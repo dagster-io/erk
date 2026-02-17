@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "adding code blocks longer than 5 lines to docs/learned/ files"
     warning: "Verbatim source code will go stale. Use source pointers instead. See docs/learned/documentation/source-pointers.md."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Learned Docs Review
@@ -58,6 +60,5 @@ The `audit-pr-docs` review uses `claude-haiku-4-5` because its task is mechanica
 
 - [inline-comment-deduplication.md](inline-comment-deduplication.md) — Dedup design and matching heuristics
 - [convention-based-reviews.md](../ci/convention-based-reviews.md) — Shared review infrastructure
-- [source-pointers.md](../documentation/source-pointers.md) — Replacement format for verbatim code blocks
-- [stale-code-blocks-are-silent-bugs.md](../documentation/stale-code-blocks-are-silent-bugs.md) — Why embedded source code is treated as a defect
-- [audit-methodology.md](../documentation/audit-methodology.md) — Classification framework used by the review
+
+See also documentation category docs for source pointer format and stale code block documentation.

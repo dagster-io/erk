@@ -15,7 +15,7 @@ tripwires:
     warning: 'Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)'
   - action: "adding a function with 5+ parameters"
     warning: "Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures and Click command callbacks."
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

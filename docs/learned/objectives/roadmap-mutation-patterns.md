@@ -15,8 +15,8 @@ tripwires:
     warning: "All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows."
   - action: "using None/empty string interchangeably in update-roadmap-step parameters"
     warning: "None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values."
-last_audited: "2026-02-16 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Roadmap Mutation Patterns
@@ -105,21 +105,11 @@ See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` f
 
 All regex patterns that match roadmap table rows MUST use `^...$` anchors with `re.MULTILINE`. Without anchors, patterns can match partial lines or span multiple rows, causing incorrect mutations.
 
-<!-- Source: src/erk/cli/commands/objective/check_cmd.py:29-32 -->
-
-```python
-# CORRECT - anchored with ^ and $, uses re.MULTILINE
-_STALE_STATUS_4COL = re.compile(
-    r"^\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|$", re.MULTILINE
-)
-_STALE_STATUS_5COL = re.compile(
-    r"^\|[^|]+\|[^|]+\|\s*-\s*\|[^|]*\|\s*#\d+\s*\|$", re.MULTILINE
-)
-```
+The canonical example is `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` (around line 107), which builds a compiled regex anchored with `^...$` and `re.MULTILINE` to match a single 5-column row by step ID. Each cell is captured as a non-greedy group so only the target row's status/plan/PR cells are replaced.
 
 **Why anchoring matters**: Without `^` and `$` anchors, a pattern like `\|[^|]+\|` could match across row boundaries. The `re.MULTILINE` flag makes `^` and `$` match at line starts/ends rather than just string starts/ends.
 
-**Pattern**: Every regex that operates on markdown table rows should follow this template: `r"^<row pattern>$"` with `re.MULTILINE`.
+**Pattern**: Every regex that operates on markdown table rows should follow: anchored `^...$` with `re.MULTILINE`.
 
 ## Related Documentation
 

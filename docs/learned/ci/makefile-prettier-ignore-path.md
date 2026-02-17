@@ -9,6 +9,8 @@ tripwires:
     action: "Creating or modifying .prettierignore"
     warning: "The Makefile uses `prettier --ignore-path .gitignore`, NOT `.prettierignore`. Adding rules to .prettierignore has no effect. Modify .gitignore to control what Prettier ignores."
     context: "This design keeps ignore patterns DRY - files ignored by git are also ignored by Prettier. Prettier's default .prettierignore support is bypassed by the --ignore-path flag."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Makefile Prettier Ignore Path

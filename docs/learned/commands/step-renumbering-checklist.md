@@ -7,6 +7,8 @@ read_when:
 tripwire:
   trigger: "Before merging or removing steps in slash commands"
   action: "Read [Step Renumbering in Slash Commands](step-renumbering-checklist.md) first. Search for `Step \\d+[a-z]?` in the file to find ALL references — headers, forward refs, backward refs, conditional jumps — and update them as a unit."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Step Renumbering in Slash Commands

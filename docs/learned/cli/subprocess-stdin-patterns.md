@@ -1,5 +1,7 @@
 ---
 title: Subprocess Stdin Patterns
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "passing content to CLI tools via stdin"
   - "using subprocess with input parameter"

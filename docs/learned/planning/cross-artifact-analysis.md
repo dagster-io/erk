@@ -4,6 +4,8 @@ read_when:
   - "detecting PR and plan relationships"
   - "assessing if work supersedes a plan"
   - "analyzing overlap between artifacts"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Cross-Artifact Analysis

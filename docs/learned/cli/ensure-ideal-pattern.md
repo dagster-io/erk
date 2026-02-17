@@ -10,8 +10,8 @@ tripwires:
     warning: "Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method."
   - action: "choosing between Ensure and EnsureIdeal"
     warning: "Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal."
-last_audited: "2026-02-08 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # EnsureIdeal Pattern for Type Narrowing
@@ -113,4 +113,3 @@ Why `SystemExit`? It exits immediately without stack traces, which is appropriat
 
 - [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — When to use unions vs exceptions
 - [Two-Phase Validation Model](two-phase-validation-model.md) — Where EnsureIdeal fits in command structure
-- [CLI Error Handling](../testing/cli-error-handling.md) — The Ensure class for invariant checks

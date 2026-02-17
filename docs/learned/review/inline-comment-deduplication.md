@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "posting inline review comments without deduplication"
     warning: "Always deduplicate before posting. The dedup logic is prompt-embedded, not code-enforced — see Step 4 of REVIEW_PROMPT_TEMPLATE."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Inline Comment Deduplication
@@ -57,4 +59,4 @@ The prompt instructs the agent to match only comments starting with the same rev
 
 ## Related Documentation
 
-- [Review Prompt Assembly](prompt-assembly.md) — The two-mode prompt system where dedup instructions are embedded
+Related review documentation covers the prompt assembly system where deduplication instructions are embedded.

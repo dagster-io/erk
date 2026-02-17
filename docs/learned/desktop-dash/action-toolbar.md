@@ -11,6 +11,8 @@ tripwires:
     warning: "Actions use streaming execution via IPC (startStreamingAction). Never await or block the UI thread on action completion. App.tsx owns the streaming lifecycle."
   - action: "adding a new action without a test case"
     warning: "ActionToolbar.test.tsx tests every action's availability predicate AND generated command. New actions need both."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # erkdesk Action Toolbar
@@ -63,6 +65,4 @@ The global lock (disabling all buttons while any action runs) prevents concurren
 
 ## Related Documentation
 
-- [App Architecture](app-architecture.md) — How App.tsx coordinates action state and IPC events
-- [IPC Actions](ipc-actions.md) — IPC handler pattern for streaming execution
-- [erkdesk Tripwires](tripwires.md) — Critical patterns to follow
+Related erkdesk documentation in this category covers app architecture, IPC patterns, and development tripwires.

@@ -1,7 +1,7 @@
 ---
 title: Session Hierarchy
-last_audited: "2026-02-15 18:50 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "understanding Claude Code session structure"
   - "working with parent and agent sessions"

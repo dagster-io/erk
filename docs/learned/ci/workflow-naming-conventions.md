@@ -10,6 +10,8 @@ tripwires:
     warning: "The workflow's name: field MUST match the CLI command name"
   - action: using this pattern
     warning: Update WORKFLOW_COMMAND_MAP when adding launchable workflows
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Workflow Naming Conventions

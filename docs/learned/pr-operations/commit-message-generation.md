@@ -4,6 +4,8 @@ read_when:
   - "understanding how PR descriptions are generated"
   - "working with plan context in PR summaries"
   - "customizing commit message generation"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Commit Message Generation

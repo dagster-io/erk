@@ -4,6 +4,8 @@ read_when:
   - "deciding when to use Explore agents vs direct searches"
   - "planning a two-stage explore-then-plan workflow"
   - "gathering codebase context before entering plan mode"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Exploration Strategies

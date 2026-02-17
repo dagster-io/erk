@@ -4,7 +4,7 @@ read_when:
   - "implementing existence checks before gateway operations"
   - "adding LBYL validation to CLI commands"
   - "understanding why gateways have separate existence methods"
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 tripwires:
   - action: "calling get_X() and handling IssueNotFound sentinel inline"

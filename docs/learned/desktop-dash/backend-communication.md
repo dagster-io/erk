@@ -11,6 +11,8 @@ tripwires:
   - action: "duplicating PlanDataProvider logic in TypeScript"
     warning: "erkdesk delegates all data fetching to `erk exec dash-data`. The Python side owns data assembly — erkdesk is a thin rendering shell over CLI output."
     score: 6
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Backend Communication Pattern Decision
@@ -87,6 +89,6 @@ The upgrade would be transparent to the renderer — same `PlanRow` data shape, 
 
 ## Related Documentation
 
-- [erkdesk App Architecture](app-architecture.md) — State management and streaming action lifecycle
-- [IPC Actions](ipc-actions.md) — Four-location checklist and handler patterns
 - [Action Toolbar](action-toolbar.md) — Action definitions and availability predicates
+
+Related erkdesk documentation in this category covers app architecture and IPC patterns.

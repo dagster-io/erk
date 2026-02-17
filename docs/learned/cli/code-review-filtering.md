@@ -1,9 +1,11 @@
 ---
+title: Code Review Filtering
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - debugging false positives in code review
   - understanding keyword-only parameter exceptions
   - working with ABC/Protocol method validation
-title: Code Review Filtering
 tripwires:
   - action: "flagging 5+ parameter violations in code review"
     warning: "Before flagging, verify NO exception applies (ABC/Protocol/Click)"

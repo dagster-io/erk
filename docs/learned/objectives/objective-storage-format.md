@@ -9,6 +9,8 @@ tripwires:
     warning: "Objective content goes in the first comment (objective-body block), not the issue body. The issue body holds only metadata blocks (objective-header, objective-roadmap)."
   - action: "using plan-* metadata block names for objective data"
     warning: "Metadata block names must match their entity type: plan-header/plan-body for plans, objective-header/objective-roadmap/objective-body for objectives."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Objective v2 Storage Format
@@ -70,5 +72,5 @@ Metadata blocks are rendered as `<details>` elements with YAML code blocks insid
 ## Related Documentation
 
 - [Objective Lifecycle](objective-lifecycle.md) — Full mutation and reading lifecycle
-- [GitHub Metadata Blocks](../architecture/github-metadata-blocks.md) — Block infrastructure
+- [Metadata Blocks](../architecture/metadata-blocks.md) — Block infrastructure
 - [Roadmap Parser](roadmap-parser.md) — How roadmap data is parsed from objectives

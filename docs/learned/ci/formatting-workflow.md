@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "running only prettier after editing Python files"
     warning: "Prettier silently skips Python files. Always use 'make format' for .py files."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Formatting Workflow Decision Tree

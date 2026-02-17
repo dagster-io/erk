@@ -5,7 +5,7 @@ read_when:
   - "using Task with run_in_background"
   - "collecting results with TaskOutput"
   - "running agents in parallel"
-last_audited: "2026-02-05 13:18 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

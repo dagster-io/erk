@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "composing conditions across multiple GitHub Actions workflow steps"
     warning: "Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs."
-last_audited: "2026-02-08 13:56 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
 ---
 
@@ -42,7 +42,7 @@ GitHub Actions silently evaluates the missing step as undefined, making the cond
 
 <!-- Source: .github/workflows/ci.yml, autofix job conditions -->
 
-See the autofix job in `.github/workflows/ci.yml:151-162` for a production example of compound conditions across multiple job outputs. The condition checks 5 different `needs.<job>.result` values, each of which must reference an actual job name.
+See the autofix job in `.github/workflows/ci.yml:152-163` for a production example of compound conditions across multiple job outputs. The condition checks 5 different `needs.<job>.result` values, each of which must reference an actual job name.
 
 ### Output Key Mismatch
 
@@ -201,7 +201,7 @@ This architecture requires:
 
 <!-- Source: .github/workflows/ci.yml, jobs structure -->
 
-See `.github/workflows/ci.yml:19-30` for the gate job, `.github/workflows/ci.yml:32-145` for parallel jobs, and `.github/workflows/ci.yml:148-398` for the autofix fan-in.
+See `.github/workflows/ci.yml:20-30` for the gate job, `.github/workflows/ci.yml:32-146` for parallel jobs, and `.github/workflows/ci.yml:148-397` for the autofix fan-in.
 
 ## Related Documentation
 

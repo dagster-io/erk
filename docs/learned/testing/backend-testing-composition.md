@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "creating a FakePlanBackend for testing caller code"
     warning: "Use real backend + fake gateway instead. FakeGitHubIssues injected into GitHubPlanStore. Fake backends are only for validating ABC contract across providers."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Backend Testing Composition
@@ -69,5 +71,5 @@ Assert on fake gateway mutation tracking properties:
 ## Related Documentation
 
 - [Gateway vs Backend](../architecture/gateway-vs-backend.md) - Architecture distinction
-- [PlanBackend Migration](../architecture/plan-backend-migration.md) - Migration pattern
+- [Plan Backend Migration](../architecture/plan-backend-migration.md) - Migration pattern
 - [Erk Test Reference](testing.md) - General testing patterns

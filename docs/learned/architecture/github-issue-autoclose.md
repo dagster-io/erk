@@ -5,6 +5,8 @@ read_when:
   - "debugging why issues didn't auto-close after PR merge"
   - "understanding closing keyword behavior"
   - "working with plan issue closure detection"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # GitHub Issue Auto-Close Behavior

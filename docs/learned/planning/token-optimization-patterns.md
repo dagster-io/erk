@@ -1,5 +1,7 @@
 ---
 title: Token Optimization Patterns
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - designing multi-agent workflows that process multiple documents
   - experiencing context bloat from fetching large payloads into parent agent

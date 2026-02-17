@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "constructing gist raw URLs with hardcoded filenames"
     warning: "Use /raw/ without filename - GitHub redirects to first file."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # GitHub Gist URL Patterns

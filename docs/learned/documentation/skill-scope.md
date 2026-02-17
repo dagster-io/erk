@@ -6,6 +6,8 @@ read_when:
   - Creating or modifying skills in .claude/skills/
   - Deciding where to document a pattern
   - Reviewing skill content for project-specific leakage
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Skill Scope Boundaries

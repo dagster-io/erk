@@ -12,7 +12,7 @@ tripwires:
     warning: "trigger_async_learn duplicates the exec script's filtering pipeline as _preprocess_session_direct(). If you change the exec script's pipeline, update the direct function too."
   - action: "passing session content to an analysis agent"
     warning: "Raw JSONL sessions can be 6+ million characters. Always preprocess first. The learn workflow validates preprocessed output exists before spawning agents."
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

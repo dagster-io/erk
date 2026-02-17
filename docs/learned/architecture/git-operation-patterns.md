@@ -1,6 +1,6 @@
 ---
 title: Git Operation Patterns
-last_audited: "2026-02-07 20:30 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 read_when:
   - "implementing git operations in gateways"

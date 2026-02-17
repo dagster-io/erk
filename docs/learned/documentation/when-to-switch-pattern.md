@@ -9,6 +9,8 @@ tripwires:
     warning: "If the change touches 5+ files or has uncertain approach, plan first. See the decision matrix in when-to-switch-pattern.md."
   - action: "continuing to code after discovering scope is larger than expected"
     warning: "Stop and switch to planning. Mid-task warning signs (uncertainty accumulating, scope creeping, multiple valid approaches) indicate you should plan. See when-to-switch-pattern.md."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Planless vs Planning Workflow Decision Framework
@@ -16,6 +18,8 @@ tripwires:
 Erk supports two workflows — planless (direct coding) and planning (plan-first). This document captures the cross-cutting decision framework for choosing between them and recognizing when to switch mid-task.
 
 For the mechanics of each workflow, see the howto guides: [planless workflow](../../howto/planless-workflow.md) and [local workflow](../../howto/local-workflow.md).
+
+For the mechanics of each workflow, see the planning workflow documentation in `docs/learned/planning/`.
 
 ## Why This Decision Matters
 
@@ -68,7 +72,5 @@ These signals indicate you should stop coding and switch to planning. They're or
 
 ## Related Documentation
 
-- [Planless Workflow Guide](../../howto/planless-workflow.md) — How to work without plans
-- [Local Planning Workflow](../../howto/local-workflow.md) — Plan-first workflow
 - [Plan Lifecycle](../planning/lifecycle.md) — Understanding plan phases and state transitions
 - [Planning Workflow](../planning/workflow.md) — `.impl/` folder structure and commands

@@ -4,8 +4,8 @@ read_when:
   - "choosing between git-pr-push and pr-submit commands"
   - "understanding PR submission workflows"
   - "deciding whether to use Graphite or plain git"
-last_audited: "2026-02-08 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 tripwires:
   - action: "submitting PRs"
     warning: "Before creating PRs, understand the workflow tradeoffs"
@@ -127,6 +127,6 @@ We tried unifying them with a `--no-stack` flag, but the behavioral differences 
 
 ## See Also
 
-- [Git-PR-Push Command](.claude/commands/erk/git-pr-push.md) — Full command specification
-- [PR-Submit Command](.claude/commands/erk/pr-submit.md) — Full command specification
+- [Git-PR-Push Command](../../../.claude/commands/erk/git-pr-push.md) — Full command specification
+- [PR-Submit Command](../../../.claude/commands/erk/pr-submit.md) — Full command specification
 - [PR Check Command](../cli/commands/pr-check.md) — Validation rules reference

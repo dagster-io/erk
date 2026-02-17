@@ -1,5 +1,7 @@
 ---
 title: erk pr sync Workflow
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "synchronizing a PR with Graphite"
   - "after erk pr checkout"

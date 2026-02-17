@@ -4,6 +4,8 @@ read_when:
   - Adding a new hook managed by erk
   - Implementing version detection for artifacts
   - Understanding how hook updates work
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Hook Marker Detection Pattern
@@ -20,9 +22,8 @@ Erk uses an `ERK_HOOK_ID=` marker pattern in hook commands to enable version-awa
 
 Erk hook commands embed an identifier as an environment variable prefix:
 
-```python
-ERK_USER_PROMPT_HOOK_COMMAND = "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
-ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+```bash
+ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook
 ```
 
 This marker persists even when the command after it changes, enabling detection of outdated hooks.

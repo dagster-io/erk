@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "reloading skills already loaded in the session"
     warning: "Skills persist for entire sessions. Check conversation history before loading."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Skill Composition Patterns
