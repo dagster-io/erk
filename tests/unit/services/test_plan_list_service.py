@@ -15,6 +15,7 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
+from erk_shared.plan_store.types import Plan, PlanState
 
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
 
@@ -46,9 +47,9 @@ class TestPlanListService:
             labels=["erk-plan"],
         )
 
-        assert len(result.issues) == 1
-        assert result.issues[0].number == 42
-        assert result.issues[0].title == "Test Plan"
+        assert len(result.plans) == 1
+        assert result.plans[0].plan_identifier == "42"
+        assert result.plans[0].title == "Test Plan"
         assert result.pr_linkages == {}
 
     def test_fetches_issues_and_pr_linkages_unified(self) -> None:
@@ -89,9 +90,9 @@ class TestPlanListService:
             labels=["erk-plan"],
         )
 
-        # Unified path returns issues from get_issues_with_pr_linkages
-        assert len(result.issues) == 1
-        assert result.issues[0].number == 42
+        # Unified path returns plans from get_issues_with_pr_linkages
+        assert len(result.plans) == 1
+        assert result.plans[0].plan_identifier == "42"
         # PR linkages should be fetched together
         assert 42 in result.pr_linkages
         assert result.pr_linkages[42][0].number == 123
@@ -107,7 +108,7 @@ class TestPlanListService:
             labels=["erk-plan"],
         )
 
-        assert result.issues == []
+        assert result.plans == []
         assert result.pr_linkages == {}
         assert result.workflow_runs == {}
 
@@ -149,8 +150,8 @@ class TestPlanListService:
             state="open",
         )
 
-        assert len(result.issues) == 1
-        assert result.issues[0].title == "Open Plan"
+        assert len(result.plans) == 1
+        assert result.plans[0].title == "Open Plan"
 
     def test_state_filter_closed(self) -> None:
         """Service passes state filter to unified get_issues_with_pr_linkages for closed issues."""
@@ -189,8 +190,8 @@ class TestPlanListService:
             state="closed",
         )
 
-        assert len(result.issues) == 1
-        assert result.issues[0].title == "Closed Plan"
+        assert len(result.plans) == 1
+        assert result.plans[0].title == "Closed Plan"
 
 
 class TestWorkflowRunFetching:
@@ -418,9 +419,9 @@ last_dispatched_node_id: 'WFR_abc123'
             labels=["erk-plan"],
         )
 
-        # Issues should still be returned
-        assert len(result.issues) == 1
-        assert result.issues[0].number == 42
+        # Plans should still be returned
+        assert len(result.plans) == 1
+        assert result.plans[0].plan_identifier == "42"
         # Workflow runs should be empty due to API failure
         assert result.workflow_runs == {}
 
@@ -431,29 +432,30 @@ class TestPlanListData:
     def test_dataclass_is_frozen(self) -> None:
         """PlanListData instances are immutable."""
         data = PlanListData(
-            issues=[],
+            plans=[],
             pr_linkages={},
             workflow_runs={},
         )
 
         with pytest.raises(AttributeError):
-            data.issues = []  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
+            data.plans = []  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
 
     def test_dataclass_contains_all_fields(self) -> None:
         """PlanListData has all expected fields."""
         now = datetime.now(UTC)
-        issues = [
-            IssueInfo(
-                number=1,
+        plans = [
+            Plan(
+                plan_identifier="1",
                 title="Plan",
                 body="",
-                state="OPEN",
+                state=PlanState.OPEN,
                 url="",
                 labels=[],
                 assignees=[],
                 created_at=now,
                 updated_at=now,
-                author="test-user",
+                metadata={"number": 1},
+                objective_id=None,
             )
         ]
         pr = PullRequestInfo(
@@ -477,11 +479,11 @@ class TestPlanListData:
         runs: dict[int, WorkflowRun | None] = {1: run}
 
         data = PlanListData(
-            issues=issues,
+            plans=plans,
             pr_linkages=linkages,
             workflow_runs=runs,
         )
 
-        assert data.issues == issues
+        assert data.plans == plans
         assert data.pr_linkages == linkages
         assert data.workflow_runs == runs

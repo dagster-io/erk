@@ -60,7 +60,6 @@ from erk_shared.plan_store.conversion import (
     header_datetime,
     header_int,
     header_str,
-    issue_info_to_plan,
 )
 from erk_shared.plan_store.types import Plan
 
@@ -138,8 +137,8 @@ class RealPlanDataProvider(PlanDataProvider):
         # Build local worktree mapping
         worktree_by_issue = self._build_worktree_mapping()
 
-        # Convert all issues to Plans (single-parse: header_fields populated)
-        plans = [issue_info_to_plan(issue) for issue in plan_data.issues]
+        # Use pre-converted Plan objects from PlanListData
+        plans = plan_data.plans
 
         # First pass: collect learn_plan_issue numbers for batch fetch
         learn_issue_numbers: set[int] = set()
@@ -155,9 +154,11 @@ class RealPlanDataProvider(PlanDataProvider):
         rows: list[PlanRowData] = []
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
 
-        for issue, plan in zip(plan_data.issues, plans, strict=True):
+        for plan in plans:
+            issue_number = int(plan.plan_identifier)
+
             # Get workflow run for filtering
-            workflow_run = plan_data.workflow_runs.get(issue.number)
+            workflow_run = plan_data.workflow_runs.get(issue_number)
 
             # Apply run_state filter
             if filters.run_state is not None:
@@ -169,8 +170,7 @@ class RealPlanDataProvider(PlanDataProvider):
             # Build row data
             row = self._build_row_data(
                 plan=plan,
-                issue_number=issue.number,
-                author=issue.author,
+                issue_number=issue_number,
                 pr_linkages=plan_data.pr_linkages,
                 workflow_run=workflow_run,
                 worktree_by_issue=worktree_by_issue,
@@ -432,7 +432,6 @@ class RealPlanDataProvider(PlanDataProvider):
         *,
         plan: Plan,
         issue_number: int,
-        author: str,
         pr_linkages: dict[int, list[PullRequestInfo]],
         workflow_run: WorkflowRun | None,
         worktree_by_issue: dict[int, tuple[str, str | None]],
@@ -668,7 +667,7 @@ class RealPlanDataProvider(PlanDataProvider):
             updated_display=updated_display,
             created_at=plan.created_at,
             created_display=created_display,
-            author=author,
+            author=str(plan.metadata.get("author", "")),
             is_learn_plan=is_learn_plan,
         )
 

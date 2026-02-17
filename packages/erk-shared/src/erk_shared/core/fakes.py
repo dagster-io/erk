@@ -262,7 +262,7 @@ class FakePlanListService(PlanListService):
     """
 
     def __init__(self, data: PlanListData | None = None) -> None:
-        self._data = data or PlanListData(issues=[], pr_linkages={}, workflow_runs={})
+        self._data = data or PlanListData(plans=[], pr_linkages={}, workflow_runs={})
 
     def get_plan_list_data(
         self,

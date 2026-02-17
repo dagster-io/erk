@@ -16,6 +16,7 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.types import GitHubRepoLocation, WorkflowRun
+from erk_shared.plan_store.conversion import issue_info_to_plan
 
 
 class RealPlanListService(PlanListService):
@@ -58,7 +59,7 @@ class RealPlanListService(PlanListService):
                 only issues created by this user are returned.
 
         Returns:
-            PlanListData containing issues, PR linkages, and workflow runs
+            PlanListData containing plans, PR linkages, and workflow runs
         """
         # Always use unified path: issues + PR linkages in one API call (~600ms)
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(
@@ -69,10 +70,13 @@ class RealPlanListService(PlanListService):
             creator=creator,
         )
 
+        # Convert IssueInfo to Plan with enriched metadata
+        plans = [issue_info_to_plan(issue) for issue in issues]
+
         # Conditionally fetch workflow runs (skip for performance when not needed)
         workflow_runs: dict[int, WorkflowRun | None] = {}
         if not skip_workflow_runs:
-            # Extract node_ids from plan-header metadata
+            # Extract node_ids from plan-header metadata (still from issue body)
             node_id_to_issue: dict[str, int] = {}
             for issue in issues:
                 _, node_id, _ = extract_plan_header_dispatch_info(issue.body)
@@ -95,7 +99,7 @@ class RealPlanListService(PlanListService):
                     logging.warning("Failed to fetch workflow runs: %s", e)
 
         return PlanListData(
-            issues=issues,
+            plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,
         )
