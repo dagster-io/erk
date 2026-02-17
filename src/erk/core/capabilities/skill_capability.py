@@ -16,7 +16,9 @@ from erk.core.capabilities.base import (
     CapabilityResult,
     CapabilityScope,
     ManagedArtifact,
+    backend_agent_dir,
 )
+from erk_shared.context.types import AgentBackend
 
 
 class SkillCapability(Capability):
@@ -62,26 +64,33 @@ class SkillCapability(Capability):
         """Declare the skill as a managed artifact."""
         return [ManagedArtifact(name=self.skill_name, artifact_type="skill")]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if the skill directory exists."""
         assert repo_root is not None, "SkillCapability requires repo_root"
-        return (repo_root / ".claude" / "skills" / self.skill_name).exists()
+        agent_dir = backend_agent_dir(backend)
+        return (repo_root / agent_dir / "skills" / self.skill_name).exists()
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Install the skill using artifact sync."""
         assert repo_root is not None, "SkillCapability requires repo_root"
 
-        skill_dir = repo_root / ".claude" / "skills" / self.skill_name
+        from erk.artifacts.paths import get_bundled_codex_dir
+
+        agent_dir = backend_agent_dir(backend)
+        skill_dir = repo_root / agent_dir / "skills" / self.skill_name
         if skill_dir.exists():
             # Still record installation even if directory exists
             add_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
-                message=f".claude/skills/{self.skill_name}/ already exists",
+                message=f"{agent_dir}/skills/{self.skill_name}/ already exists",
             )
 
-        bundled_claude_dir = get_bundled_claude_dir()
-        source_skill = bundled_claude_dir / "skills" / self.skill_name
+        if backend == "codex":
+            bundled_dir = get_bundled_codex_dir()
+        else:
+            bundled_dir = get_bundled_claude_dir()
+        source_skill = bundled_dir / "skills" / self.skill_name
 
         if not source_skill.exists():
             return CapabilityResult(
@@ -98,20 +107,21 @@ class SkillCapability(Capability):
 
         return CapabilityResult(
             success=True,
-            message=f"Installed .claude/skills/{self.skill_name}/",
+            message=f"Installed {agent_dir}/skills/{self.skill_name}/",
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Uninstall the skill by deleting its directory."""
         assert repo_root is not None, "SkillCapability requires repo_root"
 
-        skill_dir = repo_root / ".claude" / "skills" / self.skill_name
+        agent_dir = backend_agent_dir(backend)
+        skill_dir = repo_root / agent_dir / "skills" / self.skill_name
         if not skill_dir.exists():
             # Still remove from installed capabilities
             remove_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
-                message=f".claude/skills/{self.skill_name}/ does not exist",
+                message=f"{agent_dir}/skills/{self.skill_name}/ does not exist",
             )
 
         shutil.rmtree(skill_dir)
@@ -119,7 +129,7 @@ class SkillCapability(Capability):
         remove_installed_capability(repo_root, self.name)
         return CapabilityResult(
             success=True,
-            message=f"Removed .claude/skills/{self.skill_name}/",
+            message=f"Removed {agent_dir}/skills/{self.skill_name}/",
         )
 
     def _copy_directory(self, source: Path, target: Path) -> None:

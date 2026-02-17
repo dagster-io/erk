@@ -22,6 +22,7 @@ from erk.capabilities.statusline import StatuslineCapability
 from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
 from erk.core.capabilities.base import Capability
+from erk_shared.context.types import AgentBackend
 
 
 @cache
@@ -82,6 +83,18 @@ def list_required_capabilities() -> list[Capability]:
         List of capabilities where required=True
     """
     return [cap for cap in _all_capabilities() if cap.required]
+
+
+def list_capabilities_for_backend(*, backend: AgentBackend) -> list[Capability]:
+    """Get capabilities compatible with a specific backend.
+
+    Returns:
+        List of capabilities where backend is in supported_backends, sorted by name
+    """
+    return sorted(
+        [c for c in _all_capabilities() if backend in c.supported_backends],
+        key=lambda c: c.name,
+    )
 
 
 @cache

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.init.capability.backend_utils import resolve_backend
 from erk.core.capabilities.registry import get_capability, list_capabilities
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
@@ -29,6 +30,7 @@ def remove_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
     """
     # Track success/failure for exit code
     any_failed = False
+    backend = resolve_backend(ctx)
 
     # Lazy repo discovery - only done if needed
     repo_root: Path | None = None
@@ -78,11 +80,11 @@ def remove_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
             uninstall_repo_root = None
 
         # Check if installed before trying to remove
-        if not cap.is_installed(uninstall_repo_root):
+        if not cap.is_installed(uninstall_repo_root, backend=backend):
             user_output(click.style("⚠ ", fg="yellow") + f"{cap_name}: Not installed, skipping")
             continue
 
-        result = cap.uninstall(uninstall_repo_root)
+        result = cap.uninstall(uninstall_repo_root, backend=backend)
         if result.success:
             user_output(click.style("✓ ", fg="green") + f"{cap_name}: {result.message}")
         else:

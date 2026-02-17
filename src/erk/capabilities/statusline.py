@@ -13,6 +13,7 @@ from erk.core.claude_settings import (
     has_erk_statusline,
     remove_erk_statusline,
 )
+from erk_shared.context.types import AgentBackend
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
 
@@ -54,18 +55,22 @@ class StatuslineCapability(Capability):
         return "statusLine configured in ~/.claude/settings.json"
 
     @property
+    def supported_backends(self) -> tuple[AgentBackend, ...]:
+        return ("claude",)
+
+    @property
     def artifacts(self) -> list[CapabilityArtifact]:
         # settings.json is shared by multiple capabilities, so not listed here
         return []
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if erk-statusline is configured in Claude settings."""
         # User-level capability ignores repo_root
         _ = repo_root
         settings = self._claude_installation.read_settings()
         return has_erk_statusline(settings)
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Configure erk-statusline in ~/.claude/settings.json."""
         # User-level capability ignores repo_root
         _ = repo_root
@@ -92,7 +97,7 @@ class StatuslineCapability(Capability):
             created_files=("~/.claude/settings.json",),
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove erk-statusline from ~/.claude/settings.json."""
         # User-level capability ignores repo_root
         _ = repo_root

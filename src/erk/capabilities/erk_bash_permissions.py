@@ -9,6 +9,7 @@ from erk.core.capabilities.base import (
     CapabilityResult,
     CapabilityScope,
 )
+from erk_shared.context.types import AgentBackend
 
 
 class ErkBashPermissionsCapability(Capability):
@@ -31,11 +32,15 @@ class ErkBashPermissionsCapability(Capability):
         return "Bash(erk:*) in .claude/settings.json permissions.allow"
 
     @property
+    def supported_backends(self) -> tuple[AgentBackend, ...]:
+        return ("claude",)
+
+    @property
     def artifacts(self) -> list[CapabilityArtifact]:
         # settings.json is shared by multiple capabilities, so not listed here
         return []
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if Bash(erk:*) permission exists in settings.json."""
         assert repo_root is not None, "ErkBashPermissionsCapability requires repo_root"
         settings_path = repo_root / ".claude" / "settings.json"
@@ -47,7 +52,7 @@ class ErkBashPermissionsCapability(Capability):
         allow_list = permissions.get("allow", [])
         return "Bash(erk:*)" in allow_list
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Add Bash(erk:*) to permissions.allow in settings.json."""
         assert repo_root is not None, "ErkBashPermissionsCapability requires repo_root"
         settings_path = repo_root / ".claude" / "settings.json"
@@ -90,7 +95,7 @@ class ErkBashPermissionsCapability(Capability):
             created_files=tuple(created_files),
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove Bash(erk:*) from permissions.allow in settings.json."""
         from erk.core.claude_settings import remove_erk_permission, write_claude_settings
 

@@ -26,6 +26,7 @@ from erk.core.capabilities.base import (
     CapabilityScope,
     ManagedArtifact,
 )
+from erk_shared.context.types import AgentBackend
 
 InstallableItemType = Literal["file", "directory", "create_directory"]
 
@@ -133,13 +134,13 @@ class CodeReviewsSystemCapability(Capability):
             ManagedArtifact(name="setup-claude-erk", artifact_type="action"),
         ]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if the workflow file exists."""
         if repo_root is None:
             return False
         return (repo_root / ".github" / "workflows" / "code-reviews.yml").exists()
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Install the workflow and supporting actions."""
         if repo_root is None:
             return CapabilityResult(
@@ -191,7 +192,7 @@ class CodeReviewsSystemCapability(Capability):
             message=f"Installed code-reviews-system ({len(installed_items)} items: {items_str})",
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove the code-reviews-system workflow and actions.
 
         Note: .erk/reviews/ is not removed as it may contain user-installed reviews.

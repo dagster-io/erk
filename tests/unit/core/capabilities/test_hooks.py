@@ -17,13 +17,13 @@ from erk.core.claude_settings import (
 def test_is_installed_returns_false_when_no_repo_root() -> None:
     """Test is_installed returns False when repo_root is None."""
     capability = HooksCapability()
-    assert capability.is_installed(repo_root=None) is False
+    assert capability.is_installed(repo_root=None, backend="claude") is False
 
 
 def test_is_installed_returns_false_when_settings_missing(tmp_path: Path) -> None:
     """Test is_installed returns False when settings.json doesn't exist."""
     capability = HooksCapability()
-    assert capability.is_installed(repo_root=tmp_path) is False
+    assert capability.is_installed(repo_root=tmp_path, backend="claude") is False
 
 
 def test_is_installed_returns_false_when_hooks_missing(tmp_path: Path) -> None:
@@ -33,7 +33,7 @@ def test_is_installed_returns_false_when_hooks_missing(tmp_path: Path) -> None:
     settings_path.write_text("{}", encoding="utf-8")
 
     capability = HooksCapability()
-    assert capability.is_installed(repo_root=tmp_path) is False
+    assert capability.is_installed(repo_root=tmp_path, backend="claude") is False
 
 
 def test_is_installed_returns_true_when_current_hooks_present(tmp_path: Path) -> None:
@@ -60,7 +60,7 @@ def test_is_installed_returns_true_when_current_hooks_present(tmp_path: Path) ->
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     capability = HooksCapability()
-    assert capability.is_installed(repo_root=tmp_path) is True
+    assert capability.is_installed(repo_root=tmp_path, backend="claude") is True
 
 
 def test_is_installed_returns_false_for_old_hook_commands(tmp_path: Path) -> None:
@@ -96,7 +96,7 @@ def test_is_installed_returns_false_for_old_hook_commands(tmp_path: Path) -> Non
 
     capability = HooksCapability()
     # Should return False because the exact command doesn't match current version
-    assert capability.is_installed(repo_root=tmp_path) is False
+    assert capability.is_installed(repo_root=tmp_path, backend="claude") is False
 
 
 def test_has_any_erk_hooks_returns_false_when_no_repo_root() -> None:
@@ -187,7 +187,7 @@ def test_install_creates_hooks_in_empty_settings(tmp_path: Path) -> None:
     settings_path.write_text("{}", encoding="utf-8")
 
     capability = HooksCapability()
-    result = capability.install(repo_root=tmp_path)
+    result = capability.install(repo_root=tmp_path, backend="claude")
 
     assert result.success is True
     assert "Added erk hooks" in result.message
@@ -230,7 +230,7 @@ def test_install_updates_old_hooks(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     capability = HooksCapability()
-    result = capability.install(repo_root=tmp_path)
+    result = capability.install(repo_root=tmp_path, backend="claude")
 
     assert result.success is True
     # Should say "Updated" not "Added" since old hooks were present
@@ -269,7 +269,7 @@ def test_install_skips_when_already_current(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     capability = HooksCapability()
-    result = capability.install(repo_root=tmp_path)
+    result = capability.install(repo_root=tmp_path, backend="claude")
 
     assert result.success is True
     assert "already configured" in result.message
@@ -301,7 +301,7 @@ def test_install_preserves_user_hooks(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     capability = HooksCapability()
-    result = capability.install(repo_root=tmp_path)
+    result = capability.install(repo_root=tmp_path, backend="claude")
 
     assert result.success is True
 
@@ -317,7 +317,7 @@ def test_install_preserves_user_hooks(tmp_path: Path) -> None:
 def test_install_fails_without_repo_root() -> None:
     """Test install returns failure when repo_root is None."""
     capability = HooksCapability()
-    result = capability.install(repo_root=None)
+    result = capability.install(repo_root=None, backend="claude")
 
     assert result.success is False
     assert "requires repo_root" in result.message
@@ -330,7 +330,7 @@ def test_install_fails_on_invalid_json(tmp_path: Path) -> None:
     settings_path.write_text("{ invalid json", encoding="utf-8")
 
     capability = HooksCapability()
-    result = capability.install(repo_root=tmp_path)
+    result = capability.install(repo_root=tmp_path, backend="claude")
 
     assert result.success is False
     assert "Invalid JSON" in result.message

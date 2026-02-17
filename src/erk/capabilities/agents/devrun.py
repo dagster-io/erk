@@ -3,7 +3,7 @@
 import shutil
 from pathlib import Path
 
-from erk.artifacts.paths import get_bundled_claude_dir
+from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
 from erk.artifacts.state import add_installed_capability, remove_installed_capability
 from erk.core.capabilities.base import (
     Capability,
@@ -11,7 +11,9 @@ from erk.core.capabilities.base import (
     CapabilityResult,
     CapabilityScope,
     ManagedArtifact,
+    backend_agent_dir,
 )
+from erk_shared.context.types import AgentBackend
 
 
 class DevrunAgentCapability(Capability):
@@ -51,40 +53,46 @@ class DevrunAgentCapability(Capability):
         """Declare devrun agent as managed artifact."""
         return [ManagedArtifact(name="devrun", artifact_type="agent")]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if the agent file exists."""
         assert repo_root is not None, "DevrunAgentCapability requires repo_root"
-        return (repo_root / ".claude" / "agents" / "devrun.md").exists()
+        agent_dir = backend_agent_dir(backend)
+        return (repo_root / agent_dir / "agents" / "devrun.md").exists()
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Install the devrun agent definition."""
         assert repo_root is not None, "DevrunAgentCapability requires repo_root"
 
-        bundled_claude_dir = get_bundled_claude_dir()
+        if backend == "codex":
+            bundled_dir = get_bundled_codex_dir()
+        else:
+            bundled_dir = get_bundled_claude_dir()
+
+        agent_dir = backend_agent_dir(backend)
 
         # Check for single-file agent first, then directory
-        agent_file_src = bundled_claude_dir / "agents" / "devrun.md"
-        agent_dir_src = bundled_claude_dir / "agents" / "devrun"
+        agent_file_src = bundled_dir / "agents" / "devrun.md"
+        agent_dir_src = bundled_dir / "agents" / "devrun"
 
         if agent_file_src.exists():
-            agent_dst = repo_root / ".claude" / "agents" / "devrun.md"
+            agent_dst = repo_root / agent_dir / "agents" / "devrun.md"
             agent_dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(agent_file_src, agent_dst)
             # Record capability installation
             add_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
-                message="Installed .claude/agents/devrun.md",
+                message=f"Installed {agent_dir}/agents/devrun.md",
             )
         elif agent_dir_src.exists():
-            agent_dst = repo_root / ".claude" / "agents" / "devrun"
+            agent_dst = repo_root / agent_dir / "agents" / "devrun"
             agent_dst.mkdir(parents=True, exist_ok=True)
             self._copy_directory(agent_dir_src, agent_dst)
             # Record capability installation
             add_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
-                message="Installed .claude/agents/devrun/",
+                message=f"Installed {agent_dir}/agents/devrun/",
             )
 
         return CapabilityResult(
@@ -92,12 +100,13 @@ class DevrunAgentCapability(Capability):
             message="Agent 'devrun' not found in erk package",
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove the devrun agent."""
         assert repo_root is not None, "DevrunAgentCapability requires repo_root"
 
-        agent_file = repo_root / ".claude" / "agents" / "devrun.md"
-        agent_dir = repo_root / ".claude" / "agents" / "devrun"
+        agent_dir = backend_agent_dir(backend)
+        agent_file = repo_root / agent_dir / "agents" / "devrun.md"
+        agent_dir_path = repo_root / agent_dir / "agents" / "devrun"
 
         # Remove from installed capabilities
         remove_installed_capability(repo_root, self.name)
@@ -106,13 +115,13 @@ class DevrunAgentCapability(Capability):
             agent_file.unlink()
             return CapabilityResult(
                 success=True,
-                message="Removed .claude/agents/devrun.md",
+                message=f"Removed {agent_dir}/agents/devrun.md",
             )
-        elif agent_dir.exists():
-            shutil.rmtree(agent_dir)
+        elif agent_dir_path.exists():
+            shutil.rmtree(agent_dir_path)
             return CapabilityResult(
                 success=True,
-                message="Removed .claude/agents/devrun/",
+                message=f"Removed {agent_dir}/agents/devrun/",
             )
 
         return CapabilityResult(

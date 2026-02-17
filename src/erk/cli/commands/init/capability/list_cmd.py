@@ -4,10 +4,12 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.init.capability.backend_utils import resolve_backend
 from erk.core.capabilities.base import Capability, CapabilityArtifact
 from erk.core.capabilities.registry import get_capability, list_capabilities
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
+from erk_shared.context.types import AgentBackend
 from erk_shared.output.output import user_output
 
 
@@ -32,13 +34,15 @@ def list_cmd(ctx: ErkContext, name: str | None) -> None:
     else:
         repo_root = repo_or_sentinel.root
 
+    backend = resolve_backend(ctx)
+
     if name is not None:
-        _check_capability(name, repo_root)
+        _check_capability(name, repo_root, backend=backend)
     else:
-        _check_all(repo_root)
+        _check_all(repo_root, backend=backend)
 
 
-def _check_capability(name: str, repo_root: Path | None) -> None:
+def _check_capability(name: str, repo_root: Path | None, *, backend: AgentBackend) -> None:
     """Check a specific capability."""
     cap = get_capability(name)
     if cap is None:
@@ -56,7 +60,7 @@ def _check_capability(name: str, repo_root: Path | None) -> None:
         )
         raise SystemExit(1)
 
-    is_installed = cap.is_installed(repo_root if cap.scope == "project" else None)
+    is_installed = cap.is_installed(repo_root if cap.scope == "project" else None, backend=backend)
     scope_label = f"[{cap.scope}]"
 
     if is_installed:
@@ -105,7 +109,7 @@ def _show_artifact_status(
     user_output(f"    {status} {artifact.path:25} ({artifact.artifact_type})")
 
 
-def _check_all(repo_root: Path | None) -> None:
+def _check_all(repo_root: Path | None, *, backend: AgentBackend) -> None:
     """Check all capabilities."""
     caps = list_capabilities()
 
@@ -124,7 +128,7 @@ def _check_all(repo_root: Path | None) -> None:
             user_output(click.style("  ? ", fg="yellow") + cap_line)
             user_output(check_line)
         else:
-            if cap.is_installed(repo_root if cap.scope == "project" else None):
+            if cap.is_installed(repo_root if cap.scope == "project" else None, backend=backend):
                 user_output(click.style("  ✓ ", fg="green") + cap_line)
                 user_output(check_line)
             else:

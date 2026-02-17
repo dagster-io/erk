@@ -29,7 +29,7 @@ def sync_cmd(force: bool) -> None:
       erk artifact sync --force
     """
     project_dir = Path.cwd()
-    config = create_artifact_sync_config(project_dir)
+    config = create_artifact_sync_config(project_dir, backend="claude")
 
     result = sync_artifacts(project_dir, force, config=config)
 

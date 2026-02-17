@@ -29,13 +29,13 @@ def test_scope_is_project() -> None:
 def test_is_installed_returns_false_when_no_repo_root() -> None:
     """Test is_installed returns False when repo_root is None."""
     capability = CodeReviewsSystemCapability()
-    assert capability.is_installed(repo_root=None) is False
+    assert capability.is_installed(repo_root=None, backend="claude") is False
 
 
 def test_is_installed_returns_false_when_workflow_missing(tmp_path: Path) -> None:
     """Test is_installed returns False when workflow doesn't exist."""
     capability = CodeReviewsSystemCapability()
-    assert capability.is_installed(repo_root=tmp_path) is False
+    assert capability.is_installed(repo_root=tmp_path, backend="claude") is False
 
 
 def test_is_installed_returns_true_when_workflow_exists(tmp_path: Path) -> None:
@@ -45,13 +45,13 @@ def test_is_installed_returns_true_when_workflow_exists(tmp_path: Path) -> None:
     (workflow_dir / "code-reviews.yml").write_text("name: code-reviews", encoding="utf-8")
 
     capability = CodeReviewsSystemCapability()
-    assert capability.is_installed(repo_root=tmp_path) is True
+    assert capability.is_installed(repo_root=tmp_path, backend="claude") is True
 
 
 def test_install_fails_without_repo_root() -> None:
     """Test install fails when repo_root is None."""
     capability = CodeReviewsSystemCapability()
-    result = capability.install(repo_root=None)
+    result = capability.install(repo_root=None, backend="claude")
     assert result.success is False
     assert "requires repo_root" in result.message
 
@@ -59,7 +59,7 @@ def test_install_fails_without_repo_root() -> None:
 def test_uninstall_fails_without_repo_root() -> None:
     """Test uninstall fails when repo_root is None."""
     capability = CodeReviewsSystemCapability()
-    result = capability.uninstall(repo_root=None)
+    result = capability.uninstall(repo_root=None, backend="claude")
     assert result.success is False
     assert "requires repo_root" in result.message
 
@@ -67,7 +67,7 @@ def test_uninstall_fails_without_repo_root() -> None:
 def test_uninstall_succeeds_when_not_installed(tmp_path: Path) -> None:
     """Test uninstall succeeds gracefully when not installed."""
     capability = CodeReviewsSystemCapability()
-    result = capability.uninstall(repo_root=tmp_path)
+    result = capability.uninstall(repo_root=tmp_path, backend="claude")
     assert result.success is True
     assert "not installed" in result.message
 
@@ -80,7 +80,7 @@ def test_uninstall_removes_workflow(tmp_path: Path) -> None:
     workflow_file.write_text("name: code-reviews", encoding="utf-8")
 
     capability = CodeReviewsSystemCapability()
-    result = capability.uninstall(repo_root=tmp_path)
+    result = capability.uninstall(repo_root=tmp_path, backend="claude")
 
     assert result.success is True
     assert "code-reviews.yml" in result.message
@@ -105,7 +105,7 @@ def test_uninstall_removes_actions(tmp_path: Path) -> None:
     (action2_dir / "action.yml").write_text("name: setup-claude-erk", encoding="utf-8")
 
     capability = CodeReviewsSystemCapability()
-    result = capability.uninstall(repo_root=tmp_path)
+    result = capability.uninstall(repo_root=tmp_path, backend="claude")
 
     assert result.success is True
     assert not action1_dir.exists()

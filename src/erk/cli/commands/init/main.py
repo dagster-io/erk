@@ -522,6 +522,12 @@ def run_init(
             user_output("  Graphite (gt) detected - will use 'gt create' for new branches")
         else:
             user_output("  Graphite (gt) not detected - will use 'git' for branch creation")
+    else:
+        # Config already exists — resolve backend from it
+        if ctx.global_config is not None:
+            backend = ctx.global_config.interactive_agent.backend
+        else:
+            backend = "claude"
 
     # Check if repo is already erk-ified
     already_erkified = is_repo_erk_ified(repo_root)
@@ -561,7 +567,7 @@ def run_init(
         user_output(f"  Wrote {version_file}")
 
         # Sync artifacts (skills, commands, agents, workflows, actions)
-        config = create_artifact_sync_config(repo_context.root)
+        config = create_artifact_sync_config(repo_context.root, backend=backend)
         sync_result = sync_artifacts(repo_context.root, force=False, config=config)
         if sync_result.success:
             user_output(click.style("  ✓ ", fg="green") + sync_result.message)
@@ -573,9 +579,11 @@ def run_init(
 
         # Auto-install required capabilities (e.g., hooks)
         for cap in list_required_capabilities():
+            if backend not in cap.supported_backends:
+                continue
             check_repo_root = repo_context.root if cap.scope == "project" else None
-            if not cap.is_installed(check_repo_root):
-                result = cap.install(check_repo_root)
+            if not cap.is_installed(check_repo_root, backend=backend):
+                result = cap.install(check_repo_root, backend=backend)
                 if result.success:
                     user_output(click.style("  ✓ ", fg="green") + result.message)
                 else:
@@ -621,7 +629,7 @@ def run_init(
             cap_line = f"{cap.name:25} {scope_label:10} {cap.description}"
 
             check_repo_root = repo_root if cap.scope == "project" else None
-            if cap.is_installed(check_repo_root):
+            if cap.is_installed(check_repo_root, backend=backend):
                 user_output(click.style("  ✓ ", fg="green") + cap_line + "  " + check_desc)
             else:
                 user_output(click.style("  ○ ", fg="yellow") + cap_line + "  " + check_desc)

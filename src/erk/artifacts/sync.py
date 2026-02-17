@@ -17,6 +17,7 @@ from erk.core.claude_settings import (
     has_exit_plan_hook,
     has_user_prompt_hook,
 )
+from erk_shared.context.types import AgentBackend
 
 
 @dataclass(frozen=True)
@@ -35,14 +36,20 @@ class ArtifactSyncConfig:
     package: ErkPackageInfo
     installed_capabilities: frozenset[str]
     sync_capabilities: bool  # False in tests to avoid capability install overwriting test fixtures
+    backend: AgentBackend
 
 
-def create_artifact_sync_config(project_dir: Path) -> ArtifactSyncConfig:
+def create_artifact_sync_config(
+    project_dir: Path,
+    *,
+    backend: AgentBackend,
+) -> ArtifactSyncConfig:
     """Create config with real values for production use."""
     return ArtifactSyncConfig(
         package=ErkPackageInfo.from_project_dir(project_dir),
         installed_capabilities=load_installed_capabilities(project_dir),
         sync_capabilities=True,
+        backend=backend,
     )
 
 
@@ -721,9 +728,10 @@ def sync_artifacts(
     if config.sync_capabilities:
         from erk.core.capabilities.registry import list_capabilities
 
+        backend = config.backend
         for cap in list_capabilities():
-            if cap.scope == "project" and cap.is_installed(project_dir):
-                cap.install(project_dir)
+            if cap.scope == "project" and cap.is_installed(project_dir, backend=backend):
+                cap.install(project_dir, backend=backend)
 
     # Build per-artifact state from synced artifacts
     files: dict[str, ArtifactFileState] = {}

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.init.capability.backend_utils import resolve_backend
 from erk.core.capabilities.registry import get_capability, list_capabilities
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
@@ -30,6 +31,7 @@ def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
     """
     # Track success/failure for exit code
     any_failed = False
+    backend = resolve_backend(ctx)
 
     # Lazy repo discovery - only done if needed
     repo_root: Path | None = None
@@ -70,14 +72,22 @@ def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
             # User-level capability - no repo needed
             install_repo_root = None
 
+        # Skip capabilities that don't support this backend
+        if backend not in cap.supported_backends:
+            user_output(
+                click.style("⚠ ", fg="yellow")
+                + f"{cap_name}: Not supported for backend '{backend}', skipping"
+            )
+            continue
+
         # Run preflight checks before installation
-        preflight_result = cap.preflight(install_repo_root)
+        preflight_result = cap.preflight(install_repo_root, backend=backend)
         if not preflight_result.success:
             user_output(click.style("✗ ", fg="red") + f"{cap_name}: {preflight_result.message}")
             any_failed = True
             continue
 
-        result = cap.install(install_repo_root)
+        result = cap.install(install_repo_root, backend=backend)
         if result.success:
             user_output(click.style("✓ ", fg="green") + f"{cap_name}: {result.message}")
             for created_file in result.created_files:
