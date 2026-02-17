@@ -1603,7 +1603,8 @@ def render_land_execution_script(
     This script is generated after validation passes. When sourced, it:
     1. Validates required arguments (PR number and branch)
     2. Calls `erk exec land-execute` with pre-validated state plus user flags
-    3. Navigates to the target location (trunk or child branch)
+    3. If land-execute fails (e.g., merge conflict), stops immediately via ``return 1``
+    4. On success, navigates to the target location (trunk or child branch)
 
     Note: The execute phase always skips confirmation prompts because the user
     already approved by sourcing the script. --force is not passed because
@@ -1672,7 +1673,7 @@ PR_NUMBER="${{1:?Error: PR number required}}"
 BRANCH="${{2:?Error: Branch name required}}"
 shift 2
 
-{erk_cmd}
+{erk_cmd} || return 1
 cd {target_path_str}
 """
 

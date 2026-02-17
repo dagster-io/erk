@@ -178,6 +178,28 @@ def test_render_land_execution_script_omits_no_cleanup_when_cleanup_confirmed() 
     assert "--no-cleanup" not in script
 
 
+def test_render_land_execution_script_stops_on_execute_failure() -> None:
+    """Script returns early if land-execute fails, preventing cd to trunk."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
+        cleanup_confirmed=True,
+        target_path=Path("/repo"),
+    )
+
+    assert "|| return 1" in script
+    # The return guard must appear on the erk exec line, before cd
+    lines = script.strip().splitlines()
+    exec_line_idx = next(i for i, line in enumerate(lines) if "erk exec land-execute" in line)
+    cd_line_idx = next(i for i, line in enumerate(lines) if line.startswith("cd "))
+    assert "|| return 1" in lines[exec_line_idx]
+    assert exec_line_idx < cd_line_idx
+
+
 def test_render_land_execution_script_has_header_comment() -> None:
     """Script starts with header comment."""
     script = render_land_execution_script(
