@@ -14,7 +14,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_pr_sync_divergence_success() -> None:
     """Test successful sync when branch is diverged."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -48,7 +48,7 @@ def test_pr_sync_divergence_success() -> None:
 def test_pr_sync_divergence_requires_dangerous_flag() -> None:
     """Test that command fails when --dangerous flag is not provided (default config)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -78,7 +78,7 @@ def test_pr_sync_divergence_requires_dangerous_flag() -> None:
 def test_pr_sync_divergence_skip_dangerous_with_config() -> None:
     """Test that --dangerous flag is not required when config disables requirement."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -119,7 +119,7 @@ def test_pr_sync_divergence_skip_dangerous_with_config() -> None:
 def test_pr_sync_divergence_already_in_sync() -> None:
     """Test early exit when no divergence."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -150,7 +150,7 @@ def test_pr_sync_divergence_already_in_sync() -> None:
 def test_pr_sync_divergence_behind_only() -> None:
     """Test fast-forward case (behind but not diverged)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -179,7 +179,7 @@ def test_pr_sync_divergence_behind_only() -> None:
 def test_pr_sync_divergence_no_remote_branch() -> None:
     """Test error when no remote tracking branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -203,7 +203,7 @@ def test_pr_sync_divergence_no_remote_branch() -> None:
 def test_pr_sync_divergence_detached_head() -> None:
     """Test error when not on a branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -226,7 +226,7 @@ def test_pr_sync_divergence_detached_head() -> None:
 def test_pr_sync_divergence_claude_not_available() -> None:
     """Test error when Claude is not installed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -258,7 +258,7 @@ def test_pr_sync_divergence_claude_not_available() -> None:
 def test_pr_sync_divergence_aborts_on_semantic_conflict() -> None:
     """Test that command aborts when Claude prompts for user input (semantic conflict)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -291,7 +291,7 @@ def test_pr_sync_divergence_aborts_on_semantic_conflict() -> None:
 def test_pr_sync_divergence_fails_on_command_error() -> None:
     """Test that command fails when slash command execution fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -323,7 +323,7 @@ def test_pr_sync_divergence_fails_on_command_error() -> None:
 def test_pr_sync_divergence_fails_when_no_work_events() -> None:
     """Test that command fails when Claude completes but produces no work events."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},

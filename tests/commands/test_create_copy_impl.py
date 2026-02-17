@@ -11,7 +11,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_create_copy_plan_success() -> None:
     """Test --copy-plan copies .impl directory to new worktree."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: Create .impl directory in current worktree (at repo root)
         plan_dir = env.cwd / ".impl"
         plan_dir.mkdir()
@@ -74,7 +74,7 @@ def test_create_copy_plan_success() -> None:
 def test_create_copy_plan_missing_plan_error() -> None:
     """Test --copy-plan errors when current directory has no .impl/."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: No .impl directory exists
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -108,7 +108,7 @@ def test_create_copy_plan_missing_plan_error() -> None:
 def test_create_copy_plan_mutual_exclusion_with_plan_file() -> None:
     """Test --copy-plan and --from-plan-file are mutually exclusive."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: Create .impl directory and plan file
         plan_dir = env.cwd / ".impl"
         plan_dir.mkdir()
@@ -150,7 +150,7 @@ def test_create_copy_plan_mutual_exclusion_with_plan_file() -> None:
 def test_create_copy_plan_preserves_progress() -> None:
     """Test --copy-plan preserves progress.md checkboxes exactly."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: Create .impl with mixed checkbox states at repo root
         plan_dir = env.cwd / ".impl"
         plan_dir.mkdir()
@@ -206,7 +206,7 @@ total_steps: 6
 def test_create_copy_plan_preserves_yaml_front_matter() -> None:
     """Test --copy-plan preserves YAML front matter in progress.md."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: Create .impl with YAML front matter at repo root
         plan_dir = env.cwd / ".impl"
         plan_dir.mkdir()

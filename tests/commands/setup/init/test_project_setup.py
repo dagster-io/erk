@@ -28,7 +28,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_init_creates_config_at_erk_dir() -> None:
     """Test that init creates config.toml in .erk/ directory."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -58,7 +58,7 @@ def test_init_creates_config_at_erk_dir() -> None:
 def test_init_force_overwrites_existing_config() -> None:
     """Test that --force overwrites existing config."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         # Create existing config in .erk/ directory
@@ -95,7 +95,7 @@ def test_init_skips_silently_when_already_erkified() -> None:
     project configuration, proceeding directly to user setup (Step 3).
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         # Create existing config in .erk/ directory
@@ -128,7 +128,7 @@ def test_init_skips_silently_when_already_erkified() -> None:
 def test_init_not_in_git_repo_fails() -> None:
     """Test that init fails when not in a git repository."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Remove .git directory to simulate non-git directory
         import shutil
 

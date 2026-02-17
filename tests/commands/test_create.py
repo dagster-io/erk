@@ -76,7 +76,7 @@ def test_create_from_current_branch_outputs_script_path_to_stdout() -> None:
 def test_create_from_plan_with_valid_issue() -> None:
     """Test erk create --from-plan with valid erk-plan issue."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Set up git state
@@ -158,7 +158,7 @@ def test_create_from_plan_with_valid_issue() -> None:
 def test_create_from_plan_missing_label() -> None:
     """Test erk create --from-plan fails if issue lacks erk-plan label."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up git state
         git_ops = FakeGit(
             worktrees={
@@ -208,7 +208,7 @@ def test_create_from_plan_missing_label() -> None:
 def test_create_from_plan_url_parsing() -> None:
     """Test erk create --from-plan with GitHub URL."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up git state
         git_ops = FakeGit(
             worktrees={
@@ -259,7 +259,7 @@ def test_create_from_plan_url_parsing() -> None:
 def test_create_from_plan_name_derivation() -> None:
     """Test worktree name derived from issue title via sanitize_worktree_name."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Set up git state
@@ -317,7 +317,7 @@ def test_create_from_plan_name_derivation() -> None:
 def test_create_from_plan_not_found() -> None:
     """Test erk create --from-plan when issue doesn't exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up git state
         git_ops = FakeGit(
             worktrees={
@@ -351,7 +351,7 @@ def test_create_from_plan_not_found() -> None:
 def test_create_from_plan_readonly_operation() -> None:
     """Test that --from-plan doesn't create/modify issues."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up git state
         git_ops = FakeGit(
             worktrees={
@@ -412,7 +412,7 @@ def test_create_from_plan_tracks_branch_with_graphite() -> None:
        and trunk as parent (delegates to graphite.track_branch() in GraphiteBranchManager)
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Set up git state
@@ -503,7 +503,7 @@ def test_create_from_plan_no_graphite_tracking_when_disabled() -> None:
     and uses the correct branch manager (GitBranchManager via GraphiteDisabled).
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up git state
         git_ops = FakeGit(
             worktrees={

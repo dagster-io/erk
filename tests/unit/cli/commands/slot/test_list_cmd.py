@@ -13,7 +13,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_slot_list_empty() -> None:
     """Test that slot list shows all slots as available when empty."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -47,7 +47,7 @@ def test_slot_list_empty() -> None:
 def test_slot_list_with_assignments() -> None:
     """Test that slot list shows assigned branches."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -91,7 +91,7 @@ def test_slot_list_with_assignments() -> None:
 def test_slot_list_alias_ls() -> None:
     """Test that slot ls alias works."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -119,7 +119,7 @@ def test_slot_list_alias_ls() -> None:
 def test_slot_list_shows_reason_column() -> None:
     """Test that slot list shows Reason column with issue status."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create worktree directory
@@ -166,7 +166,7 @@ def test_slot_list_shows_reason_column() -> None:
 def test_slot_list_shows_dirty_for_uncommitted_changes() -> None:
     """Test that slot list shows 'dirty' for worktrees with uncommitted changes."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create worktree directory
@@ -215,7 +215,7 @@ def test_slot_list_shows_dirty_for_uncommitted_changes() -> None:
 def test_slot_list_shows_exists_column() -> None:
     """Test that slot list shows Exists column indicating physical worktree presence."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create worktree directory for slot 01 (exists physically)
@@ -267,7 +267,7 @@ def test_slot_list_healthy_when_branch_upstack_from_assigned() -> None:
     Graphite stack, the slot should show as healthy (assigned), not as an error.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create worktree directory

@@ -11,7 +11,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_check_workflow_permissions_no_origin_remote() -> None:
     """Test check_workflow_permissions when no origin remote is configured."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # FakeGit with no remote_urls configured - get_remote_url will raise ValueError
         # Use env.build_context() directly to avoid build_workspace_test_context
         # auto-adding a default remote URL
@@ -36,7 +36,7 @@ def test_check_workflow_permissions_no_origin_remote() -> None:
 def test_check_workflow_permissions_non_github_remote() -> None:
     """Test check_workflow_permissions when remote is not GitHub."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # FakeGit with a non-GitHub remote URL
         # Use env.build_context() directly to avoid build_workspace_test_context
         # overwriting the remote URL

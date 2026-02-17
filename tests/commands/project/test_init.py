@@ -10,7 +10,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_project_init_creates_project_toml() -> None:
     """Test that project init creates .erk/project.toml."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up a project subdirectory
         project_dir = env.cwd / "python_modules" / "my-project"
         project_dir.mkdir(parents=True)
@@ -39,7 +39,7 @@ def test_project_init_creates_project_toml() -> None:
 def test_project_init_fails_if_already_exists() -> None:
     """Test that project init fails if project.toml already exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up a project subdirectory with existing project.toml
         project_dir = env.cwd / "python_modules" / "my-project"
         erk_dir = project_dir / ".erk"
@@ -62,7 +62,7 @@ def test_project_init_fails_if_already_exists() -> None:
 def test_project_init_fails_at_repo_root() -> None:
     """Test that project init fails when run at repo root."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
 
         test_ctx = env.build_context(

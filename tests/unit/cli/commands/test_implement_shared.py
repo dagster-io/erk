@@ -16,7 +16,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_extract_plan_from_current_branch_with_p_prefix() -> None:
     """Test extraction from branch with P prefix."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["P123-fix-bug-01-16-1200"]},
@@ -32,7 +32,7 @@ def test_extract_plan_from_current_branch_with_p_prefix() -> None:
 def test_extract_plan_from_current_branch_with_large_issue_number() -> None:
     """Test extraction works with large issue numbers."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["P4567-feature-branch-01-16-1200"]},
@@ -48,7 +48,7 @@ def test_extract_plan_from_current_branch_with_large_issue_number() -> None:
 def test_extract_plan_from_current_branch_returns_none_for_non_plan_branch() -> None:
     """Test returns None for non-plan branches."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["feature-branch"]},
@@ -64,7 +64,7 @@ def test_extract_plan_from_current_branch_returns_none_for_non_plan_branch() -> 
 def test_extract_plan_from_current_branch_returns_none_for_main() -> None:
     """Test returns None for main branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -80,7 +80,7 @@ def test_extract_plan_from_current_branch_returns_none_for_main() -> None:
 def test_extract_plan_handles_no_current_branch() -> None:
     """Test returns None when no current branch (detached HEAD)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: []},
@@ -96,7 +96,7 @@ def test_extract_plan_handles_no_current_branch() -> None:
 def test_extract_plan_from_legacy_branch_format() -> None:
     """Test extraction from legacy branch format without P prefix."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["123-fix-bug-01-16-1200"]},

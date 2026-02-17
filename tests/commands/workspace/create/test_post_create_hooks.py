@@ -12,7 +12,7 @@ from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 def test_create_runs_post_create_commands() -> None:
     """Test that create runs post-create commands."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly with post_create commands

@@ -16,7 +16,7 @@ from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
 def test_check_returns_passed_when_api_key_exists() -> None:
     """Test that check returns success when ANTHROPIC_API_KEY secret exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         admin = FakeGitHubAdmin(secrets={"ANTHROPIC_API_KEY"})
         ctx = env.build_context()  # Default env has GitHub remote
 
@@ -32,7 +32,7 @@ def test_check_returns_passed_when_api_key_exists() -> None:
 def test_check_returns_passed_when_oauth_token_exists() -> None:
     """Test that check returns success when CLAUDE_CODE_OAUTH_TOKEN secret exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         admin = FakeGitHubAdmin(secrets={"CLAUDE_CODE_OAUTH_TOKEN"})
         ctx = env.build_context()
 
@@ -47,7 +47,7 @@ def test_check_returns_passed_when_oauth_token_exists() -> None:
 def test_check_returns_passed_with_precedence_note_when_both_exist() -> None:
     """Test that check notes precedence when both secrets exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         admin = FakeGitHubAdmin(secrets={"ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"})
         ctx = env.build_context()
 
@@ -64,7 +64,7 @@ def test_check_returns_passed_with_precedence_note_when_both_exist() -> None:
 def test_check_returns_info_when_neither_secret_exists() -> None:
     """Test that check returns info-level when no secrets are configured."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         admin = FakeGitHubAdmin(secrets=set())  # No secrets
         ctx = env.build_context()
 
@@ -84,7 +84,7 @@ def test_check_returns_info_when_neither_secret_exists() -> None:
 def test_check_returns_info_when_api_error() -> None:
     """Test that check returns info-level when secret check fails (e.g., no permission)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         admin = FakeGitHubAdmin(secret_check_error=True)  # Simulate API error
         ctx = env.build_context()
 
@@ -98,7 +98,7 @@ def test_check_returns_info_when_api_error() -> None:
 def test_check_returns_info_when_no_origin_remote() -> None:
     """Test that check returns info-level when no origin remote configured."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         from erk_shared.gateway.git.fake import FakeGit
 
         # FakeGit with no remote URLs configured - will raise ValueError
@@ -122,7 +122,7 @@ def test_check_returns_info_when_no_origin_remote() -> None:
 def test_check_returns_info_when_not_github_repo() -> None:
     """Test that check returns info-level for non-GitHub repositories."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         from erk_shared.gateway.git.fake import FakeGit
 
         # Non-GitHub remote URL
@@ -146,7 +146,7 @@ def test_check_returns_info_when_not_github_repo() -> None:
 def test_check_handles_https_github_url() -> None:
     """Test that check works with HTTPS GitHub URLs."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         from erk_shared.gateway.git.fake import FakeGit
 
         git = FakeGit(

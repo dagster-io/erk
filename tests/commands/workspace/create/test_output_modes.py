@@ -105,7 +105,7 @@ def test_create_json_and_script_mutually_exclusive() -> None:
 def test_create_with_json_and_plan_file() -> None:
     """Test creating a worktree with JSON output and plan file."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
@@ -246,7 +246,7 @@ def test_create_with_stay_and_json() -> None:
 def test_create_with_stay_and_plan_file() -> None:
     """Test that --stay works with --from-plan-file flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file
         plan_file = env.cwd / "test-feature-plan.md"
         plan_file.write_text("# Test Feature Plan\n", encoding="utf-8")

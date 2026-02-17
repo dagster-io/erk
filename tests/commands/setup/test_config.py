@@ -640,7 +640,7 @@ def test_config_get_pool_max_slots_default() -> None:
 def test_config_set_pool_max_slots() -> None:
     """Test setting pool.max_slots writes to config file."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -675,7 +675,7 @@ def test_config_set_pool_max_slots() -> None:
 def test_config_set_pool_max_slots_invalid_value() -> None:
     """Test that setting pool.max_slots with invalid value fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -703,7 +703,7 @@ def test_config_set_pool_max_slots_invalid_value() -> None:
 def test_config_set_pool_max_slots_zero() -> None:
     """Test that setting pool.max_slots to zero fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -797,7 +797,7 @@ def test_config_list_shows_pool_max_slots_default() -> None:
 def test_config_set_local_writes_to_local_config() -> None:
     """Test that --local writes to config.local.toml, not config.toml."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -838,7 +838,7 @@ def test_config_set_local_writes_to_local_config() -> None:
 def test_config_set_local_short_flag() -> None:
     """Test that -l short flag works the same as --local."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -887,7 +887,7 @@ def test_config_set_local_global_key_fails() -> None:
 def test_config_set_local_trunk_branch_fails() -> None:
     """Test that --local with trunk-branch fails with error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -917,7 +917,7 @@ def test_config_set_local_trunk_branch_fails() -> None:
 def test_config_set_local_env_var() -> None:
     """Test setting env.<name> with --local flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -953,7 +953,7 @@ def test_config_set_local_env_var() -> None:
 def test_config_set_local_post_create_shell() -> None:
     """Test setting post_create.shell with --local flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -989,7 +989,7 @@ def test_config_set_local_post_create_shell() -> None:
 def test_config_set_local_post_create_commands() -> None:
     """Test setting post_create.commands with --local flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1027,7 +1027,7 @@ def test_config_set_local_post_create_commands() -> None:
 def test_config_set_local_plans_repo() -> None:
     """Test setting plans.repo with --local flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1063,7 +1063,7 @@ def test_config_set_local_plans_repo() -> None:
 def test_config_set_without_local_writes_to_config_toml() -> None:
     """Test that without --local flag, writes go to config.toml."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1106,7 +1106,7 @@ def test_config_set_without_local_writes_to_config_toml() -> None:
 def test_config_set_local_pool_checkout_shell() -> None:
     """Test setting pool.checkout.shell with --local flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1144,7 +1144,7 @@ def test_config_set_local_pool_checkout_shell() -> None:
 def test_config_set_local_pool_checkout_commands() -> None:
     """Test setting pool.checkout.commands with --local flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1184,7 +1184,7 @@ def test_config_set_local_pool_checkout_commands() -> None:
 def test_config_set_repo_flag_writes_to_config_toml() -> None:
     """Test that --repo flag writes to config.toml (repo level)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1224,7 +1224,7 @@ def test_config_set_repo_flag_writes_to_config_toml() -> None:
 def test_config_set_repo_flag_short_form() -> None:
     """Test that -r short flag works the same as --repo."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1252,7 +1252,7 @@ def test_config_set_repo_flag_short_form() -> None:
 def test_config_set_local_and_repo_flags_mutually_exclusive() -> None:
     """Test that --local and --repo flags cannot be used together."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1282,7 +1282,7 @@ def test_config_set_local_and_repo_flags_mutually_exclusive() -> None:
 def test_config_set_overridable_global_key_with_local_flag() -> None:
     """Test setting an overridable global key with --local flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1317,7 +1317,7 @@ def test_config_set_overridable_global_key_with_local_flag() -> None:
 def test_config_set_overridable_global_key_with_repo_flag() -> None:
     """Test setting an overridable global key with --repo flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1352,7 +1352,7 @@ def test_config_set_overridable_global_key_with_repo_flag() -> None:
 def test_config_set_use_graphite_with_local_flag() -> None:
     """Test setting use_graphite with --local flag (now overridable)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1387,7 +1387,7 @@ def test_config_set_use_graphite_with_local_flag() -> None:
 def test_config_set_github_planning_with_repo_flag() -> None:
     """Test setting github_planning with --repo flag (now overridable)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1456,7 +1456,7 @@ def test_config_set_non_overridable_global_key_with_repo_flag_fails() -> None:
 def test_config_list_shows_source_annotation_for_local_override() -> None:
     """Test that config list shows (local) annotation for locally overridden keys."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create config.local.toml with prompt_learn_on_land
@@ -1494,7 +1494,7 @@ def test_config_list_shows_source_annotation_for_local_override() -> None:
 def test_config_list_shows_source_annotation_for_repo_override() -> None:
     """Test that config list shows (repo) annotation for repo-level overridden keys."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create config.toml with prompt_learn_on_land (repo level)
@@ -1532,7 +1532,7 @@ def test_config_list_shows_source_annotation_for_repo_override() -> None:
 def test_config_list_shows_pool_source_annotation() -> None:
     """Test that config list shows (local) annotation for pool.max_slots."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create config.local.toml with pool.max_slots
@@ -1569,7 +1569,7 @@ def test_config_list_shows_pool_source_annotation() -> None:
 def test_config_set_trunk_branch_rejects_repo_flag() -> None:
     """Test that trunk-branch rejects --repo flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})

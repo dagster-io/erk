@@ -115,7 +115,7 @@ def test_checkout_to_branch_not_found() -> None:
 def test_checkout_creates_worktree_for_unchecked_branch() -> None:
     """Test that checkout auto-creates worktree when branch exists but is not checked out."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         work_dir = env.erk_root / env.cwd.name
 
         # Branch 'existing-branch' exists in git but is not checked out
@@ -182,7 +182,7 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
     directly checked out will have a worktree created automatically.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         work_dir = env.erk_root / env.cwd.name
         wt1 = work_dir / "feature-1-wt"
 
@@ -443,7 +443,7 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
 def test_checkout_creates_worktree_for_remote_only_branch() -> None:
     """Test checkout auto-creates worktree when branch exists only on origin."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         work_dir = env.erk_root / env.cwd.name
 
         # Branch exists on origin but not locally

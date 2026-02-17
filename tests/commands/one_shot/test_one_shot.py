@@ -13,7 +13,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_one_shot_happy_path() -> None:
     """Test one-shot command creates branch, PR, and triggers workflow."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -74,7 +74,7 @@ def test_one_shot_happy_path() -> None:
 def test_one_shot_empty_instruction() -> None:
     """Test that empty instruction is rejected."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -99,7 +99,7 @@ def test_one_shot_empty_instruction() -> None:
 def test_one_shot_dry_run() -> None:
     """Test dry-run mode shows what would happen without executing."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -135,7 +135,7 @@ def test_one_shot_dry_run() -> None:
 def test_one_shot_with_model() -> None:
     """Test model flag is passed to workflow inputs."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -166,7 +166,7 @@ def test_one_shot_with_model() -> None:
 def test_one_shot_model_alias() -> None:
     """Test model alias expansion (o -> opus)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -194,7 +194,7 @@ def test_one_shot_model_alias() -> None:
 def test_one_shot_pr_title_truncation() -> None:
     """Test that long instructions are truncated in PR title."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -227,7 +227,7 @@ def test_one_shot_pr_title_truncation() -> None:
 def test_one_shot_restores_branch_on_error() -> None:
     """Test that original branch is restored even if push fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -257,7 +257,7 @@ def test_one_shot_restores_branch_on_error() -> None:
 def test_one_shot_rejects_detached_head() -> None:
     """Test that one-shot rejects execution from detached HEAD."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(

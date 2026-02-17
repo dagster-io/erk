@@ -40,7 +40,7 @@ def _build_worktree_info(path: Path, branch: str) -> WorktreeInfo:
 def test_slot_repair_no_pool_configured() -> None:
     """Test repair when no pool is configured shows error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -71,7 +71,7 @@ def test_slot_repair_no_pool_configured() -> None:
 def test_slot_repair_no_stale_assignments() -> None:
     """Test repair when there are no stale assignments."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -120,7 +120,7 @@ def test_slot_repair_no_stale_assignments() -> None:
 def test_slot_repair_removes_stale_with_force() -> None:
     """Test repair removes stale assignments with --force flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         # Do NOT create the directory - simulates stale assignment
@@ -168,7 +168,7 @@ def test_slot_repair_removes_stale_with_force() -> None:
 def test_slot_repair_preserves_valid_assignments() -> None:
     """Test repair preserves valid assignments when removing stale ones."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create two worktree paths - one exists, one doesn't
@@ -226,7 +226,7 @@ def test_slot_repair_preserves_valid_assignments() -> None:
 def test_slot_repair_confirmation_required_without_force() -> None:
     """Test repair prompts for confirmation without --force flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         # Do NOT create the directory
@@ -271,7 +271,7 @@ def test_slot_repair_confirmation_required_without_force() -> None:
 def test_slot_repair_confirmation_yes() -> None:
     """Test repair proceeds when user confirms with 'y'."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         # Do NOT create the directory
@@ -315,7 +315,7 @@ def test_slot_repair_confirmation_yes() -> None:
 def test_slot_repair_repairs_branch_mismatch() -> None:
     """Test repair fixes branch-mismatch issues by removing the assignment."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -364,7 +364,7 @@ def test_slot_repair_repairs_branch_mismatch() -> None:
 def test_slot_repair_repairs_multiple_issues() -> None:
     """Test repair fixes multiple issues of different types."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # One worktree with branch-mismatch (exists but wrong branch)
@@ -427,7 +427,7 @@ def test_slot_repair_repairs_multiple_issues() -> None:
 def test_slot_repair_repairs_missing_branch() -> None:
     """Test repair fixes missing-branch issues by removing the assignment."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -474,7 +474,7 @@ def test_slot_repair_repairs_missing_branch() -> None:
 def test_slot_repair_repairs_git_registry_missing() -> None:
     """Test repair fixes git-registry-missing issues by removing the assignment."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -516,7 +516,7 @@ def test_slot_repair_repairs_git_registry_missing() -> None:
 def test_slot_repair_dry_run_does_not_modify_state() -> None:
     """Test --dry-run shows what would be repaired without modifying state."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         # Do NOT create the directory - simulates stale assignment (orphan-state)
@@ -562,7 +562,7 @@ def test_slot_repair_dry_run_does_not_modify_state() -> None:
 def test_slot_repair_dry_run_branch_mismatch() -> None:
     """Test --dry-run shows branch-mismatch repairs without modifying state."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -617,7 +617,7 @@ def test_slot_repair_repairs_closed_pr() -> None:
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -703,7 +703,7 @@ def test_slot_repair_repairs_merged_pr() -> None:
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -789,7 +789,7 @@ def test_slot_repair_skips_open_pr() -> None:
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -872,7 +872,7 @@ def test_slot_repair_skips_branch_without_pr() -> None:
     from erk_shared.gateway.github.fake import FakeGitHub
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)

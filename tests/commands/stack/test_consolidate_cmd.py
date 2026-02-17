@@ -102,7 +102,7 @@ def test_consolidate_graphite_not_installed() -> None:
 def test_consolidate_slot_aware_unassigns_slot() -> None:
     """Test consolidate unassigns slots instead of removing worktree directories."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Worktree paths - one is a slot, one is regular
@@ -211,7 +211,7 @@ def test_consolidate_slot_aware_unassigns_slot() -> None:
 def test_consolidate_worktree_remove_error() -> None:
     """Test consolidate shows error when worktree removal fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Worktree path for non-slot worktree that will fail removal

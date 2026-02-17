@@ -19,7 +19,7 @@ def test_implement_with_submit_flag_from_issue() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -42,7 +42,7 @@ def test_implement_with_submit_flag_from_issue() -> None:
 def test_implement_with_submit_flag_from_file() -> None:
     """Test implementing from file with --submit flag and --script generates script."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -72,7 +72,7 @@ def test_implement_without_submit_uses_default_command() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -96,7 +96,7 @@ def test_implement_submit_in_script_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -131,7 +131,7 @@ def test_implement_submit_with_dry_run() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -167,7 +167,7 @@ def test_implement_with_dangerous_flag_in_script_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -202,7 +202,7 @@ def test_implement_without_dangerous_flag_in_script_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -234,7 +234,7 @@ def test_implement_with_dangerous_and_submit_flags() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -275,7 +275,7 @@ def test_implement_with_dangerous_flag_in_dry_run() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -306,7 +306,7 @@ def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -334,7 +334,7 @@ def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
 def test_implement_plan_file_with_dangerous_flag() -> None:
     """Test that --dangerous flag works with plan file mode."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -371,7 +371,7 @@ def test_implement_with_dangerous_shows_in_script_content() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},

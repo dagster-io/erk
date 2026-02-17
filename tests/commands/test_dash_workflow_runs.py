@@ -36,7 +36,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
 def test_list_displays_workflow_run_id_for_plan_with_impl_folder() -> None:
     """Workflow run ID should appear for plans with node_id in plan-header."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create worktree directory with .impl/issue.json
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
@@ -124,7 +124,7 @@ Implementation details"""
 def test_plan_list_linkifies_workflow_run_id_with_owner_repo() -> None:
     """Workflow run ID should be linkified when owner/repo available from metadata."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create worktree directory with .impl/issue.json
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
@@ -216,7 +216,7 @@ last_dispatched_node_id: 'WFR_def456'
 def test_plan_list_displays_plain_run_id_without_owner_repo() -> None:
     """Workflow run ID should display without link when owner/repo missing."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create worktree with .impl/issue.json
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
@@ -300,7 +300,7 @@ last_dispatched_node_id: 'WFR_ghi789'
 def test_plan_list_handles_missing_workflow_run() -> None:
     """Plan list should handle branches without workflow runs gracefully."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create worktree with .impl/issue.json
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
@@ -368,7 +368,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
 def test_plan_list_handles_batch_query_failure() -> None:
     """Plan list should succeed even if batch workflow query fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create worktree with .impl/issue.json
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
@@ -432,7 +432,7 @@ def test_plan_list_handles_batch_query_failure() -> None:
 def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> None:
     """Plan list should display different workflow run IDs for multiple plans."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create two worktrees with .impl/issue.json
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
@@ -565,7 +565,7 @@ last_dispatched_node_id: 'WFR_node2'
 def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
     """Plan list should not query workflow runs for plans without .impl/ folders."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan WITHOUT corresponding .impl/issue.json
         plan = Plan(
             plan_identifier="999",

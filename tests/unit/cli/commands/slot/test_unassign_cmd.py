@@ -29,7 +29,7 @@ def _create_test_assignment(
 def test_slot_unassign_by_slot_name() -> None:
     """Test unassigning by slot name checks out placeholder branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -90,7 +90,7 @@ def test_slot_unassign_by_slot_name() -> None:
 def test_slot_unassign_not_found() -> None:
     """Test unassigning non-existent slot or branch shows error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -125,7 +125,7 @@ def test_slot_unassign_not_found() -> None:
 def test_slot_unassign_no_pool_configured() -> None:
     """Test unassigning when no pool is configured shows error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -158,7 +158,7 @@ def test_slot_unassign_no_pool_configured() -> None:
 def test_slot_unassign_preserves_other_assignments() -> None:
     """Test that unassigning one slot preserves other assignments."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create pool state with two assignments
@@ -209,7 +209,7 @@ def test_slot_unassign_preserves_other_assignments() -> None:
 def test_slot_unassign_fails_with_uncommitted_changes() -> None:
     """Test unassigning fails when worktree has uncommitted changes."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -258,7 +258,7 @@ def test_slot_unassign_fails_with_uncommitted_changes() -> None:
 def test_slot_unassign_uses_existing_placeholder_branch() -> None:
     """Test unassigning uses existing placeholder branch without creating new one."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
@@ -311,7 +311,7 @@ def test_slot_unassign_creates_placeholder_via_git_not_branch_manager() -> None:
     branch and fail in multi-worktree scenarios).
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)

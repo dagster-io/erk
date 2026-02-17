@@ -23,7 +23,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_pr_submit_fails_when_claude_not_available() -> None:
     """Test that command fails when Claude CLI is not available."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -52,7 +52,7 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
     by skipping Graphite enhancement rather than failing entirely.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Configure a complete PR submission scenario
         pr_info = PullRequestInfo(
             number=123,
@@ -125,7 +125,7 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
 def test_pr_submit_fails_when_github_not_authenticated() -> None:
     """Test that command fails when GitHub is not authenticated."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.git_dir},
@@ -156,7 +156,7 @@ def test_pr_submit_fails_when_github_not_authenticated() -> None:
 def test_pr_submit_fails_when_no_commits_ahead() -> None:
     """Test that command fails when branch has no commits ahead of parent."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Configure branch with parent relationship but 0 commits ahead
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -210,7 +210,7 @@ def test_pr_submit_fails_when_no_commits_ahead() -> None:
 def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
     """Test that command fails when commit message generation fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create PR info for the branch (so preflight can retrieve it after submit)
         pr_info = PullRequestInfo(
             number=123,
@@ -300,7 +300,7 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
 def test_pr_submit_fails_when_pr_update_fails() -> None:
     """Test that command fails when finalize cannot update PR metadata."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -393,7 +393,7 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
 def test_pr_submit_success(tmp_path: Path) -> None:
     """Test successful PR submission with all phases completing."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -504,7 +504,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
     Bug: All commits from branch-1 AND branch-2 (since main)
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=456,
             state="OPEN",
@@ -629,7 +629,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
 def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
     """Test that -f/--force flag allows force push when branch has diverged."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -726,7 +726,7 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
 def test_pr_submit_short_force_flag() -> None:
     """Test that -f short flag works the same as --force."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -820,7 +820,7 @@ def test_pr_submit_short_force_flag() -> None:
 def test_pr_submit_shows_graphite_url() -> None:
     """Test that Graphite URL is displayed on success."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -913,7 +913,7 @@ def test_pr_submit_shows_graphite_url() -> None:
 def test_pr_submit_shows_created_message_for_new_pr() -> None:
     """Test that output shows 'created' when PR is newly created."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # No existing PR - FakeGitHub.create_pr will be called
         # and return PR #999
 
@@ -1006,7 +1006,7 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
     a helpful message directing users to use 'gt submit' instead.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Current branch: feature (no existing PR)
         # Graphite parent: parent-branch (also no PR)
         # Should fail because parent needs PR first
@@ -1085,7 +1085,7 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
 def test_pr_submit_shows_found_message_for_existing_pr() -> None:
     """Test that output shows 'found (already exists)' when PR already exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -1189,7 +1189,7 @@ def test_pr_submit_shows_plan_context_phase() -> None:
     from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -1338,7 +1338,7 @@ def test_pr_submit_shows_plan_context_with_objective() -> None:
     from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -1498,7 +1498,7 @@ def test_pr_submit_shows_no_plan_message() -> None:
     the submit command should show a "No linked plan found" message.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info = PullRequestInfo(
             number=123,
             state="OPEN",

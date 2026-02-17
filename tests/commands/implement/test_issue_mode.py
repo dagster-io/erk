@@ -26,7 +26,7 @@ def test_implement_from_plain_issue_number() -> None:
     plan_issue = create_sample_plan_issue("123")
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -53,7 +53,7 @@ def test_implement_from_issue_number() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -80,7 +80,7 @@ def test_implement_from_issue_url() -> None:
     plan_issue = create_sample_plan_issue("123")
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -107,7 +107,7 @@ def test_implement_creates_impl_folder_in_cwd() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -144,7 +144,7 @@ def test_implement_from_issue_fails_without_erk_plan_label() -> None:
     )
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -163,7 +163,7 @@ def test_implement_from_issue_fails_without_erk_plan_label() -> None:
 def test_implement_from_issue_fails_when_not_found() -> None:
     """Test that command fails when issue doesn't exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -183,7 +183,7 @@ def test_implement_from_issue_dry_run() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -208,7 +208,7 @@ def test_auto_detect_plan_from_branch_name() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "P42-my-feature-01-16-1200"]},
@@ -229,7 +229,7 @@ def test_auto_detect_plan_from_branch_name() -> None:
 def test_auto_detect_fails_on_non_plan_branch() -> None:
     """Test error when TARGET omitted and not on PXXXX-* branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -303,7 +303,7 @@ def test_implement_from_issue_closes_review_pr() -> None:
     fake_github = FakeGitHub(issues_gateway=fake_issues)
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},

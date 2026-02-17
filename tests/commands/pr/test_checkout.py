@@ -57,7 +57,7 @@ def _make_pr_info(number: int, state: str = "OPEN") -> PullRequestInfo:
 def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
     """Test checking out a same-repo PR where branch exists on remote."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup repo structure for worktrees_dir
         env.setup_repo_structure()
         pr_details = _make_pr_details(
@@ -93,7 +93,7 @@ def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
 def test_pr_checkout_same_repo_branch_already_local() -> None:
     """Test checking out a same-repo PR where branch already exists locally."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=456,
@@ -124,7 +124,7 @@ def test_pr_checkout_same_repo_branch_already_local() -> None:
 def test_pr_checkout_cross_repository_fork() -> None:
     """Test checking out a PR from a fork uses pr/<number> branch name."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=789,
@@ -159,7 +159,7 @@ def test_pr_checkout_cross_repository_fork() -> None:
 def test_pr_checkout_already_checked_out() -> None:
     """Test checking out a PR that's already in a worktree."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=111,
@@ -197,7 +197,7 @@ def test_pr_checkout_already_checked_out() -> None:
 def test_pr_checkout_pr_not_found() -> None:
     """Test error when PR does not exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         github = FakeGitHub(pr_details={})  # Empty - PR 999 not found
         git = FakeGit(
@@ -215,7 +215,7 @@ def test_pr_checkout_pr_not_found() -> None:
 def test_pr_checkout_warns_on_closed_pr() -> None:
     """Test warning displayed when checking out a closed PR."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=222,
@@ -241,7 +241,7 @@ def test_pr_checkout_warns_on_closed_pr() -> None:
 def test_pr_checkout_warns_on_merged_pr() -> None:
     """Test warning displayed when checking out a merged PR."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=333,
@@ -267,7 +267,7 @@ def test_pr_checkout_warns_on_merged_pr() -> None:
 def test_pr_checkout_with_github_url() -> None:
     """Test checking out a PR using GitHub URL instead of number."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=444,
@@ -299,7 +299,7 @@ def test_pr_checkout_with_github_url() -> None:
 def test_pr_checkout_invalid_reference() -> None:
     """Test error on invalid PR reference format."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -316,7 +316,7 @@ def test_pr_checkout_invalid_reference() -> None:
 def test_pr_checkout_script_mode_outputs_script_path() -> None:
     """Test that --script flag outputs activation script path."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=555,
@@ -354,7 +354,7 @@ def test_pr_checkout_non_script_mode_prints_activation_instructions() -> None:
     instructions instead of spawning a subshell.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=666,
@@ -385,7 +385,7 @@ def test_pr_checkout_non_script_mode_prints_activation_instructions() -> None:
 def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
     """Test that checking out a stacked PR rebases onto base branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         # PR-B is based on PR-A (not trunk)
         pr_details = _make_pr_details(
@@ -425,7 +425,7 @@ def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
 def test_pr_checkout_stacked_pr_base_already_local() -> None:
     """Test that stacked PR checkout skips fetch/tracking when base exists locally."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         # PR-B is based on PR-A (not trunk), but feature-a already exists locally
         pr_details = _make_pr_details(
@@ -465,7 +465,7 @@ def test_pr_checkout_stacked_pr_base_already_local() -> None:
 def test_pr_checkout_stacked_pr_with_conflicts_warns_user() -> None:
     """Test that stacked PR checkout with rebase conflicts warns user."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=888,
@@ -506,7 +506,7 @@ def test_pr_checkout_stacked_pr_with_conflicts_warns_user() -> None:
 def test_pr_checkout_trunk_pr_skips_rebase() -> None:
     """Test that PRs targeting trunk don't trigger a rebase."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         # This PR targets trunk (main), not another branch
         pr_details = _make_pr_details(
@@ -542,7 +542,7 @@ def test_pr_checkout_trunk_pr_skips_rebase() -> None:
 def test_pr_checkout_creates_slot_assignment() -> None:
     """Test that pr checkout creates a slot assignment by default."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=1001,
@@ -579,7 +579,7 @@ def test_pr_checkout_creates_slot_assignment() -> None:
 def test_pr_checkout_no_slot_skips_assignment() -> None:
     """Test that --no-slot creates worktree without slot assignment."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=1002,
@@ -619,7 +619,7 @@ def test_pr_checkout_no_slot_skips_assignment() -> None:
 def test_pr_checkout_reuses_inactive_slot() -> None:
     """Test that pr checkout reuses an existing inactive slot."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Pre-create worktree directory for the slot
@@ -680,7 +680,7 @@ def test_pr_checkout_reuses_inactive_slot() -> None:
 def test_pr_checkout_force_unassigns_oldest() -> None:
     """Test that --force unassigns oldest slot when pool is full."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Pre-create worktree directory for the slot
@@ -755,7 +755,7 @@ def test_pr_checkout_force_unassigns_oldest() -> None:
 def test_pr_checkout_pool_full_no_force_fails() -> None:
     """Test that pool-full without --force fails in non-interactive mode."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Pre-create worktree directory for the slot
@@ -821,7 +821,7 @@ def test_pr_checkout_prints_activation_instructions() -> None:
     Verifies that erk pr checkout prints the activation path after checkout.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=2001,
@@ -858,7 +858,7 @@ def test_pr_checkout_existing_worktree_prints_activation_instructions() -> None:
     When the worktree already exists, still print activation instructions.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=2002,
@@ -904,7 +904,7 @@ def test_pr_checkout_script_mode_no_activation_instructions() -> None:
     In script mode, shell integration handles navigation automatically.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=2003,

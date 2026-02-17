@@ -22,7 +22,7 @@ TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
 def test_branch_create_creates_new_branch_and_assignment(tmp_path) -> None:
     """Test that branch create creates a new branch and assignment."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -62,7 +62,7 @@ def test_branch_create_creates_new_branch_and_assignment(tmp_path) -> None:
 def test_branch_create_with_br_alias(tmp_path) -> None:
     """Test that 'erk br create' alias works."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -95,7 +95,7 @@ def test_branch_create_with_br_alias(tmp_path) -> None:
 def test_branch_create_no_slot_only_creates_branch() -> None:
     """Test that --no-slot creates branch without slot assignment."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -139,7 +139,7 @@ def test_branch_create_no_slot_only_creates_branch() -> None:
 def test_branch_create_second_slot() -> None:
     """Test that branch create uses next available slot."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -182,7 +182,7 @@ def test_branch_create_second_slot() -> None:
 def test_branch_create_fails_if_branch_already_exists() -> None:
     """Test that branch create fails if branch already exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create a FakeGit that reports the branch already exists
@@ -216,7 +216,7 @@ def test_branch_create_fails_if_branch_already_exists() -> None:
 def test_branch_create_tracks_branch_with_graphite() -> None:
     """Test that branch create registers the branch with Graphite."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -257,7 +257,7 @@ def test_branch_create_force_reuses_unassigned_slot_with_checkout() -> None:
     (not add_worktree) to avoid 'fatal: already exists' error from git.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory so we can configure FakeGit with it
@@ -343,7 +343,7 @@ def test_branch_create_force_reuses_unassigned_slot_with_checkout() -> None:
 def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None:
     """Test that --for-plan creates branch, slot, and .impl/ folder."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -414,7 +414,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
 def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
     """Test that --for-plan accepts GitHub issue URLs."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -467,7 +467,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
 def test_branch_create_for_plan_fails_without_erk_plan_label() -> None:
     """Test that --for-plan fails if issue doesn't have erk-plan label."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -518,7 +518,7 @@ def test_branch_create_for_plan_fails_without_erk_plan_label() -> None:
 def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
     """Test that --for-plan with --no-slot creates branch but not .impl folder."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -575,7 +575,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
 def test_branch_create_fails_with_both_branch_and_for_plan() -> None:
     """Test that specifying both BRANCH and --for-plan fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -609,7 +609,7 @@ def test_branch_create_fails_with_both_branch_and_for_plan() -> None:
 def test_branch_create_fails_without_branch_or_for_plan() -> None:
     """Test that omitting both BRANCH and --for-plan fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -638,7 +638,7 @@ def test_branch_create_fails_without_branch_or_for_plan() -> None:
 def test_branch_create_stacks_on_current_branch() -> None:
     """Test that branch create stacks on current branch when not on trunk."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Current branch is feature-parent, not trunk
@@ -682,7 +682,7 @@ def test_branch_create_stacks_on_current_branch() -> None:
 def test_branch_create_for_plan_stacks_on_current_branch() -> None:
     """Test that --for-plan stacks on current branch when not on trunk."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Current branch is feature-parent, not trunk
@@ -740,7 +740,7 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
 def test_branch_create_uses_trunk_when_on_trunk() -> None:
     """Test that branch create uses trunk when current branch is trunk."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Current branch is main (trunk)

@@ -64,7 +64,7 @@ def _make_pr_details(
 def test_pr_sync_git_only_happy_path(tmp_path: Path) -> None:
     """pr sync without Graphite: fetch → rebase → force push."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(123, "feature-branch")
@@ -119,7 +119,7 @@ def test_pr_sync_git_only_happy_path(tmp_path: Path) -> None:
 def test_pr_sync_git_only_uses_pr_base_branch(tmp_path: Path) -> None:
     """Git-only sync uses PR base branch from GitHub, not assumptions."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # PR targets "release/v1.0" not "main"
@@ -163,7 +163,7 @@ def test_pr_sync_git_only_uses_pr_base_branch(tmp_path: Path) -> None:
 def test_pr_sync_git_only_handles_rebase_conflict(tmp_path: Path) -> None:
     """Git-only sync shows helpful error when rebase conflicts occur."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(789, "conflict-branch")
@@ -217,7 +217,7 @@ def test_pr_sync_git_only_handles_rebase_conflict(tmp_path: Path) -> None:
 def test_pr_sync_git_only_fails_on_closed_pr(tmp_path: Path) -> None:
     """Git-only sync fails when PR is closed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(999, "closed-branch", state="CLOSED")
@@ -255,7 +255,7 @@ def test_pr_sync_git_only_fails_on_closed_pr(tmp_path: Path) -> None:
 def test_pr_sync_git_only_fails_on_fork_pr(tmp_path: Path) -> None:
     """Git-only sync fails when PR is from a fork."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(111, "fork-branch")
@@ -293,7 +293,7 @@ def test_pr_sync_git_only_fails_on_fork_pr(tmp_path: Path) -> None:
 def test_pr_sync_git_only_does_not_require_dangerous_flag(tmp_path: Path) -> None:
     """Git-only sync works without --dangerous flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(222, "feature-branch")

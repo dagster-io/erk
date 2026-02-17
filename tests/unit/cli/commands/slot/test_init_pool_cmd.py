@@ -97,7 +97,7 @@ def test_init_pool_dry_run_shows_slot_count() -> None:
 def test_init_pool_creates_worktrees_without_dry_run() -> None:
     """Test that init-pool actually creates worktrees when dry_run=False."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(

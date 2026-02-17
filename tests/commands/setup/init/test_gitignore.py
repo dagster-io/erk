@@ -32,7 +32,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_init_adds_env_to_gitignore() -> None:
     """Test that init offers to add .env to .gitignore."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create .gitignore
         gitignore = env.cwd / ".gitignore"
         gitignore.write_text("*.pyc\n", encoding="utf-8")
@@ -61,7 +61,7 @@ def test_init_adds_env_to_gitignore() -> None:
 def test_init_skips_gitignore_entries_if_declined() -> None:
     """Test that init skips all gitignore entries if user declines."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create .gitignore
         gitignore = env.cwd / ".gitignore"
         gitignore.write_text("*.pyc\n", encoding="utf-8")
@@ -123,7 +123,7 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
 def test_init_handles_missing_gitignore() -> None:
     """Test that init handles missing .gitignore gracefully."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # No .gitignore file
 
         erk_root = env.cwd / "erks"

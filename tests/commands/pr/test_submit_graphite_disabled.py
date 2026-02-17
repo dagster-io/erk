@@ -52,7 +52,7 @@ def test_pr_submit_core_path_succeeds_without_graphite() -> None:
     The core path uses git push + gh pr create, not Graphite.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info, pr_details = _make_pr_fixtures()
 
         git = FakeGit(
@@ -97,7 +97,7 @@ def test_pr_submit_core_path_succeeds_without_graphite() -> None:
 def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
     """--no-graphite flag works when use_graphite is already False."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr_info, pr_details = _make_pr_fixtures()
 
         git = FakeGit(
@@ -143,7 +143,7 @@ def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
 def test_pr_submit_without_claude_shows_proper_error() -> None:
     """PR submission shows Claude error, not Graphite error, when Claude unavailable."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},

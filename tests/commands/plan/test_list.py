@@ -422,7 +422,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
     )
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create worktree directory with .impl/issue.json for plan 1
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
@@ -510,7 +510,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
     )
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
 

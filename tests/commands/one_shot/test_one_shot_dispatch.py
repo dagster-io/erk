@@ -18,7 +18,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_dispatch_happy_path() -> None:
     """Test dispatch creates skeleton issue, branch with P<N>- prefix, PR, and triggers workflow."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -83,7 +83,7 @@ def test_dispatch_happy_path() -> None:
 def test_dispatch_with_extra_inputs() -> None:
     """Test extra_workflow_inputs in workflow trigger and skeleton links to objective."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -123,7 +123,7 @@ def test_dispatch_with_extra_inputs() -> None:
 def test_dispatch_dry_run() -> None:
     """Test dispatch_one_shot dry_run outputs info without mutations."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -158,7 +158,7 @@ def test_dispatch_dry_run() -> None:
 def test_dispatch_restores_branch_on_error() -> None:
     """Test that original branch is restored even if push fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -188,7 +188,7 @@ def test_dispatch_restores_branch_on_error() -> None:
 def test_dispatch_creates_skeleton_plan_issue() -> None:
     """Test that skeleton plan issue is created with correct content and metadata."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(

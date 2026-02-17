@@ -16,7 +16,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_slot_assign_assigns_existing_branch(tmp_path) -> None:
     """Test that slot assign assigns an existing branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Create a FakeGit that reports the branch already exists
@@ -56,7 +56,7 @@ def test_slot_assign_assigns_existing_branch(tmp_path) -> None:
 def test_slot_assign_fails_if_branch_does_not_exist() -> None:
     """Test that slot assign fails if branch does not exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -89,7 +89,7 @@ def test_slot_assign_fails_if_branch_does_not_exist() -> None:
 def test_slot_assign_second_slot() -> None:
     """Test that slot assign uses next available slot."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -132,7 +132,7 @@ def test_slot_assign_second_slot() -> None:
 def test_slot_assign_branch_already_assigned() -> None:
     """Test that slot assign fails if branch is already assigned."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -170,7 +170,7 @@ def test_slot_assign_branch_already_assigned() -> None:
 def test_slot_assign_uses_config_pool_size() -> None:
     """Test that slot assign uses pool size from config."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -207,7 +207,7 @@ def test_slot_assign_uses_config_pool_size() -> None:
 def test_slot_assign_force_unassigns_oldest() -> None:
     """Test that --force auto-unassigns oldest branch when pool is full."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory so we can configure FakeGit with it
@@ -272,7 +272,7 @@ def test_slot_assign_force_unassigns_oldest() -> None:
 def test_slot_assign_pool_full_non_tty_fails() -> None:
     """Test that pool-full without --force fails in non-TTY mode."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory so we can configure FakeGit with it
@@ -381,7 +381,7 @@ def test_cleanup_worktree_artifacts_handles_missing_folders(tmp_path) -> None:
 def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
     """Test that slot assign cleans up .impl/ and .erk/scratch/ when reusing worktree."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory with stale artifacts
@@ -449,7 +449,7 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
 def test_slot_assign_creates_activation_script() -> None:
     """Test that slot assign creates .erk/bin/activate.sh in the worktree."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(

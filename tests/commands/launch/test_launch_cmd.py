@@ -61,7 +61,7 @@ def _make_pr_details(
 def test_workflow_launch_unknown_workflow(tmp_path: Path) -> None:
     """Test error when workflow name is not recognized."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -80,7 +80,7 @@ def test_workflow_launch_unknown_workflow(tmp_path: Path) -> None:
 def test_workflow_launch_pr_fix_conflicts_triggers_workflow(tmp_path: Path) -> None:
     """Test pr-fix-conflicts workflow trigger."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
@@ -124,7 +124,7 @@ def test_workflow_launch_pr_fix_conflicts_triggers_workflow(tmp_path: Path) -> N
 def test_workflow_launch_pr_fix_conflicts_with_pr_option(tmp_path: Path) -> None:
     """Test pr-fix-conflicts with explicit --pr option."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(456, "other-branch", "OPEN", "Other feature")
@@ -161,7 +161,7 @@ def test_workflow_launch_pr_fix_conflicts_with_pr_option(tmp_path: Path) -> None
 def test_workflow_launch_pr_fix_conflicts_with_no_squash(tmp_path: Path) -> None:
     """Test pr-fix-conflicts with --no-squash flag."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Feature")
@@ -197,7 +197,7 @@ def test_workflow_launch_pr_fix_conflicts_with_no_squash(tmp_path: Path) -> None
 def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
     """Test pr-address workflow trigger."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
@@ -236,7 +236,7 @@ def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
 def test_workflow_launch_pr_address_requires_pr_option(tmp_path: Path) -> None:
     """Test pr-address requires --pr option."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -255,7 +255,7 @@ def test_workflow_launch_pr_address_requires_pr_option(tmp_path: Path) -> None:
 def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
     """Test learn workflow trigger."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         github = FakeGitHub()
@@ -282,7 +282,7 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
 def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
     """Test learn requires --issue option."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -301,7 +301,7 @@ def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
 def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> None:
     """Test plan-implement suggests using erk plan submit instead."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -320,7 +320,7 @@ def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> Non
 def test_workflow_launch_with_model_option(tmp_path: Path) -> None:
     """Test --model option is passed to workflow."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Feature")
@@ -360,7 +360,7 @@ def test_workflow_launch_with_model_option(tmp_path: Path) -> None:
 def test_workflow_launch_pr_fix_conflicts_closed_pr_fails(tmp_path: Path) -> None:
     """Test error when PR is closed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         pr_info = _make_pr_info(111, "closed-branch", "CLOSED", "Closed PR")

@@ -132,7 +132,7 @@ def test_init_skips_hooks_when_already_installed() -> None:
 def test_init_hooks_flag_removed() -> None:
     """Test that the --hooks flag no longer exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -157,7 +157,7 @@ def test_init_hooks_flag_removed() -> None:
 def test_init_syncs_artifacts_successfully() -> None:
     """Test that init calls sync_artifacts and shows success message."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -193,7 +193,7 @@ def test_init_syncs_artifacts_successfully() -> None:
 def test_init_shows_warning_on_artifact_sync_failure() -> None:
     """Test that init shows warning but continues when artifact sync fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})

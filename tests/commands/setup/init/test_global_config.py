@@ -178,7 +178,7 @@ def test_init_creates_global_config_even_when_repo_already_erkified() -> None:
 def test_init_detects_both_backends_defaults_claude() -> None:
     """Both claude and codex installed, defaults to claude without prompting."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -208,7 +208,7 @@ def test_init_detects_both_backends_defaults_claude() -> None:
 def test_init_detects_only_codex_defaults_claude() -> None:
     """Only codex installed, still defaults to claude."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -235,7 +235,7 @@ def test_init_detects_only_codex_defaults_claude() -> None:
 def test_init_detects_only_claude_uses_it() -> None:
     """Only claude installed, defaults to claude."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -262,7 +262,7 @@ def test_init_detects_only_claude_uses_it() -> None:
 def test_init_detects_no_backends_defaults_claude() -> None:
     """Neither backend installed, defaults to claude with warning."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -289,7 +289,7 @@ def test_init_detects_no_backends_defaults_claude() -> None:
 def test_init_backend_persisted_in_config() -> None:
     """Verify backend is saved to config as claude regardless of detected backends."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -316,7 +316,7 @@ def test_init_backend_persisted_in_config() -> None:
 def test_init_shows_config_switch_hint() -> None:
     """Verify init output contains hint about switching backend via config."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})

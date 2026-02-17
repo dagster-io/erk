@@ -44,7 +44,7 @@ def _make_test_admin() -> FakeGitHubAdmin:
 def test_doctor_runs_checks() -> None:
     """Test that doctor command runs and displays check results."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -70,7 +70,7 @@ def test_doctor_runs_checks() -> None:
 def test_doctor_shows_cli_availability() -> None:
     """Test that doctor shows CLI tool availability."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -93,7 +93,7 @@ def test_doctor_shows_cli_availability() -> None:
 def test_doctor_shows_repository_status() -> None:
     """Test that doctor shows repository setup status."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -112,7 +112,7 @@ def test_doctor_shows_repository_status() -> None:
 def test_doctor_shows_summary() -> None:
     """Test that doctor shows a summary at the end."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -131,7 +131,7 @@ def test_doctor_shows_summary() -> None:
 def test_doctor_shows_github_checks() -> None:
     """Test that doctor shows GitHub-related checks in appropriate sections."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -151,7 +151,7 @@ def test_doctor_shows_github_checks() -> None:
 def test_doctor_shows_required_version_check() -> None:
     """Test that doctor shows required version check result."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -172,7 +172,7 @@ def test_doctor_shows_required_version_check() -> None:
 def test_doctor_shows_exit_plan_hook_check() -> None:
     """Test that doctor shows exit plan hook check result."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -198,7 +198,7 @@ def test_doctor_shows_exit_plan_hook_check() -> None:
 def test_doctor_default_shows_condensed_subgroups() -> None:
     """Test that doctor default output shows condensed sub-group summaries."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -218,7 +218,7 @@ def test_doctor_default_shows_condensed_subgroups() -> None:
 def test_doctor_verbose_shows_all_individual_checks() -> None:
     """Test that --verbose flag shows all individual checks expanded."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -240,7 +240,7 @@ def test_doctor_verbose_shows_all_individual_checks() -> None:
 def test_doctor_verbose_short_flag() -> None:
     """Test that -v short flag works for verbose mode."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -259,7 +259,7 @@ def test_doctor_verbose_short_flag() -> None:
 def test_doctor_dogfooder_hides_checks_by_default() -> None:
     """Test that early dogfooder checks are not shown by default."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -278,7 +278,7 @@ def test_doctor_dogfooder_hides_checks_by_default() -> None:
 def test_doctor_dogfooder_flag_shows_checks() -> None:
     """Test that --dogfooder flag shows early dogfooder checks."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -297,7 +297,7 @@ def test_doctor_dogfooder_flag_shows_checks() -> None:
 def test_doctor_subgroup_auto_expands_on_failure() -> None:
     """Test that sub-groups with failures auto-expand to show failed checks."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -325,7 +325,7 @@ def test_doctor_subgroup_auto_expands_on_failure() -> None:
 def test_doctor_clear_hook_logs_clears_logs_and_shows_count() -> None:
     """Test that --clear-hook-logs clears logs and shows the count."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -357,7 +357,7 @@ def test_doctor_clear_hook_logs_clears_logs_and_shows_count() -> None:
 def test_doctor_clear_hook_logs_with_no_logs() -> None:
     """Test that --clear-hook-logs with no logs shows '0 logs'."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -385,7 +385,7 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
     from erk.core.health_checks import CheckResult
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},

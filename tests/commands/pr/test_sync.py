@@ -66,7 +66,7 @@ def _make_pr_details(
 def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
     """Test successful sync flow: track → squash → update commit → restack → submit."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info for branch lookup
@@ -133,7 +133,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
 def test_pr_sync_syncs_remote_when_already_tracked(tmp_path: Path) -> None:
     """Test that already-tracked branches still sync with remote."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info
@@ -194,7 +194,7 @@ def test_pr_sync_syncs_remote_when_already_tracked(tmp_path: Path) -> None:
 def test_pr_sync_handles_restack_conflict_when_already_tracked(tmp_path: Path) -> None:
     """Test sync handles conflicts during restack of already-tracked branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info
@@ -252,7 +252,7 @@ def test_pr_sync_handles_restack_conflict_when_already_tracked(tmp_path: Path) -
 def test_pr_sync_graphite_mode_requires_dangerous_flag(tmp_path: Path) -> None:
     """Test that sync with Graphite enabled fails when --dangerous flag is not provided."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info for branch lookup
@@ -286,7 +286,7 @@ def test_pr_sync_graphite_mode_requires_dangerous_flag(tmp_path: Path) -> None:
 def test_pr_sync_fails_when_not_on_branch(tmp_path: Path) -> None:
     """Test error when on detached HEAD."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Detached HEAD (no current branch)
@@ -306,7 +306,7 @@ def test_pr_sync_fails_when_not_on_branch(tmp_path: Path) -> None:
 def test_pr_sync_fails_when_no_pr_exists(tmp_path: Path) -> None:
     """Test error when branch has no PR."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # No PR for this branch (empty prs dict)
@@ -328,7 +328,7 @@ def test_pr_sync_fails_when_no_pr_exists(tmp_path: Path) -> None:
 def test_pr_sync_fails_when_pr_is_closed(tmp_path: Path) -> None:
     """Test error when PR is closed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # PR is closed
@@ -360,7 +360,7 @@ def test_pr_sync_fails_when_pr_is_closed(tmp_path: Path) -> None:
 def test_pr_sync_fails_when_pr_is_merged(tmp_path: Path) -> None:
     """Test error when PR is merged."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # PR is merged
@@ -392,7 +392,7 @@ def test_pr_sync_fails_when_pr_is_merged(tmp_path: Path) -> None:
 def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
     """Test error when PR is from a fork (cross-repository)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # PR exists and is open
@@ -428,7 +428,7 @@ def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
 def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
     """Test sync handles single-commit case gracefully (no squash needed)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR
@@ -477,7 +477,7 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
 def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
     """Test sync continues when submit fails (non-critical)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR
@@ -516,7 +516,7 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
 def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
     """Test sync fails when squash raises unexpected error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR
@@ -558,7 +558,7 @@ def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
 def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
     """Test sync uses PR base branch from GitHub, not assumptions."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # PR targets "release/v1.0" not "main"
@@ -598,7 +598,7 @@ def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
 def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
     """Test commit message is updated with title only when no body exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR with title but NO body (empty string)
@@ -638,7 +638,7 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
 def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
     """Test commit message is not updated when PR has no title."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR with empty title
@@ -678,7 +678,7 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
 def test_pr_sync_handles_restack_conflict_gracefully(tmp_path: Path) -> None:
     """Test sync provides user-friendly error when restack hits merge conflicts."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info for branch lookup
@@ -729,7 +729,7 @@ def test_pr_sync_handles_restack_conflict_gracefully(tmp_path: Path) -> None:
 def test_pr_sync_handles_restack_unmerged_files_gracefully(tmp_path: Path) -> None:
     """Test sync detects 'unmerged files' pattern in restack errors."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info
@@ -774,7 +774,7 @@ def test_pr_sync_handles_restack_unmerged_files_gracefully(tmp_path: Path) -> No
 def test_pr_sync_raises_non_conflict_restack_error(tmp_path: Path) -> None:
     """Test sync re-raises restack errors that are NOT conflict-related."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info
@@ -823,7 +823,7 @@ def test_pr_sync_rebases_onto_parent_before_tracking_stacked_pr(tmp_path: Path) 
     the child's git history.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # PR is stacked on parent-branch, not on trunk (main)
@@ -868,7 +868,7 @@ def test_pr_sync_rebases_onto_parent_before_tracking_stacked_pr(tmp_path: Path) 
 def test_pr_sync_skips_rebase_for_trunk_based_pr(tmp_path: Path) -> None:
     """When syncing a PR based on trunk, skip the rebase step."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # PR is based on trunk (main), not on another branch
@@ -909,7 +909,7 @@ def test_pr_sync_skips_rebase_for_trunk_based_pr(tmp_path: Path) -> None:
 def test_pr_sync_handles_rebase_conflicts_for_stacked_pr(tmp_path: Path) -> None:
     """When rebasing onto parent conflicts, show helpful error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Stacked PR
@@ -959,7 +959,7 @@ def test_pr_sync_auto_fixes_diverged_branch_after_restack(tmp_path: Path) -> Non
     on child branches to fail. Sync should detect this and retrack the branch.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info
@@ -1010,7 +1010,7 @@ def test_pr_sync_auto_fixes_diverged_branch_after_restack(tmp_path: Path) -> Non
 def test_pr_sync_skips_retrack_when_not_diverged(tmp_path: Path) -> None:
     """Test that sync skips retrack when branch is not diverged."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR info

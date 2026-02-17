@@ -77,7 +77,7 @@ def _make_pr_details(
 def test_checkout_local_branch_exists() -> None:
     """Test checkout when local branch exists for the plan."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         # Create a local branch that matches issue 123
         git = FakeGit(
@@ -101,7 +101,7 @@ def test_checkout_local_branch_exists() -> None:
 def test_checkout_with_plain_number() -> None:
     """Test checkout using plain number instead of P-prefix."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -123,7 +123,7 @@ def test_checkout_with_plain_number() -> None:
 def test_checkout_branch_already_in_worktree() -> None:
     """Test checkout when branch is already checked out in a worktree."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         branch_name = "P789-existing-03-01-1200"
         worktree_path = env.repo.worktrees_dir / branch_name
@@ -157,7 +157,7 @@ def test_checkout_branch_already_in_worktree() -> None:
 def test_checkout_multiple_local_branches_shows_table() -> None:
     """Test checkout shows table when multiple local branches match."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         # Multiple branches for the same issue (different timestamps)
         git = FakeGit(
@@ -188,7 +188,7 @@ def test_checkout_multiple_local_branches_shows_table() -> None:
 def test_checkout_no_local_branch_fetches_pr() -> None:
     """Test checkout fetches PR when no local branch exists but PR does."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=200,
@@ -224,7 +224,7 @@ def test_checkout_no_local_branch_fetches_pr() -> None:
 def test_checkout_multiple_open_prs_shows_table() -> None:
     """Test checkout shows table when multiple open PRs reference the issue."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -257,7 +257,7 @@ def test_checkout_multiple_open_prs_shows_table() -> None:
 def test_checkout_filters_to_open_prs_only() -> None:
     """Test checkout only considers OPEN PRs, not CLOSED or MERGED."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=400,
@@ -298,7 +298,7 @@ def test_checkout_filters_to_open_prs_only() -> None:
 def test_checkout_no_branch_no_pr_shows_help() -> None:
     """Test checkout shows helpful message when nothing found."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -321,7 +321,7 @@ def test_checkout_no_branch_no_pr_shows_help() -> None:
 def test_checkout_invalid_identifier() -> None:
     """Test checkout with invalid identifier shows error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -341,7 +341,7 @@ def test_checkout_invalid_identifier() -> None:
 def test_checkout_with_github_url() -> None:
     """Test checkout accepts GitHub issue URL."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -367,7 +367,7 @@ def test_checkout_with_github_url() -> None:
 def test_checkout_legacy_branch_format_without_p_prefix() -> None:
     """Test checkout finds legacy branches without P prefix."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         # Legacy format: issue number without P prefix
         git = FakeGit(

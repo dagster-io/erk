@@ -108,7 +108,7 @@ def _make_rewrite_fakes(
 def test_pr_rewrite_happy_path() -> None:
     """Test successful rewrite: squash, generate, amend, push, update PR."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git, graphite, github, executor = _make_rewrite_fakes(env, branch_name="feature")
 
         ctx = build_workspace_test_context(
@@ -142,7 +142,7 @@ def test_pr_rewrite_happy_path() -> None:
 def test_pr_rewrite_already_single_commit() -> None:
     """Test rewrite with already-single-commit (squash is idempotent)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git, graphite, github, executor = _make_rewrite_fakes(
             env, branch_name="feature", commits_ahead=1
         )
@@ -164,7 +164,7 @@ def test_pr_rewrite_already_single_commit() -> None:
 def test_pr_rewrite_fails_when_no_pr() -> None:
     """Test that rewrite fails when no PR exists for the branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.git_dir},
@@ -216,7 +216,7 @@ def test_pr_rewrite_fails_when_no_pr() -> None:
 def test_pr_rewrite_fails_when_squash_conflicts() -> None:
     """Test that rewrite fails when squash encounters conflicts."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git, graphite, github, executor = _make_rewrite_fakes(
             env,
             branch_name="feature",
@@ -240,7 +240,7 @@ def test_pr_rewrite_fails_when_squash_conflicts() -> None:
 def test_pr_rewrite_fails_when_ai_generation_fails() -> None:
     """Test that rewrite fails when commit message generation fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git, graphite, github, executor = _make_rewrite_fakes(
             env,
             branch_name="feature",
@@ -264,7 +264,7 @@ def test_pr_rewrite_fails_when_ai_generation_fails() -> None:
 def test_pr_rewrite_fails_when_detached_head() -> None:
     """Test that rewrite fails when in detached HEAD state."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -284,7 +284,7 @@ def test_pr_rewrite_fails_when_detached_head() -> None:
 def test_pr_rewrite_fails_when_claude_not_available() -> None:
     """Test that rewrite fails when Claude CLI is not available."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -303,7 +303,7 @@ def test_pr_rewrite_fails_when_claude_not_available() -> None:
 def test_pr_rewrite_discovers_issue_from_impl_folder() -> None:
     """Test that rewrite discovers issue number from .impl/issue.json for footer."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create .impl/issue.json with issue number
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir()
@@ -338,7 +338,7 @@ def test_pr_rewrite_discovers_issue_from_impl_folder() -> None:
 def test_pr_rewrite_preserves_closing_ref_from_existing_footer() -> None:
     """Test that rewrite preserves closing reference from existing PR footer."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         existing_body = "Old body\n---\n\nCloses #123\n\nTo checkout this PR..."
 
         git, graphite, github, executor = _make_rewrite_fakes(
