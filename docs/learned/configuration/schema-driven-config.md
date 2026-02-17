@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "adding a new config option without defining it in a Pydantic schema"
     warning: "All config keys must be defined in schema.py with proper ConfigLevel. The schema is the single source of truth — CLI commands discover fields via Pydantic introspection, so manual lists are unnecessary and will diverge."
-last_audited: "2026-02-08 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-17 09:00 PT"
+audit_result: edited
 ---
 
 # Schema-Driven Config System
@@ -58,7 +58,7 @@ Schema classes must be registered in `_GLOBAL_CONFIG_SECTIONS` to be discovered 
 
 <!-- Source: src/erk/cli/commands/config.py, _CLI_KEY_TO_ATTR -->
 
-The user-facing CLI key prefix `interactive_claude` maps to the `GlobalConfig` attribute `interactive_agent`. This mismatch exists because the internal attribute name was generalized while the CLI key kept the user-friendly name. See `_CLI_KEY_TO_ATTR` in `config.py` for the mapping. When adding new sectioned schemas, you may need to add a similar mapping if the CLI prefix differs from the dataclass attribute.
+The user-facing CLI key prefix `interactive_claude` maps to the `GlobalConfig` attribute `interactive_agent`. This mismatch exists because the internal attribute name was generalized while the CLI key kept the user-friendly name. See `_CLI_KEY_TO_ATTR` in `src/erk/cli/commands/config.py` for the mapping. When adding new sectioned schemas, you may need to add a similar mapping if the CLI prefix differs from the dataclass attribute.
 
 ## Adding a New Config Option — Checklist
 

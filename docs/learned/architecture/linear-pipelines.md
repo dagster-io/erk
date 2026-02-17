@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "creating a new complex command with multiple validation steps"
     warning: "Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar."
-last_audited: "2026-02-07 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-17 12:00 PT"
+audit_result: clean
 ---
 
 # Linear Pipeline Architecture

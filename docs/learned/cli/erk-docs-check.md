@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "calling is_learned_docs_available() in CLI code"
     warning: "Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError."
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # erk docs check Command

@@ -5,7 +5,7 @@ read_when:
   - "extending CommandResult dataclass"
   - "adding metadata extraction"
   - "implementing new CommandResult field"
-last_audited: "2026-02-05 14:18 PT"
+last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: Branch Reuse in Plan Submit
-last_audited: "2026-02-16 02:45 PT"
-audit_result: edited
+last_audited: "2026-02-17 16:00 PT"
+audit_result: clean
 read_when:
   - "implementing erk plan submit"
   - "handling duplicate branches"

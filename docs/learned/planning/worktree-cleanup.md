@@ -11,7 +11,7 @@ tripwires:
     warning: "A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md."
   - action: "removing .worker-impl/ during implementation (before CI passes)"
     warning: "The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes."
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 ---
 

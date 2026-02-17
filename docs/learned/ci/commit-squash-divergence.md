@@ -1,6 +1,6 @@
 ---
 title: Commit Squash Divergence
-last_audited: "2026-02-16 04:53 PT"
+last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 read_when:
   - "encountering 'fetch first' after gt submit"

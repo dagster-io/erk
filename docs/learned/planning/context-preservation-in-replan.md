@@ -1,5 +1,7 @@
 ---
 title: Context Preservation in Replan Workflow
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 read_when:
   - "implementing or modifying replan workflow steps"
   - "debugging why a replanned issue produced a sparse plan"

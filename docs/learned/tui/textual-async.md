@@ -1,6 +1,6 @@
 ---
 title: Textual Async Best Practices
-last_audited: "2026-02-16 04:53 PT"
+last_audited: "2026-02-17 18:30 PT"
 audit_result: clean
 read_when:
   - "overriding Screen actions"

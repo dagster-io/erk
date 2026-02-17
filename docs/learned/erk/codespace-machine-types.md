@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using `gh codespace create` to create a codespace"
     warning: "The machines endpoint returns HTTP 500 for this repo. Use `POST /user/codespaces` REST API directly. See the workaround section below."
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # Codespace Machine Types

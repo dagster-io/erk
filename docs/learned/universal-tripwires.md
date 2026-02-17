@@ -1,5 +1,7 @@
 ---
 title: Universal Tripwires
+last_audited: "2026-02-17 18:30 PT"
+audit_result: clean
 read_when:
   - "starting any coding task"
   - "writing new code in erk"

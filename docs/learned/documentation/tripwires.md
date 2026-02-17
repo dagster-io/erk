@@ -34,17 +34,19 @@ Rules triggered by matching actions in code.
 
 **creating a two-option doc where every matrix row favors the same option** → Read [Two-Option Decision Documentation](two-option-template.md) first. That's a best-practice doc, not a decision doc. Don't create false balance.
 
+**creating skills without explicit invocation triggers** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. Skills without explicit invocation triggers perform identically to having no documentation. Use passive context (AGENTS.md) or structural triggers (hooks) instead.
+
 **declaring canonical authority in a learned doc** → Read [Canonical Authority Declarations](canonical-authority-declarations.md) first. Authority without substance misleads. Only declare canonical authority if the doc is the comprehensive deep-dive, not a summary. If AGENTS.md has the abbreviated version and this doc has the full treatment, that's the right split.
 
 **documenting implementation details that are derivable from code** → Read [Documentation Simplification Patterns](simplification-patterns.md) first. Use source pointers instead of duplication. See simplification-patterns.md for the three simplification patterns.
 
 **documenting type definitions without verifying they exist** → Read [Documentation Audit Methodology](audit-methodology.md) first. Type references in docs must match actual codebase types — phantom types are the most common audit finding. Verify with grep before committing.
 
+**expecting agents to self-diagnose knowledge gaps** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. Use passive context or structural triggers instead. Agents cannot distinguish stale training data from correct knowledge.
+
 **justifying erkdesk code inclusion** → Read [Language Scope Auditing](language-scope-auditing.md) first. Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron
 
 **manually wrapping lines or aligning tables in markdown** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun.
-
-**never expect agents to self-diagnose knowledge gaps** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. use passive context or structural triggers
 
 **restructuring or deleting doc content** → Read [Documentation Simplification Patterns](simplification-patterns.md) first. Run 'erk docs sync' after structural changes to regenerate indexes and fix broken cross-references.
 
@@ -53,8 +55,6 @@ Rules triggered by matching actions in code.
 **two learned docs claiming canonical authority over the same topic** → Read [Canonical Authority Declarations](canonical-authority-declarations.md) first. Contradicts the purpose. Consolidate into one doc, or differentiate scope explicitly (e.g., 'canonical for hook patterns' vs 'canonical for command patterns').
 
 **using line numbers in source pointers** → Read [Source Pointers](source-pointers.md) first. Prefer name-based identifiers (ClassName.method) over line numbers. Names survive refactoring; line numbers go stale silently.
-
-**using this pattern** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. skills without explicit invocation triggers perform identically to having no documentation
 
 **writing a decision doc with only prose 'use X when...' bullets** → Read [Two-Option Decision Documentation](two-option-template.md) first. Add a decision matrix table. Tables let agents scan trade-offs at a glance without parsing paragraphs. See two-option-template.md.
 

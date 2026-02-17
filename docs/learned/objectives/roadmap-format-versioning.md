@@ -9,6 +9,8 @@ tripwires:
     warning: "The 4→5 column migration is the established pattern. Read this doc to understand the header-based detection and auto-upgrade strategy before adding columns."
   - action: "adding step_type, issue, or depends_on fields to RoadmapStep"
     warning: "These fields were planned but never built. The parser, serializer, and all callers would need coordinated changes."
+last_audited: "2026-02-17 16:00 PT"
+audit_result: clean
 ---
 
 # Roadmap Format Versioning

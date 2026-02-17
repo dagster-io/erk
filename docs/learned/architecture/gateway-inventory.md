@@ -3,8 +3,8 @@ title: Gateway Inventory
 read_when:
   - "understanding available gateways"
   - "adding a new gateway"
-last_audited: "2026-02-04 05:48 PT"
-audit_result: edited
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # Gateway Inventory

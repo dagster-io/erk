@@ -1,7 +1,7 @@
 ---
 title: Flatten Subgateway Pattern
-last_audited: "2026-02-07 20:05 PT"
-audit_result: edited
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 read_when:
   - "creating or migrating subgateways"
   - "exposing subgateway operations through parent gateway"

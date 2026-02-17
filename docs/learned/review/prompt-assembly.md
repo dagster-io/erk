@@ -1,6 +1,6 @@
 ---
 title: Review Prompt Assembly
-last_audited: "2026-02-16 04:53 PT"
+last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 read_when:
   - "modifying review prompt generation or templates"

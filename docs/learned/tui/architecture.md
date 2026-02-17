@@ -4,8 +4,8 @@ read_when:
   - "understanding TUI structure"
   - "implementing TUI components"
   - "working with TUI data providers"
-last_audited: "2026-02-05 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-17 18:30 PT"
+audit_result: clean
 ---
 
 # TUI Architecture Overview

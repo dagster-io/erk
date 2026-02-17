@@ -1,5 +1,7 @@
 ---
 title: Local Command Patterns
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 read_when:
   - "designing local commands"
   - "understanding local command taxonomy"

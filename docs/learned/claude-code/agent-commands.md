@@ -1,7 +1,7 @@
 ---
 title: Claude Code Agent Command Patterns
-last_audited: "2026-02-07 18:30 PT"
-audit_result: edited
+last_audited: "2026-02-17 16:00 PT"
+audit_result: clean
 read_when:
   - "creating Claude Code agent commands"
   - "implementing conversation-context extraction"

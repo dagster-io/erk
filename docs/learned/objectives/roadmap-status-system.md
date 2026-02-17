@@ -11,7 +11,7 @@ tripwires:
     warning: "Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns."
   - action: "expecting status to auto-update when PR column is edited manually"
     warning: "Only the update-roadmap-step command writes computed status. Manual PR edits leave status unchanged — set status to '-' to re-enable inference."
-last_audited: "2026-02-16 14:25 PT"
+last_audited: "2026-02-17 16:00 PT"
 audit_result: edited
 ---
 

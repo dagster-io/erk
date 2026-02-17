@@ -10,7 +10,7 @@ tripwires:
     warning: "Class MUST be imported AND instantiated in registry.py _all_capabilities() tuple. Missing registration causes silent failures—class exists but is never discovered."
   - action: "creating a new capability type with custom installation logic"
     warning: "Don't subclass Capability directly unless needed. Use SkillCapability or ReminderCapability for 90% of cases—they handle state management automatically."
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-02-17 09:00 PT"
 audit_result: clean
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Interactive Agent Configuration
-last_audited: "2026-02-07 00:00 PT"
+last_audited: "2026-02-17 12:00 PT"
 audit_result: clean
 tripwires:
   - action: "modifying InteractiveAgentConfig fields or config file format"
