@@ -3,17 +3,17 @@ description: Create an implementation plan from an objective node
 argument-hint: "<issue-number-or-url> [--node <node-id>]"
 ---
 
-# /erk:objective-implement
+# /erk:objective-plan
 
 Create an implementation plan for a specific node in an objective's dependency graph.
 
 ## Usage
 
 ```bash
-/erk:objective-implement 3679
-/erk:objective-implement 3679 --node 2.1
-/erk:objective-implement https://github.com/owner/repo/issues/3679
-/erk:objective-implement  # prompts for issue reference
+/erk:objective-plan 3679
+/erk:objective-plan 3679 --node 2.1
+/erk:objective-plan https://github.com/owner/repo/issues/3679
+/erk:objective-plan  # prompts for issue reference
 ```
 
 ---

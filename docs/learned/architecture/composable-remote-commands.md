@@ -31,9 +31,9 @@ This separation matters because:
 
 ## The Five-Step Composition
 
-<!-- Source: src/erk/cli/commands/codespace/run/objective/implement_cmd.py, run_implement function -->
+<!-- Source: src/erk/cli/commands/codespace/run/objective/plan_cmd.py, run_plan function -->
 
-Every remote command follows this structure. See `run_implement()` in `src/erk/cli/commands/codespace/run/objective/implement_cmd.py` for the canonical implementation.
+Every remote command follows this structure. See `run_plan()` in `src/erk/cli/commands/codespace/run/objective/plan_cmd.py` for the canonical implementation.
 
 ### 1. Resolve Codespace
 
@@ -71,7 +71,7 @@ bash -l -c 'git pull && uv sync && source .venv/bin/activate && <erk_command>'
 
 Two execution methods on `ctx.codespace` (see `Codespace` ABC in `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`):
 
-- `exec_ssh_interactive(gh_name, remote_cmd)` - **Replaces current process** with SSH session (uses `os.execvp`, never returns). For interactive commands like `erk objective implement`.
+- `exec_ssh_interactive(gh_name, remote_cmd)` - **Replaces current process** with SSH session (uses `os.execvp`, never returns). For interactive commands like `erk objective plan`.
 - `run_ssh_command(gh_name, remote_cmd)` - **Blocks and returns exit code**. For non-interactive commands that stream output but don't need user input.
 
 **Decision table**:

@@ -478,11 +478,11 @@ def test_objective_commands_appear_in_objectives_view() -> None:
     cmd_ids = [cmd.id for cmd in commands]
 
     expected = [
-        "one_shot_implement",
+        "one_shot_plan",
         "check_objective",
         "close_objective",
         "open_objective",
-        "copy_implement",
+        "copy_plan",
         "copy_view",
     ]
     for obj_id in expected:
@@ -502,12 +502,12 @@ def test_plan_commands_available_in_learn_view() -> None:
 # === Dynamic Display Name Tests (Objective Commands) ===
 
 
-def test_display_name_one_shot_implement() -> None:
-    """one_shot_implement should show the objective command with --one-shot."""
+def test_display_name_one_shot_plan() -> None:
+    """one_shot_plan should show the objective command with --one-shot."""
     row = make_plan_row(7100, "Test Objective")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
-    cmd = next(c for c in get_all_commands() if c.id == "one_shot_implement")
-    assert get_display_name(cmd, ctx) == "erk objective implement 7100 --one-shot"
+    cmd = next(c for c in get_all_commands() if c.id == "one_shot_plan")
+    assert get_display_name(cmd, ctx) == "erk objective plan 7100 --one-shot"
 
 
 def test_display_name_check_objective() -> None:
@@ -538,12 +538,12 @@ def test_display_name_open_objective() -> None:
     assert get_display_name(cmd, ctx) == "https://github.com/test/repo/issues/7100"
 
 
-def test_display_name_copy_implement() -> None:
-    """copy_implement should show the implement command."""
+def test_display_name_copy_plan() -> None:
+    """copy_plan should show the plan command."""
     row = make_plan_row(7100, "Test Objective")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
-    cmd = next(c for c in get_all_commands() if c.id == "copy_implement")
-    assert get_display_name(cmd, ctx) == "erk objective implement 7100"
+    cmd = next(c for c in get_all_commands() if c.id == "copy_plan")
+    assert get_display_name(cmd, ctx) == "erk objective plan 7100"
 
 
 def test_display_name_copy_view() -> None:

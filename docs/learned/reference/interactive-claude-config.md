@@ -194,9 +194,9 @@ config = ic_config.with_overrides(
 - `-d` present: `allow_dangerous_override=True` — enables it
 - `-d` absent: `allow_dangerous_override=None` — preserves config value
 
-<!-- Source: src/erk/cli/commands/objective/implement_cmd.py, implement -->
+<!-- Source: src/erk/cli/commands/objective/plan_cmd.py, plan -->
 
-See `implement()` in `src/erk/cli/commands/objective/implement_cmd.py` for the canonical example of this pattern with a `-d` flag.
+See `plan_objective()` in `src/erk/cli/commands/objective/plan_cmd.py` for the canonical example of this pattern with a `-d` flag.
 
 ## Cross-Layer Naming: CLI Key vs Attribute
 

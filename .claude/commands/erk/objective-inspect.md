@@ -41,7 +41,7 @@ Display the full output to the user.
 
 After displaying the graph, suggest relevant follow-up commands:
 
-- `/erk:objective-implement <issue-number>` - Create a plan for the next step
+- `/erk:objective-plan <issue-number>` - Create a plan for the next step
 - `/local:objective-view <issue-number>` - View associations and PR links
 
 ---

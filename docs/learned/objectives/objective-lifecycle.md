@@ -51,7 +51,7 @@ pending → planning → in_progress → done
 ```
 
 - **pending**: Work not started
-- **planning**: Step dispatched for autonomous planning (draft PR created via `erk objective implement`)
+- **planning**: Step dispatched for autonomous planning (draft PR created via `erk objective plan`)
 - **in_progress**: Active implementation underway
 - **done**: PR landed
 - **blocked**: External dependency prevents progress
@@ -284,7 +284,7 @@ Objective body sections fall into three tiers based on how they're updated:
 
 1. **After every PR landing** (primary trigger): The `objective-update-with-landed-pr` agent performs prose reconciliation after mechanical step updates. It compares the objective body against what the PR actually implemented and corrects stale information.
 
-2. **At next-step pickup** (lighter touch): When `objective-implement` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
+2. **At next-step pickup** (lighter touch): When `objective-plan` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
 
 ### What the Agent Checks
 

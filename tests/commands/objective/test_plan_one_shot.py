@@ -1,4 +1,4 @@
-"""Tests for objective implement --one-shot command."""
+"""Tests for objective plan --one-shot command."""
 
 from datetime import UTC, datetime
 
@@ -133,7 +133,7 @@ def _build_one_shot_context(
     return build_workspace_test_context(env, git=git, github=github, issues=issues)
 
 
-def test_implement_one_shot_happy_path() -> None:
+def test_plan_one_shot_happy_path() -> None:
     """Test --one-shot dispatches workflow with objective/node inputs."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -146,7 +146,7 @@ def test_implement_one_shot_happy_path() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot"],
+            ["objective", "plan", "42", "--one-shot"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -163,7 +163,7 @@ def test_implement_one_shot_happy_path() -> None:
         assert inputs["objective_issue"] == "42"
         assert inputs["step_id"] == "1.1"
         assert inputs["instruction"] == (
-            "/erk:objective-implement 42\n"
+            "/erk:objective-plan 42\n"
             "Implement step 1.1 of objective #42: Setup infra (Phase: Foundation)"
         )
 
@@ -176,7 +176,7 @@ def test_implement_one_shot_happy_path() -> None:
         assert "planning" in updated_body.lower() or "planning" in updated_body
 
 
-def test_implement_one_shot_repeated_invocation_advances_node() -> None:
+def test_plan_one_shot_repeated_invocation_advances_node() -> None:
     """Test that running --one-shot twice dispatches different nodes.
 
     After first dispatch marks node 1.1 as 'planning', the second
@@ -194,7 +194,7 @@ def test_implement_one_shot_repeated_invocation_advances_node() -> None:
         # First invocation: dispatches node 1.1
         result1 = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot"],
+            ["objective", "plan", "42", "--one-shot"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -209,7 +209,7 @@ def test_implement_one_shot_repeated_invocation_advances_node() -> None:
         # Second invocation: should dispatch node 1.2 (since 1.1 is now "planning")
         result2 = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot"],
+            ["objective", "plan", "42", "--one-shot"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -220,7 +220,7 @@ def test_implement_one_shot_repeated_invocation_advances_node() -> None:
         assert inputs2["step_id"] == "1.2"
 
 
-def test_implement_one_shot_auto_detects_next_node() -> None:
+def test_plan_one_shot_auto_detects_next_node() -> None:
     """Test that first pending node is auto-detected."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -270,7 +270,7 @@ steps:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot"],
+            ["objective", "plan", "42", "--one-shot"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -284,7 +284,7 @@ steps:
         assert "Add tests" in inputs["instruction"]
 
 
-def test_implement_one_shot_node_override() -> None:
+def test_plan_one_shot_node_override() -> None:
     """Test --node 2.1 dispatches that specific node."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -297,7 +297,7 @@ def test_implement_one_shot_node_override() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot", "--node", "2.1"],
+            ["objective", "plan", "42", "--one-shot", "--node", "2.1"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -311,7 +311,7 @@ def test_implement_one_shot_node_override() -> None:
         assert "Build feature" in inputs["instruction"]
 
 
-def test_implement_one_shot_no_pending_nodes() -> None:
+def test_plan_one_shot_no_pending_nodes() -> None:
     """Test that all-done objective returns cleanly."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -324,7 +324,7 @@ def test_implement_one_shot_no_pending_nodes() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot"],
+            ["objective", "plan", "42", "--one-shot"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -338,7 +338,7 @@ def test_implement_one_shot_no_pending_nodes() -> None:
         assert len(github.triggered_workflows) == 0
 
 
-def test_implement_one_shot_node_not_found() -> None:
+def test_plan_one_shot_node_not_found() -> None:
     """Test --node with nonexistent node ID errors."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -351,7 +351,7 @@ def test_implement_one_shot_node_not_found() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot", "--node", "99.1"],
+            ["objective", "plan", "42", "--one-shot", "--node", "99.1"],
             obj=ctx,
         )
 
@@ -359,7 +359,7 @@ def test_implement_one_shot_node_not_found() -> None:
         assert "Node '99.1' not found" in result.output
 
 
-def test_implement_one_shot_dry_run() -> None:
+def test_plan_one_shot_dry_run() -> None:
     """Test --dry-run shows info without mutations."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -372,7 +372,7 @@ def test_implement_one_shot_dry_run() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot", "--dry-run"],
+            ["objective", "plan", "42", "--one-shot", "--dry-run"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -390,7 +390,7 @@ def test_implement_one_shot_dry_run() -> None:
         assert len(issues.updated_bodies) == 0
 
 
-def test_implement_one_shot_objective_not_found() -> None:
+def test_plan_one_shot_objective_not_found() -> None:
     """Test error when objective issue doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -401,7 +401,7 @@ def test_implement_one_shot_objective_not_found() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "999", "--one-shot"],
+            ["objective", "plan", "999", "--one-shot"],
             obj=ctx,
         )
 
@@ -409,7 +409,7 @@ def test_implement_one_shot_objective_not_found() -> None:
         assert "not found" in result.output
 
 
-def test_implement_one_shot_model_flag() -> None:
+def test_plan_one_shot_model_flag() -> None:
     """Test model flag flows through to workflow."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -422,7 +422,7 @@ def test_implement_one_shot_model_flag() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot", "-m", "opus"],
+            ["objective", "plan", "42", "--one-shot", "-m", "opus"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -435,7 +435,7 @@ def test_implement_one_shot_model_flag() -> None:
         assert inputs["model_name"] == "opus"
 
 
-def test_implement_flags_require_one_shot() -> None:
+def test_plan_flags_require_one_shot() -> None:
     """Test --model, --dry-run without --one-shot produce errors."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -449,7 +449,7 @@ def test_implement_flags_require_one_shot() -> None:
         # --model without --one-shot
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "-m", "opus"],
+            ["objective", "plan", "42", "-m", "opus"],
             obj=ctx,
         )
         assert result.exit_code == 1
@@ -458,7 +458,7 @@ def test_implement_flags_require_one_shot() -> None:
         # --dry-run without --one-shot
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--dry-run"],
+            ["objective", "plan", "42", "--dry-run"],
             obj=ctx,
         )
         assert result.exit_code == 1
@@ -482,7 +482,7 @@ def _make_plan_issue(number: int, *, objective_issue: int) -> IssueInfo:
     )
 
 
-def test_implement_one_shot_next_with_issue_ref() -> None:
+def test_plan_one_shot_next_with_issue_ref() -> None:
     """Test --one-shot --next with explicit ISSUE_REF dispatches first pending node."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -495,7 +495,7 @@ def test_implement_one_shot_next_with_issue_ref() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--one-shot", "--next"],
+            ["objective", "plan", "42", "--one-shot", "--next"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -510,7 +510,7 @@ def test_implement_one_shot_next_with_issue_ref() -> None:
         assert inputs["objective_issue"] == "42"
 
 
-def test_implement_one_shot_next_infers_from_branch() -> None:
+def test_plan_one_shot_next_infers_from_branch() -> None:
     """Test --one-shot --next without ISSUE_REF infers objective from branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -533,7 +533,7 @@ def test_implement_one_shot_next_infers_from_branch() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "--one-shot", "--next"],
+            ["objective", "plan", "--one-shot", "--next"],
             obj=ctx,
             catch_exceptions=False,
         )

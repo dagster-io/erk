@@ -16,14 +16,14 @@ tripwires:
 ## Permission Mode Override Pattern
 
 <!-- Source: packages/erk-shared/src/erk_shared/context/types.py, InteractiveAgentConfig.with_overrides -->
-<!-- Source: src/erk/cli/commands/objective/implement_cmd.py, implement -->
+<!-- Source: src/erk/cli/commands/objective/plan_cmd.py, plan -->
 
 The `with_overrides()` method on `InteractiveAgentConfig` allows selective override of config values:
 
 - Pass a value (e.g., `"plan"`) to force that mode
 - Pass `None` to preserve the config file value
 
-The `implement` command forces `permission_mode_override="plan"` to ensure the agent explores and plans rather than immediately executing. The `--dangerous` flag conditionally overrides `allow_dangerous_override`, allowing users to opt into skipping permission prompts.
+The `plan` command forces `permission_mode_override="plan"` to ensure the agent explores and plans rather than immediately executing. The `--dangerous` flag conditionally overrides `allow_dangerous_override`, allowing users to opt into skipping permission prompts.
 
 ## Validation Check Design
 
@@ -92,15 +92,13 @@ The `close` command prompts for confirmation unless `--force` is provided. The c
 
 All objective commands use the `register_with_aliases()` pattern, which registers both the full command name and a short alias:
 
-| Command     | Alias  | Why This Alias                                   |
-| ----------- | ------ | ------------------------------------------------ |
-| `check`     | `ch`   | Prefix of "check", avoids collision with "close" |
-| `close`     | `c`    | First letter, unambiguous (check uses "ch")      |
-| `inspect`   | `i`    | First letter of "inspect"                        |
-| `list`      | `ls`   | Unix convention (ls for list)                    |
-| `implement` | `impl` | First letters of "implement"                     |
-
-**Why aliases matter**: Objective commands are used in rapid iteration workflows. Typing `erk objective impl` is faster than `erk objective implement`, reducing friction without sacrificing discoverability (the full name remains canonical).
+| Command   | Alias | Why This Alias                                   |
+| --------- | ----- | ------------------------------------------------ |
+| `check`   | `ch`  | Prefix of "check", avoids collision with "close" |
+| `close`   | `c`   | First letter, unambiguous (check uses "ch")      |
+| `inspect` | `i`   | First letter of "inspect"                        |
+| `list`    | `ls`  | Unix convention (ls for list)                    |
+| `plan`    | —     | Direct, no alias needed                          |
 
 ## view_objective() Command
 
