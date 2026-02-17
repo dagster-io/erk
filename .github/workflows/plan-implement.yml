@@ -251,11 +251,13 @@ jobs:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           RUN_ID: ${{ github.run_id }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
+          BRANCH_NAME: ${{ inputs.branch_name }}
         run: |
           erk exec update-plan-remote-session \
             --issue-number "$ISSUE_NUMBER" \
             --run-id "$RUN_ID" \
-            --session-id "$SESSION_ID"
+            --session-id "$SESSION_ID" \
+            --branch-name "$BRANCH_NAME"
 
       - name: Handle implementation outcome
         id: handle_outcome

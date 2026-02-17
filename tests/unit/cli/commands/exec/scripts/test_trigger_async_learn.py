@@ -20,6 +20,7 @@ from erk_shared.gateway.claude_installation.fake import (
     FakeProject,
     FakeSessionData,
 )
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
@@ -601,6 +602,57 @@ def test_trigger_async_learn_pr_lookup_failure_continues(tmp_path: Path) -> None
     warning_lines = [line for line in stderr_lines if "failed, skipping" in line]
     assert len(warning_lines) == 1
     assert "Getting PR for plan" in warning_lines[0]
+
+
+def test_trigger_async_learn_pr_lookup_with_branch_inference(tmp_path: Path) -> None:
+    """Test PR lookup succeeds via branch inference when branch_name is missing."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+
+    branch_name = "P999-fix-something-02-17-0846"
+
+    # Plan issue with no branch_name in metadata
+    body = _make_plan_issue_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={999: _make_issue_info(999, body)})
+    fake_claude = FakeClaudeInstallation.for_test()
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        issues_gateway=fake_issues,
+        prs={branch_name: _make_pr_info(number=1000, head_branch=branch_name)},
+        pr_details={1000: _make_pr_details(number=1000, head_ref_name=branch_name)},
+    )
+    # FakeGit with current branch matching P{issue}- prefix
+    fake_git = FakeGit(current_branches={tmp_path: branch_name})
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        git=fake_git,
+        repo_info=repo_info,
+    )
+
+    # Create learn dir with content
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-999"
+    learn_dir.mkdir(parents=True)
+    (learn_dir / "placeholder.txt").write_text("test", encoding="utf-8")
+
+    result = runner.invoke(trigger_async_learn_command, ["999"], obj=ctx)
+
+    assert result.exit_code == 0
+    output = _parse_json_output(result.output)
+    assert output["success"] is True
+
+    # Verify PR lookup succeeded (no "failed, skipping" warning)
+    stderr_lines = _get_stderr_lines(result.output)
+    warning_lines = [line for line in stderr_lines if "failed, skipping" in line]
+    assert len(warning_lines) == 0
+
+    # Verify review comments were fetched (indicates PR was found)
+    review_lines = [line for line in stderr_lines if "Fetching review comments" in line]
+    assert len(review_lines) == 1
 
 
 def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:

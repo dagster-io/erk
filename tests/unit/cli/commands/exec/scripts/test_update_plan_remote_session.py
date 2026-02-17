@@ -217,3 +217,65 @@ def test_update_plan_remote_session_preserves_existing_fields(tmp_path: Path) ->
     assert block.data["source_repo"] == "owner/repo"
     assert block.data["objective_issue"] == 100
     assert block.data["created_from_session"] == "create-session-123"
+
+
+def test_update_plan_remote_session_with_branch_name(tmp_path: Path) -> None:
+    """Test that --branch-name is included in metadata when provided."""
+    issue = _make_plan_issue(42, "Test Plan Issue")
+    fake_gh = FakeGitHubIssues(issues={42: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_plan_remote_session,
+        [
+            "--issue-number",
+            "42",
+            "--run-id",
+            "12345678",
+            "--session-id",
+            "test-session-abc",
+            "--branch-name",
+            "P42-fix-something-02-17-0846",
+        ],
+        obj=ErkContext.for_test(github_issues=fake_gh, cwd=tmp_path),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Verify branch_name was written to metadata
+    _, updated_body = fake_gh.updated_bodies[0]
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["branch_name"] == "P42-fix-something-02-17-0846"
+
+
+def test_update_plan_remote_session_without_branch_name(tmp_path: Path) -> None:
+    """Test that branch_name is not added to metadata when --branch-name is omitted."""
+    issue = _make_plan_issue(42, "Test Plan Issue")
+    fake_gh = FakeGitHubIssues(issues={42: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_plan_remote_session,
+        [
+            "--issue-number",
+            "42",
+            "--run-id",
+            "12345678",
+            "--session-id",
+            "test-session-abc",
+        ],
+        obj=ErkContext.for_test(github_issues=fake_gh, cwd=tmp_path),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    # Verify branch_name was NOT updated (should still be original value from _make_plan_issue)
+    _, updated_body = fake_gh.updated_bodies[0]
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    # The original test issue has branch_name: "test-branch" from _make_plan_issue
+    # The metadata update should NOT have overwritten it since --branch-name was not passed
+    assert block.data["branch_name"] == "test-branch"

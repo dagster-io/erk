@@ -80,6 +80,12 @@ def _output_error(error_type: str, message: str) -> None:
     type=str,
     help="Claude Code session ID",
 )
+@click.option(
+    "--branch-name",
+    type=str,
+    default=None,
+    help="Branch name to store in plan-header metadata",
+)
 @click.pass_context
 def update_plan_remote_session(
     ctx: click.Context,
@@ -87,6 +93,7 @@ def update_plan_remote_session(
     issue_number: int,
     run_id: str,
     session_id: str,
+    branch_name: str | None,
 ) -> None:
     """Update plan-header metadata with remote session artifact location.
 
@@ -114,6 +121,8 @@ def update_plan_remote_session(
         "last_remote_impl_run_id": run_id,
         "last_remote_impl_session_id": session_id,
     }
+    if branch_name is not None:
+        metadata["branch_name"] = branch_name
 
     # LBYL: Check plan exists before updating
     plan_result = backend.get_plan(repo_root, plan_id)
