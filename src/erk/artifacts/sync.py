@@ -36,7 +36,7 @@ class ArtifactSyncConfig:
     package: ErkPackageInfo
     installed_capabilities: frozenset[str]
     sync_capabilities: bool  # False in tests to avoid capability install overwriting test fixtures
-    backend: AgentBackend = "claude"  # Agent backend for capability operations
+    backend: AgentBackend
 
 
 def create_artifact_sync_config(

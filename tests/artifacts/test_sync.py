@@ -41,6 +41,7 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
         ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
+        backend="claude",
     )
     result = sync_artifacts(tmp_path, force=False, config=config)
 
@@ -62,6 +63,7 @@ def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -> None:
         ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
+        backend="claude",
     )
     result = sync_artifacts(tmp_path, force=False, config=config)
 
@@ -95,6 +97,7 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
         ),
         installed_capabilities=frozenset({"learned-docs"}),
         sync_capabilities=False,
+        backend="claude",
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -127,6 +130,7 @@ def test_sync_artifacts_saves_state(tmp_path: Path) -> None:
         ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
+        backend="claude",
     )
     sync_artifacts(target_dir, force=False, config=config)
 
@@ -270,6 +274,7 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
         ),
         installed_capabilities=frozenset({"erk-impl-workflow"}),
         sync_capabilities=False,
+        backend="claude",
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -458,6 +463,7 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
         ),
         installed_capabilities=frozenset({"learned-docs", "devrun-agent"}),
         sync_capabilities=False,
+        backend="claude",
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -509,6 +515,7 @@ def test_sync_artifacts_syncs_installed_capabilities(tmp_path: Path) -> None:
         ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
+        backend="claude",
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -599,6 +606,7 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
         ),
         installed_capabilities=frozenset({"code-reviews-system"}),
         sync_capabilities=False,
+        backend="claude",
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -709,6 +717,7 @@ def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> No
         ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
+        backend="claude",
     )
     result = sync_artifacts(tmp_path, force=False, config=config)
 

@@ -58,6 +58,7 @@ def backend_agent_dir(backend: AgentBackend) -> str:
         return ".claude"
     if backend == "codex":
         return ".codex"
+    raise ValueError(f"Unknown agent backend: {backend!r}")
 
 
 class Capability(ABC):
