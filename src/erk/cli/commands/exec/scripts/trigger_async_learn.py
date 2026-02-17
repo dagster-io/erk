@@ -52,6 +52,7 @@ from erk.cli.commands.exec.scripts.upload_learn_materials import (
 from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
+    require_git,
     require_github,
     require_issues,
     require_repo_root,
@@ -271,6 +272,7 @@ def _get_pr_for_plan_direct(
     *,
     github_issues,
     github,
+    git,
     repo_root: Path,
     issue_number: int,
 ) -> dict[str, object] | None:
@@ -279,6 +281,7 @@ def _get_pr_for_plan_direct(
     Args:
         github_issues: GitHub issues gateway
         github: GitHub gateway
+        git: Git gateway (for branch inference fallback)
         repo_root: Repository root path
         issue_number: Plan issue number
 
@@ -294,6 +297,11 @@ def _get_pr_for_plan_direct(
         return None
 
     branch_name = block.data.get("branch_name")
+    if branch_name is None:
+        # Fallback: infer from current git branch (matches get_pr_for_plan.py pattern)
+        current_branch = git.branch.get_current_branch(repo_root)
+        if current_branch is not None and current_branch.startswith(f"P{issue_number}-"):
+            branch_name = current_branch
     if branch_name is None:
         return None
 
@@ -347,6 +355,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
 
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
+    git = require_git(ctx)
     github = require_github(ctx)
     github_issues = require_issues(ctx)
     claude_installation = require_claude_installation(ctx)
@@ -477,6 +486,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
     pr_result = _get_pr_for_plan_direct(
         github_issues=github_issues,
         github=github,
+        git=git,
         repo_root=repo_root,
         issue_number=issue_number,
     )

@@ -1199,11 +1199,12 @@ Update plan-header metadata with remote session artifact location.
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description                   |
-| ---------------- | ------- | -------- | -------------- | ----------------------------- |
-| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update |
-| `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID         |
-| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID        |
+| Flag             | Type    | Required | Default        | Description                                  |
+| ---------------- | ------- | -------- | -------------- | -------------------------------------------- |
+| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update                |
+| `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID                        |
+| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                       |
+| `--branch-name`  | TEXT    | No       | -              | Branch name to store in plan-header metadata |
 
 ### update-pr-description
 
