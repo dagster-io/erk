@@ -1226,6 +1226,287 @@ def test_down_delete_current_trunk_in_root() -> None:
         assert "gt delete -f feature-1" in script_content
 
 
+def test_down_count_moves_multiple_levels() -> None:
+    """Test down command with count=2 moves two levels down the stack."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Set up 4-branch stack: main -> f1 -> f2 -> f3
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees(
+                "main", ["feature-1", "feature-2", "feature-3"], repo_dir=repo_dir
+            ),
+            current_branches={env.cwd: "feature-3"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch(
+                    "feature-2", "feature-1", children=["feature-3"], commit_sha="ghi789"
+                ),
+                "feature-3": BranchMetadata.branch("feature-3", "feature-2", commit_sha="jkl012"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        # Navigate down 2 levels from feature-3 to feature-1
+        result = runner.invoke(cli, ["down", "2", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(repo_dir / "worktrees" / "feature-1") in script_content
+
+
+def test_down_count_1_is_default_behavior() -> None:
+    """Test that down with count=1 behaves identically to plain down."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-2"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(cli, ["down", "1", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(repo_dir / "worktrees" / "feature-1") in script_content
+
+
+def test_down_count_zero_fails() -> None:
+    """Test that down with count=0 fails with validation error."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(cli, ["down", "0", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert_cli_error(result, 1, "Count must be at least 1")
+
+
+def test_down_count_to_root() -> None:
+    """Test down with count that reaches root (trunk in root repo)."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Stack: main -> f1 -> f2, starting at f2
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-2"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        # From f2, down 2 should reach root (f2 -> f1 -> main/root)
+        result = runner.invoke(cli, ["down", "2", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(env.cwd) in script_content
+        assert "root" in script_content.lower()
+
+
+def test_down_count_exceeds_stack_stops_at_root() -> None:
+    """Test down with count exceeding stack depth stops at root with warning."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Stack: main -> f1 -> f2, starting at f2
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-2"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        # From f2, down 10 should stop at root with a warning
+        result = runner.invoke(
+            cli, ["down", "10", "--script"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        # Should warn about reaching root early
+        assert "Warning:" in result.output
+        assert "Reached root after 2 step(s) (requested 10)" in result.output
+        # Should still navigate to root
+        script_path = Path(result.stdout.strip().split("\n")[-1])
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(env.cwd) in script_content
+
+
+def test_down_count_with_delete_current_fails() -> None:
+    """Test that down with count > 1 and --delete-current fails."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees(
+                "main", ["feature-1", "feature-2", "feature-3"], repo_dir=repo_dir
+            ),
+            current_branches={env.cwd: "feature-3"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch(
+                    "feature-2", "feature-1", children=["feature-3"], commit_sha="ghi789"
+                ),
+                "feature-3": BranchMetadata.branch("feature-3", "feature-2", commit_sha="jkl012"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            cli,
+            ["down", "2", "--delete-current", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert_cli_error(result, 1, "Cannot use --delete-current with count > 1")
+
+
 def test_down_delete_current_slot_aware_unassigns_slot() -> None:
     """Test --delete-current uses slot unassign command in deferred script."""
     runner = CliRunner()
