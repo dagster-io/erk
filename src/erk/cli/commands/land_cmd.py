@@ -296,8 +296,7 @@ def _check_learn_status_and_prompt(
         return
 
     # Skip learn check for learn plans (they don't need to be learned from)
-    plan_id = str(plan_issue_number)
-    plan_result = ctx.plan_store.get_plan(repo_root, plan_id)
+    plan_result = ctx.plan_store.get_plan(repo_root, str(plan_issue_number))
     if isinstance(plan_result, PlanNotFound):
         user_output(click.style("Warning: ", fg="yellow") + f"Issue #{plan_issue_number} not found")
         return
@@ -305,7 +304,9 @@ def _check_learn_status_and_prompt(
         return
 
     # Check learn_status from plan header metadata
-    learn_status = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_status")
+    learn_status = ctx.plan_backend.get_metadata_field(
+        repo_root, str(plan_issue_number), "learn_status"
+    )
     if isinstance(learn_status, PlanNotFound):
         return
 
