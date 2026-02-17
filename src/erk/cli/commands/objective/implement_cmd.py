@@ -30,6 +30,7 @@ from erk_shared.gateway.github.metadata.core import extract_metadata_value
 from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
     graph_from_phases,
+    phases_from_graph,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
@@ -116,15 +117,15 @@ def _resolve_next(
         raise click.ClickException(result.error)
     assert isinstance(result, ObjectiveValidationSuccess)  # type narrowing
 
-    if not result.phases:
+    if not result.graph.nodes:
         raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
 
-    graph = graph_from_phases(result.phases)
-    next_node = graph.next_node()
+    next_node = result.graph.next_node()
     if next_node is None:
         raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
 
-    found = _find_node_in_phases(result.phases, next_node.id)
+    phases = phases_from_graph(result.graph)
+    found = _find_node_in_phases(phases, next_node.id)
     if found is None:
         raise click.ClickException(
             f"Internal error: next node '{next_node.id}' not found in phases"
@@ -375,11 +376,13 @@ def _handle_one_shot(
 
         assert isinstance(result, ObjectiveValidationSuccess)
 
-        if not result.phases:
+        if not result.graph.nodes:
             raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
 
+        phases = phases_from_graph(result.graph)
+
         if node_id is not None:
-            found = _find_node_in_phases(result.phases, node_id)
+            found = _find_node_in_phases(phases, node_id)
             if found is None:
                 raise click.ClickException(
                     f"Node '{node_id}' not found in objective #{issue_number}"
@@ -393,7 +396,7 @@ def _handle_one_shot(
                     + f" Objective #{issue_number} has no pending steps."
                 )
                 return
-            found = _find_node_in_phases(result.phases, result.next_step["id"])
+            found = _find_node_in_phases(phases, result.next_step["id"])
             if found is None:
                 raise click.ClickException(
                     f"Internal error: next_step '{result.next_step['id']}' not found"

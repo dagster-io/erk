@@ -15,12 +15,16 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
 )
+from erk_shared.gateway.github.metadata.dependency_graph import (
+    DependencyGraph,
+    compute_graph_summary,
+    find_graph_next_step,
+    graph_from_phases,
+    phases_from_graph,
+    serialize_graph_phases,
+)
 from erk_shared.gateway.github.metadata.roadmap import (
-    RoadmapPhase,
-    compute_summary,
-    find_next_step,
     parse_roadmap,
-    serialize_phases,
 )
 from erk_shared.output.output import user_output
 
@@ -35,8 +39,8 @@ class ObjectiveValidationSuccess:
         passed: True if all validation checks passed
         checks: List of (passed, description) tuples for each check
         failed_count: Number of failed checks
-        phases: Parsed roadmap phases (empty if parsing failed)
-        summary: Step count summary (empty if no phases)
+        graph: Dependency graph of roadmap nodes (empty if parsing failed)
+        summary: Step count summary (empty if no graph nodes)
         next_step: First pending step or None
         validation_errors: Parser-level warnings from roadmap parsing
     """
@@ -44,7 +48,7 @@ class ObjectiveValidationSuccess:
     passed: bool
     checks: list[tuple[bool, str]]
     failed_count: int
-    phases: list[RoadmapPhase]
+    graph: DependencyGraph
     summary: dict[str, int]
     next_step: dict[str, str] | None
     validation_errors: list[str]
@@ -107,36 +111,37 @@ def validate_objective(
             passed=False,
             checks=checks,
             failed_count=failed_count,
-            phases=[],
+            graph=DependencyGraph(nodes=()),
             summary={},
             next_step=None,
             validation_errors=validation_errors,
         )
 
-    # Check 3: Status/PR consistency
+    graph = graph_from_phases(phases)
+
+    # Check 3: Status/PR consistency (iterate graph nodes)
     consistency_issues: list[str] = []
-    for phase in phases:
-        for step in phase.steps:
-            # Steps with PR #NNN should be in_progress or done (or planning/skipped)
-            if (
-                step.pr
-                and step.pr.startswith("#")
-                and step.status not in ("in_progress", "done", "planning", "skipped")
-            ):
-                consistency_issues.append(
-                    f"Step {step.id} has PR {step.pr} but status is '{step.status}' "
-                    f"(expected 'in_progress' or 'done')"
-                )
-            # Steps with plan reference should be in_progress (or planning/skipped)
-            if (
-                step.plan
-                and step.plan.startswith("#")
-                and step.status not in ("in_progress", "planning", "skipped")
-            ):
-                consistency_issues.append(
-                    f"Step {step.id} has plan {step.plan} but status is '{step.status}' "
-                    f"(expected 'in_progress')"
-                )
+    for node in graph.nodes:
+        # Steps with PR #NNN should be in_progress or done (or planning/skipped)
+        if (
+            node.pr
+            and node.pr.startswith("#")
+            and node.status not in ("in_progress", "done", "planning", "skipped")
+        ):
+            consistency_issues.append(
+                f"Step {node.id} has PR {node.pr} but status is '{node.status}' "
+                f"(expected 'in_progress' or 'done')"
+            )
+        # Steps with plan reference should be in_progress (or planning/skipped)
+        if (
+            node.plan
+            and node.plan.startswith("#")
+            and node.status not in ("in_progress", "planning", "skipped")
+        ):
+            consistency_issues.append(
+                f"Step {node.id} has plan {node.plan} but status is '{node.status}' "
+                f"(expected 'in_progress')"
+            )
 
     if not consistency_issues:
         checks.append((True, "Status/PR consistency"))
@@ -145,10 +150,9 @@ def validate_objective(
 
     # Check 4: No orphaned done statuses (done steps should have PR reference)
     orphaned: list[str] = []
-    for phase in phases:
-        for step in phase.steps:
-            if step.status == "done" and step.pr is None:
-                orphaned.append(f"Step {step.id}")
+    for node in graph.nodes:
+        if node.status == "done" and node.pr is None:
+            orphaned.append(f"Step {node.id}")
 
     if not orphaned:
         checks.append((True, "No orphaned done statuses (done steps have PR references)"))
@@ -175,27 +179,26 @@ def validate_objective(
 
     # Check 7: Plan/PR references use # prefix (e.g., "#7146" not "7146")
     invalid_refs: list[str] = []
-    for phase in phases:
-        for step in phase.steps:
-            if step.plan and not step.plan.startswith("#"):
-                invalid_refs.append(f"Step {step.id} plan '{step.plan}' missing '#' prefix")
-            if step.pr and not step.pr.startswith("#"):
-                invalid_refs.append(f"Step {step.id} PR '{step.pr}' missing '#' prefix")
+    for node in graph.nodes:
+        if node.plan and not node.plan.startswith("#"):
+            invalid_refs.append(f"Step {node.id} plan '{node.plan}' missing '#' prefix")
+        if node.pr and not node.pr.startswith("#"):
+            invalid_refs.append(f"Step {node.id} PR '{node.pr}' missing '#' prefix")
 
     if not invalid_refs:
         checks.append((True, "Plan/PR references use '#' prefix"))
     else:
         checks.append((False, f"Invalid reference format: {invalid_refs[0]}"))
 
-    summary = compute_summary(phases)
-    next_step = find_next_step(phases)
+    summary = compute_graph_summary(graph)
+    next_step = find_graph_next_step(graph, phases)
     failed_count = sum(1 for passed, _ in checks if not passed)
 
     return ObjectiveValidationSuccess(
         passed=failed_count == 0,
         checks=checks,
         failed_count=failed_count,
-        phases=phases,
+        graph=graph,
         summary=summary,
         next_step=next_step,
         validation_errors=validation_errors,
@@ -246,9 +249,7 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
         )
         raise SystemExit(1)
 
-    all_complete = all(
-        step.status in ("done", "skipped") for phase in result.phases for step in phase.steps
-    )
+    phases = phases_from_graph(result.graph)
 
     click.echo(
         json.dumps(
@@ -258,11 +259,11 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
                 "checks": [
                     {"passed": passed, "description": desc} for passed, desc in result.checks
                 ],
-                "phases": serialize_phases(result.phases),
+                "phases": serialize_graph_phases(result.graph, phases),
                 "summary": result.summary,
                 "next_step": result.next_step,
                 "validation_errors": result.validation_errors,
-                "all_complete": all_complete,
+                "all_complete": result.graph.is_complete(),
             }
         )
     )

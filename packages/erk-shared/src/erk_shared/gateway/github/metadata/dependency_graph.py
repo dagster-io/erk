@@ -15,6 +15,8 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapStep,
     RoadmapStepStatus,
     group_steps_by_phase,
+    parse_v2_roadmap,
+    serialize_phases,
 )
 
 _TERMINAL_STATUSES: set[RoadmapStepStatus] = {"done", "skipped"}
@@ -127,6 +129,123 @@ def steps_from_graph(graph: DependencyGraph) -> list[RoadmapStep]:
 def phases_from_graph(graph: DependencyGraph) -> list[RoadmapPhase]:
     """Convert graph back to phases (inverse of graph_from_phases).
 
-    Phase names are placeholders — use _enrich_phase_names() to restore from body text.
+    Phase names are placeholders — use enrich_phase_names() to restore from body text.
     """
     return group_steps_by_phase(steps_from_graph(graph))
+
+
+def compute_graph_summary(graph: DependencyGraph) -> dict[str, int]:
+    """Compute summary statistics from graph nodes directly.
+
+    Returns the same dict format as compute_summary(phases).
+    """
+    total = 0
+    pending = 0
+    planning = 0
+    done = 0
+    in_progress = 0
+    blocked = 0
+    skipped = 0
+
+    for node in graph.nodes:
+        total += 1
+        if node.status == "pending":
+            pending += 1
+        elif node.status == "planning":
+            planning += 1
+        elif node.status == "done":
+            done += 1
+        elif node.status == "in_progress":
+            in_progress += 1
+        elif node.status == "blocked":
+            blocked += 1
+        elif node.status == "skipped":
+            skipped += 1
+
+    return {
+        "total_steps": total,
+        "pending": pending,
+        "planning": planning,
+        "done": done,
+        "in_progress": in_progress,
+        "blocked": blocked,
+        "skipped": skipped,
+    }
+
+
+def find_graph_next_step(
+    graph: DependencyGraph, phases: list[RoadmapPhase]
+) -> dict[str, str] | None:
+    """Find the first pending node by graph order, returning the dict format needed by JSON APIs.
+
+    Matches the behavior of find_next_step(phases): returns the first pending node
+    regardless of dependency satisfaction. This is the correct semantic for JSON output
+    consumers that need "what comes next" in the roadmap.
+
+    For dependency-aware selection (only unblocked nodes), use graph.next_node() directly.
+
+    Args:
+        graph: The dependency graph
+        phases: Phases for phase name lookup
+
+    Returns:
+        Dict with {id, description, phase} or None if no pending nodes.
+    """
+    target_node: ObjectiveNode | None = None
+    for node in graph.nodes:
+        if node.status == "pending":
+            target_node = node
+            break
+
+    if target_node is None:
+        return None
+
+    # Find the phase containing this node
+    phase_name = ""
+    for phase in phases:
+        if any(step.id == target_node.id for step in phase.steps):
+            phase_name = phase.name
+            break
+
+    return {
+        "id": target_node.id,
+        "description": target_node.description,
+        "phase": phase_name,
+    }
+
+
+def serialize_graph_phases(
+    graph: DependencyGraph, phases: list[RoadmapPhase]
+) -> list[dict[str, object]]:
+    """Serialize phases derived from graph for backwards-compatible JSON output.
+
+    Delegates to serialize_phases() using the provided phases.
+
+    Args:
+        graph: The dependency graph (used for consistency verification)
+        phases: Phases with display metadata (names from markdown headers)
+
+    Returns:
+        JSON-serializable list of phase dicts.
+    """
+    return serialize_phases(phases)
+
+
+def parse_graph(body: str) -> tuple[DependencyGraph, list[RoadmapPhase], list[str]] | None:
+    """Parse a v2 roadmap body into both graph and phases.
+
+    Convenience function combining parse_v2_roadmap + graph_from_phases.
+    Most callers need both graph (for logic) and phases (for display grouping).
+
+    Args:
+        body: Full objective body text with metadata blocks and markdown headers.
+
+    Returns:
+        (graph, enriched_phases, errors) or None if body is not v2 format.
+    """
+    v2_result = parse_v2_roadmap(body)
+    if v2_result is None:
+        return None
+    phases, errors = v2_result
+    graph = graph_from_phases(phases)
+    return (graph, phases, errors)

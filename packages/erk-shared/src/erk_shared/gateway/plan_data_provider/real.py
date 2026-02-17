@@ -24,6 +24,11 @@ from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
     extract_objective_header_comment_id,
 )
+from erk_shared.gateway.github.metadata.dependency_graph import (
+    compute_graph_summary,
+    find_graph_next_step,
+    graph_from_phases,
+)
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
@@ -38,8 +43,6 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_worktree_name,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
-    compute_summary,
-    find_next_step,
     parse_roadmap,
 )
 from erk_shared.gateway.github.types import (
@@ -595,11 +598,12 @@ class RealPlanDataProvider(PlanDataProvider):
         if plan.body:
             phases, _errors = parse_roadmap(plan.body)
             if phases:
-                summary = compute_summary(phases)
+                graph = graph_from_phases(phases)
+                summary = compute_graph_summary(graph)
                 objective_done_steps = summary["done"]
                 objective_total_steps = summary["total_steps"]
                 objective_progress_display = f"{objective_done_steps}/{objective_total_steps}"
-                next_step = find_next_step(phases)
+                next_step = find_graph_next_step(graph, phases)
                 if next_step is not None:
                     step_text = f"{next_step['id']} {next_step['description']}"
                     if len(step_text) > 60:

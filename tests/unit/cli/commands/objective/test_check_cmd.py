@@ -416,7 +416,7 @@ def test_validate_objective_returns_success_type() -> None:
 
     assert isinstance(result, ObjectiveValidationSuccess)
     assert result.passed is True
-    assert len(result.phases) == 2
+    assert len(result.graph.nodes) == 6
     assert result.summary["total_steps"] == 6
 
 

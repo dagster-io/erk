@@ -33,12 +33,15 @@ from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
 )
+from erk_shared.gateway.github.metadata.dependency_graph import (
+    compute_graph_summary,
+    find_graph_next_step,
+    graph_from_phases,
+    serialize_graph_phases,
+)
 from erk_shared.gateway.github.metadata.roadmap import (
-    compute_summary,
-    find_next_step,
     group_steps_by_phase,
     parse_roadmap_frontmatter,
-    serialize_phases,
 )
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.objective_fetch_context_result import (
@@ -93,22 +96,20 @@ def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapCont
         )
 
     phases = group_steps_by_phase(steps)
+    graph = graph_from_phases(phases)
 
     plan_ref = f"#{plan_number}"
     matched_steps = [step.id for step in steps if step.plan == plan_ref]
 
-    summary = compute_summary(phases)
-    next_step = find_next_step(phases)
-    all_complete = all(
-        step.status in ("done", "skipped") for phase in phases for step in phase.steps
-    )
+    summary = compute_graph_summary(graph)
+    next_step = find_graph_next_step(graph, phases)
 
     return RoadmapContextDict(
-        phases=serialize_phases(phases),
+        phases=serialize_graph_phases(graph, phases),
         matched_steps=matched_steps,
         summary=summary,
         next_step=next_step,
-        all_complete=all_complete,
+        all_complete=graph.is_complete(),
     )
 
 
