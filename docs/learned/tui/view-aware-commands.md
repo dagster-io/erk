@@ -51,10 +51,10 @@ Plan and objective commands safely reuse the same keyboard shortcuts because the
 
 | Shortcut | Plan View Command    | Objectives View Command |
 | -------- | -------------------- | ----------------------- |
-| `s`      | Submit to Queue      | Next Plan (One-Shot)    |
+| `s`      | Submit to Queue      | Implement (One-Shot)    |
 | `5`      | Fix Conflicts Remote | Check Objective         |
 | `i`      | Open Issue           | Open Objective          |
-| `1`      | Copy Prepare         | Copy Next Plan          |
+| `1`      | Copy Prepare         | Copy Implement          |
 | `3`      | Copy Submit          | Copy View               |
 
 A shortcut collision would only occur if both a plan and objective command with the same shortcut had overlapping view predicates. The `_is_plan_view` / `_is_objectives_view` split prevents this.
@@ -67,11 +67,11 @@ Six objective commands are registered, spanning all three categories:
 
 | ID                   | Category | Shortcut | Display Name Generator                 |
 | -------------------- | -------- | -------- | -------------------------------------- |
-| `one_shot_next_plan` | ACTION   | `s`      | `erk objective next-plan N --one-shot` |
+| `one_shot_implement` | ACTION   | `s`      | `erk objective implement N --one-shot` |
 | `check_objective`    | ACTION   | `5`      | `erk objective check N`                |
 | `close_objective`    | ACTION   | —        | `erk objective close N --force`        |
 | `open_objective`     | OPEN     | `i`      | Issue URL or "Objective"               |
-| `copy_next_plan`     | COPY     | `1`      | `erk objective next-plan N`            |
+| `copy_implement`     | COPY     | `1`      | `erk objective implement N`            |
 | `copy_view`          | COPY     | `3`      | `erk objective view N`                 |
 
 All six use `_is_objectives_view(ctx)` as their sole view predicate. Objective commands don't have compound availability conditions (unlike plan commands which check for PR, issue URL, etc.) because objective rows always have an issue number.

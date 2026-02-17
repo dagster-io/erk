@@ -49,7 +49,7 @@ Every tracking list uses a typed tuple with a specific field order. The conventi
 | `_added_comments`   | `(issue_number, body, comment_id)` | `(42, "comment", 100)`            |
 | `_created_labels`   | `(label, description, color)`      | `("bug", "Bug report", "ff0000")` |
 | `_closed_issues`    | `int` (issue_number)               | `42`                              |
-| `_added_reactions`  | `(issue_number, reaction)`         | `(42, "+1")`                      |
+| `_added_reactions`  | `(comment_id, reaction)`           | `(100, "+1")`                     |
 | `_updated_bodies`   | `(issue_number, body)`             | `(42, "new body")`                |
 | `_updated_titles`   | `(issue_number, title)`            | `(42, "new title")`               |
 | `_updated_comments` | `(comment_id, body)`               | `(100, "updated")`                |
