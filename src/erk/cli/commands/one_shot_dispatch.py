@@ -7,12 +7,18 @@ dispatch tasks through the same CI workflow.
 
 import logging
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 import click
 
+from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.github.metadata.core import (
+    create_submission_queued_block,
+    render_erk_issue_event,
+)
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
 from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.gateway.time.abc import Time
@@ -256,9 +262,14 @@ def dispatch_one_shot(
             inputs=inputs,
         )
 
-        # Update PR body with workflow run link (best-effort)
+        # Compute run_url and queued_at for use in PR body update, metadata, and comment
+        run_url: str | None = None
         if repo.github is not None:
             run_url = construct_workflow_run_url(repo.github.owner, repo.github.repo, run_id)
+        queued_at = datetime.now(UTC).isoformat()
+
+        # Update PR body with workflow run link (best-effort)
+        if run_url is not None:
             try:
                 pr_body = (
                     f"Autonomous one-shot execution.\n\n"
@@ -269,15 +280,60 @@ def dispatch_one_shot(
             except Exception as e:
                 logger.warning("Failed to update stub PR body with workflow run link: %s", e)
 
+        # Write dispatch metadata and post queued comment (best-effort, only if plan issue exists)
+        if plan_issue_number is not None:
+            # Write dispatch metadata to plan issue
+            try:
+                write_dispatch_metadata(
+                    plan_backend=ctx.plan_backend,
+                    github=ctx.github,
+                    repo_root=repo.root,
+                    issue_number=plan_issue_number,
+                    run_id=run_id,
+                    dispatched_at=queued_at,
+                )
+                user_output(
+                    click.style("\u2713", fg="green") + " Dispatch metadata written to issue"
+                )
+            except Exception as e:
+                user_output(
+                    click.style("Warning: ", fg="yellow")
+                    + f"Failed to update dispatch metadata: {e}"
+                )
+
+            # Post queued event comment to plan issue
+            try:
+                metadata_block = create_submission_queued_block(
+                    queued_at=queued_at,
+                    submitted_by=submitted_by,
+                    issue_number=plan_issue_number,
+                    validation_results={"issue_is_open": True, "has_erk_plan_label": True},
+                    expected_workflow="one-shot",
+                )
+                comment_body = render_erk_issue_event(
+                    title="\U0001f504 One-Shot Dispatched",
+                    metadata=metadata_block,
+                    description=(
+                        f"One-shot submitted by **{submitted_by}** at {queued_at}.\n\n"
+                        f"**Workflow run:** {run_url}\n\n"
+                        f"**Instruction:** {params.instruction}"
+                    ),
+                )
+                ctx.issues.add_comment(repo.root, plan_issue_number, comment_body)
+                user_output(click.style("\u2713", fg="green") + " Queued event comment posted")
+            except Exception as e:
+                user_output(
+                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+                )
+
         # Restore original branch after successful workflow trigger
         ctx.branch_manager.checkout_branch(repo.root, original_branch)
 
         # Display results
         user_output("")
         user_output(click.style("Done!", fg="green", bold=True))
-        if repo.github is not None:
+        if repo.github is not None and run_url is not None:
             pr_url = f"https://github.com/{repo.github.owner}/{repo.github.repo}/pull/{pr_number}"
-            # run_url already constructed above
             user_output(f"PR: {click.style(pr_url, fg='cyan')}")
             user_output(f"Run: {click.style(run_url, fg='cyan')}")
         else:
