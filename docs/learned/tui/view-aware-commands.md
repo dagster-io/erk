@@ -49,13 +49,13 @@ This keeps command definitions in one place. Adding a command to the wrong view 
 
 Plan and objective commands safely reuse the same keyboard shortcuts because the view predicates guarantee mutual exclusivity:
 
-| Shortcut | Plan View Command | Objectives View Command |
-| -------- | ----------------- | ----------------------- |
-| `s`      | Submit to Queue   | Next Plan (One-Shot)    |
-| `5`      | Fix Conflicts Remote | Check Objective      |
-| `i`      | Open Issue        | Open Objective          |
-| `1`      | Copy Prepare      | Copy Next Plan          |
-| `3`      | Copy Submit       | Copy View               |
+| Shortcut | Plan View Command    | Objectives View Command |
+| -------- | -------------------- | ----------------------- |
+| `s`      | Submit to Queue      | Next Plan (One-Shot)    |
+| `5`      | Fix Conflicts Remote | Check Objective         |
+| `i`      | Open Issue           | Open Objective          |
+| `1`      | Copy Prepare         | Copy Next Plan          |
+| `3`      | Copy Submit          | Copy View               |
 
 A shortcut collision would only occur if both a plan and objective command with the same shortcut had overlapping view predicates. The `_is_plan_view` / `_is_objectives_view` split prevents this.
 
