@@ -12,6 +12,7 @@ from erk.core.capabilities.base import (
     CapabilityScope,
     ManagedArtifact,
 )
+from erk_shared.context.types import AgentBackend
 
 
 class LearnWorkflowCapability(Capability):
@@ -51,11 +52,11 @@ class LearnWorkflowCapability(Capability):
         """Declare learn workflow as managed artifact."""
         return [ManagedArtifact(name="learn", artifact_type="workflow")]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
         return (repo_root / ".github" / "workflows" / "learn.yml").exists()
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
 
         bundled_github_dir = get_bundled_github_dir()
@@ -84,7 +85,7 @@ class LearnWorkflowCapability(Capability):
             message="Installed learn workflow",
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove the learn workflow."""
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
 

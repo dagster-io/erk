@@ -9,6 +9,7 @@ from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash,
 from erk.artifacts.models import ArtifactFileState, ArtifactState
 from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir, get_bundled_github_dir
 from erk.artifacts.state import load_installed_capabilities, save_artifact_state
+from erk_shared.context.types import AgentBackend
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
@@ -35,14 +36,20 @@ class ArtifactSyncConfig:
     package: ErkPackageInfo
     installed_capabilities: frozenset[str]
     sync_capabilities: bool  # False in tests to avoid capability install overwriting test fixtures
+    backend: AgentBackend = "claude"  # Agent backend for capability operations
 
 
-def create_artifact_sync_config(project_dir: Path) -> ArtifactSyncConfig:
+def create_artifact_sync_config(
+    project_dir: Path,
+    *,
+    backend: AgentBackend = "claude",
+) -> ArtifactSyncConfig:
     """Create config with real values for production use."""
     return ArtifactSyncConfig(
         package=ErkPackageInfo.from_project_dir(project_dir),
         installed_capabilities=load_installed_capabilities(project_dir),
         sync_capabilities=True,
+        backend=backend,
     )
 
 
@@ -721,9 +728,10 @@ def sync_artifacts(
     if config.sync_capabilities:
         from erk.core.capabilities.registry import list_capabilities
 
+        backend = config.backend
         for cap in list_capabilities():
-            if cap.scope == "project" and cap.is_installed(project_dir):
-                cap.install(project_dir)
+            if cap.scope == "project" and cap.is_installed(project_dir, backend=backend):
+                cap.install(project_dir, backend=backend)
 
     # Build per-artifact state from synced artifacts
     files: dict[str, ArtifactFileState] = {}

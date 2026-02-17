@@ -14,6 +14,7 @@ from erk.core.capabilities.base import (
     CapabilityScope,
     ManagedArtifact,
 )
+from erk_shared.context.types import AgentBackend
 
 
 class ReviewCapability(Capability):
@@ -61,13 +62,13 @@ class ReviewCapability(Capability):
         """Declare the review as a managed artifact."""
         return [ManagedArtifact(name=self.review_name, artifact_type="review")]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if the review file exists."""
         if repo_root is None:
             return False
         return (repo_root / ".erk" / "reviews" / f"{self.review_name}.md").exists()
 
-    def preflight(self, repo_root: Path | None) -> CapabilityResult:
+    def preflight(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Check that code-reviews-system capability is installed."""
         if repo_root is None:
             return CapabilityResult(
@@ -84,7 +85,7 @@ class ReviewCapability(Capability):
             )
         return CapabilityResult(success=True, message="")
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Install the review using bundled artifacts."""
         import shutil
 
@@ -127,7 +128,7 @@ class ReviewCapability(Capability):
             message=f"Installed .erk/reviews/{self.review_name}.md",
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Uninstall the review by deleting its file."""
         if repo_root is None:
             return CapabilityResult(

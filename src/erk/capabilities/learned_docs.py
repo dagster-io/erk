@@ -3,14 +3,16 @@
 import shutil
 from pathlib import Path
 
-from erk.artifacts.paths import get_bundled_claude_dir
+from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
     ManagedArtifact,
+    backend_agent_dir,
 )
+from erk_shared.context.types import AgentBackend
 
 LEARNED_DOCS_README = """\
 ---
@@ -207,19 +209,26 @@ class LearnedDocsCapability(Capability):
             ManagedArtifact(name="learn", artifact_type="agent"),
         ]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if all three learned-docs directories exist."""
         assert repo_root is not None, "LearnedDocsCapability requires repo_root"
+        agent_dir = backend_agent_dir(backend)
         return (
             (repo_root / "docs" / "learned").exists()
-            and (repo_root / ".claude" / "skills" / "learned-docs").exists()
-            and (repo_root / ".claude" / "agents" / "learn").exists()
+            and (repo_root / agent_dir / "skills" / "learned-docs").exists()
+            and (repo_root / agent_dir / "agents" / "learn").exists()
         )
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Create docs/learned/ directory, learned-docs skill, learn command, and learn agent."""
         assert repo_root is not None, "LearnedDocsCapability requires repo_root"
         created_files: list[str] = []
+
+        agent_dir = backend_agent_dir(backend)
+        if backend == "codex":
+            bundled_dir = get_bundled_codex_dir()
+        else:
+            bundled_dir = get_bundled_claude_dir()
 
         # Create docs/learned/ directory
         docs_dir = repo_root / "docs" / "learned"
@@ -236,34 +245,33 @@ class LearnedDocsCapability(Capability):
             # by 'erk docs sync' from document frontmatter
 
         # Create skill
-        skill_dir = repo_root / ".claude" / "skills" / "learned-docs"
+        skill_dir = repo_root / agent_dir / "skills" / "learned-docs"
         if not skill_dir.exists():
             skill_dir.mkdir(parents=True)
-            created_files.append(".claude/skills/learned-docs/")
+            created_files.append(f"{agent_dir}/skills/learned-docs/")
 
         skill_file = skill_dir / "SKILL.md"
         if not skill_file.exists():
             skill_file.write_text(LEARNED_DOCS_SKILL, encoding="utf-8")
-            created_files.append(".claude/skills/learned-docs/SKILL.md")
+            created_files.append(f"{agent_dir}/skills/learned-docs/SKILL.md")
 
         # Copy learn agent directory from bundled artifacts
-        bundled_claude_dir = get_bundled_claude_dir()
-        learn_agent_src = bundled_claude_dir / "agents" / "learn"
-        learn_agent_dst = repo_root / ".claude" / "agents" / "learn"
+        learn_agent_src = bundled_dir / "agents" / "learn"
+        learn_agent_dst = repo_root / agent_dir / "agents" / "learn"
 
         if learn_agent_src.exists() and not learn_agent_dst.exists():
             learn_agent_dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copytree(learn_agent_src, learn_agent_dst)
-            created_files.append(".claude/agents/learn/")
+            created_files.append(f"{agent_dir}/agents/learn/")
 
         # Copy learn command from bundled artifacts
-        learn_cmd_src = bundled_claude_dir / "commands" / "erk" / "learn.md"
-        learn_cmd_dst = repo_root / ".claude" / "commands" / "erk" / "learn.md"
+        learn_cmd_src = bundled_dir / "commands" / "erk" / "learn.md"
+        learn_cmd_dst = repo_root / agent_dir / "commands" / "erk" / "learn.md"
 
         if learn_cmd_src.exists() and not learn_cmd_dst.exists():
             learn_cmd_dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(learn_cmd_src, learn_cmd_dst)
-            created_files.append(".claude/commands/erk/learn.md")
+            created_files.append(f"{agent_dir}/commands/erk/learn.md")
 
         if not created_files:
             return CapabilityResult(
@@ -277,29 +285,30 @@ class LearnedDocsCapability(Capability):
             created_files=tuple(created_files),
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove docs/learned/ directory, learned-docs skill, learn command, and learn agent."""
         assert repo_root is not None, "LearnedDocsCapability requires repo_root"
 
         removed: list[str] = []
+        agent_dir = backend_agent_dir(backend)
 
         # Remove skill directory
-        skill_dir = repo_root / ".claude" / "skills" / "learned-docs"
+        skill_dir = repo_root / agent_dir / "skills" / "learned-docs"
         if skill_dir.exists():
             shutil.rmtree(skill_dir)
-            removed.append(".claude/skills/learned-docs/")
+            removed.append(f"{agent_dir}/skills/learned-docs/")
 
         # Remove learn agent directory
-        learn_agent_dir = repo_root / ".claude" / "agents" / "learn"
+        learn_agent_dir = repo_root / agent_dir / "agents" / "learn"
         if learn_agent_dir.exists():
             shutil.rmtree(learn_agent_dir)
-            removed.append(".claude/agents/learn/")
+            removed.append(f"{agent_dir}/agents/learn/")
 
         # Remove learn command file
-        learn_cmd_file = repo_root / ".claude" / "commands" / "erk" / "learn.md"
+        learn_cmd_file = repo_root / agent_dir / "commands" / "erk" / "learn.md"
         if learn_cmd_file.exists():
             learn_cmd_file.unlink()
-            removed.append(".claude/commands/erk/learn.md")
+            removed.append(f"{agent_dir}/commands/erk/learn.md")
 
         # Preserve docs/learned/ - it contains user-created documentation
 

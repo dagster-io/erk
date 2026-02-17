@@ -16,6 +16,7 @@ from erk.core.claude_settings import (
     has_ruff_format_hook,
     write_claude_settings,
 )
+from erk_shared.context.types import AgentBackend
 
 
 class RuffFormatCapability(Capability):
@@ -47,11 +48,15 @@ class RuffFormatCapability(Capability):
         return []
 
     @property
+    def supported_backends(self) -> tuple[AgentBackend, ...]:
+        return ("claude",)
+
+    @property
     def managed_artifacts(self) -> list[ManagedArtifact]:
         """Declare ruff-format hook as managed artifact."""
         return [ManagedArtifact(name="ruff-format-hook", artifact_type="hook")]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if the ruff format hook is configured in settings.json."""
         if repo_root is None:
             return False
@@ -67,7 +72,7 @@ class RuffFormatCapability(Capability):
 
         return has_ruff_format_hook(settings)
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Add ruff format hook to .claude/settings.json."""
         if repo_root is None:
             return CapabilityResult(
@@ -112,7 +117,7 @@ class RuffFormatCapability(Capability):
             created_files=tuple(created_files),
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove ruff format hook from .claude/settings.json."""
         from erk.core.claude_settings import remove_ruff_format_hook
 

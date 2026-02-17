@@ -18,6 +18,7 @@ from erk.core.claude_settings import (
     has_user_prompt_hook,
     write_claude_settings,
 )
+from erk_shared.context.types import AgentBackend
 
 
 class HooksCapability(Capability):
@@ -60,11 +61,15 @@ class HooksCapability(Capability):
         ]
 
     @property
+    def supported_backends(self) -> tuple[AgentBackend, ...]:
+        return ("claude",)
+
+    @property
     def required(self) -> bool:
         """Hooks are required for erk to function properly."""
         return True
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if both erk hooks are configured in settings.json with CURRENT commands.
 
         This checks for exact command match, not just marker presence.
@@ -119,7 +124,7 @@ class HooksCapability(Capability):
 
         return has_user_prompt or has_exit_plan
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Add or update erk hooks in .claude/settings.json.
 
         This method is idempotent - it will replace any existing erk hooks
@@ -177,7 +182,7 @@ class HooksCapability(Capability):
             created_files=tuple(created_files),
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Uninstall is blocked for required capabilities.
 
         Note: The CLI should block uninstall of required capabilities.

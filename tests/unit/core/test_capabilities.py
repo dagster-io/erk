@@ -106,7 +106,7 @@ def test_learned_docs_capability_description() -> None:
 def test_learned_docs_is_installed_false_when_missing(tmp_path: Path) -> None:
     """Test that is_installed returns False when docs/learned/ doesn't exist."""
     cap = LearnedDocsCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_learned_docs_is_installed_true_when_all_three_dirs_exist(tmp_path: Path) -> None:
@@ -115,28 +115,28 @@ def test_learned_docs_is_installed_true_when_all_three_dirs_exist(tmp_path: Path
     (tmp_path / ".claude" / "skills" / "learned-docs").mkdir(parents=True)
     (tmp_path / ".claude" / "agents" / "learn").mkdir(parents=True)
     cap = LearnedDocsCapability()
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_learned_docs_is_installed_false_when_only_docs_learned(tmp_path: Path) -> None:
     """Test that is_installed returns False when only docs/learned/ exists."""
     (tmp_path / "docs" / "learned").mkdir(parents=True)
     cap = LearnedDocsCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_learned_docs_is_installed_false_when_only_skill(tmp_path: Path) -> None:
     """Test that is_installed returns False when only the skill directory exists."""
     (tmp_path / ".claude" / "skills" / "learned-docs").mkdir(parents=True)
     cap = LearnedDocsCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_learned_docs_is_installed_false_when_only_agents(tmp_path: Path) -> None:
     """Test that is_installed returns False when only the agents directory exists."""
     (tmp_path / ".claude" / "agents" / "learn").mkdir(parents=True)
     cap = LearnedDocsCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_learned_docs_is_installed_false_when_two_of_three(tmp_path: Path) -> None:
@@ -144,13 +144,13 @@ def test_learned_docs_is_installed_false_when_two_of_three(tmp_path: Path) -> No
     (tmp_path / "docs" / "learned").mkdir(parents=True)
     (tmp_path / ".claude" / "skills" / "learned-docs").mkdir(parents=True)
     cap = LearnedDocsCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_learned_docs_install_creates_directory(tmp_path: Path) -> None:
     """Test that install creates docs/learned/ directory."""
     cap = LearnedDocsCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert (tmp_path / "docs" / "learned").is_dir()
@@ -159,7 +159,7 @@ def test_learned_docs_install_creates_directory(tmp_path: Path) -> None:
 def test_learned_docs_install_creates_readme(tmp_path: Path) -> None:
     """Test that install creates README.md in docs/learned/."""
     cap = LearnedDocsCapability()
-    cap.install(tmp_path)
+    cap.install(tmp_path, backend="claude")
 
     readme_path = tmp_path / "docs" / "learned" / "README.md"
     assert readme_path.exists()
@@ -171,7 +171,7 @@ def test_learned_docs_install_creates_readme(tmp_path: Path) -> None:
 def test_learned_docs_install_creates_index(tmp_path: Path) -> None:
     """Test that install creates index.md in docs/learned/."""
     cap = LearnedDocsCapability()
-    cap.install(tmp_path)
+    cap.install(tmp_path, backend="claude")
 
     index_path = tmp_path / "docs" / "learned" / "index.md"
     assert index_path.exists()
@@ -188,7 +188,7 @@ def test_learned_docs_install_creates_docs_learned_directory(tmp_path: Path) -> 
     by 'erk docs sync' from document frontmatter, not during capability install.
     """
     cap = LearnedDocsCapability()
-    cap.install(tmp_path)
+    cap.install(tmp_path, backend="claude")
 
     docs_dir = tmp_path / "docs" / "learned"
     assert docs_dir.exists()
@@ -201,12 +201,12 @@ def test_learned_docs_install_idempotent(tmp_path: Path) -> None:
     cap = LearnedDocsCapability()
 
     # First install
-    result1 = cap.install(tmp_path)
+    result1 = cap.install(tmp_path, backend="claude")
     assert result1.success is True
     assert "Created" in result1.message
 
     # Second install
-    result2 = cap.install(tmp_path)
+    result2 = cap.install(tmp_path, backend="claude")
     assert result2.success is True
     assert "already exists" in result2.message
 
@@ -216,7 +216,7 @@ def test_learned_docs_install_when_docs_exists_but_not_learned(tmp_path: Path) -
     (tmp_path / "docs").mkdir()
     cap = LearnedDocsCapability()
 
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert (tmp_path / "docs" / "learned").is_dir()
@@ -268,9 +268,9 @@ def test_learned_docs_artifacts() -> None:
 def test_learned_docs_uninstall_preserves_docs_learned(tmp_path: Path) -> None:
     """Test that uninstall preserves docs/learned/ directory."""
     cap = LearnedDocsCapability()
-    cap.install(tmp_path)
+    cap.install(tmp_path, backend="claude")
 
-    result = cap.uninstall(tmp_path)
+    result = cap.uninstall(tmp_path, backend="claude")
 
     assert result.success is True
     assert "preserved" in result.message
@@ -280,9 +280,9 @@ def test_learned_docs_uninstall_preserves_docs_learned(tmp_path: Path) -> None:
 def test_learned_docs_uninstall_removes_skill_and_agents(tmp_path: Path) -> None:
     """Test that uninstall removes skill, agents, and command but not docs."""
     cap = LearnedDocsCapability()
-    cap.install(tmp_path)
+    cap.install(tmp_path, backend="claude")
 
-    result = cap.uninstall(tmp_path)
+    result = cap.uninstall(tmp_path, backend="claude")
 
     assert result.success is True
     assert not (tmp_path / ".claude" / "skills" / "learned-docs").exists()
@@ -294,7 +294,7 @@ def test_learned_docs_uninstall_removes_skill_and_agents(tmp_path: Path) -> None
 def test_learned_docs_uninstall_when_not_installed(tmp_path: Path) -> None:
     """Test that uninstall succeeds when nothing is installed."""
     cap = LearnedDocsCapability()
-    result = cap.uninstall(tmp_path)
+    result = cap.uninstall(tmp_path, backend="claude")
 
     assert result.success is True
     assert "not installed" in result.message
@@ -340,11 +340,11 @@ class _TestCapability(Capability):
     def artifacts(self) -> list[CapabilityArtifact]:
         return [CapabilityArtifact(path=".test-cap", artifact_type="file")]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: str) -> bool:
         assert repo_root is not None, "_TestCapability requires repo_root"
         return (repo_root / ".test-cap").exists()
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: str) -> CapabilityResult:
         assert repo_root is not None, "_TestCapability requires repo_root"
         marker = repo_root / ".test-cap"
         if marker.exists():
@@ -352,7 +352,7 @@ class _TestCapability(Capability):
         marker.write_text("installed", encoding="utf-8")
         return CapabilityResult(success=True, message="Installed")
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: str) -> CapabilityResult:
         assert repo_root is not None, "_TestCapability requires repo_root"
         marker = repo_root / ".test-cap"
         if not marker.exists():
@@ -366,18 +366,18 @@ def test_custom_capability_install_and_is_installed(tmp_path: Path) -> None:
     cap = _TestCapability()
 
     # Not installed initially
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
     # Install it
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
     assert result.success is True
     assert result.message == "Installed"
 
     # Now it's installed
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
     # Install again - idempotent
-    result2 = cap.install(tmp_path)
+    result2 = cap.install(tmp_path, backend="claude")
     assert result2.success is True
     assert result2.message == "Already installed"
 
@@ -408,7 +408,7 @@ def test_skill_capability_is_installed_false_when_missing(tmp_path: Path) -> Non
     """Test skill capability is_installed returns False when skill directory missing."""
     cap = get_capability("dignified-python")
     assert cap is not None
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_skill_capability_is_installed_true_when_exists(tmp_path: Path) -> None:
@@ -416,7 +416,7 @@ def test_skill_capability_is_installed_true_when_exists(tmp_path: Path) -> None:
     (tmp_path / ".claude" / "skills" / "dignified-python").mkdir(parents=True)
     cap = get_capability("dignified-python")
     assert cap is not None
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_skill_capability_artifacts() -> None:
@@ -478,12 +478,12 @@ def test_erk_impl_workflow_is_installed(tmp_path: Path) -> None:
     cap = ErkImplWorkflowCapability()
 
     # Not installed when workflow file missing
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
     # Installed when workflow file exists
     (tmp_path / ".github" / "workflows").mkdir(parents=True)
     (tmp_path / ".github" / "workflows" / "plan-implement.yml").write_text("", encoding="utf-8")
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_workflow_capability_registered() -> None:
@@ -516,12 +516,12 @@ def test_learn_workflow_is_installed(tmp_path: Path) -> None:
     cap = LearnWorkflowCapability()
 
     # Not installed when workflow file missing
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
     # Installed when workflow file exists
     (tmp_path / ".github" / "workflows").mkdir(parents=True)
     (tmp_path / ".github" / "workflows" / "learn.yml").write_text("", encoding="utf-8")
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_learn_workflow_capability_registered() -> None:
@@ -559,12 +559,12 @@ def test_devrun_agent_is_installed(tmp_path: Path) -> None:
     cap = DevrunAgentCapability()
 
     # Not installed when agent file missing
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
     # Installed when agent file exists
     (tmp_path / ".claude" / "agents").mkdir(parents=True)
     (tmp_path / ".claude" / "agents" / "devrun.md").write_text("", encoding="utf-8")
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_agent_capability_registered() -> None:
@@ -599,7 +599,7 @@ def test_erk_bash_permissions_artifacts() -> None:
 def test_erk_bash_permissions_is_installed_false_when_no_settings(tmp_path: Path) -> None:
     """Test is_installed returns False when settings.json doesn't exist."""
     cap = ErkBashPermissionsCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_erk_bash_permissions_is_installed_false_when_not_in_allow(tmp_path: Path) -> None:
@@ -611,7 +611,7 @@ def test_erk_bash_permissions_is_installed_false_when_not_in_allow(tmp_path: Pat
     settings_path.write_text(json.dumps({"permissions": {"allow": []}}), encoding="utf-8")
 
     cap = ErkBashPermissionsCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_erk_bash_permissions_is_installed_true_when_present(tmp_path: Path) -> None:
@@ -626,7 +626,7 @@ def test_erk_bash_permissions_is_installed_true_when_present(tmp_path: Path) -> 
     )
 
     cap = ErkBashPermissionsCapability()
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_erk_bash_permissions_install_creates_settings(tmp_path: Path) -> None:
@@ -634,7 +634,7 @@ def test_erk_bash_permissions_install_creates_settings(tmp_path: Path) -> None:
     import json
 
     cap = ErkBashPermissionsCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert ".claude/settings.json" in result.created_files
@@ -658,7 +658,7 @@ def test_erk_bash_permissions_install_adds_to_existing(tmp_path: Path) -> None:
     )
 
     cap = ErkBashPermissionsCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert "Added" in result.message
@@ -681,7 +681,7 @@ def test_erk_bash_permissions_install_idempotent(tmp_path: Path) -> None:
     )
 
     cap = ErkBashPermissionsCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert "already" in result.message
@@ -727,7 +727,7 @@ def test_statusline_is_installed_false_when_not_configured() -> None:
     cap = StatuslineCapability(claude_installation=fake_claude)
 
     # User-level capability ignores repo_root
-    assert cap.is_installed(None) is False
+    assert cap.is_installed(None, backend="claude") is False
 
 
 def test_statusline_is_installed_true_when_configured() -> None:
@@ -743,7 +743,7 @@ def test_statusline_is_installed_true_when_configured() -> None:
     cap = StatuslineCapability(claude_installation=fake_claude)
 
     # User-level capability ignores repo_root
-    assert cap.is_installed(None) is True
+    assert cap.is_installed(None, backend="claude") is True
 
 
 def test_statusline_install_configures_statusline() -> None:
@@ -751,7 +751,7 @@ def test_statusline_install_configures_statusline() -> None:
     fake_claude = FakeClaudeInstallation.for_test(settings={})
     cap = StatuslineCapability(claude_installation=fake_claude)
 
-    result = cap.install(None)
+    result = cap.install(None, backend="claude")
 
     assert result.success is True
     assert "Configured" in result.message
@@ -775,7 +775,7 @@ def test_statusline_install_idempotent() -> None:
     )
     cap = StatuslineCapability(claude_installation=fake_claude)
 
-    result = cap.install(None)
+    result = cap.install(None, backend="claude")
 
     assert result.success is True
     assert "already configured" in result.message
@@ -848,7 +848,7 @@ def test_capability_scope_values() -> None:
 def test_default_preflight_returns_success(tmp_path: Path) -> None:
     """Test that default preflight() implementation returns success."""
     cap = LearnedDocsCapability()
-    result = cap.preflight(tmp_path)
+    result = cap.preflight(tmp_path, backend="claude")
 
     assert result.success is True
     assert result.message == ""
@@ -860,7 +860,7 @@ def test_preflight_called_before_install_pattern() -> None:
     cap = LearnedDocsCapability()
 
     # Default preflight always succeeds
-    preflight_result = cap.preflight(None)
+    preflight_result = cap.preflight(None, backend="claude")
     assert preflight_result.success is True
 
 
@@ -897,7 +897,7 @@ def test_hooks_capability_artifacts() -> None:
 def test_hooks_is_installed_false_when_no_settings(tmp_path: Path) -> None:
     """Test is_installed returns False when settings.json doesn't exist."""
     cap = HooksCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_hooks_is_installed_false_when_hooks_missing(tmp_path: Path) -> None:
@@ -909,7 +909,7 @@ def test_hooks_is_installed_false_when_hooks_missing(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps({}), encoding="utf-8")
 
     cap = HooksCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_hooks_is_installed_false_when_only_user_prompt_hook(tmp_path: Path) -> None:
@@ -936,7 +936,7 @@ def test_hooks_is_installed_false_when_only_user_prompt_hook(tmp_path: Path) -> 
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     cap = HooksCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_hooks_is_installed_true_when_both_hooks_present(tmp_path: Path) -> None:
@@ -974,7 +974,7 @@ def test_hooks_is_installed_true_when_both_hooks_present(tmp_path: Path) -> None
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     cap = HooksCapability()
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_hooks_install_creates_settings(tmp_path: Path) -> None:
@@ -982,7 +982,7 @@ def test_hooks_install_creates_settings(tmp_path: Path) -> None:
     import json
 
     cap = HooksCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert ".claude/settings.json" in result.created_files
@@ -1008,7 +1008,7 @@ def test_hooks_install_adds_to_existing(tmp_path: Path) -> None:
     )
 
     cap = HooksCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert "Added" in result.message
@@ -1057,7 +1057,7 @@ def test_hooks_install_idempotent(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     cap = HooksCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert "already" in result.message
@@ -1070,7 +1070,7 @@ def test_hooks_install_handles_invalid_json(tmp_path: Path) -> None:
     settings_path.write_text("invalid json {{{", encoding="utf-8")
 
     cap = HooksCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is False
     assert "Invalid JSON" in result.message
@@ -1086,13 +1086,13 @@ def test_hooks_capability_registered() -> None:
 def test_hooks_is_installed_returns_false_with_none_repo_root() -> None:
     """Test is_installed returns False when repo_root is None."""
     cap = HooksCapability()
-    assert cap.is_installed(None) is False
+    assert cap.is_installed(None, backend="claude") is False
 
 
 def test_hooks_install_fails_with_none_repo_root() -> None:
     """Test install fails when repo_root is None."""
     cap = HooksCapability()
-    result = cap.install(None)
+    result = cap.install(None, backend="claude")
 
     assert result.success is False
     assert "requires repo_root" in result.message
@@ -1168,13 +1168,13 @@ def test_capability_base_required_default_is_false() -> None:
         def artifacts(self) -> list[CapabilityArtifact]:
             return []
 
-        def is_installed(self, repo_root: Path | None) -> bool:
+        def is_installed(self, repo_root: Path | None, *, backend: str) -> bool:
             return False
 
-        def install(self, repo_root: Path | None) -> CapabilityResult:
+        def install(self, repo_root: Path | None, *, backend: str) -> CapabilityResult:
             return CapabilityResult(success=True, message="test")
 
-        def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        def uninstall(self, repo_root: Path | None, *, backend: str) -> CapabilityResult:
             return CapabilityResult(success=True, message="test")
 
     cap = TestCap()
@@ -1207,7 +1207,7 @@ def test_ruff_format_capability_artifacts() -> None:
 def test_ruff_format_is_installed_false_when_no_settings(tmp_path: Path) -> None:
     """Test is_installed returns False when settings.json doesn't exist."""
     cap = RuffFormatCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_ruff_format_is_installed_false_when_no_hook(tmp_path: Path) -> None:
@@ -1219,7 +1219,7 @@ def test_ruff_format_is_installed_false_when_no_hook(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps({}), encoding="utf-8")
 
     cap = RuffFormatCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_ruff_format_is_installed_true_when_hook_present(tmp_path: Path) -> None:
@@ -1249,7 +1249,7 @@ def test_ruff_format_is_installed_true_when_hook_present(tmp_path: Path) -> None
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     cap = RuffFormatCapability()
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_ruff_format_install_creates_settings(tmp_path: Path) -> None:
@@ -1257,7 +1257,7 @@ def test_ruff_format_install_creates_settings(tmp_path: Path) -> None:
     import json
 
     cap = RuffFormatCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert ".claude/settings.json" in result.created_files
@@ -1282,7 +1282,7 @@ def test_ruff_format_install_adds_to_existing(tmp_path: Path) -> None:
     )
 
     cap = RuffFormatCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert "Added" in result.message
@@ -1311,7 +1311,7 @@ def test_ruff_format_install_preserves_existing_hooks(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     cap = RuffFormatCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
 
@@ -1349,7 +1349,7 @@ def test_ruff_format_install_idempotent(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     cap = RuffFormatCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert "already" in result.message
@@ -1362,7 +1362,7 @@ def test_ruff_format_install_handles_invalid_json(tmp_path: Path) -> None:
     settings_path.write_text("invalid json {{{", encoding="utf-8")
 
     cap = RuffFormatCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is False
     assert "Invalid JSON" in result.message
@@ -1378,13 +1378,13 @@ def test_ruff_format_capability_registered() -> None:
 def test_ruff_format_is_installed_returns_false_with_none_repo_root() -> None:
     """Test is_installed returns False when repo_root is None."""
     cap = RuffFormatCapability()
-    assert cap.is_installed(None) is False
+    assert cap.is_installed(None, backend="claude") is False
 
 
 def test_ruff_format_install_fails_with_none_repo_root() -> None:
     """Test install fails when repo_root is None."""
     cap = RuffFormatCapability()
-    result = cap.install(None)
+    result = cap.install(None, backend="claude")
 
     assert result.success is False
     assert "requires repo_root" in result.message
@@ -1525,7 +1525,7 @@ def test_reminder_capability_is_installed_false_when_not_in_state(tmp_path: Path
     from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     cap = DevrunReminderCapability()
-    assert cap.is_installed(tmp_path) is False
+    assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_reminder_capability_is_installed_true_when_in_state(tmp_path: Path) -> None:
@@ -1535,7 +1535,7 @@ def test_reminder_capability_is_installed_true_when_in_state(tmp_path: Path) -> 
     _write_state_toml(tmp_path, ["devrun"])
 
     cap = DevrunReminderCapability()
-    assert cap.is_installed(tmp_path) is True
+    assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_reminder_capability_install_adds_to_state(tmp_path: Path) -> None:
@@ -1545,7 +1545,7 @@ def test_reminder_capability_install_adds_to_state(tmp_path: Path) -> None:
     from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     cap = DevrunReminderCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert "devrun-reminder" in result.message
@@ -1565,7 +1565,7 @@ def test_reminder_capability_install_idempotent(tmp_path: Path) -> None:
     _write_state_toml(tmp_path, ["devrun"])
 
     cap = DevrunReminderCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
     assert "already installed" in result.message
@@ -1580,7 +1580,7 @@ def test_reminder_capability_install_preserves_existing_reminders(tmp_path: Path
     _write_state_toml(tmp_path, ["devrun", "dignified-python"])
 
     cap = TripwiresReminderCapability()
-    result = cap.install(tmp_path)
+    result = cap.install(tmp_path, backend="claude")
 
     assert result.success is True
 
@@ -1607,7 +1607,7 @@ def test_reminder_capability_install_preserves_other_sections(tmp_path: Path) ->
         tomli_w.dump({"artifacts": {"version": "0.1.0"}}, f)
 
     cap = DevrunReminderCapability()
-    cap.install(tmp_path)
+    cap.install(tmp_path, backend="claude")
 
     with state_path.open("rb") as f:
         data = tomli.load(f)

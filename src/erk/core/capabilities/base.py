@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from erk_shared.context.types import AgentBackend
+
 # Type alias for capability scope
 CapabilityScope = Literal["project", "user"]
 
@@ -45,6 +47,17 @@ class CapabilityArtifact:
 
     path: str  # Relative to repo_root for project-scope, or absolute for user-scope
     artifact_type: Literal["file", "directory"]
+
+
+def backend_agent_dir(backend: AgentBackend) -> str:
+    """Map agent backend to its configuration directory name.
+
+    Returns ".claude" or ".codex".
+    """
+    if backend == "claude":
+        return ".claude"
+    if backend == "codex":
+        return ".codex"
 
 
 class Capability(ABC):
@@ -100,18 +113,6 @@ class Capability(ABC):
         """
         ...
 
-    @abstractmethod
-    def is_installed(self, repo_root: Path | None) -> bool:
-        """Check if this capability is already installed.
-
-        Args:
-            repo_root: Path to the repository root (None for user-level capabilities)
-
-        Returns:
-            True if the capability is already installed
-        """
-        ...
-
     @property
     def required(self) -> bool:
         """If True, auto-install during erk init without prompting.
@@ -120,6 +121,11 @@ class Capability(ABC):
         always be installed (e.g., hooks).
         """
         return False
+
+    @property
+    def supported_backends(self) -> tuple[AgentBackend, ...]:
+        """Backends this capability supports. Default: both."""
+        return ("claude", "codex")
 
     @property
     def managed_artifacts(self) -> list[ManagedArtifact]:
@@ -132,7 +138,7 @@ class Capability(ABC):
         """
         return []
 
-    def preflight(self, repo_root: Path | None) -> CapabilityResult:
+    def preflight(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Check preconditions before installation.
 
         Override to add capability-specific checks (e.g., required dependencies).
@@ -140,6 +146,7 @@ class Capability(ABC):
 
         Args:
             repo_root: Path to the repository root (None for user-level capabilities)
+            backend: Which agent backend is active
 
         Returns:
             CapabilityResult with success=False and message if preconditions not met
@@ -147,11 +154,25 @@ class Capability(ABC):
         return CapabilityResult(success=True, message="")
 
     @abstractmethod
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
+        """Check if this capability is already installed.
+
+        Args:
+            repo_root: Path to the repository root (None for user-level capabilities)
+            backend: Which agent backend is active
+
+        Returns:
+            True if the capability is already installed
+        """
+        ...
+
+    @abstractmethod
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Install this capability.
 
         Args:
             repo_root: Path to the repository root (None for user-level capabilities)
+            backend: Which agent backend is active
 
         Returns:
             CapabilityResult with success status and message
@@ -159,11 +180,12 @@ class Capability(ABC):
         ...
 
     @abstractmethod
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Uninstall this capability.
 
         Args:
             repo_root: Path to the repository root (None for user-level capabilities)
+            backend: Which agent backend is active
 
         Returns:
             CapabilityResult with success status and message

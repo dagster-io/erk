@@ -39,13 +39,13 @@ def test_dignified_code_simplifier_review_name() -> None:
 def test_is_installed_returns_false_when_no_repo_root() -> None:
     """Test is_installed returns False when repo_root is None."""
     capability = TripwiresReviewDefCapability()
-    assert capability.is_installed(repo_root=None) is False
+    assert capability.is_installed(repo_root=None, backend="claude") is False
 
 
 def test_is_installed_returns_false_when_review_missing(tmp_path: Path) -> None:
     """Test is_installed returns False when review file doesn't exist."""
     capability = TripwiresReviewDefCapability()
-    assert capability.is_installed(repo_root=tmp_path) is False
+    assert capability.is_installed(repo_root=tmp_path, backend="claude") is False
 
 
 def test_is_installed_returns_true_when_review_exists(tmp_path: Path) -> None:
@@ -55,13 +55,13 @@ def test_is_installed_returns_true_when_review_exists(tmp_path: Path) -> None:
     (reviews_dir / "tripwires.md").write_text("# Tripwires", encoding="utf-8")
 
     capability = TripwiresReviewDefCapability()
-    assert capability.is_installed(repo_root=tmp_path) is True
+    assert capability.is_installed(repo_root=tmp_path, backend="claude") is True
 
 
 def test_preflight_fails_without_repo_root() -> None:
     """Test preflight fails when repo_root is None."""
     capability = TripwiresReviewDefCapability()
-    result = capability.preflight(repo_root=None)
+    result = capability.preflight(repo_root=None, backend="claude")
     assert result.success is False
     assert "requires repo_root" in result.message
 
@@ -69,7 +69,7 @@ def test_preflight_fails_without_repo_root() -> None:
 def test_preflight_fails_without_code_reviews_system(tmp_path: Path) -> None:
     """Test preflight fails when code-reviews-system is not installed."""
     capability = TripwiresReviewDefCapability()
-    result = capability.preflight(repo_root=tmp_path)
+    result = capability.preflight(repo_root=tmp_path, backend="claude")
     assert result.success is False
     assert "code-reviews-system" in result.message
 
@@ -81,14 +81,14 @@ def test_preflight_succeeds_with_code_reviews_system(tmp_path: Path) -> None:
     (workflow_dir / "code-reviews.yml").write_text("name: code-reviews", encoding="utf-8")
 
     capability = TripwiresReviewDefCapability()
-    result = capability.preflight(repo_root=tmp_path)
+    result = capability.preflight(repo_root=tmp_path, backend="claude")
     assert result.success is True
 
 
 def test_install_fails_without_repo_root() -> None:
     """Test install fails when repo_root is None."""
     capability = TripwiresReviewDefCapability()
-    result = capability.install(repo_root=None)
+    result = capability.install(repo_root=None, backend="claude")
     assert result.success is False
     assert "requires repo_root" in result.message
 
@@ -96,7 +96,7 @@ def test_install_fails_without_repo_root() -> None:
 def test_uninstall_fails_without_repo_root() -> None:
     """Test uninstall fails when repo_root is None."""
     capability = TripwiresReviewDefCapability()
-    result = capability.uninstall(repo_root=None)
+    result = capability.uninstall(repo_root=None, backend="claude")
     assert result.success is False
     assert "requires repo_root" in result.message
 
@@ -104,7 +104,7 @@ def test_uninstall_fails_without_repo_root() -> None:
 def test_uninstall_succeeds_when_not_installed(tmp_path: Path) -> None:
     """Test uninstall succeeds gracefully when review doesn't exist."""
     capability = TripwiresReviewDefCapability()
-    result = capability.uninstall(repo_root=tmp_path)
+    result = capability.uninstall(repo_root=tmp_path, backend="claude")
     assert result.success is True
     assert "does not exist" in result.message
 
@@ -117,7 +117,7 @@ def test_uninstall_removes_review_file(tmp_path: Path) -> None:
     review_file.write_text("# Tripwires", encoding="utf-8")
 
     capability = TripwiresReviewDefCapability()
-    result = capability.uninstall(repo_root=tmp_path)
+    result = capability.uninstall(repo_root=tmp_path, backend="claude")
 
     assert result.success is True
     assert "Removed" in result.message

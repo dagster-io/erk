@@ -12,6 +12,7 @@ from erk.core.capabilities.base import (
     CapabilityScope,
     ManagedArtifact,
 )
+from erk_shared.context.types import AgentBackend
 
 
 class ErkImplWorkflowCapability(Capability):
@@ -65,12 +66,12 @@ class ErkImplWorkflowCapability(Capability):
             ManagedArtifact(name="setup-claude-erk", artifact_type="action"),
         ]
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if the workflow file exists."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
         return (repo_root / ".github" / "workflows" / "plan-implement.yml").exists()
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Install the workflow and related actions."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
 
@@ -115,7 +116,7 @@ class ErkImplWorkflowCapability(Capability):
             message=f"Installed plan-implement workflow ({installed_count} artifacts)",
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove the plan-implement workflow and related actions."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
 

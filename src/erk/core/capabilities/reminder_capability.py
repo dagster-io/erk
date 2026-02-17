@@ -22,6 +22,7 @@ from erk.core.capabilities.base import (
     CapabilityResult,
     CapabilityScope,
 )
+from erk_shared.context.types import AgentBackend
 
 
 def _state_file_path(repo_root: Path) -> Path:
@@ -101,14 +102,14 @@ class ReminderCapability(Capability):
         """
         return []
 
-    def is_installed(self, repo_root: Path | None) -> bool:
+    def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         """Check if this reminder is in the installed list in state.toml."""
         if repo_root is None:
             return False
         installed = _load_installed_reminders(repo_root)
         return self.reminder_name in installed
 
-    def install(self, repo_root: Path | None) -> CapabilityResult:
+    def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Add this reminder to the installed list in state.toml."""
         if repo_root is None:
             return CapabilityResult(
@@ -133,7 +134,7 @@ class ReminderCapability(Capability):
             message=f"Installed {self.name} capability",
         )
 
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+    def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove this reminder from the installed list in state.toml."""
         if repo_root is None:
             return CapabilityResult(
