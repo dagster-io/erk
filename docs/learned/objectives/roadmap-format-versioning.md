@@ -45,7 +45,7 @@ The surgical update command (`_replace_step_refs_in_body()`) still handles both 
 
 ## Migration Strategy: Header-Based Detection
 
-The parser uses **header-based format detection** — it checks for the 5-column header first, then falls back to 4-column. This keeps format detection co-located with the data itself (no version metadata needed in the table).
+The surgical update command uses **header-based format detection** — it checks for the 5-column header first, then falls back to 4-column. This keeps format detection co-located with the data itself (no version metadata needed in the table).
 
 Key design choices:
 
