@@ -37,11 +37,11 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     compute_graph_summary,
     find_graph_next_step,
     graph_from_phases,
-    serialize_graph_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     group_steps_by_phase,
     parse_roadmap_frontmatter,
+    serialize_phases,
 )
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.objective_fetch_context_result import (
@@ -105,7 +105,7 @@ def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapCont
     next_step = find_graph_next_step(graph, phases)
 
     return RoadmapContextDict(
-        phases=serialize_graph_phases(graph, phases),
+        phases=serialize_phases(phases),
         matched_steps=matched_steps,
         summary=summary,
         next_step=next_step,

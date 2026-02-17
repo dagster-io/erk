@@ -17,11 +17,11 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
     compute_graph_summary,
     graph_from_phases,
-    serialize_graph_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     parse_v2_roadmap,
+    serialize_phases,
 )
 from erk_shared.output.output import user_output
 
@@ -163,7 +163,7 @@ def _display_json(
 
     output = {
         "issue_number": issue_number,
-        "phases": serialize_graph_phases(graph, phases),
+        "phases": serialize_phases(phases),
         "graph": {
             "nodes": [
                 {

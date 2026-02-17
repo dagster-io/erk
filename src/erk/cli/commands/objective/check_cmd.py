@@ -21,10 +21,10 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     find_graph_next_step,
     graph_from_phases,
     phases_from_graph,
-    serialize_graph_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
+    serialize_phases,
 )
 from erk_shared.output.output import user_output
 
@@ -43,6 +43,7 @@ class ObjectiveValidationSuccess:
         summary: Step count summary (empty if no graph nodes)
         next_step: First pending step or None
         validation_errors: Parser-level warnings from roadmap parsing
+        issue_body: Raw issue body text (for phase name enrichment)
     """
 
     passed: bool
@@ -52,6 +53,7 @@ class ObjectiveValidationSuccess:
     summary: dict[str, int]
     next_step: dict[str, str] | None
     validation_errors: list[str]
+    issue_body: str
 
 
 @dataclass(frozen=True)
@@ -115,6 +117,7 @@ def validate_objective(
             summary={},
             next_step=None,
             validation_errors=validation_errors,
+            issue_body=issue.body,
         )
 
     graph = graph_from_phases(phases)
@@ -202,6 +205,7 @@ def validate_objective(
         summary=summary,
         next_step=next_step,
         validation_errors=validation_errors,
+        issue_body=issue.body,
     )
 
 
@@ -259,7 +263,7 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
                 "checks": [
                     {"passed": passed, "description": desc} for passed, desc in result.checks
                 ],
-                "phases": serialize_graph_phases(result.graph, phases),
+                "phases": serialize_phases(phases),
                 "summary": result.summary,
                 "next_step": result.next_step,
                 "validation_errors": result.validation_errors,

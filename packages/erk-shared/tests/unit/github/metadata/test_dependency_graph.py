@@ -8,7 +8,6 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     graph_from_phases,
     parse_graph,
     phases_from_graph,
-    serialize_graph_phases,
     steps_from_graph,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -687,28 +686,6 @@ class TestFindGraphNextStep:
         assert legacy_result is not None
         assert graph_result["id"] == legacy_result["id"]
         assert graph_result["phase"] == legacy_result["phase"]
-
-
-# ---------------------------------------------------------------------------
-# serialize_graph_phases() tests
-# ---------------------------------------------------------------------------
-
-
-class TestSerializeGraphPhases:
-    def test_serializes_phases(self) -> None:
-        from erk_shared.gateway.github.metadata.roadmap import serialize_phases
-
-        phases = [
-            _phase(
-                number=1,
-                steps=[
-                    _step(id="1.1", status="done", plan="#10", pr="#20"),
-                ],
-            ),
-        ]
-        graph = graph_from_phases(phases)
-
-        assert serialize_graph_phases(graph, phases) == serialize_phases(phases)
 
 
 # ---------------------------------------------------------------------------

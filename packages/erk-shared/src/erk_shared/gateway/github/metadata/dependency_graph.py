@@ -17,7 +17,6 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapStepStatus,
     group_steps_by_phase,
     parse_v2_roadmap,
-    serialize_phases,
 )
 
 _TERMINAL_STATUSES: set[RoadmapStepStatus] = {"done", "skipped"}
@@ -190,23 +189,6 @@ def find_graph_next_step(
         "description": target_node.description,
         "phase": phase_name,
     }
-
-
-def serialize_graph_phases(
-    graph: DependencyGraph, phases: list[RoadmapPhase]
-) -> list[dict[str, object]]:
-    """Serialize phases derived from graph for backwards-compatible JSON output.
-
-    Delegates to serialize_phases() using the provided phases.
-
-    Args:
-        graph: The dependency graph (used for consistency verification)
-        phases: Phases with display metadata (names from markdown headers)
-
-    Returns:
-        JSON-serializable list of phase dicts.
-    """
-    return serialize_phases(phases)
 
 
 def parse_graph(body: str) -> tuple[DependencyGraph, list[RoadmapPhase], list[str]] | None:
