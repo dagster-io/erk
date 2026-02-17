@@ -92,11 +92,11 @@ The `close` command prompts for confirmation unless `--force` is provided. The c
 
 All objective commands use the `register_with_aliases()` pattern, which registers both the full command name and a short alias:
 
-| Command     | Alias | Why This Alias                                   |
-| ----------- | ----- | ------------------------------------------------ |
-| `check`     | `ch`  | Prefix of "check", avoids collision with "close" |
-| `close`     | `c`   | First letter, unambiguous (check uses "ch")      |
-| `list`      | `ls`  | Unix convention (ls for list)                    |
+| Command     | Alias  | Why This Alias                                   |
+| ----------- | ------ | ------------------------------------------------ |
+| `check`     | `ch`   | Prefix of "check", avoids collision with "close" |
+| `close`     | `c`    | First letter, unambiguous (check uses "ch")      |
+| `list`      | `ls`   | Unix convention (ls for list)                    |
 | `implement` | `impl` | First letters of "implement"                     |
 
 **Why aliases matter**: Objective commands are used in rapid iteration workflows. Typing `erk objective impl` is faster than `erk objective implement`, reducing friction without sacrificing discoverability (the full name remains canonical).
