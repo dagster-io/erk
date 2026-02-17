@@ -169,12 +169,10 @@ def find_graph_next_step(
     Returns:
         Dict with {id, description, phase} or None if no pending nodes.
     """
-    target_node: ObjectiveNode | None = None
-    for node in graph.nodes:
-        if node.status == "pending":
-            target_node = node
-            break
-
+    target_node = next(
+        (node for node in graph.nodes if node.status == "pending"),
+        None,
+    )
     if target_node is None:
         return None
 
