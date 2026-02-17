@@ -54,7 +54,8 @@ class TestIssueInfoToPlan:
         assert plan.state == PlanState.OPEN
         assert plan.url == "https://github.com/test/repo/issues/42"
         assert plan.labels == ["erk-plan"]
-        assert plan.metadata == {"number": 42}
+        assert plan.metadata["number"] == 42
+        assert plan.metadata["author"] == "test-user"
 
     def test_closed_state(self) -> None:
         """CLOSED state maps correctly."""

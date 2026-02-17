@@ -8,7 +8,6 @@ Schema Version 2:
 
 import sys
 from collections.abc import Mapping
-from datetime import UTC
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -37,6 +36,7 @@ from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.conversion import issue_info_to_plan
 from erk_shared.plan_store.types import (
     CreatePlanResult,
     Plan,
@@ -590,43 +590,24 @@ class GitHubPlanStore(PlanBackend):
                        If None, uses issue_info.body (for list_plans compatibility)
 
         Returns:
-            Plan with normalized data
+            Plan with normalized data and enriched metadata
         """
-        # Normalize state
-        state = PlanState.OPEN if issue_info.state == "OPEN" else PlanState.CLOSED
+        plan = issue_info_to_plan(issue_info)
 
-        # Store GitHub-specific data in metadata for future operations
-        metadata: dict[str, object] = {
-            "number": issue_info.number,
-            "issue_body": issue_info.body,  # For plan-header parsing
-        }
+        # For get_plan(), overlay the plan body from comment
+        if plan_body is not None:
+            plan = Plan(
+                plan_identifier=plan.plan_identifier,
+                title=plan.title,
+                body=plan_body,
+                state=plan.state,
+                url=plan.url,
+                labels=plan.labels,
+                assignees=plan.assignees,
+                created_at=plan.created_at,
+                updated_at=plan.updated_at,
+                metadata=plan.metadata,
+                objective_id=plan.objective_id,
+            )
 
-        # Use provided plan_body or fall back to issue body
-        body = plan_body if plan_body is not None else issue_info.body
-
-        # Parse plan-header block once for header_fields and objective_id
-        header_fields: dict[str, object] = {}
-        block = find_metadata_block(issue_info.body, "plan-header")
-        if block is not None:
-            header_fields = dict(block.data)
-
-        # Extract objective_id from parsed header (no second parse needed)
-        objective_id: int | None = None
-        raw_objective = header_fields.get(OBJECTIVE_ISSUE)
-        if isinstance(raw_objective, int):
-            objective_id = raw_objective
-
-        return Plan(
-            plan_identifier=str(issue_info.number),
-            title=issue_info.title,
-            body=body,
-            state=state,
-            url=issue_info.url,
-            labels=issue_info.labels,
-            assignees=issue_info.assignees,
-            created_at=issue_info.created_at.astimezone(UTC),
-            updated_at=issue_info.updated_at.astimezone(UTC),
-            metadata=metadata,
-            objective_id=objective_id,
-            header_fields=header_fields,
-        )
+        return plan

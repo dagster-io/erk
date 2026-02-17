@@ -7,8 +7,8 @@ The real implementation remains in erk.core.services.plan_list_service.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.plan_store.types import Plan
 
 
 @dataclass(frozen=True)
@@ -16,12 +16,12 @@ class PlanListData:
     """Combined data for plan listing.
 
     Attributes:
-        issues: List of IssueInfo objects
+        plans: List of Plan objects with enriched metadata
         pr_linkages: Mapping of issue_number -> list of PRs that close that issue
         workflow_runs: Mapping of issue_number -> most relevant WorkflowRun
     """
 
-    issues: list[IssueInfo]
+    plans: list[Plan]
     pr_linkages: dict[int, list[PullRequestInfo]]
     workflow_runs: dict[int, WorkflowRun | None]
 
@@ -57,6 +57,6 @@ class PlanListService(ABC):
                 only issues created by this user are returned.
 
         Returns:
-            PlanListData containing issues, PR linkages, and workflow runs
+            PlanListData containing plans, PR linkages, and workflow runs
         """
         ...

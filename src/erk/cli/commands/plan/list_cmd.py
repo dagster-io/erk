@@ -41,7 +41,7 @@ from erk_shared.gateway.live_display.abc import LiveDisplay
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.conversion import header_int, header_str, issue_info_to_plan
+from erk_shared.plan_store.conversion import header_int, header_str
 from erk_shared.plan_store.types import Plan
 
 P = ParamSpec("P")
@@ -248,8 +248,8 @@ def _build_plans_table(
         user_output(click.style("Error: ", fg="red") + str(e))
         raise SystemExit(1) from e
 
-    # Convert IssueInfo to Plan objects (single-parse: header_fields populated)
-    plans = [issue_info_to_plan(issue) for issue in plan_data.issues]
+    # Use pre-converted Plan objects from PlanListData
+    plans = plan_data.plans
 
     if not plans:
         return None, 0

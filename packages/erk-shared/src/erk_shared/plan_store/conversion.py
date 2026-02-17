@@ -49,7 +49,7 @@ def issue_info_to_plan(issue: IssueInfo) -> Plan:
         assignees=issue.assignees,
         created_at=issue.created_at,
         updated_at=issue.updated_at,
-        metadata={"number": issue.number},
+        metadata={"number": issue.number, "author": issue.author},
         objective_id=objective_id,
         header_fields=header_fields,
     )
