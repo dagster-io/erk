@@ -5,9 +5,12 @@ implements it, and creates a PR.
 
 Usage:
     erk one-shot "fix the import in config.py"
+    erk one-shot --file instructions.md
     erk one-shot "add type hints to utils.py" --model opus
     erk one-shot "fix the typo in README.md" --dry-run
 """
+
+from pathlib import Path
 
 import click
 
@@ -21,7 +24,15 @@ from erk.core.context import ErkContext
 
 
 @click.command("one-shot", hidden=True)
-@click.argument("instruction")
+@click.argument("instruction", required=False, default=None)
+@click.option(
+    "-f",
+    "--file",
+    "file_path",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="Read instruction from a file instead of a CLI argument",
+)
 @click.option(
     "-m",
     "--model",
@@ -38,7 +49,8 @@ from erk.core.context import ErkContext
 def one_shot(
     ctx: ErkContext,
     *,
-    instruction: str,
+    instruction: str | None,
+    file_path: str | None,
     model: str | None,
     dry_run: bool,
 ) -> None:
@@ -47,13 +59,27 @@ def one_shot(
     Creates a branch, draft PR, and dispatches a GitHub Actions workflow
     where Claude autonomously explores, plans, implements, and submits.
 
+    Provide instruction as an argument or via --file (not both).
+
     Examples:
 
     \b
       erk one-shot "fix the import in config.py"
+      erk one-shot --file instructions.md
       erk one-shot "add type hints to utils.py" --model opus
       erk one-shot "fix the typo in README.md" --dry-run
     """
+    # Resolve instruction from argument or file
+    if file_path is not None and instruction is not None:
+        Ensure.invariant(False, "Provide instruction as argument or --file, not both")
+
+    if file_path is not None:
+        instruction = Path(file_path).read_text(encoding="utf-8")
+    elif instruction is None:
+        Ensure.invariant(False, "Provide an instruction argument or --file")
+
+    assert instruction is not None  # type narrowing after guard
+
     # Validate instruction is non-empty
     Ensure.invariant(
         len(instruction.strip()) > 0,

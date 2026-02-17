@@ -97,9 +97,13 @@ jobs:
         env:
           INSTRUCTION: ${{ inputs.instruction }}
         run: |
-          mkdir -p .impl
-          printf '%s\n' "$INSTRUCTION" > .impl/task.md
-          echo "Instruction written to .impl/task.md"
+          if [ -f .impl/task.md ]; then
+            echo "Instruction already committed to .impl/task.md"
+          else
+            mkdir -p .impl
+            printf '%s\n' "$INSTRUCTION" > .impl/task.md
+            echo "Instruction written to .impl/task.md from workflow input"
+          fi
 
       - name: Detect trunk branch
         id: trunk

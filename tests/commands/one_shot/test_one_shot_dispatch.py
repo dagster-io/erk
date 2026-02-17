@@ -54,6 +54,15 @@ def test_dispatch_happy_path() -> None:
         assert len(git.created_branches) == 1
         assert git.created_branches[0][2] == "main"  # start_point is trunk
 
+        # Verify .impl/task.md was staged and committed
+        assert len(git.commits) == 1
+        assert git.commits[0].staged_files == (".impl/task.md",)
+
+        # Verify .impl/task.md was written to disk
+        task_file = env.cwd / ".impl" / "task.md"
+        assert task_file.exists()
+        assert task_file.read_text(encoding="utf-8") == "fix the import in config.py\n"
+
         # Verify push to remote
         assert len(git.pushed_branches) == 1
 
@@ -222,3 +231,47 @@ def test_dispatch_creates_skeleton_plan_issue() -> None:
         assert issue_number == 1
         assert "One-shot" in comment_body
         assert "add user authentication" in comment_body
+
+
+def test_dispatch_long_instruction_truncates_workflow_input() -> None:
+    """Test that long instructions are truncated in workflow input but committed in full."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FakeGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        long_instruction = "x" * 1000
+
+        params = OneShotDispatchParams(
+            instruction=long_instruction,
+            model=None,
+            extra_workflow_inputs={},
+        )
+
+        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+
+        assert result is not None
+
+        # Verify workflow input was truncated
+        _workflow, inputs = github.triggered_workflows[0]
+        assert len(inputs["instruction"]) < len(long_instruction)
+        assert inputs["instruction"].endswith("... (full instruction committed to .impl/task.md)")
+
+        # Verify full instruction was committed to .impl/task.md
+        task_file = env.cwd / ".impl" / "task.md"
+        assert task_file.exists()
+        content = task_file.read_text(encoding="utf-8")
+        assert content == long_instruction + "\n"
+
+        # Verify the file was staged
+        assert git.commits[0].staged_files == (".impl/task.md",)

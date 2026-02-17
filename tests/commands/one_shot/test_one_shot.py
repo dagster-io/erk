@@ -278,3 +278,92 @@ def test_one_shot_rejects_detached_head() -> None:
         assert result.exit_code == 1
         assert "detached HEAD" in result.output
         assert len(git.created_branches) == 0
+
+
+def test_one_shot_file_option() -> None:
+    """Test --file option reads instruction from a file."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Write instruction to a file
+        instruction_file = env.cwd / "instruction.md"
+        instruction_file.write_text("fix the import in config.py\n", encoding="utf-8")
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        github = FakeGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "--file", str(instruction_file)],
+            obj=ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert "Done!" in result.output
+
+        # Verify instruction was read from file and passed through
+        assert len(github.triggered_workflows) == 1
+        _workflow, inputs = github.triggered_workflows[0]
+        assert "fix the import in config.py" in inputs["instruction"]
+
+
+def test_one_shot_file_and_argument_rejected() -> None:
+    """Test that providing both --file and argument is rejected."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        instruction_file = env.cwd / "instruction.md"
+        instruction_file.write_text("some instruction\n", encoding="utf-8")
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        github = FakeGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "inline instruction", "--file", str(instruction_file)],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "not both" in result.output
+
+
+def test_one_shot_no_instruction_rejected() -> None:
+    """Test that providing neither argument nor --file is rejected."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        github = FakeGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "instruction argument or --file" in result.output
