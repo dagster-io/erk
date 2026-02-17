@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk_shared.context.types import (
     GlobalConfig,
@@ -19,6 +20,9 @@ from erk_shared.context.types import (
     NoRepoSentinel,
     RepoContext,
 )
+
+if TYPE_CHECKING:
+    from erk.artifacts.paths import ErkPackageInfo
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
@@ -104,9 +108,12 @@ class ErkContext:
     global_config: GlobalConfig | None
     local_config: LoadedConfig
 
+    # Package info (only needed by artifact commands; None for most commands)
+    package_info: ErkPackageInfo | None = None
+
     # Mode flags
-    dry_run: bool
-    debug: bool
+    dry_run: bool = False
+    debug: bool = False
 
     @property
     def repo_root(self) -> Path:
@@ -203,6 +210,7 @@ class ErkContext:
         repo_root: Path | None = None,
         cwd: Path | None = None,
         repo_info: RepoInfo | None = None,
+        package_info: ErkPackageInfo | None = None,
     ) -> ErkContext:
         """Create test context with optional pre-configured implementations.
 
@@ -242,4 +250,5 @@ class ErkContext:
             repo_root=repo_root,
             cwd=cwd,
             repo_info=repo_info,
+            package_info=package_info,
         )

@@ -12,6 +12,7 @@ from erk.cli.commands.artifact.check import check_cmd
 from erk.cli.commands.artifact.list_cmd import list_cmd
 from erk.cli.commands.artifact.show import show_cmd
 from erk.cli.commands.artifact.sync_cmd import sync_cmd
+from erk.core.context import ErkContext, context_for_test
 
 
 class TestListCommand:
@@ -255,6 +256,26 @@ def _fake_package(
     )
 
 
+def _ctx_with_package(
+    *,
+    in_erk_repo: bool = False,
+    bundled_claude_dir: Path = Path("/nonexistent"),
+    bundled_github_dir: Path = Path("/nonexistent"),
+    bundled_erk_dir: Path = Path("/nonexistent"),
+    current_version: str = "1.0.0",
+) -> ErkContext:
+    """Create a test context with a fake package_info."""
+    return context_for_test(
+        package_info=_fake_package(
+            in_erk_repo=in_erk_repo,
+            bundled_claude_dir=bundled_claude_dir,
+            bundled_github_dir=bundled_github_dir,
+            bundled_erk_dir=bundled_erk_dir,
+            current_version=current_version,
+        )
+    )
+
+
 class TestCheckCommand:
     """Tests for erk artifact check."""
 
@@ -262,11 +283,7 @@ class TestCheckCommand:
         """Shows not initialized when no state."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(check_cmd, obj=_ctx_with_package())
 
         assert result.exit_code == 1
         assert "not initialized" in result.output
@@ -281,11 +298,7 @@ class TestCheckCommand:
                 '[artifacts]\nversion = "0.9.0"\n\n[artifacts.files]\n', encoding="utf-8"
             )
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(check_cmd, obj=_ctx_with_package())
 
         assert result.exit_code == 1
         assert "out of sync" in result.output
@@ -300,11 +313,7 @@ class TestCheckCommand:
                 '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
             )
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(check_cmd, obj=_ctx_with_package())
 
         assert result.exit_code == 0
         assert "up to date" in result.output
@@ -313,11 +322,7 @@ class TestCheckCommand:
         """Shows development mode when in erk repo."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(in_erk_repo=True),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(check_cmd, obj=_ctx_with_package(in_erk_repo=True))
 
         assert result.exit_code == 0
         assert "Development mode" in result.output
@@ -340,11 +345,7 @@ class TestCheckCommand:
             (cmd_dir / "plan-implement.md").write_text("# Command", encoding="utf-8")
             (cmd_dir / "pr-submit.md").write_text("# Command", encoding="utf-8")
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(in_erk_repo=True),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(check_cmd, obj=_ctx_with_package(in_erk_repo=True))
 
         assert result.exit_code == 0
         assert "Development mode" in result.output
@@ -378,11 +379,7 @@ class TestCheckCommand:
             cmd_dir.mkdir(parents=True)
             (cmd_dir / "auto-restack.md").write_text("# Command", encoding="utf-8")
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(check_cmd, obj=_ctx_with_package())
 
         assert result.exit_code == 0
         assert "up to date" in result.output
@@ -411,11 +408,7 @@ class TestCheckCommand:
             cmd_dir.mkdir(parents=True)
             (cmd_dir / "impl-execute.md").write_text("# Command", encoding="utf-8")
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(check_cmd, obj=_ctx_with_package())
 
         assert result.exit_code == 1
         assert "out of sync" in result.output
@@ -447,11 +440,10 @@ class TestCheckCommand:
             (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
             (project_commands / "orphaned.md").write_text("# Orphan", encoding="utf-8")
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(bundled_claude_dir=bundled_dir),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(
+                check_cmd,
+                obj=_ctx_with_package(bundled_claude_dir=bundled_dir),
+            )
 
         assert result.exit_code == 1
         assert "up to date" in result.output
@@ -494,14 +486,13 @@ class TestCheckCommand:
             bundled_github = tmp_path / "bundled" / ".github"
             bundled_github.mkdir(parents=True)
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(
+            result = runner.invoke(
+                check_cmd,
+                obj=_ctx_with_package(
                     bundled_claude_dir=bundled_dir,
                     bundled_github_dir=bundled_github,
                 ),
-            ):
-                result = runner.invoke(check_cmd)
+            )
 
         assert result.exit_code == 0
         assert "up to date" in result.output
@@ -558,11 +549,7 @@ class TestCheckCommandShowsActualArtifacts:
             # No agents directory at all
             # The old bug would still list "agents/devrun" from BUNDLED_AGENTS
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(in_erk_repo=True),
-            ):
-                result = runner.invoke(check_cmd)
+            result = runner.invoke(check_cmd, obj=_ctx_with_package(in_erk_repo=True))
 
         assert result.exit_code == 0
         assert "Development mode" in result.output
@@ -616,14 +603,14 @@ class TestCheckVerboseShowsBothArtifactTypes:
             bundled_github = tmp_path / "bundled" / ".github"
             bundled_github.mkdir(parents=True)
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(
+            result = runner.invoke(
+                check_cmd,
+                ["-v"],
+                obj=_ctx_with_package(
                     bundled_claude_dir=bundled_dir,
                     bundled_github_dir=bundled_github,
                 ),
-            ):
-                result = runner.invoke(check_cmd, ["-v"])
+            )
 
         # Verify verbose output has both sections
         assert "Erk-managed artifacts:" in result.output
@@ -659,14 +646,14 @@ class TestCheckVerboseShowsBothArtifactTypes:
             bundled_github = tmp_path / "bundled" / ".github"
             bundled_github.mkdir(parents=True)
 
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(
+            result = runner.invoke(
+                check_cmd,
+                ["-v"],
+                obj=_ctx_with_package(
                     bundled_claude_dir=bundled_dir,
                     bundled_github_dir=bundled_github,
                 ),
-            ):
-                result = runner.invoke(check_cmd, ["-v"])
+            )
 
         assert "Erk-managed artifacts:" in result.output
         # Project artifacts section should be omitted when no project artifacts exist
@@ -689,14 +676,14 @@ class TestCheckVerboseShowsBothArtifactTypes:
 
             # In dev mode, bundled_claude_dir points to the project's .claude/
             # so get_artifact_health can find the bundled artifacts
-            with patch(
-                "erk.cli.commands.artifact.check.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(
+            result = runner.invoke(
+                check_cmd,
+                ["-v"],
+                obj=_ctx_with_package(
                     in_erk_repo=True,
                     bundled_claude_dir=claude_dir,
                 ),
-            ):
-                result = runner.invoke(check_cmd, ["-v"])
+            )
 
         # Dev mode always succeeds
         assert result.exit_code == 0

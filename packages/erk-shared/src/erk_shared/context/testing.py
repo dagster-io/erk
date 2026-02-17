@@ -4,10 +4,16 @@ This module provides factory functions for creating test contexts with
 fake implementations. These are used by both erk and erk-kits tests.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import LoadedConfig, RepoContext
+
+if TYPE_CHECKING:
+    from erk.artifacts.paths import ErkPackageInfo
 from erk_shared.core.fakes import (
     FakeCodespaceRegistry,
     FakePlanListService,
@@ -43,6 +49,7 @@ def context_for_test(
     repo_root: Path | None = None,
     cwd: Path | None = None,
     repo_info: RepoInfo | None = None,
+    package_info: ErkPackageInfo | None = None,
 ) -> ErkContext:
     """Create test context with optional pre-configured implementations.
 
@@ -186,6 +193,7 @@ def context_for_test(
         repo_info=repo_info,
         global_config=None,
         local_config=LoadedConfig.test(),
+        package_info=package_info,
         dry_run=False,
         debug=debug,
     )
