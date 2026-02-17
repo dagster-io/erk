@@ -18,6 +18,10 @@ Run after landing a PR:
 
 ## Agent Instructions
 
+> **Design note:** All steps run inline in the caller's context (no subagent delegation).
+> This is deliberate — Step 3 (prose reconciliation) requires judgment that benefits from
+> the caller's model quality, and Step 7 (closing prompt) requires direct user interaction.
+
 ### Step 1: Fetch All Context
 
 Check `$ARGUMENTS` for optional overrides:
