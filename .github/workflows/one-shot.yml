@@ -97,8 +97,10 @@ jobs:
         env:
           INSTRUCTION: ${{ inputs.instruction }}
         run: |
-          if [ -f .impl/task.md ]; then
-            echo "Instruction already committed to .impl/task.md"
+          if [ -f .worker-impl/task.md ]; then
+            echo "Instruction already committed to .worker-impl/task.md"
+            mkdir -p .impl
+            cp .worker-impl/task.md .impl/task.md
           else
             mkdir -p .impl
             printf '%s\n' "$INSTRUCTION" > .impl/task.md

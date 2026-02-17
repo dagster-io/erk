@@ -54,12 +54,12 @@ def test_dispatch_happy_path() -> None:
         assert len(git.created_branches) == 1
         assert git.created_branches[0][2] == "main"  # start_point is trunk
 
-        # Verify .impl/task.md was staged and committed
+        # Verify .worker-impl/task.md was staged and committed
         assert len(git.commits) == 1
-        assert git.commits[0].staged_files == (".impl/task.md",)
+        assert git.commits[0].staged_files == (".worker-impl/task.md",)
 
-        # Verify .impl/task.md was written to disk
-        task_file = env.cwd / ".impl" / "task.md"
+        # Verify .worker-impl/task.md was written to disk
+        task_file = env.cwd / ".worker-impl" / "task.md"
         assert task_file.exists()
         assert task_file.read_text(encoding="utf-8") == "fix the import in config.py\n"
 
@@ -265,13 +265,14 @@ def test_dispatch_long_instruction_truncates_workflow_input() -> None:
         # Verify workflow input was truncated
         _workflow, inputs = github.triggered_workflows[0]
         assert len(inputs["instruction"]) < len(long_instruction)
-        assert inputs["instruction"].endswith("... (full instruction committed to .impl/task.md)")
+        expected_suffix = "... (full instruction committed to .worker-impl/task.md)"
+        assert inputs["instruction"].endswith(expected_suffix)
 
-        # Verify full instruction was committed to .impl/task.md
-        task_file = env.cwd / ".impl" / "task.md"
+        # Verify full instruction was committed to .worker-impl/task.md
+        task_file = env.cwd / ".worker-impl" / "task.md"
         assert task_file.exists()
         content = task_file.read_text(encoding="utf-8")
         assert content == long_instruction + "\n"
 
         # Verify the file was staged
-        assert git.commits[0].staged_files == (".impl/task.md",)
+        assert git.commits[0].staged_files == (".worker-impl/task.md",)
