@@ -7,7 +7,7 @@ This file uses minimal mocking for external boundaries:
 1. os.environ HOME patches:
    - LEGITIMATE: Testing path resolution logic that depends on $HOME
    - The init command uses Path.home() to determine ~/.erk location
-   - Patching HOME redirects to temp directory for test isolation
+   - erk_isolated_fs_env(env_overrides={"HOME": ...}) redirects to temp directory for test isolation
    - Cannot be replaced with fakes (environment variable is external boundary)
 
 2. Global config operations:
@@ -22,7 +22,6 @@ This file uses minimal mocking for external boundaries:
 """
 
 import json
-import os
 from unittest import mock
 
 from click.testing import CliRunner
@@ -37,7 +36,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_init_auto_installs_hooks_when_missing() -> None:
     """Test that init auto-installs hooks via required capability."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         # Create Claude settings without hooks
@@ -57,8 +56,7 @@ def test_init_auto_installs_hooks_when_missing() -> None:
         )
 
         # Run init with --no-interactive to skip other prompts
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Hooks should be auto-installed as a required capability
@@ -74,7 +72,7 @@ def test_init_auto_installs_hooks_when_missing() -> None:
 def test_init_skips_hooks_when_already_installed() -> None:
     """Test that init skips hooks installation when already configured."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         # Create Claude settings WITH erk hooks already present
@@ -124,8 +122,7 @@ def test_init_skips_hooks_when_already_installed() -> None:
         )
 
         # Run init with --no-interactive
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should NOT say "Added erk hooks" since they're already installed

@@ -7,7 +7,7 @@ This file uses minimal mocking for external boundaries:
 1. os.environ HOME patches:
    - LEGITIMATE: Testing path resolution logic that depends on $HOME
    - The init command uses Path.home() to determine ~/.erk location
-   - Patching HOME redirects to temp directory for test isolation
+   - erk_isolated_fs_env(env_overrides={"HOME": ...}) redirects to temp directory for test isolation
    - Cannot be replaced with fakes (environment variable is external boundary)
 
 2. Global config operations:
@@ -31,7 +31,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_init_creates_global_config_first_time() -> None:
     """Test that init creates global config on first run."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(
@@ -48,8 +48,7 @@ def test_init_creates_global_config_first_time() -> None:
         )
 
         # Input: erk_root, decline hooks (shell not detected so no prompt)
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Global config not found" in result.output
@@ -63,7 +62,7 @@ def test_init_creates_global_config_first_time() -> None:
 def test_init_prompts_for_erk_root() -> None:
     """Test that init prompts for erks root when creating config."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "my-erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -76,8 +75,7 @@ def test_init_prompts_for_erk_root() -> None:
             global_config=None,
         )
 
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert ".erk folder" in result.output
@@ -89,7 +87,7 @@ def test_init_prompts_for_erk_root() -> None:
 def test_init_detects_graphite_installed() -> None:
     """Test that init detects when Graphite (gt) is installed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -103,8 +101,7 @@ def test_init_detects_graphite_installed() -> None:
             global_config=None,
         )
 
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) detected" in result.output
@@ -116,7 +113,7 @@ def test_init_detects_graphite_installed() -> None:
 def test_init_detects_graphite_not_installed() -> None:
     """Test that init detects when Graphite (gt) is NOT installed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -128,8 +125,7 @@ def test_init_detects_graphite_not_installed() -> None:
             global_config=None,
         )
 
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) not detected" in result.output
@@ -147,7 +143,7 @@ def test_init_creates_global_config_even_when_repo_already_erkified() -> None:
     the else block that only ran when `not already_erkified`.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         # Create a repo that's already erkified (has .erk/config.toml)
@@ -168,8 +164,7 @@ def test_init_creates_global_config_even_when_repo_already_erkified() -> None:
             global_config=None,
         )
 
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         # Key assertion: global config should be created even though repo was already erkified
