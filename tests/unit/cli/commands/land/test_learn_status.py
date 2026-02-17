@@ -17,14 +17,12 @@ from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.sessions.discovery import SessionsForPlan
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def test_check_learn_status_and_prompt_skips_when_already_learned(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test that _check_learn_status_and_prompt shows positive feedback when plan has been
@@ -35,30 +33,18 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
 
     issue_number = 123
 
-    # Create issue (without learn_status - will fall back to session check)
+    # Create issue with session metadata so find_sessions_for_plan finds them naturally
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body=format_plan_header_body_for_test(),
+        body=format_plan_header_body_for_test(
+            created_from_session="plan-session-1",
+            last_local_impl_session="impl-session-1",
+            last_learn_session="learn-session-1",
+        ),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    # Mock find_sessions_for_plan to return sessions with learn_session_ids
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=["learn-session-1"],  # Already learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     ctx = context_for_test(cwd=repo_root, issues=fake_issues)
 
@@ -74,20 +60,10 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
 
 def test_check_learn_status_and_prompt_skips_when_force(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that _check_learn_status_and_prompt does nothing when force=True."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
-
-    # Mock should not be called when force=True
-    find_sessions_called = []
-
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        find_sessions_called.append(True)
-        raise AssertionError("Should not be called when force=True")
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     ctx = context_for_test(cwd=repo_root)
 
@@ -95,9 +71,6 @@ def test_check_learn_status_and_prompt_skips_when_force(
     _check_learn_status_and_prompt(
         ctx, repo_root=repo_root, plan_issue_number=123, force=True, script=False
     )
-
-    # Verify find_sessions was not called
-    assert len(find_sessions_called) == 0
 
 
 def test_check_learn_status_and_prompt_warns_when_not_learned(
@@ -122,22 +95,6 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=[],  # Not learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Mock click.prompt to return choice 2 (continue without learning)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 2)
@@ -181,22 +138,6 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=[],  # Not learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Mock click.prompt to return choice 3 (cancel)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 3)
@@ -244,22 +185,6 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
 
-    # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=[],  # Not learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
-
     # Mock click.prompt to return choice 3 (cancel)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 3)
 
@@ -288,7 +213,6 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
 
 def test_check_learn_status_and_prompt_skips_for_learn_plans(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that _check_learn_status_and_prompt skips check for learn plans.
 
@@ -310,15 +234,6 @@ def test_check_learn_status_and_prompt_skips_for_learn_plans(
 
     fake_issues = FakeGitHubIssues(issues={issue_number: learn_issue})
 
-    # Mock find_sessions_for_plan - should NOT be called for learn plans
-    find_sessions_called = []
-
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        find_sessions_called.append(True)
-        raise AssertionError("find_sessions_for_plan should not be called for learn plans")
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
-
     ctx = context_for_test(cwd=repo_root, issues=fake_issues)
 
     # Should return immediately without calling find_sessions_for_plan
@@ -326,26 +241,13 @@ def test_check_learn_status_and_prompt_skips_for_learn_plans(
         ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
     )
 
-    # Verify find_sessions was not called (function returned early)
-    assert len(find_sessions_called) == 0
-
 
 def test_check_learn_status_and_prompt_skips_when_config_disabled(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that _check_learn_status_and_prompt skips when prompt_learn_on_land=False."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
-
-    # Mock should not be called when config setting is disabled
-    find_sessions_called = []
-
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        find_sessions_called.append(True)
-        raise AssertionError("Should not be called when prompt_learn_on_land=False")
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Create context with prompt_learn_on_land=False
     global_config = GlobalConfig.test(
@@ -359,13 +261,9 @@ def test_check_learn_status_and_prompt_skips_when_config_disabled(
         ctx, repo_root=repo_root, plan_issue_number=123, force=False, script=False
     )
 
-    # Verify find_sessions was not called
-    assert len(find_sessions_called) == 0
-
 
 def test_check_learn_status_and_prompt_runs_when_config_enabled(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test that _check_learn_status_and_prompt runs normally when prompt_learn_on_land=True."""
@@ -374,30 +272,18 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
 
     issue_number = 123
 
-    # Create issue (without learn_status - will fall back to session check)
+    # Create issue with session metadata so find_sessions_for_plan finds them naturally
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body=format_plan_header_body_for_test(),
+        body=format_plan_header_body_for_test(
+            created_from_session="plan-session-1",
+            last_local_impl_session="impl-session-1",
+            last_learn_session="learn-session-1",
+        ),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    # Mock find_sessions_for_plan to return sessions with learn_session_ids
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=["learn-session-1"],  # Already learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Create context with prompt_learn_on_land=True (default)
     global_config = GlobalConfig.test(
@@ -421,7 +307,6 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
 
 def test_check_learn_status_completed_shows_success(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test that completed learn_status in plan header shows success message."""
@@ -441,17 +326,6 @@ def test_check_learn_status_completed_shows_success(
 
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
 
-    # Mock find_sessions_for_plan - should NOT be called when learn_status is completed
-    find_sessions_called = []
-
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        find_sessions_called.append(True)
-        raise AssertionError(
-            "Should not call find_sessions_for_plan when learn_status is completed"
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
-
     ctx = context_for_test(cwd=repo_root, issues=fake_issues)
 
     # Should return immediately with success message
@@ -463,13 +337,9 @@ def test_check_learn_status_completed_shows_success(
     captured = capsys.readouterr()
     assert "Learn completed for plan #123" in captured.err
 
-    # Verify sessions check was skipped
-    assert len(find_sessions_called) == 0
-
 
 def test_check_learn_status_pending_shows_progress(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test that learn_status='pending' in plan header shows progress message."""
@@ -489,15 +359,6 @@ def test_check_learn_status_pending_shows_progress(
 
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
 
-    # Mock find_sessions_for_plan - should NOT be called when learn_status=pending
-    find_sessions_called = []
-
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        find_sessions_called.append(True)
-        raise AssertionError("Should not call find_sessions_for_plan when learn_status=pending")
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
-
     ctx = context_for_test(cwd=repo_root, issues=fake_issues)
 
     # Should return immediately with progress message
@@ -509,13 +370,9 @@ def test_check_learn_status_pending_shows_progress(
     captured = capsys.readouterr()
     assert "Async learn in progress for plan #123" in captured.err
 
-    # Verify sessions check was skipped
-    assert len(find_sessions_called) == 0
-
 
 def test_check_learn_status_null_with_sessions_shows_success(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test that null learn_status with existing learn sessions shows success.
@@ -528,8 +385,11 @@ def test_check_learn_status_null_with_sessions_shows_success(
 
     issue_number = 123
 
-    # Create issue without learn_status (null)
-    issue_body = format_plan_header_body_for_test(learn_status=None)
+    # Create issue without learn_status but with learn session in header metadata
+    issue_body = format_plan_header_body_for_test(
+        learn_status=None,
+        last_learn_session="learn-session-1",
+    )
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
@@ -538,22 +398,6 @@ def test_check_learn_status_null_with_sessions_shows_success(
     )
 
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    # Mock find_sessions_for_plan to return learn sessions
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=["learn-session-1"],  # Already learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     ctx = context_for_test(cwd=repo_root, issues=fake_issues)
 
@@ -588,22 +432,6 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
     )
 
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    # Mock find_sessions_for_plan to return no learn sessions
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=[],  # Not learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Mock subprocess.Popen to simulate successful async learn trigger
     # The _trigger_async_learn function uses Popen to stream stderr in real-time
@@ -660,22 +488,6 @@ def test_check_learn_status_and_prompt_manual_learn_preprocesses_and_continues(
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=[],  # Not learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Mock click.prompt to return choice 4 (preprocess and continue)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
@@ -858,22 +670,6 @@ def test_option4_calls_preprocess_and_continues_landing(
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
-    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
-        return SessionsForPlan(
-            planning_session_id="plan-session-1",
-            implementation_session_ids=["impl-session-1"],
-            learn_session_ids=[],  # Not learned
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            last_session_gist_url=None,
-            last_session_id=None,
-            last_session_source=None,
-        )
-
-    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Mock click.prompt to return choice 4 (preprocess and continue)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
