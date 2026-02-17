@@ -1,5 +1,6 @@
 """Tests for --backend CLI flag and _apply_backend_override helper."""
 
+import dataclasses
 from pathlib import Path
 
 from erk.cli.cli import _apply_backend_override, _resolve_backend_flag
@@ -23,7 +24,7 @@ def test_apply_backend_override_with_existing_config() -> None:
     )
     ctx = context_for_test(global_config=original_config)
 
-    result = _apply_backend_override(ctx, "codex")
+    result = _apply_backend_override(ctx, "codex", erk_root=Path("/test/erks"))
 
     assert result.global_config is not None
     agent = result.global_config.interactive_agent
@@ -43,11 +44,9 @@ def test_apply_backend_override_with_none_config() -> None:
     ctx = context_for_test(global_config=None)
     # context_for_test sets a default GlobalConfig when None is passed,
     # so we need to create context manually with None
-    import dataclasses
-
     ctx = dataclasses.replace(ctx, global_config=None)
 
-    result = _apply_backend_override(ctx, "codex")
+    result = _apply_backend_override(ctx, "codex", erk_root=Path("/test/erks"))
 
     assert result.global_config is not None
     assert result.global_config.interactive_agent.backend == "codex"

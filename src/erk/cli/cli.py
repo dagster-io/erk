@@ -163,7 +163,9 @@ def _show_version_warning() -> None:
         logging.warning("Failed to check version: %s", e)
 
 
-def _apply_backend_override(erk_ctx: ErkContext, backend: AgentBackend) -> ErkContext:
+def _apply_backend_override(
+    erk_ctx: ErkContext, backend: AgentBackend, *, erk_root: Path
+) -> ErkContext:
     """Apply a backend override to the ErkContext's global config.
 
     Uses dataclasses.replace() to bake the backend into
@@ -171,7 +173,8 @@ def _apply_backend_override(erk_ctx: ErkContext, backend: AgentBackend) -> ErkCo
     see the override automatically.
 
     When global_config is None (pre-init), creates a minimal GlobalConfig
-    with the requested backend.
+    with the requested backend. The erk_root parameter is used in this case
+    to avoid calling Path.home() inside the helper.
     """
     if erk_ctx.global_config is not None:
         new_agent = dataclasses.replace(erk_ctx.global_config.interactive_agent, backend=backend)
@@ -179,7 +182,7 @@ def _apply_backend_override(erk_ctx: ErkContext, backend: AgentBackend) -> ErkCo
     else:
         new_agent = dataclasses.replace(InteractiveAgentConfig.default(), backend=backend)
         new_config = GlobalConfig(
-            erk_root=Path.home() / ".erk",
+            erk_root=erk_root,
             use_graphite=False,
             shell_setup_complete=False,
             github_planning=False,
@@ -243,7 +246,7 @@ def cli(ctx: click.Context, debug: bool, backend: str | None) -> None:
         env_var=os.environ.get("ERK_BACKEND"),
     )
     if effective_backend is not None:
-        ctx.obj = _apply_backend_override(ctx.obj, effective_backend)
+        ctx.obj = _apply_backend_override(ctx.obj, effective_backend, erk_root=Path.home() / ".erk")
 
 
 # Register all commands
