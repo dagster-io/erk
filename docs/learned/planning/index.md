@@ -31,6 +31,7 @@
 - **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan issue schema, coordinating metadata changes across files
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures or skeleton plan issues, integrating objectives with one-shot dispatch
+- **[parallel-audit-pattern.md](parallel-audit-pattern.md)** — designing parallel agent workflows for bulk operations, implementing multi-agent batch processing, understanding how audit-scan or learn commands parallelize work
 - **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
 - **[plan-execution-patterns.md](plan-execution-patterns.md)** — implementing a plan from a GitHub issue, understanding branch naming and worktree isolation, designing PR submission workflows for plans
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved

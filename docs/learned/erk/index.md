@@ -15,3 +15,4 @@
 - **[pr-sync-workflow.md](pr-sync-workflow.md)** — synchronizing a PR with Graphite, after erk pr checkout, enabling gt commands on external PR
 - **[remote-workflow-template.md](remote-workflow-template.md)** — creating a new remote workflow command, triggering GitHub Actions from CLI, building commands like erk launch pr-address
 - **[slot-pool-architecture.md](slot-pool-architecture.md)** — understanding slot pool design, implementing slot-related features, debugging slot assignment issues
+- **[workspace-activation.md](workspace-activation.md)** — modifying worktree activation scripts, debugging stale package versions in worktrees, understanding how workspace packages are refreshed, changing activation script generation

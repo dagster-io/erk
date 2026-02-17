@@ -22,6 +22,8 @@ Rules triggered by matching actions in code.
 
 **adding an ACTION command that executes instantly** → Read [TUI Command Architecture](action-inventory.md) first. ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories.
 
+**adding streaming commands without using \_push_streaming_detail helper** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Streaming ACTION commands need \_push_streaming_detail() to handle the push-then-stream sequence correctly. Direct streaming without it skips the detail screen push.
+
 **caching fetched data under self.\_view_mode after an async operation** → Read [TUI Async State Snapshot Pattern](async-state-snapshot.md) first. Cache under fetched_mode (snapshot at start), not self.\_view_mode (may have changed during fetch).
 
 **constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
@@ -39,6 +41,8 @@ Rules triggered by matching actions in code.
 **putting PlanDataProvider ABC in src/erk/tui/** → Read [TUI Data Contract](data-contract.md) first. The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways.
 
 **reading self.\_view_mode during async data fetch without snapshotting** → Read [TUI Async State Snapshot Pattern](async-state-snapshot.md) first. Snapshot at fetch start with fetched_mode = self.\_view_mode. Read this doc.
+
+**registering a new TUI command without a view-mode predicate** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Every command must use \_is_plan_view() or \_is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views.
 
 **using \_render() as a method name in Textual widgets** → Read [TUI View Switching](view-switching.md) first. Textual's LSP reserves \_render(). Use \_refresh_display() instead (see ViewBar).
 
