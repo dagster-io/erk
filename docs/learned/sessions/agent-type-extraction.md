@@ -25,7 +25,7 @@ Agent types are extracted using explicit ID linking (no timestamp correlation ne
 2. **tool_result entry**: `message.content[].tool_use_id` + `toolUseResult.agentId`
 3. **Match**: `tool_use.id == tool_use_id` → `agent-{agentId}` → `subagent_type`
 
-**Implementation:** See `extract_agent_types()` in `show_cmd.py`
+**Implementation:** See `extract_agent_info_from_jsonl()` in `show_cmd.py`
 
 ## Data Structures
 

@@ -127,5 +127,6 @@ We tried unifying them with a `--no-stack` flag, but the behavioral differences 
 
 ## See Also
 
-- [Git-PR-Push Command](../../.claude/commands/erk/git-pr-push.md) — Full command specification
-- [PR-Submit Command](../../.claude/commands/erk/pr-submit.md) — Full command specification
+- [Git-PR-Push Command](../../../.claude/commands/erk/git-pr-push.md) — Full command specification
+- [PR-Submit Command](../../../.claude/commands/erk/pr-submit.md) — Full command specification
+- [PR Check Command](../cli/commands/pr-check.md) — Validation rules reference

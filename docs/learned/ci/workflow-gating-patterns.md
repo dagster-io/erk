@@ -92,7 +92,7 @@ Without this trigger, marking a draft PR as ready wouldn't start CI until the ne
 
 ## When Job-Level Conditions Aren't Enough
 
-<!-- Source: .github/workflows/ci.yml, autofix job steps 165-227 -->
+<!-- Source: .github/workflows/ci.yml, autofix job steps 166-397 -->
 
 The autofix job demonstrates why some checks must happen at step-level despite job-level gating:
 
