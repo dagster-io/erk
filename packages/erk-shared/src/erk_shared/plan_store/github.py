@@ -229,6 +229,32 @@ class GitHubPlanStore(PlanBackend):
 
         return block.data.get(field_name)
 
+    def get_all_metadata_fields(
+        self,
+        repo_root: Path,
+        plan_id: str,
+    ) -> dict[str, object] | PlanNotFound:
+        """Get all metadata fields from the plan-header block.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Issue number as string
+
+        Returns:
+            Dictionary of all metadata fields, or PlanNotFound if plan doesn't exist.
+            Returns empty dict if plan exists but has no metadata block.
+        """
+        issue_number = int(plan_id)
+        issue = self._github_issues.get_issue(repo_root, issue_number)
+        if isinstance(issue, IssueNotFound):
+            return PlanNotFound(plan_id=plan_id)
+
+        block = find_metadata_block(issue.body, "plan-header")
+        if block is None:
+            return {}
+
+        return dict(block.data)
+
     def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans from GitHub.
 

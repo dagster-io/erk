@@ -12,7 +12,12 @@ import click
 
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.config import load_config
-from erk_shared.context.helpers import require_github, require_issues, require_repo_root
+from erk_shared.context.helpers import (
+    require_github,
+    require_issues,
+    require_plan_backend,
+    require_repo_root,
+)
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import PRNotFound
 
@@ -36,6 +41,7 @@ def register_one_shot_plan(
     """Register a one-shot plan with issue metadata, comment, and PR closing ref."""
     issues = require_issues(ctx)
     github = require_github(ctx)
+    plan_backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
     plans_repo = load_config(repo_root).plans_repo
     results: dict[str, object] = {}
@@ -43,7 +49,7 @@ def register_one_shot_plan(
     # Op 1: dispatch metadata
     try:
         write_dispatch_metadata(
-            issues=issues,
+            plan_backend=plan_backend,
             github=github,
             repo_root=repo_root,
             issue_number=issue_number,

@@ -129,7 +129,7 @@ def test_get_learn_plan_parent_branch_returns_parent_branch(tmp_path: Path) -> N
         tmp_path, {"5637": parent_plan, "5652": learn_plan}
     )
 
-    result = get_learn_plan_parent_branch(ctx, repo_root, learn_body)
+    result = get_learn_plan_parent_branch(ctx, repo_root, 5652)
 
     assert result == "P5637-add-github-01-23-0433"
 
@@ -151,7 +151,7 @@ def test_get_learn_plan_parent_branch_returns_none_without_learned_from(tmp_path
 
     ctx, _, _, _, _, repo_root = setup_submit_context(tmp_path, {"5652": learn_plan})
 
-    result = get_learn_plan_parent_branch(ctx, repo_root, learn_body)
+    result = get_learn_plan_parent_branch(ctx, repo_root, 5652)
 
     assert result is None
 
@@ -172,7 +172,7 @@ def test_get_learn_plan_parent_branch_returns_none_without_parent_branch(tmp_pat
         tmp_path, {"5637": parent_plan, "5652": learn_plan}
     )
 
-    result = get_learn_plan_parent_branch(ctx, repo_root, learn_body)
+    result = get_learn_plan_parent_branch(ctx, repo_root, 5652)
 
     assert result is None
 
