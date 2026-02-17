@@ -52,7 +52,7 @@ Plan and objective commands safely reuse the same keyboard shortcuts because the
 | Shortcut | Plan View Command | Objectives View Command |
 | -------- | ----------------- | ----------------------- |
 | `s`      | Submit to Queue   | Next Plan (One-Shot)    |
-| `5`      | Fix Conflicts     | Check Objective         |
+| `5`      | Fix Conflicts Remote | Check Objective      |
 | `i`      | Open Issue        | Open Objective          |
 | `1`      | Copy Prepare      | Copy Next Plan          |
 | `3`      | Copy Submit       | Copy View               |
