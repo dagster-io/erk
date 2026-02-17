@@ -56,6 +56,7 @@ Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the 
 ```
 Task(
   subagent_type: "general-purpose",
+  model: "haiku",
   description: "Classify PR feedback",
   prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
            Arguments: [pass through --pr <number> if specified] [--include-resolved if --all was specified]
@@ -235,6 +236,7 @@ After all batches complete, re-invoke the classifier to verify all threads are r
 ```
 Task(
   subagent_type: "general-purpose",
+  model: "haiku",
   description: "Verify PR feedback resolved",
   prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
            Arguments: [pass through --pr <number> if originally specified]
