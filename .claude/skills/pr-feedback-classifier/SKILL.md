@@ -7,7 +7,7 @@ description: >
 argument-hint: "[--pr <number>] [--include-resolved]"
 context: fork
 agent: general-purpose
-model: sonnet 
+model: sonnet
 ---
 
 # PR Feedback Classifier
