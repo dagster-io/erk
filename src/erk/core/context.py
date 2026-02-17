@@ -25,7 +25,8 @@ from erk.core.shell import RealShell
 # This ensures that both erk CLI and kit commands use the same class identity
 from erk_shared.context.context import ErkContext as ErkContext
 
-# Re-export types from erk_shared.context
+# Re-export types from erk_shared.context and erk.artifacts.paths
+from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
 from erk_shared.context.types import GlobalConfig as GlobalConfig
 from erk_shared.context.types import LoadedConfig as LoadedConfig
 from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
@@ -187,6 +188,7 @@ def context_for_test(
     local_config: LoadedConfig | None = None,
     repo: RepoContext | NoRepoSentinel | None = None,
     repo_info: RepoInfo | None = None,
+    package_info: ErkPackageInfo | None = None,
     dry_run: bool = False,
     debug: bool = False,
 ) -> ErkContext:
@@ -391,6 +393,7 @@ def context_for_test(
         local_config=local_config,
         repo=repo,
         repo_info=repo_info,
+        package_info=package_info,
         dry_run=dry_run,
         debug=debug,
     )
@@ -596,7 +599,12 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         real_agent_docs = DryRunAgentDocs(real_agent_docs)
     prompt_executor: PromptExecutor = ClaudePromptExecutor(console=console)
 
-    # 11. Create context with all values
+    # 11. Create package info
+    from erk.artifacts.paths import ErkPackageInfo
+
+    package_info = ErkPackageInfo.from_project_dir(cwd)
+
+    # 12. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -624,6 +632,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         local_config=local_config,
         repo=repo,
         repo_info=repo_info,
+        package_info=package_info,
         dry_run=dry_run,
         debug=debug,
     )

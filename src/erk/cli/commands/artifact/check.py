@@ -16,6 +16,7 @@ from erk.artifacts.models import InstalledArtifact
 from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.staleness import check_staleness
 from erk.artifacts.state import load_artifact_state
+from erk_shared.context.context import ErkContext
 
 
 def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
@@ -188,7 +189,8 @@ def _display_verbose_status(
     count=True,
     help="Show per-artifact status. Use -vv to also show hash comparisons.",
 )
-def check_cmd(verbose: int) -> None:
+@click.pass_context
+def check_cmd(ctx: click.Context, verbose: int) -> None:
     """Check if artifacts are in sync with erk version.
 
     Compares the version recorded in .erk/state.toml against
@@ -210,7 +212,10 @@ def check_cmd(verbose: int) -> None:
       erk artifact check -vv
     """
     project_dir = Path.cwd()
-    package = ErkPackageInfo.from_project_dir(project_dir)
+    if isinstance(ctx.obj, ErkContext) and ctx.obj.package_info is not None:
+        package = ctx.obj.package_info
+    else:
+        package = ErkPackageInfo.from_project_dir(project_dir)
 
     staleness_result = check_staleness(project_dir, package=package)
     orphan_result = find_orphaned_artifacts(project_dir, package=package)

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.staleness import check_staleness
+from erk.artifacts.paths import ErkPackageInfo
 
 
 def _make_package(tmp_path: Path, *, in_erk_repo: bool) -> ErkPackageInfo:
