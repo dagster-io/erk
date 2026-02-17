@@ -501,9 +501,6 @@ def run_init(
         if len(installed_backends) == 0:
             user_output("  No agent backends detected (claude, codex)")
             user_output("  Defaulting to claude")
-        elif len(installed_backends) == 1:
-            tool_path = ctx.shell.get_installed_tool_path(installed_backends[0])
-            user_output(f"  Detected: {installed_backends[0]} ({tool_path})")
         else:
             for b in installed_backends:
                 tool_path = ctx.shell.get_installed_tool_path(b)
