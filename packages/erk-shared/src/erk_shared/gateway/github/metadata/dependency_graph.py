@@ -15,6 +15,8 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapStepStatus,
 )
 
+_TERMINAL_STATUSES: set[RoadmapStepStatus] = {"done", "skipped"}
+
 
 @dataclass(frozen=True)
 class ObjectiveNode:
@@ -40,11 +42,10 @@ class DependencyGraph:
     def unblocked_nodes(self) -> list[ObjectiveNode]:
         """Nodes whose dependencies are all satisfied (done or skipped)."""
         node_map = self._node_map()
-        satisfied_statuses: set[RoadmapStepStatus] = {"done", "skipped"}
         result: list[ObjectiveNode] = []
         for node in self.nodes:
             all_satisfied = all(
-                node_map[dep_id].status in satisfied_statuses
+                node_map[dep_id].status in _TERMINAL_STATUSES
                 for dep_id in node.depends_on
                 if dep_id in node_map
             )
@@ -61,7 +62,7 @@ class DependencyGraph:
 
     def is_complete(self) -> bool:
         """True if every node is done or skipped."""
-        return all(node.status in {"done", "skipped"} for node in self.nodes)
+        return all(node.status in _TERMINAL_STATUSES for node in self.nodes)
 
 
 def graph_from_phases(phases: list[RoadmapPhase]) -> DependencyGraph:
