@@ -459,11 +459,11 @@ def test_objective_commands_hidden_in_plans_view() -> None:
     cmd_ids = [cmd.id for cmd in commands]
 
     objective_cmd_ids = [
-        "one_shot_implement",
+        "one_shot_plan",
         "check_objective",
         "close_objective",
         "open_objective",
-        "copy_implement",
+        "copy_plan",
         "copy_view",
     ]
     for obj_id in objective_cmd_ids:

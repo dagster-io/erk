@@ -329,9 +329,9 @@ Methods with `NoReturn` type annotation never return. Testing them directly woul
 
 ### Example: Testing exec_ssh_interactive
 
-<!-- Source: tests/unit/cli/commands/codespace/run/objective/test_implement_cmd.py, test_run_implement_starts_codespace_and_runs_command -->
+<!-- Source: tests/unit/cli/commands/codespace/run/objective/test_plan_cmd.py, test_run_plan_starts_codespace_and_runs_command -->
 
-See `test_run_implement_starts_codespace_and_runs_command()` in `tests/unit/cli/commands/codespace/run/objective/test_implement_cmd.py` for the full pattern. The test demonstrates:
+See `test_run_plan_starts_codespace_and_runs_command()` in `tests/unit/cli/commands/codespace/run/objective/test_plan_cmd.py` for the full pattern. The test demonstrates:
 
 1. Creating `FakeCodespace` and `FakeCodespaceRegistry` with constructor injection
 2. Invoking the CLI command via `CliRunner`
