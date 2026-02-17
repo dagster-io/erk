@@ -313,11 +313,11 @@ def test_update_step_in_frontmatter() -> None:
     # First step unchanged
     assert steps[0].id == "1.1"
     assert steps[0].pr is None
-    # Second step updated (--pr auto-clears plan, status inferred as done)
+    # Second step updated (--pr auto-clears plan, status inferred as in_progress)
     assert steps[1].id == "1.2"
     assert steps[1].pr == "#789"
     assert steps[1].plan is None
-    assert steps[1].status == "done"
+    assert steps[1].status == "in_progress"
 
 
 def test_update_step_in_frontmatter_not_found() -> None:
@@ -538,7 +538,7 @@ def test_update_step_status_none_infers_from_pr() -> None:
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
-    assert steps[0].status == "done"  # Inferred from PR value
+    assert steps[0].status == "in_progress"  # Inferred from PR value
     assert steps[0].pr == "#200"
 
 
@@ -564,7 +564,7 @@ def test_update_step_with_plan() -> None:
 
 
 def test_update_step_status_inferred_from_pr() -> None:
-    """Update step with status=None and PR set infers 'done' status."""
+    """Update step with status=None and PR set infers 'in_progress' status."""
     block_content = _details_block(
         "schema_version: '2'\n"
         "steps:\n"
@@ -580,7 +580,7 @@ def test_update_step_status_inferred_from_pr() -> None:
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
-    assert steps[0].status == "done"
+    assert steps[0].status == "in_progress"
     assert steps[0].pr == "#999"
 
 
@@ -623,8 +623,8 @@ def test_update_step_preserves_status_when_both_none() -> None:
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
-    # Status should be inferred from preserved pr="#200" → "done"
-    assert steps[0].status == "done"
+    # Status should be inferred from preserved pr="#200" → "in_progress"
+    assert steps[0].status == "in_progress"
     assert steps[0].pr == "#200"
 
 
@@ -653,8 +653,8 @@ def test_update_step_none_pr_preserves_existing() -> None:
     assert steps[0].status == "planning"
 
 
-def test_update_step_pr_auto_clears_plan() -> None:
-    """Setting --pr auto-clears plan reference."""
+def test_update_step_pr_preserves_plan_when_plan_none() -> None:
+    """Setting --pr with plan=None preserves existing plan reference."""
     block_content = _details_block(
         "schema_version: '2'\n"
         "steps:\n"
@@ -670,8 +670,8 @@ def test_update_step_pr_auto_clears_plan() -> None:
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
-    # Plan should be auto-cleared when PR is set
-    assert steps[0].plan is None
+    # plan=None means preserve existing, so plan stays
+    assert steps[0].plan == "#6464"
     assert steps[0].pr == "#999"
 
 
@@ -775,5 +775,5 @@ def test_render_roundtrip_via_update_details() -> None:
     steps2 = parse_roadmap_frontmatter(updated2)
     assert steps2 is not None
     assert steps2[0].pr == "#200"
-    assert steps2[0].plan is None
-    assert steps2[0].status == "done"
+    assert steps2[0].plan == "#100"  # plan=None preserves existing
+    assert steps2[0].status == "in_progress"

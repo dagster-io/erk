@@ -133,7 +133,7 @@ def _replace_table_in_text(
     if explicit_status is not None:
         display_status = explicit_status.replace("_", "-")
     elif resolved_pr != "-" and resolved_pr:
-        display_status = "done"
+        display_status = "in-progress"
     elif resolved_plan != "-" and resolved_plan:
         display_status = "in-progress"
     else:

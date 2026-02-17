@@ -30,11 +30,12 @@ The command is infrastructure for workflow integration, not an interactive tool.
 
 When the command updates plan/PR cells, it **writes status, plan, and PR cells atomically**:
 
-| Flag           | Written Status | Plan Cell | PR Cell   | Why                                   |
-| -------------- | -------------- | --------- | --------- | ------------------------------------- |
-| `--plan #6464` | `in-progress`  | `#6464`   | (cleared) | Plan reference indicates active work  |
-| `--pr #123`    | `done`         | (cleared) | `#123`    | PR reference indicates landed work    |
-| `--pr ""`      | `pending`      | (cleared) | `-`       | Clearing refs resets to initial state |
+| Flag                                  | Written Status | Plan Cell   | PR Cell     | Why                                                     |
+| ------------------------------------- | -------------- | ----------- | ----------- | ------------------------------------------------------- |
+| `--plan #6464`                        | `in-progress`  | `#6464`     | (preserved) | Plan reference indicates active work                    |
+| `--plan #6464 --pr #123`              | `in-progress`  | `#6464`     | `#123`      | PR reference without --status done means work in flight |
+| `--plan #6464 --pr #123 --status done`| `done`         | `#6464`     | `#123`      | Explicit --status done confirms PR is merged            |
+| `--pr ""`                             | `pending`      | (preserved) | `-`         | Clearing refs resets to initial state                   |
 
 The command also accepts legacy `--pr "plan #NNN"` syntax, which is automatically migrated to `--plan "#NNN"`.
 
@@ -48,8 +49,8 @@ This differs from parse-time inference (which only fires when status is `-` or e
 # Single step — plan reference
 erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --plan <PLAN_REF>
 
-# Single step — landed PR (auto-clears plan)
-erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF>
+# Single step — landed PR (--plan is required with --pr)
+erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF> --plan <PLAN_REF>
 
 # Multiple steps
 erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --step <STEP_ID> ... --plan <PLAN_REF>
@@ -63,8 +64,11 @@ erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --step <STEP_ID> ..
 # Set step to plan phase
 erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"
 
+# Link PR (infers in-progress status)
+erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464"
+
 # Mark step as done with landed PR
-erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
+erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464" --status done
 
 # Clear PR reference (resets to pending)
 erk exec update-roadmap-step 6423 --step 1.3 --pr ""
@@ -97,7 +101,7 @@ The `--include-body` flag causes the command to include the fully-mutated issue 
 
 ```bash
 # Get the updated body back in the JSON output
-erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --include-body
+erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464" --include-body
 ```
 
 **Output with `--include-body` (single step):**
@@ -141,13 +145,14 @@ On failure paths, the field is omitted regardless of the flag.
 
 The command uses separate `--plan` and `--pr` flags for the two lifecycle stages:
 
-| Flag             | Status Computed | Lifecycle Stage               |
-| ---------------- | --------------- | ----------------------------- |
-| `--plan "#6464"` | `in-progress`   | Step has an active plan issue |
-| `--pr "#6500"`   | `done`          | Step has a landed PR          |
-| `--pr ""`        | `pending`       | Clear the reference           |
+| Flag                                    | Status Computed | Lifecycle Stage                     |
+| --------------------------------------- | --------------- | ----------------------------------- |
+| `--plan "#6464"`                        | `in-progress`   | Step has an active plan issue       |
+| `--plan "#6464" --pr "#6500"`           | `in-progress`   | PR reference (not confirmed merged) |
+| `--plan "#6464" --pr "#6500" --status done` | `done`      | Step has a confirmed landed PR      |
+| `--pr ""`                               | `pending`       | Clear the reference                 |
 
-Setting `--pr` automatically clears the plan column. The legacy `--pr "plan #NNN"` syntax is still accepted and automatically migrated to `--plan "#NNN"`.
+When `--pr` is set, `--plan` must also be explicitly provided (error: `plan_required_with_pr`). Use `--plan "#NNN"` to preserve or `--plan ""` to clear. The legacy `--pr "plan #NNN"` syntax is still accepted and automatically migrated to `--plan "#NNN"`.
 
 See [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) for the write-time vs parse-time distinction.
 
@@ -257,7 +262,7 @@ github.update_issue_body(...)
 **DO** call the command:
 
 ```python
-subprocess.run(["erk", "exec", "update-roadmap-step", str(issue), "--step", "1.3", "--pr", "#123"])
+subprocess.run(["erk", "exec", "update-roadmap-step", str(issue), "--step", "1.3", "--pr", "#123", "--plan", "#456"])
 ```
 
 The command is designed for programmatic invocation — JSON output is machine-parsable.

@@ -69,7 +69,7 @@ Your tasks:
 Before running update-roadmap-step, extract the existing plan reference for each completed step from the objective roadmap YAML (available in the context blob). Pass `--plan "#<plan-number>"` to preserve it, or `--plan ""` if the step had no plan.
 
 ```bash
-erk exec update-roadmap-step <objective-number> --step <step-id-1> --step <step-id-2> ... --pr "#<pr-number>" --plan "#<plan-number>" --include-body
+erk exec update-roadmap-step <objective-number> --step <step-id-1> --step <step-id-2> ... --pr "#<pr-number>" --plan "#<plan-number>" --status done --include-body
 ```
 
 This handles both frontmatter and table dual-write automatically. The `--include-body` flag returns the fully-mutated body in the JSON output as `updated_body`, which you MUST use for prose reconciliation in step 3 (do NOT re-fetch via `gh issue view`).
@@ -128,13 +128,14 @@ These are common contradiction types, not an exhaustive list. Flag any divergenc
 
 5. **Compose the updated objective body** by editing the roadmap table:
    - Set the PR cell to `#<pr-number>` for completed steps, preserve Plan cell value
-   - Set the Status cell to the correct display value: `done` for completed steps (PR is `#NNN`), `in-progress` for in-flight plans (Plan is `#NNN`), `pending` for no refs
+   - Set the Status cell to the correct display value: `done` for completed steps (pass `--status done` explicitly), `in-progress` for in-flight plans (Plan is `#NNN`), `pending` for no refs
    - If PR title meaningfully differs from step description, update the description
    - Update "Current Focus" to describe the next pending step or next phase
 
 **Status display rules:**
 
-- Step has `#NNN` in PR column → Status `done`, preserve Plan column
+- Step has a _landed_ PR → Status `done` (pass `--status done` explicitly)
+- Step has `#NNN` in PR column (not confirmed merged) → Status `in-progress`
 - Step has `#NNN` in Plan column → Status `in-progress`
 - Step has no Plan or PR → Status `pending`
 - `blocked`/`skipped` are explicit overrides — only change if blocker is resolved
