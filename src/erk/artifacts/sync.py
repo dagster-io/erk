@@ -9,7 +9,6 @@ from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash,
 from erk.artifacts.models import ArtifactFileState, ArtifactState
 from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir, get_bundled_github_dir
 from erk.artifacts.state import load_installed_capabilities, save_artifact_state
-from erk_shared.context.types import AgentBackend
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
@@ -18,6 +17,7 @@ from erk.core.claude_settings import (
     has_exit_plan_hook,
     has_user_prompt_hook,
 )
+from erk_shared.context.types import AgentBackend
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,7 @@ class ArtifactSyncConfig:
 def create_artifact_sync_config(
     project_dir: Path,
     *,
-    backend: AgentBackend = "claude",
+    backend: AgentBackend,
 ) -> ArtifactSyncConfig:
     """Create config with real values for production use."""
     return ArtifactSyncConfig(

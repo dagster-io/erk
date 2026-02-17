@@ -10,6 +10,7 @@ they have their own capability classes.
 
 from functools import cache
 
+from erk.core.capabilities.codex_portable import codex_portable_skills
 from erk.core.capabilities.skill_capability import SkillCapability
 from erk_shared.context.types import AgentBackend
 
@@ -49,8 +50,6 @@ class BundledSkillCapability(SkillCapability):
 
     @property
     def supported_backends(self) -> tuple[AgentBackend, ...]:
-        from erk.core.capabilities.codex_portable import codex_portable_skills
-
         if self.skill_name in codex_portable_skills():
             return ("claude", "codex")
         return ("claude",)
