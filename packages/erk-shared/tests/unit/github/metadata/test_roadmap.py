@@ -1,4 +1,4 @@
-"""Unit tests for roadmap parsing and utility functions."""
+"""Unit tests for roadmap parsing, utility functions, and table rendering."""
 
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
@@ -7,6 +7,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     find_next_step,
     parse_roadmap,
     parse_v2_roadmap,
+    render_roadmap_tables,
     serialize_phases,
 )
 
@@ -533,3 +534,142 @@ steps:
     result = parse_v2_roadmap(body)
 
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# render_roadmap_tables tests
+# ---------------------------------------------------------------------------
+
+
+class TestRenderRoadmapTables:
+    def test_single_phase_basic(self) -> None:
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Foundation",
+                steps=[
+                    RoadmapStep(id="1.1", description="Setup", status="done", plan=None, pr="#10"),
+                    RoadmapStep(
+                        id="1.2", description="Build", status="pending", plan=None, pr=None
+                    ),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+
+        assert "### Phase 1: Foundation (1 PR)" in result
+        assert "| 1.1 | Setup | done | - | #10 |" in result
+        assert "| 1.2 | Build | pending | - | - |" in result
+
+    def test_status_hyphenation(self) -> None:
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Test",
+                steps=[
+                    RoadmapStep(
+                        id="1.1",
+                        description="Working",
+                        status="in_progress",
+                        plan="#50",
+                        pr=None,
+                    ),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+
+        assert "in-progress" in result
+        assert "in_progress" not in result
+
+    def test_null_values_render_as_dash(self) -> None:
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Test",
+                steps=[
+                    RoadmapStep(id="1.1", description="Step", status="pending", plan=None, pr=None),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+
+        assert "| 1.1 | Step | pending | - | - |" in result
+
+    def test_multi_phase(self) -> None:
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Foundation",
+                steps=[
+                    RoadmapStep(id="1.1", description="A", status="done", plan=None, pr="#1"),
+                ],
+            ),
+            RoadmapPhase(
+                number=2,
+                suffix="",
+                name="Core",
+                steps=[
+                    RoadmapStep(id="2.1", description="B", status="pending", plan=None, pr=None),
+                ],
+            ),
+        ]
+        result = render_roadmap_tables(phases)
+
+        assert "### Phase 1: Foundation (1 PR)" in result
+        assert "### Phase 2: Core (0 PR)" in result
+
+    def test_sub_phase_suffix(self) -> None:
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="A",
+                name="First Part",
+                steps=[
+                    RoadmapStep(
+                        id="1A.1", description="Step", status="pending", plan=None, pr=None
+                    ),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+
+        assert "### Phase 1A: First Part (0 PR)" in result
+
+    def test_table_header_format(self) -> None:
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Test",
+                steps=[
+                    RoadmapStep(id="1.1", description="Step", status="pending", plan=None, pr=None),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+        lines = result.split("\n")
+
+        assert lines[1] == "| Step | Description | Status | Plan | PR |"
+        assert lines[2] == "|------|-------------|--------|------|----|"
+
+    def test_plan_and_pr_values(self) -> None:
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Test",
+                steps=[
+                    RoadmapStep(
+                        id="1.1", description="Done", status="done", plan="#100", pr="#200"
+                    ),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+
+        assert "| 1.1 | Done | done | #100 | #200 |" in result

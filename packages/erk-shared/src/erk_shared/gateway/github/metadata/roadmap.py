@@ -483,6 +483,40 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
     return ([], [_LEGACY_FORMAT_ERROR])
 
 
+def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
+    """Render phases as markdown tables matching the objective-body display format.
+
+    Format per phase:
+        ### Phase {number}{suffix}: {name} ({N} PR)
+        | Step | Description | Status | Plan | PR |
+        |------|-------------|--------|------|----|
+        | {id} | {desc}      | {status} | {plan} | {pr} |
+
+    Status display: underscores are replaced with hyphens (in_progress → in-progress).
+    Null values render as ``-``.
+    """
+    sections: list[str] = []
+
+    for phase in phases:
+        pr_count = sum(1 for step in phase.steps if step.pr is not None)
+        header = f"### Phase {phase.number}{phase.suffix}: {phase.name} ({pr_count} PR)"
+
+        rows: list[str] = []
+        rows.append("| Step | Description | Status | Plan | PR |")
+        rows.append("|------|-------------|--------|------|----|")
+
+        for step in phase.steps:
+            status_display = step.status.replace("_", "-")
+            plan_display = step.plan if step.plan is not None else "-"
+            pr_display = step.pr if step.pr is not None else "-"
+            cells = [step.id, step.description, status_display, plan_display, pr_display]
+            rows.append("| " + " | ".join(cells) + " |")
+
+        sections.append(header + "\n" + "\n".join(rows))
+
+    return "\n\n".join(sections)
+
+
 # ---------------------------------------------------------------------------
 # Utility functions
 # ---------------------------------------------------------------------------
