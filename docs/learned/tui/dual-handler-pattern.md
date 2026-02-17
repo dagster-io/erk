@@ -49,6 +49,18 @@ Both providers feed the same `command_id` string into dispatch methods, but the 
 
 This dispatch duplication is the main cost of the pattern. Both methods contain parallel `command_id` switch statements handling the same IDs. The duplication exists because `ErkDashApp` operates at the app level (accessing `self._provider` and managing screen pushes), while `PlanDetailScreen` operates within a modal (using an executor and able to `self.dismiss()`). Attempts to unify them would require either threading app-level concerns into the modal or modal-level concerns into the app, both of which would violate the screen boundary.
 
+### ViewMode Hardcoding in PlanCommandProvider
+
+<!-- Source: src/erk/tui/commands/provider.py:181 -->
+
+`PlanCommandProvider._get_context()` hardcodes `view_mode=ViewMode.PLANS`:
+
+<!-- See PlanCommandProvider._get_context() in src/erk/tui/commands/provider.py:181 -->
+
+It returns a `CommandContext` with the detail screen's `_row` and `view_mode=ViewMode.PLANS`.
+
+This is intentional, not a bug. The detail modal always shows a single plan, so objective commands should never appear there. In contrast, `MainListCommandProvider` reads `view_mode` dynamically from `self._app._view_mode`, which changes as the user switches tabs — this is what enables objective commands to appear when the Objectives tab is active. The asymmetry exists because the detail modal is scoped to plan context while the main list serves multiple views.
+
 ## When This Pattern Breaks Down
 
 The dual provider pattern works for operations on "the selected plan." It does not apply to:

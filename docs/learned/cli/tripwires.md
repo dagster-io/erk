@@ -112,6 +112,8 @@ Rules triggered by matching actions in code.
 
 **using Python format strings with :N width specifiers for CLI output containing emoji** → Read [CLI Output Styling Guide](output-styling.md) first. Use Rich tables instead — emoji have variable terminal widths (typically 2 cells) which break fixed-width alignment. See the Rich Tables for Variable-Width Characters section below.
 
+**using a non-None default for an optional Click option** → Read [Click Framework Conventions](click-framework-conventions.md) first. Use default=None to distinguish 'not provided' from 'explicitly set'. This enables three-state semantics (None=omitted, ''=clear, value=set) used throughout erk's CLI.
+
 **using blocking operations (user confirmation, editor launch) in CI-executed code paths** → Read [CI-Aware Commands](ci-aware-commands.md) first. Check `in_github_actions()` before any blocking operation. CI has no terminal for user input.
 
 **using click.confirm() after user_output()** → Read [CLI Output Styling Guide](output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.

@@ -9,3 +9,4 @@
 - **[adding-workflows.md](adding-workflows.md)** — adding workflow capabilities, creating GitHub Actions workflow capabilities, understanding workflow capability pattern
 - **[bundled-skills.md](bundled-skills.md)** — registering new bundled skills in the capability system, understanding how skills are discovered by erk init and erk artifact sync, debugging missing skill capabilities
 - **[folder-structure.md](folder-structure.md)** — adding new capability implementations, deciding where to place capability files, understanding capability organization
+- **[learned-docs-capability.md](learned-docs-capability.md)** — modifying the learned-docs capability install or uninstall logic, debugging partial learned-docs installation, understanding how learned-docs artifacts are bundled in the wheel, adding new artifacts to the learned-docs capability

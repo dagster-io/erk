@@ -91,11 +91,19 @@ Load the `erk-planning` skill for detailed guidance. Key commands:
 
 Without built-in plan mode, follow this explicit protocol:
 
-1. For complex tasks (3+ files, unclear scope), create a plan first
-2. Write the plan to a markdown file
-3. Run: `erk plan create --file <path-to-plan.md>`
-4. To implement: `erk implement <issue-number>`
-   Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
+1. **Assess complexity**: For complex tasks (3+ files, unclear scope), create a plan first
+2. **Write the plan**: Create a markdown file with implementation steps
+3. **Save to GitHub**: Run `erk plan create --file <path-to-plan.md>` to create a tracked issue
+4. **Implement**: Run `erk implement <issue-number>` to set up a worktree and execute
+5. **Submit**: Run `erk pr submit` after implementation to create the PR
+
+**Validation coordination**: When implementing, verify that:
+
+- `erk exec impl-init --json` returns `"valid": true` before starting work
+- `.impl/plan.md` is treated as immutable during implementation
+- `erk exec impl-verify` confirms `.impl/` is preserved after implementation
+
+Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
 
 ### All Backends
 

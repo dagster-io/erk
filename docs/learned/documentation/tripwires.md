@@ -48,6 +48,8 @@ Rules triggered by matching actions in code.
 
 **manually wrapping lines or aligning tables in markdown** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun.
 
+**modifying tripwires, read_when, or title in document frontmatter** → Read [Frontmatter and Tripwire Format](frontmatter-tripwire-format.md) first. Run `erk docs sync` before committing. Frontmatter changes affect generated index and tripwire files that must be regenerated.
+
 **restructuring or deleting doc content** → Read [Documentation Simplification Patterns](simplification-patterns.md) first. Run 'erk docs sync' after structural changes to regenerate indexes and fix broken cross-references.
 
 **starting a multi-file change without entering plan mode** → Read [Planless vs Planning Workflow Decision Framework](when-to-switch-pattern.md) first. If the change touches 5+ files or has uncertain approach, plan first. See the decision matrix in when-to-switch-pattern.md.

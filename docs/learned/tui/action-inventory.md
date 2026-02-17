@@ -56,6 +56,23 @@ Commands fall into four availability tiers:
 
 **Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
 
+## Objective Commands
+
+<!-- Source: src/erk/tui/commands/registry.py, get_all_commands -->
+
+Six commands are registered for the Objectives view, spanning all three categories:
+
+| ID                   | Name                    | Category | Shortcut | Availability              |
+| -------------------- | ----------------------- | -------- | -------- | ------------------------- |
+| `one_shot_implement` | Implement (One-Shot)    | ACTION   | `s`      | Objectives view           |
+| `check_objective`    | Check Objective         | ACTION   | `5`      | Objectives view           |
+| `close_objective`    | Close Objective         | ACTION   | —        | Objectives view           |
+| `open_objective`     | Objective               | OPEN     | `i`      | Objectives view + has URL |
+| `copy_implement`     | erk objective implement | COPY     | `1`      | Objectives view           |
+| `copy_view`          | erk objective view      | COPY     | `3`      | Objectives view           |
+
+Objective commands use `_is_objectives_view(ctx)` as their view predicate, ensuring they only appear when the Objectives tab is active. Shortcuts are safely reused from plan commands because the view predicates guarantee mutual exclusivity. See [View-Aware Command Filtering](view-aware-commands.md) for the full filtering mechanism.
+
 ## Cross-Frontend Command Reuse
 
 The registry serves as a shared contract between the TUI and desktop dashboard:

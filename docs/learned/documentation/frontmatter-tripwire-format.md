@@ -12,6 +12,8 @@ tripwires:
     warning: "The validator requires structured dicts with action and warning keys. Plain strings fail validation with 'must be an object'."
   - action: "creating a doc in docs/learned/ without read_when field"
     warning: "read_when is required. Without it, the doc won't appear in any index and agents will never discover it."
+  - action: "modifying tripwires, read_when, or title in document frontmatter"
+    warning: "Run `erk docs sync` before committing. Frontmatter changes affect generated index and tripwire files that must be regenerated."
 ---
 
 # Frontmatter and Tripwire Format
@@ -119,6 +121,28 @@ Overly broad conditions waste agent context window by loading irrelevant docs. O
 Category is derived purely from directory path: `docs/learned/architecture/foo.md` → category `architecture`. Root-level docs go into "uncategorized" in the tripwires index.
 
 To create a new category: create the directory, add docs with valid frontmatter, run `erk docs sync`. Optionally add entries to `CATEGORY_DESCRIPTIONS` and `CATEGORY_ROUTING_HINTS` in `operations.py` for richer index and tripwire-index display.
+
+## Syncing After Frontmatter Changes
+
+Any change to `title`, `read_when`, or `tripwires` fields in frontmatter affects generated files. The sync pipeline must run before committing:
+
+```bash
+erk docs sync
+```
+
+Changes that require re-sync:
+
+- Adding, removing, or modifying `tripwires` entries — affects category `tripwires.md` and `tripwires-index.md`
+- Changing `read_when` conditions — affects category and root `index.md` files
+- Changing `title` — affects index display names
+- Adding a new doc or moving a doc between directories — affects category membership
+
+Changes that do **not** require re-sync:
+
+- Editing prose content below the frontmatter
+- Updating `last_audited` or `audit_result` fields
+
+CI enforces sync consistency via `make docs-check`. If generated files are stale, the check fails.
 
 ## Common Mistakes
 
