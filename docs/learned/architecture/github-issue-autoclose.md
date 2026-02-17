@@ -5,7 +5,7 @@ read_when:
   - "debugging why issues didn't auto-close after PR merge"
   - "understanding closing keyword behavior"
   - "working with plan issue closure detection"
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-02-17 12:00 PT"
 audit_result: clean
 ---
 

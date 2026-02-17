@@ -1,5 +1,7 @@
 ---
 title: PR Creation Decision Logic
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 read_when:
   - "creating a PR programmatically in any workflow"
   - "deciding whether to create vs update an existing PR"

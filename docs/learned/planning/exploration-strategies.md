@@ -1,5 +1,7 @@
 ---
 title: Exploration Strategies
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 read_when:
   - "deciding when to use Explore agents vs direct searches"
   - "planning a two-stage explore-then-plan workflow"

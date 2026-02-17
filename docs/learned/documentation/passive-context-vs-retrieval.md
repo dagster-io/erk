@@ -1,16 +1,16 @@
 ---
+title: Passive Context vs. On-Demand Retrieval
 read_when:
   - deciding whether to put knowledge in AGENTS.md, a skill, or a hook
   - diagnosing why an agent isn't using available documentation
   - adding a new tier of context injection
-title: Passive Context vs. On-Demand Retrieval
 tripwires:
-  - action: never expect agents to self-diagnose knowledge gaps
-    warning: use passive context or structural triggers
-  - action: using this pattern
-    warning:
-      skills without explicit invocation triggers perform identically to having
-      no documentation
+  - action: expecting agents to self-diagnose knowledge gaps
+    warning: "Use passive context or structural triggers instead. Agents cannot distinguish stale training data from correct knowledge."
+  - action: creating skills without explicit invocation triggers
+    warning: "Skills without explicit invocation triggers perform identically to having no documentation. Use passive context (AGENTS.md) or structural triggers (hooks) instead."
+last_audited: "2026-02-17 00:00 PT"
+audit_result: edited
 ---
 
 # Passive Context vs. On-Demand Retrieval

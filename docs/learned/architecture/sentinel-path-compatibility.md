@@ -4,6 +4,8 @@ read_when:
   - "writing functions that check path existence"
   - "seeing 'Called .exists() on sentinel path' errors"
   - "making functions testable with FakeGit"
+last_audited: "2026-02-17 12:00 PT"
+audit_result: clean
 ---
 
 # Sentinel Path Compatibility Pattern

@@ -1,7 +1,7 @@
 ---
 title: Roadmap Parser
-last_audited: "2026-02-07 18:30 PT"
-audit_result: edited
+last_audited: "2026-02-17 16:00 PT"
+audit_result: clean
 read_when:
   - "understanding how roadmap steps are parsed"
   - "working with objective roadmap check or update commands"

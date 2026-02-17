@@ -9,8 +9,8 @@ tripwires:
   - action: "reading from or writing to ~/.claude/ paths using Path.home() directly"
     warning: "Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations must go through this gateway for testability and storage abstraction."
     pattern: "Path\\.home\\(\\).*\\.claude"
-last_audited: "2026-02-07 19:42 PT"
-audit_result: edited
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # ClaudeInstallation Gateway

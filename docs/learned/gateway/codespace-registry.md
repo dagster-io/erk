@@ -1,6 +1,6 @@
 ---
 title: CodespaceRegistry Gateway — Read-Only ABC with Standalone Mutations
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
 read_when:
   - "working with GitHub Codespace registration or lookup"

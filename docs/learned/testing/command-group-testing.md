@@ -1,5 +1,7 @@
 ---
 title: Command Group Testing
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 read_when:
   - "testing Click command groups with invoke_without_command=True"
   - "writing tests for commands that serve as both group and default action"

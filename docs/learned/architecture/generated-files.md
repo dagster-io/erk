@@ -1,6 +1,6 @@
 ---
-last_audited: "2026-02-05 19:00 PT"
-audit_result: edited
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 title: Generated Files Architecture
 read_when:
   - "understanding how agent docs sync works"

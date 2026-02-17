@@ -1,6 +1,6 @@
 ---
 title: Slash Command to Exec Migration
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 read_when:
   - "adding business logic to a slash command"

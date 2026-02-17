@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "running `git reset --hard` in workflows after staging cleanup"
     warning: "Verify all cleanup changes are committed BEFORE reset; staged changes without commit will be silently discarded."
-last_audited: "2026-02-16 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-17 16:00 PT"
+audit_result: clean
 ---
 
 # erk-impl Workflow Patterns

@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "creating branches in erk code"
     warning: "Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager."
-last_audited: "2026-02-07 16:00 PT"
-audit_result: edited
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # Branch Manager Decision Tree

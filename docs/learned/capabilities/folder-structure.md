@@ -1,7 +1,7 @@
 ---
 title: Capabilities Folder Structure
-last_audited: "2026-02-15 18:50 PT"
-audit_result: edited
+last_audited: "2026-02-17 09:00 PT"
+audit_result: clean
 read_when:
   - "adding new capability implementations"
   - "deciding where to place capability files"

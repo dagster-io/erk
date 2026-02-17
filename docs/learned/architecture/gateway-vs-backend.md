@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "creating a new ABC without deciding gateway vs backend pattern"
     warning: "Read gateway-vs-backend.md first. Gateways wrap external tools (5-place: abc, real, fake, dry_run, printing). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support."
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # Gateway vs Backend ABC Pattern

@@ -1,6 +1,6 @@
 ---
 title: Claude CLI Error Reporting
-last_audited: "2026-02-16 04:53 PT"
+last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
 read_when:
   - "handling Claude CLI errors"

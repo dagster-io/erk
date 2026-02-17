@@ -1,5 +1,7 @@
 ---
 title: Import Alias vs Re-Export Detection
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 read_when:
   - enforcing the no-import-aliases rule, building automated alias detection, distinguishing re-exports from alias violations
 tripwires:

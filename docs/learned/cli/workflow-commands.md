@@ -1,6 +1,6 @@
 ---
 audit_result: clean
-last_audited: 2026-02-08 05:59 PT
+last_audited: "2026-02-17 16:00 PT"
 read_when:
   - triggering GitHub Actions workflows from CLI
   - adding a new workflow to erk launch

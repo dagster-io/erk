@@ -1,7 +1,7 @@
 ---
 title: "@ Reference Resolution"
-last_audited: "2026-02-16 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 read_when:
   - "Modifying @ reference validation"
   - "Debugging broken @ references in symlinked files"

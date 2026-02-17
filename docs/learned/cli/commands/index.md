@@ -3,6 +3,8 @@ title: CLI Commands Documentation
 read_when:
   - "looking for CLI command reference"
   - "understanding specific erk commands"
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # CLI Commands Documentation

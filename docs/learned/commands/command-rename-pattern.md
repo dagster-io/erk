@@ -1,6 +1,6 @@
 ---
 audit_result: clean
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-17 16:00 PT"
 read_when:
   - renaming a slash command or skill
   - migrating command invocations across the codebase

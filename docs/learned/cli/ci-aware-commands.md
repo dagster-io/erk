@@ -9,8 +9,8 @@ tripwires:
     warning: "Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows."
   - action: "using blocking operations (user confirmation, editor launch) in CI-executed code paths"
     warning: "Check `in_github_actions()` before any blocking operation. CI has no terminal for user input."
-last_audited: "2026-02-05 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # CI-Aware Commands

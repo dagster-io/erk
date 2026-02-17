@@ -3,6 +3,8 @@ title: Exec Script Flag Discovery
 read_when:
   - "using erk exec commands"
   - "unsure what flags an exec command accepts"
+last_audited: "2026-02-17 00:00 PT"
+audit_result: clean
 ---
 
 # Exec Script Flag Discovery
