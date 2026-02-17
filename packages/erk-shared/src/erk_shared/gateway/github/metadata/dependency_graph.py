@@ -8,6 +8,7 @@ Phase 1 of Objective #7242: these types coexist alongside the existing
 RoadmapStep/RoadmapPhase types. Phase 2 will migrate callers.
 """
 
+from collections import Counter
 from dataclasses import dataclass
 
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -139,37 +140,15 @@ def compute_graph_summary(graph: DependencyGraph) -> dict[str, int]:
 
     Returns the same dict format as compute_summary(phases).
     """
-    total = 0
-    pending = 0
-    planning = 0
-    done = 0
-    in_progress = 0
-    blocked = 0
-    skipped = 0
-
-    for node in graph.nodes:
-        total += 1
-        if node.status == "pending":
-            pending += 1
-        elif node.status == "planning":
-            planning += 1
-        elif node.status == "done":
-            done += 1
-        elif node.status == "in_progress":
-            in_progress += 1
-        elif node.status == "blocked":
-            blocked += 1
-        elif node.status == "skipped":
-            skipped += 1
-
+    counts = Counter(node.status for node in graph.nodes)
     return {
-        "total_steps": total,
-        "pending": pending,
-        "planning": planning,
-        "done": done,
-        "in_progress": in_progress,
-        "blocked": blocked,
-        "skipped": skipped,
+        "total_steps": len(graph.nodes),
+        "pending": counts.get("pending", 0),
+        "planning": counts.get("planning", 0),
+        "done": counts.get("done", 0),
+        "in_progress": counts.get("in_progress", 0),
+        "blocked": counts.get("blocked", 0),
+        "skipped": counts.get("skipped", 0),
     }
 
 
@@ -201,11 +180,10 @@ def find_graph_next_step(
         return None
 
     # Find the phase containing this node
-    phase_name = ""
-    for phase in phases:
-        if any(step.id == target_node.id for step in phase.steps):
-            phase_name = phase.name
-            break
+    phase_name = next(
+        (phase.name for phase in phases if any(step.id == target_node.id for step in phase.steps)),
+        "",
+    )
 
     return {
         "id": target_node.id,
