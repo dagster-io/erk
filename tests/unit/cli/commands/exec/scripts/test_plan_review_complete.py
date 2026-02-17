@@ -127,6 +127,7 @@ def test_plan_review_complete_success(tmp_path: Path) -> None:
         [str(issue_number)],
         obj=ErkContext.for_test(
             github=fake_gh,
+            github_issues=fake_gh_issues,
             git=fake_git,
             repo_root=repo_root,
         ),
@@ -175,7 +176,9 @@ def test_plan_review_complete_json_output_structure(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github=fake_gh, github_issues=fake_gh_issues, git=fake_git, repo_root=repo_root
+        ),
     )
 
     assert result.exit_code == 0
@@ -224,7 +227,9 @@ def test_plan_review_complete_deletes_branch(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github=fake_gh, github_issues=fake_gh_issues, git=fake_git, repo_root=repo_root
+        ),
     )
 
     assert result.exit_code == 0
@@ -262,7 +267,9 @@ def test_plan_review_complete_clears_review_pr_metadata(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github=fake_gh, github_issues=fake_gh_issues, git=fake_git, repo_root=repo_root
+        ),
     )
 
     assert result.exit_code == 0
@@ -302,7 +309,9 @@ def test_plan_review_complete_sets_last_review_pr(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github=fake_gh, github_issues=fake_gh_issues, git=fake_git, repo_root=repo_root
+        ),
     )
 
     assert result.exit_code == 0
@@ -342,7 +351,9 @@ def test_plan_review_complete_branch_delete_returns_false(tmp_path: Path) -> Non
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github=fake_gh, github_issues=fake_gh_issues, git=fake_git, repo_root=repo_root
+        ),
     )
 
     assert result.exit_code == 0
@@ -377,7 +388,9 @@ def test_plan_review_complete_already_on_master(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github=fake_gh, github_issues=fake_gh_issues, git=fake_git, repo_root=repo_root
+        ),
     )
 
     assert result.exit_code == 0
@@ -418,7 +431,9 @@ def test_plan_review_complete_no_local_branch(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github=fake_gh, github_issues=fake_gh_issues, git=fake_git, repo_root=repo_root
+        ),
     )
 
     assert result.exit_code == 0
@@ -447,7 +462,7 @@ def test_plan_review_complete_issue_not_found(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         ["9999"],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, github_issues=fake_gh_issues, repo_root=repo_root),
     )
 
     assert result.exit_code == 1
@@ -458,7 +473,11 @@ def test_plan_review_complete_issue_not_found(tmp_path: Path) -> None:
 
 
 def test_plan_review_complete_no_plan_header(tmp_path: Path) -> None:
-    """Test error when issue has no plan-header metadata."""
+    """Test error when issue has no plan-header metadata.
+
+    With PlanBackend, missing plan-header means get_metadata_field returns None,
+    which results in 'no_review_pr' error (no active review PR).
+    """
     issue_number = 2222
     repo_root = tmp_path / "repo"
 
@@ -474,13 +493,13 @@ def test_plan_review_complete_no_plan_header(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, github_issues=fake_gh_issues, repo_root=repo_root),
     )
 
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "no_plan_header"
+    assert output["error"] == "no_review_pr"
 
 
 def test_plan_review_complete_no_review_pr(tmp_path: Path) -> None:
@@ -499,7 +518,7 @@ def test_plan_review_complete_no_review_pr(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, github_issues=fake_gh_issues, repo_root=repo_root),
     )
 
     assert result.exit_code == 1
@@ -526,7 +545,7 @@ def test_plan_review_complete_pr_not_found(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, github_issues=fake_gh_issues, repo_root=repo_root),
     )
 
     assert result.exit_code == 1
@@ -547,7 +566,7 @@ def test_plan_review_complete_error_json_structure(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_review_complete,
         ["8888"],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, github_issues=fake_gh_issues, repo_root=repo_root),
     )
 
     assert result.exit_code == 1

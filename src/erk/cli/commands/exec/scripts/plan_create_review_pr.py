@@ -21,14 +21,13 @@ from erk.cli.constants import ERK_PLAN_REVIEW_TITLE_PREFIX, ERK_PLAN_TITLE_PREFI
 from erk_shared.context.helpers import (
     get_repo_identifier,
     require_github,
+    require_plan_backend,
     require_repo_root,
 )
 from erk_shared.gateway.github.abc import GitHub
-from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.core import find_metadata_block
-from erk_shared.gateway.github.metadata.plan_header import update_plan_header_review_pr
-from erk_shared.gateway.github.types import BodyText, PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -98,7 +97,7 @@ Once review is complete, the plan will be implemented directly and this PR will 
 def _create_review_pr_impl(
     github: GitHub,
     *,
-    github_issues: GitHubIssues,
+    backend: PlanBackend,
     repo_root: Path,
     repo_identifier: str,
     issue_number: int,
@@ -109,7 +108,7 @@ def _create_review_pr_impl(
 
     Args:
         github: GitHub gateway
-        github_issues: GitHub issues gateway
+        backend: PlanBackend for plan metadata operations
         repo_root: Repository root path
         repo_identifier: Repository identifier in "owner/repo" format
         issue_number: Plan issue number
@@ -122,8 +121,10 @@ def _create_review_pr_impl(
     Raises:
         CreateReviewPRException: If issue not found or PR creation fails
     """
-    # LBYL: Check if issue exists before proceeding
-    if not github_issues.issue_exists(repo_root, issue_number):
+    plan_id = str(issue_number)
+
+    # LBYL: Check if plan exists before proceeding (get_metadata_field is lightweight)
+    if isinstance(backend.get_metadata_field(repo_root, plan_id, "schema_version"), PlanNotFound):
         raise CreateReviewPRException(
             error="issue_not_found",
             message=f"Issue #{issue_number} not found",
@@ -135,19 +136,6 @@ def _create_review_pr_impl(
         raise CreateReviewPRException(
             error="pr_already_exists",
             message=f"PR #{existing_pr.number} already exists for branch {branch_name}",
-        )
-
-    # Get issue body and validate plan-header block exists before creating PR
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        msg = f"Issue #{issue_number} not found"
-        raise CreateReviewPRException(error="issue_not_found", message=msg)
-
-    # LBYL: Check plan-header block exists before proceeding
-    if find_metadata_block(issue.body, "plan-header") is None:
-        raise CreateReviewPRException(
-            error="invalid_issue",
-            message=f"Issue #{issue_number} is missing plan-header metadata block",
         )
 
     # Create draft PR - strip [erk-plan] prefix if present, use [erk-plan-review] prefix
@@ -170,12 +158,14 @@ def _create_review_pr_impl(
     github.add_label_to_pr(repo_root, pr_number, PLAN_REVIEW_LABEL)
 
     # Update plan-header metadata with review_pr field
-    # Safe to call - we validated plan-header block exists above
-    updated_body = update_plan_header_review_pr(issue.body, pr_number)
-
-    # Write updated body back to issue
-    # Safe to call - we validated issue exists above
-    github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+    # PlanHeaderNotFoundError raised if plan has no plan-header block
+    try:
+        backend.update_metadata(repo_root, plan_id, {"review_pr": pr_number})
+    except PlanHeaderNotFoundError:
+        raise CreateReviewPRException(
+            error="invalid_issue",
+            message=f"Issue #{issue_number} is missing plan-header metadata block",
+        ) from None
 
     # Construct PR URL
     pr_url = f"https://github.com/{repo_identifier}/pull/{pr_number}"
@@ -205,6 +195,7 @@ def plan_create_review_pr(
     the plan issue's metadata with the review_pr field.
     """
     github = require_github(ctx)
+    backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
     repo_identifier = get_repo_identifier(ctx)
     if repo_identifier is None:
@@ -219,7 +210,7 @@ def plan_create_review_pr(
     try:
         result = _create_review_pr_impl(
             github,
-            github_issues=github.issues,
+            backend=backend,
             repo_root=repo_root,
             repo_identifier=repo_identifier,
             issue_number=issue_number,

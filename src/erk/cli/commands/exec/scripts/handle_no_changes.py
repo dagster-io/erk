@@ -28,7 +28,7 @@ from dataclasses import asdict, dataclass
 
 import click
 
-from erk_shared.context.helpers import require_github, require_repo_root
+from erk_shared.context.helpers import require_github, require_plan_backend, require_repo_root
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -177,6 +177,7 @@ def handle_no_changes(
     Exits with code 0 on success (making the workflow succeed rather than fail).
     """
     github = require_github(ctx)
+    backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     # Build PR title and body
@@ -236,10 +237,10 @@ def handle_no_changes(
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
 
-    # 4. Add comment to plan issue
+    # 4. Add comment to plan issue via PlanBackend
     try:
         comment = _build_issue_comment(pr_number=pr_number)
-        github.issues.add_comment(repo_root, issue_number, comment)
+        backend.add_comment(repo_root, str(issue_number), comment)
     except RuntimeError as e:
         result = HandleNoChangesError(
             success=False,

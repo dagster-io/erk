@@ -21,19 +21,15 @@ from erk_shared.context.helpers import (
     require_branch_manager,
     require_git,
     require_github,
+    require_plan_backend,
     require_repo_root,
 )
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
-from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.core import find_metadata_block
-from erk_shared.gateway.github.metadata.plan_header import (
-    clear_plan_header_review_pr,
-    extract_plan_header_review_pr,
-)
-from erk_shared.gateway.github.types import BodyText, PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -71,7 +67,7 @@ def _plan_review_complete_impl(
     *,
     git: Git,
     branch_manager: BranchManager,
-    github_issues: GitHubIssues,
+    backend: PlanBackend,
     repo_root: Path,
     issue_number: int,
 ) -> PlanReviewCompleteSuccess:
@@ -81,7 +77,7 @@ def _plan_review_complete_impl(
         github: GitHub gateway
         git: Git gateway (for query operations)
         branch_manager: BranchManager (for branch mutations)
-        github_issues: GitHub issues gateway
+        backend: PlanBackend for plan metadata operations
         repo_root: Repository root path
         issue_number: Plan issue number
 
@@ -91,29 +87,15 @@ def _plan_review_complete_impl(
     Raises:
         PlanReviewCompleteException: If issue not found, no plan header, or no review PR
     """
-    # LBYL: Check if issue exists
-    if not github_issues.issue_exists(repo_root, issue_number):
+    plan_id = str(issue_number)
+
+    # LBYL: Get review_pr from plan-header metadata (also serves as existence check)
+    review_pr = backend.get_metadata_field(repo_root, plan_id, "review_pr")
+    if isinstance(review_pr, PlanNotFound):
         raise PlanReviewCompleteException(
             error="issue_not_found",
             message=f"Issue #{issue_number} not found",
         )
-
-    # LBYL: Extract review_pr from plan-header
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        raise PlanReviewCompleteException(
-            error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
-        )
-
-    # LBYL: Check plan-header block exists
-    if find_metadata_block(issue.body, "plan-header") is None:
-        raise PlanReviewCompleteException(
-            error="no_plan_header",
-            message=f"Issue #{issue_number} is missing plan-header metadata block",
-        )
-
-    review_pr = extract_plan_header_review_pr(issue.body)
 
     # LBYL: Check review_pr is not None
     if review_pr is None:
@@ -122,17 +104,25 @@ def _plan_review_complete_impl(
             message=f"Issue #{issue_number} has no active review PR",
         )
 
+    # review_pr should be an int at this point (from YAML metadata)
+    if not isinstance(review_pr, int):
+        raise PlanReviewCompleteException(
+            error="no_review_pr",
+            message=f"Issue #{issue_number} has invalid review_pr value",
+        )
+    review_pr_number = review_pr
+
     # Get PR details before closing (need branch name for deletion)
-    pr_result = github.get_pr(repo_root, review_pr)
+    pr_result = github.get_pr(repo_root, review_pr_number)
     if isinstance(pr_result, PRNotFound):
         raise PlanReviewCompleteException(
             error="pr_not_found",
-            message=f"PR #{review_pr} not found",
+            message=f"PR #{review_pr_number} not found",
         )
     branch_name = pr_result.head_ref_name
 
     # Close the PR
-    github.close_pr(repo_root, review_pr)
+    github.close_pr(repo_root, review_pr_number)
 
     # Delete the review branch
     branch_deleted = github.delete_remote_branch(repo_root, branch_name)
@@ -150,13 +140,19 @@ def _plan_review_complete_impl(
         local_branch_deleted = True
 
     # Clear review_pr metadata (archives to last_review_pr)
-    updated_body = clear_plan_header_review_pr(issue.body)
-    github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+    try:
+        metadata = {"review_pr": None, "last_review_pr": review_pr_number}
+        backend.update_metadata(repo_root, plan_id, metadata)
+    except PlanHeaderNotFoundError:
+        raise PlanReviewCompleteException(
+            error="no_plan_header",
+            message=f"Issue #{issue_number} is missing plan-header metadata block",
+        ) from None
 
     return PlanReviewCompleteSuccess(
         success=True,
         issue_number=issue_number,
-        pr_number=review_pr,
+        pr_number=review_pr_number,
         branch_name=branch_name,
         branch_deleted=branch_deleted,
         local_branch_deleted=local_branch_deleted,
@@ -177,6 +173,7 @@ def plan_review_complete(
     git = require_git(ctx)
     branch_manager = require_branch_manager(ctx)
     github = require_github(ctx)
+    backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     try:
@@ -184,7 +181,7 @@ def plan_review_complete(
             github,
             git=git,
             branch_manager=branch_manager,
-            github_issues=github.issues,
+            backend=backend,
             repo_root=repo_root,
             issue_number=issue_number,
         )

@@ -26,8 +26,12 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
 
-def _create_github_with_issue(issue_number: int) -> FakeGitHub:
-    """Create FakeGitHub with a plan issue configured for adding comments."""
+def _create_github_with_issue(issue_number: int) -> tuple[FakeGitHub, FakeGitHubIssues]:
+    """Create FakeGitHub with a plan issue configured for adding comments.
+
+    Returns:
+        Tuple of (FakeGitHub, FakeGitHubIssues) for passing both to ErkContext.
+    """
     test_time = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
     issues_gateway = FakeGitHubIssues(
         issues={
@@ -45,7 +49,7 @@ def _create_github_with_issue(issue_number: int) -> FakeGitHub:
             )
         }
     )
-    return FakeGitHub(issues_gateway=issues_gateway)
+    return FakeGitHub(issues_gateway=issues_gateway), issues_gateway
 
 
 # ============================================================================
@@ -144,9 +148,11 @@ def test_build_no_changes_title_preserves_original() -> None:
 
 def test_cli_success(tmp_path: Path) -> None:
     """Test CLI command succeeds with valid inputs."""
-    github = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_issue(456)
 
-    ctx = ErkContext.for_test(github=github, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(
+        github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
+    )
 
     runner = CliRunner()
     result = runner.invoke(
@@ -179,9 +185,11 @@ def test_cli_success(tmp_path: Path) -> None:
 
 def test_cli_success_minimal_options(tmp_path: Path) -> None:
     """Test CLI command succeeds with only required options."""
-    github = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_issue(456)
 
-    ctx = ErkContext.for_test(github=github, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(
+        github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
+    )
 
     runner = CliRunner()
     result = runner.invoke(
@@ -208,9 +216,11 @@ def test_cli_success_minimal_options(tmp_path: Path) -> None:
 
 def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
     """Test that CLI command updates PR title and body."""
-    github = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_issue(456)
 
-    ctx = ErkContext.for_test(github=github, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(
+        github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
+    )
 
     runner = CliRunner()
     runner.invoke(
@@ -246,9 +256,11 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
 
 def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
     """Test that CLI command adds no-changes label to PR."""
-    github = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_issue(456)
 
-    ctx = ErkContext.for_test(github=github, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(
+        github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
+    )
 
     runner = CliRunner()
     runner.invoke(
@@ -277,9 +289,11 @@ def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
 
 def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
     """Test that CLI command adds comment to plan issue."""
-    github = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_issue(456)
 
-    ctx = ErkContext.for_test(github=github, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(
+        github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
+    )
 
     runner = CliRunner()
     runner.invoke(
@@ -299,10 +313,10 @@ def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
         obj=ctx,
     )
 
-    # Verify comment was added to issue
+    # Verify comment was added to issue via PlanBackend
     # added_comments is list of (issue_number, body, comment_id) tuples
-    assert len(github.issues.added_comments) == 1
-    issue_number, body, _comment_id = github.issues.added_comments[0]
+    assert len(fake_gh_issues.added_comments) == 1
+    issue_number, body, _comment_id = fake_gh_issues.added_comments[0]
     assert issue_number == 456
     assert "PR #123" in body
 
@@ -413,9 +427,11 @@ def test_cli_requires_original_title() -> None:
 
 def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     """Test that JSON output has expected structure on success."""
-    github = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_issue(456)
 
-    ctx = ErkContext.for_test(github=github, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(
+        github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
+    )
 
     runner = CliRunner()
     result = runner.invoke(
@@ -451,9 +467,11 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
 
 def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
     """Test that CLI exits with code 0 on success (workflow succeeds)."""
-    github = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_issue(456)
 
-    ctx = ErkContext.for_test(github=github, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(
+        github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
+    )
 
     runner = CliRunner()
     result = runner.invoke(
