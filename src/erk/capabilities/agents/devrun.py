@@ -3,6 +3,8 @@
 import shutil
 from pathlib import Path
 
+from erk.artifacts.paths import get_bundled_claude_dir
+from erk.artifacts.state import add_installed_capability, remove_installed_capability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -57,9 +59,6 @@ class DevrunAgentCapability(Capability):
     def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install the devrun agent definition."""
         assert repo_root is not None, "DevrunAgentCapability requires repo_root"
-        # Inline import: avoids circular dependency with artifacts module
-        from erk.artifacts.paths import get_bundled_claude_dir
-        from erk.artifacts.state import add_installed_capability
 
         bundled_claude_dir = get_bundled_claude_dir()
 
@@ -96,7 +95,6 @@ class DevrunAgentCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Remove the devrun agent."""
         assert repo_root is not None, "DevrunAgentCapability requires repo_root"
-        from erk.artifacts.state import remove_installed_capability
 
         agent_file = repo_root / ".claude" / "agents" / "devrun.md"
         agent_dir = repo_root / ".claude" / "agents" / "devrun"
