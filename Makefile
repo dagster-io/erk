@@ -31,10 +31,10 @@ test-erk-dev:
 
 # === Erk test targets ===
 
-# Unit tests: Fast, in-memory tests using fakes (tests/unit/, tests/commands/, tests/core/)
+# Unit tests: Fast, in-memory tests using fakes (tests/unit/, tests/commands/, tests/core/, tests/real/)
 # These provide quick feedback for development iteration
 test-unit-erk:
-	uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto
+	uv run pytest tests/unit/ tests/commands/ tests/core/ tests/real/ -n auto
 
 # Integration tests: Slower tests with real I/O and subprocess calls (tests/integration/)
 # These verify that abstraction layers correctly wrap external tools
@@ -84,7 +84,7 @@ py-fast-ci:
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
-	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
+	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ tests/real/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-statusline) ---" && uv run pytest packages/erk-statusline -n auto || exit_code=1; \
 	exit $$exit_code
@@ -99,7 +99,7 @@ fast-ci:
 	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
 	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
 	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
-	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
+	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ tests/real/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-statusline) ---" && uv run pytest packages/erk-statusline -n auto || exit_code=1; \
 	exit $$exit_code
@@ -115,7 +115,7 @@ all-ci:
 	echo "\n--- Docs Check ---" && uv run erk docs check || exit_code=1; \
 	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
 	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
-	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
+	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ tests/real/ -n auto || exit_code=1; \
 	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-statusline) ---" && uv run pytest packages/erk-statusline -n auto || exit_code=1; \

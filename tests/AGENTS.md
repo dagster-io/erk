@@ -87,6 +87,12 @@ See [commands/CLAUDE.md](commands/CLAUDE.md) for CLI testing patterns.
 
 See [core/CLAUDE.md](core/CLAUDE.md) for core testing patterns.
 
+### Real Implementation Tests
+
+- `tests/real/` - Tests for Real\* gateway implementations (command construction, output parsing)
+
+See [real/CLAUDE.md](real/CLAUDE.md) for real implementation testing patterns.
+
 ### Other Test Directories
 
 - `tests/integration/` - Integration tests with real git
@@ -112,7 +118,23 @@ Tests that verify fake implementations work correctly. These test the **test inf
 
 **Key principle:** These tests ensure fakes are reliable test doubles. If fakes are broken, all higher-layer tests are unreliable.
 
-### Layer 2: Integration Tests (tests/integration/)
+### Layer 2: Real Implementation Tests (tests/real/)
+
+Tests for Real\* gateway implementations that verify command construction and output parsing by mocking subprocess calls. These do NOT call real external tools.
+
+**Contains:**
+
+- `test_real_git.py` - Tests RealGit command construction
+- `test_real_graphite.py` - Tests RealGraphite command construction
+- `test_real_gt_kit.py` - Tests RealGtKit command construction
+- `test_real_agent_docs.py` - Tests RealAgentDocs operations
+- `test_subprocess.py` - Tests subprocess wrapper behavior
+
+**When to add tests here:** When testing Real\* gateway command construction or output parsing.
+
+**Key principle:** Mocks subprocess calls to verify command construction and response parsing. Fast, no real I/O.
+
+### Layer 2b: Integration Tests (tests/integration/)
 
 Tests with REAL implementations (actual git, filesystem, subprocess calls).
 
@@ -170,7 +192,10 @@ Business logic tests using fakes. No CLI concerns.
 │   tests/unit/fakes/ (Layer 1)       │  Tests fakes
 │   Test infrastructure itself        │
 ├─────────────────────────────────────┤
-│   tests/integration/ (Layer 2)      │  Uses real
+│   tests/real/        (Layer 2)      │  Mocks subprocess
+│   Real* command construction/parsing│
+├─────────────────────────────────────┤
+│   tests/integration/ (Layer 2b)     │  Uses real
 │   Real git, filesystem, subprocess  │
 └─────────────────────────────────────┘
 ```
