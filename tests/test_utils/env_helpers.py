@@ -611,7 +611,7 @@ class ErkIsolatedFsEnv:
 def erk_isolated_fs_env(
     runner: CliRunner,
     *,
-    env_overrides: dict[str, str] | None,
+    env_overrides: dict[str, str] | None = None,
 ) -> Generator[ErkIsolatedFsEnv]:
     """Set up simulated erk environment with isolated filesystem.
 
