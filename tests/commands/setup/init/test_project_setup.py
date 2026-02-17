@@ -7,7 +7,7 @@ This file uses minimal mocking for external boundaries:
 1. os.environ HOME patches:
    - LEGITIMATE: Testing path resolution logic that depends on $HOME
    - The init command uses Path.home() to determine ~/.erk location
-   - Patching HOME redirects to temp directory for test isolation
+   - erk_isolated_fs_env(env_overrides={"HOME": ...}) redirects to temp directory for test isolation
    - Cannot be replaced with fakes (environment variable is external boundary)
 
 2. Global config operations:
@@ -15,9 +15,6 @@ This file uses minimal mocking for external boundaries:
    - No mocking required - proper abstraction via ConfigStore interface
    - Tests inject FakeErkInstallation with desired initial state
 """
-
-import os
-from unittest import mock
 
 from click.testing import CliRunner
 
@@ -160,7 +157,7 @@ def test_init_not_in_git_repo_fails() -> None:
 def test_init_stepped_flow_shows_three_steps() -> None:
     """Test that init shows the three-step flow in output."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -173,8 +170,7 @@ def test_init_stepped_flow_shows_three_steps() -> None:
             global_config=global_config,
         )
 
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Verify three steps are shown
@@ -187,7 +183,7 @@ def test_init_stepped_flow_shows_three_steps() -> None:
 def test_init_skips_project_setup_when_already_erkified() -> None:
     """Test that init skips project setup when repo is already erk-ified."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         # Create existing erk config to simulate already erk-ified repo
@@ -206,8 +202,7 @@ def test_init_skips_project_setup_when_already_erkified() -> None:
             global_config=global_config,
         )
 
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Verify it shows "already configured" message
@@ -220,7 +215,7 @@ def test_init_skips_project_setup_when_already_erkified() -> None:
 def test_init_force_overwrites_when_already_erkified() -> None:
     """Test that init --force overwrites config even when already erk-ified."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         # Create existing erk config
@@ -239,8 +234,7 @@ def test_init_force_overwrites_when_already_erkified() -> None:
             global_config=global_config,
         )
 
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init", "--force", "--no-interactive"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--force", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Verify config was overwritten
@@ -251,7 +245,7 @@ def test_init_force_overwrites_when_already_erkified() -> None:
 def test_init_step1_shows_repo_name() -> None:
     """Test that step 1 shows the detected repository name."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -264,8 +258,7 @@ def test_init_step1_shows_repo_name() -> None:
             global_config=global_config,
         )
 
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Verify step 1 shows the repo name (the directory name)

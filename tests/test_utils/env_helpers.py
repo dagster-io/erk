@@ -82,6 +82,7 @@ import os
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
+from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -607,7 +608,11 @@ class ErkIsolatedFsEnv:
 
 
 @contextmanager
-def erk_isolated_fs_env(runner: CliRunner) -> Generator[ErkIsolatedFsEnv]:
+def erk_isolated_fs_env(
+    runner: CliRunner,
+    *,
+    env_overrides: dict[str, str] | None = None,
+) -> Generator[ErkIsolatedFsEnv]:
     """Set up simulated erk environment with isolated filesystem.
 
     Creates realistic directory structure:
@@ -624,6 +629,8 @@ def erk_isolated_fs_env(runner: CliRunner) -> Generator[ErkIsolatedFsEnv]:
 
     Args:
         runner: Click CliRunner instance
+        env_overrides: Env vars to mock for the duration. Values containing
+            ``{root_worktree}`` are interpolated with the actual root worktree path.
 
     Yields:
         SimulatedWorkstackEnv helper for managing test environment
@@ -632,17 +639,9 @@ def erk_isolated_fs_env(runner: CliRunner) -> Generator[ErkIsolatedFsEnv]:
         ```python
         def test_something() -> None:
             runner = CliRunner()
-            # Note: erk_isolated_fs_env() handles isolated_filesystem() internally
-            with erk_isolated_fs_env(runner) as env:
-                # env.cwd is available (root worktree)
-                # env.git_dir is available (.git directory)
-                # env.script_writer is available (RealScriptWriter for temp files)
-                git = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-                test_ctx = context_for_test(
-                    cwd=env.cwd,
-                    script_writer=env.script_writer,
-                    ...
-                )
+            with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
+                # HOME is set to env.cwd for the duration
+                result = runner.invoke(cli, ["init"], obj=ctx)
         ```
     """
     with runner.isolated_filesystem():
@@ -660,10 +659,20 @@ def erk_isolated_fs_env(runner: CliRunner) -> Generator[ErkIsolatedFsEnv]:
         # Default to root worktree
         os.chdir(root_worktree)
 
-        yield ErkIsolatedFsEnv(
+        env = ErkIsolatedFsEnv(
             root_worktree=root_worktree,
             erk_root=erk_root,
         )
+
+        if env_overrides:
+            resolved = {
+                k: v.replace("{root_worktree}", str(root_worktree))
+                for k, v in env_overrides.items()
+            }
+            with patch.dict(os.environ, resolved):
+                yield env
+        else:
+            yield env
 
 
 class ErkInMemEnv:
