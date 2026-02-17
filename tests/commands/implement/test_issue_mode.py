@@ -252,28 +252,10 @@ def test_implement_from_issue_closes_review_pr() -> None:
     issue_body = format_plan_header_body_for_test()
     issue_body_with_review_pr = update_plan_header_review_pr(issue_body, 99)
 
-    # Create the Plan with metadata pointing to the real issue body
-    # (plan_store uses plan.body for the plan content, but cleanup_review_pr
-    # reads the issue body from ctx.issues which needs the metadata block)
-    plan = Plan(
-        plan_identifier="42",
-        title="Add Authentication Feature",
-        body="# Implementation Plan\n\nAdd user authentication.",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan", "enhancement"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-        objective_id=None,
-    )
-
-    # Create plan store (for _implement_from_issue to fetch the plan)
-    store, plan_store_issues = create_plan_store_with_plans({"42": plan})
-
-    # Create a separate FakeGitHubIssues with the real issue body containing
-    # the plan-header metadata block (cleanup_review_pr reads from ctx.issues)
+    # Create IssueInfo objects with plan-header metadata in the issue body.
+    # cleanup_review_pr reads review_pr via ctx.plan_backend.get_metadata_field(),
+    # so the plan store must be backed by the same FakeGitHubIssues that has
+    # the plan-header metadata block.
     issue_42 = IssueInfo(
         number=42,
         title="Add Authentication Feature",
@@ -313,7 +295,6 @@ def test_implement_from_issue_closes_review_pr() -> None:
         ctx = build_workspace_test_context(
             env,
             git=git,
-            plan_store=store,
             prompt_executor=executor,
             issues=fake_issues,
             github=fake_github,

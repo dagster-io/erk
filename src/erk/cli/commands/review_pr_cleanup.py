@@ -3,11 +3,8 @@
 from pathlib import Path
 
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import clear_plan_header_review_pr
-from erk_shared.gateway.github.metadata_blocks import find_metadata_block
-from erk_shared.gateway.github.types import BodyText
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 
 
 def cleanup_review_pr(
@@ -35,21 +32,16 @@ def cleanup_review_pr(
     Returns:
         The review PR number if closed, None otherwise
     """
-    # LBYL: Check issue exists
-    if not ctx.issues.issue_exists(repo_root, issue_number):
+    # LBYL: Get review_pr via plan_backend
+    result = ctx.plan_backend.get_metadata_field(repo_root, str(issue_number), "review_pr")
+    if isinstance(result, PlanNotFound) or result is None:
         return None
 
-    # LBYL: Get issue and check for plan-header block
-    issue = ctx.issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        return None
-    block = find_metadata_block(issue.body, "plan-header")
-    if block is None:
-        return None
-
-    # LBYL: Check review_pr is not None
-    review_pr = block.data.get("review_pr")
-    if review_pr is None:
+    if isinstance(result, int):
+        review_pr = result
+    elif isinstance(result, str):
+        review_pr = int(result)
+    else:
         return None
 
     # Step 1: Add comment to review PR explaining why it was closed
@@ -69,8 +61,14 @@ def cleanup_review_pr(
 
     # Step 3: Clear review_pr metadata (archives to last_review_pr)
     try:
-        updated_body = clear_plan_header_review_pr(issue.body)
-        ctx.issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+        ctx.plan_backend.update_metadata(
+            repo_root,
+            str(issue_number),
+            {
+                "review_pr": None,
+                "last_review_pr": review_pr,
+            },
+        )
     except (ValueError, RuntimeError):
         user_output(f"Warning: Could not clear review PR metadata for issue #{issue_number}")
 

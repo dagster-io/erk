@@ -108,6 +108,24 @@ class PlanBackend(PlanStore):
         """
         ...
 
+    @abstractmethod
+    def get_all_metadata_fields(
+        self,
+        repo_root: Path,
+        plan_id: str,
+    ) -> dict[str, object] | PlanNotFound:
+        """Get all metadata fields from the plan-header block.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier
+
+        Returns:
+            Dictionary of all metadata fields, or PlanNotFound if plan doesn't exist.
+            Returns empty dict if plan exists but has no metadata block.
+        """
+        ...
+
     # Write operations
 
     @abstractmethod

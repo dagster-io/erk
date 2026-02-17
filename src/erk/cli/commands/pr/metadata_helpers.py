@@ -11,48 +11,50 @@ from typing import TYPE_CHECKING
 
 import click
 
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.core import find_metadata_block
-from erk_shared.gateway.github.metadata.plan_header import update_plan_header_dispatch
-from erk_shared.gateway.github.types import BodyText
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.types import PlanNotFound
 
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
     from erk.core.repo_discovery import RepoContext
     from erk_shared.gateway.github.abc import GitHub
-    from erk_shared.gateway.github.issues.abc import GitHubIssues
 
 
 def write_dispatch_metadata(
     *,
-    issues: GitHubIssues,
+    plan_backend: PlanBackend,
     github: GitHub,
     repo_root: Path,
     issue_number: int,
     run_id: str,
     dispatched_at: str,
 ) -> None:
-    """Fetch issue, resolve node_id, and write dispatch metadata to plan header.
+    """Resolve node_id and write dispatch metadata to plan header.
 
     Raises:
         RuntimeError: If issue not found or node_id unavailable.
-        ValueError: If issue body has no plan-header block.
     """
-    issue = issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        raise RuntimeError(f"Issue #{issue_number} not found")
     node_id = github.get_workflow_run_node_id(repo_root, run_id)
     if node_id is None:
         raise RuntimeError(f"Could not get node_id for run {run_id}")
-    updated = update_plan_header_dispatch(
-        issue_body=issue.body,
-        run_id=run_id,
-        node_id=node_id,
-        dispatched_at=dispatched_at,
+
+    # LBYL: Check plan exists before updating metadata
+    plan_id = str(issue_number)
+    plan_result = plan_backend.get_plan(repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
+        raise RuntimeError(f"Plan #{issue_number} not found")
+
+    plan_backend.update_metadata(
+        repo_root,
+        plan_id,
+        {
+            "last_dispatched_run_id": run_id,
+            "last_dispatched_node_id": node_id,
+            "last_dispatched_at": dispatched_at,
+        },
     )
-    issues.update_issue_body(repo_root, issue_number, BodyText(content=updated))
 
 
 def maybe_update_plan_dispatch_metadata(
@@ -85,22 +87,23 @@ def maybe_update_plan_dispatch_metadata(
     if node_id is None:
         return
 
-    plan_issue = ctx.issues.get_issue(repo.root, plan_issue_number)
-    if isinstance(plan_issue, IssueNotFound):
-        return
     # LBYL: Check if plan-header block exists before attempting update
     # This is expected to be missing for non-erk-plan issues that happen
     # to have P{number} prefix in their branch name
-    if find_metadata_block(plan_issue.body, "plan-header") is None:
+    plan_id = str(plan_issue_number)
+    schema_version = ctx.plan_backend.get_metadata_field(repo.root, plan_id, "schema_version")
+    if isinstance(schema_version, PlanNotFound) or schema_version is None:
         return
 
-    updated_body = update_plan_header_dispatch(
-        issue_body=plan_issue.body,
-        run_id=run_id,
-        node_id=node_id,
-        dispatched_at=ctx.time.now().isoformat(),
+    ctx.plan_backend.update_metadata(
+        repo.root,
+        plan_id,
+        {
+            "last_dispatched_run_id": run_id,
+            "last_dispatched_node_id": node_id,
+            "last_dispatched_at": ctx.time.now().isoformat(),
+        },
     )
-    ctx.issues.update_issue_body(repo.root, plan_issue_number, BodyText(content=updated_body))
     user_output(
         click.style("\u2713", fg="green")
         + f" Updated dispatch metadata on plan #{plan_issue_number}"

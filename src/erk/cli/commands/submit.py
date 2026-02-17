@@ -32,11 +32,6 @@ from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
 )
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_branch_name,
-    extract_plan_header_learned_from_issue,
-    extract_plan_header_objective_issue,
-)
 from erk_shared.gateway.github.parsing import (
     construct_pr_url,
     construct_workflow_run_url,
@@ -162,28 +157,30 @@ def _prompt_existing_branch_action(
     return None
 
 
-def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_body: str) -> str | None:
+def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_number: int) -> str | None:
     """Get the parent branch for a learn plan.
 
     Learn plans should stack on their parent plan's branch.
-    Extracts learned_from_issue, fetches parent, returns its branch_name.
+    Extracts learned_from_issue via plan_backend, fetches parent's branch_name.
 
     Args:
-        ctx: ErkContext with issue operations
+        ctx: ErkContext with plan_backend
         repo_root: Repository root path
-        issue_body: The learn plan issue body
+        issue_number: The learn plan issue number
 
     Returns:
         Parent plan's branch_name if found, None otherwise
     """
-    learned_from = extract_plan_header_learned_from_issue(issue_body)
-    if learned_from is None:
+    learned_from = ctx.plan_backend.get_metadata_field(
+        repo_root, str(issue_number), "learned_from_issue"
+    )
+    if isinstance(learned_from, PlanNotFound) or learned_from is None:
         return None
 
-    parent_issue = ctx.issues.get_issue(repo_root, learned_from)
-    if isinstance(parent_issue, IssueNotFound):
+    branch_name = ctx.plan_backend.get_metadata_field(repo_root, str(learned_from), "branch_name")
+    if isinstance(branch_name, PlanNotFound) or branch_name is None:
         return None
-    return extract_plan_header_branch_name(parent_issue.body)
+    return str(branch_name)
 
 
 def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
@@ -369,7 +366,14 @@ def _validate_issue_for_submit(
     existing_branches = _find_existing_branches_for_issue(ctx, repo.root, issue_number)
 
     # Compute branch name using canonical naming function
-    objective_id = extract_plan_header_objective_issue(issue.body)
+    objective_id_raw = ctx.plan_backend.get_metadata_field(
+        repo.root, str(issue_number), "objective_issue"
+    )
+    objective_id: int | None = None
+    if isinstance(objective_id_raw, int):
+        objective_id = objective_id_raw
+    elif isinstance(objective_id_raw, str) and objective_id_raw.isdigit():
+        objective_id = int(objective_id_raw)
     new_branch_name = generate_issue_branch_name(
         issue_number, issue.title, ctx.time.now(), objective_id=objective_id
     )
@@ -792,7 +796,7 @@ def _submit_single_issue(
     # This ensures the issue body has the run info before we return to the user
     try:
         write_dispatch_metadata(
-            issues=ctx.issues,
+            plan_backend=ctx.plan_backend,
             github=ctx.github,
             repo_root=repo.root,
             issue_number=issue_number,
@@ -942,7 +946,7 @@ def submit_cmd(
         issue = ctx.issues.get_issue(repo.root, issue_number)
         # issue_exists check above ensures this won't be IssueNotFound
         if not isinstance(issue, IssueNotFound) and is_issue_learn_plan(issue.labels):
-            parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue.body)
+            parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue_number)
             if parent_branch is not None and ctx.git.branch.branch_exists_on_remote(
                 repo.root, "origin", parent_branch
             ):

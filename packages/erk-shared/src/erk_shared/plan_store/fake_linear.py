@@ -206,6 +206,25 @@ class FakeLinearPlanBackend(PlanBackend):
 
         return self._issues[plan_id].custom_fields.get(field_name)
 
+    def get_all_metadata_fields(
+        self,
+        repo_root: Path,
+        plan_id: str,
+    ) -> dict[str, object] | PlanNotFound:
+        """Get all metadata fields from custom_fields.
+
+        Args:
+            repo_root: Repository root directory (ignored for fake)
+            plan_id: Linear UUID string
+
+        Returns:
+            Dictionary of all custom_fields, or PlanNotFound if plan doesn't exist.
+        """
+        if plan_id not in self._issues:
+            return PlanNotFound(plan_id=plan_id)
+
+        return dict(self._issues[plan_id].custom_fields)
+
     def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans by criteria.
 

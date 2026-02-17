@@ -9,7 +9,6 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.core.typing_utils import narrow_to_literal
-from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import (
     BRANCH_NAME,
     CREATED_BY,
@@ -104,21 +103,6 @@ def _format_learn_state(
     if learn_status == "plan_completed" and learn_plan_pr is not None:
         return f"completed #{learn_plan_pr}"
     return "- not started"
-
-
-def _extract_plan_header_info(issue_body: str) -> dict[str, object]:
-    """Extract all fields from plan-header metadata block.
-
-    Args:
-        issue_body: Raw issue body containing metadata blocks
-
-    Returns:
-        Dictionary of header fields, empty if no plan-header found
-    """
-    block = find_metadata_block(issue_body, "plan-header")
-    if block is None:
-        return {}
-    return dict(block.data)
 
 
 def _format_header_section(header_info: dict[str, object], *, plan_url: str | None) -> list[str]:
@@ -281,11 +265,12 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
         raise SystemExit(1)
     plan = result
 
-    # Extract header info from issue body for branch display and later header section
-    issue_body = plan.metadata.get("issue_body")
-    header_info: dict[str, object] = {}
-    if isinstance(issue_body, str):
-        header_info = _extract_plan_header_info(issue_body)
+    # Extract header info via plan_backend for branch display and later header section
+    all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, str(issue_number))
+    if isinstance(all_meta, PlanNotFound):
+        header_info: dict[str, object] = {}
+    else:
+        header_info = all_meta
 
     # Display plan details with consistent formatting
     user_output("")
