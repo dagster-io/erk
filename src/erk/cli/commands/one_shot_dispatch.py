@@ -195,15 +195,16 @@ def dispatch_one_shot(
     try:
         ctx.branch_manager.checkout_branch(repo.root, branch_name)
 
-        # Write instruction to .impl/task.md so it's committed to the branch
-        # (avoids shell quoting issues and workflow input size limits)
-        impl_dir = repo.root / ".impl"
-        impl_dir.mkdir(parents=True, exist_ok=True)
-        task_file = impl_dir / "task.md"
+        # Write instruction to .worker-impl/task.md so it's committed to the branch
+        # (.impl/ is in .gitignore; .worker-impl/ is the committable counterpart
+        # that the remote workflow copies into .impl/)
+        worker_impl_dir = repo.root / ".worker-impl"
+        worker_impl_dir.mkdir(parents=True, exist_ok=True)
+        task_file = worker_impl_dir / "task.md"
         task_file.write_text(params.instruction + "\n", encoding="utf-8")
 
         # Stage and commit with instruction file
-        ctx.git.commit.stage_files(repo.root, [".impl/task.md"])
+        ctx.git.commit.stage_files(repo.root, [".worker-impl/task.md"])
         ctx.git.commit.commit(repo.root, f"One-shot: {params.instruction[:60]}")
 
         # Push to remote
@@ -227,11 +228,11 @@ def dispatch_one_shot(
         user_output(f"Created draft PR #{pr_number}")
 
         # Build workflow inputs
-        # Truncate instruction for workflow input (full text is in .impl/task.md)
+        # Truncate instruction for workflow input (full text is in .worker-impl/task.md)
         max_input_len = 500
         truncated_instruction = params.instruction[:max_input_len]
         if len(params.instruction) > max_input_len:
-            truncated_instruction += "... (full instruction committed to .impl/task.md)"
+            truncated_instruction += "... (full instruction committed to .worker-impl/task.md)"
 
         inputs: dict[str, str] = {
             "instruction": truncated_instruction,
