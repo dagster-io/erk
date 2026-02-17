@@ -94,30 +94,34 @@ class IssueBodyScreen(ModalScreen):
         issue_number: int,
         issue_body: str,
         full_title: str,
+        content_type: str = "Plan",
     ) -> None:
         """Initialize with plan metadata and provider for async loading.
 
         Args:
-            provider: Data provider for fetching plan content
+            provider: Data provider for fetching plan/objective content
             issue_number: The GitHub issue number
             issue_body: The issue body (contains metadata with comment ID)
-            full_title: The full plan title for display
+            full_title: The full plan/objective title for display
+            content_type: Display label - "Plan" or "Objective"
         """
         super().__init__()
         self._provider = provider
         self._issue_number = issue_number
         self._issue_body = issue_body
         self._full_title = full_title
+        self._content_type = content_type
         self._content: str | None = None
         self._error: str | None = None
         self._loading = True
 
     def compose(self) -> ComposeResult:
         """Create the issue body dialog content."""
+        label = self._content_type.lower()
         with Vertical(id="body-dialog"):
-            # Header: Plan number + title
+            # Header: Plan/Objective number + title
             with Vertical(id="body-header"):
-                yield Label(f"Plan #{self._issue_number}", id="body-plan-number")
+                yield Label(f"{self._content_type} #{self._issue_number}", id="body-plan-number")
                 yield Label(self._full_title, id="body-title", markup=False)
 
             # Divider
@@ -125,7 +129,7 @@ class IssueBodyScreen(ModalScreen):
 
             # Body content in scrollable container - starts with loading state
             with Container(id="body-content-container"):
-                yield Label("Loading plan content...", id="body-loading")
+                yield Label(f"Loading {label} content...", id="body-loading")
 
             yield Label("Press Esc, q, or Space to close", id="body-footer")
 
@@ -135,14 +139,19 @@ class IssueBodyScreen(ModalScreen):
 
     @work(thread=True)
     def _fetch_content(self) -> None:
-        """Fetch plan content in background thread."""
+        """Fetch plan/objective content in background thread."""
         content: str | None = None
         error: str | None = None
 
         # Error boundary: catch all exceptions from HTTP operations to display
         # them in the UI rather than crashing the TUI.
         try:
-            content = self._provider.fetch_plan_content(self._issue_number, self._issue_body)
+            if self._content_type == "Objective":
+                content = self._provider.fetch_objective_content(
+                    self._issue_number, self._issue_body
+                )
+            else:
+                content = self._provider.fetch_plan_content(self._issue_number, self._issue_body)
         except Exception as e:
             error = str(e)
 
@@ -173,4 +182,5 @@ class IssueBodyScreen(ModalScreen):
         elif content:
             container.mount(Markdown(content, id="body-content"))
         else:
-            container.mount(Label("(No plan content found)", id="body-empty"))
+            label = self._content_type.lower()
+            container.mount(Label(f"(No {label} content found)", id="body-empty"))
