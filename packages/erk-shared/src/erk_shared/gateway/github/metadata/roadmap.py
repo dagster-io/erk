@@ -507,9 +507,13 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
 
         for step in phase.steps:
             status_display = step.status.replace("_", "-")
-            plan_display = step.plan if step.plan is not None else "-"
-            pr_display = step.pr if step.pr is not None else "-"
-            cells = [step.id, step.description, status_display, plan_display, pr_display]
+            cells = [
+                step.id,
+                step.description,
+                status_display,
+                step.plan if step.plan is not None else "-",
+                step.pr if step.pr is not None else "-",
+            ]
             rows.append("| " + " | ".join(cells) + " |")
 
         sections.append(header + "\n" + "\n".join(rows))
