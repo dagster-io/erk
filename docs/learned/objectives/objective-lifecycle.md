@@ -227,7 +227,7 @@ erk exec update-objective-node 6423 --node 1.3 --pr ""  # Clear
 5. Write updated body to GitHub
 6. Check if all steps are done/skipped → close objective if complete
 
-**Agent workflow**: Uses subagent pattern. Parent agent discovers context, delegates body composition to subagent.
+**Agent workflow**: Single-agent pattern. Agent fetches context, then performs all updates directly (roadmap steps, prose reconciliation, action comment, validation).
 
 ### Indirect Updates
 
@@ -282,7 +282,7 @@ Objective body sections fall into three tiers based on how they're updated:
 
 ### When Reconciliation Happens
 
-1. **After every PR landing** (primary trigger): The `objective-update-with-landed-pr` subagent performs prose reconciliation after mechanical step updates. It compares the objective body against what the PR actually implemented and corrects stale information.
+1. **After every PR landing** (primary trigger): The `objective-update-with-landed-pr` agent performs prose reconciliation after mechanical step updates. It compares the objective body against what the PR actually implemented and corrects stale information.
 
 2. **At next-step pickup** (lighter touch): When `objective-implement` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
 
