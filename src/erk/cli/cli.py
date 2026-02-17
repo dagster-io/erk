@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 import os
 import sys
@@ -46,6 +47,8 @@ from erk.core.version_check import (
     get_required_version,
     is_version_mismatch,
 )
+from erk_shared.context.context import ErkContext
+from erk_shared.context.types import AgentBackend, GlobalConfig, InteractiveAgentConfig
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.git.real import RealGit
@@ -160,11 +163,67 @@ def _show_version_warning() -> None:
         logging.warning("Failed to check version: %s", e)
 
 
+def _apply_backend_override(erk_ctx: ErkContext, backend: AgentBackend) -> ErkContext:
+    """Apply a backend override to the ErkContext's global config.
+
+    Uses dataclasses.replace() to bake the backend into
+    GlobalConfig.interactive_agent.backend so all downstream consumers
+    see the override automatically.
+
+    When global_config is None (pre-init), creates a minimal GlobalConfig
+    with the requested backend.
+    """
+    if erk_ctx.global_config is not None:
+        new_agent = dataclasses.replace(erk_ctx.global_config.interactive_agent, backend=backend)
+        new_config = dataclasses.replace(erk_ctx.global_config, interactive_agent=new_agent)
+    else:
+        new_agent = dataclasses.replace(InteractiveAgentConfig.default(), backend=backend)
+        new_config = GlobalConfig(
+            erk_root=Path.home() / ".erk",
+            use_graphite=False,
+            shell_setup_complete=False,
+            github_planning=False,
+            interactive_agent=new_agent,
+        )
+    return dataclasses.replace(erk_ctx, global_config=new_config)
+
+
+def _resolve_backend_flag(
+    *,
+    cli_flag: str | None,
+    env_var: str | None,
+) -> AgentBackend | None:
+    """Resolve effective backend from CLI flag and env var.
+
+    Priority: CLI flag > env var. Returns None if neither is set.
+    Validates env var values (CLI flag is validated by Click.Choice).
+    """
+    if cli_flag is not None:
+        # Click.Choice already validated this
+        return cli_flag  # type: ignore[return-value]
+    if env_var is not None:
+        lower = env_var.lower()
+        if lower in ("claude", "codex"):
+            return lower  # type: ignore[return-value]
+        click.echo(
+            click.style("Warning: ", fg="yellow")
+            + f"Ignoring invalid ERK_BACKEND={env_var!r} (must be 'claude' or 'codex')",
+            err=True,
+        )
+    return None
+
+
 @click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)
 @click.version_option(package_name="erk")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
+@click.option(
+    "--backend",
+    type=click.Choice(["claude", "codex"], case_sensitive=False),
+    default=None,
+    help="Override agent backend (claude or codex)",
+)
 @click.pass_context
-def cli(ctx: click.Context, debug: bool) -> None:
+def cli(ctx: click.Context, debug: bool, backend: str | None) -> None:
     """Manage git worktrees in a global worktrees directory."""
     if debug:
         logging.basicConfig(level=logging.DEBUG, format="%(name)s - %(levelname)s - %(message)s")
@@ -177,6 +236,14 @@ def cli(ctx: click.Context, debug: bool) -> None:
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:
         ctx.obj = create_context(dry_run=False)
+
+    # Apply backend override: CLI flag > env var > config file
+    effective_backend = _resolve_backend_flag(
+        cli_flag=backend,
+        env_var=os.environ.get("ERK_BACKEND"),
+    )
+    if effective_backend is not None:
+        ctx.obj = _apply_backend_override(ctx.obj, effective_backend)
 
 
 # Register all commands
