@@ -63,4 +63,4 @@ jobs:
             --model claude-opus-4-6 \
             --output-format stream-json \
             --dangerously-skip-permissions \
-            "/erk:learn $ISSUE_NUMBER gist_url=$GIST_URL"
+            "@.claude/commands/erk/learn.md $ISSUE_NUMBER gist_url=$GIST_URL"
