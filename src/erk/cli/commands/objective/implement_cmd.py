@@ -311,14 +311,11 @@ def _handle_interactive(
     if use_next:
         resolved = _resolve_next(ctx, issue_ref=issue_ref)
         user_output(f"Next node: {resolved.node.id}: {resolved.node.description}")
-        issue_ref_str = str(resolved.issue_number)
-        node_suffix = f" --node {resolved.node.id}"
+        command = f"/erk:objective-implement {resolved.issue_number} --node {resolved.node.id}"
     else:
         assert issue_ref is not None  # type narrowing: validated in implement_objective
-        issue_ref_str = issue_ref
         node_suffix = f" --node {node_id}" if node_id is not None else ""
-
-    command = f"/erk:objective-implement {issue_ref_str}{node_suffix}"
+        command = f"/erk:objective-implement {issue_ref}{node_suffix}"
 
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:
