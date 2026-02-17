@@ -460,7 +460,7 @@ erk objective implement --next             # infers objective from current branc
 erk objective implement --next --one-shot  # auto-select + dispatch remotely
 ```
 
-**Resolution via `_resolve_next()`** (line 79):
+**Resolution via `_resolve_next()`**:
 
 1. If issue_ref provided, use it directly
 2. Otherwise, infer objective from current branch via `get_objective_for_branch()`

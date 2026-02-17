@@ -33,13 +33,13 @@ Frozen dataclass containing a tuple of `ObjectiveNode` with traversal methods. S
 
 **Key methods:**
 
-| Method              | Line | Purpose                                                                    |
-| ------------------- | ---- | -------------------------------------------------------------------------- |
-| `unblocked_nodes()` | 44   | Returns nodes whose dependencies are all in terminal status (done/skipped) |
-| `next_node()`       | 58   | Returns first unblocked pending node, or `None` if all complete            |
-| `is_complete()`     | 65   | Returns `True` if all nodes are in terminal status                         |
+| Method              | Purpose                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| `unblocked_nodes()` | Returns nodes whose dependencies are all in terminal status (done/skipped) |
+| `next_node()`       | Returns first unblocked pending node, or `None` if all complete            |
+| `is_complete()`     | Returns `True` if all nodes are in terminal status                         |
 
-Terminal statuses: `{"done", "skipped"}` (line 20).
+Terminal statuses: `{"done", "skipped"}`.
 
 ## Conversion Functions
 
