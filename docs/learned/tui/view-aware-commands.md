@@ -22,15 +22,10 @@ The TUI command palette filters commands by the active view mode. Plan commands 
 
 Two predicates partition the command space by view mode:
 
-```python
-def _is_plan_view(ctx: CommandContext) -> bool:
-    """True when not in Objectives view (i.e., Plans or Learn)."""
-    return ctx.view_mode != ViewMode.OBJECTIVES
+<!-- See _is_plan_view and _is_objectives_view in src/erk/tui/commands/registry.py:21-28 -->
 
-def _is_objectives_view(ctx: CommandContext) -> bool:
-    """True when in Objectives view."""
-    return ctx.view_mode == ViewMode.OBJECTIVES
-```
+- `_is_plan_view(ctx)`: Returns `True` when not in Objectives view (i.e., Plans or Learn) — checks `ctx.view_mode != ViewMode.OBJECTIVES`
+- `_is_objectives_view(ctx)`: Returns `True` when in Objectives view — checks `ctx.view_mode == ViewMode.OBJECTIVES`
 
 The `CommandContext.view_mode` field carries the active `ViewMode` enum value. `MainListCommandProvider` reads this dynamically from `self._app._view_mode`, while `PlanCommandProvider` hardcodes `ViewMode.PLANS` since the detail modal is always in plan context.
 

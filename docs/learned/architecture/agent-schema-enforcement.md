@@ -47,26 +47,15 @@ The `normalize-tripwire-candidates` exec script demonstrates the canonical patte
 
 ### Root Key Normalization
 
-```python
-ROOT_KEY_ALIASES: dict[str, str] = {
-    "tripwire_candidates": "candidates",
-}
-```
+<!-- See ROOT_KEY_ALIASES in src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py:28-30 -->
 
-If the canonical root key (`candidates`) is missing, check for known aliases and rename.
+Maps non-canonical root keys (e.g., `tripwire_candidates`) to the canonical key (`candidates`). If the canonical root key is missing, check for known aliases and rename.
 
 ### Field Name Normalization
 
-```python
-FIELD_ALIASES: dict[str, str] = {
-    "description": "warning",
-    "title": "action",
-    "name": "action",
-    "trigger_pattern": "action",
-}
-```
+<!-- See FIELD_ALIASES in src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py:33-38 -->
 
-For each entry, copy canonical fields first, then fill missing canonical fields from aliases. This gives canonical field names precedence — if both `action` and `title` are present, `action` wins.
+Maps non-canonical field names (e.g., `description`, `title`, `name`, `trigger_pattern`) to their canonical equivalents (`warning`, `action`). For each entry, copy canonical fields first, then fill missing canonical fields from aliases. This gives canonical field names precedence — if both `action` and `title` are present, `action` wins.
 
 ### Extra Field Stripping
 

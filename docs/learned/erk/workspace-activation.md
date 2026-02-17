@@ -20,11 +20,9 @@ Every erk worktree runs an activation script on entry. The script refreshes work
 
 The activation script includes this line:
 
-```bash
-uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
-```
+<!-- See the uv pip install command in src/erk/cli/activation.py:193 -->
 
-This reinstalls the three workspace packages (`erk`, `erk-shared`, `erk-statusline`) as editable installs on every worktree activation.
+The activation script reinstalls the three workspace packages (`erk`, `erk-shared`, `erk-statusline`) as editable installs with `--no-deps --quiet` on every worktree activation.
 
 ### Why `--no-deps`
 

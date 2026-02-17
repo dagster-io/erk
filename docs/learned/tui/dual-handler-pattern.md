@@ -55,9 +55,9 @@ This dispatch duplication is the main cost of the pattern. Both methods contain 
 
 `PlanCommandProvider._get_context()` hardcodes `view_mode=ViewMode.PLANS`:
 
-```python
-return CommandContext(row=self._detail_screen._row, view_mode=ViewMode.PLANS)
-```
+<!-- See PlanCommandProvider._get_context() in src/erk/tui/commands/provider.py:181 -->
+
+It returns a `CommandContext` with the detail screen's `_row` and `view_mode=ViewMode.PLANS`.
 
 This is intentional, not a bug. The detail modal always shows a single plan, so objective commands should never appear there. In contrast, `MainListCommandProvider` reads `view_mode` dynamically from `self._app._view_mode`, which changes as the user switches tabs — this is what enables objective commands to appear when the Objectives tab is active. The asymmetry exists because the detail modal is scoped to plan context while the main list serves multiple views.
 
