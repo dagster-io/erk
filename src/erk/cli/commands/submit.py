@@ -35,6 +35,7 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_branch_name,
     extract_plan_header_learned_from_issue,
+    extract_plan_header_objective_issue,
 )
 from erk_shared.gateway.github.parsing import (
     construct_pr_url,
@@ -44,10 +45,7 @@ from erk_shared.gateway.github.parsing import (
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
-from erk_shared.naming import (
-    format_branch_timestamp_suffix,
-    sanitize_worktree_name,
-)
+from erk_shared.naming import generate_issue_branch_name
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.worker_impl_folder import create_worker_impl_folder
@@ -370,12 +368,11 @@ def _validate_issue_for_submit(
     # Check for existing local branches BEFORE computing new name
     existing_branches = _find_existing_branches_for_issue(ctx, repo.root, issue_number)
 
-    # Compute branch name components (needed for both paths)
-    prefix = f"P{issue_number}-"
-    sanitized_title = sanitize_worktree_name(issue.title)
-    base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
-    timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
-    new_branch_name = base_branch_name + timestamp_suffix
+    # Compute branch name using canonical naming function
+    objective_id = extract_plan_header_objective_issue(issue.body)
+    new_branch_name = generate_issue_branch_name(
+        issue_number, issue.title, ctx.time.now(), objective_id=objective_id
+    )
 
     if existing_branches:
         chosen = _prompt_existing_branch_action(
