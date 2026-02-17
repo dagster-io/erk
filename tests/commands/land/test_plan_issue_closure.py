@@ -120,7 +120,7 @@ class StatefulFakeGitHubIssues(GitHubIssues):
         raise NotImplementedError
 
     def get_issue_comments(self, repo_root: Path, number: int) -> list[str]:
-        raise NotImplementedError
+        return []
 
     def get_comment_by_id(self, repo_root: Path, comment_id: int) -> str:
         raise NotImplementedError

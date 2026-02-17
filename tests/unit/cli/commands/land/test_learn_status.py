@@ -39,7 +39,7 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body="",
+        body=format_plan_header_body_for_test(),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
@@ -118,7 +118,7 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body="",
+        body=format_plan_header_body_for_test(),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
@@ -177,7 +177,7 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body="",
+        body=format_plan_header_body_for_test(),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
@@ -239,7 +239,7 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body="",
+        body=format_plan_header_body_for_test(),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
@@ -304,6 +304,7 @@ def test_check_learn_status_and_prompt_skips_for_learn_plans(
     learn_issue = create_test_issue(
         number=issue_number,
         title="Learn: Extract testing patterns",
+        body=format_plan_header_body_for_test(),
         labels=["erk-plan", "erk-learn"],
     )
 
@@ -377,7 +378,7 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body="",
+        body=format_plan_header_body_for_test(),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
@@ -655,7 +656,7 @@ def test_check_learn_status_and_prompt_manual_learn_preprocesses_and_continues(
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body="",
+        body=format_plan_header_body_for_test(),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
@@ -853,7 +854,7 @@ def test_option4_calls_preprocess_and_continues_landing(
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
-        body="",
+        body=format_plan_header_body_for_test(),
         labels=["erk-plan"],
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
