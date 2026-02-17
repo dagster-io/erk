@@ -497,7 +497,6 @@ def run_init(
 
         # Detect and display agent backends
         installed_backends = detect_installed_backends(ctx.shell)
-        backend: AgentBackend = "claude"
 
         if len(installed_backends) == 0:
             user_output("  No agent backends detected (claude, codex)")
@@ -510,6 +509,7 @@ def run_init(
                 tool_path = ctx.shell.get_installed_tool_path(b)
                 user_output(f"  Detected: {b} ({tool_path})")
 
+        backend: AgentBackend = "claude"
         user_output(f"  Backend: {backend}")
         user_output("  Switch later: erk config set interactive_claude.backend <name>")
 
