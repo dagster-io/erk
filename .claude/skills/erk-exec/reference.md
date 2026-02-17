@@ -55,9 +55,10 @@ Quick reference for all `erk exec` subcommands.
 | `marker exists`                   | Check if a marker file exists.                                             |
 | `marker read`                     | Read content from a marker file.                                           |
 | `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                 |
+| `objective-fetch-context`         | Fetch all context for objective update in a single call.                   |
+| `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                     |
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                       |
-| `objective-update-context`        | Fetch all context for objective update in a single call.                   |
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                            |
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.                |
 | `plan-review-complete`            | Close a plan review PR without merging.                                    |
@@ -722,6 +723,26 @@ Normalize agent-produced tripwire candidate JSON in-place.
 | ------------------- | ---- | -------- | -------------- | -------------------------------- |
 | `--candidates-file` | TEXT | Yes      | Sentinel.UNSET | Path to tripwire-candidates.json |
 
+### objective-fetch-context
+
+Fetch all context for objective update in a single call.
+
+**Usage:** `erk exec objective-fetch-context`
+
+**Options:**
+
+| Flag          | Type    | Required | Default | Description                                  |
+| ------------- | ------- | -------- | ------- | -------------------------------------------- |
+| `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)       |
+| `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted) |
+| `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)     |
+
+### objective-post-action-comment
+
+Post a formatted action comment to an objective issue.
+
+**Usage:** `erk exec objective-post-action-comment`
+
 ### objective-render-roadmap
 
 Render a complete roadmap section from JSON input on stdin.
@@ -741,20 +762,6 @@ Save plan as objective GitHub issue.
 | `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text)             |
 | `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                                     |
 | `--validate`   | FLAG   | No       | -       | Run objective validation after creation and include results in output |
-
-### objective-update-context
-
-Fetch all context for objective update in a single call.
-
-**Usage:** `erk exec objective-update-context`
-
-**Options:**
-
-| Flag          | Type    | Required | Default        | Description     |
-| ------------- | ------- | -------- | -------------- | --------------- |
-| `--pr`        | INTEGER | Yes      | Sentinel.UNSET | PR number       |
-| `--objective` | INTEGER | Yes      | Sentinel.UNSET | Objective issue |
-| `--branch`    | TEXT    | Yes      | Sentinel.UNSET | Branch name     |
 
 ### plan-create-review-branch
 

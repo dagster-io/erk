@@ -82,14 +82,17 @@ from erk.cli.commands.exec.scripts.marker import marker
 from erk.cli.commands.exec.scripts.normalize_tripwire_candidates import (
     normalize_tripwire_candidates,
 )
+from erk.cli.commands.exec.scripts.objective_fetch_context import (
+    objective_fetch_context,
+)
+from erk.cli.commands.exec.scripts.objective_post_action_comment import (
+    objective_post_action_comment,
+)
 from erk.cli.commands.exec.scripts.objective_render_roadmap import (
     objective_render_roadmap,
 )
 from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
-)
-from erk.cli.commands.exec.scripts.objective_update_context import (
-    objective_update_context,
 )
 from erk.cli.commands.exec.scripts.plan_create_review_branch import (
     plan_create_review_branch,
@@ -230,7 +233,8 @@ exec_group.add_command(marker, name="marker")
 exec_group.add_command(normalize_tripwire_candidates, name="normalize-tripwire-candidates")
 exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
-exec_group.add_command(objective_update_context, name="objective-update-context")
+exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
+exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
 exec_group.add_command(plan_create_review_branch, name="plan-create-review-branch")
 exec_group.add_command(plan_create_review_pr, name="plan-create-review-pr")
 exec_group.add_command(plan_review_complete, name="plan-review-complete")

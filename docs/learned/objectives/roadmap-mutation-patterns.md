@@ -58,7 +58,7 @@ The surgical command finds a step row by ID using regex and replaces **only** th
 
 <!-- Source: .claude/commands/erk/objective-update-with-landed-pr.md:1-50 -->
 
-The full-body update is orchestrated by a Claude command (not a Python script). It fetches context via `objective-update-context`, then delegates to a subagent that:
+The full-body update is orchestrated by a Claude command (not a Python script). It fetches context via `objective-fetch-context`, then delegates to a subagent that:
 
 1. Analyzes which roadmap steps the landed PR completed
 2. Composes an action comment documenting the change
@@ -75,9 +75,9 @@ The full-body update is orchestrated by a Claude command (not a Python script). 
 
 ## The Context-Fetching Pattern
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_update_context.py, objective_update_context -->
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py, objective_fetch_context -->
 
-The full-body workflow uses a **bundled context fetch** (`erk exec objective-update-context`) to retrieve the objective issue, plan issue, and PR details in a single CLI call. This exists because the subagent needs all three to compose the update, and fetching them in separate LLM turns would waste tokens and add latency. See `objective_update_context()` in `src/erk/cli/commands/exec/scripts/objective_update_context.py`.
+The full-body workflow uses a **bundled context fetch** (`erk exec objective-fetch-context`) to retrieve the objective issue, plan issue, and PR details in a single CLI call. This exists because the subagent needs all three to compose the update, and fetching them in separate LLM turns would waste tokens and add latency. See `objective_fetch_context()` in `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`.
 
 ## Integration Points
 
