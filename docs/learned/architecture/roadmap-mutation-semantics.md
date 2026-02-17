@@ -84,7 +84,7 @@ By writing computed status directly, the table is always human-readable.
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
 
-See `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`. The function uses regex to find the target row and replaces status, plan, and PR cells in a single operation. It supports both 4-col (legacy) and 5-col table formats, upgrading 4-col headers to 5-col on write.
+The update command uses two functions in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`: `_replace_step_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered 5-column markdown table in the objective-body comment.
 
 ### Status Inference Is Write-Time Only
 

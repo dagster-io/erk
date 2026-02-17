@@ -41,7 +41,7 @@ The old 4-column format where plan and PR shared a single column is no longer ac
 | 1.2  | Add tests   | -      | plan #6464 |
 ```
 
-The surgical update command (`_replace_step_refs_in_body()`) still handles both 4-column and 5-column table formats in the rendered markdown table (objective-body comment), but the source of truth is always YAML frontmatter.
+The surgical update command uses two functions: `_replace_step_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered 5-column markdown table in the objective-body comment.
 
 ## Migration Strategy: Header-Based Detection
 
