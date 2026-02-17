@@ -7,6 +7,7 @@ description: >
 argument-hint: "[--pr <number>] [--include-resolved]"
 context: fork
 agent: general-purpose
+model: haiku
 ---
 
 # PR Feedback Classifier
