@@ -39,9 +39,16 @@ def write_dispatch_metadata(
     node_id = github.get_workflow_run_node_id(repo_root, run_id)
     if node_id is None:
         raise RuntimeError(f"Could not get node_id for run {run_id}")
+
+    # LBYL: Check plan exists before updating metadata
+    plan_id = str(issue_number)
+    plan_result = plan_backend.get_plan(repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
+        raise RuntimeError(f"Plan #{issue_number} not found")
+
     plan_backend.update_metadata(
         repo_root,
-        str(issue_number),
+        plan_id,
         {
             "last_dispatched_run_id": run_id,
             "last_dispatched_node_id": node_id,

@@ -387,6 +387,59 @@ def test_get_metadata_field_roundtrips_with_update_metadata(
 
 
 # =============================================================================
+# get_all_metadata_fields tests
+# =============================================================================
+
+
+def test_get_all_metadata_fields_returns_plan_not_found(plan_backend: PlanBackend) -> None:
+    """Both backends return PlanNotFound for nonexistent plan."""
+    nonexistent_id = _get_nonexistent_id(plan_backend)
+    result = plan_backend.get_all_metadata_fields(Path("/repo"), nonexistent_id)
+    assert isinstance(result, PlanNotFound)
+
+
+def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
+    plan_backend: PlanBackend,
+) -> None:
+    """Both backends return empty dict when plan exists but has no metadata fields."""
+    created = plan_backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Plan for all-metadata test",
+        content="# Test plan",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    result = plan_backend.get_all_metadata_fields(Path("/repo"), created.plan_id)
+    assert not isinstance(result, PlanNotFound)
+    assert isinstance(result, dict)
+
+
+def test_get_all_metadata_fields_roundtrips_with_update_metadata(
+    plan_backend: PlanBackend,
+) -> None:
+    """Both backends can set metadata and read all fields back."""
+    created = plan_backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Plan for all-metadata roundtrip",
+        content="# Roundtrip plan",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    plan_backend.update_metadata(
+        Path("/repo"),
+        created.plan_id,
+        {"worktree_name": "my-worktree", "branch_name": "feature-branch"},
+    )
+
+    result = plan_backend.get_all_metadata_fields(Path("/repo"), created.plan_id)
+    assert not isinstance(result, PlanNotFound)
+    assert result["worktree_name"] == "my-worktree"
+    assert result["branch_name"] == "feature-branch"
+
+
+# =============================================================================
 # update_plan_content tests
 # =============================================================================
 
