@@ -137,7 +137,7 @@ The dispatch function always restores the original branch in a `finally` block, 
 | File                                                          | Key Components                                                                                    |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `src/erk/cli/commands/one_shot_dispatch.py`                   | `dispatch_one_shot()`, `generate_branch_name()`, `OneShotDispatchParams`, `OneShotDispatchResult` |
-| `src/erk/cli/commands/objective/implement_cmd.py`             | `_handle_one_shot()`, `_find_step_by_id()`                                                        |
+| `src/erk/cli/commands/objective/implement_cmd.py`             | `_handle_one_shot()`, `_find_node_in_phases()`                                                    |
 | `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` | Best-effort registration of metadata, comment, closing ref                                        |
 | `src/erk/cli/commands/pr/metadata_helpers.py`                 | `write_dispatch_metadata()`, `maybe_update_plan_dispatch_metadata()`                              |
 | `.github/workflows/one-shot.yml`                              | Two-job pipeline (plan + implement)                                                               |

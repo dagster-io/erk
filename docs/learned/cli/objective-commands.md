@@ -96,6 +96,7 @@ All objective commands use the `register_with_aliases()` pattern, which register
 | ----------- | ------ | ------------------------------------------------ |
 | `check`     | `ch`   | Prefix of "check", avoids collision with "close" |
 | `close`     | `c`    | First letter, unambiguous (check uses "ch")      |
+| `inspect`   | `i`    | First letter of "inspect"                        |
 | `list`      | `ls`   | Unix convention (ls for list)                    |
 | `implement` | `impl` | First letters of "implement"                     |
 
