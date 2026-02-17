@@ -522,6 +522,12 @@ def run_init(
             user_output("  Graphite (gt) detected - will use 'gt create' for new branches")
         else:
             user_output("  Graphite (gt) not detected - will use 'git' for branch creation")
+    else:
+        # Config already exists — resolve backend from it
+        if ctx.global_config is not None:
+            backend = ctx.global_config.interactive_agent.backend
+        else:
+            backend = "claude"
 
     # Check if repo is already erk-ified
     already_erkified = is_repo_erk_ified(repo_root)
