@@ -16,6 +16,7 @@ from erk.artifacts.models import (
     InstalledArtifact,
     OrphanCheckResult,
 )
+from erk.artifacts.paths import ErkPackageInfo
 from erk.core.capabilities.registry import (
     get_capability,
     get_managed_artifacts,
@@ -27,7 +28,6 @@ from erk.core.claude_settings import (
     has_exit_plan_hook,
     has_user_prompt_hook,
 )
-from erk.artifacts.paths import ErkPackageInfo
 
 
 def _get_bundled_by_type(

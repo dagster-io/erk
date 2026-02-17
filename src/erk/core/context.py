@@ -13,6 +13,8 @@ from typing import Any, cast
 import click
 import tomlkit
 
+# Re-export types from erk_shared.context and erk.artifacts.paths
+from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
 from erk.core.completion import RealCompletion
 from erk.core.prompt_executor import ClaudePromptExecutor
@@ -24,9 +26,6 @@ from erk.core.shell import RealShell
 # Re-export ErkContext from erk_shared for isinstance() compatibility
 # This ensures that both erk CLI and kit commands use the same class identity
 from erk_shared.context.context import ErkContext as ErkContext
-
-# Re-export types from erk_shared.context and erk.artifacts.paths
-from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
 from erk_shared.context.types import GlobalConfig as GlobalConfig
 from erk_shared.context.types import LoadedConfig as LoadedConfig
 from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel

@@ -3,8 +3,8 @@
 from pathlib import Path
 
 from erk.artifacts.models import StalenessResult
-from erk.artifacts.state import load_artifact_state
 from erk.artifacts.paths import ErkPackageInfo
+from erk.artifacts.state import load_artifact_state
 
 
 def check_staleness(project_dir: Path, *, package: ErkPackageInfo) -> StalenessResult:

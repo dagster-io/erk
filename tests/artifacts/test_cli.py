@@ -7,12 +7,12 @@ from click.testing import CliRunner
 
 from erk.artifacts.artifact_health import is_erk_managed
 from erk.artifacts.models import InstalledArtifact
+from erk.artifacts.paths import ErkPackageInfo
 from erk.cli.commands.artifact.check import check_cmd
 from erk.cli.commands.artifact.list_cmd import list_cmd
 from erk.cli.commands.artifact.show import show_cmd
 from erk.cli.commands.artifact.sync_cmd import sync_cmd
 from erk.core.context import ErkContext, context_for_test
-from erk.artifacts.paths import ErkPackageInfo
 
 
 class TestListCommand:

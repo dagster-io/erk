@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from erk.artifacts.paths import ErkPackageInfo
 from erk.core.health_checks import (
     CheckResult,
     check_claude_settings,
@@ -22,7 +23,6 @@ from erk.core.health_checks_dogfooder.legacy_config_locations import (
     check_legacy_config_locations,
 )
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, save_pool_state
-from erk.artifacts.paths import ErkPackageInfo
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit

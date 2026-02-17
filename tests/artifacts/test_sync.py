@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from erk.artifacts.paths import (
+    ErkPackageInfo,
     _get_erk_package_dir,
     _is_editable_install,
     get_bundled_claude_dir,
@@ -20,7 +21,6 @@ from erk.artifacts.sync import (
     sync_artifacts,
     sync_dignified_review,
 )
-from erk.artifacts.paths import ErkPackageInfo
 
 # Test-only constants matching the capabilities registry
 # These mirror what's registered in src/erk/core/capabilities/registry.py
