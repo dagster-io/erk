@@ -31,4 +31,5 @@ If no objectives found, report: "No open objectives found."
 
 After listing, suggest:
 
-- /erk:objective-create-plan <number> to start planning a step from an objective
+- `/erk:objective-inspect <number>` — View dependency graph and progress
+- `/erk:objective-implement <number>` — Create a plan for the next step

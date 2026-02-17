@@ -148,6 +148,10 @@ EOF
 # List open objectives
 gh issue list --label "erk-objective" --state open
 
+# View dependency graph and next step
+erk objective inspect <issue-number>
+# Or in-session: /erk:objective-inspect <issue-number>
+
 # View specific objective
 gh issue view <issue-number>
 
