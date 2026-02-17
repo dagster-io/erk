@@ -555,13 +555,7 @@ def test_check_managed_artifacts_in_erk_repo(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=True,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version="1.0.0",
-    )
+    package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir, in_erk_repo=True)
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
     result = check_managed_artifacts(tmp_path)
@@ -598,13 +592,7 @@ def test_check_managed_artifacts_produces_type_summary(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=False,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version="1.0.0",
-    )
+    package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
     result = check_managed_artifacts(project_dir)
@@ -641,13 +629,7 @@ def test_check_managed_artifacts_some_not_installed(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=False,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version="1.0.0",
-    )
+    package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
     result = check_managed_artifacts(project_dir)
@@ -690,13 +672,7 @@ def test_check_managed_artifacts_shows_type_summary(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=False,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version="1.0.0",
-    )
+    package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
     # Mock installed capabilities to include the skill capability
     monkeypatch.setattr(
@@ -748,12 +724,9 @@ def test_check_managed_artifacts_actions_optional_without_workflows(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=False,
+    package = ErkPackageInfo.test_package(
         bundled_claude_dir=bundled_claude,
         bundled_github_dir=bundled_github,
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version="1.0.0",
     )
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
     # Mock installed capabilities to include the workflow capability (which includes actions)
@@ -816,12 +789,9 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     project_workflows.mkdir(parents=True)
     (project_workflows / "plan-implement.yml").write_text("name: plan-implement", encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=False,
+    package = ErkPackageInfo.test_package(
         bundled_claude_dir=bundled_claude,
         bundled_github_dir=bundled_github,
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version="1.0.0",
     )
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
     # Mock installed capabilities to include the workflow capability
@@ -888,13 +858,7 @@ hash = "{content_hash}"
 '''
     (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=False,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version="1.0.0",
-    )
+    package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
     result = check_managed_artifacts(project_dir)
@@ -975,12 +939,8 @@ hash = "{exit_plan_hash}"
 '''
     (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=False,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version=erk_version,
+    package = ErkPackageInfo.test_package(
+        bundled_claude_dir=bundled_dir, current_version=erk_version
     )
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
@@ -1017,13 +977,7 @@ def test_check_managed_artifacts_verbose_status_explanations(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    package = ErkPackageInfo(
-        in_erk_repo=False,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
-        current_version="1.0.0",
-    )
+    package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
     monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
     result = check_managed_artifacts(project_dir)

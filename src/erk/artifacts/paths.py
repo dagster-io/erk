@@ -126,6 +126,32 @@ class ErkPackageInfo:
     bundled_erk_dir: Path
     current_version: str
 
+    @staticmethod
+    def test_package(
+        *,
+        bundled_claude_dir: Path,
+        in_erk_repo: bool = False,
+        bundled_github_dir: Path | None = None,
+        bundled_erk_dir: Path | None = None,
+        current_version: str = "1.0.0",
+    ) -> ErkPackageInfo:
+        """Create an ErkPackageInfo for tests with sensible defaults.
+
+        Derives bundled_github_dir and bundled_erk_dir from bundled_claude_dir's
+        parent if not provided (assumes bundled/.claude, bundled/.github, bundled/.erk
+        sibling layout).
+        """
+        parent = bundled_claude_dir.parent
+        return ErkPackageInfo(
+            in_erk_repo=in_erk_repo,
+            bundled_claude_dir=bundled_claude_dir,
+            bundled_github_dir=(
+                bundled_github_dir if bundled_github_dir is not None else parent / ".github"
+            ),
+            bundled_erk_dir=bundled_erk_dir if bundled_erk_dir is not None else parent / ".erk",
+            current_version=current_version,
+        )
+
     @classmethod
     def from_project_dir(cls, project_dir: Path) -> ErkPackageInfo:
         """Create from live package state.
