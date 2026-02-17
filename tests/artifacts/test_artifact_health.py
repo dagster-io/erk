@@ -4,9 +4,10 @@ from pathlib import Path
 
 from erk.artifacts.artifact_health import _get_bundled_by_type, get_artifact_health
 from erk.artifacts.models import ArtifactFileState
+from erk.artifacts.paths import ErkPackageInfo
 
 
-def test_get_artifact_health_tracks_nested_commands(tmp_path: Path, monkeypatch) -> None:
+def test_get_artifact_health_tracks_nested_commands(tmp_path: Path) -> None:
     """get_artifact_health correctly enumerates nested command directories."""
     # Create bundled commands with nested structure
     bundled_claude = tmp_path / "bundled" / ".claude"
@@ -29,9 +30,12 @@ def test_get_artifact_health_tracks_nested_commands(tmp_path: Path, monkeypatch)
     project_nested.mkdir(parents=True)
     (project_nested / "impl-execute.md").write_text("# Nested Command", encoding="utf-8")
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_current_version",
-        lambda: "1.0.0",
+    package = ErkPackageInfo(
+        in_erk_repo=False,
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=tmp_path / "bundled" / ".github",
+        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        current_version="1.0.0",
     )
 
     # No saved state - all artifacts will show as changed-upstream
@@ -42,7 +46,7 @@ def test_get_artifact_health_tracks_nested_commands(tmp_path: Path, monkeypatch)
         tmp_path / "project",
         saved_files,
         installed_capabilities=None,
-        bundled_claude_dir=bundled_claude,
+        package=package,
     )
 
     # Extract command artifact names

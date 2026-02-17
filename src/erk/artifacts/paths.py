@@ -4,6 +4,9 @@ These utilities locate bundled .claude/, .erk/, and .github/ directories in the 
 Extracted to a separate module to avoid circular dependencies.
 """
 
+from __future__ import annotations
+
+from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
@@ -106,3 +109,63 @@ def get_bundled_github_dir() -> Path:
 
     # Wheel install: data is bundled at erk/data/github/
     return erk_package_dir / "data" / "github"
+
+
+@dataclass(frozen=True)
+class ErkPackageInfo:
+    """Consolidated erk package installation info.
+
+    Bundles is_in_erk_repo detection, bundled directory paths, and current
+    version into a single injectable value object. Tests construct directly;
+    production code uses the from_project_dir factory.
+    """
+
+    in_erk_repo: bool
+    bundled_claude_dir: Path
+    bundled_github_dir: Path
+    bundled_erk_dir: Path
+    current_version: str
+
+    @staticmethod
+    def test_package(
+        *,
+        bundled_claude_dir: Path,
+        in_erk_repo: bool = False,
+        bundled_github_dir: Path | None = None,
+        bundled_erk_dir: Path | None = None,
+        current_version: str = "1.0.0",
+    ) -> ErkPackageInfo:
+        """Create an ErkPackageInfo for tests with sensible defaults.
+
+        Derives bundled_github_dir and bundled_erk_dir from bundled_claude_dir's
+        parent if not provided (assumes bundled/.claude, bundled/.github, bundled/.erk
+        sibling layout).
+        """
+        parent = bundled_claude_dir.parent
+        return ErkPackageInfo(
+            in_erk_repo=in_erk_repo,
+            bundled_claude_dir=bundled_claude_dir,
+            bundled_github_dir=(
+                bundled_github_dir if bundled_github_dir is not None else parent / ".github"
+            ),
+            bundled_erk_dir=bundled_erk_dir if bundled_erk_dir is not None else parent / ".erk",
+            current_version=current_version,
+        )
+
+    @classmethod
+    def from_project_dir(cls, project_dir: Path) -> ErkPackageInfo:
+        """Create from live package state.
+
+        Uses inline imports to avoid circular dependencies with detection.py
+        and release_notes.py.
+        """
+        from erk.artifacts.detection import is_in_erk_repo
+        from erk.core.release_notes import get_current_version
+
+        return cls(
+            in_erk_repo=is_in_erk_repo(project_dir),
+            bundled_claude_dir=get_bundled_claude_dir(),
+            bundled_github_dir=get_bundled_github_dir(),
+            bundled_erk_dir=get_bundled_erk_dir(),
+            current_version=get_current_version(),
+        )

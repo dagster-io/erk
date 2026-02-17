@@ -3,6 +3,8 @@
 import shutil
 from pathlib import Path
 
+from erk.artifacts.paths import get_bundled_github_dir
+from erk.artifacts.state import add_installed_capability, remove_installed_capability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -55,8 +57,6 @@ class LearnWorkflowCapability(Capability):
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
-        from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_github_dir
 
         bundled_github_dir = get_bundled_github_dir()
         if not bundled_github_dir.exists():
@@ -87,7 +87,6 @@ class LearnWorkflowCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Remove the learn workflow."""
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
-        from erk.artifacts.state import remove_installed_capability
 
         workflow_file = repo_root / ".github" / "workflows" / "learn.yml"
 

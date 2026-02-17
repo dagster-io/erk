@@ -1,15 +1,25 @@
 """Tests for artifact staleness checking."""
 
 from pathlib import Path
-from unittest.mock import patch
 
+from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.staleness import check_staleness
+
+
+def _make_package(tmp_path: Path, *, in_erk_repo: bool) -> ErkPackageInfo:
+    return ErkPackageInfo(
+        in_erk_repo=in_erk_repo,
+        bundled_claude_dir=tmp_path / "bundled" / ".claude",
+        bundled_github_dir=tmp_path / "bundled" / ".github",
+        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        current_version="1.0.0",
+    )
 
 
 def test_check_staleness_not_initialized(tmp_path: Path) -> None:
     """Returns not-initialized when no state file exists."""
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    package = _make_package(tmp_path, in_erk_repo=False)
+    result = check_staleness(tmp_path, package=package)
 
     assert result.is_stale is True
     assert result.reason == "not-initialized"
@@ -24,8 +34,8 @@ def test_check_staleness_version_mismatch(tmp_path: Path) -> None:
     state_file.parent.mkdir(parents=True)
     state_file.write_text('[artifacts]\nversion = "0.9.0"\n\n[artifacts.files]\n', encoding="utf-8")
 
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    package = _make_package(tmp_path, in_erk_repo=False)
+    result = check_staleness(tmp_path, package=package)
 
     assert result.is_stale is True
     assert result.reason == "version-mismatch"
@@ -40,8 +50,8 @@ def test_check_staleness_up_to_date(tmp_path: Path) -> None:
     state_file.parent.mkdir(parents=True)
     state_file.write_text('[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8")
 
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    package = _make_package(tmp_path, in_erk_repo=False)
+    result = check_staleness(tmp_path, package=package)
 
     assert result.is_stale is False
     assert result.reason == "up-to-date"
@@ -51,12 +61,8 @@ def test_check_staleness_up_to_date(tmp_path: Path) -> None:
 
 def test_check_staleness_erk_repo(tmp_path: Path) -> None:
     """Returns erk-repo reason when in erk repository without state.toml."""
-    # Create pyproject.toml with erk name
-    pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
-
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    package = _make_package(tmp_path, in_erk_repo=True)
+    result = check_staleness(tmp_path, package=package)
 
     assert result.is_stale is False
     assert result.reason == "erk-repo"
@@ -66,17 +72,13 @@ def test_check_staleness_erk_repo(tmp_path: Path) -> None:
 
 def test_check_staleness_erk_repo_with_state(tmp_path: Path) -> None:
     """Loads state.toml in erk repo for dogfooding."""
-    # Create pyproject.toml with erk name
-    pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
-
     # Create state.toml (as would be created by erk artifact sync)
     state_file = tmp_path / ".erk" / "state.toml"
     state_file.parent.mkdir(parents=True)
     state_file.write_text('[artifacts]\nversion = "0.5.0"\n\n[artifacts.files]\n', encoding="utf-8")
 
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    package = _make_package(tmp_path, in_erk_repo=True)
+    result = check_staleness(tmp_path, package=package)
 
     assert result.is_stale is False
     assert result.reason == "erk-repo"

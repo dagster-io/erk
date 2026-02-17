@@ -13,7 +13,7 @@ from erk.artifacts.artifact_health import (
 )
 from erk.artifacts.discovery import discover_artifacts
 from erk.artifacts.models import InstalledArtifact
-from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_erk_dir, get_bundled_github_dir
+from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.staleness import check_staleness
 from erk.artifacts.state import load_artifact_state
 
@@ -129,7 +129,9 @@ def _format_artifact_status(artifact: ArtifactStatus, show_hashes: bool) -> str:
     return "\n".join(lines)
 
 
-def _display_verbose_status(project_dir: Path, show_hashes: bool) -> bool:
+def _display_verbose_status(
+    project_dir: Path, show_hashes: bool, *, package: ErkPackageInfo
+) -> bool:
     """Display per-artifact status breakdown.
 
     Shows two sections:
@@ -139,6 +141,7 @@ def _display_verbose_status(project_dir: Path, show_hashes: bool) -> bool:
     Args:
         project_dir: Path to the project root
         show_hashes: If True, show hash comparison details for each artifact
+        package: Erk package installation info
 
     Returns True if any erk-managed artifacts need attention (not up-to-date).
     """
@@ -150,7 +153,7 @@ def _display_verbose_status(project_dir: Path, show_hashes: bool) -> bool:
         project_dir,
         saved_files,
         installed_capabilities=None,
-        bundled_claude_dir=get_bundled_claude_dir(),
+        package=package,
     )
 
     if health_result.skipped_reason is not None:
@@ -207,21 +210,11 @@ def check_cmd(verbose: int) -> None:
       erk artifact check -vv
     """
     project_dir = Path.cwd()
+    package = ErkPackageInfo.from_project_dir(project_dir)
 
-    staleness_result = check_staleness(project_dir)
-    bundled_claude_dir = get_bundled_claude_dir()
-    bundled_github_dir = get_bundled_github_dir()
-    orphan_result = find_orphaned_artifacts(
-        project_dir,
-        bundled_claude_dir=bundled_claude_dir,
-        bundled_github_dir=bundled_github_dir,
-    )
-    missing_result = find_missing_artifacts(
-        project_dir,
-        bundled_claude_dir=bundled_claude_dir,
-        bundled_github_dir=bundled_github_dir,
-        bundled_erk_dir=get_bundled_erk_dir(),
-    )
+    staleness_result = check_staleness(project_dir, package=package)
+    orphan_result = find_orphaned_artifacts(project_dir, package=package)
+    missing_result = find_missing_artifacts(project_dir, package=package)
 
     has_errors = False
     show_per_artifact = verbose >= 1
@@ -253,7 +246,7 @@ def check_cmd(verbose: int) -> None:
 
     # Show verbose per-artifact breakdown if requested
     if show_per_artifact and staleness_result.reason != "not-initialized":
-        verbose_has_issues = _display_verbose_status(project_dir, show_hashes)
+        verbose_has_issues = _display_verbose_status(project_dir, show_hashes, package=package)
         # In dev mode (erk-repo), don't report issues - artifacts come from source
         if verbose_has_issues and staleness_result.reason != "erk-repo":
             has_errors = True

@@ -4,9 +4,10 @@ from pathlib import Path
 
 from erk.artifacts.artifact_health import find_missing_artifacts
 from erk.artifacts.models import CompletenessCheckResult
+from erk.artifacts.paths import ErkPackageInfo
 
 
-def test_find_missing_artifacts_no_missing(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_no_missing(tmp_path: Path) -> None:
     """All bundled artifacts present locally."""
     import json
 
@@ -26,16 +27,15 @@ def test_find_missing_artifacts_no_missing(tmp_path: Path, monkeypatch) -> None:
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: False,
-    )
-
     result = find_missing_artifacts(
         tmp_path / "project",
-        bundled_claude_dir=tmp_path / "bundled" / ".claude",
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=tmp_path / "bundled" / ".claude",
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert isinstance(result, CompletenessCheckResult)
@@ -43,7 +43,7 @@ def test_find_missing_artifacts_no_missing(tmp_path: Path, monkeypatch) -> None:
     assert result.skipped_reason is None
 
 
-def test_find_missing_artifacts_missing_command(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_missing_command(tmp_path: Path) -> None:
     """Bundled command missing locally."""
     # Bundled has plan-save.md
     bundled_cmd = tmp_path / "bundled" / ".claude" / "commands" / "erk"
@@ -56,16 +56,15 @@ def test_find_missing_artifacts_missing_command(tmp_path: Path, monkeypatch) -> 
     project_cmd.mkdir(parents=True)
     (project_cmd / "pr-submit.md").write_text("content")
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: False,
-    )
-
     result = find_missing_artifacts(
         tmp_path / "project",
-        bundled_claude_dir=tmp_path / "bundled" / ".claude",
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=tmp_path / "bundled" / ".claude",
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert "commands/erk" in result.missing
@@ -73,7 +72,7 @@ def test_find_missing_artifacts_missing_command(tmp_path: Path, monkeypatch) -> 
     assert "pr-submit.md" not in result.missing["commands/erk"]
 
 
-def test_find_missing_artifacts_missing_skill_file(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_missing_skill_file(tmp_path: Path) -> None:
     """Bundled skill file missing locally."""
     # Bundled skill with multiple files
     bundled_skill = tmp_path / "bundled" / ".claude" / "skills" / "learned-docs"
@@ -86,59 +85,56 @@ def test_find_missing_artifacts_missing_skill_file(tmp_path: Path, monkeypatch) 
     project_skill.mkdir(parents=True)
     (project_skill / "SKILL.md").write_text("skill")
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: False,
-    )
-
     result = find_missing_artifacts(
         tmp_path / "project",
-        bundled_claude_dir=tmp_path / "bundled" / ".claude",
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=tmp_path / "bundled" / ".claude",
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert "skills/learned-docs" in result.missing
     assert "cli-patterns.md" in result.missing["skills/learned-docs"]
 
 
-def test_find_missing_artifacts_skip_erk_repo(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_skip_erk_repo(tmp_path: Path) -> None:
     """Skip check when running in erk repo."""
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: True,
-    )
-
     result = find_missing_artifacts(
         tmp_path,
-        bundled_claude_dir=tmp_path / "bundled" / ".claude",
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=True,
+            bundled_claude_dir=tmp_path / "bundled" / ".claude",
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.missing == {}
     assert result.skipped_reason == "erk-repo"
 
 
-def test_find_missing_artifacts_skip_no_claude_dir(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_skip_no_claude_dir(tmp_path: Path) -> None:
     """Skip check when no .claude/ directory."""
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: False,
-    )
-
     result = find_missing_artifacts(
         tmp_path,
-        bundled_claude_dir=tmp_path / "bundled" / ".claude",
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=tmp_path / "bundled" / ".claude",
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.missing == {}
     assert result.skipped_reason == "no-claude-dir"
 
 
-def test_find_missing_artifacts_missing_workflow(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_missing_workflow(tmp_path: Path) -> None:
     """Bundled workflow missing locally."""
     # Bundled has plan-implement.yml
     bundled_workflows = tmp_path / "bundled" / ".github" / "workflows"
@@ -157,23 +153,22 @@ def test_find_missing_artifacts_missing_workflow(tmp_path: Path, monkeypatch) ->
     project_claude = tmp_path / "project" / ".claude"
     project_claude.mkdir(parents=True)
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: False,
-    )
-
     result = find_missing_artifacts(
         tmp_path / "project",
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert ".github/workflows" in result.missing
     assert "plan-implement.yml" in result.missing[".github/workflows"]
 
 
-def test_find_missing_artifacts_missing_hooks_no_settings(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_missing_hooks_no_settings(tmp_path: Path) -> None:
     """All hooks missing when settings.json doesn't exist."""
     # Bundled .claude exists
     bundled_claude = tmp_path / "bundled" / ".claude"
@@ -183,16 +178,15 @@ def test_find_missing_artifacts_missing_hooks_no_settings(tmp_path: Path, monkey
     project_claude = tmp_path / "project" / ".claude"
     project_claude.mkdir(parents=True)
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: False,
-    )
-
     result = find_missing_artifacts(
         tmp_path / "project",
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert "settings.json" in result.missing
@@ -201,7 +195,7 @@ def test_find_missing_artifacts_missing_hooks_no_settings(tmp_path: Path, monkey
     assert "user-prompt-hook" in result.missing["settings.json"]
 
 
-def test_find_missing_artifacts_partial_hooks(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_partial_hooks(tmp_path: Path) -> None:
     """Only missing hooks are reported."""
     import json
 
@@ -227,16 +221,15 @@ def test_find_missing_artifacts_partial_hooks(tmp_path: Path, monkeypatch) -> No
     }
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: False,
-    )
-
     result = find_missing_artifacts(
         tmp_path / "project",
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert "settings.json" in result.missing
@@ -245,7 +238,7 @@ def test_find_missing_artifacts_partial_hooks(tmp_path: Path, monkeypatch) -> No
     assert "user-prompt-hook" not in result.missing["settings.json"]
 
 
-def test_find_missing_artifacts_all_hooks_present(tmp_path: Path, monkeypatch) -> None:
+def test_find_missing_artifacts_all_hooks_present(tmp_path: Path) -> None:
     """No missing hooks when all are configured."""
     import json
 
@@ -262,16 +255,15 @@ def test_find_missing_artifacts_all_hooks_present(tmp_path: Path, monkeypatch) -
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.is_in_erk_repo",
-        lambda _: False,
-    )
-
     result = find_missing_artifacts(
         tmp_path / "project",
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
-        bundled_erk_dir=tmp_path / "bundled" / ".erk",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     # No hooks should be missing

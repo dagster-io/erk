@@ -3,6 +3,8 @@
 import shutil
 from pathlib import Path
 
+from erk.artifacts.paths import get_bundled_github_dir
+from erk.artifacts.state import add_installed_capability, remove_installed_capability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -71,9 +73,6 @@ class ErkImplWorkflowCapability(Capability):
     def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install the workflow and related actions."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
-        # Inline import: avoids circular dependency with artifacts module
-        from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_github_dir
 
         bundled_github_dir = get_bundled_github_dir()
         if not bundled_github_dir.exists():
@@ -119,7 +118,6 @@ class ErkImplWorkflowCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Remove the plan-implement workflow and related actions."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
-        from erk.artifacts.state import remove_installed_capability
 
         removed: list[str] = []
 

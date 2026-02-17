@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from erk.artifacts.artifact_health import find_orphaned_artifacts
+from erk.artifacts.paths import ErkPackageInfo
 
 
 def test_find_orphaned_artifacts_no_claude_dir(tmp_path: Path) -> None:
@@ -12,8 +13,13 @@ def test_find_orphaned_artifacts_no_claude_dir(tmp_path: Path) -> None:
 
     result = find_orphaned_artifacts(
         tmp_path,
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.skipped_reason == "no-claude-dir"
@@ -21,21 +27,19 @@ def test_find_orphaned_artifacts_no_claude_dir(tmp_path: Path) -> None:
 
 
 def test_find_orphaned_artifacts_in_erk_repo(tmp_path: Path) -> None:
-    """Test orphan detection in erk repo → skipped."""
-    # Create pyproject.toml that makes it look like erk repo
-    pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text('name = "erk"\nversion = "1.0.0"', encoding="utf-8")
-
-    claude_dir = tmp_path / ".claude"
-    claude_dir.mkdir()
-
+    """Test orphan detection in erk repo -> skipped."""
     bundled_claude = tmp_path / "bundled" / ".claude"
     bundled_claude.mkdir(parents=True)
 
     result = find_orphaned_artifacts(
         tmp_path,
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
+        package=ErkPackageInfo(
+            in_erk_repo=True,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.skipped_reason == "erk-repo"
@@ -50,8 +54,13 @@ def test_find_orphaned_artifacts_no_bundled_dir(tmp_path: Path) -> None:
 
     result = find_orphaned_artifacts(
         tmp_path,
-        bundled_claude_dir=Path("/nonexistent"),
-        bundled_github_dir=Path("/nonexistent"),
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=Path("/nonexistent"),
+            bundled_github_dir=Path("/nonexistent"),
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.skipped_reason == "no-bundled-dir"
@@ -75,8 +84,13 @@ def test_find_orphaned_artifacts_no_orphans(tmp_path: Path) -> None:
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.skipped_reason is None
@@ -101,8 +115,13 @@ def test_find_orphaned_artifacts_orphaned_command(tmp_path: Path) -> None:
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.skipped_reason is None
@@ -128,8 +147,13 @@ def test_find_orphaned_artifacts_orphaned_skill(tmp_path: Path) -> None:
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.skipped_reason is None
@@ -155,8 +179,13 @@ def test_find_orphaned_artifacts_orphaned_agent(tmp_path: Path) -> None:
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.skipped_reason is None
@@ -182,8 +211,13 @@ def test_find_orphaned_artifacts_detects_init_py(tmp_path: Path) -> None:
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     assert result.skipped_reason is None
@@ -217,8 +251,13 @@ def test_find_orphaned_artifacts_user_created_folders_not_checked(tmp_path: Path
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=tmp_path / "bundled" / ".github",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=tmp_path / "bundled" / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     # Should have no orphans - user-created folders are not checked
@@ -248,8 +287,13 @@ def test_find_orphaned_workflows_not_detected_when_bundled_exists(tmp_path: Path
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=bundled_github,
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=bundled_github,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     # No orphans - bundled workflow exists
@@ -279,8 +323,13 @@ def test_find_orphaned_workflows_detected_when_bundled_missing(tmp_path: Path) -
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=bundled_github,
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=bundled_github,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     # plan-implement.yml is orphaned since it doesn't exist in bundled
@@ -311,8 +360,13 @@ def test_find_orphaned_workflows_ignores_user_workflows(tmp_path: Path) -> None:
 
     result = find_orphaned_artifacts(
         project_dir,
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=bundled_github,
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=bundled_github,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
     )
 
     # No orphans - user workflows are not checked

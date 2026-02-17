@@ -4,10 +4,12 @@ SkillCapability wraps the existing artifact sync system to install Claude skills
 to external repositories via the capability system.
 """
 
+import shutil
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
 
+from erk.artifacts.paths import get_bundled_claude_dir
+from erk.artifacts.state import add_installed_capability, remove_installed_capability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -15,9 +17,6 @@ from erk.core.capabilities.base import (
     CapabilityScope,
     ManagedArtifact,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 class SkillCapability(Capability):
@@ -71,9 +70,6 @@ class SkillCapability(Capability):
     def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install the skill using artifact sync."""
         assert repo_root is not None, "SkillCapability requires repo_root"
-        # Inline import: avoids circular dependency with artifacts module
-        from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_claude_dir
 
         skill_dir = repo_root / ".claude" / "skills" / self.skill_name
         if skill_dir.exists():
@@ -108,9 +104,6 @@ class SkillCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Uninstall the skill by deleting its directory."""
         assert repo_root is not None, "SkillCapability requires repo_root"
-        import shutil
-
-        from erk.artifacts.state import remove_installed_capability
 
         skill_dir = repo_root / ".claude" / "skills" / self.skill_name
         if not skill_dir.exists():
@@ -131,8 +124,6 @@ class SkillCapability(Capability):
 
     def _copy_directory(self, source: Path, target: Path) -> None:
         """Copy directory contents recursively."""
-        import shutil
-
         for source_path in source.rglob("*"):
             if source_path.is_file():
                 relative = source_path.relative_to(source)

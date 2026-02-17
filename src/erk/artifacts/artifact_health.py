@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.discovery import (
     _compute_directory_hash,
     _compute_file_hash,
@@ -17,6 +16,7 @@ from erk.artifacts.models import (
     InstalledArtifact,
     OrphanCheckResult,
 )
+from erk.artifacts.paths import ErkPackageInfo
 from erk.core.capabilities.registry import (
     get_capability,
     get_managed_artifacts,
@@ -28,7 +28,6 @@ from erk.core.claude_settings import (
     has_exit_plan_hook,
     has_user_prompt_hook,
 )
-from erk.core.release_notes import get_current_version
 
 
 def _get_bundled_by_type(
@@ -196,7 +195,7 @@ def get_artifact_health(
     saved_files: dict[str, ArtifactFileState],
     *,
     installed_capabilities: frozenset[str] | None,
-    bundled_claude_dir: Path,
+    package: ErkPackageInfo,
 ) -> ArtifactHealthResult:
     """Get per-artifact health status comparing installed vs bundled state.
 
@@ -205,6 +204,7 @@ def get_artifact_health(
         saved_files: Per-artifact state from .erk/state.toml (artifact key -> ArtifactFileState)
         installed_capabilities: Set of capability names installed in the repo,
             or None to skip filtering and check all artifacts (erk repo case)
+        package: Erk package installation info
 
     Returns:
         ArtifactHealthResult with status for each bundled artifact
@@ -214,12 +214,12 @@ def get_artifact_health(
     if not project_claude_dir.exists():
         return ArtifactHealthResult(artifacts=[], skipped_reason="no-claude-dir")
 
-    if not bundled_claude_dir.exists():
+    if not package.bundled_claude_dir.exists():
         return ArtifactHealthResult(artifacts=[], skipped_reason="no-bundled-dir")
 
     project_workflows_dir = project_dir / ".github" / "workflows"
     project_actions_dir = project_dir / ".github" / "actions"
-    current_version = get_current_version()
+    current_version = package.current_version
 
     artifacts: list[ArtifactStatus] = []
 
@@ -239,8 +239,8 @@ def get_artifact_health(
         file_path = project_claude_dir / "agents" / f"{name}.md"
 
         # Check bundled structure to determine canonical key format
-        bundled_dir = bundled_claude_dir / "agents" / name
-        bundled_file = bundled_claude_dir / "agents" / f"{name}.md"
+        bundled_dir = package.bundled_claude_dir / "agents" / name
+        bundled_file = package.bundled_claude_dir / "agents" / f"{name}.md"
 
         # Directory-based takes precedence, then single-file
         if bundled_dir.exists() and bundled_dir.is_dir():
@@ -264,7 +264,7 @@ def get_artifact_health(
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
     # Check commands (enumerate erk commands from bundled source, including nested dirs)
-    bundled_erk_commands = bundled_claude_dir / "commands" / "erk"
+    bundled_erk_commands = package.bundled_claude_dir / "commands" / "erk"
     if bundled_erk_commands.exists():
         for cmd_file in sorted(bundled_erk_commands.rglob("*.md")):
             # Compute relative path (e.g., "system/impl-execute.md" or "plan-save.md")
@@ -423,8 +423,7 @@ def _find_orphaned_workflows(
 def find_orphaned_artifacts(
     project_dir: Path,
     *,
-    bundled_claude_dir: Path,
-    bundled_github_dir: Path,
+    package: ErkPackageInfo,
 ) -> OrphanCheckResult:
     """Find orphaned files in erk-managed artifact directories.
 
@@ -433,12 +432,13 @@ def find_orphaned_artifacts(
 
     Args:
         project_dir: Path to the project root
+        package: Erk package installation info
 
     Returns:
         OrphanCheckResult with orphan status
     """
     # Skip check in erk repo - artifacts are source, not synced
-    if is_in_erk_repo(project_dir):
+    if package.in_erk_repo:
         return OrphanCheckResult(
             orphans={},
             skipped_reason="erk-repo",
@@ -452,17 +452,17 @@ def find_orphaned_artifacts(
             skipped_reason="no-claude-dir",
         )
 
-    if not bundled_claude_dir.exists():
+    if not package.bundled_claude_dir.exists():
         return OrphanCheckResult(
             orphans={},
             skipped_reason="no-bundled-dir",
         )
 
-    orphans = _find_orphaned_claude_artifacts(project_claude_dir, bundled_claude_dir)
+    orphans = _find_orphaned_claude_artifacts(project_claude_dir, package.bundled_claude_dir)
 
     # Also check for orphaned workflows
     project_workflows_dir = project_dir / ".github" / "workflows"
-    bundled_workflows_dir = bundled_github_dir / "workflows"
+    bundled_workflows_dir = package.bundled_github_dir / "workflows"
     orphans.update(_find_orphaned_workflows(project_workflows_dir, bundled_workflows_dir))
 
     return OrphanCheckResult(
@@ -663,9 +663,7 @@ def _find_missing_hooks(project_claude_dir: Path) -> dict[str, list[str]]:
 def find_missing_artifacts(
     project_dir: Path,
     *,
-    bundled_claude_dir: Path,
-    bundled_github_dir: Path,
-    bundled_erk_dir: Path,
+    package: ErkPackageInfo,
 ) -> CompletenessCheckResult:
     """Find bundled artifacts that are missing from local installation.
 
@@ -673,12 +671,13 @@ def find_missing_artifacts(
 
     Args:
         project_dir: Path to the project root
+        package: Erk package installation info
 
     Returns:
         CompletenessCheckResult with missing artifact status
     """
     # Skip in erk repo - artifacts are source
-    if is_in_erk_repo(project_dir):
+    if package.in_erk_repo:
         return CompletenessCheckResult(
             missing={},
             skipped_reason="erk-repo",
@@ -692,26 +691,26 @@ def find_missing_artifacts(
             skipped_reason="no-claude-dir",
         )
 
-    if not bundled_claude_dir.exists():
+    if not package.bundled_claude_dir.exists():
         return CompletenessCheckResult(
             missing={},
             skipped_reason="no-bundled-dir",
         )
 
-    missing = _find_missing_claude_artifacts(project_claude_dir, bundled_claude_dir)
+    missing = _find_missing_claude_artifacts(project_claude_dir, package.bundled_claude_dir)
 
     # Check workflows and actions
     project_workflows_dir = project_dir / ".github" / "workflows"
-    bundled_workflows_dir = bundled_github_dir / "workflows"
+    bundled_workflows_dir = package.bundled_github_dir / "workflows"
     missing.update(_find_missing_workflows(project_workflows_dir, bundled_workflows_dir))
 
     project_actions_dir = project_dir / ".github" / "actions"
-    bundled_actions_dir = bundled_github_dir / "actions"
+    bundled_actions_dir = package.bundled_github_dir / "actions"
     missing.update(_find_missing_actions(project_actions_dir, bundled_actions_dir))
 
     # Check reviews (in .erk/reviews/, bundled from .erk/reviews/)
     project_reviews_dir = project_dir / ".erk" / "reviews"
-    bundled_reviews_dir = bundled_erk_dir / "reviews"
+    bundled_reviews_dir = package.bundled_erk_dir / "reviews"
     missing.update(_find_missing_reviews(project_reviews_dir, bundled_reviews_dir))
 
     # Check hooks in settings.json
