@@ -8,8 +8,8 @@ read_when:
 tripwires:
   - action: "adding a new roadmap mutation site without updating this document"
     warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
-  - action: "updating roadmap step in only one location (frontmatter or table)"
-    warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-roadmap-step which handles both atomically."
+  - action: "updating roadmap step without using update-roadmap-step"
+    warning: "Use update-roadmap-step which atomically updates YAML frontmatter in the issue body and the markdown table in the objective-body comment."
 last_audited: "2026-02-16 04:53 PT"
 audit_result: clean
 ---
@@ -22,10 +22,10 @@ This document describes the complete lifecycle of objective issues from creation
 
 Objectives are GitHub issues with the `erk-objective` label that track multi-plan work through a roadmap structure. The roadmap exists in two forms:
 
-1. **Source of truth**: YAML frontmatter in `<!-- erk:metadata-block:objective-roadmap -->` blocks
-2. **Rendered view**: Markdown table in the issue body (for human readability)
+1. **Source of truth**: YAML frontmatter in `<!-- erk:metadata-block:objective-roadmap -->` blocks (in issue body)
+2. **Rendered view**: Markdown table in the objective-body comment (for human readability)
 
-During the migration period, both frontmatter and table coexist (dual-write strategy). Legacy objectives without frontmatter fall back to table parsing.
+All objectives use v2 YAML format. `parse_roadmap()` returns a legacy-format error for non-v2 content. Mutations update both the YAML frontmatter and the rendered table atomically via `update-roadmap-step`.
 
 ## Objective States
 
@@ -98,20 +98,23 @@ When created, objectives have:
 ```markdown
 ## <!-- erk:metadata-block:objective-roadmap -->
 
-schema_version: "1"
+schema_version: "2"
 steps:
 
 - id: "1.1"
   description: "Add user model"
   status: "pending"
+  plan: null
   pr: null
 - id: "1.2"
   description: "Add JWT library"
   status: "pending"
+  plan: null
   pr: null
 - id: "2.1"
   description: "Implement login"
   status: "pending"
+  plan: null
   pr: null
 
 ---
@@ -146,50 +149,33 @@ parse_roadmap(body)
   │  │  ↓
   │  │  Return (phases, [])
   │  │
-  │  └─ Invalid → Fall through to table parsing
+  │  └─ Invalid → Return ([], [legacy_format_error])
   │
-  └─ No metadata block → Table parsing (regex)
-      ↓
-      Extract phase headers and tables
-      ↓
-      Parse rows with status inference
-      ↓
-      Return (phases, validation_errors)
+  └─ No metadata block → Return ([], [legacy_format_error])
 ```
 
-### Status Inference (Table Mode Only)
+There is no table-parsing fallback. Non-v2 content returns an empty phases list with a legacy format error message directing users to recreate the objective.
 
-When parsing markdown tables, status is inferred from PR column if status column is `-`:
+### Status Resolution
 
-| PR Column    | Inferred Status |
-| ------------ | --------------- |
-| `#123`       | `done`          |
-| `plan #456`  | `in_progress`   |
-| `-` or empty | `pending`       |
+Status comes directly from the YAML `status` field in frontmatter — no inference from plan/PR columns.
 
-Explicit status values (`done`, `in_progress`, `planning`, `blocked`, `skipped`) override inference.
-
-### Frontmatter Mode
-
-Frontmatter has explicit status, no inference:
-
-- Status comes directly from YAML `status` field
-- Phase names extracted from markdown headers (not stored in YAML)
+- Phase names extracted from markdown headers via `_enrich_phase_names()` (not stored in YAML)
 - Phase membership derived from step ID prefix (e.g., "1.2" → phase 1)
 
 ## Mutations
 
-All mutations must update **both** frontmatter and table when frontmatter exists (dual-write).
+Mutations update YAML frontmatter in the issue body (source of truth) and the markdown table in the objective-body comment (rendered view). Both are updated atomically by `update-roadmap-step`.
 
 ### Mutation Sites
 
-| Site                                    | Type      | Trigger                                       | Updates                     | Frontmatter-Aware?                 |
-| --------------------------------------- | --------- | --------------------------------------------- | --------------------------- | ---------------------------------- |
-| `update-roadmap-step.py`                | Surgical  | `erk exec update-roadmap-step` or `plan-save` | Single PR cell              | ✅ Yes (this plan)                 |
-| `objective-update-with-landed-pr`       | Full-body | After landing PR                              | Roadmap + prose sections    | ✅ Yes (this plan)                 |
-| `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                  | Calls `update-roadmap-step` | ✅ Inherits                        |
-| `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                         | N/A (reads only)            | ✅ Inherits from `parse_roadmap()` |
-| `objective_update_context.py`           | Read-only | Fetch context for updates                     | N/A (reads only)            | ✅ Inherits from `parse_roadmap()` |
+| Site                                    | Type      | Trigger                                       | Updates                          |
+| --------------------------------------- | --------- | --------------------------------------------- | -------------------------------- |
+| `update-roadmap-step.py`                | Surgical  | `erk exec update-roadmap-step` or `plan-save` | YAML frontmatter + table comment |
+| `objective-update-with-landed-pr`       | Full-body | After landing PR                              | Roadmap + prose sections         |
+| `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                  | Calls `update-roadmap-step`      |
+| `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                         | N/A (reads only)                 |
+| `objective_update_context.py`           | Read-only | Fetch context for updates                     | N/A (reads only)                 |
 
 ### Surgical Update: `update-roadmap-step`
 
@@ -201,16 +187,11 @@ All mutations must update **both** frontmatter and table when frontmatter exists
 
 1. Fetch issue body
 2. Check for `objective-roadmap` metadata block
-3. **If frontmatter exists:**
-   - Parse YAML, find step by ID
-   - Update `pr` field, reset `status` to `"pending"` (for re-inference if needed)
-   - Serialize back to YAML
-   - Replace metadata block
-   - **Also** update markdown table (dual-write)
-4. **If no frontmatter:**
-   - Use regex to find table row by step ID
-   - Replace PR and status cells
-5. Write updated body to GitHub
+3. Parse YAML frontmatter, find step by ID
+4. Update `plan`/`pr` fields and recompute `status`
+5. Serialize back to YAML and replace metadata block in body
+6. Write updated body to GitHub
+7. Also update markdown table in objective-body comment (v2 rendered view)
 
 **Usage**:
 
@@ -237,15 +218,11 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr ""  # Clear
 1. Determine which steps the PR completed (compare plan to roadmap)
 2. Compose action comment with summary and lessons learned
 3. **Compose updated objective body:**
-   - **If frontmatter exists:**
-     - Parse YAML frontmatter
-     - Update relevant step(s): set `pr: "#<number>"` and `status: "done"`
-     - Serialize updated YAML
-     - **Also** update markdown table (dual-write)
-     - Reconcile stale prose sections (Design Decisions, Implementation Context)
-   - **If no frontmatter:**
-     - Update table: set PR cell to `#<number>`, status to `-`
-     - Reconcile stale prose sections (Design Decisions, Implementation Context)
+   - Parse YAML frontmatter
+   - Update relevant step(s): set `pr: "#<number>"` and `status: "done"`
+   - Serialize updated YAML and replace metadata block
+   - Also update markdown table in objective-body comment
+   - Reconcile stale prose sections (Design Decisions, Implementation Context)
 4. Post action comment to GitHub
 5. Write updated body to GitHub
 6. Check if all steps are done/skipped → close objective if complete
@@ -261,26 +238,21 @@ When saving a plan that's part of an objective:
 - Calls `erk exec update-roadmap-step <objective> --step <step-id> --pr "plan #<plan-number>"`
 - Inherits frontmatter support from `update-roadmap-step`
 
-## Frontmatter Lifecycle
+## Frontmatter Format
 
-### Migration Path
-
-1. **New objectives**: Created with frontmatter from start (when tooling supports it)
-2. **Existing objectives**: Remain table-only until migrated
-3. **Migration**: Run `erk exec migrate-objective-roadmap <issue>` to add frontmatter (future)
-4. **Dual-write period**: Both frontmatter and table updated during transition
-5. **Future**: Table becomes optional rendered view (can be regenerated from frontmatter)
+All objectives use v2 YAML frontmatter. Legacy table-only objectives are no longer supported by the parser.
 
 ### Frontmatter Schema
 
 ```yaml
 ---
-schema_version: "1"
+schema_version: "2"
 steps:
   - id: "1.1" # Required: step identifier
     description: "..." # Required: human-readable description
     status: "pending" # Required: pending|planning|done|in_progress|blocked|skipped
-    pr: null # Optional: null or string like "#123" or "plan #456"
+    plan: null # Optional: null or string like "#6464" (plan issue number)
+    pr: null # Optional: null or string like "#123" (landed PR number)
 ---
 ```
 
@@ -291,15 +263,12 @@ steps:
 - **Schema versioning**: `schema_version` for future evolution
 - **Explicit status**: No inference in frontmatter (unlike tables)
 
-### Coexistence with Tables
+### Frontmatter and Table Relationship
 
-During dual-write:
-
-- **Frontmatter** = source of truth for step data
-- **Table** = rendered view for human readability
-- Mutations update both to keep in sync
-- Reads prefer frontmatter, fall back to table
-- Tables can drift (frontmatter wins if they conflict)
+- **Frontmatter** (in issue body) = source of truth for step data
+- **Table** (in objective-body comment) = rendered view for human readability
+- Mutations update both atomically via `update-roadmap-step`
+- Reads use frontmatter only — table is never parsed
 
 ## Body Reconciliation
 
@@ -418,14 +387,14 @@ All roadmap steps completed:
 
 These components read roadmap data but don't mutate:
 
-| Consumer                      | Purpose                         | Frontmatter Support                |
-| ----------------------------- | ------------------------------- | ---------------------------------- |
-| `check_cmd.py`                | Validate objective structure    | ✅ Inherits from `parse_roadmap()` |
-| `objective_update_context.py` | Fetch objective/plan/PR context | ✅ Inherits from `parse_roadmap()` |
-| `objective_list.py`           | List all objectives             | ✅ Inherits from `parse_roadmap()` |
-| TUI viewers                   | Display objective state         | ✅ Inherits from `parse_roadmap()` |
+| Consumer                      | Purpose                         |
+| ----------------------------- | ------------------------------- |
+| `check_cmd.py`                | Validate objective structure    |
+| `objective_update_context.py` | Fetch objective/plan/PR context |
+| `objective_list.py`           | List all objectives             |
+| TUI viewers                   | Display objective state         |
 
-Read-only consumers automatically gain frontmatter support via `parse_roadmap()`.
+All read-only consumers use `parse_roadmap()` which reads v2 YAML frontmatter.
 
 ## Related Commands
 

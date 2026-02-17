@@ -24,6 +24,7 @@
 - **[mock-elimination.md](mock-elimination.md)** — refactoring tests to remove unittest.mock, replacing patch() calls with fakes, improving test maintainability
 - **[monkeypatch-elimination-checklist.md](monkeypatch-elimination-checklist.md)** — migrating tests from monkeypatch to gateways, eliminating subprocess mocks or @patch decorators, encountering monkeypatch in existing tests and deciding whether to refactor
 - **[monkeypatch-vs-fakes-decision.md](monkeypatch-vs-fakes-decision.md)** — choosing between monkeypatch and fakes for a test, deciding how to test code that uses Path.home(), unsure whether to create a gateway or use monkeypatch
+- **[parameter-injection-pattern.md](parameter-injection-pattern.md)** — adding functions that need access to bundled .claude/ directory, testing code that references get_bundled_claude_dir(), making internal path lookups testable
 - **[rebase-conflicts.md](rebase-conflicts.md)** — fixing merge conflicts in erk tests, ErkContext API changes during rebase, env_helpers conflicts
 - **[session-log-fixtures.md](session-log-fixtures.md)** — creating JSONL fixtures for session log tests, testing session plan extraction, writing integration tests for session parsing
 - **[session-store-testing.md](session-store-testing.md)** — testing code that reads session data, using FakeClaudeInstallation, mocking session ID lookup
