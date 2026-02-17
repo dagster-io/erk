@@ -30,12 +30,12 @@ on:
         type: string
         default: "claude-opus-4-6"
       objective_issue:
-        description: "Objective issue number (when dispatched from next-plan --one-shot)"
+        description: "Objective issue number (when dispatched from implement --one-shot)"
         required: false
         type: string
         default: ""
       step_id:
-        description: "Roadmap step ID (when dispatched from next-plan --one-shot)"
+        description: "Roadmap step ID (when dispatched from implement --one-shot)"
         required: false
         type: string
         default: ""
@@ -189,9 +189,9 @@ jobs:
           STEP_ID: ${{ inputs.step_id }}
           PLAN_NUMBER: ${{ steps.read_result.outputs.issue_number }}
         run: |
-          erk exec update-roadmap-step \
+          erk exec update-objective-node \
             "$OBJECTIVE_ISSUE" \
-            --step "$STEP_ID" \
+            --node "$STEP_ID" \
             --plan "$PLAN_NUMBER"
 
       - name: Fail workflow if planning failed

@@ -1,18 +1,19 @@
 ---
-description: Create an implementation plan from an objective step
-argument-hint: <issue-number-or-url>
+description: Create an implementation plan from an objective node
+argument-hint: "<issue-number-or-url> [--node <node-id>]"
 ---
 
-# /erk:objective-create-plan
+# /erk:objective-implement
 
-Create an implementation plan for a specific step in an objective's roadmap.
+Create an implementation plan for a specific node in an objective's dependency graph.
 
 ## Usage
 
 ```bash
-/erk:objective-create-plan 3679
-/erk:objective-create-plan https://github.com/owner/repo/issues/3679
-/erk:objective-create-plan  # prompts for issue reference
+/erk:objective-implement 3679
+/erk:objective-implement 3679 --node 2.1
+/erk:objective-implement https://github.com/owner/repo/issues/3679
+/erk:objective-implement  # prompts for issue reference
 ```
 
 ---

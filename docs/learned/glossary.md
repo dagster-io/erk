@@ -1078,7 +1078,7 @@ A single evaluation cycle where Claude assesses current state against the object
 3. Reports status with optional gap description
 4. If gaps found, creates bounded implementation plan
 
-**CLI**: `erk objective next-plan <objective-name>`
+**CLI**: `erk objective implement <objective-name>`
 
 ### Key Files
 

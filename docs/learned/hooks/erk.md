@@ -110,7 +110,7 @@ The exit-plan-mode hook uses marker files in `.erk/scratch/sessions/<session-id>
 | ------------------------------------------ | ------------------------------ | --------- | ---------------------------- |
 | `exit-plan-mode-hook.plan-saved.marker`    | `plan-save-to-issue`           | Reusable  | Block exit, show "complete"  |
 | `exit-plan-mode-hook.implement-now.marker` | Agent (`erk exec marker`)      | One-time  | Allow exit                   |
-| `objective-context.marker`                 | `/erk:objective-next-plan`     | One-time  | Suggests `--objective-issue` |
+| `objective-context.marker`                 | `/erk:objective-implement`     | One-time  | Suggests `--objective-issue` |
 | `incremental-plan.marker`                  | `/local:incremental-plan-mode` | One-time  | Allow exit, skip save        |
 
 **Lifecycle semantics:**

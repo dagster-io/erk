@@ -189,7 +189,7 @@ After displaying, suggest relevant actions based on state:
 
 ```
 **Suggested actions:**
-- `/erk:objective-next-plan <number>` - Create a plan for the next pending step
+- `/erk:objective-implement <number>` - Create a plan for the next pending node
 - `gh issue view <number> --web` - View full objective in browser
 ```
 

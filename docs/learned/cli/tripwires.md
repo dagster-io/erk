@@ -62,7 +62,7 @@ Rules triggered by matching actions in code.
 
 **exec reference check fails in CI** → Read [Auto-Generated Reference Documentation](auto-generated-reference-docs.md) first. Run 'erk-dev gen-exec-reference-docs' via devrun agent. This is routine maintenance after exec script changes, not a bug to investigate.
 
-**expecting status to auto-update after manual PR edits** → Read [Update Roadmap Step Command](commands/update-roadmap-step.md) first. Only the update-roadmap-step command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse.
+**expecting status to auto-update after manual PR edits** → Read [Update Objective Node Command](commands/update-objective-node.md) first. Only the update-objective-node command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse.
 
 **filtering session sources without logging which sessions were skipped and why** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered).
 
@@ -86,7 +86,7 @@ Rules triggered by matching actions in code.
 
 **mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
-**parsing roadmap tables to update PR cells** → Read [Update Roadmap Step Command](commands/update-roadmap-step.md) first. Use the update-roadmap-step command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers.
+**parsing roadmap tables to update PR cells** → Read [Update Objective Node Command](commands/update-objective-node.md) first. Use the update-objective-node command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers.
 
 **plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk plan submit instead
 

@@ -726,7 +726,7 @@ def format_objective_content_comment(content: str) -> str:
 
     Wraps objective content in collapsible objective-body metadata block.
     If the content contains roadmap tables, wraps them with HTML comment
-    markers for reliable table detection by update-roadmap-step.
+    markers for reliable table detection by update-objective-node.
 
     Args:
         content: The full objective markdown content

@@ -8,8 +8,8 @@ read_when:
 tripwires:
   - action: "adding a new roadmap mutation site without updating this document"
     warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
-  - action: "updating roadmap step without using update-roadmap-step"
-    warning: "Use update-roadmap-step which atomically updates YAML frontmatter in the issue body and the markdown table in the objective-body comment."
+  - action: "updating roadmap step in only one location (frontmatter or table)"
+    warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically."
 last_audited: "2026-02-16 04:53 PT"
 audit_result: clean
 ---
@@ -25,7 +25,7 @@ Objectives are GitHub issues with the `erk-objective` label that track multi-pla
 1. **Source of truth**: YAML frontmatter in `<!-- erk:metadata-block:objective-roadmap -->` blocks (in issue body)
 2. **Rendered view**: Markdown table in the objective-body comment (for human readability)
 
-All objectives use v2 YAML format. `parse_roadmap()` returns a legacy-format error for non-v2 content. Mutations update both the YAML frontmatter and the rendered table atomically via `update-roadmap-step`.
+All objectives use v2 YAML format. `parse_roadmap()` returns a legacy-format error for non-v2 content. Mutations update both the YAML frontmatter and the rendered table atomically via `update-objective-node`.
 
 ## Objective States
 
@@ -51,7 +51,7 @@ pending → planning → in_progress → done
 ```
 
 - **pending**: Work not started
-- **planning**: Step dispatched for autonomous planning (draft PR created via `erk objective next-plan`)
+- **planning**: Step dispatched for autonomous planning (draft PR created via `erk objective implement`)
 - **in_progress**: Active implementation underway
 - **done**: PR landed
 - **blocked**: External dependency prevents progress
@@ -165,21 +165,21 @@ Status comes directly from the YAML `status` field in frontmatter — no inferen
 
 ## Mutations
 
-Mutations update YAML frontmatter in the issue body (source of truth) and the markdown table in the objective-body comment (rendered view). Both are updated atomically by `update-roadmap-step`.
+Mutations update YAML frontmatter in the issue body (source of truth) and the markdown table in the objective-body comment (rendered view). Both are updated atomically by `update-objective-node`.
 
 ### Mutation Sites
 
-| Site                                    | Type      | Trigger                                       | Updates                          |
-| --------------------------------------- | --------- | --------------------------------------------- | -------------------------------- |
-| `update-roadmap-step.py`                | Surgical  | `erk exec update-roadmap-step` or `plan-save` | YAML frontmatter + table comment |
-| `objective-update-with-landed-pr`       | Full-body | After landing PR                              | Roadmap + prose sections         |
-| `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                  | Calls `update-roadmap-step`      |
-| `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                         | N/A (reads only)                 |
-| `objective_fetch_context.py`            | Read-only | Fetch context for updates                     | N/A (reads only)                 |
+| Site                                    | Type      | Trigger                                         | Updates                          | Frontmatter-Aware?              |
+| --------------------------------------- | --------- | ----------------------------------------------- | -------------------------------- | ------------------------------- |
+| `update-objective-node.py`              | Surgical  | `erk exec update-objective-node` or `plan-save` | YAML frontmatter + table comment | Yes (this plan)                 |
+| `objective-update-with-landed-pr`       | Full-body | After landing PR                                | Roadmap + prose sections         | Yes (this plan)                 |
+| `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                    | Calls `update-objective-node`    | Inherits                        |
+| `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                           | N/A (reads only)                 | Inherits from `parse_roadmap()` |
+| `objective_fetch_context.py`            | Read-only | Fetch context for updates                       | N/A (reads only)                 | Inherits from `parse_roadmap()` |
 
-### Surgical Update: `update-roadmap-step`
+### Surgical Update: `update-objective-node`
 
-**Path**: `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`
+**Path**: `src/erk/cli/commands/exec/scripts/update_objective_node.py`
 
 **What it does**: Updates a single step's PR reference and recomputes status.
 
@@ -196,9 +196,9 @@ Mutations update YAML frontmatter in the issue body (source of truth) and the ma
 **Usage**:
 
 ```bash
-erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
-erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
-erk exec update-roadmap-step 6423 --step 1.3 --pr ""  # Clear
+erk exec update-objective-node 6423 --node 1.3 --pr "plan #6464"
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500"
+erk exec update-objective-node 6423 --node 1.3 --pr ""  # Clear
 ```
 
 **Status computation** (table mode):
@@ -235,8 +235,8 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr ""  # Clear
 
 When saving a plan that's part of an objective:
 
-- Calls `erk exec update-roadmap-step <objective> --step <step-id> --pr "plan #<plan-number>"`
-- Inherits frontmatter support from `update-roadmap-step`
+- Calls `erk exec update-objective-node <objective> --node <step-id> --pr "plan #<plan-number>"`
+- Inherits frontmatter support from `update-objective-node`
 
 ## Frontmatter Format
 
@@ -284,7 +284,7 @@ Objective body sections fall into three tiers based on how they're updated:
 
 1. **After every PR landing** (primary trigger): The `objective-update-with-landed-pr` subagent performs prose reconciliation after mechanical step updates. It compares the objective body against what the PR actually implemented and corrects stale information.
 
-2. **At next-step pickup** (lighter touch): When `objective-next-plan` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
+2. **At next-step pickup** (lighter touch): When `objective-implement` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
 
 ### What the Agent Checks
 
@@ -345,7 +345,7 @@ All roadmap steps completed:
 │                                                          │
 │ erk plan save (with objective ref)                       │
 │   ↓                                                      │
-│ update-roadmap-step: set pr="plan #N"                    │
+│ update-objective-node: set pr="plan #N"                    │
 │   ↓                                                      │
 │ Roadmap shows plan # in PR column                        │
 └─────────────────────────────────────────────────────────┘
@@ -402,7 +402,7 @@ All read-only consumers use `parse_roadmap()` which reads v2 YAML frontmatter.
 - `erk objective check <issue>` - Validate objective structure
 - `erk objective list` - List all objectives
 - `erk objective close <issue>` - Close completed objective
-- `erk exec update-roadmap-step` - Update single step PR and status in both frontmatter and table
+- `erk exec update-objective-node` - Update single step PR and status in both frontmatter and table
 - `/erk:objective-update-with-landed-pr` - Full update after PR lands
 
 ## Implementation References
@@ -410,7 +410,7 @@ All read-only consumers use `parse_roadmap()` which reads v2 YAML frontmatter.
 | File                                                                    | Purpose                        |
 | ----------------------------------------------------------------------- | ------------------------------ |
 | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` | Core parser: `parse_roadmap()` |
-| `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`              | Surgical PR cell update        |
+| `src/erk/cli/commands/exec/scripts/update_objective_node.py`            | Surgical PR cell update        |
 | `.claude/commands/erk/objective-update-with-landed-pr.md`               | Full-body update agent         |
 | `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`          | Context fetch for updates      |
 | `src/erk/cli/commands/objective/check_cmd.py`                           | Objective validation           |

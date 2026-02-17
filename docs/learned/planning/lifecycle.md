@@ -752,7 +752,7 @@ When implementing a plan that corresponds to an objective roadmap step, the work
 
 2. **Automatic roadmap update on plan save:**
    - `/erk:plan-save` checks for `roadmap-step` marker
-   - If present, runs `erk exec update-roadmap-step` to update the objective's roadmap table with the plan issue link
+   - If present, runs `erk exec update-objective-node` to update the objective's roadmap table with the plan issue link
    - Marker is cleared after successful submission
 
 ### Lifecycle
@@ -763,7 +763,7 @@ Create markers → Save plan → Update roadmap → Create review PR → Submit 
 
 ### When to Use
 
-This pattern applies when a plan is created from an objective step via `/erk:objective-next-plan`. The markers are set automatically during that workflow. Manual marker creation is not typically needed.
+This pattern applies when a plan is created from an objective step via `/erk:objective-implement`. The markers are set automatically during that workflow. Manual marker creation is not typically needed.
 
 ---
 

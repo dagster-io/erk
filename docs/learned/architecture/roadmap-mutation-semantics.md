@@ -5,12 +5,12 @@ audit_result: clean
 read_when:
   - "modifying objective roadmap update logic"
   - "understanding status inference when updating roadmap steps"
-  - "working with update-roadmap-step command"
+  - "working with update-objective-node command"
 tripwires:
   - action: "updating a roadmap step's PR cell"
-    warning: "The update-roadmap-step command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty."
+    warning: "The update-objective-node command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty."
   - action: "expecting status to auto-update after manual PR edits"
-    warning: "Only the update-roadmap-step command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse."
+    warning: "Only the update-objective-node command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse."
   - action: "setting PR reference without providing --plan"
     warning: "The CLI requires --plan when --pr is set (error: plan_required_with_pr). Use --plan '#NNN' to preserve or --plan '' to explicitly clear. Read roadmap-mutation-semantics.md for the None/empty/value semantics."
 ---
@@ -23,16 +23,16 @@ This document explains how status values interact with PR column updates when mu
 
 Roadmap status resolution happens in **two different contexts** with different semantics:
 
-1. **Mutation context** (`update-roadmap-step` command): Computes status from PR value and **writes both cells atomically**
+1. **Mutation context** (`update-objective-node` command): Computes status from PR value and **writes both cells atomically**
 2. **Parse context** (`parse_roadmap()` function): Reads status cell and **infers only if status is `-` or empty**
 
 This split means the command produces human-readable tables (status always reflects PR state), while the parser handles legacy or manually-edited tables (where status might be stale or explicit).
 
-## Mutation: The update-roadmap-step Command
+## Mutation: The update-objective-node Command
 
 ### What It Does
 
-When you run `erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"`, the command:
+When you run `erk exec update-objective-node 6423 --node 1.3 --plan "#6464"`, the command:
 
 1. Computes display status from the plan/PR values
 2. Writes **status, plan, and PR cells** in a single atomic update
@@ -60,7 +60,7 @@ This allows callers to update one field without affecting the other. For example
 
 When `--pr` is explicitly set (non-None, non-empty), `--plan` **must** also be provided. The CLI rejects `--pr` without `--plan` with error `plan_required_with_pr` to prevent accidental loss of the plan reference. The caller must explicitly choose to preserve (`--plan "#NNN"`) or clear (`--plan ""`) the plan field.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, lines 354-366 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py -->
 
 | Flags Provided              | Plan Result | PR Result | Notes                      |
 | --------------------------- | ----------- | --------- | -------------------------- |
@@ -82,9 +82,9 @@ By writing computed status directly, the table is always human-readable.
 
 ### Implementation Detail
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
 
-The update command uses two functions in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`: `_replace_step_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered 5-column markdown table in the objective-body comment.
+The update command uses two functions in `src/erk/cli/commands/exec/scripts/update_objective_node.py`: `_replace_node_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered 5-column markdown table in the objective-body comment.
 
 ### Status Inference Is Write-Time Only
 
@@ -107,12 +107,13 @@ The key point for mutation semantics: inference only fires when the status cell 
 
 If you update PR via direct body mutation (not using the command), status won't auto-update:
 
-| Action                                            | Result Status | Why                                                                  |
-| ------------------------------------------------- | ------------- | -------------------------------------------------------------------- |
-| update-roadmap-step `--plan "#456" --pr "#123"`   | `in-progress` | Command writes computed status (PR ≠ done without explicit --status) |
-| update-roadmap-step `--plan "#456"`               | `in-progress` | Command writes computed status                                       |
-| Manual GitHub edit: change PR cell to `#123`      | (unchanged)   | Status cell not touched, parser reads explicit value                 |
-| Script sets PR but leaves status at `in-progress` | `in_progress` | Parser sees explicit value, doesn't infer                            |
+| Action                                                          | Result Status | Why                                                                    |
+| --------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------- |
+| update-objective-node `--plan "#456" --pr "#123"`               | `in-progress` | Command writes computed status (PR ≠ done without explicit `--status`) |
+| update-objective-node `--plan "#456" --pr "#123" --status done` | `done`        | Explicit `--status done` confirms PR is merged                         |
+| update-objective-node `--plan "#456"`                           | `in-progress` | Command writes computed status                                         |
+| Manual GitHub edit: change PR cell to `#123`                    | (unchanged)   | Status cell not touched, parser reads explicit value                   |
+| Script sets PR but leaves status at `in-progress`               | `in_progress` | Parser sees explicit value, doesn't infer                              |
 
 To enable inference after manual/script edits, you must explicitly set status to `-`.
 
@@ -129,7 +130,7 @@ The command is designed for **normal workflow integration** (skills, hooks, scri
 
 ## LBYL Pattern in Update Command
 
-The command follows erk's LBYL discipline throughout, using discriminated union checks before each operation. See the `update_roadmap_step()` function in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-182` for the full pattern. For the general approach, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+The command follows erk's LBYL discipline throughout, using discriminated union checks before each operation. See the `update_objective_node()` function in `src/erk/cli/commands/exec/scripts/update_objective_node.py:329` for the full pattern. For the general approach, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
 
 ## Cross-Document Knowledge
 
@@ -137,7 +138,7 @@ This document explains **mutation semantics** (what changes when you update PR).
 
 - **Parsing rules and validation** → [Roadmap Parser](../objectives/roadmap-parser.md)
 - **Two-tier status resolution details** → [Roadmap Status System](../objectives/roadmap-status-system.md)
-- **Command usage and exit codes** → [Update Roadmap Step Command](../cli/commands/update-roadmap-step.md)
+- **Command usage and exit codes** → [Update Roadmap Step Command](../cli/commands/update-objective-node.md)
 - **Batch vs surgical update decisions** → [Roadmap Mutation Patterns](../objectives/roadmap-mutation-patterns.md)
 
 The key insight unique to this document: **mutation writes both cells, parsing infers from one**. This asymmetry is intentional and solves the human-readability vs backward-compatibility trade-off.

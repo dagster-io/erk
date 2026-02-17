@@ -2,7 +2,7 @@
 
 import click
 
-from erk.cli.commands.codespace.run.objective.next_plan_cmd import run_next_plan
+from erk.cli.commands.codespace.run.objective.implement_cmd import run_implement
 from erk.cli.help_formatter import ErkCommandGroup
 
 
@@ -11,4 +11,4 @@ def objective_group() -> None:
     """Run objective commands remotely on a codespace."""
 
 
-objective_group.add_command(run_next_plan)
+objective_group.add_command(run_implement)
