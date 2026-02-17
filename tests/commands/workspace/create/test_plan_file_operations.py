@@ -13,7 +13,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_create_with_plan_file() -> None:
     """Test creating a worktree with a plan file."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file
         plan_file = env.cwd / "my-feature-plan.md"
         plan_file.write_text("# My Feature Plan\n", encoding="utf-8")
@@ -58,7 +58,7 @@ def test_create_with_plan_file() -> None:
 def test_create_with_plan_file_removes_plan_word() -> None:
     """Test that --from-plan-file flag removes 'plan' from worktree names."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
@@ -114,7 +114,7 @@ def test_create_with_plan_file_removes_plan_word() -> None:
 def test_create_plan_file_not_found() -> None:
     """Test that create fails when plan file doesn't exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
 
         test_ctx = env.build_context(git=git_ops)
@@ -132,7 +132,7 @@ def test_create_plan_file_not_found() -> None:
 def test_create_with_keep_plan_file_flag() -> None:
     """Test that --keep-plan-file copies instead of moves the plan file."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file
         plan_file = env.cwd / "my-feature-plan.md"
         plan_file.write_text("# My Feature Plan\n", encoding="utf-8")
@@ -178,7 +178,7 @@ def test_create_with_keep_plan_file_flag() -> None:
 def test_create_keep_plan_file_without_plan_file_fails() -> None:
     """Test that --keep-plan-file without --from-plan-file fails with error message."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
 
         test_ctx = env.build_context(git=git_ops)
@@ -196,7 +196,7 @@ def test_create_keep_plan_file_without_plan_file_fails() -> None:
 def test_create_with_plan_file_ensures_uniqueness() -> None:
     """Test that --from-plan-file ensures uniqueness with date suffix and versioning."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file
         plan_file = env.cwd / "my-feature-plan.md"
         plan_file.write_text("# My Feature Plan\n", encoding="utf-8")
@@ -269,7 +269,7 @@ def test_create_with_long_plan_name_matches_branch_and_worktree() -> None:
     - Result: branch name matches the BASE of the worktree name (before date)
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file with very long name
         # The base will be truncated to 30 chars for both branch and worktree base
         # Branch: "fix-branch-worktree-name-misma" (30 chars, no date)

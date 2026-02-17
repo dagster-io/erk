@@ -162,7 +162,7 @@ def test_plan_list_shows_worktree_from_local_impl() -> None:
     )
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create a worktree with .impl/issue.json
         worktree_path = env.cwd.parent / "feature-worktree"
         worktree_path.mkdir(parents=True)
@@ -239,7 +239,7 @@ issue_number: 960
 """
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create a worktree with .impl/issue.json
         worktree_path = env.cwd.parent / "local-worktree"
         worktree_path.mkdir(parents=True)
@@ -351,7 +351,7 @@ def test_plan_list_handles_multiple_local_worktrees() -> None:
     )
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create two worktrees both referencing same issue
         worktree1 = env.cwd.parent / "first-worktree"
         worktree1.mkdir(parents=True)

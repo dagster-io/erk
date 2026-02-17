@@ -9,7 +9,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_upgrade_repo_writes_version_file() -> None:
     """Test that upgrade-repo writes the version file correctly."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create .erk directory where version file will be written
         erk_dir = env.root_worktree / ".erk"
         erk_dir.mkdir(parents=True)
@@ -35,7 +35,7 @@ def test_upgrade_repo_writes_version_file() -> None:
 def test_upgrade_repo_outputs_next_steps() -> None:
     """Test that upgrade-repo outputs next steps instructions."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create .erk directory
         erk_dir = env.root_worktree / ".erk"
         erk_dir.mkdir(parents=True)
@@ -56,7 +56,7 @@ def test_upgrade_repo_outputs_next_steps() -> None:
 def test_upgrade_repo_outputs_updated_version_message() -> None:
     """Test that upgrade-repo outputs a message about the updated version."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create .erk directory
         erk_dir = env.root_worktree / ".erk"
         erk_dir.mkdir(parents=True)
@@ -75,7 +75,7 @@ def test_upgrade_repo_outputs_updated_version_message() -> None:
 def test_upgrade_repo_fails_without_erk_directory() -> None:
     """Test that upgrade-repo fails with clear error when .erk directory is missing."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Intentionally do NOT create .erk directory
 
         ctx = env.build_context()

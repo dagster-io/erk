@@ -12,7 +12,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_resolve_backend_returns_claude_when_no_global_config() -> None:
     """When global_config is None, resolve_backend defaults to 'claude'."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         ctx = env.build_context(
             git=FakeGit(git_common_dirs={}),
             erk_installation=FakeErkInstallation(config=None),
@@ -24,7 +24,7 @@ def test_resolve_backend_returns_claude_when_no_global_config() -> None:
 def test_resolve_backend_returns_claude_from_config() -> None:
     """When global_config has backend='claude', resolve_backend returns 'claude'."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
         )
@@ -39,7 +39,7 @@ def test_resolve_backend_returns_claude_from_config() -> None:
 def test_resolve_backend_returns_codex_from_config() -> None:
     """When global_config has backend='codex', resolve_backend returns 'codex'."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         agent_config = InteractiveAgentConfig(
             backend="codex",
             model=None,

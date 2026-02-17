@@ -22,7 +22,7 @@ def test_interactive_mode_calls_executor() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -55,7 +55,7 @@ def test_interactive_mode_with_dangerous_flag() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -80,7 +80,7 @@ def test_interactive_mode_with_dangerous_flag() -> None:
 def test_interactive_mode_from_plan_file() -> None:
     """Verify interactive mode works with plan file."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -115,7 +115,7 @@ def test_interactive_mode_fails_when_claude_not_available() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -140,7 +140,7 @@ def test_non_interactive_executes_single_command() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -168,7 +168,7 @@ def test_non_interactive_with_submit_runs_all_commands() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -202,7 +202,7 @@ def test_script_with_submit_includes_all_commands() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -228,7 +228,7 @@ def test_dry_run_shows_execution_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -255,7 +255,7 @@ def test_dry_run_shows_command_sequence() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -292,7 +292,7 @@ def test_yolo_flag_sets_all_flags() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -323,7 +323,7 @@ def test_yolo_flag_in_dry_run() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -352,7 +352,7 @@ def test_yolo_flag_conflicts_with_script() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -376,7 +376,7 @@ def test_submit_without_non_interactive_errors() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -396,7 +396,7 @@ def test_script_and_non_interactive_errors() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},

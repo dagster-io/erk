@@ -12,7 +12,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_capability_add_installs_capability() -> None:
     """Test that add command installs a capability."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -42,7 +42,7 @@ def test_capability_add_installs_capability() -> None:
 def test_capability_add_idempotent() -> None:
     """Test that adding an already installed capability is idempotent."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Pre-create all capability directories and files
         (env.cwd / "docs" / "learned").mkdir(parents=True)
         skill_dir = env.cwd / ".claude" / "skills" / "learned-docs"
@@ -81,7 +81,7 @@ def test_capability_add_idempotent() -> None:
 def test_capability_add_unknown_name_fails() -> None:
     """Test that add with unknown capability name fails with helpful error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -105,7 +105,7 @@ def test_capability_add_unknown_name_fails() -> None:
 def test_capability_add_multiple() -> None:
     """Test that add command can install multiple capabilities at once."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -130,7 +130,7 @@ def test_capability_add_multiple() -> None:
 def test_capability_add_requires_repo() -> None:
     """Test that add command fails outside a git repository."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # FakeGit returns None for git_common_dir when not in a repo
         git_ops = FakeGit(git_common_dirs={})
         global_config = GlobalConfig.test(
@@ -154,7 +154,7 @@ def test_capability_add_requires_repo() -> None:
 def test_capability_add_requires_at_least_one_name() -> None:
     """Test that add command requires at least one capability name."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -178,7 +178,7 @@ def test_capability_add_requires_at_least_one_name() -> None:
 def test_capability_add_preflight_failure_blocks_install() -> None:
     """Test that preflight failure prevents capability installation."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -205,7 +205,7 @@ def test_capability_add_preflight_failure_blocks_install() -> None:
 def test_capability_add_preflight_success_allows_install() -> None:
     """Test that preflight success allows capability installation."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False

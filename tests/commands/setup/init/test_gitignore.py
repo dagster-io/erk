@@ -7,7 +7,7 @@ This file uses minimal mocking for external boundaries:
 1. os.environ HOME patches:
    - LEGITIMATE: Testing path resolution logic that depends on $HOME
    - The init command uses Path.home() to determine ~/.erk location
-   - Patching HOME redirects to temp directory for test isolation
+   - erk_isolated_fs_env(env_overrides={"HOME": ...}) redirects to temp directory for test isolation
    - Cannot be replaced with fakes (environment variable is external boundary)
 
 2. Global config operations:
@@ -19,9 +19,6 @@ NOTE: These tests use erk_isolated_fs_env because they verify actual
 .gitignore file content on disk. Cannot migrate to pure mode without
 abstracting file operations in production code.
 """
-
-import os
-from unittest import mock
 
 from click.testing import CliRunner
 
@@ -35,7 +32,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_init_adds_env_to_gitignore() -> None:
     """Test that init offers to add .env to .gitignore."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create .gitignore
         gitignore = env.cwd / ".gitignore"
         gitignore.write_text("*.pyc\n", encoding="utf-8")
@@ -64,7 +61,7 @@ def test_init_adds_env_to_gitignore() -> None:
 def test_init_skips_gitignore_entries_if_declined() -> None:
     """Test that init skips all gitignore entries if user declines."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create .gitignore
         gitignore = env.cwd / ".gitignore"
         gitignore.write_text("*.pyc\n", encoding="utf-8")
@@ -95,7 +92,7 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
 def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
     """Test that init offers to add .erk/scratch/ and .impl/ to .gitignore."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         # Create .gitignore
         gitignore = env.cwd / ".gitignore"
         gitignore.write_text("*.pyc\n", encoding="utf-8")
@@ -114,8 +111,7 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
 
         # Decline .env, accept .erk/scratch/ and .impl/, decline config.local.toml,
         # decline .erk/bin/, decline hooks
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -127,7 +123,7 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
 def test_init_handles_missing_gitignore() -> None:
     """Test that init handles missing .gitignore gracefully."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # No .gitignore file
 
         erk_root = env.cwd / "erks"
@@ -151,7 +147,7 @@ def test_init_handles_missing_gitignore() -> None:
 def test_init_preserves_gitignore_formatting() -> None:
     """Test that init preserves existing gitignore formatting."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         # Create .gitignore with specific formatting
         gitignore = env.cwd / ".gitignore"
         original_content = "# Python\n*.pyc\n__pycache__/\n"
@@ -171,8 +167,7 @@ def test_init_preserves_gitignore_formatting() -> None:
 
         # Accept .env, decline .erk/scratch/, .impl/, .erk/config.local.toml,
         # .erk/bin/, and hooks
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")

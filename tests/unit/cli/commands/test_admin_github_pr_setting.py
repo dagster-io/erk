@@ -11,7 +11,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_display_mode_shows_enabled() -> None:
     """Display mode shows Enabled when permission is granted."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_admin = FakeGitHubAdmin(
             workflow_permissions={"can_approve_pull_request_reviews": True},
         )
@@ -26,7 +26,7 @@ def test_display_mode_shows_enabled() -> None:
 def test_display_mode_shows_disabled() -> None:
     """Display mode shows Disabled when permission is not granted."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_admin = FakeGitHubAdmin()
         ctx = env.build_context(github_admin=fake_admin)
 
@@ -39,7 +39,7 @@ def test_display_mode_shows_disabled() -> None:
 def test_enable_mode_sets_permission() -> None:
     """--enable flag calls set_workflow_pr_permissions with enabled=True."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_admin = FakeGitHubAdmin()
         ctx = env.build_context(github_admin=fake_admin)
 
@@ -55,7 +55,7 @@ def test_enable_mode_sets_permission() -> None:
 def test_disable_mode_sets_permission() -> None:
     """--disable flag calls set_workflow_pr_permissions with enabled=False."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_admin = FakeGitHubAdmin()
         ctx = env.build_context(github_admin=fake_admin)
 
@@ -71,7 +71,7 @@ def test_disable_mode_sets_permission() -> None:
 def test_error_no_github_remote() -> None:
     """Command fails with clear error when repo has no GitHub remote."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             existing_paths={env.cwd, env.git_dir},

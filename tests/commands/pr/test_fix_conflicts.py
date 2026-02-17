@@ -13,7 +13,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_pr_fix_conflicts_success() -> None:
     """Test successful fix-conflicts when conflicts exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -42,7 +42,7 @@ def test_pr_fix_conflicts_success() -> None:
 def test_pr_fix_conflicts_requires_dangerous_flag() -> None:
     """Test that command fails when --dangerous flag is not provided (default config)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -67,7 +67,7 @@ def test_pr_fix_conflicts_requires_dangerous_flag() -> None:
 def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
     """Test that --dangerous flag is not required when config disables requirement."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -103,7 +103,7 @@ def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
 def test_pr_fix_conflicts_no_conflicts() -> None:
     """Test early exit when no conflicts detected."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -129,7 +129,7 @@ def test_pr_fix_conflicts_no_conflicts() -> None:
 def test_pr_fix_conflicts_claude_not_available() -> None:
     """Test error when Claude is not installed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -156,7 +156,7 @@ def test_pr_fix_conflicts_claude_not_available() -> None:
 def test_pr_fix_conflicts_aborts_on_semantic_conflict() -> None:
     """Test that command aborts when Claude prompts for user input (semantic conflict)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -186,7 +186,7 @@ def test_pr_fix_conflicts_aborts_on_semantic_conflict() -> None:
 def test_pr_fix_conflicts_fails_on_command_error() -> None:
     """Test that command fails when slash command execution fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -213,7 +213,7 @@ def test_pr_fix_conflicts_fails_on_command_error() -> None:
 def test_pr_fix_conflicts_fails_when_no_work_events() -> None:
     """Test that command fails when Claude completes but produces no work events."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},

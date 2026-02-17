@@ -16,7 +16,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_pr_check_passes_with_valid_footer_and_issue_reference(tmp_path: Path) -> None:
     """Test PR with valid footer and issue reference passes all checks."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Create .impl/issue.json at repo root
@@ -99,7 +99,7 @@ erk pr checkout 123
 def test_pr_check_fails_when_missing_issue_reference(tmp_path: Path) -> None:
     """Test PR missing 'Closes #N' when issue.json exists fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Create .impl/issue.json at repo root
@@ -181,7 +181,7 @@ erk pr checkout 123
 def test_pr_check_fails_when_missing_footer(tmp_path: Path) -> None:
     """Test PR missing checkout footer fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Setup PR without footer
@@ -237,7 +237,7 @@ This PR adds a feature.
 def test_pr_check_passes_without_issue_json(tmp_path: Path) -> None:
     """Test PR without issue.json skips issue reference check."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # No .impl/issue.json - issue reference check should be skipped
@@ -303,7 +303,7 @@ erk pr checkout 123
 def test_pr_check_fails_when_no_pr_exists(tmp_path: Path) -> None:
     """Test error when branch has no PR."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # No PR for this branch
@@ -325,7 +325,7 @@ def test_pr_check_fails_when_no_pr_exists(tmp_path: Path) -> None:
 def test_pr_check_fails_when_not_on_branch(tmp_path: Path) -> None:
     """Test error when on detached HEAD."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Detached HEAD (no current branch)
@@ -345,7 +345,7 @@ def test_pr_check_fails_when_not_on_branch(tmp_path: Path) -> None:
 def test_pr_check_handles_empty_pr_body(tmp_path: Path) -> None:
     """Test PR with empty body fails footer check."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # PR with empty body
@@ -397,7 +397,7 @@ def test_pr_check_handles_empty_pr_body(tmp_path: Path) -> None:
 def test_pr_check_case_insensitive_closes_pattern(tmp_path: Path) -> None:
     """Test 'closes' pattern is case-insensitive."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Create .impl/issue.json at repo root
@@ -474,7 +474,7 @@ erk pr checkout 123
 def test_pr_check_reports_multiple_failures(tmp_path: Path) -> None:
     """Test that multiple failures are counted correctly."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Create .impl/issue.json at repo root
@@ -546,7 +546,7 @@ def test_pr_check_reports_multiple_failures(tmp_path: Path) -> None:
 def test_pr_check_fails_when_branch_and_issue_json_mismatch(tmp_path: Path) -> None:
     """Test PR check fails when branch name disagrees with .impl/issue.json."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Create .impl/issue.json with issue 99
@@ -630,7 +630,7 @@ erk pr checkout 123
 def test_pr_check_passes_when_branch_and_plan_ref_match(tmp_path: Path) -> None:
     """Test PR check passes with matching branch name and .impl/plan-ref.json."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Create .impl/plan-ref.json with plan 456

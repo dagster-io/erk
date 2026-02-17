@@ -102,7 +102,7 @@ def test_up_at_top_of_stack() -> None:
 def test_up_child_has_no_worktree() -> None:
     """Test 'erk up' navigation when child has no worktree - should auto-create."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Only feature-1 has a worktree, feature-2 does not (will be auto-created)
@@ -272,7 +272,7 @@ def test_down_at_trunk() -> None:
 def test_down_parent_has_no_worktree() -> None:
     """Test 'erk down' navigation when parent has no worktree - should auto-create."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Only feature-2 has a worktree, feature-1 does not (will be auto-created)

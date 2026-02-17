@@ -14,7 +14,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_capability_list_shows_available_capabilities() -> None:
     """Test that list command shows all registered capabilities."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -45,7 +45,7 @@ def test_capability_list_shows_available_capabilities() -> None:
 def test_capability_list_works_without_repo() -> None:
     """Test that list command works outside a git repository."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # FakeGit returns None for git_common_dir when not in a repo
         git_ops = FakeGit(git_common_dirs={})
         global_config = GlobalConfig.test(
@@ -69,7 +69,7 @@ def test_capability_list_works_without_repo() -> None:
 def test_capability_list_sorts_alphabetically() -> None:
     """Test that capabilities are sorted alphabetically within each scope."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False

@@ -153,7 +153,7 @@ def test_down_at_trunk() -> None:
 def test_down_parent_has_no_worktree() -> None:
     """Test down command when parent branch exists but has no worktree - should auto-create."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Only feature-2 has a worktree, feature-1 does not (will be auto-created)
@@ -1510,7 +1510,7 @@ def test_down_count_with_delete_current_fails() -> None:
 def test_down_delete_current_slot_aware_unassigns_slot() -> None:
     """Test --delete-current uses slot unassign command in deferred script."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Worktree path is a managed slot (erk-slot-01)

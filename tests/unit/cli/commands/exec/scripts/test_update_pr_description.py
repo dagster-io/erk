@@ -139,7 +139,7 @@ def _make_standard_fakes(
 def test_fails_when_claude_not_available() -> None:
     """Test that command fails when Claude CLI is not available."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -159,7 +159,7 @@ def test_fails_when_claude_not_available() -> None:
 def test_fails_when_not_on_branch() -> None:
     """Test that command fails when not on a branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.git_dir},
@@ -182,7 +182,7 @@ def test_fails_when_not_on_branch() -> None:
 def test_fails_when_no_pr() -> None:
     """Test that command fails when no PR exists for the branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.git_dir},
@@ -229,7 +229,7 @@ def test_fails_when_no_pr() -> None:
 def test_success_updates_pr() -> None:
     """Test successful update-pr-description generates title/body and updates PR."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git, graphite, github, executor = _make_standard_fakes(env)
 
         ctx = build_workspace_test_context(
@@ -255,7 +255,7 @@ def test_success_updates_pr() -> None:
 def test_preserves_header_and_footer() -> None:
     """Test that existing header and footer metadata are preserved."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         header = "**Plan:** #123"
         footer_content = build_pr_body_footer(
             42,
@@ -287,7 +287,7 @@ def test_uses_graphite_parent() -> None:
     Expected: Diff computed against branch-1, not main
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.git_dir},
@@ -355,7 +355,7 @@ def test_uses_graphite_parent() -> None:
 def test_embeds_plan_context() -> None:
     """Test that plan context is embedded in the updated PR body."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         plan_body = format_plan_header_body_for_test(plan_comment_id=1000)
         plan_issue = _make_issue_info(number=123, title="Plan: Fix bug", body=plan_body)
         comment = IssueComment(

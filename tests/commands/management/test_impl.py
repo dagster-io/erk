@@ -21,7 +21,7 @@ def _get_current_date_suffix() -> str:
 def test_create_with_plan_file() -> None:
     """Test creating a worktree from a plan file."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create a plan file in root worktree
         plan_file = env.root_worktree / "Add_Auth_Feature.md"
         plan_content = "# Auth Feature Plan\n\n- Add login\n- Add signup\n"
@@ -75,7 +75,7 @@ def test_create_with_plan_file() -> None:
 def test_create_with_plan_name_sanitization() -> None:
     """Test that plan filename gets properly sanitized for worktree name."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create a plan file with underscores and mixed case
         plan_file = env.root_worktree / "MY_COOL_Plan_File.md"
         plan_file.write_text("# Cool Plan\n", encoding="utf-8")
@@ -119,7 +119,7 @@ def test_create_with_plan_name_sanitization() -> None:
 def test_create_with_both_name_and_plan_file_fails() -> None:
     """Test that providing both NAME and --from-plan-file is an error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create a plan file
         plan_file = env.root_worktree / "plan.md"
         plan_file.write_text("# Plan\n", encoding="utf-8")
@@ -164,7 +164,7 @@ def test_create_with_both_name_and_plan_file_fails() -> None:
 def test_create_rejects_reserved_name_root() -> None:
     """Test that 'root' is rejected as a reserved worktree name."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Configure FakeGit with root worktree only
         git_ops = FakeGit(
             worktrees={
@@ -209,7 +209,7 @@ def test_create_rejects_reserved_name_root() -> None:
 def test_create_rejects_reserved_name_root_case_insensitive() -> None:
     """Test that 'ROOT', 'Root', etc. are also rejected (case-insensitive)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Configure FakeGit with root worktree only
         git_ops = FakeGit(
             worktrees={
@@ -253,7 +253,7 @@ def test_create_rejects_reserved_name_root_case_insensitive() -> None:
 def test_create_rejects_main_as_worktree_name() -> None:
     """Test that 'main' is rejected as a worktree name."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Configure FakeGit with root worktree only
         git_ops = FakeGit(
             worktrees={
@@ -298,7 +298,7 @@ def test_create_rejects_main_as_worktree_name() -> None:
 def test_create_rejects_master_as_worktree_name() -> None:
     """Test that 'master' is rejected as a worktree name."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Configure FakeGit with root worktree only
         # Set trunk_branches to "master" so it gets rejected
         git_ops = FakeGit(
@@ -358,7 +358,7 @@ def test_render_cd_script() -> None:
 def test_create_with_script_flag() -> None:
     """Test that --script flag outputs cd script instead of regular messages."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Configure FakeGit with root worktree only
         git_ops = FakeGit(
             worktrees={

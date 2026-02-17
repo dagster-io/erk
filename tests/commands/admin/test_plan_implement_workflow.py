@@ -54,7 +54,7 @@ def test_creates_empty_commit_before_pr() -> None:
     master and the test branch (since the test branch was just pushed from master).
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up repo structure with .erk directory
         env.setup_repo_structure()
         erk_dir = env.root_worktree / ".erk"
@@ -140,7 +140,7 @@ def test_creates_empty_commit_before_pr() -> None:
 def test_creates_issue_when_not_provided() -> None:
     """Test that an issue is created when --issue flag is not provided."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Set up repo structure with .erk directory
         env.setup_repo_structure()
         erk_dir = env.root_worktree / ".erk"

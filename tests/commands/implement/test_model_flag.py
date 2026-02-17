@@ -18,7 +18,7 @@ def test_model_flag_in_interactive_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -46,7 +46,7 @@ def test_model_flag_short_form_in_interactive_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -74,7 +74,7 @@ def test_model_alias_in_interactive_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -100,7 +100,7 @@ def test_model_flag_in_non_interactive_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -125,7 +125,7 @@ def test_model_flag_in_script_mode() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -155,7 +155,7 @@ def test_model_flag_in_dry_run() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -183,7 +183,7 @@ def test_invalid_model_flag() -> None:
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},

@@ -52,7 +52,7 @@ def test_pr_checkout_tracks_and_submits_with_graphite() -> None:
     2. Submit to establish remote stack metadata (gt submit)
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=100,
@@ -89,7 +89,7 @@ def test_pr_checkout_skips_graphite_for_existing_worktree() -> None:
     the Graphite linking should be skipped as the branch may already be tracked.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=101,
@@ -131,7 +131,7 @@ def test_pr_checkout_skips_graphite_for_already_tracked() -> None:
     returns non-None), the Graphite linking should be skipped for idempotence.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=102,
@@ -184,7 +184,7 @@ def test_pr_checkout_skips_graphite_for_fork_prs() -> None:
     because the source branch is in a different repository.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         # Cross-repository PR (is_cross_repository=True)
         pr_details = _make_pr_details(
@@ -220,7 +220,7 @@ def test_pr_checkout_shows_warning_when_submit_branch_fails() -> None:
     (checkout already happened) but display a warning about the failure.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=105,
@@ -266,7 +266,7 @@ def test_pr_checkout_skips_graphite_when_disabled() -> None:
     command should not attempt any Graphite operations.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=104,

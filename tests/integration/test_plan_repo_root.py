@@ -42,7 +42,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
     Now: dash command uses PlanListService which calls GitHub.get_issues_with_pr_linkages().
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Track which directory is passed to GitHub operations
         captured_repo_root: Path | None = None
 
@@ -106,7 +106,7 @@ def test_plan_issue_get_uses_repo_root_not_metadata_dir() -> None:
     Same regression test as above but for the 'get' command.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Track which directory is passed to gh operations
         captured_repo_root: Path | None = None
 

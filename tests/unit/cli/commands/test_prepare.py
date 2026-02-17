@@ -21,7 +21,7 @@ TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
 def test_prepare_creates_branch_and_impl_folder() -> None:
     """Test that erk prepare creates branch, slot, and .impl/ folder."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -82,7 +82,7 @@ def test_prepare_creates_branch_and_impl_folder() -> None:
 def test_prepare_with_issue_url() -> None:
     """Test that erk prepare accepts GitHub issue URLs."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -135,7 +135,7 @@ def test_prepare_with_issue_url() -> None:
 def test_prepare_with_no_slot_flag() -> None:
     """Test that erk prepare --no-slot creates branch but not .impl folder."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -191,7 +191,7 @@ def test_prepare_with_no_slot_flag() -> None:
 def test_prepare_with_force_flag() -> None:
     """Test that erk prepare --force reuses slot when pool is full."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory so we can configure FakeGit with it
@@ -279,7 +279,7 @@ def test_prepare_with_force_flag() -> None:
 def test_prepare_fails_without_erk_plan_label() -> None:
     """Test that erk prepare fails if issue doesn't have erk-plan label."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -330,7 +330,7 @@ def test_prepare_behaves_same_as_br_create_for_plan() -> None:
     runner = CliRunner()
 
     # Test with prepare command
-    with erk_isolated_fs_env(runner) as env1:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env1:
         repo_dir1 = env1.setup_repo_structure()
 
         git_ops1 = FakeGit(
@@ -371,7 +371,7 @@ def test_prepare_behaves_same_as_br_create_for_plan() -> None:
         result1 = runner.invoke(cli, ["prepare", "300"], obj=test_ctx1, catch_exceptions=False)
 
     # Test with br create --for-plan
-    with erk_isolated_fs_env(runner) as env2:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env2:
         repo_dir2 = env2.setup_repo_structure()
 
         git_ops2 = FakeGit(

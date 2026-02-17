@@ -12,7 +12,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_implement_from_plan_file() -> None:
     """Test implementing from plan file creates .impl/ in current directory."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -43,7 +43,7 @@ def test_implement_from_plan_file() -> None:
 def test_implement_from_plan_file_creates_impl_folder() -> None:
     """Test implementing from plan file creates .impl/ folder in cwd."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -70,7 +70,7 @@ def test_implement_from_plan_file_creates_impl_folder() -> None:
 def test_implement_from_plan_file_fails_when_not_found() -> None:
     """Test that command fails when plan file doesn't exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
@@ -88,7 +88,7 @@ def test_implement_from_plan_file_fails_when_not_found() -> None:
 def test_implement_from_plan_file_dry_run() -> None:
     """Test dry-run mode for plan file implementation."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},

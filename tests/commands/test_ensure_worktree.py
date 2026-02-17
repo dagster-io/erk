@@ -257,7 +257,7 @@ def test_ensure_worktree_handles_tracking_branch_failure() -> None:
 def test_ensure_worktree_creates_env_file_from_config() -> None:
     """Test that ensure_worktree_for_branch creates .env file from config."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         git_ops = FakeGit(
@@ -306,7 +306,7 @@ def test_ensure_worktree_creates_env_file_from_config() -> None:
 def test_ensure_worktree_skips_env_when_no_template() -> None:
     """Test that ensure_worktree_for_branch skips .env creation when no template."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         git_ops = FakeGit(
@@ -352,7 +352,7 @@ def test_ensure_worktree_skips_env_when_no_template() -> None:
 def test_ensure_worktree_runs_post_create_commands() -> None:
     """Test that ensure_worktree_for_branch runs post-create commands."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         git_ops = FakeGit(
@@ -395,7 +395,7 @@ def test_ensure_worktree_runs_post_create_commands() -> None:
 def test_ensure_worktree_works_without_local_config() -> None:
     """Test that ensure_worktree_for_branch works when local_config is None."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         git_ops = FakeGit(
@@ -435,7 +435,7 @@ def test_ensure_worktree_works_without_local_config() -> None:
 def test_ensure_worktree_generates_unique_name_on_collision() -> None:
     """Test that ensure_worktree_for_branch errors on name collision with different branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Create existing worktree with name "feature-name"

@@ -120,7 +120,7 @@ def test_checkout_succeeds_when_graphite_not_installed() -> None:
 def test_branch_checkout_creates_slot_assignment_by_default() -> None:
     """Test that branch checkout creates a slot assignment by default."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -148,7 +148,7 @@ def test_branch_checkout_creates_slot_assignment_by_default() -> None:
 def test_branch_checkout_no_slot_skips_assignment() -> None:
     """Test that --no-slot creates worktree without slot assignment."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -182,7 +182,7 @@ def test_branch_checkout_no_slot_skips_assignment() -> None:
 def test_branch_checkout_reuses_inactive_slot() -> None:
     """Test that branch checkout reuses an existing inactive slot."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Pre-create worktree directory for the slot
@@ -233,7 +233,7 @@ def test_branch_checkout_reuses_inactive_slot() -> None:
 def test_branch_checkout_creates_tracking_branch_for_remote() -> None:
     """Test that checkout creates a tracking branch for a remote-only branch."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -260,7 +260,7 @@ def test_branch_checkout_creates_tracking_branch_for_remote() -> None:
 def test_branch_checkout_force_unassigns_oldest() -> None:
     """Test that --force unassigns the oldest slot when pool is full."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Pre-create worktree directory for the slot
@@ -322,7 +322,7 @@ def test_branch_checkout_force_unassigns_oldest() -> None:
 def test_branch_checkout_pool_full_no_force_fails() -> None:
     """Test that pool-full without --force fails in non-interactive mode."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Pre-create worktree directory for the slot
@@ -370,7 +370,7 @@ def test_branch_checkout_pool_full_no_force_fails() -> None:
 def test_branch_checkout_nonexistent_branch_fails() -> None:
     """Test that checking out a non-existent branch fails with helpful error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -392,7 +392,7 @@ def test_branch_checkout_nonexistent_branch_fails() -> None:
 def test_branch_checkout_already_assigned_returns_existing() -> None:
     """Test that checking out an already-assigned branch returns existing slot."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Pre-create worktree directory for the slot
@@ -446,7 +446,7 @@ def test_branch_checkout_already_assigned_returns_existing() -> None:
 def test_branch_checkout_stale_assignment_worktree_missing() -> None:
     """Test that stale assignment with missing worktree is removed and proceeds."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # Worktree path in pool.json but doesn't exist on disk
@@ -490,7 +490,7 @@ def test_branch_checkout_stale_assignment_worktree_missing() -> None:
 def test_branch_checkout_stale_assignment_wrong_branch() -> None:
     """Test that stale assignment with wrong branch checked out is fixed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
@@ -544,7 +544,7 @@ def test_branch_checkout_stale_assignment_wrong_branch() -> None:
 def test_branch_checkout_stale_assignment_wrong_branch_with_uncommitted_changes() -> None:
     """Test that stale assignment with uncommitted changes fails gracefully."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
@@ -600,7 +600,7 @@ def test_branch_checkout_internal_state_mismatch_allocated_but_not_checked_out()
     This indicates corrupted pool state that needs manual intervention.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"

@@ -12,7 +12,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_capability_check_shows_not_installed() -> None:
     """Test that list shows capability as not installed when directory doesn't exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -36,7 +36,7 @@ def test_capability_check_shows_not_installed() -> None:
 def test_capability_check_shows_installed() -> None:
     """Test that list shows capability as installed when directory exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create docs/learned/ to make capability appear installed
         (env.cwd / "docs" / "learned").mkdir(parents=True)
 
@@ -62,7 +62,7 @@ def test_capability_check_shows_installed() -> None:
 def test_capability_check_specific_name() -> None:
     """Test that check with a specific name shows only that capability."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -86,7 +86,7 @@ def test_capability_check_specific_name() -> None:
 def test_capability_check_unknown_name_fails() -> None:
     """Test that check with unknown capability name fails with helpful error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -110,7 +110,7 @@ def test_capability_check_unknown_name_fails() -> None:
 def test_capability_check_outside_repo_shows_unknown_for_project_caps() -> None:
     """Test that list command outside git repo shows '?' for project capabilities."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # FakeGit returns None for git_common_dir when not in a repo
         git_ops = FakeGit(git_common_dirs={})
         global_config = GlobalConfig.test(
@@ -140,7 +140,7 @@ def test_capability_check_outside_repo_shows_unknown_for_project_caps() -> None:
 def test_capability_check_specific_project_cap_requires_repo() -> None:
     """Test that checking a specific project-level capability fails outside git repo."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # FakeGit returns None for git_common_dir when not in a repo
         git_ops = FakeGit(git_common_dirs={})
         global_config = GlobalConfig.test(
@@ -165,7 +165,7 @@ def test_capability_check_specific_project_cap_requires_repo() -> None:
 def test_capability_check_shows_artifacts_when_installed() -> None:
     """Test that check with name shows artifact details when installed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create all three directories to make capability appear installed
         (env.cwd / "docs" / "learned").mkdir(parents=True)
         (env.cwd / "docs" / "learned" / "README.md").write_text("# Test", encoding="utf-8")
@@ -202,7 +202,7 @@ def test_capability_check_shows_artifacts_when_installed() -> None:
 def test_capability_check_shows_artifacts_when_not_installed() -> None:
     """Test that check with name shows artifact details when not installed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
@@ -231,7 +231,7 @@ def test_capability_check_shows_artifacts_when_not_installed() -> None:
 def test_capability_check_shows_installation_check_description() -> None:
     """Test that check with name shows what the installation check verifies."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False

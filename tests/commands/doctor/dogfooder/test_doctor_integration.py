@@ -11,7 +11,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_doctor_shows_early_dogfooder_section_with_flag() -> None:
     """Test that doctor shows Early Dogfooder section when --dogfooder flag passed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create deprecated pyproject.toml config
         pyproject_path = env.cwd / "pyproject.toml"
         pyproject_path.write_text(
@@ -42,7 +42,7 @@ some_setting = true
 def test_doctor_hides_early_dogfooder_section_by_default() -> None:
     """Test that doctor hides Early Dogfooder section by default even with deprecated config."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create deprecated pyproject.toml config
         pyproject_path = env.cwd / "pyproject.toml"
         pyproject_path.write_text(

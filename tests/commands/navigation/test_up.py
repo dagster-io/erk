@@ -130,7 +130,7 @@ def test_up_at_top_of_stack() -> None:
 def test_up_child_has_no_worktree() -> None:
     """Test up command when child branch exists but has no worktree - should auto-create."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Only feature-1 has a worktree, feature-2 does not (will be auto-created)
@@ -1359,7 +1359,7 @@ def test_up_count_with_delete_current_fails() -> None:
 def test_up_delete_current_slot_aware_unassigns_slot() -> None:
     """Test --delete-current unassigns slot instead of removing worktree directory."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Worktree path is a managed slot (erk-slot-01)

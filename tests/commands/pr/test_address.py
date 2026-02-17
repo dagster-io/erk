@@ -12,7 +12,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_pr_address_success() -> None:
     """Test successful local address when Claude is available."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -40,7 +40,7 @@ def test_pr_address_success() -> None:
 def test_pr_address_requires_dangerous_flag() -> None:
     """Test that command fails when --dangerous flag is not provided."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -62,7 +62,7 @@ def test_pr_address_requires_dangerous_flag() -> None:
 def test_pr_address_claude_not_available() -> None:
     """Test error when Claude is not installed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
@@ -88,7 +88,7 @@ def test_pr_address_claude_not_available() -> None:
 def test_pr_address_fails_on_command_error() -> None:
     """Test that command fails when slash command execution fails."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},

@@ -35,7 +35,7 @@ def test_create_detects_default_branch() -> None:
 def test_create_from_current_branch_in_worktree() -> None:
     """Regression: ensure --from-current-branch works when executed from a worktree."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_root = env.root_worktree
         git_dir = env.git_dir
 

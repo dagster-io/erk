@@ -747,7 +747,7 @@ def test_delete_slot_aware_unassigns_slot() -> None:
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
         # Worktree path is a managed slot (erk-slot-01)

@@ -12,7 +12,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_happy_path_with_existing_issue() -> None:
     """Command succeeds with --issue flag, using existing issue number."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_github = FakeGitHub()
         fake_issues = FakeGitHubIssues()
         ctx = env.build_context(
@@ -47,7 +47,7 @@ def test_happy_path_with_existing_issue() -> None:
 def test_happy_path_creating_new_issue() -> None:
     """Command succeeds without --issue, creating a new issue."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_github = FakeGitHub()
         fake_issues = FakeGitHubIssues()
         ctx = env.build_context(
@@ -74,7 +74,7 @@ def test_happy_path_creating_new_issue() -> None:
 def test_error_no_github_remote() -> None:
     """Command fails with clear error when repo has no GitHub remote."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "my-feature"},
@@ -92,7 +92,7 @@ def test_error_no_github_remote() -> None:
 def test_error_detached_head() -> None:
     """Command fails with clear error when in detached HEAD state."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Don't set current_branch so get_current_branch returns None
         ctx = env.build_context()
 

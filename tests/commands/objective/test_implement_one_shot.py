@@ -136,7 +136,7 @@ def _build_one_shot_context(
 def test_implement_one_shot_happy_path() -> None:
     """Test --one-shot dispatches workflow with objective/node inputs."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(
@@ -183,7 +183,7 @@ def test_implement_one_shot_repeated_invocation_advances_node() -> None:
     invocation should skip it and dispatch node 1.2.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(
@@ -223,7 +223,7 @@ def test_implement_one_shot_repeated_invocation_advances_node() -> None:
 def test_implement_one_shot_auto_detects_next_node() -> None:
     """Test that first pending node is auto-detected."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         # First step is done, second is pending
@@ -287,7 +287,7 @@ steps:
 def test_implement_one_shot_node_override() -> None:
     """Test --node 2.1 dispatches that specific node."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(
@@ -314,7 +314,7 @@ def test_implement_one_shot_node_override() -> None:
 def test_implement_one_shot_no_pending_nodes() -> None:
     """Test that all-done objective returns cleanly."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(
@@ -341,7 +341,7 @@ def test_implement_one_shot_no_pending_nodes() -> None:
 def test_implement_one_shot_node_not_found() -> None:
     """Test --node with nonexistent node ID errors."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(
@@ -362,7 +362,7 @@ def test_implement_one_shot_node_not_found() -> None:
 def test_implement_one_shot_dry_run() -> None:
     """Test --dry-run shows info without mutations."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(
@@ -393,7 +393,7 @@ def test_implement_one_shot_dry_run() -> None:
 def test_implement_one_shot_objective_not_found() -> None:
     """Test error when objective issue doesn't exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(issues={})
@@ -412,7 +412,7 @@ def test_implement_one_shot_objective_not_found() -> None:
 def test_implement_one_shot_model_flag() -> None:
     """Test model flag flows through to workflow."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(
@@ -438,7 +438,7 @@ def test_implement_one_shot_model_flag() -> None:
 def test_implement_flags_require_one_shot() -> None:
     """Test --model, --dry-run without --one-shot produce errors."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
         issues = FakeGitHubIssues(

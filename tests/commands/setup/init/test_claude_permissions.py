@@ -24,7 +24,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def test_init_offers_claude_permission_when_missing() -> None:
     """Test that init offers to add erk permission when Claude settings exist."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         # Create Claude settings in repo without erk permission
@@ -61,7 +61,7 @@ def test_init_offers_claude_permission_when_missing() -> None:
 def test_init_skips_claude_permission_when_already_configured() -> None:
     """Test that init skips prompt when erk permission already exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         # Create Claude settings WITH erk permission already present
@@ -93,7 +93,7 @@ def test_init_skips_claude_permission_when_already_configured() -> None:
 def test_init_skips_claude_permission_when_no_settings() -> None:
     """Test that init skips Claude permission setup when no settings.json exists."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         # No .claude/settings.json file in repo
@@ -119,7 +119,7 @@ def test_init_skips_claude_permission_when_no_settings() -> None:
 def test_init_handles_declined_claude_permission() -> None:
     """Test that init handles user declining Claude permission gracefully."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         # Create Claude settings in repo without erk permission
@@ -152,7 +152,7 @@ def test_init_handles_declined_claude_permission() -> None:
 def test_init_handles_declined_write_confirmation() -> None:
     """Test that init handles user declining write confirmation gracefully."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         # Create Claude settings in repo without erk permission
@@ -186,7 +186,7 @@ def test_init_handles_declined_write_confirmation() -> None:
 def test_init_accepts_default_on_empty_input_for_write_confirmation() -> None:
     """Test that hitting Enter at write confirmation accepts (default=True)."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         erk_root = env.cwd / "erks"
 
         # Create Claude settings in repo without erk permission

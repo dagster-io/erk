@@ -106,7 +106,7 @@ def test_delete_branch_with_vanilla_worktree() -> None:
 def test_delete_branch_with_slot_worktree_unassigns_slot() -> None:
     """Delete a branch in a slot worktree: unassign slot, keep directory."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
         slot_wt = repo_dir / "worktrees" / "erk-slot-01"
         slot_wt.mkdir(parents=True)
