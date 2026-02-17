@@ -41,7 +41,7 @@ When you run `erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"`, the 
 | ----------------------------------------- | -------------- | ----------------- | --------------- |
 | `--pr "#123" --plan "#456"`               | `in-progress`  | `#456`            | `#123`          |
 | `--pr "#123" --plan "#456" --status done` | `done`         | `#456`            | `#123`          |
-| `--plan "#456"`                           | `in-progress`  | `#456`            | `-`             |
+| `--plan "#456"`                           | `in-progress`  | `#456`            | `(preserved)`   |
 | `--pr "" --plan ""`                       | `pending`      | `-`               | `-`             |
 
 ### None vs Empty-String vs Value Semantics

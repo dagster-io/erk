@@ -30,12 +30,12 @@ The command is infrastructure for workflow integration, not an interactive tool.
 
 When the command updates plan/PR cells, it **writes status, plan, and PR cells atomically**:
 
-| Flag                                  | Written Status | Plan Cell   | PR Cell     | Why                                                     |
-| ------------------------------------- | -------------- | ----------- | ----------- | ------------------------------------------------------- |
-| `--plan #6464`                        | `in-progress`  | `#6464`     | (preserved) | Plan reference indicates active work                    |
-| `--plan #6464 --pr #123`              | `in-progress`  | `#6464`     | `#123`      | PR reference without --status done means work in flight |
-| `--plan #6464 --pr #123 --status done`| `done`         | `#6464`     | `#123`      | Explicit --status done confirms PR is merged            |
-| `--pr ""`                             | `pending`      | (preserved) | `-`         | Clearing refs resets to initial state                   |
+| Flag                                   | Written Status | Plan Cell   | PR Cell     | Why                                                     |
+| -------------------------------------- | -------------- | ----------- | ----------- | ------------------------------------------------------- |
+| `--plan #6464`                         | `in-progress`  | `#6464`     | (preserved) | Plan reference indicates active work                    |
+| `--plan #6464 --pr #123`               | `in-progress`  | `#6464`     | `#123`      | PR reference without --status done means work in flight |
+| `--plan #6464 --pr #123 --status done` | `done`         | `#6464`     | `#123`      | Explicit --status done confirms PR is merged            |
+| `--pr ""`                              | `pending`\*    | (preserved) | `-`         | \*`in-progress` if preserved plan is non-empty          |
 
 The command also accepts legacy `--pr "plan #NNN"` syntax, which is automatically migrated to `--plan "#NNN"`.
 
@@ -145,12 +145,12 @@ On failure paths, the field is omitted regardless of the flag.
 
 The command uses separate `--plan` and `--pr` flags for the two lifecycle stages:
 
-| Flag                                    | Status Computed | Lifecycle Stage                     |
-| --------------------------------------- | --------------- | ----------------------------------- |
-| `--plan "#6464"`                        | `in-progress`   | Step has an active plan issue       |
-| `--plan "#6464" --pr "#6500"`           | `in-progress`   | PR reference (not confirmed merged) |
-| `--plan "#6464" --pr "#6500" --status done` | `done`      | Step has a confirmed landed PR      |
-| `--pr ""`                               | `pending`       | Clear the reference                 |
+| Flag                                        | Status Computed | Lifecycle Stage                             |
+| ------------------------------------------- | --------------- | ------------------------------------------- |
+| `--plan "#6464"`                            | `in-progress`   | Step has an active plan issue               |
+| `--plan "#6464" --pr "#6500"`               | `in-progress`   | PR reference (not confirmed merged)         |
+| `--plan "#6464" --pr "#6500" --status done` | `done`          | Step has a confirmed landed PR              |
+| `--pr ""`                                   | `pending`\*     | Clear PR; \*`in-progress` if plan preserved |
 
 When `--pr` is set, `--plan` must also be explicitly provided (error: `plan_required_with_pr`). Use `--plan "#NNN"` to preserve or `--plan ""` to clear. The legacy `--pr "plan #NNN"` syntax is still accepted and automatically migrated to `--plan "#NNN"`.
 
