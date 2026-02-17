@@ -34,6 +34,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
+    enrich_phase_names,
 )
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.output.output import user_output
@@ -125,6 +126,7 @@ def _resolve_next(
         raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
 
     phases = phases_from_graph(result.graph)
+    phases = enrich_phase_names(result.issue_body, phases)
     found = _find_node_in_phases(phases, next_node.id)
     if found is None:
         raise click.ClickException(
@@ -380,6 +382,7 @@ def _handle_one_shot(
             raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
 
         phases = phases_from_graph(result.graph)
+        phases = enrich_phase_names(result.issue_body, phases)
 
         if node_id is not None:
             found = _find_node_in_phases(phases, node_id)
