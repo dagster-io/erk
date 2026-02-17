@@ -65,14 +65,14 @@ A shortcut collision would only occur if both a plan and objective command with 
 
 Six objective commands are registered, spanning all three categories:
 
-| ID                   | Category | Shortcut | Display Name Generator                 |
-| -------------------- | -------- | -------- | -------------------------------------- |
-| `one_shot_implement` | ACTION   | `s`      | `erk objective implement N --one-shot` |
-| `check_objective`    | ACTION   | `5`      | `erk objective check N`                |
-| `close_objective`    | ACTION   | —        | `erk objective close N --force`        |
-| `open_objective`     | OPEN     | `i`      | Issue URL or "Objective"               |
-| `copy_implement`     | COPY     | `1`      | `erk objective implement N`            |
-| `copy_view`          | COPY     | `3`      | `erk objective view N`                 |
+| ID                | Category | Shortcut | Display Name Generator            |
+| ----------------- | -------- | -------- | --------------------------------- |
+| `one_shot_plan`   | ACTION   | `s`      | `erk objective plan N --one-shot` |
+| `check_objective` | ACTION   | `5`      | `erk objective check N`           |
+| `close_objective` | ACTION   | —        | `erk objective close N --force`   |
+| `open_objective`  | OPEN     | `i`      | Issue URL or "Objective"          |
+| `copy_plan`       | COPY     | `1`      | `erk objective plan N`            |
+| `copy_view`       | COPY     | `3`      | `erk objective view N`            |
 
 All six use `_is_objectives_view(ctx)` as their sole view predicate. Objective commands don't have compound availability conditions (unlike plan commands which check for PR, issue URL, etc.) because objective rows always have an issue number.
 

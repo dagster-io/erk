@@ -537,7 +537,7 @@ def _get_objective_context_marker_path(session_id: str, repo_root: Path) -> Path
     """Get objective-context marker path in .erk/scratch/sessions/<session_id>/.
 
     The objective-context marker stores the objective issue number when
-    a plan is created via /erk:objective-implement. This allows the hook
+    a plan is created via /erk:objective-plan. This allows the hook
     to suggest the correct --objective-issue flag in the save command.
 
     Args:

@@ -14,7 +14,7 @@ Rules triggered by matching actions in code.
 
 **adding a changelog entry without a commit hash reference** → Read [Changelog Standards and Format](changelog-standards.md) first. All unreleased entries must include 9-character short hashes in parentheses. Hashes are stripped at release time by /local:changelog-release.
 
-**adding a new roadmap status value** → Read [Objective Summary Format](objective-summary-format.md) first. Status inference lives in two places that must stay synchronized: the roadmap parser (erk_shared/gateway/github/metadata/roadmap.py) and the agent prompt in objective-implement.md. Update both or the formats will diverge.
+**adding a new roadmap status value** → Read [Objective Summary Format](objective-summary-format.md) first. Status inference lives in two places that must stay synchronized: the roadmap parser (erk_shared/gateway/github/metadata/roadmap.py) and the agent prompt in objective-plan.md. Update both or the formats will diverge.
 
 **adding a new workflow_dispatch workflow without run-name** → Read [GitHub Actions API Interaction Patterns](github-actions-api.md) first. Every erk workflow must use run-name with distinct_id for trigger_workflow discovery. Pattern: run-name: '<context>:${{ inputs.distinct_id }}'
 

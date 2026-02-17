@@ -22,7 +22,7 @@ Claude Code slash commands for in-session use.
 
 ## Navigation Commands
 
-<!-- TODO: /erk:land, /erk:objective-inspect, /erk:objective-implement -->
+<!-- TODO: /erk:land, /erk:objective-inspect, /erk:objective-plan -->
 
 ## Documentation Commands
 

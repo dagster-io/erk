@@ -117,9 +117,9 @@ def _display_copy_replan(ctx: CommandContext) -> str:
 # === Display Name Generators (Objective Commands) ===
 
 
-def _display_one_shot_implement(ctx: CommandContext) -> str:
-    """Display name for one_shot_implement command."""
-    return f"erk objective implement {ctx.row.issue_number} --one-shot"
+def _display_one_shot_plan(ctx: CommandContext) -> str:
+    """Display name for one_shot_plan command."""
+    return f"erk objective plan {ctx.row.issue_number} --one-shot"
 
 
 def _display_check_objective(ctx: CommandContext) -> str:
@@ -139,9 +139,9 @@ def _display_open_objective(ctx: CommandContext) -> str:
     return "Objective"
 
 
-def _display_copy_implement(ctx: CommandContext) -> str:
-    """Display name for copy_implement command."""
-    return f"erk objective implement {ctx.row.issue_number}"
+def _display_copy_plan(ctx: CommandContext) -> str:
+    """Display name for copy_plan command."""
+    return f"erk objective plan {ctx.row.issue_number}"
 
 
 def _display_copy_view(ctx: CommandContext) -> str:
@@ -217,13 +217,13 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         # === OBJECTIVE ACTIONS ===
         CommandDefinition(
-            id="one_shot_implement",
-            name="Implement (One-Shot)",
-            description="implement (one-shot)",
+            id="one_shot_plan",
+            name="Plan (One-Shot)",
+            description="plan (one-shot)",
             category=CommandCategory.ACTION,
             shortcut="s",
             is_available=lambda ctx: _is_objectives_view(ctx),
-            get_display_name=_display_one_shot_implement,
+            get_display_name=_display_one_shot_plan,
         ),
         CommandDefinition(
             id="check_objective",
@@ -338,13 +338,13 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         # === OBJECTIVE COPIES ===
         CommandDefinition(
-            id="copy_implement",
-            name="erk objective implement",
-            description="implement",
+            id="copy_plan",
+            name="erk objective plan",
+            description="plan",
             category=CommandCategory.COPY,
             shortcut="1",
             is_available=lambda ctx: _is_objectives_view(ctx),
-            get_display_name=_display_copy_implement,
+            get_display_name=_display_copy_plan,
         ),
         CommandDefinition(
             id="copy_view",

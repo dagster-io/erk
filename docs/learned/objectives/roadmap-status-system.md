@@ -36,7 +36,7 @@ The parser expects `in_progress` (underscore) in the YAML frontmatter. The `upda
 
 ### The "planning" Status
 
-The `planning` status indicates a step has been dispatched for autonomous planning and implementation (via `erk objective implement`). It is set when a draft PR is created from an objective step, before the work transitions to `in_progress`. The transition path is: `pending` → `planning` (draft PR created) → `in_progress` (work begins) → `done` (PR landed). The `planning` status is treated as a non-terminal active state by the check command — steps with `planning` status are not flagged for PR/status consistency issues (see `check_cmd.py:137,147`).
+The `planning` status indicates a step has been dispatched for autonomous planning and implementation (via `erk objective plan`). It is set when a draft PR is created from an objective step, before the work transitions to `in_progress`. The transition path is: `pending` → `planning` (draft PR created) → `in_progress` (work begins) → `done` (PR landed). The `planning` status is treated as a non-terminal active state by the check command — steps with `planning` status are not flagged for PR/status consistency issues (see `check_cmd.py:137,147`).
 
 ## Tier 2: PR-Based Inference
 

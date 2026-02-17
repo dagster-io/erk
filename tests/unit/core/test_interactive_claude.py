@@ -139,7 +139,7 @@ def test_build_claude_args_all_options() -> None:
         allow_dangerous=True,
     )
 
-    args = build_claude_args(config, command="/erk:objective-implement 123")
+    args = build_claude_args(config, command="/erk:objective-plan 123")
 
     assert args == [
         "claude",
@@ -149,7 +149,7 @@ def test_build_claude_args_all_options() -> None:
         "--allow-dangerously-skip-permissions",
         "--model",
         "claude-opus-4-5",
-        "/erk:objective-implement 123",
+        "/erk:objective-plan 123",
     ]
 
 

@@ -908,8 +908,8 @@ class ErkDashApp(App):
             self.notify(f"Copied: {cmd}")
 
         # === OBJECTIVE COMMANDS ===
-        elif command_id == "copy_implement":
-            cmd = f"erk objective implement {row.issue_number}"
+        elif command_id == "copy_plan":
+            cmd = f"erk objective plan {row.issue_number}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
@@ -923,13 +923,13 @@ class ErkDashApp(App):
                 self._provider.browser.launch(row.issue_url)
                 self.notify(f"Opened objective #{row.issue_number}")
 
-        elif command_id == "one_shot_implement":
+        elif command_id == "one_shot_plan":
             self._push_streaming_detail(
                 row=row,
                 command=[
                     "erk",
                     "objective",
-                    "implement",
+                    "plan",
                     str(row.issue_number),
                     "--one-shot",
                 ],

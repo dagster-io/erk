@@ -1,6 +1,6 @@
-"""Tests for objective implement command.
+"""Tests for objective plan command.
 
-Note: The implement command uses AgentLauncher.launch_interactive() which
+Note: The plan command uses AgentLauncher.launch_interactive() which
 replaces the process. These tests verify behavior up to (but not including)
 the process replacement, using FakeAgentLauncher to track calls.
 """
@@ -23,7 +23,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
-def test_implement_shows_error_when_claude_not_installed() -> None:
+def test_plan_shows_error_when_claude_not_installed() -> None:
     """Test implement shows error when Claude CLI is not installed."""
     runner = CliRunner()
 
@@ -32,13 +32,13 @@ def test_implement_shows_error_when_claude_not_installed() -> None:
     )
     ctx = context_for_test(agent_launcher=launcher)
 
-    result = runner.invoke(cli, ["objective", "implement", "123"], obj=ctx)
+    result = runner.invoke(cli, ["objective", "plan", "123"], obj=ctx)
 
     assert result.exit_code == 1
     assert "Claude CLI not found" in result.output
 
 
-def test_implement_launches_claude_with_issue_number() -> None:
+def test_plan_launches_claude_with_issue_number() -> None:
     """Test implement launches Claude with the correct command for issue number.
 
     The implement command uses plan mode since it's for creating implementation plans.
@@ -47,59 +47,45 @@ def test_implement_launches_claude_with_issue_number() -> None:
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["objective", "implement", "3679"], obj=ctx)
+    result = runner.invoke(cli, ["objective", "plan", "3679"], obj=ctx)
 
     # FakeAgentLauncher.launch_interactive raises SystemExit(0), which CliRunner catches
     assert result.exit_code == 0
     assert fake_launcher.launch_called
     assert fake_launcher.last_call is not None
-    assert fake_launcher.last_call.command == "/erk:objective-implement 3679"
+    assert fake_launcher.last_call.command == "/erk:objective-plan 3679"
     assert fake_launcher.last_call.config.permission_mode == "plan"
     assert fake_launcher.last_call.config.allow_dangerous is False
     assert fake_launcher.last_call.config.dangerous is False
 
 
-def test_implement_launches_claude_with_url() -> None:
+def test_plan_launches_claude_with_url() -> None:
     """Test implement launches Claude with the correct command for GitHub URL."""
     runner = CliRunner()
     url = "https://github.com/owner/repo/issues/3679"
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["objective", "implement", url], obj=ctx)
+    result = runner.invoke(cli, ["objective", "plan", url], obj=ctx)
 
     assert result.exit_code == 0
     assert fake_launcher.launch_called
     assert fake_launcher.last_call is not None
-    assert fake_launcher.last_call.command == f"/erk:objective-implement {url}"
+    assert fake_launcher.last_call.command == f"/erk:objective-plan {url}"
     assert fake_launcher.last_call.config.permission_mode == "plan"
 
 
-def test_implement_alias_impl_works() -> None:
-    """Test that 'impl' alias works for implement command."""
-    runner = CliRunner()
-    fake_launcher = FakeAgentLauncher()
-    ctx = context_for_test(agent_launcher=fake_launcher)
-
-    result = runner.invoke(cli, ["objective", "impl", "123"], obj=ctx)
-
-    assert result.exit_code == 0
-    assert fake_launcher.launch_called
-    assert fake_launcher.last_call is not None
-    assert fake_launcher.last_call.command == "/erk:objective-implement 123"
-
-
-def test_implement_requires_issue_ref_or_next() -> None:
+def test_plan_requires_issue_ref_or_next() -> None:
     """Test implement requires ISSUE_REF unless --next is used."""
     runner = CliRunner()
 
-    result = runner.invoke(cli, ["objective", "implement"])
+    result = runner.invoke(cli, ["objective", "plan"])
 
     assert result.exit_code == 1
     assert "ISSUE_REF is required unless --next" in result.output
 
 
-def test_implement_respects_allow_dangerous_config() -> None:
+def test_plan_respects_allow_dangerous_config() -> None:
     """Test that allow_dangerous from config is passed to agent launcher.
 
     When the user has allow_dangerous = true in their ~/.erk/config.toml,
@@ -123,7 +109,7 @@ def test_implement_respects_allow_dangerous_config() -> None:
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(global_config=global_config, agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["objective", "implement", "123"], obj=ctx)
+    result = runner.invoke(cli, ["objective", "plan", "123"], obj=ctx)
 
     assert result.exit_code == 0
     assert fake_launcher.launch_called
@@ -132,16 +118,16 @@ def test_implement_respects_allow_dangerous_config() -> None:
     # and use plan mode (overridden from default acceptEdits)
     assert fake_launcher.last_call.config.allow_dangerous is True
     assert fake_launcher.last_call.config.permission_mode == "plan"
-    assert fake_launcher.last_call.command == "/erk:objective-implement 123"
+    assert fake_launcher.last_call.command == "/erk:objective-plan 123"
 
 
-def test_implement_with_dangerous_flag() -> None:
+def test_plan_with_dangerous_flag() -> None:
     """Test that -d/--dangerous flag enables allow_dangerous in launcher config."""
     runner = CliRunner()
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["objective", "implement", "-d", "123"], obj=ctx)
+    result = runner.invoke(cli, ["objective", "plan", "-d", "123"], obj=ctx)
 
     assert result.exit_code == 0
     assert fake_launcher.launch_called
@@ -149,16 +135,16 @@ def test_implement_with_dangerous_flag() -> None:
     # Should include allow_dangerous from -d flag
     assert fake_launcher.last_call.config.allow_dangerous is True
     assert fake_launcher.last_call.config.permission_mode == "plan"
-    assert fake_launcher.last_call.command == "/erk:objective-implement 123"
+    assert fake_launcher.last_call.command == "/erk:objective-plan 123"
 
 
-def test_implement_without_dangerous_flag() -> None:
+def test_plan_without_dangerous_flag() -> None:
     """Test that without -d flag, allow_dangerous is not enabled."""
     runner = CliRunner()
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["objective", "implement", "123"], obj=ctx)
+    result = runner.invoke(cli, ["objective", "plan", "123"], obj=ctx)
 
     assert result.exit_code == 0
     assert fake_launcher.launch_called
@@ -166,28 +152,28 @@ def test_implement_without_dangerous_flag() -> None:
     # Should NOT include allow_dangerous
     assert fake_launcher.last_call.config.allow_dangerous is False
     assert fake_launcher.last_call.config.permission_mode == "plan"
-    assert fake_launcher.last_call.command == "/erk:objective-implement 123"
+    assert fake_launcher.last_call.command == "/erk:objective-plan 123"
 
 
-def test_implement_with_node_flag() -> None:
+def test_plan_with_node_flag() -> None:
     """Test that --node flag passes node ID to Claude command."""
     runner = CliRunner()
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["objective", "implement", "42", "--node", "2.1"], obj=ctx)
+    result = runner.invoke(cli, ["objective", "plan", "42", "--node", "2.1"], obj=ctx)
 
     assert result.exit_code == 0
     assert fake_launcher.launch_called
     assert fake_launcher.last_call is not None
-    assert fake_launcher.last_call.command == "/erk:objective-implement 42 --node 2.1"
+    assert fake_launcher.last_call.command == "/erk:objective-plan 42 --node 2.1"
 
 
-def test_implement_next_and_node_mutually_exclusive() -> None:
+def test_plan_next_and_node_mutually_exclusive() -> None:
     """Test --next and --node are mutually exclusive."""
     runner = CliRunner()
 
-    result = runner.invoke(cli, ["objective", "implement", "42", "--next", "--node", "2.1"])
+    result = runner.invoke(cli, ["objective", "plan", "42", "--next", "--node", "2.1"])
 
     assert result.exit_code == 1
     assert "--next and --node are mutually exclusive" in result.output
@@ -296,7 +282,7 @@ def _make_plan_issue(number: int, *, objective_issue: int) -> IssueInfo:
     )
 
 
-def test_implement_next_with_issue_ref() -> None:
+def test_plan_next_with_issue_ref() -> None:
     """Test --next with explicit ISSUE_REF resolves next pending node."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -319,7 +305,7 @@ def test_implement_next_with_issue_ref() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--next"],
+            ["objective", "plan", "42", "--next"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -327,11 +313,11 @@ def test_implement_next_with_issue_ref() -> None:
         assert result.exit_code == 0
         assert fake_launcher.launch_called
         assert fake_launcher.last_call is not None
-        assert fake_launcher.last_call.command == "/erk:objective-implement 42 --node 1.1"
+        assert fake_launcher.last_call.command == "/erk:objective-plan 42 --node 1.1"
         assert "Next node: 1.1: Setup infra" in result.output
 
 
-def test_implement_next_infers_from_branch() -> None:
+def test_plan_next_infers_from_branch() -> None:
     """Test --next without ISSUE_REF infers objective from branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -359,7 +345,7 @@ def test_implement_next_infers_from_branch() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "--next"],
+            ["objective", "plan", "--next"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -367,10 +353,10 @@ def test_implement_next_infers_from_branch() -> None:
         assert result.exit_code == 0
         assert fake_launcher.launch_called
         assert fake_launcher.last_call is not None
-        assert fake_launcher.last_call.command == "/erk:objective-implement 42 --node 1.1"
+        assert fake_launcher.last_call.command == "/erk:objective-plan 42 --node 1.1"
 
 
-def test_implement_next_no_pending_nodes() -> None:
+def test_plan_next_no_pending_nodes() -> None:
     """Test --next with all-done objective errors."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -393,7 +379,7 @@ def test_implement_next_no_pending_nodes() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "42", "--next"],
+            ["objective", "plan", "42", "--next"],
             obj=ctx,
         )
 
@@ -401,7 +387,7 @@ def test_implement_next_no_pending_nodes() -> None:
         assert "no pending unblocked nodes" in result.output
 
 
-def test_implement_next_branch_not_linked() -> None:
+def test_plan_next_branch_not_linked() -> None:
     """Test --next without ISSUE_REF on unlinked branch errors."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -422,7 +408,7 @@ def test_implement_next_branch_not_linked() -> None:
 
         result = runner.invoke(
             cli,
-            ["objective", "implement", "--next"],
+            ["objective", "plan", "--next"],
             obj=ctx,
         )
 

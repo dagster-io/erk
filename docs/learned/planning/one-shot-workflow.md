@@ -32,7 +32,7 @@ CLI dispatch → skeleton issue → branch + draft PR → workflow trigger
 Two CLI commands trigger the pipeline:
 
 - `erk one-shot <instruction>` -- direct dispatch
-- `erk objective implement <issue> --one-shot [--node <id>]` -- objective-driven dispatch
+- `erk objective plan <issue> --one-shot [--node <id>]` -- objective-driven dispatch
 
 Both converge on `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
 
@@ -64,7 +64,7 @@ The slug is truncated to stay under git's 31-character worktree limit.
 
 ## Objective Integration
 
-When dispatched via `erk objective implement --one-shot`, the `_handle_one_shot()` function in `src/erk/cli/commands/objective/implement_cmd.py`:
+When dispatched via `erk objective plan --one-shot`, the `_handle_one_shot()` function in `src/erk/cli/commands/objective/plan_cmd.py`:
 
 1. Validates the objective exists
 2. Builds an instruction string including step ID and phase name for context
@@ -137,7 +137,7 @@ The dispatch function always restores the original branch in a `finally` block, 
 | File                                                          | Key Components                                                                                    |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `src/erk/cli/commands/one_shot_dispatch.py`                   | `dispatch_one_shot()`, `generate_branch_name()`, `OneShotDispatchParams`, `OneShotDispatchResult` |
-| `src/erk/cli/commands/objective/implement_cmd.py`             | `_handle_one_shot()`, `_find_node_in_phases()`                                                    |
+| `src/erk/cli/commands/objective/plan_cmd.py`                  | `_handle_one_shot()`, `_find_node_in_phases()`                                                    |
 | `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` | Best-effort registration of metadata, comment, closing ref                                        |
 | `src/erk/cli/commands/pr/metadata_helpers.py`                 | `write_dispatch_metadata()`, `maybe_update_plan_dispatch_metadata()`                              |
 | `.github/workflows/one-shot.yml`                              | Two-job pipeline (plan + implement)                                                               |

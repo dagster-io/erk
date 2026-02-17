@@ -763,7 +763,7 @@ Create markers → Save plan → Update roadmap → Create review PR → Submit 
 
 ### When to Use
 
-This pattern applies when a plan is created from an objective step via `/erk:objective-implement`. The markers are set automatically during that workflow. Manual marker creation is not typically needed.
+This pattern applies when a plan is created from an objective step via `/erk:objective-plan`. The markers are set automatically during that workflow. Manual marker creation is not typically needed.
 
 ---
 

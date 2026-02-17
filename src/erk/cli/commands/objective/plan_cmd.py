@@ -1,11 +1,10 @@
-"""Create an implementation plan from an objective node."""
+"""Create a plan from an objective node."""
 
 from dataclasses import dataclass
 from pathlib import Path
 
 import click
 
-from erk.cli.alias import alias
 from erk.cli.commands.exec.scripts.update_objective_node import (
     _replace_node_refs_in_body,
     _replace_table_in_text,
@@ -194,8 +193,7 @@ def _update_objective_node(
             issues.update_comment(repo_root, objective_comment_id, updated_comment)
 
 
-@alias("impl")
-@click.command("implement")
+@click.command("plan")
 @click.argument("issue_ref", required=False, default=None)
 @click.option(
     "-d",
@@ -239,7 +237,7 @@ def _update_objective_node(
     help="Auto-select next unblocked pending node (infers objective from branch if omitted)",
 )
 @click.pass_obj
-def implement_objective(
+def plan_objective(
     ctx: ErkContext,
     issue_ref: str | None,
     dangerous: bool,
@@ -249,11 +247,11 @@ def implement_objective(
     node_id: str | None,
     use_next: bool,
 ) -> None:
-    """Create an implementation plan from an objective node.
+    """Create a plan from an objective node.
 
     ISSUE_REF is an objective issue number or GitHub URL.
 
-    By default, launches Claude interactively in plan mode to implement
+    By default, launches Claude interactively in plan mode to plan
     the next unblocked node.
 
     With --one-shot, dispatches via the one-shot CI workflow for
@@ -264,14 +262,14 @@ def implement_objective(
 
     \b
     Examples:
-      erk objective implement 42
-      erk objective implement 42 --node 2.1
-      erk objective implement 42 --one-shot
-      erk objective implement 42 --one-shot --node 1.2
-      erk objective implement 42 --one-shot --dry-run
-      erk objective implement 42 --next
-      erk objective implement --next
-      erk objective implement --next --one-shot
+      erk objective plan 42
+      erk objective plan 42 --node 2.1
+      erk objective plan 42 --one-shot
+      erk objective plan 42 --one-shot --node 1.2
+      erk objective plan 42 --one-shot --dry-run
+      erk objective plan 42 --next
+      erk objective plan --next
+      erk objective plan --next --one-shot
     """
     # Validate flag combinations
     if use_next and node_id is not None:
@@ -314,11 +312,11 @@ def _handle_interactive(
     if use_next:
         resolved = _resolve_next(ctx, issue_ref=issue_ref)
         user_output(f"Next node: {resolved.node.id}: {resolved.node.description}")
-        command = f"/erk:objective-implement {resolved.issue_number} --node {resolved.node.id}"
+        command = f"/erk:objective-plan {resolved.issue_number} --node {resolved.node.id}"
     else:
-        assert issue_ref is not None  # type narrowing: validated in implement_objective
+        assert issue_ref is not None  # type narrowing: validated in plan_objective
         node_suffix = f" --node {node_id}" if node_id is not None else ""
-        command = f"/erk:objective-implement {issue_ref}{node_suffix}"
+        command = f"/erk:objective-plan {issue_ref}{node_suffix}"
 
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:
@@ -360,7 +358,7 @@ def _handle_one_shot(
         target_node = resolved.node
         phase_name = resolved.phase_name
     else:
-        assert issue_ref is not None  # type narrowing: validated in implement_objective
+        assert issue_ref is not None  # type narrowing: validated in plan_objective
         # Parse issue identifier
         issue_number = parse_issue_identifier(issue_ref)
 
@@ -411,7 +409,7 @@ def _handle_one_shot(
 
     # Build instruction
     instruction = (
-        f"/erk:objective-implement {issue_number}\n"
+        f"/erk:objective-plan {issue_number}\n"
         f"Implement step {target_node.id} of objective #{issue_number}: "
         f"{target_node.description} (Phase: {phase_name})"
     )
