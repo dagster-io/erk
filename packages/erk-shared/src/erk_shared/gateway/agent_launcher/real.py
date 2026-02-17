@@ -66,6 +66,14 @@ class RealAgentLauncher(AgentLauncher):
         Note:
             This method never returns - the process is replaced.
         """
+        # Validate backend
+        if config.backend != "claude":
+            raise RuntimeError(
+                f"Unsupported agent backend: '{config.backend}'\n"
+                f"Only 'claude' is currently supported.\n"
+                f"To switch back: erk config set interactive_claude.backend claude"
+            )
+
         # Check Claude CLI availability
         if shutil.which("claude") is None:
             raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")

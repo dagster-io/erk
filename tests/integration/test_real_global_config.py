@@ -181,7 +181,9 @@ def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:
     )
 
     with mock.patch("erk.cli.commands.init.main.detect_graphite", return_value=False):
-        create_and_save_global_config(ctx, Path("/tmp/erks"), shell_setup_complete=False)
+        create_and_save_global_config(
+            ctx, Path("/tmp/erks"), shell_setup_complete=False, backend="claude"
+        )
 
     # Verify config was saved to in-memory installation
     assert erk_installation.config_exists()
@@ -339,7 +341,7 @@ model = "opus"
 def test_save_config_with_interactive_claude(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that RealErkInstallation correctly saves [interactive-claude] section."""
+    """Test that RealErkInstallation correctly saves [interactive-agent] section."""
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
 
     erk_dir = tmp_path / ".erk"
@@ -366,7 +368,7 @@ def test_save_config_with_interactive_claude(
 
     # Verify file content
     content = (erk_dir / "config.toml").read_text(encoding="utf-8")
-    assert "[interactive-claude]" in content
+    assert "[interactive-agent]" in content
     assert 'model = "claude-opus-4-5"' in content
     assert "verbose = true" in content
     assert 'permission_mode = "plan"' in content
@@ -377,7 +379,7 @@ def test_save_config_with_interactive_claude(
 def test_save_config_interactive_claude_defaults_not_written(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that default interactive_claude values are not written to file."""
+    """Test that default interactive_agent values are not written to file."""
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
 
     erk_dir = tmp_path / ".erk"
@@ -395,15 +397,15 @@ def test_save_config_interactive_claude_defaults_not_written(
     )
     installation.save_config(config)
 
-    # Verify file content does NOT contain [interactive-claude] section
+    # Verify file content does NOT contain [interactive-agent] section
     content = (erk_dir / "config.toml").read_text(encoding="utf-8")
-    assert "[interactive-claude]" not in content
+    assert "[interactive-agent]" not in content
 
 
 def test_save_config_interactive_claude_partial_non_defaults(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that only non-default interactive_claude values are written."""
+    """Test that only non-default interactive_agent values are written."""
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
 
     erk_dir = tmp_path / ".erk"
@@ -430,12 +432,12 @@ def test_save_config_interactive_claude_partial_non_defaults(
 
     # Verify file content
     content = (erk_dir / "config.toml").read_text(encoding="utf-8")
-    assert "[interactive-claude]" in content
+    assert "[interactive-agent]" in content
     assert 'model = "opus"' in content
-    # Defaults should not be written (check exact patterns within [interactive-claude])
+    # Defaults should not be written (check exact patterns within [interactive-agent])
     assert "verbose =" not in content
     assert "permission_mode =" not in content
-    # Check that "dangerous =" is not in [interactive-claude] section
+    # Check that "dangerous =" is not in [interactive-agent] section
     # (note: "requires_dangerous_flag" is a different field that exists elsewhere)
     assert "\ndangerous =" not in content
     assert "allow_dangerous =" not in content

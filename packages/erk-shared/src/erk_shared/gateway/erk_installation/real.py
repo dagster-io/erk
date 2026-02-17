@@ -141,12 +141,15 @@ class RealErkInstallation(ErkInstallation):
         doc["prompt_learn_on_land"] = config.prompt_learn_on_land
         doc["shell_integration"] = config.shell_integration
 
-        # Add [interactive-claude] section if any non-default values are set
+        # Add [interactive-agent] section if any non-default values are set
         ic = config.interactive_agent
         ic_default = InteractiveAgentConfig.default()
         ic_table = tomlkit.table()
         has_ic_values = False
 
+        if ic.backend != ic_default.backend:
+            ic_table["backend"] = ic.backend
+            has_ic_values = True
         if ic.model is not None:
             ic_table["model"] = ic.model
             has_ic_values = True
@@ -165,7 +168,7 @@ class RealErkInstallation(ErkInstallation):
 
         if has_ic_values:
             doc.add(tomlkit.nl())
-            doc["interactive-claude"] = ic_table
+            doc["interactive-agent"] = ic_table
 
         try:
             config_path.write_text(tomlkit.dumps(doc), encoding="utf-8")

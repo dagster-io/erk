@@ -35,7 +35,7 @@ from erk.core.repo_discovery import (
     discover_repo_or_sentinel,
     ensure_erk_metadata_dir,
 )
-from erk_shared.context.types import GlobalConfig
+from erk_shared.context.types import AgentBackend, GlobalConfig, InteractiveAgentConfig
 from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.issues.abc import GitHubIssues
@@ -112,20 +112,33 @@ def detect_graphite(shell_ops: Shell) -> bool:
     return shell_ops.get_installed_tool_path("gt") is not None
 
 
+def detect_installed_backends(shell_ops: Shell) -> list[AgentBackend]:
+    """Detect which agent backends are installed and available in PATH."""
+    backends: list[AgentBackend] = []
+    if shell_ops.get_installed_tool_path("claude") is not None:
+        backends.append("claude")
+    if shell_ops.get_installed_tool_path("codex") is not None:
+        backends.append("codex")
+    return backends
+
+
 def create_and_save_global_config(
     ctx: ErkContext,
     erk_root: Path,
     *,
     shell_setup_complete: bool,
+    backend: AgentBackend,
 ) -> GlobalConfig:
     """Create and save global config, returning the created config."""
     use_graphite = detect_graphite(ctx.shell)
+    agent_config = dataclasses.replace(InteractiveAgentConfig.default(), backend=backend)
     config = GlobalConfig(
         erk_root=erk_root,
         use_graphite=use_graphite,
         shell_setup_complete=shell_setup_complete,
         github_planning=True,
         prompt_learn_on_land=True,
+        interactive_agent=agent_config,
     )
     ctx.erk_installation.save_config(config)
     return config
@@ -481,7 +494,25 @@ def run_init(
         default_erk_root = Path.home() / ".erk"
         erk_root = click.prompt("  .erk folder", type=Path, default=str(default_erk_root))
         erk_root = erk_root.expanduser().resolve()
-        config = create_and_save_global_config(ctx, erk_root, shell_setup_complete=False)
+
+        # Detect and display agent backends
+        installed_backends = detect_installed_backends(ctx.shell)
+
+        if len(installed_backends) == 0:
+            user_output("  No agent backends detected (claude, codex)")
+            user_output("  Defaulting to claude")
+        else:
+            for b in installed_backends:
+                tool_path = ctx.shell.get_installed_tool_path(b)
+                user_output(f"  Detected: {b} ({tool_path})")
+
+        backend: AgentBackend = "claude"
+        user_output(f"  Backend: {backend}")
+        user_output("  Switch later: erk config set interactive_claude.backend <name>")
+
+        config = create_and_save_global_config(
+            ctx, erk_root, shell_setup_complete=False, backend=backend
+        )
         # Update context with newly created config
         ctx = dataclasses.replace(ctx, global_config=config)
         user_output(f"  Created global config at {config_path}")
