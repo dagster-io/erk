@@ -1409,7 +1409,12 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
         )
 
 
-def check_managed_artifacts(repo_root: Path) -> CheckResult:
+def check_managed_artifacts(
+    repo_root: Path,
+    *,
+    package: ErkPackageInfo,
+    installed_capabilities: frozenset[str] | None,
+) -> CheckResult:
     """Check status of erk-managed artifacts.
 
     Shows a summary of artifact status by type (skills, commands, agents, etc.)
@@ -1417,12 +1422,12 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
 
     Args:
         repo_root: Path to the repository root
+        package: Package info for the repository
+        installed_capabilities: Installed capabilities for filtering, or None for erk repo
 
     Returns:
         CheckResult with artifact health status
     """
-    package = ErkPackageInfo.from_project_dir(repo_root)
-
     # Check for .claude/ directory
     claude_dir = repo_root / ".claude"
     if not claude_dir.exists():
@@ -1435,13 +1440,6 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
     # Load saved artifact state
     state = load_artifact_state(repo_root)
     saved_files: dict[str, ArtifactFileState] = dict(state.files) if state else {}
-
-    # Load installed capabilities for filtering
-    # In erk repo, use None to check all artifacts (they're all from source)
-    # In external repos, only check artifacts for installed capabilities
-    installed_capabilities: frozenset[str] | None = None
-    if not package.in_erk_repo:
-        installed_capabilities = load_installed_capabilities(repo_root)
 
     # Get artifact health
     result = get_artifact_health(
@@ -1532,7 +1530,17 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         # Anthropic API secret check (required for Claude in GitHub Actions)
         results.append(check_anthropic_api_secret(ctx, repo_root, admin))
         # Managed artifacts check (consolidated from orphaned + missing)
-        results.append(check_managed_artifacts(repo_root))
+        package = ErkPackageInfo.from_project_dir(repo_root)
+        managed_capabilities: frozenset[str] | None = None
+        if not package.in_erk_repo:
+            managed_capabilities = load_installed_capabilities(repo_root)
+        results.append(
+            check_managed_artifacts(
+                repo_root,
+                package=package,
+                installed_capabilities=managed_capabilities,
+            )
+        )
 
         # Check plans_repo labels if configured
         from erk.cli.config import load_config as load_repo_config
