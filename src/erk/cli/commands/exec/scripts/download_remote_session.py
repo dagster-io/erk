@@ -27,6 +27,7 @@ import json
 import shutil
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
 
 import click
@@ -78,7 +79,18 @@ def _get_remote_sessions_dir(repo_root: Path, session_id: str) -> Path:
     return remote_sessions_dir
 
 
-def _download_from_gist(gist_url: str, session_dir: Path) -> Path | str:
+def _real_url_fetch(url: str) -> bytes:
+    """Production URL fetcher using urllib."""
+    with urllib.request.urlopen(url) as response:
+        return response.read()
+
+
+def _download_from_gist(
+    gist_url: str,
+    session_dir: Path,
+    *,
+    url_fetcher: Callable[[str], bytes],
+) -> Path | str:
     """Download session content from a gist URL.
 
     Handles both webpage URLs (gist.github.com) and raw URLs (gist.githubusercontent.com).
@@ -86,19 +98,59 @@ def _download_from_gist(gist_url: str, session_dir: Path) -> Path | str:
     Args:
         gist_url: Gist URL (webpage or raw).
         session_dir: Directory to save the session file in.
+        url_fetcher: Callable that fetches URL content as bytes.
 
     Returns:
         Path to the downloaded session file on success, error message string on failure.
     """
     normalized_url = normalize_gist_url(gist_url)
     try:
-        with urllib.request.urlopen(normalized_url) as response:
-            content = response.read()
+        content = url_fetcher(normalized_url)
         session_file = session_dir / "session.jsonl"
         session_file.write_bytes(content)
         return session_file
     except urllib.error.URLError as e:
         return f"Failed to download from gist URL: {e}"
+
+
+def _execute_download(
+    *,
+    repo_root: Path,
+    gist_url: str,
+    session_id: str,
+    url_fetcher: Callable[[str], bytes],
+) -> tuple[int, dict[str, object]]:
+    """Core download logic.
+
+    Args:
+        repo_root: Repository root path.
+        gist_url: Gist URL (webpage or raw).
+        session_id: Claude session ID.
+        url_fetcher: Callable that fetches URL content as bytes.
+
+    Returns:
+        Tuple of (exit_code, output_dict).
+    """
+    session_dir = _get_remote_sessions_dir(repo_root, session_id)
+
+    # Clean up existing directory contents for idempotent re-downloads
+    if session_dir.exists():
+        for item in session_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
+
+    result = _download_from_gist(gist_url, session_dir, url_fetcher=url_fetcher)
+    if isinstance(result, str):
+        return 1, {"success": False, "error": result}
+
+    return 0, {
+        "success": True,
+        "session_id": session_id,
+        "path": str(result),
+        "source": "gist",
+    }
 
 
 @click.command(name="download-remote-session")
@@ -129,34 +181,12 @@ def download_remote_session(
     3. Returns path to the session file
     """
     repo_root = require_repo_root(ctx)
-
-    # Get or create the remote sessions directory
-    session_dir = _get_remote_sessions_dir(repo_root, session_id)
-
-    # Clean up existing directory contents for idempotent re-downloads
-    if session_dir.exists():
-        for item in session_dir.iterdir():
-            if item.is_file():
-                item.unlink()
-            elif item.is_dir():
-                shutil.rmtree(item)
-
-    # Download from gist
-    result = _download_from_gist(gist_url, session_dir)
-    if isinstance(result, str):
-        # Error case - result is error message
-        error_output = {
-            "success": False,
-            "error": result,
-        }
-        click.echo(json.dumps(error_output))
-        raise SystemExit(1)
-
-    # Success case
-    output: dict[str, object] = {
-        "success": True,
-        "session_id": session_id,
-        "path": str(result),
-        "source": "gist",
-    }
+    exit_code, output = _execute_download(
+        repo_root=repo_root,
+        gist_url=gist_url,
+        session_id=session_id,
+        url_fetcher=_real_url_fetch,
+    )
     click.echo(json.dumps(output))
+    if exit_code != 0:
+        raise SystemExit(exit_code)
