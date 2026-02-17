@@ -110,6 +110,18 @@ EOF
 
 After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
 
+### Inspecting an Objective
+
+View an objective's dependency graph and next step:
+
+```bash
+# CLI
+erk objective inspect <issue-number>
+
+# Slash command (in-session)
+/erk:objective-inspect <issue-number>
+```
+
 ### Spawning an Erk-Plan
 
 To implement a specific roadmap step, create an erk-plan that references the objective:
@@ -121,10 +133,11 @@ erk plan create --title "Implement [step description]" --body "Part of Objective
 ## Workflow Summary
 
 1. **Create objective** - When starting multi-plan work
-2. **Log actions** - After completing each significant piece of work
-3. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
-4. **Spawn erk-plans** - For individual implementation steps
-5. **Close** - When goal achieved or abandoned (proactively ask when all steps done)
+2. **Inspect progress** - View dependency graph and next step
+3. **Log actions** - After completing each significant piece of work
+4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
+5. **Spawn erk-plans** - For individual implementation steps
+6. **Close** - When goal achieved or abandoned (proactively ask when all steps done)
 
 ## Resources
 
