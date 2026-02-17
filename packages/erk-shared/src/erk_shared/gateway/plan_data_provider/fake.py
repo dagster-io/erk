@@ -48,6 +48,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
         self._fetch_error = fetch_error
         self._plan_content_by_issue: dict[int, str] = {}
+        self._objective_content_by_issue: dict[int, str] = {}
 
     @property
     def repo_root(self) -> Path:
@@ -159,6 +160,29 @@ class FakePlanDataProvider(PlanDataProvider):
             content: The plan content to return
         """
         self._plan_content_by_issue[issue_number] = content
+
+    def fetch_objective_content(self, issue_number: int, issue_body: str) -> str | None:
+        """Fake objective content fetch implementation.
+
+        Returns the objective_content if configured, otherwise None.
+
+        Args:
+            issue_number: The GitHub issue number
+            issue_body: The issue body (unused in fake)
+
+        Returns:
+            The configured objective content for this issue, or None
+        """
+        return self._objective_content_by_issue.get(issue_number)
+
+    def set_objective_content(self, issue_number: int, content: str) -> None:
+        """Set the objective content to return for a specific issue.
+
+        Args:
+            issue_number: The GitHub issue number
+            content: The objective content to return
+        """
+        self._objective_content_by_issue[issue_number] = content
 
 
 def make_plan_row(

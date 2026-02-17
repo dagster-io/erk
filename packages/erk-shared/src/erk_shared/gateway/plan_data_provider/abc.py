@@ -108,3 +108,16 @@ class PlanDataProvider(ABC):
             The extracted plan content, or None if not found
         """
         ...
+
+    @abstractmethod
+    def fetch_objective_content(self, issue_number: int, issue_body: str) -> str | None:
+        """Fetch objective content from the first comment of an issue.
+
+        Args:
+            issue_number: The GitHub issue number
+            issue_body: The issue body (to extract objective_comment_id from metadata)
+
+        Returns:
+            The extracted objective content, or None if not found
+        """
+        ...

@@ -20,6 +20,10 @@ from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
+from erk_shared.gateway.github.metadata.core import (
+    extract_objective_from_comment,
+    extract_objective_header_comment_id,
+)
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
@@ -361,6 +365,32 @@ class RealPlanDataProvider(PlanDataProvider):
 
         # Extract plan content from comment
         return extract_plan_from_comment(comment_body)
+
+    def fetch_objective_content(self, issue_number: int, issue_body: str) -> str | None:
+        """Fetch objective content from the first comment of an issue.
+
+        Uses the objective_comment_id from the issue body metadata to fetch
+        the specific comment containing the objective content.
+
+        Args:
+            issue_number: The GitHub issue number
+            issue_body: The issue body (to extract objective_comment_id from metadata)
+
+        Returns:
+            The extracted objective content, or None if not found
+        """
+        comment_id = extract_objective_header_comment_id(issue_body)
+        if comment_id is None:
+            return None
+
+        owner = self._location.repo_id.owner
+        repo = self._location.repo_id.repo
+        endpoint = f"repos/{owner}/{repo}/issues/comments/{comment_id}"
+
+        response = self._http_client.get(endpoint)
+        comment_body = response.get("body", "")
+
+        return extract_objective_from_comment(comment_body)
 
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of issue number to (worktree name, branch).

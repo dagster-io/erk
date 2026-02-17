@@ -740,6 +740,45 @@ def format_objective_content_comment(content: str) -> str:
     return render_objective_body_block(marked_content)
 
 
+def extract_objective_header_comment_id(issue_body: str) -> int | None:
+    """Extract objective_comment_id from objective-header block.
+
+    Args:
+        issue_body: Issue body containing objective-header block
+
+    Returns:
+        objective_comment_id if found, None if block is missing or field is unset
+    """
+    block = find_metadata_block(issue_body, "objective-header")
+    if block is None:
+        return None
+
+    return block.data.get("objective_comment_id")
+
+
+def extract_objective_from_comment(comment_body: str) -> str | None:
+    """Extract objective content from a comment with objective-body metadata block.
+
+    Args:
+        comment_body: Comment body potentially containing objective content
+
+    Returns:
+        Extracted objective content, or None if markers not found
+    """
+    raw_blocks = extract_raw_metadata_blocks(comment_body)
+    for block in raw_blocks:
+        if block.key == "objective-body":
+            # Extract content from <details> structure
+            # The objective-body block uses <strong> tags in summary (not <code>)
+            # Accept both <details> and <details open>
+            pattern = r"<details(?:\s+open)?>\s*<summary>.*?</summary>\s*(.*?)\s*</details>"
+            match = re.search(pattern, block.body, re.DOTALL)
+            if match:
+                return match.group(1).strip()
+
+    return None
+
+
 def update_objective_header_comment_id(
     issue_body: str,
     comment_id: int,

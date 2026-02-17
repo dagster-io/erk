@@ -546,17 +546,19 @@ class ErkDashApp(App):
         )
 
     def action_view_issue_body(self) -> None:
-        """Display the plan content in a modal (fetched on-demand)."""
+        """Display the plan/objective content in a modal (fetched on-demand)."""
         row = self._get_selected_row()
         if row is None:
             return
-        # Push screen that will fetch plan content on-demand
+        content_type = "Objective" if self._view_mode == ViewMode.OBJECTIVES else "Plan"
+        # Push screen that will fetch content on-demand
         self.push_screen(
             IssueBodyScreen(
                 provider=self._provider,
                 issue_number=row.issue_number,
                 issue_body=row.issue_body,
                 full_title=row.full_title,
+                content_type=content_type,
             )
         )
 

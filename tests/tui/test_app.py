@@ -1605,6 +1605,43 @@ class TestIssueBodyScreen:
             content_widget = body_screen.query_one("#body-content", Markdown)
             assert content_widget is not None
 
+    @pytest.mark.asyncio
+    async def test_objective_view_shows_objective_header_and_fetches_content(self) -> None:
+        """In Objectives view, IssueBodyScreen fetches objective content."""
+        objective_content = "# Roadmap\n\n- Step 1\n- Step 2"
+        objective_plans = [
+            make_plan_row(100, "My Objective", issue_body="objective metadata"),
+        ]
+        provider = FakePlanDataProvider(
+            plans_by_labels={("erk-objective",): objective_plans},
+        )
+        provider.set_objective_content(100, objective_content)
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Switch to Objectives view
+            await pilot.press("3")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert app._view_mode == ViewMode.OBJECTIVES
+
+            # Press 'v' to view content
+            await pilot.press("v")
+            await pilot.pause()
+            await pilot.pause(0.3)
+
+            body_screen = app.screen_stack[-1]
+            assert isinstance(body_screen, IssueBodyScreen)
+            # Should use "Objective" content type
+            assert body_screen._content_type == "Objective"
+            assert body_screen._content == objective_content
+            assert body_screen._loading is False
+
 
 class TestBuildGithubUrl:
     """Tests for _build_github_url helper function."""
