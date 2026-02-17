@@ -17,6 +17,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
 
 _TERMINAL_STATUSES: set[RoadmapStepStatus] = {"done", "skipped"}
 
+
 @dataclass(frozen=True)
 class ObjectiveNode:
     """A node in the objective dependency graph."""
