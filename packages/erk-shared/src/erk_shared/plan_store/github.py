@@ -22,7 +22,6 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
-    extract_plan_header_objective_issue,
     format_plan_content_comment,
 )
 from erk_shared.gateway.github.metadata.schemas import (
@@ -605,8 +604,17 @@ class GitHubPlanStore(PlanBackend):
         # Use provided plan_body or fall back to issue body
         body = plan_body if plan_body is not None else issue_info.body
 
-        # Extract objective_issue from plan-header metadata
-        objective_id = extract_plan_header_objective_issue(issue_info.body)
+        # Parse plan-header block once for header_fields and objective_id
+        header_fields: dict[str, object] = {}
+        block = find_metadata_block(issue_info.body, "plan-header")
+        if block is not None:
+            header_fields = dict(block.data)
+
+        # Extract objective_id from parsed header (no second parse needed)
+        objective_id: int | None = None
+        raw_objective = header_fields.get(OBJECTIVE_ISSUE)
+        if isinstance(raw_objective, int):
+            objective_id = raw_objective
 
         return Plan(
             plan_identifier=str(issue_info.number),
@@ -620,4 +628,5 @@ class GitHubPlanStore(PlanBackend):
             updated_at=issue_info.updated_at.astimezone(UTC),
             metadata=metadata,
             objective_id=objective_id,
+            header_fields=header_fields,
         )

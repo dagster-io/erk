@@ -9,6 +9,7 @@ from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
@@ -19,6 +20,14 @@ from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.context import create_test_context
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+
+
+def _parse_header_fields(body: str) -> dict[str, object]:
+    """Parse header_fields from a plan body for test Plan construction."""
+    block = find_metadata_block(body, "plan-header")
+    if block is None:
+        return {}
+    return dict(block.data)
 
 
 def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
@@ -769,6 +778,7 @@ class TestLearnStatusDisplay:
             updated_at=datetime.now(UTC),
             metadata={},
             objective_id=None,
+            header_fields=_parse_header_fields(plan_body),
         )
 
         row = provider._build_row_data(
@@ -836,6 +846,7 @@ class TestLearnStatusDisplay:
             updated_at=datetime.now(UTC),
             metadata={},
             objective_id=None,
+            header_fields=_parse_header_fields(plan_body),
         )
 
         row = provider._build_row_data(
@@ -905,6 +916,7 @@ class TestLearnStatusDisplay:
             updated_at=datetime.now(UTC),
             metadata={},
             objective_id=None,
+            header_fields=_parse_header_fields(plan_body),
         )
 
         row = provider._build_row_data(
@@ -976,6 +988,7 @@ class TestLearnStatusDisplay:
             updated_at=datetime.now(UTC),
             metadata={},
             objective_id=None,
+            header_fields=_parse_header_fields(plan_body),
         )
 
         row = provider._build_row_data(
@@ -1047,6 +1060,7 @@ class TestLearnStatusDisplay:
             updated_at=datetime(2024, 1, 1, tzinfo=UTC),
             metadata={},
             objective_id=None,
+            header_fields=_parse_header_fields(plan_body),
         )
 
         # Learn issue 456 is closed
@@ -1120,6 +1134,7 @@ class TestLearnStatusDisplay:
             updated_at=datetime(2024, 1, 1, tzinfo=UTC),
             metadata={},
             objective_id=None,
+            header_fields=_parse_header_fields(plan_body),
         )
 
         # Learn issue 456 is open
