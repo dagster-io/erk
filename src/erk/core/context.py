@@ -79,6 +79,30 @@ from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
 
 
+def create_prompt_executor(
+    *,
+    global_config: GlobalConfig | None,
+    console: Console,
+) -> PromptExecutor:
+    """Select prompt executor based on global configuration.
+
+    Returns CodexPromptExecutor when backend is "codex", otherwise
+    ClaudePromptExecutor (the default).
+
+    Args:
+        global_config: Global configuration, or None if not yet initialized.
+        console: Console gateway for TTY detection.
+
+    Returns:
+        PromptExecutor implementation matching the configured backend.
+    """
+    if global_config is not None and global_config.interactive_agent.backend == "codex":
+        from erk.core.codex_prompt_executor import CodexPromptExecutor
+
+        return CodexPromptExecutor(console=console)
+    return ClaudePromptExecutor(console=console)
+
+
 def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     """Create minimal context with only git configured, rest are test defaults.
 
@@ -596,7 +620,10 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     real_agent_docs: AgentDocs = RealAgentDocs()
     if dry_run:
         real_agent_docs = DryRunAgentDocs(real_agent_docs)
-    prompt_executor: PromptExecutor = ClaudePromptExecutor(console=console)
+    prompt_executor = create_prompt_executor(
+        global_config=global_config,
+        console=console,
+    )
 
     # 11. Create package info
     from erk.artifacts.paths import ErkPackageInfo

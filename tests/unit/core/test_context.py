@@ -4,7 +4,16 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from erk.core.context import context_for_test, create_context, regenerate_context
+from erk.core.codex_prompt_executor import CodexPromptExecutor
+from erk.core.context import (
+    context_for_test,
+    create_context,
+    create_prompt_executor,
+    regenerate_context,
+)
+from erk.core.prompt_executor import ClaudePromptExecutor
+from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
+from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.git.fake import FakeGit
 
 
@@ -72,6 +81,60 @@ def test_create_context_detects_deleted_directory(tmp_path: Path) -> None:
     finally:
         # Cleanup: restore original directory
         os.chdir(original_cwd)
+
+
+def _test_console() -> FakeConsole:
+    return FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=None,
+    )
+
+
+def test_create_prompt_executor_selects_codex_when_backend_is_codex() -> None:
+    """Backend selection returns CodexPromptExecutor when config says codex."""
+    config = GlobalConfig.test(
+        Path("/test/erks"),
+        interactive_agent=InteractiveAgentConfig(
+            backend="codex",
+            model=None,
+            verbose=False,
+            permission_mode="edits",
+            dangerous=False,
+            allow_dangerous=False,
+        ),
+    )
+
+    executor = create_prompt_executor(global_config=config, console=_test_console())
+
+    assert isinstance(executor, CodexPromptExecutor)
+
+
+def test_create_prompt_executor_selects_claude_when_backend_is_claude() -> None:
+    """Backend selection returns ClaudePromptExecutor when config says claude."""
+    config = GlobalConfig.test(
+        Path("/test/erks"),
+        interactive_agent=InteractiveAgentConfig(
+            backend="claude",
+            model=None,
+            verbose=False,
+            permission_mode="edits",
+            dangerous=False,
+            allow_dangerous=False,
+        ),
+    )
+
+    executor = create_prompt_executor(global_config=config, console=_test_console())
+
+    assert isinstance(executor, ClaudePromptExecutor)
+
+
+def test_create_prompt_executor_defaults_to_claude_when_config_is_none() -> None:
+    """Backend selection defaults to ClaudePromptExecutor when global_config is None."""
+    executor = create_prompt_executor(global_config=None, console=_test_console())
+
+    assert isinstance(executor, ClaudePromptExecutor)
 
 
 def test_regenerate_context_detects_deleted_directory(tmp_path: Path) -> None:

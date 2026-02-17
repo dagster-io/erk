@@ -50,6 +50,51 @@ def permission_mode_to_claude(permission_mode: PermissionMode) -> ClaudePermissi
     raise ValueError(f"Unknown permission_mode: {permission_mode}")
 
 
+# Codex mode: exec (headless) vs tui (interactive)
+CodexMode = Literal["exec", "tui"]
+
+# Codex exec mode: approval is hardcoded to Never, so only sandbox flags matter.
+# Codex TUI mode: both sandbox and approval flags are needed.
+# See docs/learned/integrations/codex/codex-cli-reference.md for rationale.
+_PERMISSION_MODE_TO_CODEX_EXEC: dict[PermissionMode, list[str]] = {
+    "safe": ["--sandbox", "read-only"],
+    "edits": ["--full-auto"],
+    "plan": ["--sandbox", "read-only"],
+    "dangerous": ["--yolo"],
+}
+
+_PERMISSION_MODE_TO_CODEX_TUI: dict[PermissionMode, list[str]] = {
+    "safe": ["--sandbox", "read-only", "-a", "untrusted"],
+    "edits": ["--sandbox", "workspace-write", "-a", "on-request"],
+    "plan": ["--sandbox", "read-only", "-a", "never"],
+    "dangerous": ["--yolo"],
+}
+
+
+def permission_mode_to_codex(
+    permission_mode: PermissionMode,
+    *,
+    mode: CodexMode,
+) -> list[str]:
+    """Map generic permission mode to Codex CLI flags.
+
+    Unlike Claude's single permission mode string, Codex decomposes into
+    multiple flags (--sandbox, -a, --full-auto, --yolo) and the mapping
+    differs between exec and TUI modes.
+
+    Args:
+        permission_mode: Generic erk permission mode.
+        mode: Whether building flags for exec (headless) or tui (interactive).
+
+    Returns:
+        List of CLI flag strings to pass to the codex command.
+    """
+    lookup = _PERMISSION_MODE_TO_CODEX_EXEC if mode == "exec" else _PERMISSION_MODE_TO_CODEX_TUI
+    if permission_mode in lookup:
+        return lookup[permission_mode]
+    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+
+
 @dataclass(frozen=True)
 class RepoContext:
     """Represents a git repo root and its managed worktrees directory.
