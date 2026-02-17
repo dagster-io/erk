@@ -718,17 +718,18 @@ def execute_stack_navigation(
                 trunk_branch=ctx.trunk_branch,
             )
             is_root = target_name == "root"
-            # Can't navigate further down from root
-            if is_root and step < count - 1:
-                user_output(
-                    click.style("Warning: ", fg="yellow")
-                    + f"Reached root after {step + 1} step(s) (requested {count})"
-                )
-                break
 
         # Track if any step created a worktree
         if step_created:
             was_created = True
+
+        # Can't navigate further down from root
+        if is_root and step < count - 1:
+            user_output(
+                click.style("Warning: ", fg="yellow")
+                + f"Reached root after {step + 1} step(s) (requested {count})"
+            )
+            break
 
     # Show creation message if worktree was just created
     if was_created and not script:
