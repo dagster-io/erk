@@ -37,7 +37,10 @@ Tests that verify fake implementations work correctly:
 ❌ Tests that USE fakes to test production code
 → Go in `tests/commands/` or `tests/core/`
 
-❌ Tests of real implementations with subprocess/filesystem
+❌ Tests of Real\* implementations (command construction, output parsing)
+→ Go in `tests/real/`
+
+❌ Tests with real subprocess/filesystem I/O
 → Go in `tests/integration/`
 
 ## Testing Pattern
