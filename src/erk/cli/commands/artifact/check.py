@@ -16,7 +16,6 @@ from erk.artifacts.models import InstalledArtifact
 from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.staleness import check_staleness
 from erk.artifacts.state import load_artifact_state
-from erk_shared.context.context import ErkContext
 
 
 def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
@@ -212,10 +211,7 @@ def check_cmd(ctx: click.Context, verbose: int) -> None:
       erk artifact check -vv
     """
     project_dir = Path.cwd()
-    if isinstance(ctx.obj, ErkContext) and ctx.obj.package_info is not None:
-        package = ctx.obj.package_info
-    else:
-        package = ErkPackageInfo.from_project_dir(project_dir)
+    package = ctx.obj.package_info
 
     staleness_result = check_staleness(project_dir, package=package)
     orphan_result = find_orphaned_artifacts(project_dir, package=package)
