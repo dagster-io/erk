@@ -171,8 +171,9 @@ def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_number:
     Returns:
         Parent plan's branch_name if found, None otherwise
     """
-    plan_id = str(issue_number)
-    learned_from = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learned_from_issue")
+    learned_from = ctx.plan_backend.get_metadata_field(
+        repo_root, str(issue_number), "learned_from_issue"
+    )
     if isinstance(learned_from, PlanNotFound) or learned_from is None:
         return None
 
@@ -371,7 +372,7 @@ def _validate_issue_for_submit(
     objective_id: int | None = None
     if isinstance(objective_id_raw, int):
         objective_id = objective_id_raw
-    elif isinstance(objective_id_raw, str):
+    elif isinstance(objective_id_raw, str) and objective_id_raw.isdigit():
         objective_id = int(objective_id_raw)
     new_branch_name = generate_issue_branch_name(
         issue_number, issue.title, ctx.time.now(), objective_id=objective_id

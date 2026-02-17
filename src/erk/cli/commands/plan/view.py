@@ -267,7 +267,10 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
 
     # Extract header info via plan_backend for branch display and later header section
     all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, str(issue_number))
-    header_info: dict[str, object] = {} if isinstance(all_meta, PlanNotFound) else all_meta
+    if isinstance(all_meta, PlanNotFound):
+        header_info: dict[str, object] = {}
+    else:
+        header_info = all_meta
 
     # Display plan details with consistent formatting
     user_output("")
