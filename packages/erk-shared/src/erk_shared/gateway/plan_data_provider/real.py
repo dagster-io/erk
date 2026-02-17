@@ -155,9 +155,7 @@ class RealPlanDataProvider(PlanDataProvider):
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
 
         for plan in plans:
-            issue_number = plan.metadata.get("number")
-            if not isinstance(issue_number, int):
-                continue
+            issue_number = int(plan.plan_identifier)
 
             # Get workflow run for filtering
             workflow_run = plan_data.workflow_runs.get(issue_number)

@@ -6,6 +6,7 @@ Schema Version 2:
 - Plan content is always fetched fresh (no caching)
 """
 
+import dataclasses
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -117,7 +118,7 @@ class GitHubPlanStore(PlanBackend):
         if isinstance(issue, IssueNotFound):
             return PlanNotFound(plan_id=plan_id)
         plan_body = self._get_plan_body(repo_root, issue)
-        return self._convert_to_plan(issue, plan_body)
+        return self._convert_to_plan(issue, plan_body=plan_body)
 
     def _fetch_comment_with_retry(
         self,
@@ -282,7 +283,7 @@ class GitHubPlanStore(PlanBackend):
             limit=query.limit,
         )
 
-        return [self._convert_to_plan(issue) for issue in issues]
+        return [self._convert_to_plan(issue, plan_body=None) for issue in issues]
 
     def get_provider_name(self) -> str:
         """Get the provider name.
@@ -581,7 +582,7 @@ class GitHubPlanStore(PlanBackend):
         )
         raise RuntimeError(msg)
 
-    def _convert_to_plan(self, issue_info: IssueInfo, plan_body: str | None = None) -> Plan:
+    def _convert_to_plan(self, issue_info: IssueInfo, *, plan_body: str | None) -> Plan:
         """Convert IssueInfo to Plan.
 
         Args:
@@ -596,18 +597,6 @@ class GitHubPlanStore(PlanBackend):
 
         # For get_plan(), overlay the plan body from comment
         if plan_body is not None:
-            plan = Plan(
-                plan_identifier=plan.plan_identifier,
-                title=plan.title,
-                body=plan_body,
-                state=plan.state,
-                url=plan.url,
-                labels=plan.labels,
-                assignees=plan.assignees,
-                created_at=plan.created_at,
-                updated_at=plan.updated_at,
-                metadata=plan.metadata,
-                objective_id=plan.objective_id,
-            )
+            plan = dataclasses.replace(plan, body=plan_body)
 
         return plan
