@@ -623,6 +623,7 @@ def execute_stack_navigation(
     *,
     ctx: ErkContext,
     direction: Literal["up", "down"],
+    count: int,
     script: bool,
     delete_current: bool,
     force: bool,
@@ -633,14 +634,15 @@ def execute_stack_navigation(
     the logic from up.py and down.py into a single function.
 
     Phases:
-    1. Validate preconditions (gh authenticated)
-    2. Resolve navigation target (direction-specific)
+    1. Validate preconditions (gh authenticated, count >= 1)
+    2. Resolve navigation target (direction-specific, N steps)
     3. If delete_current: validate + prepare deferred deletion commands
     4. Activate target (script or interactive mode)
 
     Args:
         ctx: Erk context
         direction: Navigation direction ("up" or "down")
+        count: Number of levels to navigate (must be >= 1)
         script: Whether to output script path for shell integration
         delete_current: If True, delete current branch/worktree after navigation
         force: If True, prompts instead of blocking on validation failures
@@ -651,6 +653,11 @@ def execute_stack_navigation(
     from erk.cli.core import discover_repo_context
 
     # Validate preconditions upfront (LBYL)
+    Ensure.invariant(count >= 1, "Count must be at least 1")
+    Ensure.invariant(
+        not (delete_current and count > 1),
+        "Cannot use --delete-current with count > 1",
+    )
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -694,19 +701,34 @@ def execute_stack_navigation(
             force=force,
         )
 
-    # Resolve navigation target (direction-specific)
-    if direction == "up":
-        target_name, was_created = resolve_up_navigation(ctx, repo, current_branch, worktrees)
-        is_root = False
-    else:  # direction == "down"
-        target_name, was_created = resolve_down_navigation(
-            ctx,
-            repo=repo,
-            current_branch=current_branch,
-            worktrees=worktrees,
-            trunk_branch=ctx.trunk_branch,
-        )
-        is_root = target_name == "root"
+    # Resolve navigation target by walking N steps in the given direction
+    target_name = current_branch
+    was_created = False
+    is_root = False
+
+    for step in range(count):
+        if direction == "up":
+            target_name, step_created = resolve_up_navigation(ctx, repo, target_name, worktrees)
+        else:  # direction == "down"
+            target_name, step_created = resolve_down_navigation(
+                ctx,
+                repo=repo,
+                current_branch=target_name,
+                worktrees=worktrees,
+                trunk_branch=ctx.trunk_branch,
+            )
+            is_root = target_name == "root"
+            # Can't navigate further down from root
+            if is_root and step < count - 1:
+                user_output(
+                    click.style("Warning: ", fg="yellow")
+                    + f"Reached root after {step + 1} step(s) (requested {count})"
+                )
+                break
+
+        # Track if any step created a worktree
+        if step_created:
+            was_created = True
 
     # Show creation message if worktree was just created
     if was_created and not script:

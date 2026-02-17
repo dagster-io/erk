@@ -1135,6 +1135,227 @@ def test_up_delete_current_success() -> None:
         assert "gt delete -f feature-1" in script_content
 
 
+def test_up_count_moves_multiple_levels() -> None:
+    """Test up command with count=2 moves two levels up the stack."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Set up 4-branch stack: main -> f1 -> f2 -> f3
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees(
+                "main", ["feature-1", "feature-2", "feature-3"], repo_dir=repo_dir
+            ),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch(
+                    "feature-2", "feature-1", children=["feature-3"], commit_sha="ghi789"
+                ),
+                "feature-3": BranchMetadata.branch("feature-3", "feature-2", commit_sha="jkl012"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        # Navigate up 2 levels from feature-1 to feature-3
+        result = runner.invoke(cli, ["up", "2", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(repo_dir / "worktrees" / "feature-3") in script_content
+
+
+def test_up_count_1_is_default_behavior() -> None:
+    """Test that up with count=1 behaves identically to plain up."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(cli, ["up", "1", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(repo_dir / "worktrees" / "feature-2") in script_content
+
+
+def test_up_count_zero_fails() -> None:
+    """Test that up with count=0 fails with validation error."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(cli, ["up", "0", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert_cli_error(result, 1, "Count must be at least 1")
+
+
+def test_up_count_exceeds_stack_fails() -> None:
+    """Test that up with count exceeding stack depth fails at the step with no children."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Stack: main -> f1 -> f2, starting at f1
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        # From f1, up 3 should fail (only 1 child level exists: f2 has no children)
+        result = runner.invoke(cli, ["up", "3", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert_cli_error(result, 1, "Already at the top of the stack")
+
+
+def test_up_count_with_delete_current_fails() -> None:
+    """Test that up with count > 1 and --delete-current fails."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees(
+                "main", ["feature-1", "feature-2", "feature-3"], repo_dir=repo_dir
+            ),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch(
+                    "feature-2", "feature-1", children=["feature-3"], commit_sha="ghi789"
+                ),
+                "feature-3": BranchMetadata.branch("feature-3", "feature-2", commit_sha="jkl012"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            cli, ["up", "2", "--delete-current", "--script"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert_cli_error(result, 1, "Cannot use --delete-current with count > 1")
+
+
 def test_up_delete_current_slot_aware_unassigns_slot() -> None:
     """Test --delete-current unassigns slot instead of removing worktree directory."""
     runner = CliRunner()
