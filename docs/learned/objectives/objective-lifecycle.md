@@ -175,7 +175,7 @@ Mutations update YAML frontmatter in the issue body (source of truth) and the ma
 | `objective-update-with-landed-pr`       | Full-body | After landing PR                              | Roadmap + prose sections         |
 | `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                  | Calls `update-roadmap-step`      |
 | `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                         | N/A (reads only)                 |
-| `objective_update_context.py`           | Read-only | Fetch context for updates                     | N/A (reads only)                 |
+| `objective_fetch_context.py`            | Read-only | Fetch context for updates                     | N/A (reads only)                 |
 
 ### Surgical Update: `update-roadmap-step`
 
@@ -387,12 +387,12 @@ All roadmap steps completed:
 
 These components read roadmap data but don't mutate:
 
-| Consumer                      | Purpose                         |
-| ----------------------------- | ------------------------------- |
-| `check_cmd.py`                | Validate objective structure    |
-| `objective_update_context.py` | Fetch objective/plan/PR context |
-| `objective_list.py`           | List all objectives             |
-| TUI viewers                   | Display objective state         |
+| Consumer                     | Purpose                         |
+| ---------------------------- | ------------------------------- |
+| `check_cmd.py`               | Validate objective structure    |
+| `objective_fetch_context.py` | Fetch objective/plan/PR context |
+| `objective_list.py`          | List all objectives             |
+| TUI viewers                  | Display objective state         |
 
 All read-only consumers use `parse_roadmap()` which reads v2 YAML frontmatter.
 
@@ -412,7 +412,7 @@ All read-only consumers use `parse_roadmap()` which reads v2 YAML frontmatter.
 | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` | Core parser: `parse_roadmap()` |
 | `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`              | Surgical PR cell update        |
 | `.claude/commands/erk/objective-update-with-landed-pr.md`               | Full-body update agent         |
-| `src/erk/cli/commands/exec/scripts/objective_update_context.py`         | Context fetch for updates      |
+| `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`          | Context fetch for updates      |
 | `src/erk/cli/commands/objective/check_cmd.py`                           | Objective validation           |
 
 ## See Also

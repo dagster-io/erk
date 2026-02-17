@@ -135,6 +135,7 @@ def test_valid_objective_json_output() -> None:
     assert output["summary"]["blocked"] == 1
     assert output["summary"]["skipped"] == 1
     assert output["next_step"]["id"] == "1.3"
+    assert output["all_complete"] is False
 
 
 def test_missing_objective_label_fails() -> None:
@@ -476,6 +477,7 @@ steps:
     assert output["summary"]["skipped"] == 1
     assert output["summary"]["pending"] == 0
     assert output["next_step"] is None
+    assert output["all_complete"] is True
 
 
 # --- v2 format integrity tests ---

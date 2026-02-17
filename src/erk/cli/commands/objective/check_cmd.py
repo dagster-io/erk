@@ -246,6 +246,10 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
         )
         raise SystemExit(1)
 
+    all_complete = all(
+        step.status in ("done", "skipped") for phase in result.phases for step in phase.steps
+    )
+
     click.echo(
         json.dumps(
             {
@@ -258,6 +262,7 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
                 "summary": result.summary,
                 "next_step": result.next_step,
                 "validation_errors": result.validation_errors,
+                "all_complete": all_complete,
             }
         )
     )
