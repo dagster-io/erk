@@ -11,6 +11,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 OBJECTIVE_BODY = """# Objective: Add caching
 
@@ -462,3 +463,85 @@ def test_implement_flags_require_one_shot() -> None:
         )
         assert result.exit_code == 1
         assert "--dry-run requires --one-shot" in result.output
+
+
+def _make_plan_issue(number: int, *, objective_issue: int) -> IssueInfo:
+    """Create a plan issue with objective metadata for branch inference tests."""
+    body = format_plan_header_body_for_test(objective_issue=objective_issue)
+    return IssueInfo(
+        number=number,
+        title="Plan: Setup infra",
+        body=body,
+        state="OPEN",
+        url=f"https://github.com/owner/repo/issues/{number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=NOW,
+        updated_at=NOW,
+        author="testuser",
+    )
+
+
+def test_implement_one_shot_next_with_issue_ref() -> None:
+    """Test --one-shot --next with explicit ISSUE_REF dispatches first pending node."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        issues = FakeGitHubIssues(
+            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
+        )
+        ctx = _build_one_shot_context(env, issues=issues)
+
+        result = runner.invoke(
+            cli,
+            ["objective", "implement", "42", "--one-shot", "--next"],
+            obj=ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        github = ctx.github
+        assert isinstance(github, FakeGitHub)
+        assert len(github.triggered_workflows) == 1
+        _workflow, inputs = github.triggered_workflows[0]
+        assert inputs["step_id"] == "1.1"
+        assert inputs["objective_issue"] == "42"
+
+
+def test_implement_one_shot_next_infers_from_branch() -> None:
+    """Test --one-shot --next without ISSUE_REF infers objective from branch."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Plan issue #100 linked to objective #42
+        plan_issue = _make_plan_issue(100, objective_issue=42)
+        objective_issue = _make_objective_issue(42, OBJECTIVE_BODY)
+        issues = FakeGitHubIssues(
+            issues={100: plan_issue, 42: objective_issue},
+        )
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "P100-setup-infra-01-15-1200"},
+        )
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+        result = runner.invoke(
+            cli,
+            ["objective", "implement", "--one-shot", "--next"],
+            obj=ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        assert isinstance(github, FakeGitHub)
+        assert len(github.triggered_workflows) == 1
+        _workflow, inputs = github.triggered_workflows[0]
+        assert inputs["step_id"] == "1.1"
+        assert inputs["objective_issue"] == "42"

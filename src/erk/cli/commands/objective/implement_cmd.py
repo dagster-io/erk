@@ -1,5 +1,6 @@
 """Create an implementation plan from an objective node."""
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
@@ -15,6 +16,7 @@ from erk.cli.commands.objective.check_cmd import (
     ObjectiveValidationSuccess,
     validate_objective,
 )
+from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
@@ -57,6 +59,82 @@ def _find_node_in_phases(
         if any(step.id == node_id for step in phase.steps):
             return node, phase.name
     return None
+
+
+@dataclass(frozen=True)
+class ResolvedNext:
+    """Result of resolving the next unblocked pending node for an objective.
+
+    Attributes:
+        issue_number: The objective issue number
+        node: The next unblocked pending node
+        phase_name: The phase containing the node
+    """
+
+    issue_number: int
+    node: ObjectiveNode
+    phase_name: str
+
+
+def _resolve_next(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+) -> ResolvedNext:
+    """Resolve the next unblocked pending node for an objective.
+
+    If issue_ref is provided, uses it directly. Otherwise infers the objective
+    from the current branch via plan store metadata.
+
+    Args:
+        ctx: ErkContext with git, issues, and plan_store
+        issue_ref: Optional issue reference (number or URL)
+
+    Raises:
+        click.ClickException: If objective cannot be resolved or has no pending nodes
+    """
+    if isinstance(ctx.repo, NoRepoSentinel):
+        raise click.ClickException("Not in a git repository")
+    assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+    repo: RepoContext = ctx.repo
+
+    if issue_ref is not None:
+        issue_number = parse_issue_identifier(issue_ref)
+    else:
+        branch = ctx.git.branch.get_current_branch(repo.root)
+        if branch is None:
+            raise click.ClickException("Not on a branch")
+        objective_id = get_objective_for_branch(ctx, repo.root, branch)
+        if objective_id is None:
+            raise click.ClickException(
+                f"Branch '{branch}' is not linked to an objective. Provide ISSUE_REF explicitly."
+            )
+        issue_number = objective_id
+
+    result = validate_objective(ctx.issues, repo.root, issue_number)
+    if isinstance(result, ObjectiveValidationError):
+        raise click.ClickException(result.error)
+    assert isinstance(result, ObjectiveValidationSuccess)  # type narrowing
+
+    if not result.phases:
+        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+
+    graph = graph_from_phases(result.phases)
+    next_node = graph.next_node()
+    if next_node is None:
+        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+
+    found = _find_node_in_phases(result.phases, next_node.id)
+    if found is None:
+        raise click.ClickException(
+            f"Internal error: next node '{next_node.id}' not found in phases"
+        )
+
+    return ResolvedNext(
+        issue_number=issue_number,
+        node=found[0],
+        phase_name=found[1],
+    )
 
 
 def _update_objective_node(
@@ -115,7 +193,7 @@ def _update_objective_node(
 
 @alias("impl")
 @click.command("implement")
-@click.argument("issue_ref")
+@click.argument("issue_ref", required=False, default=None)
 @click.option(
     "-d",
     "--dangerous",
@@ -150,15 +228,23 @@ def _update_objective_node(
     default=None,
     help="Specific node ID to implement (e.g., --node 2.1)",
 )
+@click.option(
+    "--next",
+    "use_next",
+    is_flag=True,
+    default=False,
+    help="Auto-select next unblocked pending node (infers objective from branch if omitted)",
+)
 @click.pass_obj
 def implement_objective(
     ctx: ErkContext,
-    issue_ref: str,
+    issue_ref: str | None,
     dangerous: bool,
     one_shot_mode: bool,
     model: str | None,
     dry_run: bool,
     node_id: str | None,
+    use_next: bool,
 ) -> None:
     """Create an implementation plan from an objective node.
 
@@ -170,6 +256,9 @@ def implement_objective(
     With --one-shot, dispatches via the one-shot CI workflow for
     fully autonomous planning and implementation.
 
+    With --next, auto-selects the next unblocked pending node.
+    If ISSUE_REF is omitted with --next, infers the objective from the current branch.
+
     \b
     Examples:
       erk objective implement 42
@@ -177,7 +266,17 @@ def implement_objective(
       erk objective implement 42 --one-shot
       erk objective implement 42 --one-shot --node 1.2
       erk objective implement 42 --one-shot --dry-run
+      erk objective implement 42 --next
+      erk objective implement --next
+      erk objective implement --next --one-shot
     """
+    # Validate flag combinations
+    if use_next and node_id is not None:
+        raise click.ClickException("--next and --node are mutually exclusive")
+
+    if issue_ref is None and not use_next:
+        raise click.ClickException("ISSUE_REF is required unless --next is used")
+
     # Validate flag dependencies: --model, --dry-run require --one-shot
     if not one_shot_mode:
         if model is not None:
@@ -186,18 +285,40 @@ def implement_objective(
             raise click.ClickException("--dry-run requires --one-shot")
 
     if one_shot_mode:
-        _handle_one_shot(ctx, issue_ref=issue_ref, model=model, dry_run=dry_run, node_id=node_id)
+        _handle_one_shot(
+            ctx,
+            issue_ref=issue_ref,
+            model=model,
+            dry_run=dry_run,
+            node_id=node_id,
+            use_next=use_next,
+        )
     else:
-        _handle_interactive(ctx, issue_ref=issue_ref, dangerous=dangerous, node_id=node_id)
+        _handle_interactive(
+            ctx, issue_ref=issue_ref, dangerous=dangerous, node_id=node_id, use_next=use_next
+        )
 
 
 def _handle_interactive(
-    ctx: ErkContext, *, issue_ref: str, dangerous: bool, node_id: str | None
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    dangerous: bool,
+    node_id: str | None,
+    use_next: bool,
 ) -> None:
     """Launch Claude interactively to create a plan."""
-    # Build command with argument
-    node_suffix = f" --node {node_id}" if node_id is not None else ""
-    command = f"/erk:objective-implement {issue_ref}{node_suffix}"
+    if use_next:
+        resolved = _resolve_next(ctx, issue_ref=issue_ref)
+        user_output(f"Next node: {resolved.node.id}: {resolved.node.description}")
+        issue_ref_str = str(resolved.issue_number)
+        node_suffix = f" --node {resolved.node.id}"
+    else:
+        assert issue_ref is not None  # type narrowing: validated in implement_objective
+        issue_ref_str = issue_ref
+        node_suffix = f" --node {node_id}" if node_id is not None else ""
+
+    command = f"/erk:objective-implement {issue_ref_str}{node_suffix}"
 
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:
@@ -226,51 +347,61 @@ def _handle_interactive(
 def _handle_one_shot(
     ctx: ErkContext,
     *,
-    issue_ref: str,
+    issue_ref: str | None,
     model: str | None,
     dry_run: bool,
     node_id: str | None,
+    use_next: bool,
 ) -> None:
     """Dispatch objective node via one-shot workflow."""
-    # Parse issue identifier
-    issue_number = parse_issue_identifier(issue_ref)
-
-    # Validate repo context
-    if isinstance(ctx.repo, NoRepoSentinel):
-        raise click.ClickException("Not in a git repository")
-    assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
-    repo: RepoContext = ctx.repo
-
-    # Validate objective
-    result = validate_objective(ctx.issues, repo.root, issue_number)
-
-    if isinstance(result, ObjectiveValidationError):
-        raise click.ClickException(result.error)
-
-    assert isinstance(result, ObjectiveValidationSuccess)
-
-    if not result.phases:
-        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
-
-    if node_id is not None:
-        found = _find_node_in_phases(result.phases, node_id)
-        if found is None:
-            raise click.ClickException(f"Node '{node_id}' not found in objective #{issue_number}")
-        target_node, phase_name = found
+    if use_next:
+        resolved = _resolve_next(ctx, issue_ref=issue_ref)
+        issue_number = resolved.issue_number
+        target_node = resolved.node
+        phase_name = resolved.phase_name
     else:
-        # Use next_step from validation (finds first pending step by position)
-        if result.next_step is None:
-            user_output(
-                click.style("All steps completed!", fg="green")
-                + f" Objective #{issue_number} has no pending steps."
-            )
-            return
-        found = _find_node_in_phases(result.phases, result.next_step["id"])
-        if found is None:
-            raise click.ClickException(
-                f"Internal error: next_step '{result.next_step['id']}' not found"
-            )
-        target_node, phase_name = found
+        assert issue_ref is not None  # type narrowing: validated in implement_objective
+        # Parse issue identifier
+        issue_number = parse_issue_identifier(issue_ref)
+
+        # Validate repo context
+        if isinstance(ctx.repo, NoRepoSentinel):
+            raise click.ClickException("Not in a git repository")
+        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        repo: RepoContext = ctx.repo
+
+        # Validate objective
+        result = validate_objective(ctx.issues, repo.root, issue_number)
+
+        if isinstance(result, ObjectiveValidationError):
+            raise click.ClickException(result.error)
+
+        assert isinstance(result, ObjectiveValidationSuccess)
+
+        if not result.phases:
+            raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+
+        if node_id is not None:
+            found = _find_node_in_phases(result.phases, node_id)
+            if found is None:
+                raise click.ClickException(
+                    f"Node '{node_id}' not found in objective #{issue_number}"
+                )
+            target_node, phase_name = found
+        else:
+            # Use next_step from validation (finds first pending step by position)
+            if result.next_step is None:
+                user_output(
+                    click.style("All steps completed!", fg="green")
+                    + f" Objective #{issue_number} has no pending steps."
+                )
+                return
+            found = _find_node_in_phases(result.phases, result.next_step["id"])
+            if found is None:
+                raise click.ClickException(
+                    f"Internal error: next_step '{result.next_step['id']}' not found"
+                )
+            target_node, phase_name = found
 
     # Normalize model name
     model = normalize_model_name(model)
@@ -301,9 +432,13 @@ def _handle_one_shot(
 
     # After successful dispatch, immediately mark node as "planning" with draft PR
     if dispatch_result is not None:
+        # repo is guaranteed to be RepoContext here:
+        # - use_next path: _resolve_next validates repo
+        # - non-use_next path: repo is assigned above
+        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
         _update_objective_node(
             ctx.issues,
-            repo.root,
+            ctx.repo.root,
             issue_number=issue_number,
             node_id=target_node.id,
             pr_number=dispatch_result.pr_number,
