@@ -6,7 +6,6 @@ They must be in tests/integration/ because they depend on prettier being install
 
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from erk.agent_docs.operations import sync_agent_docs
@@ -42,7 +41,6 @@ def _make_context(tmp_path: Path) -> tuple:
     return agent_docs, ctx
 
 
-@pytest.mark.integration
 def test_check_passes_with_valid_docs_in_sync(tmp_path: Path) -> None:
     """Check passes when all docs are valid and generated files are in sync."""
     docs_dir = tmp_path / "docs" / "learned"
@@ -63,7 +61,6 @@ def test_check_passes_with_valid_docs_in_sync(tmp_path: Path) -> None:
     assert result.exit_code == 0
 
 
-@pytest.mark.integration
 def test_check_fails_with_invalid_frontmatter(tmp_path: Path) -> None:
     """Check fails when a doc has invalid frontmatter."""
     docs_dir = tmp_path / "docs" / "learned"
@@ -81,7 +78,6 @@ def test_check_fails_with_invalid_frontmatter(tmp_path: Path) -> None:
     assert result.exit_code == 1
 
 
-@pytest.mark.integration
 def test_check_fails_when_sync_out_of_date(tmp_path: Path) -> None:
     """Check fails when generated files are out of sync.
 

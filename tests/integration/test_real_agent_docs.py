@@ -3,12 +3,9 @@
 Tests format_markdown which calls prettier via subprocess.
 """
 
-import pytest
-
 from erk_shared.gateway.agent_docs.real import RealAgentDocs
 
 
-@pytest.mark.integration
 def test_format_markdown_normalizes_content() -> None:
     """format_markdown runs prettier and normalizes markdown."""
     agent_docs = RealAgentDocs()
@@ -22,7 +19,6 @@ def test_format_markdown_normalizes_content() -> None:
     assert "Extra blank lines." in result
 
 
-@pytest.mark.integration
 def test_format_markdown_is_idempotent() -> None:
     """Running format_markdown twice produces identical output."""
     agent_docs = RealAgentDocs()
