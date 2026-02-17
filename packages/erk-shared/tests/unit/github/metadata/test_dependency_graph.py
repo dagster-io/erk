@@ -13,6 +13,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     RoadmapStep,
+    compute_summary,
     find_next_step,
 )
 
@@ -581,8 +582,6 @@ class TestComputeGraphSummary:
 
     def test_matches_compute_summary_from_phases(self) -> None:
         """Verify graph summary matches phase-based summary."""
-        from erk_shared.gateway.github.metadata.roadmap import compute_summary
-
         phases = [
             _phase(
                 number=1,
