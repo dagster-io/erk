@@ -62,7 +62,7 @@ This skips the job for push events (the empty array case), preventing CI from ru
 
 ## Combining Draft and Label Checks
 
-<!-- Source: .github/workflows/ci.yml, lines 22, 36, 46, 57, 68, 85, 96, 116, 128 -->
+<!-- Source: .github/workflows/ci.yml, job-level if: conditions on check-submission, format, lint, prettier, docs-check, ty, unit-tests, integration-tests, erkdesk-tests -->
 
 The pattern `github.event.pull_request.draft != true && !contains(...)` appears on every gated job. Both checks are necessary because they gate different states:
 
