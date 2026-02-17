@@ -156,7 +156,7 @@ The backend is determined from the user's global config (`~/.config/erk/config.t
 
 ### Config Migration: [interactive-claude] -> [interactive-agent]
 
-**Location:** `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` (line 62)
+**Location:** `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py, ia_data cascading fallback -->
 
