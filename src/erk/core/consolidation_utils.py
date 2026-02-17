@@ -65,6 +65,36 @@ def calculate_stack_range(
     return stack_branches[: branch_index + 1]
 
 
+def calculate_upstack_range(
+    stack_branches: list[str],
+    start_branch: str,
+) -> list[str]:
+    """Calculate upstack portion of the stack to consolidate.
+
+    Args:
+        stack_branches: Full stack from trunk to leaf (e.g., ['main', 'feat-1', 'feat-2', 'feat-3'])
+        start_branch: Branch to start from (inclusive).
+
+    Returns:
+        List of branches from start_branch to leaf (inclusive).
+
+    Raises:
+        ValueError: If start_branch is not in stack_branches
+
+    Examples:
+        >>> calculate_upstack_range(['main', 'feat-1', 'feat-2', 'feat-3'], 'feat-2')
+        ['feat-2', 'feat-3']
+
+        >>> calculate_upstack_range(['main', 'feat-1', 'feat-2'], 'main')
+        ['main', 'feat-1', 'feat-2']
+    """
+    if start_branch not in stack_branches:
+        raise ValueError(f"Branch '{start_branch}' not in stack")
+
+    branch_index = stack_branches.index(start_branch)
+    return stack_branches[branch_index:]
+
+
 def identify_removable_worktrees(
     all_worktrees: list[WorktreeInfo],
     stack_to_consolidate: list[str],
@@ -139,18 +169,21 @@ def create_consolidation_plan(
     all_worktrees: list[WorktreeInfo],
     stack_branches: list[str],
     end_branch: str | None,
+    start_branch: str | None,
     target_worktree_path: Path,
-    source_worktree_path: Path | None = None,
+    source_worktree_path: Path | None,
 ) -> ConsolidationPlan:
     """Create a complete consolidation plan.
 
-    This is a convenience function that combines calculate_stack_range() and
-    identify_removable_worktrees() into a single operation.
+    This is a convenience function that combines calculate_stack_range() /
+    calculate_upstack_range() and identify_removable_worktrees() into a single operation.
 
     Args:
         all_worktrees: All worktrees in the repository
         stack_branches: Full stack from trunk to leaf
-        end_branch: Optional branch to consolidate up to (inclusive)
+        end_branch: Optional branch to consolidate up to (inclusive, downstack)
+        start_branch: Optional branch to consolidate from (inclusive, upstack).
+                     Mutually exclusive with end_branch.
         target_worktree_path: Path to target worktree
         source_worktree_path: Path to source worktree (when creating new with --name)
 
@@ -158,9 +191,12 @@ def create_consolidation_plan(
         Complete consolidation plan with all information needed for execution
 
     Raises:
-        ValueError: If end_branch is not in stack_branches
+        ValueError: If end_branch or start_branch is not in stack_branches
     """
-    stack_to_consolidate = calculate_stack_range(stack_branches, end_branch)
+    if start_branch is not None:
+        stack_to_consolidate = calculate_upstack_range(stack_branches, start_branch)
+    else:
+        stack_to_consolidate = calculate_stack_range(stack_branches, end_branch)
 
     worktrees_to_remove = identify_removable_worktrees(
         all_worktrees,

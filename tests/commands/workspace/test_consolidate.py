@@ -1136,3 +1136,181 @@ def test_consolidate_with_name_outputs_script_even_when_branch_delete_fails(
         assert str(expected_new_path) in script_content, (
             f"Script should navigate to new worktree. Content: {script_content}"
         )
+
+
+def test_consolidate_up_removes_only_upstack_worktrees() -> None:
+    """Test --up only removes upstack worktrees, leaving downstack untouched."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        # Configure graphite with stack (main -> feat-1 -> feat-2 -> feat-3)
+        graphite_ops = FakeGraphite(stacks={"feat-3": ["main", "feat-1", "feat-2", "feat-3"]})
+
+        # Create worktree directories
+        repo_dir = env.setup_repo_structure()
+        wt1_path = repo_dir / "wt1"
+        wt2_path = repo_dir / "wt2"
+        wt3_path = repo_dir / "wt3"
+
+        # Current on feat-2, worktrees for feat-1, feat-2, feat-3
+        worktrees = {
+            env.cwd: [
+                WorktreeInfo(path=wt1_path, branch="feat-1"),
+                WorktreeInfo(path=wt2_path, branch="feat-2"),
+                WorktreeInfo(path=wt3_path, branch="feat-3"),
+            ]
+        }
+
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            git_common_dirs={wt2_path: env.git_dir},
+            current_branches={wt2_path: "feat-2"},
+        )
+        git_ops._git_common_dirs[wt1_path] = env.git_dir
+        git_ops._git_common_dirs[wt2_path] = env.git_dir
+        git_ops._git_common_dirs[wt3_path] = env.git_dir
+
+        test_ctx = build_workspace_test_context(
+            env,
+            use_graphite=True,
+            git=git_ops,
+            graphite=graphite_ops,
+            cwd=wt2_path,
+        )
+
+        # Run consolidate --up from feat-2
+        # Should consolidate feat-2 → feat-3 only, keeping feat-1 separate
+        result = runner.invoke(cli, ["stack", "consolidate", "--up", "-f"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Should remove wt3 (feat-3) but NOT wt1 (feat-1, downstack)
+        assert len(test_ctx.git.removed_worktrees) == 1
+        assert wt3_path in test_ctx.git.removed_worktrees
+        assert wt1_path not in test_ctx.git.removed_worktrees
+        # Current worktree (wt2/feat-2) should not be removed
+        assert wt2_path not in test_ctx.git.removed_worktrees
+
+
+def test_consolidate_up_and_down_mutually_exclusive() -> None:
+    """Test that --up and --down cannot be used together."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        graphite_ops = FakeGraphite(stacks={"feat-2": ["main", "feat-1", "feat-2"]})
+
+        worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feat-2")]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feat-2"},
+        )
+        test_ctx = build_workspace_test_context(
+            env,
+            use_graphite=True,
+            git=git_ops,
+            graphite=graphite_ops,
+        )
+
+        result = runner.invoke(cli, ["stack", "consolidate", "--up", "--down", "-f"], obj=test_ctx)
+
+        assert result.exit_code == 1
+        assert "Cannot use --up with --down" in result.output
+
+
+def test_consolidate_up_and_branch_mutually_exclusive() -> None:
+    """Test that --up and BRANCH argument cannot be used together."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        graphite_ops = FakeGraphite(stacks={"feat-2": ["main", "feat-1", "feat-2"]})
+
+        worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feat-2")]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feat-2"},
+        )
+        test_ctx = build_workspace_test_context(
+            env,
+            use_graphite=True,
+            git=git_ops,
+            graphite=graphite_ops,
+        )
+
+        result = runner.invoke(cli, ["stack", "consolidate", "--up", "feat-1", "-f"], obj=test_ctx)
+
+        assert result.exit_code == 1
+        assert "Cannot use --up with BRANCH argument" in result.output
+
+
+def test_consolidate_up_dry_run() -> None:
+    """Test --up --dry-run shows correct preview without executing."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        graphite_ops = FakeGraphite(stacks={"feat-3": ["main", "feat-1", "feat-2", "feat-3"]})
+
+        repo_dir = env.setup_repo_structure()
+        wt1_path = repo_dir / "wt1"
+        wt2_path = repo_dir / "wt2"
+        wt3_path = repo_dir / "wt3"
+
+        worktrees = {
+            env.cwd: [
+                WorktreeInfo(path=wt1_path, branch="feat-1"),
+                WorktreeInfo(path=wt2_path, branch="feat-2"),
+                WorktreeInfo(path=wt3_path, branch="feat-3"),
+            ]
+        }
+
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            git_common_dirs={wt2_path: env.git_dir},
+            current_branches={wt2_path: "feat-2"},
+        )
+        git_ops._git_common_dirs[wt1_path] = env.git_dir
+        git_ops._git_common_dirs[wt2_path] = env.git_dir
+        git_ops._git_common_dirs[wt3_path] = env.git_dir
+
+        test_ctx = build_workspace_test_context(
+            env,
+            use_graphite=True,
+            git=git_ops,
+            graphite=graphite_ops,
+            cwd=wt2_path,
+        )
+
+        result = runner.invoke(cli, ["stack", "consolidate", "--up", "--dry-run"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "[DRY RUN]" in result.output
+        # feat-3 worktree should be shown in preview
+        assert str(wt3_path) in result.output
+        # No worktrees should actually be removed
+        assert len(test_ctx.git.removed_worktrees) == 0
+
+
+def test_consolidate_up_no_upstack_worktrees() -> None:
+    """Test --up when current branch is the leaf shows no worktrees to remove."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        # Current branch is feat-3 (the leaf)
+        graphite_ops = FakeGraphite(stacks={"feat-3": ["main", "feat-1", "feat-2", "feat-3"]})
+
+        worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feat-3")]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feat-3"},
+        )
+        test_ctx = build_workspace_test_context(
+            env,
+            use_graphite=True,
+            git=git_ops,
+            graphite=graphite_ops,
+        )
+
+        result = runner.invoke(cli, ["stack", "consolidate", "--up", "-f"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "No other worktrees found" in result.output
+        assert len(test_ctx.git.removed_worktrees) == 0
