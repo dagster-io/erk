@@ -11,7 +11,11 @@ from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
 from erk.cli.help_formatter import script_option
-from erk.core.consolidation_utils import calculate_stack_range, create_consolidation_plan
+from erk.core.consolidation_utils import (
+    calculate_stack_range,
+    calculate_upstack_range,
+    create_consolidation_plan,
+)
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
@@ -139,6 +143,12 @@ def _remove_worktree_slot_aware(
     is_flag=True,
     help="Only consolidate downstack (trunk to current branch). Default is entire stack.",
 )
+@click.option(
+    "--up",
+    "up",
+    is_flag=True,
+    help="Only consolidate upstack (current branch to leaf). Default is entire stack.",
+)
 @script_option
 @click.pass_obj
 def consolidate_stack(
@@ -149,19 +159,21 @@ def consolidate_stack(
     force: bool,
     dry_run: bool,
     down: bool,
+    up: bool,
     script: bool,
 ) -> None:
     """Consolidate stack branches into a single worktree.
 
     By default, consolidates full stack (trunk to leaf). With --down, consolidates
-    only downstack branches (trunk to current).
+    only downstack branches (trunk to current). With --up, consolidates only
+    upstack branches (current to leaf).
 
     This command removes other worktrees that contain branches from the stack,
     ensuring branches exist in only one worktree. This is useful before
     stack-wide operations like 'gt restack'.
 
     BRANCH: Optional branch name. If provided, consolidate only from trunk up to
-    this branch (partial consolidation). Cannot be used with --down.
+    this branch (partial consolidation). Cannot be used with --down or --up.
 
     \b
     Examples:
@@ -170,6 +182,9 @@ def consolidate_stack(
 
       # Consolidate only downstack (trunk to current)
       $ erk consolidate --down
+
+      # Consolidate only upstack (current to leaf)
+      $ erk consolidate --up
 
       # Consolidate trunk → feat-2 only (leaves feat-3+ in separate worktrees)
       $ erk consolidate feat-2
@@ -202,6 +217,22 @@ def consolidate_stack(
         user_output(
             "Use either --down (consolidate trunk to current) or "
             "BRANCH (consolidate trunk to BRANCH)"
+        )
+        raise SystemExit(1)
+
+    # Validate that --up and --down are not used together
+    if up and down:
+        user_output(click.style("❌ Error: Cannot use --up with --down", fg="red"))
+        user_output(
+            "Use either --up (consolidate current to leaf) or --down (consolidate trunk to current)"
+        )
+        raise SystemExit(1)
+
+    # Validate that --up and BRANCH are not used together
+    if up and branch is not None:
+        user_output(click.style("❌ Error: Cannot use --up with BRANCH argument", fg="red"))
+        user_output(
+            "Use either --up (consolidate current to leaf) or BRANCH (consolidate trunk to BRANCH)"
         )
         raise SystemExit(1)
 
@@ -259,9 +290,18 @@ def consolidate_stack(
             raise SystemExit(1)
 
     # Calculate stack range early (needed for safety check)
-    # If --down is set, force end_branch to be current_branch
-    end_branch = current_branch if down else branch
-    stack_to_consolidate = calculate_stack_range(stack_branches, end_branch)
+    if up:
+        start_branch = current_branch
+        end_branch = None
+        stack_to_consolidate = calculate_upstack_range(stack_branches, start_branch)
+    elif down:
+        start_branch = None
+        end_branch = current_branch
+        stack_to_consolidate = calculate_stack_range(stack_branches, end_branch)
+    else:
+        start_branch = None
+        end_branch = branch
+        stack_to_consolidate = calculate_stack_range(stack_branches, end_branch)
 
     # Check worktrees in stack for uncommitted changes
     # Only check worktrees that will actually be removed (skip root and current)
@@ -349,11 +389,12 @@ def consolidate_stack(
         target_worktree_path = current_worktree
 
     # Create consolidation plan using utility function
-    # Use the same end_branch logic as calculated above
+    # Use the same end_branch/start_branch logic as calculated above
     plan = create_consolidation_plan(
         all_worktrees=all_worktrees,
         stack_branches=stack_branches,
         end_branch=end_branch,
+        start_branch=start_branch,
         target_worktree_path=target_worktree_path,
         source_worktree_path=current_worktree if name is not None else None,
     )

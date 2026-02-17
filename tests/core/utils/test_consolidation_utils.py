@@ -10,6 +10,7 @@ import pytest
 
 from erk.core.consolidation_utils import (
     calculate_stack_range,
+    calculate_upstack_range,
     create_consolidation_plan,
     identify_removable_worktrees,
 )
@@ -218,7 +219,12 @@ def test_full_consolidation_plan() -> None:
     target = Path("/repo")
 
     plan = create_consolidation_plan(
-        all_worktrees=worktrees, stack_branches=stack, end_branch=None, target_worktree_path=target
+        all_worktrees=worktrees,
+        stack_branches=stack,
+        end_branch=None,
+        start_branch=None,
+        target_worktree_path=target,
+        source_worktree_path=None,
     )
 
     assert plan.stack_branches == stack
@@ -243,7 +249,9 @@ def test_partial_consolidation_plan() -> None:
         all_worktrees=worktrees,
         stack_branches=stack,
         end_branch="feat-2",
+        start_branch=None,
         target_worktree_path=target,
+        source_worktree_path=None,
     )
 
     assert plan.stack_branches == stack  # Full stack for context
@@ -268,6 +276,7 @@ def test_plan_with_new_worktree_creation() -> None:
         all_worktrees=worktrees,
         stack_branches=stack,
         end_branch=None,
+        start_branch=None,
         target_worktree_path=target,
         source_worktree_path=source,
     )
@@ -291,7 +300,9 @@ def test_plan_validates_branch_argument() -> None:
             all_worktrees=worktrees,
             stack_branches=stack,
             end_branch="unknown",
+            start_branch=None,
             target_worktree_path=target,
+            source_worktree_path=None,
         )
 
 
@@ -302,9 +313,82 @@ def test_immutable_plan_object() -> None:
     target = Path("/repo")
 
     plan = create_consolidation_plan(
-        all_worktrees=worktrees, stack_branches=stack, end_branch=None, target_worktree_path=target
+        all_worktrees=worktrees,
+        stack_branches=stack,
+        end_branch=None,
+        start_branch=None,
+        target_worktree_path=target,
+        source_worktree_path=None,
     )
 
     # Verify frozen dataclass
     with pytest.raises(AttributeError):
         plan.stack_branches = ["different"]  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
+
+
+# Tests for calculate_upstack_range function
+
+
+def test_upstack_range_from_middle_branch() -> None:
+    """Upstack range from a middle branch includes it and all branches above."""
+    stack = ["main", "feat-1", "feat-2", "feat-3"]
+    result = calculate_upstack_range(stack, "feat-2")
+    assert result == ["feat-2", "feat-3"]
+
+
+def test_upstack_range_from_first_branch() -> None:
+    """Upstack range from first branch returns full stack."""
+    stack = ["main", "feat-1", "feat-2", "feat-3"]
+    result = calculate_upstack_range(stack, "main")
+    assert result == stack
+
+
+def test_upstack_range_from_last_branch() -> None:
+    """Upstack range from last branch returns only that branch."""
+    stack = ["main", "feat-1", "feat-2", "feat-3"]
+    result = calculate_upstack_range(stack, "feat-3")
+    assert result == ["feat-3"]
+
+
+def test_upstack_range_error_when_branch_not_in_stack() -> None:
+    """Raises ValueError when start_branch is not in stack."""
+    stack = ["main", "feat-1", "feat-2"]
+    with pytest.raises(ValueError, match="Branch 'unknown' not in stack"):
+        calculate_upstack_range(stack, "unknown")
+
+
+def test_upstack_range_single_branch_stack() -> None:
+    """Upstack range on single-branch stack returns that branch."""
+    stack = ["main"]
+    result = calculate_upstack_range(stack, "main")
+    assert result == ["main"]
+
+
+# Tests for create_consolidation_plan with start_branch (upstack)
+
+
+def test_upstack_consolidation_plan() -> None:
+    """Create plan for upstack consolidation using start_branch."""
+    worktrees = [
+        WorktreeInfo(Path("/repo"), "main", True),
+        WorktreeInfo(Path("/repo/feat-1"), "feat-1", False),
+        WorktreeInfo(Path("/repo/feat-2"), "feat-2", False),
+        WorktreeInfo(Path("/repo/feat-3"), "feat-3", False),
+    ]
+    stack = ["main", "feat-1", "feat-2", "feat-3"]
+    target = Path("/repo/feat-2")
+
+    plan = create_consolidation_plan(
+        all_worktrees=worktrees,
+        stack_branches=stack,
+        end_branch=None,
+        start_branch="feat-2",
+        target_worktree_path=target,
+        source_worktree_path=None,
+    )
+
+    assert plan.stack_branches == stack
+    assert plan.stack_to_consolidate == ["feat-2", "feat-3"]
+    # Only feat-3 is removable (target is feat-2, main and feat-1 not in upstack range)
+    assert len(plan.worktrees_to_remove) == 1
+    assert plan.worktrees_to_remove[0].branch == "feat-3"
