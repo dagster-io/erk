@@ -52,7 +52,15 @@ Follow this priority order:
 
 #### 1a. If ISSUE_ARG is provided
 
-Set up from the specified issue:
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`, the `.impl/` folder is already configured. **Skip directly to Step 3** (Read Plan and Load Context).
+
+Otherwise, set up from the specified issue:
 
 ```bash
 erk exec setup-impl-from-issue <ISSUE_ARG>

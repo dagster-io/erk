@@ -200,7 +200,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "@.claude/commands/erk/plan-implement.md"
+            "/erk:plan-implement $ISSUE_NUMBER"
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           if [ $EXIT_CODE -eq 0 ]; then
@@ -214,6 +214,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ inputs.pr_number }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
 
       - name: Capture session ID
         id: session
@@ -333,7 +334,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "@.claude/commands/erk/git-pr-push.md Implement issue #$ISSUE_NUMBER"
+            "/erk:git-pr-push Implement issue #$ISSUE_NUMBER"
           echo "impl_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Handle merge conflicts if push failed

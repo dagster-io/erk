@@ -66,7 +66,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "@.claude/commands/erk/pr-address.md"
+            "/erk:pr-address --pr $PR_NUMBER"
 
       - name: Push changes
         env:
