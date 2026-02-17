@@ -107,6 +107,7 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
         [str(issue_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
+            github_issues=fake_gh_issues,
             repo_root=repo_root,
             repo_info=TEST_REPO_INFO,
         ),
@@ -133,9 +134,11 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     # Verify plan-review label was added
     assert (999, "erk-plan-review") in fake_gh.added_labels
 
-    # Verify issue body was updated with review_pr field
-    updated_issue = fake_gh_issues.get_issue(repo_root, issue_number)
-    assert "review_pr: 999" in updated_issue.body
+    # Verify issue body was updated with review_pr field via PlanBackend
+    assert len(fake_gh_issues.updated_bodies) == 1
+    updated_issue_number, updated_body = fake_gh_issues.updated_bodies[0]
+    assert updated_issue_number == issue_number
+    assert "review_pr: 999" in updated_body
 
 
 def test_plan_create_review_pr_title_format(tmp_path: Path) -> None:
@@ -156,7 +159,12 @@ def test_plan_create_review_pr_title_format(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
+        ),
     )
 
     assert result.exit_code == 0
@@ -184,7 +192,12 @@ def test_plan_create_review_pr_strips_erk_plan_prefix(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
+        ),
     )
 
     assert result.exit_code == 0
@@ -212,7 +225,12 @@ def test_plan_create_review_pr_body_format(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
+        ),
     )
 
     assert result.exit_code == 0
@@ -249,7 +267,12 @@ def test_plan_create_review_pr_draft_mode(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
+        ),
     )
 
     assert result.exit_code == 0
@@ -277,15 +300,22 @@ def test_plan_create_review_pr_metadata_updated(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
+        ),
     )
 
     assert result.exit_code == 0
 
-    # Verify metadata was updated
-    updated_issue = fake_gh_issues.get_issue(repo_root, issue_number)
-    assert "review_pr:" in updated_issue.body
-    assert "review_pr: 999" in updated_issue.body
+    # Verify metadata was updated via PlanBackend
+    assert len(fake_gh_issues.updated_bodies) == 1
+    updated_issue_number, updated_body = fake_gh_issues.updated_bodies[0]
+    assert updated_issue_number == issue_number
+    assert "review_pr:" in updated_body
+    assert "review_pr: 999" in updated_body
 
 
 def test_plan_create_review_pr_uses_dynamic_repo_url(tmp_path: Path) -> None:
@@ -308,7 +338,12 @@ def test_plan_create_review_pr_uses_dynamic_repo_url(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=custom_repo_info),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=custom_repo_info,
+        ),
     )
 
     assert result.exit_code == 0
@@ -332,7 +367,12 @@ def test_plan_create_review_pr_issue_not_found(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         ["9999", "test-branch", "Test Plan"],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
+        ),
     )
 
     assert result.exit_code == 1
@@ -365,7 +405,12 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
+        ),
     )
 
     assert result.exit_code == 0
@@ -395,7 +440,12 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         ["8888", "test-branch", "Error Test"],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+        obj=ErkContext.for_test(
+            github=fake_gh,
+            github_issues=fake_gh_issues,
+            repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
+        ),
     )
 
     assert result.exit_code == 1
