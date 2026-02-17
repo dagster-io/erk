@@ -8,6 +8,7 @@ Phase 1 of Objective #7242: these types coexist alongside the existing
 RoadmapStep/RoadmapPhase types. Phase 2 will migrate callers.
 """
 
+from collections import Counter
 from dataclasses import dataclass
 
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -15,6 +16,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapStep,
     RoadmapStepStatus,
     group_steps_by_phase,
+    parse_v2_roadmap,
 )
 
 _TERMINAL_STATUSES: set[RoadmapStepStatus] = {"done", "skipped"}
@@ -127,6 +129,81 @@ def steps_from_graph(graph: DependencyGraph) -> list[RoadmapStep]:
 def phases_from_graph(graph: DependencyGraph) -> list[RoadmapPhase]:
     """Convert graph back to phases (inverse of graph_from_phases).
 
-    Phase names are placeholders — use _enrich_phase_names() to restore from body text.
+    Phase names are placeholders — use enrich_phase_names() to restore from body text.
     """
     return group_steps_by_phase(steps_from_graph(graph))
+
+
+def compute_graph_summary(graph: DependencyGraph) -> dict[str, int]:
+    """Compute summary statistics from graph nodes directly.
+
+    Returns the same dict format as compute_summary(phases).
+    """
+    counts = Counter(node.status for node in graph.nodes)
+    return {
+        "total_steps": len(graph.nodes),
+        "pending": counts.get("pending", 0),
+        "planning": counts.get("planning", 0),
+        "done": counts.get("done", 0),
+        "in_progress": counts.get("in_progress", 0),
+        "blocked": counts.get("blocked", 0),
+        "skipped": counts.get("skipped", 0),
+    }
+
+
+def find_graph_next_step(
+    graph: DependencyGraph, phases: list[RoadmapPhase]
+) -> dict[str, str] | None:
+    """Find the first pending node by graph order, returning the dict format needed by JSON APIs.
+
+    Matches the behavior of find_next_step(phases): returns the first pending node
+    regardless of dependency satisfaction. This is the correct semantic for JSON output
+    consumers that need "what comes next" in the roadmap.
+
+    For dependency-aware selection (only unblocked nodes), use graph.next_node() directly.
+
+    Args:
+        graph: The dependency graph
+        phases: Phases for phase name lookup
+
+    Returns:
+        Dict with {id, description, phase} or None if no pending nodes.
+    """
+    target_node = next(
+        (node for node in graph.nodes if node.status == "pending"),
+        None,
+    )
+    if target_node is None:
+        return None
+
+    # Find the phase containing this node
+    phase_name = next(
+        (phase.name for phase in phases if any(step.id == target_node.id for step in phase.steps)),
+        "",
+    )
+
+    return {
+        "id": target_node.id,
+        "description": target_node.description,
+        "phase": phase_name,
+    }
+
+
+def parse_graph(body: str) -> tuple[DependencyGraph, list[RoadmapPhase], list[str]] | None:
+    """Parse a v2 roadmap body into both graph and phases.
+
+    Convenience function combining parse_v2_roadmap + graph_from_phases.
+    Most callers need both graph (for logic) and phases (for display grouping).
+
+    Args:
+        body: Full objective body text with metadata blocks and markdown headers.
+
+    Returns:
+        (graph, enriched_phases, errors) or None if body is not v2 format.
+    """
+    v2_result = parse_v2_roadmap(body)
+    if v2_result is None:
+        return None
+    phases, errors = v2_result
+    graph = graph_from_phases(phases)
+    return (graph, phases, errors)

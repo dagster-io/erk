@@ -16,9 +16,12 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.dependency_graph import (
+    compute_graph_summary,
+    find_graph_next_step,
+    graph_from_phases,
+)
 from erk_shared.gateway.github.metadata.roadmap import (
-    compute_summary,
-    find_next_step,
     parse_v2_roadmap,
 )
 from erk_shared.output.output import user_output
@@ -149,11 +152,12 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
         )
     phases, _validation_errors = v2_result
 
-    # Compute summary statistics
-    summary = compute_summary(phases)
+    # Build graph and compute summary statistics
+    graph = graph_from_phases(phases)
+    summary = compute_graph_summary(graph)
 
     # Find next step
-    next_step = find_next_step(phases)
+    next_step = find_graph_next_step(graph, phases)
 
     # Display objective details
     user_output("")

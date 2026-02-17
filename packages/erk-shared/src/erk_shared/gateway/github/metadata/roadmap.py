@@ -348,7 +348,7 @@ def update_step_in_frontmatter(
 # ---------------------------------------------------------------------------
 
 
-def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPhase]:
+def enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPhase]:
     """Extract phase names from markdown headers and enrich phase objects.
 
     Frontmatter doesn't store phase names, so we extract them from
@@ -421,7 +421,7 @@ def parse_v2_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]] | None:
         return None
 
     phases = group_steps_by_phase(steps)
-    phases = _enrich_phase_names(body, phases)
+    phases = enrich_phase_names(body, phases)
     return (phases, errors)
 
 
@@ -450,7 +450,7 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
 
         if steps is not None:
             phases = group_steps_by_phase(steps)
-            phases = _enrich_phase_names(body, phases)
+            phases = enrich_phase_names(body, phases)
             return (phases, [])
 
     # No valid v2 metadata block found — legacy format or missing

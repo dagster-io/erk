@@ -3,13 +3,17 @@
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
+    compute_graph_summary,
+    find_graph_next_step,
     graph_from_phases,
+    parse_graph,
     phases_from_graph,
     steps_from_graph,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     RoadmapStep,
+    compute_summary,
     find_next_step,
 )
 
@@ -539,3 +543,213 @@ class TestRoundTrip:
         recovered = phases_from_graph(graph_from_phases(original))
 
         self._assert_steps_equivalent(original, recovered)
+
+
+# ---------------------------------------------------------------------------
+# compute_graph_summary() tests
+# ---------------------------------------------------------------------------
+
+
+class TestComputeGraphSummary:
+    def test_mixed_statuses(self) -> None:
+        graph = DependencyGraph(
+            nodes=(
+                _node(id="1.1", status="done", depends_on=()),
+                _node(id="1.2", status="in_progress", depends_on=("1.1",)),
+                _node(id="1.3", status="pending", depends_on=("1.2",)),
+                _node(id="1.4", status="blocked", depends_on=()),
+                _node(id="1.5", status="skipped", depends_on=()),
+                _node(id="1.6", status="planning", depends_on=()),
+            )
+        )
+        summary = compute_graph_summary(graph)
+
+        assert summary["total_steps"] == 6
+        assert summary["done"] == 1
+        assert summary["in_progress"] == 1
+        assert summary["pending"] == 1
+        assert summary["blocked"] == 1
+        assert summary["skipped"] == 1
+        assert summary["planning"] == 1
+
+    def test_empty_graph(self) -> None:
+        graph = DependencyGraph(nodes=())
+        summary = compute_graph_summary(graph)
+
+        assert summary["total_steps"] == 0
+        assert summary["done"] == 0
+        assert summary["pending"] == 0
+
+    def test_matches_compute_summary_from_phases(self) -> None:
+        """Verify graph summary matches phase-based summary."""
+        phases = [
+            _phase(
+                number=1,
+                steps=[
+                    _step(id="1.1", status="done", plan="#10", pr="#20"),
+                    _step(id="1.2", status="in_progress", plan="#30", pr=None),
+                    _step(id="1.3", status="pending", plan=None, pr=None),
+                ],
+            ),
+            _phase(
+                number=2,
+                steps=[
+                    _step(id="2.1", status="blocked", plan=None, pr=None),
+                    _step(id="2.2", status="skipped", plan=None, pr=None),
+                ],
+            ),
+        ]
+        graph = graph_from_phases(phases)
+
+        assert compute_graph_summary(graph) == compute_summary(phases)
+
+
+# ---------------------------------------------------------------------------
+# find_graph_next_step() tests
+# ---------------------------------------------------------------------------
+
+
+class TestFindGraphNextStep:
+    def test_returns_next_pending_with_phase(self) -> None:
+        phases = [
+            _phase(
+                number=1,
+                steps=[
+                    _step(id="1.1", status="done", plan=None, pr=None),
+                    _step(id="1.2", status="pending", plan=None, pr=None),
+                ],
+            ),
+        ]
+        graph = graph_from_phases(phases)
+        result = find_graph_next_step(graph, phases)
+
+        assert result is not None
+        assert result["id"] == "1.2"
+        assert result["description"] == "Step 1.2"
+        assert result["phase"] == "Phase 1"
+
+    def test_returns_none_all_done(self) -> None:
+        phases = [
+            _phase(
+                number=1,
+                steps=[
+                    _step(id="1.1", status="done", plan=None, pr=None),
+                    _step(id="1.2", status="done", plan=None, pr=None),
+                ],
+            ),
+        ]
+        graph = graph_from_phases(phases)
+        result = find_graph_next_step(graph, phases)
+
+        assert result is None
+
+    def test_cross_phase_next(self) -> None:
+        phases = [
+            _phase(
+                number=1,
+                steps=[
+                    _step(id="1.1", status="done", plan=None, pr=None),
+                ],
+            ),
+            _phase(
+                number=2,
+                steps=[
+                    _step(id="2.1", status="pending", plan=None, pr=None),
+                ],
+            ),
+        ]
+        graph = graph_from_phases(phases)
+        result = find_graph_next_step(graph, phases)
+
+        assert result is not None
+        assert result["id"] == "2.1"
+        assert result["phase"] == "Phase 2"
+
+    def test_matches_find_next_step(self) -> None:
+        """Verify graph next step matches phase-based next step."""
+        phases = [
+            _phase(
+                number=1,
+                steps=[
+                    _step(id="1.1", status="done", plan=None, pr=None),
+                    _step(id="1.2", status="in_progress", plan=None, pr=None),
+                    _step(id="1.3", status="pending", plan=None, pr=None),
+                ],
+            ),
+        ]
+        graph = graph_from_phases(phases)
+        graph_result = find_graph_next_step(graph, phases)
+        legacy_result = find_next_step(phases)
+
+        assert graph_result is not None
+        assert legacy_result is not None
+        assert graph_result["id"] == legacy_result["id"]
+        assert graph_result["phase"] == legacy_result["phase"]
+
+
+# ---------------------------------------------------------------------------
+# parse_graph() tests
+# ---------------------------------------------------------------------------
+
+
+_V2_BODY = """\
+# Objective
+
+### Phase 1: Foundation
+
+### Phase 2: Build
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: Setup infra
+  status: done
+  plan: null
+  pr: '#100'
+- id: '2.1'
+  description: Build core
+  status: pending
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+class TestParseGraph:
+    def test_parses_v2_body(self) -> None:
+        result = parse_graph(_V2_BODY)
+
+        assert result is not None
+        graph, phases, errors = result
+        assert len(graph.nodes) == 2
+        assert graph.nodes[0].id == "1.1"
+        assert graph.nodes[0].status == "done"
+        assert graph.nodes[1].id == "2.1"
+        assert graph.nodes[1].status == "pending"
+        assert len(phases) == 2
+        assert phases[0].name == "Foundation"
+        assert phases[1].name == "Build"
+        assert errors == []
+
+    def test_returns_none_for_non_v2(self) -> None:
+        result = parse_graph("Just some text with no roadmap")
+
+        assert result is None
+
+    def test_graph_and_phases_are_consistent(self) -> None:
+        result = parse_graph(_V2_BODY)
+
+        assert result is not None
+        graph, phases, _errors = result
+        # Graph nodes should match flattened phase steps
+        phase_step_ids = [step.id for phase in phases for step in phase.steps]
+        graph_node_ids = [node.id for node in graph.nodes]
+        assert graph_node_ids == phase_step_ids

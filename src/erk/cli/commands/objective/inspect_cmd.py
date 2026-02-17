@@ -15,11 +15,11 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
+    compute_graph_summary,
     graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
-    compute_summary,
     parse_v2_roadmap,
     serialize_phases,
 )
@@ -66,7 +66,7 @@ def _display_human(
     """Display human-readable graph inspection output."""
     unblocked_ids = {n.id for n in graph.unblocked_nodes()}
     next_node = graph.next_node()
-    summary = compute_summary(phases)
+    summary = compute_graph_summary(graph)
     node_by_id = {n.id: n for n in graph.nodes}
 
     # Header
@@ -159,7 +159,7 @@ def _display_json(
 ) -> None:
     """Display JSON output for programmatic use."""
     next_node = graph.next_node()
-    summary = compute_summary(phases)
+    summary = compute_graph_summary(graph)
 
     output = {
         "issue_number": issue_number,
