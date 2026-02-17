@@ -20,7 +20,7 @@ Phase names are NOT stored in YAML frontmatter. They are extracted from markdown
 
 The YAML frontmatter stores steps as a flat list with IDs like `"1.1"`, `"2A.1"`. Phase membership is derived from the ID prefix:
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, group_steps_by_phase lines 213-274 -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, group_steps_by_phase -->
 
 ### Step 1: `group_steps_by_phase()` — Derive Phase Membership
 
@@ -40,7 +40,7 @@ Phase names at this stage are placeholders: `"Phase 1"`, `"Phase 2A"`, etc.
 
 ### Step 2: `_enrich_phase_names()` — Extract Names from Headers
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, _enrich_phase_names lines 359-396 -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, _enrich_phase_names -->
 
 A regex scans the full issue body for markdown headers matching:
 
@@ -60,7 +60,7 @@ Frontmatter stores only machine-readable data (step IDs, statuses, PR references
 
 ## Implementation References
 
-| Function                 | File                                                                    | Lines   |
-| ------------------------ | ----------------------------------------------------------------------- | ------- |
-| `group_steps_by_phase()` | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` | 213-274 |
-| `_enrich_phase_names()`  | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` | 359-396 |
+| Function                 | File                                                                    |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `group_steps_by_phase()` | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |
+| `_enrich_phase_names()`  | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |
