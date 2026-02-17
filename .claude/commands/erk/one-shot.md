@@ -11,12 +11,28 @@ Submit a task for fully autonomous remote execution. The instruction will be dis
 
 1. Validate that `$ARGUMENTS` is non-empty. If empty, tell the user they need to provide an instruction.
 
-2. Run the CLI command:
+2. Write the instruction text to a scratch file to avoid shell quoting issues with long or complex instructions:
 
 ```bash
-erk one-shot "$ARGUMENTS"
+# Write instruction to session-scoped scratch file
+mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-instruction.md << 'INSTRUCTION_EOF'
+$ARGUMENTS
+INSTRUCTION_EOF
 ```
 
-3. Display the output to the user, which includes the PR URL and workflow run URL.
+3. Run the CLI command with --file:
+
+```bash
+erk one-shot --file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-instruction.md
+```
+
+4. Clean up the scratch file:
+
+```bash
+rm -f .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-instruction.md
+```
+
+5. Display the output to the user, which includes the PR URL and workflow run URL.
 
 If the command fails, display the error message.
