@@ -10,7 +10,6 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import update_plan_header_review_pr
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.fakes.prompt_executor import FakePromptExecutor
@@ -285,9 +284,6 @@ def test_implement_from_issue_closes_review_pr() -> None:
     fake_issues = FakeGitHubIssues(issues={42: issue_42, 99: issue_99})
     fake_github = FakeGitHub(issues_gateway=fake_issues)
 
-    # Use the same fake_issues for plan store so plan_backend sees the metadata
-    store = GitHubPlanStore(fake_issues)
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -299,7 +295,6 @@ def test_implement_from_issue_closes_review_pr() -> None:
         ctx = build_workspace_test_context(
             env,
             git=git,
-            plan_store=store,
             prompt_executor=executor,
             issues=fake_issues,
             github=fake_github,
