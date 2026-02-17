@@ -94,6 +94,8 @@ Rules triggered by matching actions in code.
 
 **removing a workflow command or CLI entry** → Read [Incomplete Command Removal Pattern](incomplete-command-removal.md) first. Read incomplete-command-removal.md first. Search all string references before removing. String-based dispatch maps like WORKFLOW_COMMAND_MAP aren't caught by type checkers.
 
+**renaming an exec command without updating all 9 reference locations** → Read [Command Rename Checklist](command-rename-checklist.md) first. Follow the 9-place checklist in command-rename-checklist.md to avoid stale references.
+
 **retrieving dependencies in Click commands** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
 
 **running any erk exec subcommand** → Read [erk exec Commands](erk-exec-commands.md) first. Check syntax with `erk exec <command> -h` first, or load erk-exec skill for workflow guidance.

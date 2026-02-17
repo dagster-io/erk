@@ -34,6 +34,8 @@ Rules triggered by matching actions in code.
 
 **choosing between monkeypatch and fakes for a test** → Read [Monkeypatch vs Fakes Decision Guide](monkeypatch-vs-fakes-decision.md) first. Read monkeypatch-vs-fakes-decision.md first. Default to gateway fakes. Monkeypatch is only appropriate for process-level globals like Path.home() in exec scripts.
 
+**creating ErkPackageInfo directly in production code** → Read [ErkPackageInfo Value Object](erk-package-info-pattern.md) first. Use ErkPackageInfo.from_project_dir(). Direct construction is for tests only.
+
 **creating a FakePlanBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHubIssues injected into GitHubPlanStore. Fake backends are only for validating ABC contract across providers.
 
 **creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
@@ -87,6 +89,8 @@ Rules triggered by matching actions in code.
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
 **using monkeypatch or unittest.mock in hook tests** → Read [Hook Testing Patterns](hook-testing.md) first. Use ErkContext.for_test() with CliRunner instead of mocking. See docs/learned/testing/hook-testing.md.
+
+**using monkeypatch to set HOME in init command tests** → Read [env_overrides Pattern for erk_isolated_fs_env](env-overrides-pattern.md) first. Use erk_isolated_fs_env(runner, env_overrides={'HOME': '{root_worktree}'}) instead.
 
 **using monkeypatch to stub Path.home() or subprocess.run()** [pattern: `monkeypatch\.setattr.*Path\.home|monkeypatch.*subprocess\.run`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. These are the two most common monkeypatch targets. Both have established gateway replacements — ClaudeInstallation/ErkInstallation for paths, specific gateways for subprocess.
 
