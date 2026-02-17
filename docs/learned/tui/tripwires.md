@@ -38,6 +38,8 @@ Rules triggered by matching actions in code.
 
 **modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
 
+**pushing IssueBodyScreen without explicit content_type** → Read [TUI View Switching](view-switching.md) first. Content type must come from view_mode at push time, not derived inside the screen.
+
 **putting PlanDataProvider ABC in src/erk/tui/** → Read [TUI Data Contract](data-contract.md) first. The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways.
 
 **reading self.\_view_mode during async data fetch without snapshotting** → Read [TUI Async State Snapshot Pattern](async-state-snapshot.md) first. Snapshot at fetch start with fetched_mode = self.\_view_mode. Read this doc.

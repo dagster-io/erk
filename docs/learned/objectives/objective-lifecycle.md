@@ -5,13 +5,15 @@ read_when:
   - "creating or modifying objective lifecycle code"
   - "understanding how objectives are created, mutated, and closed"
   - "adding new mutation paths to objective roadmaps"
+  - "working with objective-fetch-context or auto-discovery"
+  - "using --next flag on objective implement"
 tripwires:
   - action: "adding a new roadmap mutation site without updating this document"
     warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
   - action: "updating roadmap step in only one location (frontmatter or table)"
     warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically."
-last_audited: "2026-02-16 04:53 PT"
-audit_result: clean
+last_audited: "2026-02-17 00:00 PT"
+audit_result: edited
 ---
 
 # Objective Lifecycle
@@ -396,6 +398,103 @@ These components read roadmap data but don't mutate:
 
 All read-only consumers use `parse_roadmap()` which reads v2 YAML frontmatter.
 
+## Context Fetching: objective-fetch-context
+
+**Path:** `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`
+
+The `objective-fetch-context` exec script bundles all context needed for objective updates into a single JSON response, eliminating multiple sequential data-fetching turns.
+
+### Auto-Discovery Mode
+
+All three flags are optional. When omitted, arguments are discovered from git state:
+
+```bash
+erk exec objective-fetch-context                          # full auto-discovery
+erk exec objective-fetch-context --pr 6517 --objective 6423 --branch P6513-...
+```
+
+**Discovery chain:**
+
+1. **Branch**: from current git state via `git.branch.get_current_branch()`
+2. **Plan number**: extracted from branch name via regex `^P(\d+)-`
+3. **Objective**: extracted from plan issue metadata (`plan-header.objective_issue` field)
+4. **PR number**: discovered from branch via `github.get_pr_for_branch()`
+
+### Deterministic Step Matching
+
+Steps are matched to plans using exact string comparison against YAML frontmatter plan references:
+
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py, step.plan matching -->
+
+See the `step.plan == f"#{plan_number}"` comparison in `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`.
+
+No LLM inference or heuristics are involved. Only steps explicitly tagged with the plan reference appear in `matched_steps`.
+
+### Output Format
+
+```json
+{
+  "success": true,
+  "objective": {"number": 6423, "title": "...", "body": "..."},
+  "plan": {"number": 6513, "title": "...", "body": "..."},
+  "pr": {"number": 6517, "title": "...", "body": "..."},
+  "roadmap": {
+    "phases": [...],
+    "matched_steps": [...],
+    "summary": "...",
+    "next_step": "1.3",
+    "all_complete": false
+  }
+}
+```
+
+## Auto-Selection: --next Flag on objective implement
+
+**Path:** `src/erk/cli/commands/objective/implement_cmd.py`
+
+The `--next` flag auto-selects the next unblocked pending node using dependency graph traversal:
+
+```bash
+erk objective implement 42 --next          # explicit objective
+erk objective implement --next             # infers objective from current branch
+erk objective implement --next --one-shot  # auto-select + dispatch remotely
+```
+
+**Resolution via `_resolve_next()`** (line 79):
+
+1. If issue_ref provided, use it directly
+2. Otherwise, infer objective from current branch via `get_objective_for_branch()`
+3. Build `DependencyGraph` via `graph_from_phases()`
+4. Call `graph.next_node()` for first unblocked pending node
+
+Returns a `ResolvedNext` frozen dataclass with `issue_number`, `node`, and `phase_name`.
+
+**Mutual exclusion**: `--next` and `--node` cannot be used together.
+
+## Action Comments: objective-post-action-comment
+
+**Path:** `src/erk/cli/commands/exec/scripts/objective_post_action_comment.py`
+
+Posts formatted action comments to objective issues after PR landing. Reads structured JSON from stdin:
+
+```json
+{
+  "issue_number": 6423,
+  "date": "2026-02-17",
+  "pr_number": 6517,
+  "phase_step": "1.1, 1.2",
+  "title": "Brief title",
+  "what_was_done": ["Action 1", "Action 2"],
+  "lessons_learned": ["Insight 1"],
+  "roadmap_updates": ["Step 1.1: pending -> done"],
+  "body_reconciliation": [
+    { "section": "Design Decisions", "change": "Updated X" }
+  ]
+}
+```
+
+Required fields: `issue_number`, `date`, `pr_number`, `phase_step`, `title`, `what_was_done`. Body reconciliation section is omitted from output when empty.
+
 ## Related Commands
 
 - `erk objective create` - Create new objective with roadmap
@@ -417,6 +516,7 @@ All read-only consumers use `parse_roadmap()` which reads v2 YAML frontmatter.
 
 ## See Also
 
+- [Dependency Graph Architecture](dependency-graph.md) - ObjectiveNode/DependencyGraph types and traversal
 - [Objective Roadmap Frontmatter](objective-roadmap-frontmatter.md) - YAML schema details
 - [Objective Planning Patterns](objective-planning.md) - Creating plans from objectives
 - [GitHub Metadata Blocks](../architecture/github-metadata-blocks.md) - Metadata block infrastructure

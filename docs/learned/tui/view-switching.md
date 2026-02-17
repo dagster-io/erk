@@ -4,12 +4,15 @@ read_when:
   - "adding a new view mode to the TUI"
   - "understanding how view switching and caching work"
   - "debugging data not appearing in a specific view"
+  - "working with IssueBodyScreen content type parameterization"
 tripwires:
   - action: "adding a new ViewMode without updating VIEW_CONFIGS"
     warning: "Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime."
   - action: "using _render() as a method name in Textual widgets"
     warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
-last_audited: "2026-02-16 14:20 PT"
+  - action: "pushing IssueBodyScreen without explicit content_type"
+    warning: "Content type must come from view_mode at push time, not derived inside the screen."
+last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
 ---
 
@@ -114,6 +117,25 @@ The app uses `get_next_view_mode()` and `get_previous_view_mode()` from `src/erk
 When a fetch is in progress and the user switches tabs, the fetched data could be applied to the wrong view. The `fetched_mode` guard prevents this — see [Async State Snapshot](async-state-snapshot.md) for the full pattern.
 
 In brief: `_load_data()` snapshots `self._view_mode` at fetch start, and `_update_table()` only updates the display if the current view still matches the snapshot.
+
+## Content Type Parameterization: IssueBodyScreen
+
+<!-- Source: src/erk/tui/screens/issue_body_screen.py -->
+
+`IssueBodyScreen` accepts a `content_type: Literal["Plan", "Objective"]` parameter that controls both the UI display labels and which gateway method is called:
+
+<!-- Source: src/erk/tui/screens/issue_body_screen.py, IssueBodyScreen.__init__ -->
+
+See `IssueBodyScreen.__init__()` in `src/erk/tui/screens/issue_body_screen.py`. Accepts `provider`, `issue_number`, `issue_body`, `full_title`, and `content_type: Literal["Plan", "Objective"]` keyword arguments.
+
+**View-mode-aware routing:** The app determines `content_type` from `_view_mode` BEFORE pushing the screen — it is not derived from state inside the screen:
+
+- `content_type="Objective"` -> calls `provider.fetch_objective_content()`
+- `content_type="Plan"` -> calls `provider.fetch_plan_content()`
+
+**Symmetric gateway API:** `fetch_plan_content()` and `fetch_objective_content()` follow the 5-place gateway pattern (ABC, real, fake, test helper, tests) with matching extraction functions.
+
+**Display labels:** `content_type.lower()` is used for user-facing strings (e.g., "Loading plan content..." vs "Loading objective content...").
 
 ## Related Documentation
 

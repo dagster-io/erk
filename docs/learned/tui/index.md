@@ -18,4 +18,4 @@
 - **[textual-async.md](textual-async.md)** — overriding Screen actions, working with async/await in Textual, testing async TUI code
 - **[title-truncation-edge-cases.md](title-truncation-edge-cases.md)** — implementing title truncation in TUI, troubleshooting truncated titles showing only prefix, working with title display lengths
 - **[view-aware-commands.md](view-aware-commands.md)** — registering a new TUI command with view-mode filtering, understanding how commands are filtered by view mode (plans, learn, objectives), adding objective-specific commands to the command palette, implementing streaming commands in the TUI
-- **[view-switching.md](view-switching.md)** — adding a new view mode to the TUI, understanding how view switching and caching work, debugging data not appearing in a specific view
+- **[view-switching.md](view-switching.md)** — adding a new view mode to the TUI, understanding how view switching and caching work, debugging data not appearing in a specific view, working with IssueBodyScreen content type parameterization

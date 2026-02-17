@@ -16,6 +16,7 @@
 - **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, handling codespace name resolution with optional defaults, bypassing GitHub API endpoint bugs
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
+- **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
 - **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
 - **[commands/pr-sync-divergence.md](commands/pr-sync-divergence.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, syncing local branch with remote tracking branch
 - **[commands/update-objective-node.md](commands/update-objective-node.md)** — working with objective roadmap tables, updating step PR references, implementing plan-save workflow

@@ -3,8 +3,9 @@
 
 # Objectives Documentation
 
+- **[dependency-graph.md](dependency-graph.md)** — working with ObjectiveNode or DependencyGraph types, implementing dependency-aware step traversal, converting between roadmap phases and graph representations
 - **[objective-create-workflow.md](objective-create-workflow.md)** — modifying the objective creation flow, understanding how objective-render-roadmap and objective-save-to-issue work together, debugging objective creation failures
-- **[objective-lifecycle.md](objective-lifecycle.md)** — creating or modifying objective lifecycle code, understanding how objectives are created, mutated, and closed, adding new mutation paths to objective roadmaps
+- **[objective-lifecycle.md](objective-lifecycle.md)** — creating or modifying objective lifecycle code, understanding how objectives are created, mutated, and closed, adding new mutation paths to objective roadmaps, working with objective-fetch-context or auto-discovery, using --next flag on objective implement
 - **[objective-roadmap-check.md](objective-roadmap-check.md)** — validating objective roadmap consistency beyond structure, understanding why check command exists separate from parsing, adding new validation checks to objective check
 - **[objective-storage-format.md](objective-storage-format.md)** — understanding how objective issues store their data, creating or modifying objective creation code, working with objective metadata blocks
 - **[phase-name-enrichment.md](phase-name-enrichment.md)** — working with phase names in roadmap parsing, assuming phase names are stored in YAML frontmatter, understanding how group_steps_by_phase derives phase membership

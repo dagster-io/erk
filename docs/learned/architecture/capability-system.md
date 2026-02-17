@@ -1,13 +1,14 @@
 ---
 title: Capability System Architecture
 read_when:
-  - creating new erk init capabilities
-  - understanding how erk init works
-  - adding installable features
-  - working with capability tracking in state.toml
-  - understanding how erk doctor filters artifacts by installed capabilities
-last_audited: "2026-02-16 14:20 PT"
-audit_result: clean
+  - "creating new erk init capabilities"
+  - "understanding how erk init works"
+  - "adding installable features"
+  - "working with capability tracking in state.toml"
+  - "understanding how erk doctor filters artifacts by installed capabilities"
+  - "working with backend-aware capability filtering"
+last_audited: "2026-02-17 00:00 PT"
+audit_result: edited
 ---
 
 # Capability System Architecture
@@ -122,6 +123,48 @@ Required capabilities don't need tracking—they're always installed and always 
 | `erk init capability list [name]`   | Show all capabilities with status, or detailed view of one |
 | `erk init capability add <name>`    | Install capability                                         |
 | `erk init capability remove <name>` | Uninstall capability                                       |
+
+## Backend Awareness
+
+Capabilities declare which agent backends they support. This enables filtering capabilities by the user's configured backend.
+
+### supported_backends Property
+
+<!-- Source: src/erk/core/capabilities/base.py, Capability.supported_backends -->
+
+See `Capability.supported_backends` property in `src/erk/core/capabilities/base.py`. Returns a tuple of `AgentBackend` values (default: both `"claude"` and `"codex"`).
+
+`AgentBackend = Literal["claude", "codex"]` (defined in `packages/erk-shared/src/erk_shared/context/types.py`).
+
+Override this property in capability subclasses to restrict to specific backends. The default supports both.
+
+### Backend-Specific Filtering
+
+<!-- Source: src/erk/core/capabilities/registry.py, list_capabilities_for_backend -->
+
+**Registry function:** `list_capabilities_for_backend()` in `src/erk/core/capabilities/registry.py`. Filters `_all_capabilities()` to those supporting the given backend, sorted by name.
+
+**CLI filtering** in `capability add` (`src/erk/cli/commands/init/capability/add_cmd.py`): Capabilities that don't support the current backend are skipped with a warning message.
+
+### Backend Resolution
+
+<!-- Source: src/erk/cli/commands/init/capability/backend_utils.py, resolve_backend -->
+
+See `resolve_backend()` in `src/erk/cli/commands/init/capability/backend_utils.py`. Reads the backend from `ctx.global_config.interactive_agent.backend`, defaulting to `"claude"`.
+
+The backend is determined from the user's global config (`~/.config/erk/config.toml`), defaulting to `"claude"`.
+
+### Config Migration: [interactive-claude] -> [interactive-agent]
+
+**Location:** `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` (line 62)
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py, ia_data cascading fallback -->
+
+The config reader uses cascading fallback. See the `ia_data` assignment in `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`.
+
+- **Reading**: Checks `[interactive-agent]` first, falls back to `[interactive-claude]`
+- **Writing**: Always writes `[interactive-agent]` (new section name)
+- **Field migration**: `sandbox_mode` -> `permission_mode` (with fallback)
 
 ## Related Topics
 
