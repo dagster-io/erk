@@ -265,8 +265,7 @@ def test_dispatch_long_instruction_truncates_workflow_input() -> None:
         # Verify workflow input was truncated
         _workflow, inputs = github.triggered_workflows[0]
         assert len(inputs["instruction"]) < len(long_instruction)
-        expected_suffix = "... (full instruction committed to .worker-impl/task.md)"
-        assert inputs["instruction"].endswith(expected_suffix)
+        assert inputs["instruction"].endswith("... (full instruction committed to .worker-impl/task.md)")
 
         # Verify full instruction was committed to .worker-impl/task.md
         task_file = env.cwd / ".worker-impl" / "task.md"
