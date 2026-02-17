@@ -4,18 +4,11 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.init.capability.backend_utils import resolve_backend
 from erk.core.capabilities.registry import get_capability, list_capabilities
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
-from erk_shared.context.types import AgentBackend
 from erk_shared.output.output import user_output
-
-
-def _resolve_backend(ctx: ErkContext) -> AgentBackend:
-    """Resolve agent backend from global config, defaulting to 'claude'."""
-    if ctx.global_config is not None:
-        return ctx.global_config.interactive_agent.backend
-    return "claude"
 
 
 @click.command("remove")
@@ -37,7 +30,7 @@ def remove_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
     """
     # Track success/failure for exit code
     any_failed = False
-    backend = _resolve_backend(ctx)
+    backend = resolve_backend(ctx)
 
     # Lazy repo discovery - only done if needed
     repo_root: Path | None = None
