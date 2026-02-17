@@ -42,11 +42,11 @@ The `planning` status indicates a step has been dispatched for autonomous planni
 
 When the Status column is `-` or empty (or any unrecognized value), the parser falls through to infer status from the PR column:
 
-| Plan Column  | PR Column    | Inferred Status | Reasoning                               |
-| ------------ | ------------ | --------------- | --------------------------------------- |
-| any          | `#123`       | done            | A merged PR means work is complete      |
-| `#456`       | `-` or empty | in_progress     | A plan issue means work is underway     |
-| `-` or empty | `-` or empty | pending         | No references means work hasn't started |
+| Plan Column  | PR Column    | Inferred Status | Reasoning                                                                    |
+| ------------ | ------------ | --------------- | ---------------------------------------------------------------------------- |
+| any          | `#123`       | in_progress     | A PR reference means work is in flight (use --status done to confirm merged) |
+| `#456`       | `-` or empty | in_progress     | A plan issue means work is underway                                          |
+| `-` or empty | `-` or empty | pending         | No references means work hasn't started                                      |
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
@@ -57,7 +57,7 @@ See the status resolution logic in `parse_roadmap()` in `packages/erk-shared/src
 | Status Column | PR Column  | Final Status | Why                                             |
 | ------------- | ---------- | ------------ | ----------------------------------------------- |
 | `done`        | `-`        | done         | Explicit — no inference needed                  |
-| `-`           | `#123`     | done         | Tier 2 inference from PR                        |
+| `-`           | `#123`     | in_progress  | Tier 2 inference from PR (not confirmed merged) |
 | `blocked`     | `#123`     | blocked      | Explicit overrides PR (step blocked despite PR) |
 | `-`           | `plan #45` | in_progress  | Tier 2 inference from plan reference            |
 | `pending`     | `#123`     | pending      | Explicit overrides PR (intentional hold)        |
@@ -69,7 +69,7 @@ The most important cross-cutting insight: **mutation writes both cells, but pars
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
 
-The `update-roadmap-step` command computes display status from the PR value and writes both the Status and PR cells atomically. It does this so the table is always human-readable on GitHub without requiring a parse pass. But `parse_roadmap()` only falls through to PR inference when the Status cell is `-` or empty.
+The `update-roadmap-step` command computes display status from the plan/PR values and writes both the Status and PR cells atomically. PR reference alone infers `in_progress` (not `done`); callers that know the PR is merged must pass `--status done` explicitly. This prevents premature "done" status when a PR exists but hasn't been confirmed as merged. But `parse_roadmap()` only falls through to PR inference when the Status cell is `-` or empty.
 
 This creates a subtle trap: if you update the PR cell **without using the command** (e.g., manual GitHub edit or direct body mutation), the Status cell retains its old value and the parser will respect that stale explicit value. To re-enable inference after manual edits, set the Status cell to `-`.
 
@@ -77,7 +77,7 @@ This creates a subtle trap: if you update the PR cell **without using the comman
 
 <!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
 
-The `erk objective check` command validates status/PR consistency after parsing. It flags cases where explicit status contradicts the PR column — for example, a step with PR `#123` but status `in_progress`. These inconsistencies are valid (the explicit status wins by design), but the validator surfaces them as warnings because they usually indicate a forgotten status update rather than an intentional override.
+The `erk objective check` command validates status/PR consistency after parsing. It flags cases where explicit status contradicts the PR column — for example, a step with PR `#123` but status `pending`. Steps with a PR are expected to be `in_progress` (PR open) or `done` (PR merged); other statuses like `pending` usually indicate a forgotten status update rather than an intentional override.
 
 ## When to Use Each Tier
 

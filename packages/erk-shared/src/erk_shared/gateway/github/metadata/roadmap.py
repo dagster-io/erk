@@ -324,7 +324,7 @@ def update_step_in_frontmatter(
             if status is not None:
                 new_status = status
             elif resolved_pr:
-                new_status = cast(RoadmapStepStatus, "done")
+                new_status = cast(RoadmapStepStatus, "in_progress")
             elif resolved_plan:
                 new_status = cast(RoadmapStepStatus, "in_progress")
             else:

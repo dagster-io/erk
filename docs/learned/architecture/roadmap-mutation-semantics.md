@@ -37,12 +37,12 @@ When you run `erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"`, the 
 1. Computes display status from the plan/PR values
 2. Writes **status, plan, and PR cells** in a single atomic update
 
-| Flag Provided               | Written Status | Written Plan Cell | Written PR Cell |
-| --------------------------- | -------------- | ----------------- | --------------- |
-| `--pr "#123" --plan "#456"` | `done`         | `#456`            | `#123`          |
-| `--pr "#123" --plan ""`     | `done`         | `-`               | `#123`          |
-| `--plan "#456"`             | `in-progress`  | `#456`            | `-`             |
-| `--pr ""`                   | `pending`      | `-`               | `-`             |
+| Flag Provided                             | Written Status | Written Plan Cell | Written PR Cell |
+| ----------------------------------------- | -------------- | ----------------- | --------------- |
+| `--pr "#123" --plan "#456"`               | `in-progress`  | `#456`            | `#123`          |
+| `--pr "#123" --plan "#456" --status done` | `done`         | `#456`            | `#123`          |
+| `--plan "#456"`                           | `in-progress`  | `#456`            | `(preserved)`   |
+| `--pr "" --plan ""`                       | `pending`      | `-`               | `-`             |
 
 ### None vs Empty-String vs Value Semantics
 
@@ -90,10 +90,10 @@ The update command uses two functions in `src/erk/cli/commands/exec/scripts/upda
 
 Status is computed by `update_step_in_frontmatter()` at mutation time. There is no read-time inference in the v2 YAML path — `parse_roadmap()` reads the `status` field directly from YAML. The inference logic (explicit > infer from PR/plan > preserve) runs only during writes:
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_step_in_frontmatter lines 330-339 -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_step_in_frontmatter lines 322-331 -->
 
 1. **Explicit status provided** → use it directly
-2. **PR is set** → status = `"done"`
+2. **PR is set** → status = `"in_progress"`
 3. **Plan is set** → status = `"in_progress"`
 4. **Neither** → preserve existing status
 
@@ -107,12 +107,12 @@ The key point for mutation semantics: inference only fires when the status cell 
 
 If you update PR via direct body mutation (not using the command), status won't auto-update:
 
-| Action                                            | Result Status | Why                                                  |
-| ------------------------------------------------- | ------------- | ---------------------------------------------------- |
-| update-roadmap-step `--pr "#123"`                 | `done`        | Command writes computed status                       |
-| update-roadmap-step `--plan "#456"`               | `in-progress` | Command writes computed status                       |
-| Manual GitHub edit: change PR cell to `#123`      | (unchanged)   | Status cell not touched, parser reads explicit value |
-| Script sets PR but leaves status at `in-progress` | `in_progress` | Parser sees explicit value, doesn't infer            |
+| Action                                            | Result Status | Why                                                                  |
+| ------------------------------------------------- | ------------- | -------------------------------------------------------------------- |
+| update-roadmap-step `--plan "#456" --pr "#123"`   | `in-progress` | Command writes computed status (PR ≠ done without explicit --status) |
+| update-roadmap-step `--plan "#456"`               | `in-progress` | Command writes computed status                                       |
+| Manual GitHub edit: change PR cell to `#123`      | (unchanged)   | Status cell not touched, parser reads explicit value                 |
+| Script sets PR but leaves status at `in-progress` | `in_progress` | Parser sees explicit value, doesn't infer                            |
 
 To enable inference after manual/script edits, you must explicitly set status to `-`.
 
