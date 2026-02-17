@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -94,7 +96,7 @@ class IssueBodyScreen(ModalScreen):
         issue_number: int,
         issue_body: str,
         full_title: str,
-        content_type: str = "Plan",
+        content_type: Literal["Plan", "Objective"],
     ) -> None:
         """Initialize with plan metadata and provider for async loading.
 
