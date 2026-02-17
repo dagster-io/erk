@@ -16,7 +16,11 @@ from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
 from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.gateway.time.abc import Time
-from erk_shared.naming import format_branch_timestamp_suffix, sanitize_worktree_name
+from erk_shared.naming import (
+    format_branch_timestamp_suffix,
+    generate_issue_branch_name,
+    sanitize_worktree_name,
+)
 from erk_shared.output.output import user_output
 
 logger = logging.getLogger(__name__)
@@ -47,26 +51,28 @@ def generate_branch_name(
     *,
     time: Time,
     plan_issue_number: int | None,
+    objective_id: int | None,
 ) -> str:
     """Generate a branch name from the instruction.
 
-    Format: P{N}-{slug}-{MM-DD-HHMM} when plan_issue_number is provided,
-    otherwise oneshot-{slug}-{MM-DD-HHMM}.
+    Format: P{N}-{slug}-{MM-DD-HHMM} (with optional O{M} objective encoding)
+    when plan_issue_number is provided, otherwise oneshot-{slug}-{MM-DD-HHMM}.
 
     Args:
         instruction: The task description
         time: Time gateway for deterministic timestamps
-        plan_issue_number: If provided, use P{N}- prefix instead of oneshot-
+        plan_issue_number: If provided, delegate to generate_issue_branch_name
+        objective_id: If provided with plan_issue_number, encode O{N} in branch name
 
     Returns:
         Branch name string
     """
-    slug = sanitize_worktree_name(instruction)
     if plan_issue_number is not None:
-        prefix = f"P{plan_issue_number}-"
-    else:
-        prefix = "oneshot-"
-    # Truncate slug to leave room for prefix and timestamp
+        return generate_issue_branch_name(
+            plan_issue_number, instruction, time.now(), objective_id=objective_id
+        )
+    slug = sanitize_worktree_name(instruction)
+    prefix = "oneshot-"
     max_slug_len = 31 - len(prefix)
     if len(slug) > max_slug_len:
         slug = slug[:max_slug_len].rstrip("-")
@@ -124,6 +130,7 @@ def dispatch_one_shot(
             params.instruction,
             time=ctx.time,
             plan_issue_number=None,
+            objective_id=None,
         )
         user_output(
             click.style("Dry-run mode:", fg="cyan", bold=True) + " No changes will be made\n"
@@ -169,6 +176,7 @@ def dispatch_one_shot(
         params.instruction,
         time=ctx.time,
         plan_issue_number=plan_issue_number,
+        objective_id=objective_id,
     )
 
     # Save current branch for restoration after workflow trigger
