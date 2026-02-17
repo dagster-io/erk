@@ -124,8 +124,7 @@ def _create_review_pr_impl(
     plan_id = str(issue_number)
 
     # LBYL: Check if plan exists before proceeding (get_metadata_field is lightweight)
-    existence_check = backend.get_metadata_field(repo_root, plan_id, "schema_version")
-    if isinstance(existence_check, PlanNotFound):
+    if isinstance(backend.get_metadata_field(repo_root, plan_id, "schema_version"), PlanNotFound):
         raise CreateReviewPRException(
             error="issue_not_found",
             message=f"Issue #{issue_number} not found",

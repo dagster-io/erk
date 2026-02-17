@@ -90,15 +90,12 @@ def _plan_review_complete_impl(
     plan_id = str(issue_number)
 
     # LBYL: Get review_pr from plan-header metadata (also serves as existence check)
-    review_pr_result = backend.get_metadata_field(repo_root, plan_id, "review_pr")
-    if isinstance(review_pr_result, PlanNotFound):
+    review_pr = backend.get_metadata_field(repo_root, plan_id, "review_pr")
+    if isinstance(review_pr, PlanNotFound):
         raise PlanReviewCompleteException(
             error="issue_not_found",
             message=f"Issue #{issue_number} not found",
         )
-
-    # get_metadata_field returns None for missing block or missing field
-    review_pr = review_pr_result
 
     # LBYL: Check review_pr is not None
     if review_pr is None:
