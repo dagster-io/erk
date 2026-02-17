@@ -72,8 +72,8 @@ class ErkImplWorkflowCapability(Capability):
         """Install the workflow and related actions."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
+        from erk.artifacts.paths import get_bundled_github_dir
         from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_github_dir
 
         bundled_github_dir = get_bundled_github_dir()
         if not bundled_github_dir.exists():

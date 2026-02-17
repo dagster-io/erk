@@ -72,8 +72,8 @@ class SkillCapability(Capability):
         """Install the skill using artifact sync."""
         assert repo_root is not None, "SkillCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
+        from erk.artifacts.paths import get_bundled_claude_dir
         from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_claude_dir
 
         skill_dir = repo_root / ".claude" / "skills" / self.skill_name
         if skill_dir.exists():

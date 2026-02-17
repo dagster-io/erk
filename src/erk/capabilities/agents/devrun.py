@@ -58,8 +58,8 @@ class DevrunAgentCapability(Capability):
         """Install the devrun agent definition."""
         assert repo_root is not None, "DevrunAgentCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
+        from erk.artifacts.paths import get_bundled_claude_dir
         from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_claude_dir
 
         bundled_claude_dir = get_bundled_claude_dir()
 

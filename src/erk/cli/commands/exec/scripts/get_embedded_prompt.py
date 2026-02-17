@@ -31,7 +31,7 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.sync import get_bundled_github_dir
+from erk.artifacts.paths import get_bundled_github_dir
 
 # Available prompts that can be retrieved
 AVAILABLE_PROMPTS = frozenset(

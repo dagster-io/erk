@@ -55,8 +55,8 @@ class LearnWorkflowCapability(Capability):
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
+        from erk.artifacts.paths import get_bundled_github_dir
         from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_github_dir
 
         bundled_github_dir = get_bundled_github_dir()
         if not bundled_github_dir.exists():

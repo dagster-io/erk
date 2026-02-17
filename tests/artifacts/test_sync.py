@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from erk.artifacts.paths import (
+    ErkPackageInfo,
     _get_erk_package_dir,
     _is_editable_install,
     get_bundled_claude_dir,
@@ -29,15 +30,15 @@ BUNDLED_AGENTS: frozenset[str] = frozenset({"devrun"})
 
 def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
     """Skips file copying in erk repo but still updates state."""
-    # Create pyproject.toml with erk name
-    pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
-
-    # Config is checked after the erk repo early-return, so values don't matter
+    # Config with in_erk_repo=True triggers the erk repo early-return
     config = ArtifactSyncConfig(
-        bundled_claude_dir=tmp_path,
-        bundled_github_dir=tmp_path,
-        current_version="1.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=True,
+            bundled_claude_dir=tmp_path,
+            bundled_github_dir=tmp_path,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
     )
@@ -52,9 +53,13 @@ def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -> None:
     """Fails when bundled .claude/ directory doesn't exist."""
     nonexistent = tmp_path / "nonexistent"
     config = ArtifactSyncConfig(
-        bundled_claude_dir=nonexistent,
-        bundled_github_dir=nonexistent,
-        current_version="1.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=nonexistent,
+            bundled_github_dir=nonexistent,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
     )
@@ -81,9 +86,13 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
     # github dir doesn't exist so no workflows synced
     nonexistent = tmp_path / "nonexistent"
     config = ArtifactSyncConfig(
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=nonexistent,
-        current_version="1.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=nonexistent,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
         installed_capabilities=frozenset({"learned-docs"}),
         sync_capabilities=False,
     )
@@ -109,9 +118,13 @@ def test_sync_artifacts_saves_state(tmp_path: Path) -> None:
 
     nonexistent = tmp_path / "nonexistent"
     config = ArtifactSyncConfig(
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=nonexistent,
-        current_version="2.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=nonexistent,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="2.0.0",
+        ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
     )
@@ -248,9 +261,13 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
     target_dir.mkdir()
 
     config = ArtifactSyncConfig(
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=bundled_github,
-        current_version="1.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=bundled_github,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
         installed_capabilities=frozenset({"erk-impl-workflow"}),
         sync_capabilities=False,
     )
@@ -432,9 +449,13 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
 
     nonexistent = tmp_path / "nonexistent"
     config = ArtifactSyncConfig(
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=nonexistent,
-        current_version="1.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=nonexistent,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
         installed_capabilities=frozenset({"learned-docs", "devrun-agent"}),
         sync_capabilities=False,
     )
@@ -479,9 +500,13 @@ def test_sync_artifacts_syncs_installed_capabilities(tmp_path: Path) -> None:
 
     nonexistent = tmp_path / "nonexistent"
     config = ArtifactSyncConfig(
-        bundled_claude_dir=bundled_dir,
-        bundled_github_dir=nonexistent,
-        current_version="1.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=nonexistent,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
     )
@@ -565,9 +590,13 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
     # Use code-reviews-system since that's the capability that owns the actions
     # in the managed artifacts registry (actions can only be registered once)
     config = ArtifactSyncConfig(
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=bundled_github,
-        current_version="1.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=bundled_github,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
         installed_capabilities=frozenset({"code-reviews-system"}),
         sync_capabilities=False,
     )
@@ -657,10 +686,6 @@ def test_sync_dignified_review_handles_missing_sources(tmp_path: Path) -> None:
 
 def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> None:
     """sync_artifacts in erk repo correctly tracks nested commands."""
-    # Create pyproject.toml to simulate erk repo
-    pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
-
     # Create bundled commands with nested structure
     bundled_claude = tmp_path / ".claude"
     bundled_cmd = bundled_claude / "commands" / "erk"
@@ -672,22 +697,20 @@ def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> No
     nested_cmd.mkdir(parents=True)
     (nested_cmd / "impl-execute.md").write_text("# Nested Command", encoding="utf-8")
 
-    # Note: The erk repo code path uses get_bundled_*_dir() directly to compute state
-    # from source, so we still need to patch those. Config is required but not used
-    # because the erk repo check returns early.
+    # in_erk_repo=True triggers the erk repo code path; _compute_source_artifact_state
+    # now receives package directly instead of calling get_bundled_*_dir()
     config = ArtifactSyncConfig(
-        bundled_claude_dir=bundled_claude,
-        bundled_github_dir=tmp_path / ".github",
-        current_version="1.0.0",
+        package=ErkPackageInfo(
+            in_erk_repo=True,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=tmp_path / ".github",
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
         installed_capabilities=frozenset(),
         sync_capabilities=False,
     )
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=tmp_path / ".github"),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_artifacts(tmp_path, force=False, config=config)
+    result = sync_artifacts(tmp_path, force=False, config=config)
 
     assert result.success is True
     # Should be development mode (no files actually copied)

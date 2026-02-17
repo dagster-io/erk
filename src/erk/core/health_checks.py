@@ -13,9 +13,8 @@ from erk.artifacts.artifact_health import (
     ArtifactStatusType,
     get_artifact_health,
 )
-from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import ArtifactFileState
-from erk.artifacts.paths import get_bundled_claude_dir
+from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.state import load_artifact_state, load_installed_capabilities
 from erk.core.claude_settings import (
     ERK_PERMISSION,
@@ -1422,7 +1421,7 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
     Returns:
         CheckResult with artifact health status
     """
-    in_erk_repo = is_in_erk_repo(repo_root)
+    package = ErkPackageInfo.from_project_dir(repo_root)
 
     # Check for .claude/ directory
     claude_dir = repo_root / ".claude"
@@ -1441,7 +1440,7 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
     # In erk repo, use None to check all artifacts (they're all from source)
     # In external repos, only check artifacts for installed capabilities
     installed_capabilities: frozenset[str] | None = None
-    if not in_erk_repo:
+    if not package.in_erk_repo:
         installed_capabilities = load_installed_capabilities(repo_root)
 
     # Get artifact health
@@ -1449,7 +1448,7 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
         repo_root,
         saved_files,
         installed_capabilities=installed_capabilities,
-        bundled_claude_dir=get_bundled_claude_dir(),
+        package=package,
     )
 
     # Handle skipped cases from get_artifact_health
@@ -1476,7 +1475,7 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
         )
 
     # In erk repo, show counts without status comparison (all from source)
-    if in_erk_repo:
+    if package.in_erk_repo:
         return _build_erk_repo_artifacts_result(result)
 
     return _build_managed_artifacts_result(result)
