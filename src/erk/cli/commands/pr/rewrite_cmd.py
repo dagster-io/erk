@@ -112,7 +112,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     # Phase 4: Generate AI title/body
     click.echo(click.style("Phase 3: Generating commit message", bold=True))
 
-    plan_provider = PlanContextProvider(ctx.github_issues)
+    plan_provider = PlanContextProvider(plan_store=ctx.plan_store, github_issues=ctx.github_issues)
     plan_context = plan_provider.get_plan_context(
         repo_root=discovery.repo_root,
         branch_name=discovery.current_branch,

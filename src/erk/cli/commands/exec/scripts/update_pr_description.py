@@ -105,7 +105,7 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
     # Phase 3: Plan context
     click.echo(click.style("Phase 3: Fetching plan context", bold=True))
 
-    plan_provider = PlanContextProvider(ctx.github_issues)
+    plan_provider = PlanContextProvider(plan_store=ctx.plan_store, github_issues=ctx.github_issues)
     plan_context = plan_provider.get_plan_context(
         repo_root=discovery.repo_root,
         branch_name=discovery.current_branch,

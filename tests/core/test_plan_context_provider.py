@@ -10,6 +10,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
 )
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _make_issue_info(
@@ -34,10 +35,15 @@ def _make_issue_info(
     )
 
 
+def _make_provider(github_issues: FakeGitHubIssues) -> PlanContextProvider:
+    """Create a PlanContextProvider with GitHubPlanStore backed by fake issues."""
+    plan_store = GitHubPlanStore(github_issues)
+    return PlanContextProvider(plan_store=plan_store, github_issues=github_issues)
+
+
 def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> None:
     """Test that branches without issue number prefix return None."""
-    github_issues = FakeGitHubIssues()
-    provider = PlanContextProvider(github_issues)
+    provider = _make_provider(FakeGitHubIssues())
 
     result = provider.get_plan_context(
         repo_root=tmp_path,
@@ -49,8 +55,7 @@ def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> No
 
 def test_get_plan_context_returns_none_for_missing_issue(tmp_path: Path) -> None:
     """Test that missing issues return None (graceful degradation)."""
-    github_issues = FakeGitHubIssues(issues={})
-    provider = PlanContextProvider(github_issues)
+    provider = _make_provider(FakeGitHubIssues(issues={}))
 
     result = provider.get_plan_context(
         repo_root=tmp_path,
@@ -60,34 +65,41 @@ def test_get_plan_context_returns_none_for_missing_issue(tmp_path: Path) -> None
     assert result is None
 
 
-def test_get_plan_context_returns_none_for_non_plan_issue(tmp_path: Path) -> None:
-    """Test that issues without plan_comment_id return None."""
-    # Create an issue without plan-header metadata
+def test_get_plan_context_returns_content_for_old_format_issue(tmp_path: Path) -> None:
+    """Test that old-format issues (body as plan content) return plan context.
+
+    PlanStore supports backward compatibility - issues without plan-header
+    metadata have their body treated as plan content directly.
+    """
     issue = _make_issue_info(
         number=123,
         title="Regular Issue",
         body="This is just a regular issue body",
     )
-    github_issues = FakeGitHubIssues(issues={123: issue})
-    provider = PlanContextProvider(github_issues)
+    provider = _make_provider(FakeGitHubIssues(issues={123: issue}))
 
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="P123-fix-bug",
     )
 
-    assert result is None
+    assert result is not None
+    assert result.issue_number == 123
+    assert result.plan_content == "This is just a regular issue body"
 
 
-def test_get_plan_context_returns_none_for_missing_comment(tmp_path: Path) -> None:
-    """Test that missing plan comment returns None."""
-    # Create a plan issue with plan_comment_id but no corresponding comment
+def test_get_plan_context_falls_back_to_body_for_missing_comment(tmp_path: Path) -> None:
+    """Test that missing plan comment falls back to issue body via PlanStore.
+
+    When plan_comment_id points to a deleted/missing comment, PlanStore
+    falls back to the issue body as plan content (backward compatibility).
+    """
     body = format_plan_header_body(
         created_at="2024-01-01T00:00:00Z",
         created_by="testuser",
         worktree_name=None,
         branch_name=None,
-        plan_comment_id=1000,  # Comment exists but we won't configure it
+        plan_comment_id=1000,
         last_dispatched_run_id=None,
         last_dispatched_node_id=None,
         last_dispatched_at=None,
@@ -110,15 +122,16 @@ def test_get_plan_context_returns_none_for_missing_comment(tmp_path: Path) -> No
         learned_from_issue=None,
     )
     issue = _make_issue_info(number=123, title="Plan: Fix bug", body=body)
-    github_issues = FakeGitHubIssues(issues={123: issue})
-    provider = PlanContextProvider(github_issues)
+    provider = _make_provider(FakeGitHubIssues(issues={123: issue}))
 
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="P123-fix-bug",
     )
 
-    assert result is None
+    # PlanStore falls back to issue body when comment is missing
+    assert result is not None
+    assert result.issue_number == 123
 
 
 def test_get_plan_context_extracts_plan_content(tmp_path: Path) -> None:
@@ -131,10 +144,8 @@ Users are getting logged out unexpectedly.
 ## Solution
 Fix the session token expiration logic."""
 
-    # Create the plan comment body
     comment_body = format_plan_content_comment(plan_content)
 
-    # Create plan issue body with plan_comment_id
     body = format_plan_header_body(
         created_at="2024-01-01T00:00:00Z",
         created_by="testuser",
@@ -164,7 +175,6 @@ Fix the session token expiration logic."""
     )
     issue = _make_issue_info(number=123, title="Plan: Fix Authentication Bug", body=body)
 
-    # Create comment with plan content
     comment = IssueComment(
         id=1000,
         body=comment_body,
@@ -176,7 +186,7 @@ Fix the session token expiration logic."""
         issues={123: issue},
         comments_with_urls={123: [comment]},
     )
-    provider = PlanContextProvider(github_issues)
+    provider = _make_provider(github_issues)
 
     result = provider.get_plan_context(
         repo_root=tmp_path,
@@ -195,7 +205,6 @@ def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
     plan_content = "# Plan: Implement Feature\n\nDetails here."
     comment_body = format_plan_content_comment(plan_content)
 
-    # Create plan issue with objective_issue link
     plan_body = format_plan_header_body(
         created_at="2024-01-01T00:00:00Z",
         created_by="testuser",
@@ -213,7 +222,7 @@ def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
         source_repo=None,
-        objective_issue=200,  # Link to objective
+        objective_issue=200,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -225,14 +234,12 @@ def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
     )
     plan_issue = _make_issue_info(number=123, title="Plan: Implement Feature", body=plan_body)
 
-    # Create objective issue
     objective_issue = _make_issue_info(
         number=200,
         title="Improve CI Reliability",
         body="Objective body",
     )
 
-    # Create plan comment
     comment = IssueComment(
         id=1000,
         body=comment_body,
@@ -244,7 +251,7 @@ def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
         issues={123: plan_issue, 200: objective_issue},
         comments_with_urls={123: [comment]},
     )
-    provider = PlanContextProvider(github_issues)
+    provider = _make_provider(github_issues)
 
     result = provider.get_plan_context(
         repo_root=tmp_path,
@@ -261,7 +268,6 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
     plan_content = "# Plan: Implement Feature\n\nDetails here."
     comment_body = format_plan_content_comment(plan_content)
 
-    # Create plan issue with objective_issue link to non-existent issue
     plan_body = format_plan_header_body(
         created_at="2024-01-01T00:00:00Z",
         created_by="testuser",
@@ -279,7 +285,7 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
         source_repo=None,
-        objective_issue=999,  # Non-existent objective
+        objective_issue=999,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -291,7 +297,6 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
     )
     plan_issue = _make_issue_info(number=123, title="Plan: Implement Feature", body=plan_body)
 
-    # Create plan comment
     comment = IssueComment(
         id=1000,
         body=comment_body,
@@ -300,10 +305,10 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
     )
 
     github_issues = FakeGitHubIssues(
-        issues={123: plan_issue},  # No objective issue
+        issues={123: plan_issue},
         comments_with_urls={123: [comment]},
     )
-    provider = PlanContextProvider(github_issues)
+    provider = _make_provider(github_issues)
 
     result = provider.get_plan_context(
         repo_root=tmp_path,
@@ -312,7 +317,7 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
 
     assert result is not None
     assert result.issue_number == 123
-    assert result.objective_summary is None  # Graceful degradation
+    assert result.objective_summary is None
 
 
 def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
@@ -359,9 +364,8 @@ def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
         issues={456: issue},
         comments_with_urls={456: [comment]},
     )
-    provider = PlanContextProvider(github_issues)
+    provider = _make_provider(github_issues)
 
-    # Legacy format without P prefix
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="456-fix-bug",
@@ -379,14 +383,12 @@ def test_plan_context_dataclass_frozen() -> None:
         objective_summary="Objective #1: Test",
     )
 
-    # Verify we can read fields
     assert context.issue_number == 123
     assert context.plan_content == "Plan content"
     assert context.objective_summary == "Objective #1: Test"
 
-    # Verify frozen (should raise FrozenInstanceError on assignment)
     try:
         context.issue_number = 456  # type: ignore[misc]
         raise AssertionError("Expected FrozenInstanceError")
     except AttributeError:
-        pass  # Expected
+        pass

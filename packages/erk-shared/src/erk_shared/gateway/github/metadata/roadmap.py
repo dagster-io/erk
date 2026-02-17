@@ -274,34 +274,6 @@ def group_steps_by_phase(steps: list[RoadmapStep]) -> list[RoadmapPhase]:
     return phases
 
 
-def _derive_step_status(
-    *,
-    explicit: RoadmapStepStatus | None,
-    pr_provided: bool,
-    plan_provided: bool,
-    resolved_pr: str | None,
-    resolved_plan: str | None,
-    existing: RoadmapStepStatus,
-) -> RoadmapStepStatus:
-    """Derive step status: explicit > infer from explicitly-provided values > preserve.
-
-    Only derives status from values the caller explicitly passed (not preserved ones).
-    """
-    if explicit is not None:
-        return explicit
-    if pr_provided:
-        if resolved_pr:
-            return "done"
-        if resolved_plan:
-            return "in_progress"
-        return "pending"
-    if plan_provided:
-        if resolved_plan:
-            return "in_progress"
-        return "pending"
-    return existing
-
-
 def update_step_in_frontmatter(
     block_content: str,
     step_id: str,
@@ -347,14 +319,16 @@ def update_step_in_frontmatter(
             else:
                 resolved_plan = plan or None
 
-            new_status = _derive_step_status(
-                explicit=status,
-                pr_provided=pr is not None,
-                plan_provided=plan is not None,
-                resolved_pr=resolved_pr,
-                resolved_plan=resolved_plan,
-                existing=step.status,
-            )
+            # Determine status: explicit > infer from resolved values > preserve
+            new_status: RoadmapStepStatus
+            if status is not None:
+                new_status = status
+            elif resolved_pr:
+                new_status = cast(RoadmapStepStatus, "in_progress")
+            elif resolved_plan:
+                new_status = cast(RoadmapStepStatus, "in_progress")
+            else:
+                new_status = step.status  # preserve existing status
 
             updated_steps.append(
                 replace(step, status=new_status, plan=resolved_plan, pr=resolved_pr)

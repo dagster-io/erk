@@ -41,10 +41,10 @@ Optimized slash commands follow a two-phase structure:
 
 **Phase 2 — Reason and act (2-3 turns):** The LLM analyzes the complete dataset, composes outputs, and executes writes (ideally in parallel).
 
-<!-- Source: .claude/commands/erk/objective-update-with-landed-pr.md, Step 1 -->
+<!-- Source: .claude/commands/erk/objective-update-with-landed-pr.md, Step 0 -->
 <!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py, objective_fetch_context -->
 
-The `objective-update-with-landed-pr` command demonstrates this: Step 1 calls `erk exec objective-fetch-context` once to fetch the objective issue, plan issue, PR details, and parsed roadmap context. The agent then has everything it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.
+The `objective-update-with-landed-pr` command demonstrates this: Step 0 calls `erk exec objective-fetch-context` once to fetch the objective issue, plan issue, PR details, and parsed roadmap context. The subagent then has everything it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.
 
 ## Write-Side Parallelism
 

@@ -58,7 +58,6 @@ from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_learn_status,
     extract_plan_header_learned_from_issue,
     update_plan_header_learn_materials_gist_url,
     update_plan_header_learn_plan_completed,
@@ -66,6 +65,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
 from erk_shared.gateway.github.types import BodyText, PRDetails
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
+from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.sessions.discovery import find_sessions_for_plan
 from erk_shared.stack.validation import validate_parent_is_trunk
 
@@ -296,16 +296,18 @@ def _check_learn_status_and_prompt(
         return
 
     # Skip learn check for learn plans (they don't need to be learned from)
-    # Fetch issue to check labels and learn_status
-    issue = ctx.issues.get_issue(repo_root, plan_issue_number)
-    if isinstance(issue, IssueNotFound):
+    plan_id = str(plan_issue_number)
+    plan_result = ctx.plan_store.get_plan(repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
         user_output(click.style("Warning: ", fg="yellow") + f"Issue #{plan_issue_number} not found")
         return
-    if "erk-learn" in issue.labels:
+    if "erk-learn" in plan_result.labels:
         return
 
     # Check learn_status from plan header metadata
-    learn_status = extract_plan_header_learn_status(issue.body)
+    learn_status = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_status")
+    if isinstance(learn_status, PlanNotFound):
+        return
 
     # Handle completed statuses - learn has already finished
     completed_statuses = {"completed_no_plan", "completed_with_plan", "plan_completed"}

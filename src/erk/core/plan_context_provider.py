@@ -9,12 +9,9 @@ from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_from_comment,
-    extract_plan_header_comment_id,
-    extract_plan_header_objective_issue,
-)
 from erk_shared.naming import extract_leading_issue_number
+from erk_shared.plan_store.store import PlanStore
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -37,14 +34,13 @@ class PlanContextProvider:
 
     This provider extracts plan content from GitHub issues when a branch
     follows the naming convention P{issue_number}-{slug} or {issue_number}-{slug}.
+
+    Uses PlanStore for plan fetching. GitHubIssues is retained solely for
+    objective title lookup (objectives are issues, not plans).
     """
 
-    def __init__(self, github_issues: GitHubIssues) -> None:
-        """Initialize the provider.
-
-        Args:
-            github_issues: Gateway for GitHub issue operations
-        """
+    def __init__(self, *, plan_store: PlanStore, github_issues: GitHubIssues) -> None:
+        self._plan_store = plan_store
         self._github_issues = github_issues
 
     def get_plan_context(
@@ -57,10 +53,8 @@ class PlanContextProvider:
 
         Attempts to fetch plan context by:
         1. Extracting issue number from branch name (P5763-fix-... -> 5763)
-        2. Fetching the issue body
-        3. Extracting plan_comment_id from metadata
-        4. Fetching the comment and extracting plan content
-        5. Optionally getting objective title if linked
+        2. Fetching the plan via PlanStore
+        3. Optionally getting objective title if linked
 
         Returns None on any failure, allowing graceful degradation for
         branches not linked to plans.
@@ -72,44 +66,22 @@ class PlanContextProvider:
         Returns:
             PlanContext if plan found, None otherwise
         """
-        # Step 1: Extract issue number from branch name
         issue_number = extract_leading_issue_number(branch_name)
         if issue_number is None:
             return None
 
-        # Step 2: Fetch the issue body
-        issue_info = self._github_issues.get_issue(repo_root, issue_number)
-        if isinstance(issue_info, IssueNotFound):
-            # Issue doesn't exist - graceful degradation
+        result = self._plan_store.get_plan(repo_root, str(issue_number))
+        if isinstance(result, PlanNotFound):
             return None
 
-        # Step 3: Extract plan_comment_id from metadata
-        comment_id = extract_plan_header_comment_id(issue_info.body)
-        if comment_id is None:
-            # Not an erk-plan issue or no plan comment yet
-            return None
-
-        # Step 4: Fetch the comment and extract plan content
-        try:
-            comment_body = self._github_issues.get_comment_by_id(repo_root, comment_id)
-        except RuntimeError:
-            # Comment not found or API error
-            return None
-
-        plan_content = extract_plan_from_comment(comment_body)
-        if plan_content is None:
-            # Comment doesn't contain plan content
-            return None
-
-        # Step 5: Optionally get objective title if linked
         objective_summary = self._get_objective_summary(
             repo_root=repo_root,
-            issue_body=issue_info.body,
+            objective_id=result.objective_id,
         )
 
         return PlanContext(
             issue_number=issue_number,
-            plan_content=plan_content,
+            plan_content=result.body,
             objective_summary=objective_summary,
         )
 
@@ -117,23 +89,21 @@ class PlanContextProvider:
         self,
         *,
         repo_root: Path,
-        issue_body: str,
+        objective_id: int | None,
     ) -> str | None:
         """Get objective summary if plan is linked to an objective.
 
         Args:
             repo_root: Repository root path
-            issue_body: Plan issue body
+            objective_id: Parent objective issue number, or None
 
         Returns:
             Summary like "Objective #123: Title" if linked, None otherwise
         """
-        objective_issue = extract_plan_header_objective_issue(issue_body)
-        if objective_issue is None:
+        if objective_id is None:
             return None
 
-        objective_info = self._github_issues.get_issue(repo_root, objective_issue)
+        objective_info = self._github_issues.get_issue(repo_root, objective_id)
         if isinstance(objective_info, IssueNotFound):
-            # Objective issue not found
             return None
-        return f"Objective #{objective_issue}: {objective_info.title}"
+        return f"Objective #{objective_id}: {objective_info.title}"

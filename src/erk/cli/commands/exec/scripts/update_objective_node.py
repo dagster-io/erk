@@ -130,26 +130,14 @@ def _replace_table_in_text(
     else:
         resolved_pr = "-"
 
-    existing_status = match.group(3).strip()
-
     if explicit_status is not None:
         display_status = explicit_status.replace("_", "-")
-    elif new_pr is not None:
-        # PR was explicitly set or cleared — derive from resolved values
-        if resolved_pr != "-" and resolved_pr:
-            display_status = "done"
-        elif resolved_plan != "-" and resolved_plan:
-            display_status = "in-progress"
-        else:
-            display_status = "pending"
-    elif new_plan is not None:
-        # Only plan was explicitly provided — derive from plan only
-        if resolved_plan != "-" and resolved_plan:
-            display_status = "in-progress"
-        else:
-            display_status = "pending"
+    elif resolved_pr != "-" and resolved_pr:
+        display_status = "in-progress"
+    elif resolved_plan != "-" and resolved_plan:
+        display_status = "in-progress"
     else:
-        display_status = existing_status  # nothing explicitly changed, preserve
+        display_status = "pending"
 
     replacement = (
         f"|{match.group(1)}|{match.group(2)}| {display_status} | {resolved_plan} | {resolved_pr} |"

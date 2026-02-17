@@ -18,7 +18,7 @@ Run after landing a PR:
 
 ## Agent Instructions
 
-### Step 1: Fetch All Context
+### Step 0: Fetch All Context
 
 Check `$ARGUMENTS` for optional overrides:
 
@@ -46,11 +46,19 @@ This returns JSON with:
 
 If this returns `success: false`, display the error and stop.
 
-### Step 2: Update Roadmap Steps
+### Step 1: Delegate to Subagent
 
-Read `matched_steps` from the context blob. These are the steps this plan completed — no analysis needed. If `matched_steps` is empty, the plan may not have been linked to specific steps; fall back to comparing the plan body against the roadmap to identify which steps were completed.
+Use the Task tool to spawn a specialized subagent. Pass the full JSON context blob and the `--auto-close` flag if present.
 
-Update roadmap steps using a SINGLE batched command:
+**Subagent Instructions:**
+
+You are updating objective issue #<objective-number> after landing PR #<pr-number>.
+
+Your tasks:
+
+1. **Read `matched_steps` from the context blob.** These are the steps this plan completed — no analysis needed. If `matched_steps` is empty, the plan may not have been linked to specific steps; fall back to comparing the plan body against the roadmap to identify which steps were completed.
+
+**CRITICAL: Pass ALL completed steps as multiple `--node` flags in ONE command. Do NOT run separate commands per step — sequential calls cause race conditions and duplicate API calls.**
 
 Before running update-objective-node, extract the existing plan reference for each completed step from the objective roadmap YAML (available in the context blob). Pass `--plan "#<plan-number>"` to preserve it, or `--plan ""` if the step had no plan.
 
@@ -60,14 +68,11 @@ erk exec update-objective-node <objective-number> --node <step-id-1> --node <ste
 
 Preserve the existing plan reference for each step (available in `roadmap.phases`). The `--include-body` flag returns the fully-mutated body as `updated_body` — use this for prose reconciliation (do NOT re-fetch via `gh issue view`).
 
-### Step 3: Prose Reconciliation
-
-Compare `updated_body` against what the PR actually did:
-
-- Read each Design Decision. Did the PR override or refine any?
-- Read Implementation Context. Does the architecture description still match?
-- Read upcoming step descriptions. Did this PR change the landscape?
-- If nothing is stale, skip body update entirely.
+3. **Perform prose reconciliation.** Compare `updated_body` against what the PR actually did:
+   - Read each Design Decision. Did the PR override or refine any?
+   - Read Implementation Context. Does the architecture description still match?
+   - Read upcoming step descriptions. Did this PR change the landscape?
+   - If nothing is stale, skip body update entirely.
 
 | Contradiction Type          | Example                                                      | Section to Update                             |
 | --------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
@@ -77,9 +82,7 @@ Compare `updated_body` against what the PR actually did:
 | **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                        |
 | **New discovery**           | PR revealed a caching bug affecting future steps             | Implementation Context or new Design Decision |
 
-### Step 4: Post Action Comment
-
-Post the action comment via the exec script. Provide structured JSON on stdin:
+4. **Post the action comment** via the exec script. Provide structured JSON on stdin:
 
 ```bash
 echo '{"issue_number": <N>, "date": "YYYY-MM-DD", "pr_number": <N>, "phase_step": "X.Y, X.Z", "title": "Brief title", "what_was_done": ["..."], "lessons_learned": ["..."], "roadmap_updates": ["Step X.Y: status -> done"], "body_reconciliation": [{"section": "...", "change": "..."}]}' | erk exec objective-post-action-comment
@@ -91,9 +94,7 @@ echo '{"issue_number": <N>, "date": "YYYY-MM-DD", "pr_number": <N>, "phase_step"
 - **Lessons Learned:** Infer from implementation patterns. If straightforward, note what worked well.
 - **Body Reconciliation:** Only include if prose sections needed updating. Omit entirely if nothing is stale.
 
-### Step 5: Update Body (if needed)
-
-If prose reconciliation found stale sections, update the objective body:
+5. **If prose reconciliation found stale sections**, update the objective body:
 
 ```bash
 erk exec update-issue-body <issue-number> --body "$(cat <<'BODY_EOF'
@@ -102,33 +103,37 @@ BODY_EOF
 )"
 ```
 
-If nothing is stale, skip this step.
-
-### Step 6: Validate and Close
-
-Validate the objective:
+6. **Validate the objective:**
 
 ```bash
 erk objective check <issue-number> --json-output
 ```
 
-If checks fail, report failures and attempt to fix. The JSON output includes `all_complete`.
+If checks fail, report failures and attempt to fix. The JSON output now includes `all_complete`.
+
+7. **Check closing triggers using `all_complete`:**
 
 **If `all_complete` is `true`:**
 
 - **If `--auto-close` was provided:** Post "Action: Objective Complete" comment, close the issue (`gh issue close <issue-number>`), report: "All steps complete - objective closed automatically"
-- **Otherwise:** Ask the user:
-  ```
-  All roadmap steps are complete. Should I close objective #<number> now?
-  - Yes, close with final summary
-  - Not yet, there may be follow-up work
-  - I'll close it manually later
-  ```
-  If yes: post final comment and close. Otherwise: acknowledge and report complete.
+- **Otherwise:** Report back to parent: "All steps complete, user should be asked if they want to close"
 
 **If `all_complete` is `false`:**
 
 - Report the update is complete. Use `roadmap.next_step` to describe next focus.
+
+### Step 2: Handle Subagent Response
+
+If the subagent reports "all steps complete", ask the user:
+
+```
+All roadmap steps are complete. Should I close objective #<number> now?
+- Yes, close with final summary
+- Not yet, there may be follow-up work
+- I'll close it manually later
+```
+
+If yes: post final comment and close. Otherwise: acknowledge and report complete.
 
 ---
 

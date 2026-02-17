@@ -532,7 +532,7 @@ def test_none_plan_preserves_when_pr_set() -> None:
     # Plan should be preserved (#200 still present) because new_plan=None means preserve
     assert "#200" in result
     assert "#500" in result
-    assert "status: done" in result
+    assert "status: in_progress" in result
 
 
 def test_none_plan_preserves_when_no_pr() -> None:
@@ -863,7 +863,7 @@ def test_replace_table_in_text_preserves_plan_when_pr_set() -> None:
     result = _replace_table_in_text(text, "1.1", new_plan=None, new_pr="#500", explicit_status=None)
     assert result is not None
     assert "| #200 | #500 |" in result
-    assert "| done |" in result
+    assert "| in-progress |" in result
 
 
 def test_replace_table_in_text_preserves_plan_when_no_pr() -> None:
@@ -902,7 +902,7 @@ def test_update_step_with_pr_and_plan_preserved() -> None:
     updated_body = fake_gh.updated_bodies[0][1]
     assert "#500" in updated_body
     assert "#200" in updated_body
-    assert "status: done" in updated_body
+    assert "status: in_progress" in updated_body
 
 
 def test_update_step_with_pr_and_plan_cleared() -> None:
@@ -926,7 +926,7 @@ def test_update_step_with_pr_and_plan_cleared() -> None:
 
     updated_body = fake_gh.updated_bodies[0][1]
     assert "#500" in updated_body
-    assert "status: done" in updated_body
+    assert "status: in_progress" in updated_body
 
 
 def test_pr_without_plan_returns_error() -> None:

@@ -11,11 +11,10 @@ import click
 
 from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
-from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PlanNotFound, PlanState
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +38,7 @@ def _wait_for_issue_closure(
     Returns True if issue closed within retry window, False otherwise.
     Returns False if issue becomes inaccessible (fail-open).
     """
+    plan_id = str(issue_number)
     logger.debug(
         "Waiting for issue #%d to close (max %d retries, %.1fs delay)",
         issue_number,
@@ -47,13 +47,13 @@ def _wait_for_issue_closure(
     )
     for attempt in range(_AUTO_CLOSE_MAX_RETRIES):
         ctx.time.sleep(_AUTO_CLOSE_RETRY_DELAY)
-        issue = ctx.issues.get_issue(repo_root, issue_number)
-        if isinstance(issue, IssueNotFound):
+        result = ctx.plan_store.get_plan(repo_root, plan_id)
+        if isinstance(result, PlanNotFound):
             logger.warning(
                 "Issue #%d became inaccessible during retry %d", issue_number, attempt + 1
             )
             return False
-        if issue.state == "CLOSED":
+        if result.state == PlanState.CLOSED:
             logger.debug("Issue #%d closed after %d retries", issue_number, attempt + 1)
             return True
         logger.debug(
@@ -87,6 +87,8 @@ def check_and_display_plan_issue_closure(
     if plan_number is None:
         return None
 
+    plan_id = str(plan_number)
+
     has_closing_ref = has_issue_closing_reference(
         pr_body,
         plan_number,
@@ -99,14 +101,12 @@ def check_and_display_plan_issue_closure(
         branch,
     )
 
-    # GitHubIssues.get_issue returns IssueNotFound for missing issues.
-    # This is a fail-open feature (non-critical), so we check and return None.
-    issue = ctx.issues.get_issue(repo_root, plan_number)
-    if isinstance(issue, IssueNotFound):
+    result = ctx.plan_store.get_plan(repo_root, plan_id)
+    if isinstance(result, PlanNotFound):
         logger.debug("Plan issue #%d not found, skipping closure check", plan_number)
         return None
 
-    if issue.state == "CLOSED":
+    if result.state == PlanState.CLOSED:
         user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
         return plan_number
 
@@ -130,7 +130,7 @@ def check_and_display_plan_issue_closure(
         )
         # Offer to close the issue manually
         if ctx.console.confirm(f"Close issue #{plan_number} now?", default=True):
-            ctx.issues.close_issue(repo_root, plan_number)
+            ctx.plan_store.close_plan(repo_root, plan_id)
             user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
 
     return plan_number

@@ -25,17 +25,13 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.ensure_ideal import EnsureIdeal
 from erk.core.context import ErkContext
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_learned_from_issue,
-    update_plan_header_learn_plan_completed,
-)
-from erk_shared.gateway.github.types import BodyText, MergeError, PRDetails
+from erk_shared.gateway.github.types import MergeError, PRDetails
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound
 from erk_shared.stack.validation import validate_parent_is_trunk
 
 # ---------------------------------------------------------------------------
@@ -466,31 +462,24 @@ def update_learn_plan(ctx: ErkContext, state: LandState) -> LandState | LandErro
     if state.plan_issue_number is None or state.merged_pr_number is None:
         return state
 
-    if not ctx.issues.issue_exists(state.main_repo_root, state.plan_issue_number):
-        return state
+    plan_id = str(state.plan_issue_number)
 
-    issue = ctx.issues.get_issue(state.main_repo_root, state.plan_issue_number)
-    if isinstance(issue, IssueNotFound):
-        return state
-
-    learned_from = extract_plan_header_learned_from_issue(issue.body)
-    if learned_from is None:
-        return state
-
-    if not ctx.issues.issue_exists(state.main_repo_root, learned_from):
-        return state
-
-    parent_issue = ctx.issues.get_issue(state.main_repo_root, learned_from)
-    if isinstance(parent_issue, IssueNotFound):
-        user_output(f"Warning: Could not find parent issue #{learned_from} to update learn status")
-        return state
-
-    updated_body = update_plan_header_learn_plan_completed(
-        issue_body=parent_issue.body,
-        learn_plan_pr=state.merged_pr_number,
+    learned_from = ctx.plan_backend.get_metadata_field(
+        state.main_repo_root, plan_id, "learned_from_issue"
     )
-    ctx.issues.update_issue_body(state.main_repo_root, learned_from, BodyText(content=updated_body))
-    user_output(f"Updated learn status on parent plan #{learned_from}")
+    if isinstance(learned_from, PlanNotFound) or learned_from is None:
+        return state
+
+    try:
+        ctx.plan_backend.update_metadata(
+            state.main_repo_root,
+            str(learned_from),
+            {"learn_status": "plan_completed", "learn_plan_pr": state.merged_pr_number},
+        )
+        user_output(f"Updated learn status on parent plan #{learned_from}")
+    except (RuntimeError, PlanHeaderNotFoundError):
+        user_output(f"Warning: Could not update learn status on parent plan #{learned_from}")
+
     return state
 
 
