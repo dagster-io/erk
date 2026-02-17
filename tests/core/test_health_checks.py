@@ -525,7 +525,10 @@ def test_check_legacy_config_ignores_legacy_when_primary_exists(tmp_path: Path) 
 
 def test_check_managed_artifacts_no_claude_dir(tmp_path: Path) -> None:
     """Test managed artifacts check when no .claude/ directory exists."""
-    result = check_managed_artifacts(tmp_path)
+    package = ErkPackageInfo.test_package(
+        bundled_claude_dir=tmp_path / "bundled" / ".claude",
+    )
+    result = check_managed_artifacts(tmp_path, package=package, installed_capabilities=None)
 
     assert result.name == "managed-artifacts"
     assert result.passed is True
@@ -533,9 +536,7 @@ def test_check_managed_artifacts_no_claude_dir(tmp_path: Path) -> None:
     assert "No .claude/ directory" in result.message
 
 
-def test_check_managed_artifacts_in_erk_repo(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_managed_artifacts_in_erk_repo(tmp_path: Path) -> None:
     """Test managed artifacts check in erk repo → shows counts from source."""
     import json
 
@@ -556,9 +557,8 @@ def test_check_managed_artifacts_in_erk_repo(
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
     package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir, in_erk_repo=True)
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
-    result = check_managed_artifacts(tmp_path)
+    result = check_managed_artifacts(tmp_path, package=package, installed_capabilities=None)
 
     assert result.name == "managed-artifacts"
     assert result.passed is True
@@ -568,9 +568,7 @@ def test_check_managed_artifacts_in_erk_repo(
     assert "commands" in result.details or "hooks" in result.details
 
 
-def test_check_managed_artifacts_produces_type_summary(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_managed_artifacts_produces_type_summary(tmp_path: Path) -> None:
     """Test managed artifacts check produces per-type summary."""
     import json
 
@@ -593,9 +591,8 @@ def test_check_managed_artifacts_produces_type_summary(
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
     package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
-    result = check_managed_artifacts(project_dir)
+    result = check_managed_artifacts(project_dir, package=package, installed_capabilities=None)
 
     assert result.name == "managed-artifacts"
     # The check runs and produces details with type summary
@@ -604,9 +601,7 @@ def test_check_managed_artifacts_produces_type_summary(
     assert "commands" in result.details or "hooks" in result.details
 
 
-def test_check_managed_artifacts_some_not_installed(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_managed_artifacts_some_not_installed(tmp_path: Path) -> None:
     """Test managed artifacts check when some artifacts are not installed."""
     import json
 
@@ -630,9 +625,8 @@ def test_check_managed_artifacts_some_not_installed(
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
     package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
-    result = check_managed_artifacts(project_dir)
+    result = check_managed_artifacts(project_dir, package=package, installed_capabilities=None)
 
     assert result.name == "managed-artifacts"
     assert result.passed is False  # not-installed causes failure
@@ -643,9 +637,7 @@ def test_check_managed_artifacts_some_not_installed(
     assert "erk artifact sync" in result.remediation
 
 
-def test_check_managed_artifacts_shows_type_summary(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_managed_artifacts_shows_type_summary(tmp_path: Path) -> None:
     """Test managed artifacts shows per-type summary in details."""
     import json
 
@@ -673,14 +665,12 @@ def test_check_managed_artifacts_shows_type_summary(
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
     package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
-    # Mock installed capabilities to include the skill capability
-    monkeypatch.setattr(
-        "erk.core.health_checks.load_installed_capabilities",
-        lambda _: frozenset({"dignified-python"}),
-    )
 
-    result = check_managed_artifacts(project_dir)
+    result = check_managed_artifacts(
+        project_dir,
+        package=package,
+        installed_capabilities=frozenset({"dignified-python"}),
+    )
 
     assert result.name == "managed-artifacts"
     assert result.details is not None
@@ -728,14 +718,12 @@ def test_check_managed_artifacts_actions_optional_without_workflows(
         bundled_claude_dir=bundled_claude,
         bundled_github_dir=bundled_github,
     )
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
-    # Mock installed capabilities to include the workflow capability (which includes actions)
-    monkeypatch.setattr(
-        "erk.core.health_checks.load_installed_capabilities",
-        lambda _: frozenset({"erk-impl-workflow"}),
-    )
 
-    result = check_managed_artifacts(project_dir)
+    result = check_managed_artifacts(
+        project_dir,
+        package=package,
+        installed_capabilities=frozenset({"erk-impl-workflow"}),
+    )
 
     assert result.name == "managed-artifacts"
     # Should PASS because actions not-installed is OK when workflows not installed
@@ -793,14 +781,12 @@ def test_check_managed_artifacts_actions_required_with_workflows(
         bundled_claude_dir=bundled_claude,
         bundled_github_dir=bundled_github,
     )
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
-    # Mock installed capabilities to include the workflow capability
-    monkeypatch.setattr(
-        "erk.core.health_checks.load_installed_capabilities",
-        lambda _: frozenset({"erk-impl-workflow"}),
-    )
 
-    result = check_managed_artifacts(project_dir)
+    result = check_managed_artifacts(
+        project_dir,
+        package=package,
+        installed_capabilities=frozenset({"erk-impl-workflow"}),
+    )
 
     assert result.name == "managed-artifacts"
     # Should FAIL because actions are required when workflows are installed
@@ -816,9 +802,7 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     assert "erk artifact sync" in result.remediation
 
 
-def test_check_managed_artifacts_changed_upstream_remediation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_managed_artifacts_changed_upstream_remediation(tmp_path: Path) -> None:
     """Test remediation message for changed-upstream artifacts.
 
     Scenario: A newer version of erk has updated the bundled artifact content.
@@ -859,9 +843,10 @@ hash = "{content_hash}"
     (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
 
     package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
-    result = check_managed_artifacts(project_dir)
+    result = check_managed_artifacts(
+        project_dir, package=package, installed_capabilities=frozenset()
+    )
 
     assert result.name == "managed-artifacts"
     assert result.passed is True  # changed-upstream is a warning, not failure
@@ -872,9 +857,7 @@ hash = "{content_hash}"
     assert "update to latest erk version" in result.remediation
 
 
-def test_check_managed_artifacts_locally_modified_remediation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_managed_artifacts_locally_modified_remediation(tmp_path: Path) -> None:
     """Test remediation message for locally-modified artifacts.
 
     Scenario: User has manually edited an installed artifact. The artifact state
@@ -942,9 +925,10 @@ hash = "{exit_plan_hash}"
     package = ErkPackageInfo.test_package(
         bundled_claude_dir=bundled_dir, current_version=erk_version
     )
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
-    result = check_managed_artifacts(project_dir)
+    result = check_managed_artifacts(
+        project_dir, package=package, installed_capabilities=frozenset()
+    )
 
     assert result.name == "managed-artifacts"
     assert result.passed is True  # locally-modified is a warning, not failure
@@ -955,9 +939,7 @@ hash = "{exit_plan_hash}"
     assert "restore erk defaults" in result.remediation
 
 
-def test_check_managed_artifacts_verbose_status_explanations(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_managed_artifacts_verbose_status_explanations(tmp_path: Path) -> None:
     """Test verbose output includes status explanations."""
     from erk.core.claude_settings import add_erk_hooks
 
@@ -978,9 +960,8 @@ def test_check_managed_artifacts_verbose_status_explanations(
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
     package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
-    monkeypatch.setattr(ErkPackageInfo, "from_project_dir", staticmethod(lambda _: package))
 
-    result = check_managed_artifacts(project_dir)
+    result = check_managed_artifacts(project_dir, package=package, installed_capabilities=None)
 
     assert result.name == "managed-artifacts"
     assert result.verbose_details is not None
