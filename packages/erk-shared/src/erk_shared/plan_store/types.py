@@ -1,6 +1,6 @@
 """Core types for provider-agnostic plan storage."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
@@ -29,6 +29,9 @@ class Plan:
         updated_at: Last update timestamp
         metadata: Provider-specific fields (e.g., {"number": 42} for GitHub)
         objective_id: Parent objective issue number, or None if not linked
+        header_fields: Parsed plan-header metadata fields (pre-parsed from issue body).
+            Populated during IssueInfo-to-Plan conversion to avoid repeated YAML parsing.
+            Keys are schema constants from schemas.py (e.g., WORKTREE_NAME, SOURCE_REPO).
     """
 
     plan_identifier: str
@@ -42,6 +45,7 @@ class Plan:
     updated_at: datetime
     metadata: dict[str, object]
     objective_id: int | None
+    header_fields: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

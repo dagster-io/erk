@@ -26,15 +26,13 @@ from erk.tui.sorting.types import SortKey, SortState
 from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_local_impl_at,
-    extract_plan_header_local_impl_event,
-    extract_plan_header_objective_issue,
-    extract_plan_header_remote_impl_at,
-    extract_plan_header_review_pr,
-    extract_plan_header_source_repo,
-    extract_plan_header_worktree_name,
+from erk_shared.gateway.github.metadata.schemas import (
+    LAST_LOCAL_IMPL_AT,
+    LAST_LOCAL_IMPL_EVENT,
+    LAST_REMOTE_IMPL_AT,
+    REVIEW_PR,
+    SOURCE_REPO,
+    WORKTREE_NAME,
 )
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
 from erk_shared.gateway.http.auth import fetch_github_token
@@ -43,37 +41,11 @@ from erk_shared.gateway.live_display.abc import LiveDisplay
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.plan_store.conversion import header_int, header_str, issue_info_to_plan
+from erk_shared.plan_store.types import Plan
 
 P = ParamSpec("P")
 T = TypeVar("T")
-
-
-def _issue_to_plan(issue: IssueInfo) -> Plan:
-    """Convert IssueInfo to Plan format.
-
-    Args:
-        issue: IssueInfo from GraphQL query
-
-    Returns:
-        Plan object with equivalent data
-    """
-    # Map issue state to PlanState
-    state = PlanState.OPEN if issue.state == "OPEN" else PlanState.CLOSED
-
-    return Plan(
-        plan_identifier=str(issue.number),
-        title=issue.title,
-        body=issue.body,
-        state=state,
-        url=issue.url,
-        labels=issue.labels,
-        assignees=issue.assignees,
-        created_at=issue.created_at,
-        updated_at=issue.updated_at,
-        metadata={"number": issue.number},
-        objective_id=extract_plan_header_objective_issue(issue.body),
-    )
 
 
 def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -> str:
@@ -276,8 +248,8 @@ def _build_plans_table(
         user_output(click.style("Error: ", fg="red") + str(e))
         raise SystemExit(1) from e
 
-    # Convert IssueInfo to Plan objects
-    plans = [_issue_to_plan(issue) for issue in plan_data.issues]
+    # Convert IssueInfo to Plan objects (single-parse: header_fields populated)
+    plans = [issue_info_to_plan(issue) for issue in plan_data.issues]
 
     if not plans:
         return None, 0
@@ -359,9 +331,7 @@ def _build_plans_table(
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
     # Check if any plan has source_repo (for cross-repo plans column)
-    has_cross_repo_plans = any(
-        plan.body and extract_plan_header_source_repo(plan.body) for plan in plans
-    )
+    has_cross_repo_plans = any(plan.header_fields.get(SOURCE_REPO) for plan in plans)
 
     # Create Rich table with columns
     table = Table(show_header=True, header_style="bold")
@@ -410,22 +380,22 @@ def _build_plans_table(
             worktree_name = worktree_by_issue[issue_number]
             exists_locally = True
 
-        # Extract from issue body - worktree may or may not exist locally
+        # Extract from pre-parsed header fields (no repeated YAML parsing)
         source_repo: str | None = None
         review_pr: int | None = None
-        if plan.body:
-            extracted = extract_plan_header_worktree_name(plan.body)
+        if plan.header_fields:
+            extracted = header_str(plan.header_fields, WORKTREE_NAME)
             if extracted:
                 # If we don't have a local name yet, use the one from issue body
                 if not worktree_name:
                     worktree_name = extracted
             # Extract implementation timestamps and event
-            last_local_impl_at = extract_plan_header_local_impl_at(plan.body)
-            last_local_impl_event = extract_plan_header_local_impl_event(plan.body)
-            last_remote_impl_at = extract_plan_header_remote_impl_at(plan.body)
+            last_local_impl_at = header_str(plan.header_fields, LAST_LOCAL_IMPL_AT)
+            last_local_impl_event = header_str(plan.header_fields, LAST_LOCAL_IMPL_EVENT)
+            last_remote_impl_at = header_str(plan.header_fields, LAST_REMOTE_IMPL_AT)
             # Extract source_repo for cross-repo plans
-            source_repo = extract_plan_header_source_repo(plan.body)
-            review_pr = extract_plan_header_review_pr(plan.body)
+            source_repo = header_str(plan.header_fields, SOURCE_REPO)
+            review_pr = header_int(plan.header_fields, REVIEW_PR)
 
         # Format the worktree cells
         worktree_name_cell = format_worktree_name_cell(worktree_name, exists_locally)

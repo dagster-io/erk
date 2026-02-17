@@ -19,7 +19,7 @@ from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
     extract_objective_header_comment_id,
@@ -32,18 +32,20 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
-    extract_plan_header_learn_plan_issue,
-    extract_plan_header_learn_plan_pr,
-    extract_plan_header_learn_run_id,
-    extract_plan_header_learn_status,
-    extract_plan_header_local_impl_at,
-    extract_plan_header_objective_issue,
-    extract_plan_header_remote_impl_at,
-    extract_plan_header_review_pr,
-    extract_plan_header_worktree_name,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
+)
+from erk_shared.gateway.github.metadata.schemas import (
+    LAST_LOCAL_IMPL_AT,
+    LAST_REMOTE_IMPL_AT,
+    LEARN_PLAN_ISSUE,
+    LEARN_PLAN_PR,
+    LEARN_RUN_ID,
+    LEARN_STATUS,
+    OBJECTIVE_ISSUE,
+    REVIEW_PR,
+    WORKTREE_NAME,
 )
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
@@ -54,7 +56,13 @@ from erk_shared.gateway.github.types import (
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 from erk_shared.naming import extract_leading_issue_number
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.plan_store.conversion import (
+    header_datetime,
+    header_int,
+    header_str,
+    issue_info_to_plan,
+)
+from erk_shared.plan_store.types import Plan
 
 logger = logging.getLogger(__name__)
 
@@ -130,13 +138,15 @@ class RealPlanDataProvider(PlanDataProvider):
         # Build local worktree mapping
         worktree_by_issue = self._build_worktree_mapping()
 
+        # Convert all issues to Plans (single-parse: header_fields populated)
+        plans = [issue_info_to_plan(issue) for issue in plan_data.issues]
+
         # First pass: collect learn_plan_issue numbers for batch fetch
         learn_issue_numbers: set[int] = set()
-        for issue in plan_data.issues:
-            if issue.body:
-                learn_plan_issue = extract_plan_header_learn_plan_issue(issue.body)
-                if learn_plan_issue is not None:
-                    learn_issue_numbers.add(learn_plan_issue)
+        for plan in plans:
+            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
+            if learn_plan_issue is not None:
+                learn_issue_numbers.add(learn_plan_issue)
 
         # Batch fetch learn issue states
         learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
@@ -145,9 +155,7 @@ class RealPlanDataProvider(PlanDataProvider):
         rows: list[PlanRowData] = []
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
 
-        for issue in plan_data.issues:
-            plan = _issue_to_plan(issue)
-
+        for issue, plan in zip(plan_data.issues, plans, strict=True):
             # Get workflow run for filtering
             workflow_run = plan_data.workflow_runs.get(issue.number)
 
@@ -449,7 +457,7 @@ class RealPlanDataProvider(PlanDataProvider):
             worktree_name, worktree_branch = worktree_by_issue[issue_number]
             exists_locally = True
 
-        # Extract from issue body
+        # Extract from pre-parsed header fields (no repeated YAML parsing)
         local_impl_str: str | None = None
         remote_impl_str: str | None = None
         learn_status: str | None = None
@@ -457,22 +465,20 @@ class RealPlanDataProvider(PlanDataProvider):
         learn_plan_pr: int | None = None
         learn_run_id: str | None = None
         review_pr: int | None = None
-        if plan.body:
-            extracted = extract_plan_header_worktree_name(plan.body)
+        if plan.header_fields:
+            extracted = header_str(plan.header_fields, WORKTREE_NAME)
             if extracted and not worktree_name:
                 worktree_name = extracted
-            local_impl_str = extract_plan_header_local_impl_at(plan.body)
-            remote_impl_str = extract_plan_header_remote_impl_at(plan.body)
-            learn_status = extract_plan_header_learn_status(plan.body)
-            learn_plan_issue = extract_plan_header_learn_plan_issue(plan.body)
-            learn_plan_pr = extract_plan_header_learn_plan_pr(plan.body)
-            learn_run_id = extract_plan_header_learn_run_id(plan.body)
-            review_pr = extract_plan_header_review_pr(plan.body)
+            local_impl_str = header_str(plan.header_fields, LAST_LOCAL_IMPL_AT)
+            remote_impl_str = header_str(plan.header_fields, LAST_REMOTE_IMPL_AT)
+            learn_status = header_str(plan.header_fields, LEARN_STATUS)
+            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
+            learn_plan_pr = header_int(plan.header_fields, LEARN_PLAN_PR)
+            learn_run_id = header_str(plan.header_fields, LEARN_RUN_ID)
+            review_pr = header_int(plan.header_fields, REVIEW_PR)
 
-        # Extract objective_issue from plan body
-        objective_issue: int | None = None
-        if plan.body:
-            objective_issue = extract_plan_header_objective_issue(plan.body)
+        # Extract objective_issue from pre-parsed header fields
+        objective_issue = header_int(plan.header_fields, OBJECTIVE_ISSUE)
 
         # Look up learn plan issue closed state
         learn_plan_issue_closed: bool | None = None
@@ -493,13 +499,9 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_plan_issue_closed=learn_plan_issue_closed,
         )
 
-        # Parse ISO 8601 timestamps for storage
-        last_local_impl_at: datetime | None = None
-        last_remote_impl_at: datetime | None = None
-        if local_impl_str:
-            last_local_impl_at = datetime.fromisoformat(local_impl_str.replace("Z", "+00:00"))
-        if remote_impl_str:
-            last_remote_impl_at = datetime.fromisoformat(remote_impl_str.replace("Z", "+00:00"))
+        # Get datetime versions for storage (already parsed by YAML)
+        last_local_impl_at = header_datetime(plan.header_fields, LAST_LOCAL_IMPL_AT)
+        last_remote_impl_at = header_datetime(plan.header_fields, LAST_REMOTE_IMPL_AT)
 
         # Format time displays
         local_impl = format_relative_time(local_impl_str)
@@ -755,24 +757,6 @@ def _format_learn_display_icon(
         return f"✓ #{learn_plan_pr}"
     # Fallback for unknown status
     return "-"
-
-
-def _issue_to_plan(issue: IssueInfo) -> Plan:
-    """Convert IssueInfo to Plan format."""
-    state = PlanState.OPEN if issue.state == "OPEN" else PlanState.CLOSED
-    return Plan(
-        plan_identifier=str(issue.number),
-        title=issue.title,
-        body=issue.body,
-        state=state,
-        url=issue.url,
-        labels=issue.labels,
-        assignees=issue.assignees,
-        created_at=issue.created_at,
-        updated_at=issue.updated_at,
-        metadata={"number": issue.number},
-        objective_id=extract_plan_header_objective_issue(issue.body),
-    )
 
 
 def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -> None:
