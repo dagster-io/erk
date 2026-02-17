@@ -532,7 +532,7 @@ def test_none_plan_preserves_when_pr_set() -> None:
     # Plan should be preserved (#200 still present) because new_plan=None means preserve
     assert "#200" in result
     assert "#500" in result
-    assert "status: in_progress" in result
+    assert "status: done" in result
 
 
 def test_none_plan_preserves_when_no_pr() -> None:
@@ -806,6 +806,27 @@ def test_v2_no_comment_update_when_no_header() -> None:
     assert len(fake_gh.updated_comments) == 0
 
 
+def test_replace_table_plan_only_with_existing_pr_derives_in_progress() -> None:
+    """_replace_table_in_text: plan only with existing PR derives in-progress, not done.
+
+    Regression test: when new_plan="#NNN" but new_pr=None, the preserved
+    PR value should NOT influence status derivation in the table path.
+    """
+    from erk.cli.commands.exec.scripts.update_objective_node import _replace_table_in_text
+
+    text = """\
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 2.1 | Implement main feature | planning | - | #200 |
+"""
+    result = _replace_table_in_text(
+        text, "2.1", new_plan="#7000", new_pr=None, explicit_status=None
+    )
+    assert result is not None
+    # Status should derive from plan only (in-progress), not from preserved PR (done)
+    assert "| in-progress | #7000 | #200 |" in result
+
+
 def test_replace_table_in_text_basic() -> None:
     """_replace_table_in_text updates a step's plan/PR cells in markdown text."""
     from erk.cli.commands.exec.scripts.update_objective_node import _replace_table_in_text
@@ -842,7 +863,7 @@ def test_replace_table_in_text_preserves_plan_when_pr_set() -> None:
     result = _replace_table_in_text(text, "1.1", new_plan=None, new_pr="#500", explicit_status=None)
     assert result is not None
     assert "| #200 | #500 |" in result
-    assert "| in-progress |" in result
+    assert "| done |" in result
 
 
 def test_replace_table_in_text_preserves_plan_when_no_pr() -> None:
@@ -881,7 +902,7 @@ def test_update_step_with_pr_and_plan_preserved() -> None:
     updated_body = fake_gh.updated_bodies[0][1]
     assert "#500" in updated_body
     assert "#200" in updated_body
-    assert "status: in_progress" in updated_body
+    assert "status: done" in updated_body
 
 
 def test_update_step_with_pr_and_plan_cleared() -> None:
@@ -905,7 +926,7 @@ def test_update_step_with_pr_and_plan_cleared() -> None:
 
     updated_body = fake_gh.updated_bodies[0][1]
     assert "#500" in updated_body
-    assert "status: in_progress" in updated_body
+    assert "status: done" in updated_body
 
 
 def test_pr_without_plan_returns_error() -> None:
