@@ -12,7 +12,9 @@ from dataclasses import dataclass
 
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
+    RoadmapStep,
     RoadmapStepStatus,
+    group_steps_by_phase,
 )
 
 _TERMINAL_STATUSES: set[RoadmapStepStatus] = {"done", "skipped"}
@@ -102,3 +104,29 @@ def graph_from_phases(phases: list[RoadmapPhase]) -> DependencyGraph:
             last_step_id_of_prev_phase = phase.steps[-1].id
 
     return DependencyGraph(nodes=tuple(nodes))
+
+
+def steps_from_graph(graph: DependencyGraph) -> list[RoadmapStep]:
+    """Convert graph nodes to flat RoadmapStep list (inverse of the flatten in graph_from_phases).
+
+    Strips dependency information, returning plain steps suitable for
+    serialization to YAML frontmatter via render_roadmap_block_inner().
+    """
+    return [
+        RoadmapStep(
+            id=node.id,
+            description=node.description,
+            status=node.status,
+            plan=node.plan,
+            pr=node.pr,
+        )
+        for node in graph.nodes
+    ]
+
+
+def phases_from_graph(graph: DependencyGraph) -> list[RoadmapPhase]:
+    """Convert graph back to phases (inverse of graph_from_phases).
+
+    Phase names are placeholders — use _enrich_phase_names() to restore from body text.
+    """
+    return group_steps_by_phase(steps_from_graph(graph))
