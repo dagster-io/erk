@@ -249,11 +249,12 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
 
         # Create issue for the plan (required for learn status check)
         from tests.test_utils.github_helpers import create_test_issue
+        from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
         plan_issue = create_test_issue(
             number=4867,
             title="Fix something",
-            body="",
+            body=format_plan_header_body_for_test(),
             labels=["erk-plan"],
         )
         issues_ops = FakeGitHubIssues(

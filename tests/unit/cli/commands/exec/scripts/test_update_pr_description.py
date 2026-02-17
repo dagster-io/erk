@@ -376,7 +376,12 @@ def test_embeds_plan_context() -> None:
         )
 
         ctx = build_workspace_test_context(
-            env, git=git, graphite=graphite, github=github, prompt_executor=executor
+            env,
+            git=git,
+            graphite=graphite,
+            github=github,
+            prompt_executor=executor,
+            issues=fake_github_issues,
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)

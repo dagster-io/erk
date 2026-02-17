@@ -1315,6 +1315,7 @@ plan_comment_id: 1000
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            issues=github_issues,
         )
 
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
@@ -1478,6 +1479,7 @@ objective_issue: 5000
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            issues=github_issues,
         )
 
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
