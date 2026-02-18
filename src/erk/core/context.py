@@ -16,6 +16,7 @@ import tomlkit
 # Re-export types from erk_shared.context and erk.artifacts.paths
 from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+from erk.core.codex_prompt_executor import CodexPromptExecutor
 from erk.core.completion import RealCompletion
 from erk.core.prompt_executor import ClaudePromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
@@ -97,8 +98,6 @@ def create_prompt_executor(
         PromptExecutor implementation matching the configured backend.
     """
     if global_config is not None and global_config.interactive_agent.backend == "codex":
-        from erk.core.codex_prompt_executor import CodexPromptExecutor
-
         return CodexPromptExecutor(console=console)
     return ClaudePromptExecutor(console=console)
 

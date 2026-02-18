@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from erk.core.codex_output_parser import CodexParserState, parse_codex_jsonl_line
-from erk_shared.context.types import permission_mode_to_codex
+from erk_shared.context.types import permission_mode_to_codex_exec, permission_mode_to_codex_tui
 from erk_shared.core.prompt_executor import (
     ErrorEvent,
     ExecutorEvent,
@@ -71,7 +71,7 @@ def build_codex_exec_args(
     if json_output:
         cmd.append("--json")
     cmd.extend(["--cd", str(worktree_path)])
-    cmd.extend(permission_mode_to_codex(permission_mode, mode="exec"))
+    cmd.extend(permission_mode_to_codex_exec(permission_mode))
     if model is not None:
         cmd.extend(["--model", model])
     cmd.append(prompt)
@@ -100,7 +100,7 @@ def build_codex_tui_args(
     """
     cmd = ["codex"]
     cmd.extend(["--cd", str(target_dir)])
-    cmd.extend(permission_mode_to_codex(permission_mode, mode="tui"))
+    cmd.extend(permission_mode_to_codex_tui(permission_mode))
     if model is not None:
         cmd.extend(["--model", model])
     if command:
@@ -135,7 +135,7 @@ def build_codex_prompt_args(
     if cwd is not None:
         cmd.extend(["--cd", str(cwd)])
     cmd.extend(["--model", model])
-    cmd.extend(permission_mode_to_codex(permission_mode, mode="exec"))
+    cmd.extend(permission_mode_to_codex_exec(permission_mode))
 
     # Codex has no --system-prompt flag; prepend to user prompt
     if system_prompt is not None:

@@ -13,6 +13,7 @@ This module provides the core data types used by ErkContext:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 from typing import Literal, Self
 
@@ -35,61 +36,64 @@ ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissi
 # - "dangerous": Bypass all permissions (Claude skip permissions, Codex "--yolo")
 PermissionMode = Literal["safe", "edits", "plan", "dangerous"]
 
-_PERMISSION_MODE_TO_CLAUDE: dict[PermissionMode, ClaudePermissionMode] = {
-    "safe": "default",
-    "edits": "acceptEdits",
-    "plan": "plan",
-    "dangerous": "bypassPermissions",
-}
 
-
+@cache
 def permission_mode_to_claude(permission_mode: PermissionMode) -> ClaudePermissionMode:
     """Map generic permission mode to Claude-specific permission mode."""
-    if permission_mode in _PERMISSION_MODE_TO_CLAUDE:
-        return _PERMISSION_MODE_TO_CLAUDE[permission_mode]
+    lookup: dict[PermissionMode, ClaudePermissionMode] = {
+        "safe": "default",
+        "edits": "acceptEdits",
+        "plan": "plan",
+        "dangerous": "bypassPermissions",
+    }
+    if permission_mode in lookup:
+        return lookup[permission_mode]
     raise ValueError(f"Unknown permission_mode: {permission_mode}")
 
 
-# Codex mode: exec (headless) vs tui (interactive)
-CodexMode = Literal["exec", "tui"]
+@cache
+def permission_mode_to_codex_exec(permission_mode: PermissionMode) -> list[str]:
+    """Map generic permission mode to Codex CLI flags for exec (headless) mode.
 
-# Codex exec mode: approval is hardcoded to Never, so only sandbox flags matter.
-# Codex TUI mode: both sandbox and approval flags are needed.
-# See docs/learned/integrations/codex/codex-cli-reference.md for rationale.
-_PERMISSION_MODE_TO_CODEX_EXEC: dict[PermissionMode, list[str]] = {
-    "safe": ["--sandbox", "read-only"],
-    "edits": ["--full-auto"],
-    "plan": ["--sandbox", "read-only"],
-    "dangerous": ["--yolo"],
-}
-
-_PERMISSION_MODE_TO_CODEX_TUI: dict[PermissionMode, list[str]] = {
-    "safe": ["--sandbox", "read-only", "-a", "untrusted"],
-    "edits": ["--sandbox", "workspace-write", "-a", "on-request"],
-    "plan": ["--sandbox", "read-only", "-a", "never"],
-    "dangerous": ["--yolo"],
-}
-
-
-def permission_mode_to_codex(
-    permission_mode: PermissionMode,
-    *,
-    mode: CodexMode,
-) -> list[str]:
-    """Map generic permission mode to Codex CLI flags.
-
-    Unlike Claude's single permission mode string, Codex decomposes into
-    multiple flags (--sandbox, -a, --full-auto, --yolo) and the mapping
-    differs between exec and TUI modes.
+    Codex exec mode: approval is hardcoded to Never, so only sandbox flags matter.
+    See docs/learned/integrations/codex/codex-cli-reference.md for rationale.
 
     Args:
         permission_mode: Generic erk permission mode.
-        mode: Whether building flags for exec (headless) or tui (interactive).
 
     Returns:
         List of CLI flag strings to pass to the codex command.
     """
-    lookup = _PERMISSION_MODE_TO_CODEX_EXEC if mode == "exec" else _PERMISSION_MODE_TO_CODEX_TUI
+    lookup: dict[PermissionMode, list[str]] = {
+        "safe": ["--sandbox", "read-only"],
+        "edits": ["--full-auto"],
+        "plan": ["--sandbox", "read-only"],
+        "dangerous": ["--yolo"],
+    }
+    if permission_mode in lookup:
+        return lookup[permission_mode]
+    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+
+
+@cache
+def permission_mode_to_codex_tui(permission_mode: PermissionMode) -> list[str]:
+    """Map generic permission mode to Codex CLI flags for TUI (interactive) mode.
+
+    Codex TUI mode: both sandbox and approval flags are needed.
+    See docs/learned/integrations/codex/codex-cli-reference.md for rationale.
+
+    Args:
+        permission_mode: Generic erk permission mode.
+
+    Returns:
+        List of CLI flag strings to pass to the codex command.
+    """
+    lookup: dict[PermissionMode, list[str]] = {
+        "safe": ["--sandbox", "read-only", "-a", "untrusted"],
+        "edits": ["--sandbox", "workspace-write", "-a", "on-request"],
+        "plan": ["--sandbox", "read-only", "-a", "never"],
+        "dangerous": ["--yolo"],
+    }
     if permission_mode in lookup:
         return lookup[permission_mode]
     raise ValueError(f"Unknown permission_mode: {permission_mode}")
