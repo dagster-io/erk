@@ -14,7 +14,7 @@ tripwires:
 
 # Phase Name Enrichment
 
-Phase names are NOT stored in YAML frontmatter. They are extracted from markdown headers at parse time via `_enrich_phase_names()`.
+Phase names are NOT stored in YAML frontmatter. They are extracted from markdown headers at parse time via `enrich_phase_names()`.
 
 ## How It Works
 
@@ -38,9 +38,9 @@ Nodes with no dot in their ID (e.g., `"1"`, `"A"`) default to phase `(1, "")`.
 
 Phase names at this stage are placeholders: `"Phase 1"`, `"Phase 2A"`, etc.
 
-### Step 2: `_enrich_phase_names()` — Extract Names from Headers
+### Step 2: `enrich_phase_names()` — Extract Names from Headers
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, _enrich_phase_names -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, enrich_phase_names -->
 
 A regex scans the full issue body for markdown headers matching:
 
@@ -63,4 +63,4 @@ Frontmatter stores only machine-readable data (step IDs, statuses, PR references
 | Function                 | File                                                                    |
 | ------------------------ | ----------------------------------------------------------------------- |
 | `group_nodes_by_phase()` | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |
-| `_enrich_phase_names()`  | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |
+| `enrich_phase_names()`   | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |

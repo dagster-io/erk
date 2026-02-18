@@ -68,12 +68,12 @@ def replace_metadata_block_in_body(body: str, key: str, new_block_content: str) 
 
 Replaces an entire metadata block's content in the body. Finds the block by key and substitutes the content between the HTML comment markers. Used during roadmap mutations to replace the frontmatter block after updating node data.
 
-### `_enrich_phase_names()` (from roadmap.py)
+### `enrich_phase_names()` (from roadmap.py)
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, _enrich_phase_names -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, enrich_phase_names -->
 
 ```python
-def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPhase]
+def enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPhase]
 ```
 
 Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and replaces placeholder names in parsed `RoadmapPhase` objects. Called by `parse_roadmap()` after frontmatter parsing because frontmatter stores flat steps without phase names. Uses regex pattern `^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)` to match headers.
