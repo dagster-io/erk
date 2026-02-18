@@ -37,7 +37,7 @@ Parse the JSON response.
 
 **Handle errors**: If `success` is false, display the error and exit.
 
-**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
 
 **Format the results** as a human-readable summary:
 
@@ -46,11 +46,17 @@ Parse the JSON response.
 
 ### Actionable Items (N total)
 
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
 | # | Type | Location | Summary | Complexity |
 |---|------|----------|---------|------------|
-| 1 | review | foo.py:42 | Use LBYL pattern | local |
-| 2 | review | bar.py:15 | Add type annotation | local |
-| 3 | discussion | - | Update documentation | cross_cutting |
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
 
 ### Execution Plan Preview
 
@@ -61,13 +67,19 @@ Parse the JSON response.
 **Batch 2: Cross-Cutting** (user confirmation)
 - Item #3: Update documentation
 
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
 ### Statistics
 - Actionable items: 3
-- Informational skipped: 12
-- Estimated batches: 2
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
 - Auto-proceed batches: 1
-- User confirmation batches: 1
+- User confirmation batches: 2
 ```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
 
 Add footer:
 

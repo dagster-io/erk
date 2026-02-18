@@ -68,9 +68,11 @@ Parse the JSON response. The skill returns:
 
 - `success`: Whether the operation succeeded
 - `pr_number`, `pr_title`, `pr_url`: PR metadata
-- `actionable_threads`: Array with `thread_id`, `path`, `line`, `action_summary`, `complexity`
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
 - `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
 - `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
 - `error`: Error message if `success` is false
 
 **Handle errors**: If `success` is false, display the error and exit.
@@ -122,7 +124,16 @@ For each batch, execute this workflow using the thread IDs from the classifier J
 
 For each comment in the batch:
 
-**For Review Threads:**
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
 
 1. Read the file to understand context:
    - If `line` is specified: Read around that line number
@@ -244,7 +255,7 @@ Task(
 )
 ```
 
-If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items.
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
 
 #### Report Final Summary
 
