@@ -103,6 +103,5 @@ def maybe_update_plan_dispatch_metadata(
         },
     )
     user_output(
-        click.style("\u2713", fg="green")
-        + f" Updated dispatch metadata on plan #{plan_id}"
+        click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{plan_id}"
     )

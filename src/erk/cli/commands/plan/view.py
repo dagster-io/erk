@@ -243,10 +243,7 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
     if identifier is not None:
         issue_number = parse_issue_identifier(identifier)
         if issue_number is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"Invalid identifier: {identifier}"
-            )
+            user_output(click.style("Error: ", fg="red") + f"Invalid identifier: {identifier}")
             raise SystemExit(1)
         result = ctx.plan_store.get_plan(repo_root, str(issue_number))
         plan_id = str(issue_number)

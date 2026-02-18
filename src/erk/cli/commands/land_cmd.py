@@ -303,25 +303,19 @@ def _check_learn_status_and_prompt(
         return
 
     # Check learn_status from plan header metadata
-    learn_status = ctx.plan_backend.get_metadata_field(
-        repo_root, plan_id, "learn_status"
-    )
+    learn_status = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_status")
     if isinstance(learn_status, PlanNotFound):
         return
 
     # Handle completed statuses - learn has already finished
     completed_statuses = {"completed_no_plan", "completed_with_plan", "plan_completed"}
     if learn_status in completed_statuses:
-        user_output(
-            click.style("✓", fg="green") + f" Learn completed for plan #{plan_id}"
-        )
+        user_output(click.style("✓", fg="green") + f" Learn completed for plan #{plan_id}")
         return
 
     # Handle pending status - async learn is in progress
     if learn_status == "pending":
-        user_output(
-            click.style("⏳", fg="cyan") + f" Async learn in progress for plan #{plan_id}"
-        )
+        user_output(click.style("⏳", fg="cyan") + f" Async learn in progress for plan #{plan_id}")
         return
 
     # learn_status is null or not_started - fall through to check sessions
@@ -331,9 +325,7 @@ def _check_learn_status_and_prompt(
     sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
 
     if sessions.learn_session_ids:
-        user_output(
-            click.style("✓", fg="green") + f" Learn completed for plan #{plan_id}"
-        )
+        user_output(click.style("✓", fg="green") + f" Learn completed for plan #{plan_id}")
         return
 
     # No learn has happened - prompt user for action
@@ -1069,9 +1061,7 @@ def _validate_pr_for_landing(
     # 5. Learn status check (for plan branches)
     # Check when: has plan issue AND (is_current_branch OR has worktree)
     plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, target.branch)
-    if plan_id is not None and (
-        target.is_current_branch or target.worktree_path is not None
-    ):
+    if plan_id is not None and (target.is_current_branch or target.worktree_path is not None):
         _check_learn_status_and_prompt(
             ctx,
             repo_root=main_repo_root,

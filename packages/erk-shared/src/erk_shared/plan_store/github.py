@@ -36,6 +36,7 @@ from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, wi
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
+from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import issue_info_to_plan
 from erk_shared.plan_store.types import (
@@ -90,9 +91,7 @@ class GitHubPlanStore(PlanBackend):
         self._github_issues = github_issues
         self._time = time if time is not None else RealTime()
 
-    def resolve_plan_id_for_branch(
-        self, repo_root: Path, branch_name: str
-    ) -> str | None:
+    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
         """Resolve plan identifier from branch name via regex.
 
         Zero-cost operation: parses branch naming convention (P{number}-{slug})
@@ -105,16 +104,12 @@ class GitHubPlanStore(PlanBackend):
         Returns:
             Issue number as string if branch matches plan pattern, None otherwise
         """
-        from erk_shared.naming import extract_leading_issue_number
-
         number = extract_leading_issue_number(branch_name)
         if number is None:
             return None
         return str(number)
 
-    def get_plan_for_branch(
-        self, repo_root: Path, branch_name: str
-    ) -> Plan | PlanNotFound:
+    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
         """Look up the plan associated with a branch.
 
         Resolves branch name to plan ID via regex, then fetches the full plan.

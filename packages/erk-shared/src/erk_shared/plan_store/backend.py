@@ -133,9 +133,7 @@ class PlanBackend(PlanStore):
     # Branch → Plan resolution
 
     @abstractmethod
-    def get_plan_for_branch(
-        self, repo_root: Path, branch_name: str
-    ) -> Plan | PlanNotFound:
+    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
         """Look up the plan associated with a branch.
 
         Resolves the branch name to a plan identifier and fetches the full plan.
@@ -152,9 +150,7 @@ class PlanBackend(PlanStore):
         ...
 
     @abstractmethod
-    def resolve_plan_id_for_branch(
-        self, repo_root: Path, branch_name: str
-    ) -> str | None:
+    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
         """Resolve plan identifier for a branch without fetching the full plan.
 
         Lightweight resolution that does NOT verify the plan exists.
