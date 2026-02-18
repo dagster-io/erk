@@ -671,22 +671,46 @@ class FakeGitHub(GitHub):
         repo_root: Path,
         *,
         state: PRListState,
+        labels: list[str] | None = None,
+        author: str | None = None,
+        draft: bool | None = None,
     ) -> dict[str, PullRequestInfo]:
-        """List PRs from pre-configured state, filtered by state.
+        """List PRs from pre-configured state, filtered by state and optional filters.
+
+        Label filtering uses pr_details (which have labels). Author filtering is
+        not supported in the fake (no author data stored on PullRequestInfo).
 
         Args:
             repo_root: Repository root directory (ignored in fake)
             state: Filter by state - "open", "closed", or "all"
+            labels: Filter to PRs with ALL specified labels. Uses pr_details for lookup.
+            author: Filter by author (not supported in fake, ignored).
+            draft: Filter by draft status. True=only drafts, False=only non-drafts.
 
         Returns:
             Dict mapping head branch name to PullRequestInfo.
         """
-        if state == "all":
-            return dict(self._prs)
+        result: dict[str, PullRequestInfo] = {}
+        for branch, pr in self._prs.items():
+            # State filter
+            if state != "all" and pr.state != state.upper():
+                continue
 
-        # Filter by state (normalize to upper case for comparison)
-        target_state = state.upper()
-        return {branch: pr for branch, pr in self._prs.items() if pr.state == target_state}
+            # Draft filter
+            if draft is not None and pr.is_draft != draft:
+                continue
+
+            # Label filter (cross-reference pr_details which have labels)
+            if labels is not None:
+                pr_details = self._pr_details.get(pr.number)
+                if pr_details is None:
+                    continue
+                if not all(label in pr_details.labels for label in labels):
+                    continue
+
+            result[branch] = pr
+
+        return result
 
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent

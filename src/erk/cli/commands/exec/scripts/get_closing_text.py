@@ -35,7 +35,7 @@ import click
 
 from erk.cli.config import load_config
 from erk_shared.context.helpers import get_current_branch, require_cwd
-from erk_shared.impl_folder import validate_plan_linkage
+from erk_shared.impl_folder import read_plan_ref, validate_plan_linkage
 
 
 def _find_repo_root(start: Path) -> Path | None:
@@ -81,6 +81,12 @@ def get_closing_text(ctx: click.Context) -> None:
     if plan_id is None:
         # No issue to close (neither branch nor .impl/ has one)
         return
+
+    # Draft-PR plans close themselves on merge - no closing keyword needed
+    if impl_dir.exists():
+        plan_ref = read_plan_ref(impl_dir)
+        if plan_ref is not None and plan_ref.provider == "github-draft-pr":
+            return
 
     # Load config to check for cross-repo plans
     repo_root = _find_repo_root(cwd)

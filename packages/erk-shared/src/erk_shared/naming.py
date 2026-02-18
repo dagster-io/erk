@@ -598,6 +598,49 @@ def generate_issue_branch_name(
     return base_branch_name + timestamp_suffix
 
 
+def generate_draft_pr_branch_name(
+    title: str,
+    timestamp: datetime,
+    *,
+    objective_id: int | None,
+) -> str:
+    """Generate branch name for draft-PR-backed plans.
+
+    Format: plan-{sanitized_title}-{timestamp}
+    Or with objective: plan-O{objective_id}-{sanitized_title}-{timestamp}
+    Example: plan-fix-auth-bug-01-15-1430
+    Example with objective: plan-O456-fix-auth-bug-01-15-1430
+
+    No P{issue} prefix since the PR number isn't known until after creation.
+
+    Args:
+        title: Plan title to sanitize
+        timestamp: Timestamp for the suffix
+        objective_id: Optional objective ID to encode in branch name
+
+    Returns:
+        Branch name in format plan-{slug}-{timestamp}
+
+    Examples:
+        >>> from datetime import datetime
+        >>> generate_draft_pr_branch_name(
+        ...     "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=None
+        ... )
+        "plan-fix-auth-bug-01-15-1430"
+        >>> generate_draft_pr_branch_name(
+        ...     "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=456
+        ... )
+        "plan-O456-fix-auth-bug-01-15-1430"
+    """
+    prefix = "plan-"
+    if objective_id is not None:
+        prefix += f"O{objective_id}-"
+    sanitized_title = sanitize_worktree_name(title)
+    base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
+    timestamp_suffix = format_branch_timestamp_suffix(timestamp)
+    return base_branch_name + timestamp_suffix
+
+
 def derive_branch_name_from_title(title: str) -> str:
     """Derive branch name from issue/plan title.
 

@@ -201,9 +201,14 @@ class PrintingGitHub(PrintingBase, GitHub):
         repo_root: Path,
         *,
         state: PRListState,
+        labels: list[str] | None = None,
+        author: str | None = None,
+        draft: bool | None = None,
     ) -> dict[str, PullRequestInfo]:
         """List PRs for the repository (read-only, no printing)."""
-        return self._wrapped.list_prs(repo_root, state=state)
+        return self._wrapped.list_prs(
+            repo_root, state=state, labels=labels, author=author, draft=draft
+        )
 
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent

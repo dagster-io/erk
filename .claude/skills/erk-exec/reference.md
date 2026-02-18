@@ -63,6 +63,7 @@ Quick reference for all `erk exec` subcommands.
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                            |
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.                |
 | `plan-review-complete`            | Close a plan review PR without merging.                                    |
+| `plan-save`                       | Backend-aware plan save: dispatches to issue or draft-PR based on config.  |
 | `plan-save-to-issue`              | Extract plan from ~/.claude/plans/ and create GitHub issue.                |
 | `plan-submit-for-review`          | Fetch plan content from a GitHub issue for PR-based review workflow.       |
 | `plan-update-from-feedback`       | Update a plan issue's plan-body comment with new content.                  |
@@ -819,6 +820,24 @@ Close a plan review PR without merging.
 | Name           | Required | Description |
 | -------------- | -------- | ----------- |
 | `ISSUE_NUMBER` | Yes      | -           |
+
+### plan-save
+
+Backend-aware plan save: dispatches to issue or draft-PR based on config.
+
+**Usage:** `erk exec plan-save`
+
+**Options:**
+
+| Flag                              | Type    | Required | Default | Description                                               |
+| --------------------------------- | ------- | -------- | ------- | --------------------------------------------------------- |
+| `--format`                        | CHOICE  | No       | 'json'  | Output format: json (default) or display (formatted text) |
+| `--plan-file`                     | PATH    | No       | -       | Path to specific plan file (highest priority)             |
+| `--session-id`                    | TEXT    | No       | -       | Session ID for scoped plan lookup                         |
+| `--objective-issue`               | INTEGER | No       | -       | Link plan to parent objective issue number                |
+| `--plan-type`                     | CHOICE  | No       | -       | Plan type: standard (default) or learn                    |
+| `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans)                |
+| `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL                           |
 
 ### plan-save-to-issue
 

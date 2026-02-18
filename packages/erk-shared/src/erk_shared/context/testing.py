@@ -32,6 +32,8 @@ from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.store import PlanStore
 
 
 def context_for_test(
@@ -45,6 +47,8 @@ def context_for_test(
     agent_docs: AgentDocs | None = None,
     prompt_executor: PromptExecutor | None = None,
     codespace: Codespace | None = None,
+    plan_store: PlanStore | None = None,
+    local_config: LoadedConfig | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
@@ -69,6 +73,9 @@ def context_for_test(
         agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
+        plan_store: Optional PlanStore. If None, creates GitHubPlanStore or
+            DraftPRPlanBackend based on local_config.plan_backend.
+        local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
         cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -168,6 +175,18 @@ def context_for_test(
         is_stderr_tty=None,
         confirm_responses=None,
     )
+
+    resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
+
+    # Resolve plan_store: explicit > config-based selection > default (GitHubPlanStore)
+    resolved_plan_store: PlanStore
+    if plan_store is not None:
+        resolved_plan_store = plan_store
+    elif resolved_local_config.plan_backend == "draft_pr":
+        resolved_plan_store = DraftPRPlanBackend(resolved_github)
+    else:
+        resolved_plan_store = GitHubPlanStore(resolved_issues, fake_time)
+
     return ErkContext(
         git=resolved_git,
         github=resolved_github,
@@ -180,7 +199,7 @@ def context_for_test(
         time=fake_time,
         erk_installation=FakeErkInstallation(),
         agent_docs=resolved_agent_docs,
-        plan_store=GitHubPlanStore(resolved_issues, fake_time),
+        plan_store=resolved_plan_store,
         shell=FakeShell(),
         completion=FakeCompletion(),
         codespace=resolved_codespace,
@@ -192,7 +211,7 @@ def context_for_test(
         repo=repo,
         repo_info=repo_info,
         global_config=None,
-        local_config=LoadedConfig.test(),
+        local_config=resolved_local_config,
         package_info=package_info,
         dry_run=False,
         debug=debug,

@@ -278,6 +278,7 @@ class LoadedConfig:
     post_create_commands: list[str]
     post_create_shell: str | None
     plans_repo: str | None
+    plan_backend: str | None  # "github" (default) or "draft_pr"
     pool_size: int | None  # None = use default
     pool_checkout_commands: list[str]  # Commands to run after pooled checkout
     pool_checkout_shell: str | None  # Shell to use for checkout commands
@@ -291,6 +292,7 @@ class LoadedConfig:
         post_create_commands: list[str] | None = None,
         post_create_shell: str | None = None,
         plans_repo: str | None = None,
+        plan_backend: str | None = None,
         pool_size: int | None = None,
         pool_checkout_commands: list[str] | None = None,
         pool_checkout_shell: str | None = None,
@@ -302,6 +304,7 @@ class LoadedConfig:
             post_create_commands=post_create_commands if post_create_commands is not None else [],
             post_create_shell=post_create_shell,
             plans_repo=plans_repo,
+            plan_backend=plan_backend,
             pool_size=pool_size,
             pool_checkout_commands=(
                 pool_checkout_commands if pool_checkout_commands is not None else []

@@ -191,9 +191,14 @@ class DryRunGitHub(GitHub):
         repo_root: Path,
         *,
         state: PRListState,
+        labels: list[str] | None = None,
+        author: str | None = None,
+        draft: bool | None = None,
     ) -> dict[str, PullRequestInfo]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.list_prs(repo_root, state=state)
+        return self._wrapped.list_prs(
+            repo_root, state=state, labels=labels, author=author, draft=draft
+        )
 
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent

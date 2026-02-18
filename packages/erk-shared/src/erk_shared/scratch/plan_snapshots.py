@@ -4,18 +4,14 @@ Creates durable archives of Claude Code plan files in the session scratch direct
 This compensates for Claude Code's opaque plan file naming and overwrite behavior.
 
 Storage layout:
-    .erk/scratch/sessions/<session-id>/plans/
+    .erk/scratch/sessions/<session-id>/plan_snapshots/
         000001-a1b2c3d4/
-            quirky-drifting-comet.md        # Original Claude filename preserved
-            quirky-drifting-comet.meta.json # Provenance metadata
+            quirky-drifting-comet.md        # Plan content with YAML frontmatter metadata
         000002-e5f6g7h8/
             bold-flying-star.md
-            bold-flying-star.meta.json
 """
 
 import hashlib
-import json
-import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -37,11 +33,24 @@ class PlanSnapshotMetadata:
 
 @dataclass(frozen=True)
 class PlanSnapshot:
-    """Result of creating a plan snapshot."""
+    """Immutable archive of a plan file captured at save time.
+
+    Plans in ~/.claude/plans/ are mutable — Claude overwrites them during a session.
+    When a plan is saved to GitHub (as an issue or draft PR), a snapshot preserves
+    the exact content that was shipped, stored in session-scoped scratch storage
+    (.erk/scratch/{session_id}/plan_snapshots/). This serves two purposes:
+
+    1. Audit trail: the snapshot is the authoritative record of what was saved,
+       even if the source plan file is later modified or deleted.
+    2. Deduplication: marker files reference the snapshot to detect if a session
+       already saved a plan, preventing duplicate GitHub issues/PRs.
+
+    The snapshot is a single .md file with YAML frontmatter containing provenance
+    metadata (slug, content hash, source path, planning agent IDs).
+    """
 
     snapshot_dir: Path
     plan_file: Path
-    metadata_file: Path
     sequence_number: int
     content_hash_short: str
 
@@ -122,17 +131,40 @@ def determine_next_sequence(existing_folders: list[str]) -> int:
 
 
 def get_plans_snapshot_dir(session_id: str, *, repo_root: Path | None) -> Path:
-    """Get the plans snapshot directory for a session.
+    """Get the plan snapshots directory for a session.
 
     Args:
         session_id: Claude session ID.
         repo_root: Repo root path. If None, auto-detects via git.
 
     Returns:
-        Path to .erk/scratch/sessions/<session-id>/plans/ directory.
+        Path to .erk/scratch/sessions/<session-id>/plan_snapshots/ directory.
     """
     scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    return scratch_dir / "plans"
+    return scratch_dir / "plan_snapshots"
+
+
+def _format_frontmatter(metadata: PlanSnapshotMetadata) -> str:
+    """Format metadata as YAML frontmatter string.
+
+    Args:
+        metadata: Snapshot metadata to format.
+
+    Returns:
+        YAML frontmatter block including --- delimiters and trailing newline.
+    """
+    lines = [
+        "---",
+        f"slug: {metadata.slug}",
+        f"captured_at: '{metadata.captured_at}'",
+        f"content_hash: '{metadata.content_hash}'",
+        f"source_path: '{metadata.source_path}'",
+        "planning_agent_ids:",
+    ]
+    for agent_id in metadata.planning_agent_ids:
+        lines.append(f"- {agent_id}")
+    lines.append("---")
+    return "\n".join(lines) + "\n"
 
 
 def snapshot_plan_file(
@@ -145,7 +177,8 @@ def snapshot_plan_file(
 ) -> PlanSnapshot:
     """Snapshot a plan file to permanent session-scoped storage.
 
-    Creates a snapshot directory with the plan file and metadata sidecar.
+    Creates a snapshot directory with a single .md file containing the plan
+    content prefixed with YAML frontmatter metadata.
 
     Args:
         session_id: Claude session ID.
@@ -155,12 +188,12 @@ def snapshot_plan_file(
         repo_root: Repo root path. If None, auto-detects via git.
 
     Returns:
-        PlanSnapshot with paths to created files.
+        PlanSnapshot with path to the created file.
     """
     plans_dir = get_plans_snapshot_dir(session_id, repo_root=repo_root)
     plans_dir.mkdir(parents=True, exist_ok=True)
 
-    # Read content and compute hash
+    # Read content and compute hash (hash the original content, not with frontmatter)
     content = plan_file_path.read_text(encoding="utf-8")
     content_hash = compute_content_hash(content)
     hash_short = extract_short_hash(content_hash)
@@ -174,11 +207,7 @@ def snapshot_plan_file(
     snapshot_dir = plans_dir / folder_name
     snapshot_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy plan file (preserve original filename)
-    dest_plan_file = snapshot_dir / plan_file_path.name
-    shutil.copy2(plan_file_path, dest_plan_file)
-
-    # Write metadata
+    # Build metadata frontmatter
     metadata = PlanSnapshotMetadata(
         slug=slug,
         captured_at=datetime.now(UTC).isoformat(),
@@ -186,20 +215,15 @@ def snapshot_plan_file(
         source_path=str(plan_file_path),
         planning_agent_ids=list(planning_agent_ids),
     )
-    metadata_file = snapshot_dir / f"{slug}.meta.json"
-    metadata_dict = {
-        "slug": metadata.slug,
-        "captured_at": metadata.captured_at,
-        "content_hash": metadata.content_hash,
-        "source_path": metadata.source_path,
-        "planning_agent_ids": metadata.planning_agent_ids,
-    }
-    metadata_file.write_text(json.dumps(metadata_dict, indent=2), encoding="utf-8")
+    frontmatter = _format_frontmatter(metadata)
+
+    # Write plan file with frontmatter prepended
+    dest_plan_file = snapshot_dir / plan_file_path.name
+    dest_plan_file.write_text(frontmatter + content, encoding="utf-8")
 
     return PlanSnapshot(
         snapshot_dir=snapshot_dir,
         plan_file=dest_plan_file,
-        metadata_file=metadata_file,
         sequence_number=sequence,
         content_hash_short=hash_short,
     )

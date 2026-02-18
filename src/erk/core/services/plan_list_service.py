@@ -15,8 +15,93 @@ from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
-from erk_shared.gateway.github.types import GitHubRepoLocation, WorkflowRun
-from erk_shared.plan_store.conversion import issue_info_to_plan
+from erk_shared.gateway.github.types import (
+    GitHubRepoLocation,
+    PRListState,
+    PRNotFound,
+    WorkflowRun,
+)
+from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
+from erk_shared.plan_store.draft_pr import _extract_plan_content_from_body
+
+_PLAN_LABEL = "erk-plan"
+
+
+class DraftPRPlanListService(PlanListService):
+    """Plan list service for draft-PR-backed plans.
+
+    Lists open draft PRs with the erk-plan label and converts them to
+    PlanListData. Draft PRs don't have issue-based PR linkages or workflow
+    runs, so those fields are empty.
+    """
+
+    def __init__(self, github: GitHub) -> None:
+        """Initialize with GitHub gateway.
+
+        Args:
+            github: GitHub gateway implementation
+        """
+        self._github = github
+
+    def get_plan_list_data(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+        skip_workflow_runs: bool = False,
+        creator: str | None = None,
+    ) -> PlanListData:
+        """Fetch plan list data from draft PRs.
+
+        Lists draft PRs with erk-plan label and converts to PlanListData.
+        PR linkages and workflow runs are empty since draft PRs are the plans
+        themselves (not linked issues).
+
+        Args:
+            location: GitHub repository location
+            labels: Labels to filter by
+            state: Filter by state
+            limit: Maximum number of results
+            skip_workflow_runs: Ignored (no workflow runs for draft PRs)
+            creator: Filter by PR author username
+
+        Returns:
+            PlanListData with plans from draft PRs
+        """
+        pr_state: PRListState = "open"
+        if state in ("open", "closed", "all"):
+            pr_state = state  # type: ignore[assignment]
+
+        # Push label, author, and draft filtering to list_prs so the gateway
+        # handles as much filtering as possible (server-side for REST data).
+        all_labels = [_PLAN_LABEL, *labels]
+        prs = self._github.list_prs(
+            location.root,
+            state=pr_state,
+            labels=all_labels,
+            author=creator,
+            draft=True,
+        )
+
+        plans = []
+        for _branch, pr_info in prs.items():
+            pr_details = self._github.get_pr(location.root, pr_info.number)
+            if isinstance(pr_details, PRNotFound):
+                continue
+
+            plan_body = _extract_plan_content_from_body(pr_details.body)
+            plans.append(pr_details_to_plan(pr_details, plan_body=plan_body))
+
+            if limit is not None and len(plans) >= limit:
+                break
+
+        return PlanListData(
+            plans=plans,
+            pr_linkages={},
+            workflow_runs={},
+        )
 
 
 class RealPlanListService(PlanListService):

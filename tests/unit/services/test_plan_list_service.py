@@ -5,13 +5,18 @@ from pathlib import Path
 
 import pytest
 
-from erk.core.services.plan_list_service import PlanListData, RealPlanListService
+from erk.core.services.plan_list_service import (
+    DraftPRPlanListService,
+    PlanListData,
+    RealPlanListService,
+)
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
+    PRDetails,
     PullRequestInfo,
     WorkflowRun,
 )
@@ -487,3 +492,234 @@ class TestPlanListData:
         assert data.plans == plans
         assert data.pr_linkages == linkages
         assert data.workflow_runs == runs
+
+
+def _make_draft_pr_details(
+    *,
+    number: int,
+    title: str,
+    body: str,
+    labels: tuple[str, ...] = ("erk-plan",),
+    state: str = "OPEN",
+    is_draft: bool = True,
+    branch: str = "plan-branch",
+) -> PRDetails:
+    """Create a PRDetails for testing DraftPRPlanListService."""
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        title=title,
+        body=body,
+        state=state,
+        is_draft=is_draft,
+        base_ref_name="main",
+        head_ref_name=branch,
+        is_cross_repository=False,
+        mergeable="UNKNOWN",
+        merge_state_status="UNKNOWN",
+        owner="owner",
+        repo="repo",
+        labels=labels,
+    )
+
+
+def _make_pr_info(
+    *,
+    number: int,
+    is_draft: bool = True,
+    title: str = "Plan",
+    branch: str = "plan-branch",
+    state: str = "OPEN",
+) -> PullRequestInfo:
+    """Create a PullRequestInfo for testing DraftPRPlanListService."""
+    return PullRequestInfo(
+        number=number,
+        state=state,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        is_draft=is_draft,
+        title=title,
+        checks_passing=None,
+        owner="owner",
+        repo="repo",
+        head_branch=branch,
+    )
+
+
+class TestDraftPRPlanListService:
+    """Tests for DraftPRPlanListService."""
+
+    def test_returns_plans_for_draft_prs_with_erk_plan_label(self) -> None:
+        """Happy path: 1 draft plan PR returns 1 plan."""
+        pr_body = "metadata\n\n---\n\n# My Plan\n\nPlan content here"
+        fake_github = FakeGitHub(
+            prs={"plan-branch": _make_pr_info(number=42)},
+            pr_details={42: _make_draft_pr_details(number=42, title="My Plan", body=pr_body)},
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert len(result.plans) == 1
+        assert result.plans[0].plan_identifier == "42"
+        assert result.plans[0].title == "My Plan"
+
+    def test_filters_out_non_draft_prs(self) -> None:
+        """Non-draft PRs with erk-plan label are excluded."""
+        fake_github = FakeGitHub(
+            prs={"feature": _make_pr_info(number=10, is_draft=False, branch="feature")},
+            pr_details={
+                10: _make_draft_pr_details(
+                    number=10, title="Not Draft", body="body", is_draft=False, branch="feature"
+                )
+            },
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert result.plans == []
+
+    def test_filters_out_prs_without_erk_plan_label(self) -> None:
+        """Draft PRs without erk-plan label are excluded."""
+        fake_github = FakeGitHub(
+            prs={"draft-no-label": _make_pr_info(number=20, branch="draft-no-label")},
+            pr_details={
+                20: _make_draft_pr_details(
+                    number=20, title="No Label", body="body", labels=(), branch="draft-no-label"
+                )
+            },
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert result.plans == []
+
+    def test_applies_additional_label_filters(self) -> None:
+        """labels=["erk-learn"] requires ALL labels present."""
+        fake_github = FakeGitHub(
+            prs={
+                "has-both": _make_pr_info(number=30, branch="has-both"),
+                "only-plan": _make_pr_info(number=31, branch="only-plan"),
+            },
+            pr_details={
+                30: _make_draft_pr_details(
+                    number=30,
+                    title="Both Labels",
+                    body="body",
+                    labels=("erk-plan", "erk-learn"),
+                    branch="has-both",
+                ),
+                31: _make_draft_pr_details(
+                    number=31,
+                    title="Only Plan",
+                    body="body",
+                    labels=("erk-plan",),
+                    branch="only-plan",
+                ),
+            },
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-learn"])
+
+        assert len(result.plans) == 1
+        assert result.plans[0].title == "Both Labels"
+
+    def test_state_filtering(self) -> None:
+        """state="closed" passes through to list_prs."""
+        fake_github = FakeGitHub(
+            prs={
+                "closed-plan": _make_pr_info(number=40, branch="closed-plan", state="CLOSED"),
+            },
+            pr_details={
+                40: _make_draft_pr_details(
+                    number=40,
+                    title="Closed Plan",
+                    body="body",
+                    state="CLOSED",
+                    branch="closed-plan",
+                )
+            },
+        )
+        service = DraftPRPlanListService(fake_github)
+
+        # With state="open" the closed PR should not appear
+        result_open = service.get_plan_list_data(location=TEST_LOCATION, labels=[], state="open")
+        assert result_open.plans == []
+
+        # With state="closed" it should appear
+        result_closed = service.get_plan_list_data(
+            location=TEST_LOCATION, labels=[], state="closed"
+        )
+        assert len(result_closed.plans) == 1
+        assert result_closed.plans[0].title == "Closed Plan"
+
+    def test_respects_limit(self) -> None:
+        """limit=2 returns exactly 2 from 3 PRs."""
+        prs: dict[str, PullRequestInfo] = {}
+        pr_details: dict[int, PRDetails] = {}
+        for i in range(3):
+            branch = f"plan-{i}"
+            number = 50 + i
+            prs[branch] = _make_pr_info(number=number, branch=branch, title=f"Plan {i}")
+            pr_details[number] = _make_draft_pr_details(
+                number=number, title=f"Plan {i}", body="body", branch=branch
+            )
+
+        fake_github = FakeGitHub(prs=prs, pr_details=pr_details)
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[], limit=2)
+
+        assert len(result.plans) == 2
+
+    def test_handles_pr_not_found(self) -> None:
+        """PR in list_prs but missing from pr_details is skipped."""
+        fake_github = FakeGitHub(
+            prs={"orphan": _make_pr_info(number=60, branch="orphan")},
+            # Intentionally no pr_details for 60
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert result.plans == []
+
+    def test_empty_prs_returns_empty_data(self) -> None:
+        """No PRs returns empty plans/linkages/runs."""
+        fake_github = FakeGitHub()
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert result.plans == []
+        assert result.pr_linkages == {}
+        assert result.workflow_runs == {}
+
+    def test_always_returns_empty_pr_linkages_and_workflow_runs(self) -> None:
+        """pr_linkages and workflow_runs are always empty for draft PRs."""
+        fake_github = FakeGitHub(
+            prs={"plan": _make_pr_info(number=70)},
+            pr_details={70: _make_draft_pr_details(number=70, title="Plan", body="body")},
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert len(result.plans) == 1
+        assert result.pr_linkages == {}
+        assert result.workflow_runs == {}
+
+    def test_extracts_plan_content_from_body(self) -> None:
+        """PR body with metadata separator extracts only plan content."""
+        pr_body = "<!-- metadata -->\n\n---\n\n# Actual Plan\n\nThe real content"
+        fake_github = FakeGitHub(
+            prs={"content-plan": _make_pr_info(number=80, branch="content-plan")},
+            pr_details={
+                80: _make_draft_pr_details(
+                    number=80, title="Plan Title", body=pr_body, branch="content-plan"
+                )
+            },
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert len(result.plans) == 1
+        # The body should be the extracted plan content (after the separator)
+        assert "Actual Plan" in result.plans[0].body
+        assert "The real content" in result.plans[0].body
+        # Metadata portion should not be in the plan body
+        assert "<!-- metadata -->" not in result.plans[0].body

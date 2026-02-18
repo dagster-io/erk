@@ -83,8 +83,8 @@ def get_impl_path(worktree_path: Path, git_ops=None) -> Path | None:
     return None
 
 
-PlanProviderType = Literal["github"]
-"""Supported plan providers. Only "github" for now; extend when adding new providers."""
+PlanProviderType = Literal["github", "github-draft-pr"]
+"""Supported plan providers. "github" for issue-backed, "github-draft-pr" for draft PR plans."""
 
 
 @dataclass(frozen=True)
@@ -125,7 +125,7 @@ class LocalRunState:
 def save_plan_ref(
     impl_dir: Path,
     *,
-    provider: PlanProviderType,
+    provider: str,
     plan_id: str,
     url: str,
     labels: tuple[str, ...],
@@ -135,7 +135,7 @@ def save_plan_ref(
 
     Args:
         impl_dir: Path to .impl/ directory
-        provider: Plan provider type
+        provider: Plan provider name (e.g. "github", "github-draft-pr")
         plan_id: Provider-specific ID as string ("42", "PROJ-123")
         url: Web URL to view the plan
         labels: Plan labels
