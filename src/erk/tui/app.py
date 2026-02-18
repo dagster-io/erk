@@ -977,6 +977,11 @@ class ErkDashApp(App):
                 timeout=30.0,
             )
 
+        elif command_id == "codespace_run_plan":
+            cmd = f"erk codespace run objective plan {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
         """Handle Enter/double-click on row - show plan details."""

@@ -465,13 +465,14 @@ def test_objective_commands_hidden_in_plans_view() -> None:
         "open_objective",
         "copy_plan",
         "copy_view",
+        "codespace_run_plan",
     ]
     for obj_id in objective_cmd_ids:
         assert obj_id not in cmd_ids, f"Objective command {obj_id} should be hidden in Plans view"
 
 
 def test_objective_commands_appear_in_objectives_view() -> None:
-    """All 6 objective commands should appear in Objectives view."""
+    """All 7 objective commands should appear in Objectives view."""
     row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     commands = get_available_commands(ctx)
@@ -484,6 +485,7 @@ def test_objective_commands_appear_in_objectives_view() -> None:
         "open_objective",
         "copy_plan",
         "copy_view",
+        "codespace_run_plan",
     ]
     for obj_id in expected:
         assert obj_id in cmd_ids, f"Objective command {obj_id} should appear in Objectives view"
@@ -544,6 +546,32 @@ def test_display_name_copy_plan() -> None:
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "copy_plan")
     assert get_display_name(cmd, ctx) == "erk objective plan 7100"
+
+
+def test_display_name_codespace_run_plan() -> None:
+    """codespace_run_plan should show the codespace run command."""
+    row = make_plan_row(7100, "Test Objective")
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    cmd = next(c for c in get_all_commands() if c.id == "codespace_run_plan")
+    assert get_display_name(cmd, ctx) == "erk codespace run objective plan 7100"
+
+
+def test_codespace_run_plan_available_in_objectives_view() -> None:
+    """codespace_run_plan should be available in Objectives view."""
+    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "codespace_run_plan" in cmd_ids
+
+
+def test_codespace_run_plan_not_available_in_plans_view() -> None:
+    """codespace_run_plan should not be available in Plans view."""
+    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "codespace_run_plan" not in cmd_ids
 
 
 def test_display_name_copy_view() -> None:
