@@ -105,11 +105,11 @@ class FakeGitHubAdmin(GitHubAdmin):
         self._secrets.discard(secret_name)
 
     @property
-    def set_secret_calls(self) -> list[tuple[str, str]]:
+    def set_secret_calls(self) -> tuple[tuple[str, str], ...]:
         """Read-only access to tracked secret set calls for test assertions."""
-        return self._set_secret_calls
+        return tuple(self._set_secret_calls)
 
     @property
-    def delete_secret_calls(self) -> list[str]:
+    def delete_secret_calls(self) -> tuple[str, ...]:
         """Read-only access to tracked secret delete calls for test assertions."""
-        return self._delete_secret_calls
+        return tuple(self._delete_secret_calls)

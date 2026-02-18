@@ -1,5 +1,6 @@
 """Unit tests for admin gh-actions-api-key command."""
 
+import os
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -80,7 +81,7 @@ def test_enable_errors_without_env_var() -> None:
 
         with patch.dict("os.environ", {}, clear=False):
             # Ensure ANTHROPIC_API_KEY is not set
-            env_copy = dict(**__import__("os").environ)
+            env_copy = dict(**os.environ)
             env_copy.pop("ANTHROPIC_API_KEY", None)
             with patch.dict("os.environ", env_copy, clear=True):
                 result = runner.invoke(
