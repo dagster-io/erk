@@ -139,6 +139,7 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
                     status="pending",
                     plan=None,
                     pr=None,
+                    depends_on=None,
                 )
             )
 

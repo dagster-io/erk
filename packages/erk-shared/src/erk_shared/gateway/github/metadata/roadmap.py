@@ -35,6 +35,7 @@ class RoadmapNode:
     status: RoadmapNodeStatus
     plan: str | None  # None or "#123" (plan issue number)
     pr: str | None  # None or "#456" (landed PR number)
+    depends_on: tuple[str, ...] | None  # None = not specified, () = no deps
 
 
 @dataclass(frozen=True)
@@ -130,6 +131,18 @@ def validate_roadmap_frontmatter(
             errors.append(f"Step {i} field 'pr' must be a string or null")
             return None, errors
 
+        raw_depends_on = step_dict.get("depends_on")
+        depends_on: tuple[str, ...] | None = None
+        if raw_depends_on is not None:
+            if not isinstance(raw_depends_on, list):
+                errors.append(f"Step {i} field 'depends_on' must be a list or null")
+                return None, errors
+            for j, item in enumerate(raw_depends_on):
+                if not isinstance(item, str):
+                    errors.append(f"Step {i} field 'depends_on' item {j} must be a string")
+                    return None, errors
+            depends_on = tuple(cast(list[str], raw_depends_on))
+
         steps.append(
             RoadmapNode(
                 id=step_id,
@@ -137,6 +150,7 @@ def validate_roadmap_frontmatter(
                 status=cast(RoadmapNodeStatus, status),
                 plan=raw_plan,
                 pr=raw_pr,
+                depends_on=depends_on,
             )
         )
 
@@ -180,18 +194,22 @@ def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
         Inner content for an objective-roadmap metadata block, wrapped in
         ``<details>`` with a YAML code block.
     """
-    data = {
+    any_has_depends_on = any(s.depends_on is not None for s in nodes)
+    node_dicts: list[dict[str, object]] = []
+    for s in nodes:
+        node_dict: dict[str, object] = {
+            "id": s.id,
+            "description": s.description,
+            "status": s.status,
+            "plan": s.plan,
+            "pr": s.pr,
+        }
+        if any_has_depends_on:
+            node_dict["depends_on"] = list(s.depends_on) if s.depends_on is not None else []
+        node_dicts.append(node_dict)
+    data: dict[str, object] = {
         "schema_version": "3",
-        "nodes": [
-            {
-                "id": s.id,
-                "description": s.description,
-                "status": s.status,
-                "plan": s.plan,
-                "pr": s.pr,
-            }
-            for s in nodes
-        ],
+        "nodes": node_dicts,
     }
     yaml_content = yaml.safe_dump(
         data,
@@ -553,6 +571,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
                     "status": step.status,
                     "plan": step.plan,
                     "pr": step.pr,
+                    "depends_on": list(step.depends_on) if step.depends_on is not None else None,
                 }
                 for step in phase.nodes
             ],

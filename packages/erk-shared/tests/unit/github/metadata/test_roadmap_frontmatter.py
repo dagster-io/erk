@@ -148,9 +148,9 @@ def test_parse_missing_required_field() -> None:
 def test_render_roundtrip() -> None:
     """Render then parse returns same step data."""
     original_steps = [
-        RoadmapNode(id="1.1", description="First", status="pending", plan=None, pr=None),
-        RoadmapNode(id="1.2", description="Second", status="done", plan=None, pr="#456"),
-        RoadmapNode(id="1.3", description="Third", status="in_progress", plan="#789", pr=None),
+        RoadmapNode(id="1.1", description="First", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="1.2", description="Second", status="done", plan=None, pr="#456", depends_on=None),
+        RoadmapNode(id="1.3", description="Third", status="in_progress", plan="#789", pr=None, depends_on=None),
     ]
 
     rendered = render_roadmap_block_inner(original_steps)
@@ -172,9 +172,9 @@ def test_render_roundtrip() -> None:
 def test_group_nodes_by_phase() -> None:
     """Group nodes by phase prefix creates correct phases."""
     steps = [
-        RoadmapNode(id="1.1", description="Step 1.1", status="pending", plan=None, pr=None),
-        RoadmapNode(id="1.2", description="Step 1.2", status="done", plan=None, pr="#123"),
-        RoadmapNode(id="2.1", description="Step 2.1", status="pending", plan=None, pr=None),
+        RoadmapNode(id="1.1", description="Step 1.1", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="1.2", description="Step 1.2", status="done", plan=None, pr="#123", depends_on=None),
+        RoadmapNode(id="2.1", description="Step 2.1", status="pending", plan=None, pr=None, depends_on=None),
     ]
 
     phases = group_nodes_by_phase(steps)
@@ -194,9 +194,9 @@ def test_group_nodes_by_phase() -> None:
 def test_group_steps_sub_phases() -> None:
     """Group steps handles sub-phases with letter suffixes."""
     steps = [
-        RoadmapNode(id="1A.1", description="Step 1A.1", status="pending", plan=None, pr=None),
-        RoadmapNode(id="1A.2", description="Step 1A.2", status="done", plan=None, pr="#123"),
-        RoadmapNode(id="1B.1", description="Step 1B.1", status="pending", plan=None, pr=None),
+        RoadmapNode(id="1A.1", description="Step 1A.1", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="1A.2", description="Step 1A.2", status="done", plan=None, pr="#123", depends_on=None),
+        RoadmapNode(id="1B.1", description="Step 1B.1", status="pending", plan=None, pr=None, depends_on=None),
     ]
 
     phases = group_nodes_by_phase(steps)
@@ -213,9 +213,9 @@ def test_group_steps_sub_phases() -> None:
 def test_group_steps_sorts_phases() -> None:
     """Group steps sorts phases by number then suffix."""
     steps = [
-        RoadmapNode(id="2.1", description="Step 2.1", status="pending", plan=None, pr=None),
-        RoadmapNode(id="1B.1", description="Step 1B.1", status="pending", plan=None, pr=None),
-        RoadmapNode(id="1A.1", description="Step 1A.1", status="pending", plan=None, pr=None),
+        RoadmapNode(id="2.1", description="Step 2.1", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="1B.1", description="Step 1B.1", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="1A.1", description="Step 1A.1", status="pending", plan=None, pr=None, depends_on=None),
     ]
 
     phases = group_nodes_by_phase(steps)
@@ -232,8 +232,8 @@ def test_group_steps_sorts_phases() -> None:
 def test_group_steps_undotted_ids() -> None:
     """Steps with non-dotted IDs (e.g., '1', '2') are grouped into phase 1."""
     steps = [
-        RoadmapNode(id="1", description="First", status="pending", plan=None, pr=None),
-        RoadmapNode(id="2", description="Second", status="pending", plan=None, pr=None),
+        RoadmapNode(id="1", description="First", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="2", description="Second", status="pending", plan=None, pr=None, depends_on=None),
     ]
 
     phases = group_nodes_by_phase(steps)
@@ -249,8 +249,8 @@ def test_group_steps_undotted_ids() -> None:
 def test_group_steps_mixed_dotted_and_undotted() -> None:
     """Non-dotted and dotted IDs with phase 1 prefix merge together."""
     steps = [
-        RoadmapNode(id="1", description="Undotted", status="pending", plan=None, pr=None),
-        RoadmapNode(id="1.1", description="Dotted", status="pending", plan=None, pr=None),
+        RoadmapNode(id="1", description="Undotted", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="1.1", description="Dotted", status="pending", plan=None, pr=None, depends_on=None),
     ]
 
     phases = group_nodes_by_phase(steps)
@@ -263,8 +263,8 @@ def test_group_steps_mixed_dotted_and_undotted() -> None:
 def test_group_steps_multi_dot_ids() -> None:
     """Step '1.2.3' groups into phase 1 (leading number extracted from '1.2')."""
     steps = [
-        RoadmapNode(id="1.2.3", description="Nested", status="pending", plan=None, pr=None),
-        RoadmapNode(id="1.1", description="Normal", status="pending", plan=None, pr=None),
+        RoadmapNode(id="1.2.3", description="Nested", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="1.1", description="Normal", status="pending", plan=None, pr=None, depends_on=None),
     ]
 
     phases = group_nodes_by_phase(steps)
@@ -277,7 +277,7 @@ def test_group_steps_multi_dot_ids() -> None:
 def test_group_steps_letter_ids() -> None:
     """Pure letter IDs like 'A' go to phase 1."""
     steps = [
-        RoadmapNode(id="A", description="Letter step", status="pending", plan=None, pr=None),
+        RoadmapNode(id="A", description="Letter step", status="pending", plan=None, pr=None, depends_on=None),
     ]
 
     phases = group_nodes_by_phase(steps)
@@ -715,8 +715,8 @@ def test_parse_roadmap_frontmatter_details_format() -> None:
 def test_render_roadmap_block_inner() -> None:
     """Render roadmap block inner produces <details> + code block format."""
     steps = [
-        RoadmapNode(id="1.1", description="First", status="pending", plan=None, pr=None),
-        RoadmapNode(id="1.2", description="Second", status="done", plan=None, pr="#456"),
+        RoadmapNode(id="1.1", description="First", status="pending", plan=None, pr=None, depends_on=None),
+        RoadmapNode(id="1.2", description="Second", status="done", plan=None, pr="#456", depends_on=None),
     ]
 
     result = render_roadmap_block_inner(steps)
@@ -777,3 +777,175 @@ def test_render_roundtrip_via_update_details() -> None:
     assert steps2[0].pr == "#200"
     assert steps2[0].plan == "#100"  # plan=None preserves existing
     assert steps2[0].status == "in_progress"
+
+
+# ---------------------------------------------------------------------------
+# depends_on tests
+# ---------------------------------------------------------------------------
+
+
+def test_parse_with_depends_on() -> None:
+    """YAML with depends_on populates the field."""
+    block_content = _details_block(
+        "schema_version: '3'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  description: Root\n"
+        "  status: done\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "  depends_on: []\n"
+        "- id: '1.2'\n"
+        "  description: Child\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "  depends_on:\n"
+        "  - '1.1'"
+    )
+
+    steps = parse_roadmap_frontmatter(block_content)
+
+    assert steps is not None
+    assert len(steps) == 2
+    assert steps[0].depends_on == ()
+    assert steps[1].depends_on == ("1.1",)
+
+
+def test_parse_without_depends_on() -> None:
+    """YAML without depends_on sets field to None."""
+    block_content = _details_block(
+        "schema_version: '3'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  description: Step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null"
+    )
+
+    steps = parse_roadmap_frontmatter(block_content)
+
+    assert steps is not None
+    assert steps[0].depends_on is None
+
+
+def test_render_with_depends_on() -> None:
+    """Nodes with depends_on produce YAML that includes the field."""
+    nodes = [
+        RoadmapNode(id="1.1", description="Root", status="done", plan=None, pr=None, depends_on=()),
+        RoadmapNode(id="1.2", description="Child", status="pending", plan=None, pr=None, depends_on=("1.1",)),
+    ]
+
+    result = render_roadmap_block_inner(nodes)
+
+    assert "depends_on:" in result
+
+
+def test_render_without_depends_on() -> None:
+    """Nodes with None depends_on produce YAML that omits the field."""
+    nodes = [
+        RoadmapNode(id="1.1", description="Step", status="pending", plan=None, pr=None, depends_on=None),
+    ]
+
+    result = render_roadmap_block_inner(nodes)
+
+    assert "depends_on" not in result
+
+
+def test_roundtrip_with_depends_on() -> None:
+    """Parse → render → parse preserves depends_on data."""
+    original = [
+        RoadmapNode(id="1.1", description="Root", status="done", plan=None, pr=None, depends_on=()),
+        RoadmapNode(id="2.1", description="A", status="pending", plan=None, pr=None, depends_on=("1.1",)),
+        RoadmapNode(id="2.2", description="B", status="pending", plan=None, pr=None, depends_on=("1.1",)),
+        RoadmapNode(id="3.1", description="Merge", status="pending", plan=None, pr=None, depends_on=("2.1", "2.2")),
+    ]
+
+    rendered = render_roadmap_block_inner(original)
+    parsed = parse_roadmap_frontmatter(rendered)
+
+    assert parsed is not None
+    assert len(parsed) == 4
+    assert parsed[0].depends_on == ()
+    assert parsed[1].depends_on == ("1.1",)
+    assert parsed[2].depends_on == ("1.1",)
+    assert parsed[3].depends_on == ("2.1", "2.2")
+
+
+def test_validate_depends_on_not_list_rejected() -> None:
+    """Invalid depends_on type (not a list) is rejected."""
+    data: dict[str, object] = {
+        "schema_version": "3",
+        "nodes": [
+            {
+                "id": "1.1",
+                "description": "Step",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+                "depends_on": "1.2",
+            },
+        ],
+    }
+
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is None
+    assert len(errors) == 1
+    assert "depends_on" in errors[0]
+    assert "list" in errors[0]
+
+
+def test_validate_depends_on_non_string_items_rejected() -> None:
+    """Invalid depends_on item type (not a string) is rejected."""
+    data: dict[str, object] = {
+        "schema_version": "3",
+        "nodes": [
+            {
+                "id": "1.1",
+                "description": "Step",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+                "depends_on": [123],
+            },
+        ],
+    }
+
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is None
+    assert len(errors) == 1
+    assert "depends_on" in errors[0]
+    assert "string" in errors[0]
+
+
+def test_update_node_preserves_depends_on() -> None:
+    """update_node_in_frontmatter roundtrip preserves depends_on."""
+    block_content = _details_block(
+        "schema_version: '3'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  description: Root\n"
+        "  status: done\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "  depends_on: []\n"
+        "- id: '1.2'\n"
+        "  description: Child\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "  depends_on:\n"
+        "  - '1.1'"
+    )
+
+    updated = update_node_in_frontmatter(block_content, "1.2", plan=None, pr="#999", status=None)
+
+    assert updated is not None
+    steps = parse_roadmap_frontmatter(updated)
+    assert steps is not None
+    assert steps[0].depends_on == ()
+    assert steps[1].depends_on == ("1.1",)
+    assert steps[1].pr == "#999"
