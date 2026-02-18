@@ -32,7 +32,7 @@ def test_happy_path_with_existing_issue() -> None:
         assert len(fake_github.created_prs) == 1
         branch, title, _body, base, draft = fake_github.created_prs[0]
         assert branch.startswith("test-workflow-")
-        assert base == "master"
+        assert base == "main"
         assert draft is True
         # Verify workflow was triggered
         assert len(fake_github.triggered_workflows) == 1
