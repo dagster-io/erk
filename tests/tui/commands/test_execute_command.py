@@ -18,7 +18,7 @@ class TestExecuteCommandBrowserCommands:
             123,
             "Test",
             pr_url="https://github.com/test/repo/pull/456",
-            issue_url="https://github.com/test/repo/issues/123",
+            plan_url="https://github.com/test/repo/issues/123",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -27,7 +27,7 @@ class TestExecuteCommandBrowserCommands:
 
     def test_open_browser_opens_issue_url_when_no_pr(self) -> None:
         """open_browser opens issue URL when no PR is available."""
-        row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+        row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("open_browser")
@@ -35,12 +35,12 @@ class TestExecuteCommandBrowserCommands:
 
     def test_open_issue_opens_issue_url(self) -> None:
         """open_issue opens the issue URL."""
-        row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+        row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("open_issue")
         assert executor.opened_urls == ["https://github.com/test/repo/issues/123"]
-        assert "Opened issue #123" in executor.notifications
+        assert "Opened plan #123" in executor.notifications
 
     def test_open_pr_opens_pr_url(self) -> None:
         """open_pr opens the PR URL."""
@@ -137,10 +137,10 @@ class TestExecuteCommandClosePlan:
 
     def test_close_plan_does_nothing_without_issue_url(self) -> None:
         """close_plan does nothing if no issue URL."""
-        # Create row directly to set issue_url=None (make_plan_row defaults it)
+        # Create row directly to set plan_url=None (make_plan_row defaults it)
         row = PlanRowData(
-            issue_number=123,
-            issue_url=None,  # Explicitly None
+            plan_id=123,
+            plan_url=None,  # Explicitly None
             title="Test",
             pr_number=None,
             pr_url=None,
@@ -154,7 +154,7 @@ class TestExecuteCommandClosePlan:
             run_state_display="-",
             run_url=None,
             full_title="Test",
-            issue_body="",
+            plan_body="",
             pr_title=None,
             pr_state=None,
             pr_head_branch=None,
@@ -204,7 +204,7 @@ class TestExecuteCommandSubmitToQueue:
 
     def test_submit_to_queue_does_nothing_without_repo_root(self) -> None:
         """submit_to_queue does nothing if repo_root is not provided."""
-        row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+        row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
         # repo_root not provided - streaming command should not execute
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -215,8 +215,8 @@ class TestExecuteCommandSubmitToQueue:
     def test_submit_to_queue_does_nothing_without_issue_url(self) -> None:
         """submit_to_queue does nothing if no issue URL."""
         row = PlanRowData(
-            issue_number=123,
-            issue_url=None,  # Explicitly None
+            plan_id=123,
+            plan_url=None,  # Explicitly None
             title="Test",
             pr_number=None,
             pr_url=None,
@@ -230,7 +230,7 @@ class TestExecuteCommandSubmitToQueue:
             run_state_display="-",
             run_url=None,
             full_title="Test",
-            issue_body="",
+            plan_body="",
             pr_title=None,
             pr_state=None,
             pr_head_branch=None,

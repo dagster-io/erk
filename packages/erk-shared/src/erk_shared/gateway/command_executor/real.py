@@ -53,9 +53,9 @@ class RealCommandExecutor(CommandExecutor):
         """Copy text to clipboard."""
         self._clipboard_copy(text)
 
-    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
+    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
         """Close plan and linked PRs."""
-        return self._close_plan_fn(issue_number, issue_url)
+        return self._close_plan_fn(plan_id, plan_url)
 
     def notify(self, message: str, *, severity: str | None) -> None:
         """Show notification to user."""
@@ -65,6 +65,6 @@ class RealCommandExecutor(CommandExecutor):
         """Trigger data refresh."""
         self._refresh_fn()
 
-    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
+    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Submit plan to implementation queue."""
-        self._submit_to_queue_fn(issue_number, issue_url)
+        self._submit_to_queue_fn(plan_id, plan_url)

@@ -47,12 +47,12 @@ The key insight is within ACTION: some actions (close, submit) are fast in-proce
 
 Commands fall into four availability tiers:
 
-| Tier               | Predicate                | Commands                                                                       | Rationale                                                |
-| ------------------ | ------------------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------- |
-| Always available   | `lambda _: True`         | close_plan, copy_prepare, copy_prepare_activate, copy_submit                   | Only need `issue_number`, which is always present        |
-| Needs issue URL    | `issue_url is not None`  | submit_to_queue, copy_replan                                                   | Requires the issue to exist on GitHub (not just locally) |
-| Needs PR           | `pr_number is not None`  | fix_conflicts_remote, address_remote, open_pr, copy_checkout, copy_pr_checkout | PR must be linked to the plan                            |
-| Compound condition | Multiple fields non-null | land_pr (needs PR + OPEN state + run URL)                                      | Landing requires all CI infrastructure to be present     |
+| Tier               | Predicate                | Commands                                                                       | Rationale                                               |
+| ------------------ | ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Always available   | `lambda _: True`         | close_plan, copy_prepare, copy_prepare_activate, copy_submit                   | Only need `plan_id`, which is always present            |
+| Needs plan URL     | `plan_url is not None`   | submit_to_queue, copy_replan, open_issue                                       | Requires the plan to exist on GitHub (not just locally) |
+| Needs PR           | `pr_number is not None`  | fix_conflicts_remote, address_remote, open_pr, copy_checkout, copy_pr_checkout | PR must be linked to the plan                           |
+| Compound condition | Multiple fields non-null | land_pr (needs PR + OPEN state + run URL)                                      | Landing requires all CI infrastructure to be present    |
 
 **Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
 
@@ -75,21 +75,11 @@ Objective commands use `_is_objectives_view(ctx)` as their view predicate, ensur
 
 ## Key Binding: view_comments
 
-The `view_comments` action (`c` key) opens a modal screen displaying unresolved PR review comments. It follows the three-layer LBYL guard pattern before launching the modal:
+<!-- Source: src/erk/tui/app.py, ErkApp.action_view_comments -->
 
-```python
-def action_view_comments(self) -> None:
-    row = self._get_selected_row()
-    if row is None:
-        return
-    if row.pr_number is None:
-        return
-    if row.unresolved_count is None or row.unresolved_count == 0:
-        return
-    self.push_screen(UnresolvedCommentsScreen(row))
-```
+The `view_comments` action (`c` key) opens a modal screen displaying unresolved PR review comments. It follows the three-layer LBYL guard pattern before launching the modal. See `ErkApp.action_view_comments()` in `src/erk/tui/app.py` for the implementation.
 
-This demonstrates the guard pattern: check data availability at each level (row exists, PR exists, comments exist) before attempting the operation. No exceptions, no error messages for expected empty states.
+The guard pattern checks data availability at each level (row exists, PR exists, comments exist) before attempting the operation, with status bar messages for expected empty states.
 
 ## Cross-Frontend Command Reuse
 

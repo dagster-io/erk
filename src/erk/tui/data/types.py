@@ -14,8 +14,8 @@ class PlanRowData:
     Immutable to ensure table state consistency.
 
     Attributes:
-        issue_number: GitHub issue number (e.g., 123)
-        issue_url: Full URL to the GitHub issue
+        plan_id: GitHub issue number (e.g., 123)
+        plan_url: Full URL to the GitHub issue
         title: Plan title (truncated for display)
         pr_number: PR number if linked, None otherwise
         pr_url: URL to PR (GitHub or Graphite), None if no PR
@@ -29,7 +29,7 @@ class PlanRowData:
         run_state_display: Formatted workflow run state
         run_url: URL to the GitHub Actions run page
         full_title: Complete untruncated plan title
-        issue_body: Raw issue body text (markdown)
+        plan_body: Raw issue body text (markdown)
         pr_title: PR title if linked
         pr_state: PR state (e.g., "OPEN", "MERGED", "CLOSED")
         pr_head_branch: Head branch from PR metadata (source branch for landing)
@@ -63,8 +63,8 @@ class PlanRowData:
         author: GitHub login of the issue creator
     """
 
-    issue_number: int
-    issue_url: str | None
+    plan_id: int
+    plan_url: str | None
     title: str
     pr_number: int | None
     pr_url: str | None
@@ -78,7 +78,7 @@ class PlanRowData:
     run_state_display: str
     run_url: str | None
     full_title: str
-    issue_body: str
+    plan_body: str
     pr_title: str | None
     pr_state: str | None
     pr_head_branch: str | None

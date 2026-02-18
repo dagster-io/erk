@@ -4,11 +4,11 @@ from erk.tui.data.types import PlanRowData
 
 
 def filter_plans(plans: list[PlanRowData], query: str) -> list[PlanRowData]:
-    """Filter plans by query matching title, issue number, or PR number.
+    """Filter plans by query matching title, plan ID, or PR number.
 
     Case-insensitive substring matching against:
     - Plan title
-    - Issue number (as string)
+    - Plan ID (as string)
     - PR number (as string, if present)
 
     Args:
@@ -31,8 +31,8 @@ def filter_plans(plans: list[PlanRowData], query: str) -> list[PlanRowData]:
             result.append(plan)
             continue
 
-        # Check issue number
-        if query_lower in str(plan.issue_number):
+        # Check plan ID
+        if query_lower in str(plan.plan_id):
             result.append(plan)
             continue
 

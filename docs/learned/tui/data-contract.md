@@ -62,16 +62,16 @@ The key assembly step is `_build_row_data()`, which merges data from four source
 
 ## PlanRowData Field Reference
 
-The `PlanRowData` frozen dataclass (`src/erk/tui/data/types.py`) contains 38 fields organized into 9 categories. All data is immutable to ensure table state consistency.
+The `PlanRowData` frozen dataclass (`src/erk/tui/data/types.py`) contains 48 fields organized into multiple categories. All data is immutable to ensure table state consistency.
 
 ### Identifiers (4 fields)
 
-| Field          | Type  | Nullable | Description                                        |
-| -------------- | ----- | -------- | -------------------------------------------------- |
-| `issue_number` | `int` | No       | GitHub issue number                                |
-| `issue_url`    | `str` | Yes      | Full URL to the GitHub issue (None if unavailable) |
-| `pr_number`    | `int` | Yes      | PR number if linked, None otherwise                |
-| `pr_url`       | `str` | Yes      | URL to PR (GitHub or Graphite)                     |
+| Field       | Type  | Nullable | Description                                |
+| ----------- | ----- | -------- | ------------------------------------------ |
+| `plan_id`   | `int` | No       | Plan identifier                            |
+| `plan_url`  | `str` | Yes      | Full URL to the plan (None if unavailable) |
+| `pr_number` | `int` | Yes      | PR number if linked, None otherwise        |
+| `pr_url`    | `str` | Yes      | URL to PR (GitHub or Graphite)             |
 
 ### Title Fields (3 fields)
 
@@ -91,9 +91,9 @@ The `PlanRowData` frozen dataclass (`src/erk/tui/data/types.py`) contains 38 fie
 
 ### Body Content (1 field)
 
-| Field        | Type  | Nullable | Description                    |
-| ------------ | ----- | -------- | ------------------------------ |
-| `issue_body` | `str` | No       | Raw issue body text (markdown) |
+| Field       | Type  | Nullable | Description                   |
+| ----------- | ----- | -------- | ----------------------------- |
+| `plan_body` | `str` | No       | Raw plan body text (markdown) |
 
 ### Display Strings (10 fields)
 
@@ -172,19 +172,21 @@ Pre-formatted strings with emoji and relative times. Ready for direct rendering 
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py, PlanDataProvider -->
 
-Abstract interface for fetching plan data. Implementations must provide 3 abstract properties and 5 abstract methods:
+Abstract interface for fetching plan data. Implementations must provide 3 abstract properties and 7 abstract methods:
 
 **Properties:** `repo_root` (Path), `clipboard` (Clipboard), `browser` (BrowserLauncher)
 
 **Methods:**
 
-| Method                  | Signature                              | Returns                     |
-| ----------------------- | -------------------------------------- | --------------------------- |
-| `fetch_plans`           | `(filters: PlanFilters)`               | `list[PlanRowData]`         |
-| `close_plan`            | `(issue_number: int, issue_url: str)`  | `list[int]` (PR numbers)    |
-| `submit_to_queue`       | `(issue_number: int, issue_url: str)`  | `None`                      |
-| `fetch_branch_activity` | `(rows: list[PlanRowData])`            | `dict[int, BranchActivity]` |
-| `fetch_plan_content`    | `(issue_number: int, issue_body: str)` | `str \| None`               |
+| Method                      | Signature                        | Returns                     |
+| --------------------------- | -------------------------------- | --------------------------- |
+| `fetch_plans`               | `(filters: PlanFilters)`         | `list[PlanRowData]`         |
+| `close_plan`                | `(plan_id: int, plan_url: str)`  | `list[int]` (PR numbers)    |
+| `submit_to_queue`           | `(plan_id: int, plan_url: str)`  | `None`                      |
+| `fetch_branch_activity`     | `(rows: list[PlanRowData])`      | `dict[int, BranchActivity]` |
+| `fetch_plan_content`        | `(plan_id: int, plan_body: str)` | `str \| None`               |
+| `fetch_objective_content`   | `(plan_id: int, plan_body: str)` | `str \| None`               |
+| `fetch_unresolved_comments` | `(pr_number: int)`               | `list[PRReviewThread]`      |
 
 ## PlanFilters
 

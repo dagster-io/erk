@@ -136,7 +136,7 @@ class RealPlanDataProvider(PlanDataProvider):
         )
 
         # Build local worktree mapping
-        worktree_by_issue = self._build_worktree_mapping()
+        worktree_by_plan_id = self._build_worktree_mapping()
 
         # Use pre-converted Plan objects from PlanListData
         plans = plan_data.plans
@@ -156,10 +156,10 @@ class RealPlanDataProvider(PlanDataProvider):
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
 
         for plan in plans:
-            issue_number = int(plan.plan_identifier)
+            plan_id = int(plan.plan_identifier)
 
             # Get workflow run for filtering
-            workflow_run = plan_data.workflow_runs.get(issue_number)
+            workflow_run = plan_data.workflow_runs.get(plan_id)
 
             # Apply run_state filter
             if filters.run_state is not None:
@@ -171,10 +171,10 @@ class RealPlanDataProvider(PlanDataProvider):
             # Build row data
             row = self._build_row_data(
                 plan=plan,
-                issue_number=issue_number,
+                plan_id=plan_id,
                 pr_linkages=plan_data.pr_linkages,
                 workflow_run=workflow_run,
-                worktree_by_issue=worktree_by_issue,
+                worktree_by_plan_id=worktree_by_plan_id,
                 use_graphite=use_graphite,
                 learn_issue_states=learn_issue_states,
             )
@@ -204,31 +204,31 @@ class RealPlanDataProvider(PlanDataProvider):
             result[issue_number] = issue_info.state == "CLOSED"
         return result
 
-    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
+    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
         """Close a plan and its linked PRs using direct HTTP calls.
 
         This method uses the HTTP client directly instead of subprocess calls
         for significantly faster execution in the TUI.
 
         Args:
-            issue_number: The issue number to close
-            issue_url: The issue URL for PR linkage lookup
+            plan_id: The plan ID to close
+            plan_url: The plan URL for PR linkage lookup
 
         Returns:
             List of PR numbers that were also closed
         """
         # Parse owner/repo from issue URL
-        owner_repo = self._parse_owner_repo_from_url(issue_url)
+        owner_repo = self._parse_owner_repo_from_url(plan_url)
         if owner_repo is None:
             return []
         owner, repo = owner_repo
 
         # Close linked PRs first
-        closed_prs = self._close_linked_prs_http(issue_number, owner, repo)
+        closed_prs = self._close_linked_prs_http(plan_id, owner, repo)
 
         # Close the plan (issue) via HTTP
         self._http_client.patch(
-            f"repos/{owner}/{repo}/issues/{issue_number}",
+            f"repos/{owner}/{repo}/issues/{plan_id}",
             data={"state": "closed"},
         )
 
@@ -254,7 +254,7 @@ class RealPlanDataProvider(PlanDataProvider):
 
     def _close_linked_prs_http(
         self,
-        issue_number: int,
+        plan_id: int,
         owner: str,
         repo: str,
     ) -> list[int]:
@@ -263,7 +263,7 @@ class RealPlanDataProvider(PlanDataProvider):
         Uses the GitHub REST API via HTTP client for fast execution.
 
         Args:
-            issue_number: The issue number
+            plan_id: The plan ID
             owner: Repository owner
             repo: Repository name
 
@@ -275,8 +275,8 @@ class RealPlanDataProvider(PlanDataProvider):
             root=self._location.root,
             repo_id=GitHubRepoId(owner=owner, repo=repo),
         )
-        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [issue_number])
-        linked_prs = pr_linkages.get(issue_number, [])
+        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [plan_id])
+        linked_prs = pr_linkages.get(plan_id, [])
 
         closed_prs: list[int] = []
         for pr in linked_prs:
@@ -290,20 +290,20 @@ class RealPlanDataProvider(PlanDataProvider):
 
         return closed_prs
 
-    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
+    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Submit a plan to the implementation queue.
 
         Runs 'erk plan submit' as a subprocess to handle the complex workflow
         of creating branches, PRs, and triggering GitHub Actions.
 
         Args:
-            issue_number: The issue number to submit
-            issue_url: The issue URL (unused, kept for interface consistency)
+            plan_id: The plan ID to submit
+            plan_url: The plan URL (unused, kept for interface consistency)
         """
         # Run erk plan submit command from the repository root
         # -f flag prevents blocking on existing branch prompts in TUI context
         subprocess.run(
-            ["erk", "plan", "submit", str(issue_number), "-f"],
+            ["erk", "plan", "submit", str(plan_id), "-f"],
             cwd=self._location.root,
             check=True,
             capture_output=True,
@@ -316,7 +316,7 @@ class RealPlanDataProvider(PlanDataProvider):
             rows: List of plan rows to fetch activity for
 
         Returns:
-            Mapping of issue_number to BranchActivity for plans with local worktrees.
+            Mapping of plan_id to BranchActivity for plans with local worktrees.
         """
         result: dict[int, BranchActivity] = {}
 
@@ -340,30 +340,30 @@ class RealPlanDataProvider(PlanDataProvider):
                 # Parse ISO timestamp from git
                 timestamp_str = commits[0]["timestamp"]
                 commit_at = datetime.fromisoformat(timestamp_str)
-                result[row.issue_number] = BranchActivity(
+                result[row.plan_id] = BranchActivity(
                     last_commit_at=commit_at,
                     last_commit_author=commits[0]["author"],
                 )
             else:
-                result[row.issue_number] = BranchActivity.empty()
+                result[row.plan_id] = BranchActivity.empty()
 
         return result
 
-    def fetch_plan_content(self, issue_number: int, issue_body: str) -> str | None:
+    def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
         """Fetch plan content from the first comment of an issue.
 
         Uses the plan_comment_id from the issue body metadata to fetch
         the specific comment containing the plan content.
 
         Args:
-            issue_number: The GitHub issue number
-            issue_body: The issue body (to extract plan_comment_id from metadata)
+            plan_id: The GitHub issue number
+            plan_body: The issue body (to extract plan_comment_id from metadata)
 
         Returns:
             The extracted plan content, or None if not found
         """
         # Extract plan_comment_id from issue body metadata
-        comment_id = extract_plan_header_comment_id(issue_body)
+        comment_id = extract_plan_header_comment_id(plan_body)
         if comment_id is None:
             return None
 
@@ -378,20 +378,20 @@ class RealPlanDataProvider(PlanDataProvider):
         # Extract plan content from comment
         return extract_plan_from_comment(comment_body)
 
-    def fetch_objective_content(self, issue_number: int, issue_body: str) -> str | None:
+    def fetch_objective_content(self, plan_id: int, plan_body: str) -> str | None:
         """Fetch objective content from the first comment of an issue.
 
         Uses the objective_comment_id from the issue body metadata to fetch
         the specific comment containing the objective content.
 
         Args:
-            issue_number: The GitHub issue number
-            issue_body: The issue body (to extract objective_comment_id from metadata)
+            plan_id: The GitHub issue number
+            plan_body: The issue body (to extract objective_comment_id from metadata)
 
         Returns:
             The extracted objective content, or None if not found
         """
-        comment_id = extract_objective_header_comment_id(issue_body)
+        comment_id = extract_objective_header_comment_id(plan_body)
         if comment_id is None:
             return None
 
@@ -418,37 +418,37 @@ class RealPlanDataProvider(PlanDataProvider):
         )
 
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
-        """Build mapping of issue number to (worktree name, branch).
+        """Build mapping of plan ID to (worktree name, branch).
 
         Uses PXXXX prefix matching on branch names to associate worktrees
-        with issues. Branch names follow pattern: P{issue_number}-{slug}-{timestamp}
+        with issues. Branch names follow pattern: P{plan_id}-{slug}-{timestamp}
 
         Returns:
-            Mapping of issue number to tuple of (worktree_name, branch_name)
+            Mapping of plan ID to tuple of (worktree_name, branch_name)
         """
         _ensure_erk_metadata_dir_from_context(self._ctx.repo)
-        worktree_by_issue: dict[int, tuple[str, str | None]] = {}
+        worktree_by_plan_id: dict[int, tuple[str, str | None]] = {}
         worktrees = self._ctx.git.worktree.list_worktrees(self._location.root)
         for worktree in worktrees:
             issue_number = (
                 extract_leading_issue_number(worktree.branch) if worktree.branch else None
             )
             if issue_number is not None:
-                if issue_number not in worktree_by_issue:
-                    worktree_by_issue[issue_number] = (
+                if issue_number not in worktree_by_plan_id:
+                    worktree_by_plan_id[issue_number] = (
                         worktree.path.name,
                         worktree.branch,
                     )
-        return worktree_by_issue
+        return worktree_by_plan_id
 
     def _build_row_data(
         self,
         *,
         plan: Plan,
-        issue_number: int,
+        plan_id: int,
         pr_linkages: dict[int, list[PullRequestInfo]],
         workflow_run: WorkflowRun | None,
-        worktree_by_issue: dict[int, tuple[str, str | None]],
+        worktree_by_plan_id: dict[int, tuple[str, str | None]],
         use_graphite: bool,
         learn_issue_states: dict[int, bool],
     ) -> PlanRowData:
@@ -466,8 +466,8 @@ class RealPlanDataProvider(PlanDataProvider):
         worktree_branch: str | None = None
         exists_locally = False
 
-        if issue_number in worktree_by_issue:
-            worktree_name, worktree_branch = worktree_by_issue[issue_number]
+        if plan_id in worktree_by_plan_id:
+            worktree_name, worktree_branch = worktree_by_plan_id[plan_id]
             exists_locally = True
 
         # Extract from pre-parsed header fields (no repeated YAML parsing)
@@ -536,8 +536,8 @@ class RealPlanDataProvider(PlanDataProvider):
         total_comment_count = 0
         comments_display = "-"
 
-        if issue_number in pr_linkages:
-            issue_prs = pr_linkages[issue_number]
+        if plan_id in pr_linkages:
+            issue_prs = pr_linkages[plan_id]
             if review_pr is not None:
                 exclude_pr_numbers: set[int] | None = {review_pr}
             else:
@@ -635,8 +635,8 @@ class RealPlanDataProvider(PlanDataProvider):
         is_learn_plan = "erk-learn" in plan.labels
 
         return PlanRowData(
-            issue_number=issue_number,
-            issue_url=plan.url,
+            plan_id=plan_id,
+            plan_url=plan.url,
             title=title,
             pr_number=pr_number,
             pr_url=pr_url,
@@ -650,7 +650,7 @@ class RealPlanDataProvider(PlanDataProvider):
             run_state_display=run_state_display,
             run_url=run_url,
             full_title=full_title,
-            issue_body=plan.body or "",
+            plan_body=plan.body or "",
             pr_title=pr_title,
             pr_state=pr_state,
             pr_head_branch=pr_head_branch,

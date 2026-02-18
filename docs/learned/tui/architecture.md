@@ -40,7 +40,7 @@ src/erk/tui/
 │   └── types.py        # Command types (CommandDefinition, CommandContext)
 ├── screens/            # Modal screens
 │   ├── help_screen.py
-│   ├── issue_body_screen.py
+│   ├── plan_body_screen.py
 │   └── plan_detail_screen.py
 ├── widgets/            # UI components
 │   ├── plan_table.py   # Plan list table
@@ -74,7 +74,7 @@ The `fetch_unresolved_comments()` method returns `list[PRReviewThread]`, where e
 Frozen dataclass containing both:
 
 - **Display strings**: Pre-formatted for rendering (`pr_display`, `checks_display`, `run_state_display`)
-- **Raw data**: For actions and sorting (`pr_number`, `issue_number`, timestamps)
+- **Raw data**: For actions and sorting (`pr_number`, `plan_id`, timestamps)
 
 This separation ensures:
 
@@ -143,7 +143,7 @@ The data provider fetches GitHub issue data and transforms it into `PlanRowData`
 
 Frozen dataclass with both raw data and pre-formatted display strings. The full type has 30+ fields spanning issue data, PR data, worktree data, run data, learn workflow data, objective data, and comment data. See `PlanRowData` in `erk.tui.data.types` for the complete field list and docstring.
 
-Key design: display fields (e.g., `pr_display`, `checks_display`, `learn_display_icon`) are pre-formatted at fetch time so the table widget never does string formatting during render. Raw fields (e.g., `pr_number`, `issue_url`, `run_url`) are available for actions like opening URLs.
+Key design: display fields (e.g., `pr_display`, `checks_display`, `learn_display_icon`) are pre-formatted at fetch time so the table widget never does string formatting during render. Raw fields (e.g., `pr_number`, `plan_url`, `run_url`) are available for actions like opening URLs.
 
 ### Layer 4: DataTable Cell
 

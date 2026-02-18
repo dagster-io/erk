@@ -208,7 +208,7 @@ class PlanDataTable(DataTable):
         # Save current selection by issue number (row key)
         selected_key: str | None = None
         if self._rows and self.cursor_row is not None and 0 <= self.cursor_row < len(self._rows):
-            selected_key = str(self._rows[self.cursor_row].issue_number)
+            selected_key = str(self._rows[self.cursor_row].plan_id)
 
         # Save cursor row index for fallback (move up if plan disappears)
         saved_cursor_row = self.cursor_row
@@ -218,14 +218,14 @@ class PlanDataTable(DataTable):
 
         for row in rows:
             values = self._row_to_values(row)
-            self.add_row(*values, key=str(row.issue_number))
+            self.add_row(*values, key=str(row.plan_id))
 
         # Restore cursor position
         if rows:
             # Try to restore by key (issue number) first
             if selected_key is not None:
                 for idx, row in enumerate(rows):
-                    if str(row.issue_number) == selected_key:
+                    if str(row.plan_id) == selected_key:
                         self.move_cursor(row=idx)
                         return
 
@@ -244,8 +244,8 @@ class PlanDataTable(DataTable):
             Tuple of cell values matching column order
         """
         # Format issue number - colorize if clickable
-        plan_cell: str | Text = f"#{row.issue_number}"
-        if row.issue_url:
+        plan_cell: str | Text = f"#{row.plan_id}"
+        if row.plan_url:
             plan_cell = Text(plan_cell, style="cyan underline")
 
         # Objectives view: plan, title, progress, next, updated, author
@@ -345,7 +345,7 @@ class PlanDataTable(DataTable):
 
         # Check plan column (issue number)
         if col_index == self._plan_column_index:
-            if row_index < len(self._rows) and self._rows[row_index].issue_url:
+            if row_index < len(self._rows) and self._rows[row_index].plan_url:
                 self.post_message(self.PlanClicked(row_index))
                 event.prevent_default()
                 event.stop()

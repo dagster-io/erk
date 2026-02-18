@@ -9,7 +9,7 @@ from textual.widgets import Markdown
 from erk.tui.app import (
     ErkDashApp,
     HelpScreen,
-    IssueBodyScreen,
+    PlanBodyScreen,
     PlanDetailScreen,
     _build_github_url,
 )
@@ -279,7 +279,7 @@ class TestFilterMode:
 
             # Only matching row should be visible
             assert len(app._rows) == 1
-            assert app._rows[0].issue_number == 456
+            assert app._rows[0].plan_id == 456
 
     @pytest.mark.asyncio
     async def test_escape_clears_then_exits(self) -> None:
@@ -365,7 +365,7 @@ class TestFilterMode:
             await pilot.pause()
 
             assert len(app._rows) == 1
-            assert app._rows[0].issue_number == 456
+            assert app._rows[0].plan_id == 456
 
     @pytest.mark.asyncio
     async def test_filter_by_pr_number(self) -> None:
@@ -389,7 +389,7 @@ class TestFilterMode:
             await pilot.pause()
 
             assert len(app._rows) == 1
-            assert app._rows[0].issue_number == 2
+            assert app._rows[0].plan_id == 2
 
 
 class TestOpenRow:
@@ -405,7 +405,7 @@ class TestOpenRow:
                     "Feature",
                     pr_number=456,
                     pr_url="https://github.com/test/repo/pull/456",
-                    issue_url="https://github.com/test/repo/issues/123",
+                    plan_url="https://github.com/test/repo/issues/123",
                 )
             ]
         )
@@ -433,7 +433,7 @@ class TestOpenRow:
                 make_plan_row(
                     123,
                     "Feature",
-                    issue_url="https://github.com/test/repo/issues/123",
+                    plan_url="https://github.com/test/repo/issues/123",
                 )
             ]
         )
@@ -463,7 +463,7 @@ class TestOnLearnClicked:
                 make_plan_row(
                     123,
                     "Feature",
-                    issue_url="https://github.com/test/repo/issues/123",
+                    plan_url="https://github.com/test/repo/issues/123",
                     learn_status="plan_completed",
                     learn_plan_issue=456,
                     learn_plan_pr=789,
@@ -497,7 +497,7 @@ class TestOnLearnClicked:
                 make_plan_row(
                     123,
                     "Feature",
-                    issue_url="https://github.com/test/repo/issues/123",
+                    plan_url="https://github.com/test/repo/issues/123",
                     learn_status="completed_with_plan",
                     learn_plan_issue=456,
                 )
@@ -530,7 +530,7 @@ class TestOnLearnClicked:
                 make_plan_row(
                     123,
                     "Feature",
-                    issue_url="https://github.com/test/repo/issues/123",
+                    plan_url="https://github.com/test/repo/issues/123",
                 )
             ]
         )
@@ -557,7 +557,7 @@ class TestOnLearnClicked:
                 make_plan_row(
                     123,
                     "Feature",
-                    issue_url="",  # Empty string to represent no issue URL
+                    plan_url="",  # Empty string to represent no issue URL
                     learn_status="plan_completed",
                     learn_plan_pr=789,
                 )
@@ -1333,7 +1333,7 @@ class TestClosePlanInProcess:
                 make_plan_row(
                     123,
                     "Test Plan",
-                    issue_url="https://github.com/test/repo/issues/123",
+                    plan_url="https://github.com/test/repo/issues/123",
                 )
             ],
         )
@@ -1398,17 +1398,17 @@ class TestClosePlanInProcess:
 
             # Plan should be removed from provider
             assert len(provider._plans) == 1
-            assert provider._plans[0].issue_number == 456
+            assert provider._plans[0].plan_id == 456
 
 
-class TestIssueBodyScreen:
-    """Tests for IssueBodyScreen modal (view plan text with async loading)."""
+class TestPlanBodyScreen:
+    """Tests for PlanBodyScreen modal (view plan text with async loading)."""
 
     @pytest.mark.asyncio
     async def test_v_key_opens_issue_body_screen(self) -> None:
         """Pressing 'v' opens the issue body modal."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
         provider.set_plan_content(123, "# Test Plan\n\nThis is the plan content.")
         filters = PlanFilters.default()
@@ -1423,16 +1423,16 @@ class TestIssueBodyScreen:
             await pilot.pause()
             await pilot.pause()
 
-            # IssueBodyScreen should be in the screen stack
+            # PlanBodyScreen should be in the screen stack
             assert len(app.screen_stack) > 1
-            assert isinstance(app.screen_stack[-1], IssueBodyScreen)
+            assert isinstance(app.screen_stack[-1], PlanBodyScreen)
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_fetches_and_shows_content(self) -> None:
-        """IssueBodyScreen fetches and displays the plan content."""
+        """PlanBodyScreen fetches and displays the plan content."""
         plan_content = "# Implementation Plan\n\n1. Step one\n2. Step two"
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
         provider.set_plan_content(123, plan_content)
         filters = PlanFilters.default()
@@ -1448,16 +1448,16 @@ class TestIssueBodyScreen:
             await pilot.pause(0.3)
 
             body_screen = app.screen_stack[-1]
-            assert isinstance(body_screen, IssueBodyScreen)
+            assert isinstance(body_screen, PlanBodyScreen)
             # Content should have been fetched
             assert body_screen._content == plan_content
             assert body_screen._loading is False
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_dismisses_on_escape(self) -> None:
-        """IssueBodyScreen closes when pressing escape."""
+        """PlanBodyScreen closes when pressing escape."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
         provider.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
@@ -1472,19 +1472,19 @@ class TestIssueBodyScreen:
             await pilot.pause()
             await pilot.pause()
 
-            assert isinstance(app.screen_stack[-1], IssueBodyScreen)
+            assert isinstance(app.screen_stack[-1], PlanBodyScreen)
 
             # Press escape to close
             await pilot.press("escape")
             await pilot.pause()
 
-            assert not isinstance(app.screen_stack[-1], IssueBodyScreen)
+            assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_dismisses_on_q(self) -> None:
-        """IssueBodyScreen closes when pressing q."""
+        """PlanBodyScreen closes when pressing q."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
         provider.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
@@ -1498,18 +1498,18 @@ class TestIssueBodyScreen:
             await pilot.pause()
             await pilot.pause()
 
-            assert isinstance(app.screen_stack[-1], IssueBodyScreen)
+            assert isinstance(app.screen_stack[-1], PlanBodyScreen)
 
             await pilot.press("q")
             await pilot.pause()
 
-            assert not isinstance(app.screen_stack[-1], IssueBodyScreen)
+            assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_dismisses_on_space(self) -> None:
-        """IssueBodyScreen closes when pressing space."""
+        """PlanBodyScreen closes when pressing space."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
         provider.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
@@ -1523,18 +1523,18 @@ class TestIssueBodyScreen:
             await pilot.pause()
             await pilot.pause()
 
-            assert isinstance(app.screen_stack[-1], IssueBodyScreen)
+            assert isinstance(app.screen_stack[-1], PlanBodyScreen)
 
             await pilot.press("space")
             await pilot.pause()
 
-            assert not isinstance(app.screen_stack[-1], IssueBodyScreen)
+            assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_shows_empty_message_when_no_content(self) -> None:
-        """IssueBodyScreen shows empty message when no plan content found."""
+        """PlanBodyScreen shows empty message when no plan content found."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
         # Don't set plan content - fetch will return None
         filters = PlanFilters.default()
@@ -1550,17 +1550,17 @@ class TestIssueBodyScreen:
             await pilot.pause(0.3)
 
             body_screen = app.screen_stack[-1]
-            assert isinstance(body_screen, IssueBodyScreen)
+            assert isinstance(body_screen, PlanBodyScreen)
             # Content should be None (not found)
             assert body_screen._content is None
             assert body_screen._loading is False
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_shows_plan_number_and_title(self) -> None:
-        """IssueBodyScreen shows plan number and full title in header."""
+        """PlanBodyScreen shows plan number and full title in header."""
         full_title = "This is a very long plan title that should be shown in full"
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(456, full_title, issue_body="metadata body")]
+            plans=[make_plan_row(456, full_title, plan_body="metadata body")]
         )
         provider.set_plan_content(456, "Plan content")
         filters = PlanFilters.default()
@@ -1575,16 +1575,16 @@ class TestIssueBodyScreen:
             await pilot.pause()
 
             body_screen = app.screen_stack[-1]
-            assert isinstance(body_screen, IssueBodyScreen)
-            assert body_screen._issue_number == 456
+            assert isinstance(body_screen, PlanBodyScreen)
+            assert body_screen._plan_id == 456
             assert body_screen._full_title == full_title
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_renders_content_as_markdown(self) -> None:
-        """IssueBodyScreen renders plan content using Markdown widget."""
+        """PlanBodyScreen renders plan content using Markdown widget."""
         plan_content = "# Header\n\n- List item 1\n- List item 2"
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
         provider.set_plan_content(123, plan_content)
         filters = PlanFilters.default()
@@ -1600,7 +1600,7 @@ class TestIssueBodyScreen:
             await pilot.pause(0.3)
 
             body_screen = app.screen_stack[-1]
-            assert isinstance(body_screen, IssueBodyScreen)
+            assert isinstance(body_screen, PlanBodyScreen)
 
             # Verify content is rendered as Markdown widget
             content_widget = body_screen.query_one("#body-content", Markdown)
@@ -1608,10 +1608,10 @@ class TestIssueBodyScreen:
 
     @pytest.mark.asyncio
     async def test_objective_view_shows_objective_header_and_fetches_content(self) -> None:
-        """In Objectives view, IssueBodyScreen fetches objective content."""
+        """In Objectives view, PlanBodyScreen fetches objective content."""
         objective_content = "# Roadmap\n\n- Step 1\n- Step 2"
         objective_plans = [
-            make_plan_row(100, "My Objective", issue_body="objective metadata"),
+            make_plan_row(100, "My Objective", plan_body="objective metadata"),
         ]
         provider = FakePlanDataProvider(
             plans_by_labels={("erk-objective",): objective_plans},
@@ -1637,7 +1637,7 @@ class TestIssueBodyScreen:
             await pilot.pause(0.3)
 
             body_screen = app.screen_stack[-1]
-            assert isinstance(body_screen, IssueBodyScreen)
+            assert isinstance(body_screen, PlanBodyScreen)
             # Should use "Objective" content type
             assert body_screen._content_type == "Objective"
             assert body_screen._content == objective_content
@@ -1702,7 +1702,7 @@ class TestViewSwitching:
             assert app._view_mode == ViewMode.PLANS
             # Plans view excludes learn plans
             assert len(app._rows) == 1
-            assert app._rows[0].issue_number == 1
+            assert app._rows[0].plan_id == 1
 
             # Switch to Learn view
             await pilot.press("2")
@@ -1711,7 +1711,7 @@ class TestViewSwitching:
             assert app._view_mode == ViewMode.LEARN
             # Learn view filters to only learn plans
             assert len(app._rows) == 1
-            assert app._rows[0].issue_number == 2
+            assert app._rows[0].plan_id == 2
 
     @pytest.mark.asyncio
     async def test_plans_view_excludes_learn_plans(self) -> None:
@@ -1731,7 +1731,7 @@ class TestViewSwitching:
             assert app._view_mode == ViewMode.PLANS
             # Plans view should exclude the learn plan
             assert len(app._rows) == 2
-            issue_numbers = {r.issue_number for r in app._rows}
+            issue_numbers = {r.plan_id for r in app._rows}
             assert issue_numbers == {1, 3}
 
     @pytest.mark.asyncio
@@ -1943,7 +1943,7 @@ class TestViewSwitching:
             # Initial state: Plans view with 1 row
             assert app._view_mode == ViewMode.PLANS
             assert len(app._rows) == 1
-            assert app._rows[0].issue_number == 1
+            assert app._rows[0].plan_id == 1
 
             # Switch to Objectives view
             await pilot.press("3")
@@ -1952,7 +1952,7 @@ class TestViewSwitching:
 
             assert app._view_mode == ViewMode.OBJECTIVES
             assert len(app._rows) == 2
-            displayed_issues = {r.issue_number for r in app._rows}
+            displayed_issues = {r.plan_id for r in app._rows}
             assert displayed_issues == {10, 20}
 
             # Simulate a stale fetch arriving: data fetched for Plans view
@@ -1968,13 +1968,13 @@ class TestViewSwitching:
             # Display should NOT have changed - still showing Objectives
             assert app._view_mode == ViewMode.OBJECTIVES
             assert len(app._rows) == 2
-            assert {r.issue_number for r in app._rows} == {10, 20}
+            assert {r.plan_id for r in app._rows} == {10, 20}
 
             # But the stale data should be cached under Plans labels
             plans_labels = get_view_config(ViewMode.PLANS).labels
             assert plans_labels in app._data_cache
             assert len(app._data_cache[plans_labels]) == 1
-            assert app._data_cache[plans_labels][0].issue_number == 99
+            assert app._data_cache[plans_labels][0].plan_id == 99
 
     @pytest.mark.asyncio
     async def test_right_arrow_cycles_to_next_view(self) -> None:

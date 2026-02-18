@@ -13,7 +13,7 @@ def test_filter_by_title_substring() -> None:
     ]
     result = filter_plans(plans, "login")
     assert len(result) == 1
-    assert result[0].issue_number == 2
+    assert result[0].plan_id == 2
 
 
 def test_filter_by_issue_number() -> None:
@@ -25,7 +25,7 @@ def test_filter_by_issue_number() -> None:
     ]
     result = filter_plans(plans, "456")
     assert len(result) == 1
-    assert result[0].issue_number == 456
+    assert result[0].plan_id == 456
 
 
 def test_filter_by_pr_number() -> None:
@@ -37,7 +37,7 @@ def test_filter_by_pr_number() -> None:
     ]
     result = filter_plans(plans, "200")
     assert len(result) == 1
-    assert result[0].issue_number == 2
+    assert result[0].plan_id == 2
 
 
 def test_empty_query_returns_all() -> None:
@@ -60,7 +60,7 @@ def test_case_insensitive_title_match() -> None:
     ]
     result = filter_plans(plans, "authentication")
     assert len(result) == 1
-    assert result[0].issue_number == 1
+    assert result[0].plan_id == 1
 
 
 def test_case_insensitive_query() -> None:
@@ -70,7 +70,7 @@ def test_case_insensitive_query() -> None:
     ]
     result = filter_plans(plans, "USER")
     assert len(result) == 1
-    assert result[0].issue_number == 1
+    assert result[0].plan_id == 1
 
 
 def test_no_matches_returns_empty() -> None:
@@ -93,8 +93,8 @@ def test_partial_issue_number_match() -> None:
     # "12" matches both 123 and 1234
     result = filter_plans(plans, "12")
     assert len(result) == 2
-    assert result[0].issue_number == 123
-    assert result[1].issue_number == 1234
+    assert result[0].plan_id == 123
+    assert result[1].plan_id == 1234
 
 
 def test_filter_by_author() -> None:
@@ -106,8 +106,8 @@ def test_filter_by_author() -> None:
     ]
     result = filter_plans(plans, "alice")
     assert len(result) == 2
-    assert result[0].issue_number == 1
-    assert result[1].issue_number == 3
+    assert result[0].plan_id == 1
+    assert result[1].plan_id == 3
 
 
 def test_multiple_matches_preserved_order() -> None:
@@ -119,6 +119,6 @@ def test_multiple_matches_preserved_order() -> None:
     ]
     result = filter_plans(plans, "feature")
     assert len(result) == 3
-    assert result[0].issue_number == 1
-    assert result[1].issue_number == 2
-    assert result[2].issue_number == 3
+    assert result[0].plan_id == 1
+    assert result[1].plan_id == 2
+    assert result[2].plan_id == 3

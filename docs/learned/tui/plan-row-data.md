@@ -20,15 +20,15 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 
 ## Field Categories
 
-### Issue Info
+### Plan Info
 
-| Field          | Type          | Description                    | Nullable?                     |
-| -------------- | ------------- | ------------------------------ | ----------------------------- |
-| `issue_number` | `int`         | GitHub issue number            | Never                         |
-| `issue_url`    | `str \| None` | Full URL to GitHub issue       | Yes                           |
-| `title`        | `str`         | Plan title (may be truncated)  | Never (empty string possible) |
-| `full_title`   | `str`         | Complete untruncated title     | Never (empty string possible) |
-| `issue_body`   | `str`         | Raw issue body text (markdown) | Never (empty string possible) |
+| Field        | Type          | Description                   | Nullable?                     |
+| ------------ | ------------- | ----------------------------- | ----------------------------- |
+| `plan_id`    | `int`         | Plan identifier               | Never                         |
+| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
+| `title`      | `str`         | Plan title (may be truncated) | Never (empty string possible) |
+| `full_title` | `str`         | Complete untruncated title    | Never (empty string possible) |
+| `plan_body`  | `str`         | Raw plan body text (markdown) | Never (empty string possible) |
 
 ### PR Info
 
@@ -121,10 +121,10 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 is_available=lambda ctx: ctx.row.pr_number is not None
 ```
 
-### Check if issue URL exists
+### Check if plan URL exists
 
 ```python
-is_available=lambda ctx: ctx.row.issue_url is not None
+is_available=lambda ctx: ctx.row.plan_url is not None
 ```
 
 ### Check if worktree exists locally
@@ -145,8 +145,8 @@ is_available=lambda ctx: ctx.row.run_url is not None
 # PR exists AND worktree exists locally
 is_available=lambda ctx: ctx.row.pr_number is not None and ctx.row.exists_locally
 
-# Either PR or issue URL exists
-is_available=lambda ctx: bool(ctx.row.pr_url or ctx.row.issue_url)
+# Either PR or plan URL exists
+is_available=lambda ctx: bool(ctx.row.pr_url or ctx.row.plan_url)
 ```
 
 ### Always available
@@ -161,7 +161,7 @@ Many pieces of data have both a raw value and a display value:
 
 | Raw Field                                      | Display Field                        | Purpose                 |
 | ---------------------------------------------- | ------------------------------------ | ----------------------- |
-| `issue_number`                                 | (used directly in display)           | Issue number            |
+| `plan_id`                                      | (used directly in display)           | Plan identifier         |
 | `pr_number`                                    | `pr_display`                         | PR with state indicator |
 | `resolved_comment_count`/`total_comment_count` | `comments_display`                   | Comment counts (X/Y)    |
 | `run_id`                                       | `run_id_display`                     | Run ID formatted        |

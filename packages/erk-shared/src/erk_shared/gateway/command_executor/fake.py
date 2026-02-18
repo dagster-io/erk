@@ -31,7 +31,7 @@ class FakeCommandExecutor(CommandExecutor):
 
     @property
     def closed_plans(self) -> list[tuple[int, str]]:
-        """Plans that were closed (issue_number, issue_url)."""
+        """Plans that were closed (plan_id, plan_url)."""
         return list(self._closed_plans)
 
     @property
@@ -46,7 +46,7 @@ class FakeCommandExecutor(CommandExecutor):
 
     @property
     def submitted_to_queue(self) -> list[tuple[int, str]]:
-        """Plans that were submitted to queue (issue_number, issue_url)."""
+        """Plans that were submitted to queue (plan_id, plan_url)."""
         return list(self._submitted_to_queue)
 
     def set_close_plan_return(self, pr_numbers: list[int]) -> None:
@@ -65,9 +65,9 @@ class FakeCommandExecutor(CommandExecutor):
         """Track clipboard copy."""
         self._copied_texts.append(text)
 
-    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
+    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
         """Track plan close and return configured PRs."""
-        self._closed_plans.append((issue_number, issue_url))
+        self._closed_plans.append((plan_id, plan_url))
         return self._close_plan_return
 
     def notify(self, message: str, *, severity: str | None) -> None:
@@ -78,6 +78,6 @@ class FakeCommandExecutor(CommandExecutor):
         """Track refresh."""
         self._refresh_count += 1
 
-    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
+    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Track queue submission."""
-        self._submitted_to_queue.append((issue_number, issue_url))
+        self._submitted_to_queue.append((plan_id, plan_url))

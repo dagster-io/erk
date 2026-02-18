@@ -26,7 +26,7 @@ def test_all_commands_have_required_fields() -> None:
 
 def test_open_issue_available_when_issue_url_exists() -> None:
     """open_issue should be available when issue URL exists."""
-    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -223,7 +223,7 @@ def test_fix_conflicts_remote_not_available_when_no_pr() -> None:
 
 def test_copy_replan_available_when_issue_url_exists() -> None:
     """copy_replan should be available when issue URL exists."""
-    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -270,7 +270,7 @@ def test_display_name_open_issue_shows_bare_url() -> None:
     row = make_plan_row(
         5831,
         "Test Plan",
-        issue_url="https://github.com/test/repo/issues/5831",
+        plan_url="https://github.com/test/repo/issues/5831",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "open_issue")
@@ -419,7 +419,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
     row = make_plan_row(
         123,
         "Test",
-        issue_url="https://github.com/test/repo/issues/123",
+        plan_url="https://github.com/test/repo/issues/123",
         pr_number=456,
         pr_url="https://github.com/test/repo/pull/456",
         pr_state="OPEN",
@@ -453,7 +453,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
 
 def test_objective_commands_hidden_in_plans_view() -> None:
     """Objective commands should not appear in Plans view."""
-    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -473,7 +473,7 @@ def test_objective_commands_hidden_in_plans_view() -> None:
 
 def test_objective_commands_appear_in_objectives_view() -> None:
     """All 7 objective commands should appear in Objectives view."""
-    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -493,7 +493,7 @@ def test_objective_commands_appear_in_objectives_view() -> None:
 
 def test_plan_commands_available_in_learn_view() -> None:
     """Plan commands should still appear in Learn view (not objectives)."""
-    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.LEARN)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -533,7 +533,7 @@ def test_display_name_open_objective() -> None:
     row = make_plan_row(
         7100,
         "Test Objective",
-        issue_url="https://github.com/test/repo/issues/7100",
+        plan_url="https://github.com/test/repo/issues/7100",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "open_objective")
@@ -558,7 +558,7 @@ def test_display_name_codespace_run_plan() -> None:
 
 def test_codespace_run_plan_available_in_objectives_view() -> None:
     """codespace_run_plan should be available in Objectives view."""
-    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -567,7 +567,7 @@ def test_codespace_run_plan_available_in_objectives_view() -> None:
 
 def test_codespace_run_plan_not_available_in_plans_view() -> None:
     """codespace_run_plan should not be available in Plans view."""
-    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -595,7 +595,7 @@ def test_shortcuts_no_conflicts_within_view() -> None:
     row = make_plan_row(
         123,
         "Test",
-        issue_url="https://github.com/test/repo/issues/123",
+        plan_url="https://github.com/test/repo/issues/123",
         pr_number=456,
         pr_url="https://github.com/test/repo/pull/456",
         pr_state="OPEN",
