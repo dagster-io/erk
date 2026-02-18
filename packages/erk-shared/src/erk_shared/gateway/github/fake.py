@@ -4,6 +4,7 @@ FakeGitHub is an in-memory implementation that accepts pre-configured state
 in its constructor. Construct instances directly with keyword arguments.
 """
 
+import dataclasses
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -146,6 +147,7 @@ class FakeGitHub(GitHub):
         # (filename, content, description, public)
         self._created_gists: list[tuple[str, str, str, bool]] = []
         self._next_gist_id = 1000
+        self._next_pr_number = 999
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []
@@ -191,13 +193,24 @@ class FakeGitHub(GitHub):
         self._operation_log.append(("update_pr_base_branch", pr_number, new_base))
 
     def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -> None:
-        """Record PR body update in mutation tracking list.
+        """Record PR body update in mutation tracking list and update stored state.
+
+        Updates the PRDetails entry (if one exists) so get_pr() returns
+        the latest body. Also updates prs_by_branch if applicable.
 
         Raises RuntimeError if pr_update_should_succeed is False.
         """
         if not self._pr_update_should_succeed:
             raise RuntimeError("PR update failed (configured to fail)")
         self._updated_pr_bodies.append((pr_number, body))
+
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, body=body)
+            self._pr_details[pr_number] = updated
+            # Keep prs_by_branch in sync
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
 
     def merge_pr(
         self,
@@ -261,14 +274,55 @@ class FakeGitHub(GitHub):
         *,
         draft: bool = False,
     ) -> int:
-        """Record PR creation in mutation tracking list.
+        """Record PR creation and register PR in internal state.
+
+        Auto-registers a PRDetails entry so that get_pr() and
+        get_pr_for_branch() work after creation without manual setup.
 
         Returns:
-            A fake PR number for testing
+            An incrementing fake PR number for testing
         """
+        pr_number = self._next_pr_number
+        self._next_pr_number += 1
         self._created_prs.append((branch, title, body, base, draft))
-        # Return a fake PR number
-        return 999
+
+        effective_base = base if base is not None else "main"
+        pr_url = (
+            f"https://github.com/{self._repo_info.owner}/{self._repo_info.name}/pull/{pr_number}"
+        )
+
+        details = PRDetails(
+            number=pr_number,
+            url=pr_url,
+            title=title,
+            body=body,
+            state="OPEN",
+            is_draft=draft,
+            base_ref_name=effective_base,
+            head_ref_name=branch,
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner=self._repo_info.owner,
+            repo=self._repo_info.name,
+        )
+        self._pr_details[pr_number] = details
+        self._prs_by_branch[branch] = details
+
+        # Also register in _prs for list_prs() lookups
+        self._prs[branch] = PullRequestInfo(
+            number=pr_number,
+            state="OPEN",
+            url=pr_url,
+            is_draft=draft,
+            title=title,
+            checks_passing=None,
+            owner=self._repo_info.owner,
+            repo=self._repo_info.name,
+            head_branch=branch,
+        )
+
+        return pr_number
 
     @property
     def created_prs(self) -> list[tuple[str, str, str, str | None, bool]]:
@@ -279,8 +333,15 @@ class FakeGitHub(GitHub):
         return self._created_prs
 
     def close_pr(self, repo_root: Path, pr_number: int) -> None:
-        """Record PR closure in mutation tracking list."""
+        """Record PR closure in mutation tracking list and update stored state."""
         self._closed_prs.append(pr_number)
+
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, state="CLOSED")
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
 
     @property
     def updated_pr_bases(self) -> list[tuple[int, str]]:
@@ -688,6 +749,15 @@ class FakeGitHub(GitHub):
         if pr_number not in self._pr_labels:
             self._pr_labels[pr_number] = set()
         self._pr_labels[pr_number].add(label)
+
+        # Keep PRDetails labels in sync
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            if label not in old.labels:
+                updated = dataclasses.replace(old, labels=old.labels + (label,))
+                self._pr_details[pr_number] = updated
+                if old.head_ref_name in self._prs_by_branch:
+                    self._prs_by_branch[old.head_ref_name] = updated
 
     def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
         """Check if a PR has a specific label from configured state."""

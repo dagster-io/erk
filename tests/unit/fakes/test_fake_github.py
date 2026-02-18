@@ -943,3 +943,127 @@ def test_fake_github_update_pr_comment_tracks_mutation() -> None:
     ops.update_pr_comment(sentinel_path(), 12345, "Updated body")
 
     assert ops.pr_comment_updates == [(12345, "Updated body")]
+
+
+# =============================================================================
+# create_pr auto-registration tests
+# =============================================================================
+
+
+def test_create_pr_returns_incrementing_numbers() -> None:
+    """Test create_pr returns unique incrementing PR numbers."""
+    ops = FakeGitHub()
+
+    pr1 = ops.create_pr(sentinel_path(), "branch-1", "Title 1", "Body 1")
+    pr2 = ops.create_pr(sentinel_path(), "branch-2", "Title 2", "Body 2")
+    pr3 = ops.create_pr(sentinel_path(), "branch-3", "Title 3", "Body 3")
+
+    assert pr1 < pr2 < pr3
+    assert len({pr1, pr2, pr3}) == 3
+
+
+def test_create_pr_auto_registers_pr_details() -> None:
+    """Test create_pr automatically registers PRDetails for get_pr() lookups."""
+    ops = FakeGitHub()
+
+    pr_number = ops.create_pr(
+        sentinel_path(), "feature-branch", "Add feature", "Feature body", draft=True
+    )
+
+    result = ops.get_pr(sentinel_path(), pr_number)
+    assert not isinstance(result, PRNotFound)
+    assert result.number == pr_number
+    assert result.title == "Add feature"
+    assert result.body == "Feature body"
+    assert result.state == "OPEN"
+    assert result.is_draft is True
+    assert result.head_ref_name == "feature-branch"
+    assert result.base_ref_name == "main"
+
+
+def test_create_pr_auto_registers_for_branch_lookup() -> None:
+    """Test create_pr automatically registers for get_pr_for_branch() lookups."""
+    ops = FakeGitHub()
+
+    pr_number = ops.create_pr(sentinel_path(), "my-branch", "Title", "Body")
+
+    result = ops.get_pr_for_branch(sentinel_path(), "my-branch")
+    assert not isinstance(result, PRNotFound)
+    assert result.number == pr_number
+
+
+def test_create_pr_uses_custom_base() -> None:
+    """Test create_pr uses provided base branch."""
+    ops = FakeGitHub()
+
+    pr_number = ops.create_pr(sentinel_path(), "feature", "Title", "Body", "develop")
+
+    result = ops.get_pr(sentinel_path(), pr_number)
+    assert not isinstance(result, PRNotFound)
+    assert result.base_ref_name == "develop"
+
+
+# =============================================================================
+# update_pr_body state synchronization tests
+# =============================================================================
+
+
+def test_update_pr_body_updates_stored_pr_details() -> None:
+    """Test update_pr_body updates the PRDetails returned by get_pr()."""
+    ops = FakeGitHub()
+
+    pr_number = ops.create_pr(sentinel_path(), "branch", "Title", "Original body")
+
+    ops.update_pr_body(sentinel_path(), pr_number, "Updated body")
+
+    result = ops.get_pr(sentinel_path(), pr_number)
+    assert not isinstance(result, PRNotFound)
+    assert result.body == "Updated body"
+
+
+def test_update_pr_body_updates_branch_lookup() -> None:
+    """Test update_pr_body keeps prs_by_branch in sync."""
+    ops = FakeGitHub()
+
+    ops.create_pr(sentinel_path(), "my-branch", "Title", "Original")
+
+    ops.update_pr_body(sentinel_path(), 999, "New body")
+
+    result = ops.get_pr_for_branch(sentinel_path(), "my-branch")
+    assert not isinstance(result, PRNotFound)
+    assert result.body == "New body"
+
+
+# =============================================================================
+# close_pr state synchronization tests
+# =============================================================================
+
+
+def test_close_pr_updates_stored_pr_state() -> None:
+    """Test close_pr updates the PRDetails state to CLOSED."""
+    ops = FakeGitHub()
+
+    pr_number = ops.create_pr(sentinel_path(), "branch", "Title", "Body")
+
+    result_before = ops.get_pr(sentinel_path(), pr_number)
+    assert not isinstance(result_before, PRNotFound)
+    assert result_before.state == "OPEN"
+
+    ops.close_pr(sentinel_path(), pr_number)
+
+    result_after = ops.get_pr(sentinel_path(), pr_number)
+    assert not isinstance(result_after, PRNotFound)
+    assert result_after.state == "CLOSED"
+
+
+def test_close_pr_updates_branch_lookup() -> None:
+    """Test close_pr keeps prs_by_branch in sync."""
+    ops = FakeGitHub()
+
+    ops.create_pr(sentinel_path(), "my-branch", "Title", "Body")
+
+    ops.close_pr(sentinel_path(), 999)
+
+    result = ops.get_pr_for_branch(sentinel_path(), "my-branch")
+    assert not isinstance(result, PRNotFound)
+    assert result.state == "CLOSED"
