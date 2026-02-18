@@ -54,6 +54,12 @@ Remove `.worker-impl/` only after all three conditions are met:
 
 **Never remove during implementation** — the workflow copies `.worker-impl/` to `.impl/` at the start, and Claude reads from `.impl/` throughout. Removing `.worker-impl/` mid-implementation doesn't break Claude's run, but it prevents reruns from refreshing plan content.
 
+**Exception: Workflow pre-implementation removal.** The `plan-implement.yml` workflow removes `.worker-impl/` from git immediately after copying it to `.impl/`, _before_ the implementation agent starts. This is safe because:
+
+1. The copy to `.impl/` has already completed — the agent reads from `.impl/`, not `.worker-impl/`
+2. The workflow regenerates `.worker-impl/` from the issue on every run via `erk exec create-worker-impl-from-issue`, so reruns are unaffected
+3. Early removal prevents `.worker-impl/` from leaking into squash merges (the original bug this fix addresses)
+
 ## The Multi-Layer Cleanup Architecture
 
 Cleanup uses three independent layers because no single layer is reliable on its own. This was learned through production failures — see [reliability-patterns.md](reliability-patterns.md) for the full case study.
@@ -76,7 +82,7 @@ See the "Clean up .worker-impl/ after implementation" step in `.github/workflows
 
 **Auto-deleting .impl/** — `.impl/` belongs to the user. It preserves the original plan for comparison against implementation, and deleting it removes context the user may need for review or future reference. Never add automation that removes `.impl/`.
 
-**Removing .worker-impl/ before CI passes** — The cleanup step's condition gates on implementation success AND CI success. Removing before CI passes means a failed CI rerun can't access the plan metadata it needs for diagnostics.
+**Removing .worker-impl/ before CI passes** — The cleanup step's condition gates on implementation success AND CI success. Removing before CI passes means a failed CI rerun can't access the plan metadata it needs for diagnostics. (Exception: the workflow's pre-implementation removal step — see "Cleanup Timing" above.)
 
 ## Diagnosing Leftover .worker-impl/
 
