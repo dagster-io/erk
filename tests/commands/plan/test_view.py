@@ -2,16 +2,22 @@
 
 from datetime import UTC, datetime
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
 
 
-def test_view_plan_displays_issue() -> None:
+@pytest.fixture(params=["github", "draft_pr"])
+def plan_backend_type(request: pytest.FixtureRequest) -> str:
+    return request.param
+
+
+def test_view_plan_displays_issue(plan_backend_type: str) -> None:
     """Test fetching and displaying a plan issue."""
     # Arrange
     plan_issue = Plan(
@@ -30,7 +36,7 @@ def test_view_plan_displays_issue() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -43,7 +49,8 @@ def test_view_plan_displays_issue() -> None:
         assert "#42" in result.output
         assert "erk-plan" in result.output
         assert "bug" in result.output
-        assert "alice" in result.output
+        if plan_backend_type == "github":
+            assert "alice" in result.output  # PRDetails has no assignees field
         # Body should NOT be displayed without --full
         assert "This is a test issue description" not in result.output
 
@@ -100,7 +107,7 @@ def test_view_plan_error_when_cannot_infer_from_branch() -> None:
         assert "P{issue}-..." in result.output
 
 
-def test_view_plan_with_full_flag() -> None:
+def test_view_plan_with_full_flag(plan_backend_type: str) -> None:
     """Test viewing plan with --full flag shows the body."""
     # Arrange
     plan_issue = Plan(
@@ -119,7 +126,7 @@ def test_view_plan_with_full_flag() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -133,7 +140,7 @@ def test_view_plan_with_full_flag() -> None:
         assert "─── Plan ───" in result.output
 
 
-def test_view_plan_with_short_full_flag() -> None:
+def test_view_plan_with_short_full_flag(plan_backend_type: str) -> None:
     """Test viewing plan with -f flag (short form of --full)."""
     # Arrange
     plan_issue = Plan(
@@ -152,7 +159,7 @@ def test_view_plan_with_short_full_flag() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -164,12 +171,12 @@ def test_view_plan_with_short_full_flag() -> None:
         assert "This is a test issue description" in result.output
 
 
-def test_view_plan_not_found() -> None:
+def test_view_plan_not_found(plan_backend_type: str) -> None:
     """Test fetching a plan issue that doesn't exist."""
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_plan_store({}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -181,13 +188,13 @@ def test_view_plan_not_found() -> None:
         assert "Issue #999 not found" in result.output
 
 
-def test_view_plan_minimal_fields() -> None:
+def test_view_plan_minimal_fields(plan_backend_type: str) -> None:
     """Test displaying issue with minimal fields (no labels, assignees, body)."""
     # Arrange
     plan_issue = Plan(
         plan_identifier="1",
         title="Minimal Issue",
-        body="minimal content",  # GitHubPlanStore requires non-empty body
+        body="minimal content",
         state=PlanState.CLOSED,
         url="https://github.com/owner/repo/issues/1",
         labels=[],
@@ -200,7 +207,7 @@ def test_view_plan_minimal_fields() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"1": plan_issue})
+        store, _ = create_plan_store({"1": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -212,7 +219,7 @@ def test_view_plan_minimal_fields() -> None:
         assert "CLOSED" in result.output
 
 
-def test_view_plan_with_github_url() -> None:
+def test_view_plan_with_github_url(plan_backend_type: str) -> None:
     """Test fetching plan using GitHub issue URL."""
     # Arrange
     plan_issue = Plan(
@@ -231,7 +238,7 @@ def test_view_plan_with_github_url() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
+        store, _ = create_plan_store({"123": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act - use GitHub URL instead of plain number
@@ -244,12 +251,12 @@ def test_view_plan_with_github_url() -> None:
         assert "URL Test Issue" in result.output
 
 
-def test_view_plan_invalid_url() -> None:
+def test_view_plan_invalid_url(plan_backend_type: str) -> None:
     """Test error handling for invalid identifier format."""
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_plan_store({}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act - use invalid identifier
@@ -261,13 +268,11 @@ def test_view_plan_invalid_url() -> None:
         assert "Invalid issue number or URL" in result.output
 
 
-def test_view_plan_with_header_info() -> None:
+def test_view_plan_with_header_info(plan_backend_type: str) -> None:
     """Test displaying plan with plan-header metadata.
 
-    Note: The test helper converts Plan.body to IssueInfo.body,
-    and GitHubPlanStore._convert_to_plan sets metadata["issue_body"]
-    from IssueInfo.body. So we put the raw issue body with the
-    plan-header block in Plan.body.
+    The plan body contains a plan-header metadata block. Both backends
+    extract header_fields from this block for display.
     """
     # Arrange - create plan with body containing plan-header
     # This is what the raw issue body would look like on GitHub
@@ -308,7 +313,7 @@ Some other content here.
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -325,7 +330,7 @@ Some other content here.
         assert "Objective:" in result.output and "#100" in result.output
 
 
-def test_view_plan_with_implementation_info() -> None:
+def test_view_plan_with_implementation_info(plan_backend_type: str) -> None:
     """Test displaying plan with local implementation metadata."""
     # Arrange
     issue_body = """<!-- erk:metadata-block:plan-header -->
@@ -350,7 +355,7 @@ last_local_impl_user: testuser
     plan_issue = Plan(
         plan_identifier="42",
         title="Plan with Impl Info",
-        body=issue_body,  # Raw issue body with plan-header
+        body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
         labels=["erk-plan"],
@@ -363,7 +368,7 @@ last_local_impl_user: testuser
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -378,7 +383,7 @@ last_local_impl_user: testuser
         assert "User:" in result.output and "testuser" in result.output
 
 
-def test_view_plan_without_header_info() -> None:
+def test_view_plan_without_header_info(plan_backend_type: str) -> None:
     """Test displaying plan without plan-header metadata shows no header section."""
     # Arrange - plan without issue_body metadata
     plan_issue = Plan(
@@ -397,7 +402,7 @@ def test_view_plan_without_header_info() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -410,7 +415,7 @@ def test_view_plan_without_header_info() -> None:
         assert "─── Header ───" not in result.output
 
 
-def test_view_plan_learn_section_no_evaluation() -> None:
+def test_view_plan_learn_section_no_evaluation(plan_backend_type: str) -> None:
     """Test that Learn section shows '- not started' when learn hasn't been run."""
     # Arrange - plan with header but no learn data
     issue_body = """<!-- erk:metadata-block:plan-header -->
@@ -445,7 +450,7 @@ created_from_session: abc123-session-id
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -462,7 +467,7 @@ created_from_session: abc123-session-id
         assert "- not started" in result.output
 
 
-def test_view_plan_learn_section_with_session_data() -> None:
+def test_view_plan_learn_section_with_session_data(plan_backend_type: str) -> None:
     """Test that Learn section shows session data when available."""
     # Arrange - plan with header and learn session
     issue_body = """<!-- erk:metadata-block:plan-header -->
@@ -498,7 +503,7 @@ last_learn_session: def456-learn-session
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
@@ -514,7 +519,7 @@ last_learn_session: def456-learn-session
         assert "def456-learn-session" in result.output
 
 
-def test_view_plan_learn_status_pending() -> None:
+def test_view_plan_learn_status_pending(plan_backend_type: str) -> None:
     """Test learn status 'pending' displays as 'in progress'."""
     issue_body = """<!-- erk:metadata-block:plan-header -->
 <details>
@@ -546,7 +551,7 @@ learn_status: pending
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
@@ -556,7 +561,7 @@ learn_status: pending
         assert "in progress" in result.output
 
 
-def test_view_plan_learn_status_completed_with_plan() -> None:
+def test_view_plan_learn_status_completed_with_plan(plan_backend_type: str) -> None:
     """Test learn status 'completed_with_plan' displays the issue number."""
     issue_body = """<!-- erk:metadata-block:plan-header -->
 <details>
@@ -589,7 +594,7 @@ learn_plan_issue: 456
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
@@ -599,7 +604,7 @@ learn_plan_issue: 456
         assert "#456" in result.output
 
 
-def test_view_plan_learn_status_plan_completed() -> None:
+def test_view_plan_learn_status_plan_completed(plan_backend_type: str) -> None:
     """Test learn status 'plan_completed' displays the PR number."""
     issue_body = """<!-- erk:metadata-block:plan-header -->
 <details>
@@ -632,7 +637,7 @@ learn_plan_pr: 789
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
@@ -642,7 +647,7 @@ learn_plan_pr: 789
         assert "completed #789" in result.output
 
 
-def test_view_plan_learn_pending_with_workflow_url() -> None:
+def test_view_plan_learn_pending_with_workflow_url(plan_backend_type: str) -> None:
     """Test learn status 'pending' with run_id displays workflow URL."""
     issue_body = """<!-- erk:metadata-block:plan-header -->
 <details>
@@ -675,7 +680,7 @@ learn_run_id: "12345678"
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
@@ -687,7 +692,7 @@ learn_run_id: "12345678"
         assert "https://github.com/owner/repo/actions/runs/12345678" in result.output
 
 
-def test_view_plan_learn_pending_without_run_id_no_workflow() -> None:
+def test_view_plan_learn_pending_without_run_id_no_workflow(plan_backend_type: str) -> None:
     """Test learn status 'pending' without run_id does not display workflow URL."""
     issue_body = """<!-- erk:metadata-block:plan-header -->
 <details>
@@ -719,7 +724,7 @@ learn_status: pending
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)

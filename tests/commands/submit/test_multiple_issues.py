@@ -14,9 +14,10 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from tests.commands.submit.conftest import create_plan, make_plan_body
+from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
 
 
-def test_submit_multiple_issues_success(tmp_path: Path) -> None:
+def test_submit_multiple_issues_success(tmp_path: Path, plan_backend_type: str) -> None:
     """Test submit successfully handles multiple issue numbers (happy path)."""
     plan_123 = create_plan("123", "Feature A", body=make_plan_body("Implementation for A..."))
     plan_456 = create_plan("456", "Feature B", body=make_plan_body("Implementation for B..."))
@@ -69,11 +70,11 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    from tests.test_utils.plan_helpers import create_plan_store_with_plans
-
-    fake_plan_store, fake_github_issues = create_plan_store_with_plans(
-        {"123": plan_123, "456": plan_456}
+    fake_plan_store, _ = create_plan_store(
+        {"123": plan_123, "456": plan_456}, backend=plan_backend_type
     )
+    # Submit validates via ctx.issues (GitHub Issues gateway), always needed
+    _, fake_github_issues = create_plan_store_with_plans({"123": plan_123, "456": plan_456})
 
     fake_git = FakeGitWithCheckoutCleanup(
         fs_repo_root=repo_root,

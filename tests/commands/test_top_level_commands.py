@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -11,7 +12,12 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
+
+
+@pytest.fixture(params=["github", "draft_pr"])
+def plan_backend_type(request: pytest.FixtureRequest) -> str:
+    return request.param
 
 
 def plan_to_issue(plan: Plan) -> IssueInfo:
@@ -138,7 +144,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
             assert call_args.kwargs["state"] == "open"
 
 
-def test_top_level_view_command_works() -> None:
+def test_top_level_view_command_works(plan_backend_type: str) -> None:
     """Test that 'erk plan view' command works."""
     # Arrange
     issue1 = Plan(
@@ -157,7 +163,7 @@ def test_top_level_view_command_works() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"123": issue1})
+        store, _ = create_plan_store({"123": issue1}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act - Use plan view command

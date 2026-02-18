@@ -74,7 +74,7 @@ After writing a plan in plan mode:
 /erk:plan-save
 
 # Via CLI
-erk exec plan-save-to-issue --format display --session-id="<session-id>"
+erk exec plan-save --format display --session-id="<session-id>"
 ```
 
 ### Updating an Existing Plan Issue

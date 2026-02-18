@@ -130,7 +130,7 @@ If neither argument nor valid `.impl/` exists, save the current plan from plan m
 Save the current plan to GitHub and capture the issue number:
 
 ```bash
-erk exec plan-save-to-issue --format json --session-id="${CLAUDE_SESSION_ID}"
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}"
 ```
 
 Parse the JSON output to get:

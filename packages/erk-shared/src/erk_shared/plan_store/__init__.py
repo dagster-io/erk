@@ -13,4 +13,12 @@ Note: PlanBackend is a BACKEND (composes gateways), not a gateway. It has no
 fake implementation. Test by injecting fake gateways into real backends.
 """
 
-PLAN_BACKEND: str = "github"  # "github" (issues) or "draft_pr" (draft PRs)
+import os
+
+
+def get_plan_backend() -> str:
+    """Read plan backend from ERK_PLAN_BACKEND env var.
+
+    Valid values: "github" (default), "draft_pr".
+    """
+    return os.environ.get("ERK_PLAN_BACKEND", "github")

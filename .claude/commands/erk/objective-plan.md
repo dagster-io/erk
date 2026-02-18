@@ -231,7 +231,7 @@ When you run this command, it will:
 - Display "Verified objective link: #<number>" on success
 - Fail with remediation steps if verification fails
 
-**Note:** If using `erk exec plan-save-to-issue` directly (not recommended), you must verify manually:
+**Note:** If using `erk exec plan-save` directly (not recommended), you must verify manually:
 
 ```bash
 erk exec get-issue-body <new-issue-number>

@@ -729,7 +729,7 @@ Parse the JSON output:
 
 ```bash
 # Build command with optional workflow run URL for backlink
-CMD="erk exec plan-save-to-issue \
+CMD="erk exec plan-save \
     --plan-type learn \
     --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md \
     --session-id=\"${CLAUDE_SESSION_ID}\" \
