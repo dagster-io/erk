@@ -150,7 +150,6 @@ def land_execute(
         worktree_path=Path(worktree_path) if worktree_path else None,
         is_current_branch=is_current_branch,
         target_child_branch=resolved_target_child,
-        objective_number=None,
         use_graphite=use_graphite,
         pull_flag=pull_flag,
         no_delete=no_delete,

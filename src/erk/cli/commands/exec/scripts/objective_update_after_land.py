@@ -70,10 +70,10 @@ def objective_update_after_land(
 
     if result.success:
         user_output("")
-        user_output(click.style("\u2713", fg="green") + " Objective updated successfully")
+        user_output(click.style("✓", fg="green") + " Objective updated successfully")
     else:
         user_output("")
         user_output(
-            click.style("\u26a0", fg="yellow") + f" Objective update failed: {result.error_message}"
+            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
         )
         user_output("  Run '/erk:objective-update-with-landed-pr' manually to retry")

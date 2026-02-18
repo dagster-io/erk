@@ -110,7 +110,7 @@ def test_cleanup_and_navigate_no_delete_preserves_branch_and_slot(
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=True,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -202,7 +202,7 @@ def test_cleanup_and_navigate_no_delete_preserves_non_slot_branch(
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=True,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -321,7 +321,7 @@ def test_cleanup_and_navigate_no_delete_with_up_flag(tmp_path: Path) -> None:
             force=True,
             is_current_branch=True,  # We are in the current branch's worktree
             target_child_branch="child-branch",  # Navigate to child (--up behavior)
-            objective_number=None,
+
             no_delete=True,
             skip_activation_output=False,
             cleanup_confirmed=True,

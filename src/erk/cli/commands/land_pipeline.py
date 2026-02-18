@@ -494,7 +494,6 @@ def cleanup_and_navigate(ctx: ErkContext, state: LandState) -> LandState | LandE
         force=True,
         is_current_branch=state.is_current_branch,
         target_child_branch=state.target_child_branch,
-        objective_number=state.objective_number,
         no_delete=state.no_delete,
         skip_activation_output=True,
         cleanup_confirmed=state.cleanup_confirmed,
@@ -610,7 +609,6 @@ def make_execution_state(
     branch: str,
     worktree_path: Path | None,
     is_current_branch: bool,
-    objective_number: int | None,
     use_graphite: bool,
     pull_flag: bool,
     no_delete: bool,
@@ -648,7 +646,7 @@ def make_execution_state(
         use_graphite=use_graphite,
         target_child_branch=target_child_branch,
         # Derived
-        objective_number=objective_number,
+        objective_number=None,  # Only used in validation pipeline path
         plan_id=plan_id,
         cleanup_confirmed=not no_cleanup,
         merged_pr_number=None,

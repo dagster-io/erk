@@ -70,7 +70,7 @@ def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -
         github=GitHubRepoId(owner="owner", repo="repo"),
     )
 
-    # Call _cleanup_and_navigate in dry-run mode with objective
+    # Call _cleanup_and_navigate in dry-run mode
     try:
         _cleanup_and_navigate(
             ctx=ctx,
@@ -82,7 +82,6 @@ def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=123,  # This would trigger pool state save
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -90,7 +89,7 @@ def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
 
-    # Verify pool state was NOT modified (objective should NOT be recorded)
+    # Verify pool state was NOT modified
     reloaded_state = load_pool_state(pool_json_path)
     assert reloaded_state is not None
     # The slot should still have its assignment (not modified by dry-run)
@@ -151,7 +150,6 @@ def test_cleanup_and_navigate_dry_run_shows_summary() -> None:
                 force=True,
                 is_current_branch=False,
                 target_child_branch=None,
-                objective_number=None,
                 no_delete=False,
                 skip_activation_output=False,
                 cleanup_confirmed=True,

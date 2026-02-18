@@ -79,7 +79,7 @@ def test_cleanup_and_navigate_uses_plain_git_delete_when_graphite_disabled(
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -178,7 +178,7 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -291,7 +291,7 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -400,7 +400,7 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -490,7 +490,7 @@ def test_cleanup_and_navigate_non_slot_worktree_fails_with_uncommitted_changes(
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -608,7 +608,7 @@ def test_cleanup_ensures_branch_not_checked_out_before_delete_with_stale_pool_st
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -774,7 +774,7 @@ def test_cleanup_and_navigate_slot_without_assignment_force_suppresses_warning(
             force=True,  # This should suppress the warning
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -871,7 +871,7 @@ def test_cleanup_and_navigate_outputs_noop_script_when_not_current_branch(
             force=True,
             is_current_branch=False,  # Key: not in branch's worktree
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
@@ -960,7 +960,7 @@ def test_cleanup_and_navigate_skip_activation_output_with_up_flag(
             force=True,
             is_current_branch=False,
             target_child_branch="child-branch",  # --up mode
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=True,  # Execute mode - should skip activation
             cleanup_confirmed=True,
@@ -1059,7 +1059,7 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_after_deleting_b
             force=True,
             is_current_branch=False,
             target_child_branch=None,
-            objective_number=None,
+
             no_delete=False,
             skip_activation_output=False,
             cleanup_confirmed=True,
