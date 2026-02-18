@@ -39,13 +39,13 @@ Examples:
 
 import json
 import os
-import subprocess
 from dataclasses import asdict, dataclass
 from typing import Literal
 
 import click
 
-from erk_shared.subprocess_utils import build_claude_subprocess_env
+from erk_shared.context.helpers import require_prompt_executor
+from erk_shared.core.prompt_executor import PromptExecutor
 
 
 @dataclass(frozen=True)
@@ -76,11 +76,17 @@ def _check_env_vars() -> bool:
     return bool(oauth_token) or bool(api_key)
 
 
-def _validate_credentials_impl() -> ValidationSuccess | ValidationError:
+def _validate_credentials_impl(
+    *,
+    prompt_executor: PromptExecutor,
+) -> ValidationSuccess | ValidationError:
     """Validate Claude credentials by checking env vars and making API call.
 
     First checks that at least one credential environment variable is set,
-    then validates the credential by making a minimal API call.
+    then validates the credential by making a minimal API call via PromptExecutor.
+
+    Args:
+        prompt_executor: Executor to use for the validation API call
 
     Returns:
         ValidationSuccess if credentials are valid, ValidationError otherwise
@@ -94,15 +100,16 @@ def _validate_credentials_impl() -> ValidationSuccess | ValidationError:
         )
 
     # Validate by making a minimal API call
-    result = subprocess.run(
-        ["claude", "--print", "--no-session-persistence", "--max-turns", "1", "respond with ok"],
-        check=False,
-        capture_output=True,
-        text=True,
-        env=build_claude_subprocess_env(),
+    result = prompt_executor.execute_prompt(
+        "respond with ok",
+        model="haiku",
+        tools=None,
+        cwd=None,
+        system_prompt=None,
+        dangerous=False,
     )
 
-    if result.returncode != 0:
+    if not result.success:
         return ValidationError(
             success=False,
             error="authentication-failed",
@@ -116,14 +123,16 @@ def _validate_credentials_impl() -> ValidationSuccess | ValidationError:
 
 
 @click.command(name="validate-claude-credentials")
-def validate_claude_credentials() -> None:
+@click.pass_context
+def validate_claude_credentials(ctx: click.Context) -> None:
     """Validate Claude credentials for CI workflows.
 
     Checks that at least one credential is set (CLAUDE_CODE_OAUTH_TOKEN or
     ANTHROPIC_API_KEY) and validates it by making a minimal API call.
     Fails fast with clear error messages when credentials are missing or invalid.
     """
-    result = _validate_credentials_impl()
+    prompt_executor = require_prompt_executor(ctx)
+    result = _validate_credentials_impl(prompt_executor=prompt_executor)
 
     # Output JSON result
     click.echo(json.dumps(asdict(result), indent=2))
