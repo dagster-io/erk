@@ -3,8 +3,8 @@
 Usage:
     erk exec plan-save [OPTIONS]
 
-When PLAN_BACKEND is "draft_pr", creates a draft PR with the plan.
-Otherwise delegates to the existing plan-save-to-issue logic.
+When ERK_PLAN_BACKEND is "draft_pr", creates a draft PR with the plan.
+Otherwise delegates to the existing plan-save-to-issue logic (default).
 
 Options:
     --format json|display: Output format (default: json)
@@ -42,7 +42,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.naming import generate_draft_pr_branch_name
-from erk_shared.plan_store import PLAN_BACKEND
+from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
@@ -356,11 +356,11 @@ def plan_save(
 ) -> None:
     """Backend-aware plan save: dispatches to issue or draft-PR based on constant.
 
-    When PLAN_BACKEND is "draft_pr", creates a draft PR.
+    When ERK_PLAN_BACKEND is "draft_pr", creates a draft PR.
     Otherwise delegates to plan-save-to-issue.
     """
     # Default backend: delegate to issue-based save
-    if PLAN_BACKEND != "draft_pr":
+    if get_plan_backend() != "draft_pr":
         ctx.invoke(
             plan_save_to_issue,
             output_format=output_format,

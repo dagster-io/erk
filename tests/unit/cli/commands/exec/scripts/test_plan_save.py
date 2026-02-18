@@ -1,9 +1,7 @@
 """Unit tests for plan-save command (backend-aware dispatcher)."""
 
-import importlib
 import json
 from pathlib import Path
-from types import ModuleType
 
 import pytest
 from click.testing import CliRunner
@@ -15,11 +13,6 @@ from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-
-# Module reference for monkeypatching PLAN_BACKEND constant.
-# Cannot use `import erk.cli.commands.exec.scripts.plan_save as mod` because
-# `exec` in the path conflicts with Python's builtin.
-plan_save_mod: ModuleType = importlib.import_module("erk.cli.commands.exec.scripts.plan_save")
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
@@ -33,8 +26,8 @@ This plan describes the implementation of a new feature.
 
 @pytest.fixture(autouse=True)
 def _use_draft_pr_backend(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Set PLAN_BACKEND to draft_pr for all tests in this module."""
-    monkeypatch.setattr(plan_save_mod, "PLAN_BACKEND", "draft_pr")
+    """Set ERK_PLAN_BACKEND to draft_pr for all tests in this module."""
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
 
 
 def _draft_pr_context(
@@ -92,8 +85,8 @@ def test_draft_pr_success_display(tmp_path: Path) -> None:
 def test_delegates_to_issue_when_not_draft_pr(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """PLAN_BACKEND="github" delegates to plan_save_to_issue."""
-    monkeypatch.setattr(plan_save_mod, "PLAN_BACKEND", "github")
+    """ERK_PLAN_BACKEND="github" delegates to plan_save_to_issue."""
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "github")
     fake_issues = FakeGitHubIssues()
     fake_github = FakeGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(
