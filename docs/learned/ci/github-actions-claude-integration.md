@@ -49,11 +49,14 @@ All Claude-invoking workflows default to `claude-opus-4-6`. See [Workflow Model 
 
 Not all Claude usage in workflows is direct `claude` CLI invocation. Exec scripts that internally call Claude via `require_prompt_executor()` need `ANTHROPIC_API_KEY` in their workflow step's environment, even though they don't invoke `claude` directly.
 
-| Usage Type                      | Token Needed                                    | Example                                 |
-| ------------------------------- | ----------------------------------------------- | --------------------------------------- |
-| Direct `claude` CLI             | `CLAUDE_CODE_OAUTH_TOKEN` + `ANTHROPIC_API_KEY` | `claude --print "..."` in workflow step |
-| Exec script with PromptExecutor | `ANTHROPIC_API_KEY`                             | `erk exec generate-pr-address-summary`  |
-| Exec script without Claude      | Neither                                         | `erk exec impl-init`                    |
+| Usage Type                      | Token Needed                                    | Example                                                 |
+| ------------------------------- | ----------------------------------------------- | ------------------------------------------------------- |
+| Direct `claude` CLI             | `CLAUDE_CODE_OAUTH_TOKEN` + `ANTHROPIC_API_KEY` | `claude --print "..."` in workflow step                 |
+| Exec script with PromptExecutor | `ANTHROPIC_API_KEY`                             | `erk exec generate-pr-address-summary`                  |
+| Exec script needing both tokens | `ANTHROPIC_API_KEY` + `CLAUDE_CODE_OAUTH_TOKEN` | `erk exec generate-pr-summary` (in pr-address workflow) |
+| Exec script without Claude      | Neither                                         | `erk exec impl-init`                                    |
+
+**Lesson learned (PR #7356):** The `generate-pr-address-summary` step in `pr-address.yml` initially failed silently because `CLAUDE_CODE_OAUTH_TOKEN` was missing from its env block. When adding Claude-dependent steps to workflows, always check whether the exec script calls `require_prompt_executor()` (needs `ANTHROPIC_API_KEY`) or invokes `claude` CLI (needs `CLAUDE_CODE_OAUTH_TOKEN`), or both.
 
 See [Exec Script Environment Requirements](exec-script-environment-requirements.md) for the complete inventory of scripts requiring API keys and the workflow step checklist.
 

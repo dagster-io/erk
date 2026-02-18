@@ -325,6 +325,35 @@ If you find code using `datetime.now()`:
 - **Dependency injection**: Follows erk's DI pattern for all integrations
 - **Consistent**: Same pattern as Git, GitHub, Graphite abstractions
 
+## UTC Timestamp Idiom
+
+When generating ISO timestamps for metadata, always use the full idiom:
+
+```python
+queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
+```
+
+**Why `.replace(tzinfo=UTC)` instead of `datetime.now(UTC)`:**
+
+- `ctx.time.now()` returns a naive datetime (for testability via FakeTime)
+- Callers add timezone info explicitly before serialization
+- Never bypass `ctx.time` with `datetime.now(UTC)` — it breaks test determinism
+
+<!-- Source: src/erk/cli/commands/one_shot_dispatch.py, dispatch_one_shot -->
+
+**Source:** See `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
+
+## ctx.plan_backend vs ctx.plan_store
+
+- `ctx.plan_backend` — Write-side interface (PlanBackend ABC). Use for `update_metadata()`, `post_event()`, `create_plan()`
+- `ctx.plan_store` — Read-side interface (PlanStore ABC). Use for `get_plan()`, `list_plans()`
+
+PlanBackend extends PlanStore, so `ctx.plan_backend` can do reads too, but prefer the narrower type in signatures.
+
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend, PlanStore -->
+
+**Source:** See `PlanBackend` and `PlanStore` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
+
 ## TUI Exit-with-Command Pattern
 
 _Note: This pattern has been deprecated. The `exit_command` attribute no longer exists in `ErkDashApp`. See `src/erk/tui/app.py` for current TUI architecture._

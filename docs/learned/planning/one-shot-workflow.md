@@ -14,6 +14,10 @@ tripwires:
     warning: "One-shot dry-run mode must NOT create skeleton issues"
   - action: "modifying register-one-shot-plan exit behavior"
     warning: "register-one-shot-plan uses best-effort: exit 0 if any operation succeeds"
+  - action: "adding post-dispatch operations without matching submit.py pattern"
+    warning: "dispatch_one_shot() and _submit_single_issue() in submit.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other."
+  - action: "writing post-dispatch operations without try/except guards"
+    warning: "Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py."
 ---
 
 # One-Shot Workflow

@@ -14,6 +14,8 @@ Rules triggered by matching actions in code.
 
 **accessing node_id on a RoadmapNode** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. The field is named 'id', not 'node_id'. This is a common mistake — check the actual dataclass definition.
 
+**accessing phase names from graph operations without calling enrich_phase_names()** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Phase names come from markdown headers, not from the parser. After graph_from_phases(), call enrich_phase_names(graph, issue_body) to populate phase names. Without enrichment, phase.name is None.
+
 **adding a new roadmap mutation site without updating this document** → Read [Objective Lifecycle](objective-lifecycle.md) first. All roadmap mutation sites must be documented in objective-lifecycle.md
 
 **adding a new validation check** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels.
@@ -65,6 +67,8 @@ Rules triggered by matching actions in code.
 **updating roadmap step in only one location (frontmatter or table)** → Read [Objective Lifecycle](objective-lifecycle.md) first. Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically.
 
 **using None/empty string interchangeably in update-objective-node parameters** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values.
+
+**using ObjectiveValidationSuccess.graph without checking issue_body for enrichment** → Read [Dependency Graph Architecture](dependency-graph.md) first. ObjectiveValidationSuccess includes issue_body specifically for phase name enrichment. Pass result.issue_body to enrich_phase_names() when you need phase names in display contexts.
 
 **using find_next_node() for dependency-aware traversal** → Read [Dependency Graph Architecture](dependency-graph.md) first. Use DependencyGraph.next_node() instead. find_next_node() is position-based and ignores dependencies.
 

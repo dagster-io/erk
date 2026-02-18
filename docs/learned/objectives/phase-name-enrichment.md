@@ -10,6 +10,8 @@ tripwires:
     warning: "Phase names come from markdown headers, not frontmatter. Read this doc."
   - action: "looking for phase names in RoadmapNode fields"
     warning: "Nodes are stored flat. Phase membership is derived from node ID prefix. Phase names come from markdown headers via enrich_phase_names()."
+  - action: "accessing phase names from graph operations without calling enrich_phase_names()"
+    warning: "Phase names come from markdown headers, not from the parser. After graph_from_phases(), call enrich_phase_names(graph, issue_body) to populate phase names. Without enrichment, phase.name is None."
 ---
 
 # Phase Name Enrichment
