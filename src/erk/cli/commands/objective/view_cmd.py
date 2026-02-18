@@ -312,7 +312,7 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
                     escape(step.id),
                     _format_step_status(step.status, plan=step.plan, is_unblocked=is_unblocked),
                     escape(step.description),
-                    deps_str,
+                    escape(deps_str),
                     _format_ref_link(step.plan, repo_base_url),
                     _format_ref_link(step.pr, repo_base_url),
                 )
@@ -337,8 +337,12 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
         )
 
         # Display unblocked count
-        unblocked_pending = [n for n in graph.unblocked_nodes() if n.status == "pending"]
-        user_output(_format_field("Unblocked", str(len(unblocked_pending))))
+        user_output(
+            _format_field(
+                "Unblocked",
+                str(sum(1 for n in graph.unblocked_nodes() if n.status == "pending")),
+            )
+        )
 
         # Display next step if available
         if next_step:
