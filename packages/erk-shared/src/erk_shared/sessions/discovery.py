@@ -192,7 +192,7 @@ def find_local_sessions_for_project(
     project_cwd: Path,
     *,
     limit: int,
-    issue_number: int | None,
+    branch_name: str | None,
 ) -> list[str]:
     """Find local sessions for a project (fallback when GitHub metadata unavailable).
 
@@ -200,21 +200,21 @@ def find_local_sessions_for_project(
     Returns session IDs for sessions that exist locally for this project,
     sorted by modification time (newest first).
 
-    When issue_number is provided, filters to only sessions whose gitBranch
-    matches ``P{issue_number}-*``. This prevents unrelated sessions from other
-    plans/branches being included in learn analysis.
+    When branch_name is provided, filters to only sessions whose gitBranch
+    matches the given branch. This prevents unrelated sessions from other
+    branches being included in learn analysis.
 
     Args:
         claude_installation: Claude installation for session listing
         project_cwd: Current working directory for project lookup
         limit: Maximum number of sessions to return
-        issue_number: When set, only include sessions from matching branches
+        branch_name: When set, only include sessions from this branch
 
     Returns:
         List of session IDs that exist locally for this project
     """
     # Request more sessions when filtering to account for non-matching branches
-    fetch_limit = limit if issue_number is None else limit * 5
+    fetch_limit = limit if branch_name is None else limit * 5
     sessions = claude_installation.find_sessions(
         project_cwd,
         current_session_id=None,
@@ -223,10 +223,9 @@ def find_local_sessions_for_project(
         include_agents=False,
     )
 
-    if issue_number is None:
+    if branch_name is None:
         return [s.session_id for s in sessions]
 
-    branch_prefix = f"P{issue_number}-"
     matching: list[str] = []
     for session in sessions:
         content = claude_installation.read_session(
@@ -235,14 +234,14 @@ def find_local_sessions_for_project(
         if content is None:
             continue
         branch = extract_git_branch(content.main_content)
-        if branch is not None and branch.startswith(branch_prefix):
+        if branch == branch_name:
             matching.append(session.session_id)
             if len(matching) >= limit:
                 break
         else:
             print(
                 f"Skipping session {session.session_id}: "
-                f"branch '{branch}' does not match '{branch_prefix}*'",
+                f"branch '{branch}' does not match '{branch_name}'",
                 file=sys.stderr,
             )
 

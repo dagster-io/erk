@@ -234,28 +234,28 @@ def test_json_output_structure(tmp_path: Path) -> None:
 
 def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
     """Test session_sources includes properly structured LocalSessionSource data."""
-    fake_git = FakeGit()
-    test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
-    fake_issues = FakeGitHubIssues(issues={200: test_issue})
-
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
+        fake_git = FakeGit(current_branches={cwd: "P200-feature"})
+        test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
+        fake_issues = FakeGitHubIssues(issues={200: test_issue})
+
         # Set up fake claude installation with sessions that will be returned
         # via the local session fallback path (when no readable_session_ids from GitHub).
-        # Sessions must have matching gitBranch for issue 200 to pass branch filtering.
+        # Sessions must have matching gitBranch for branch filtering.
         fake_claude = FakeClaudeInstallation.for_test(
             projects={
                 cwd: FakeProject(
                     sessions={
                         "session-abc-123": FakeSessionData(
-                            content=_session_content_with_branch(branch="P200-feature-a"),
+                            content=_session_content_with_branch(branch="P200-feature"),
                             size_bytes=1024,
                             modified_at=1000.0,
                         ),
                         "session-def-456": FakeSessionData(
-                            content=_session_content_with_branch(branch="P200-feature-b"),
+                            content=_session_content_with_branch(branch="P200-feature"),
                             size_bytes=2048,
                             modified_at=2000.0,
                         ),
@@ -351,7 +351,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
-        fake_git = FakeGit()
+        fake_git = FakeGit(current_branches={cwd: "P400-impl"})
 
         # Create issue with remote implementation metadata
         plan_body = format_plan_header_body_for_test(
@@ -363,7 +363,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
         fake_issues = FakeGitHubIssues(issues={400: test_issue})
 
         # Set up fake claude installation with local sessions.
-        # Session must have matching gitBranch for issue 400 to pass branch filtering.
+        # Session must have matching gitBranch for branch filtering.
         fake_claude = FakeClaudeInstallation.for_test(
             projects={
                 cwd: FakeProject(
@@ -453,14 +453,14 @@ def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None
 
 
 def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
-    """Test local session fallback only includes sessions from matching branches."""
-    fake_git = FakeGit()
-    test_issue = create_test_issue(600, "Test Plan #600", "Plan body")
-    fake_issues = FakeGitHubIssues(issues={600: test_issue})
-
+    """Test local session fallback only includes sessions from matching branch."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
+
+        fake_git = FakeGit(current_branches={cwd: "P600-feature"})
+        test_issue = create_test_issue(600, "Test Plan #600", "Plan body")
+        fake_issues = FakeGitHubIssues(issues={600: test_issue})
 
         fake_claude = FakeClaudeInstallation.for_test(
             projects={
@@ -501,7 +501,7 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
 
     # Skip messages go to stderr but CliRunner mixes them into output.
-    # Extract only the JSON portion (lines starting with { or whitespace-indented).
+    # Extract only the JSON portion.
     raw_lines = result.output.strip().splitlines()
     json_lines = [line for line in raw_lines if not line.startswith("Skipping session")]
     output = json.loads("\n".join(json_lines))

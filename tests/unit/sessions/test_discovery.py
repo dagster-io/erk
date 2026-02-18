@@ -265,15 +265,15 @@ def _make_session_content(*, git_branch: str) -> str:
     return json.dumps({"type": "user", "gitBranch": git_branch}) + "\n"
 
 
-def test_find_local_sessions_filters_by_issue_number() -> None:
-    """Test that sessions are filtered to matching P{issue}- branches."""
+def test_find_local_sessions_filters_by_branch_name() -> None:
+    """Test that sessions are filtered to those matching the given branch name."""
     project = Path("/project")
     installation = FakeClaudeInstallation.for_test(
         projects={
             project: FakeProject(
                 sessions={
-                    "session-match-1": FakeSessionData(
-                        content=_make_session_content(git_branch="P42-feature-a"),
+                    "session-match": FakeSessionData(
+                        content=_make_session_content(git_branch="P42-feature"),
                         size_bytes=1024,
                         modified_at=3000.0,
                     ),
@@ -282,8 +282,8 @@ def test_find_local_sessions_filters_by_issue_number() -> None:
                         size_bytes=1024,
                         modified_at=2000.0,
                     ),
-                    "session-match-2": FakeSessionData(
-                        content=_make_session_content(git_branch="P42-feature-b"),
+                    "session-different-branch": FakeSessionData(
+                        content=_make_session_content(git_branch="P42-other-branch"),
                         size_bytes=1024,
                         modified_at=1000.0,
                     ),
@@ -292,13 +292,16 @@ def test_find_local_sessions_filters_by_issue_number() -> None:
         }
     )
 
-    result = find_local_sessions_for_project(installation, project, limit=10, issue_number=42)
+    result = find_local_sessions_for_project(
+        installation, project, limit=10, branch_name="P42-feature"
+    )
 
-    assert result == ["session-match-1", "session-match-2"]
+    # Only exact match, not prefix match
+    assert result == ["session-match"]
 
 
-def test_find_local_sessions_returns_all_when_no_issue_number() -> None:
-    """Test existing behavior is preserved when issue_number is None."""
+def test_find_local_sessions_returns_all_when_no_branch_name() -> None:
+    """Test existing behavior is preserved when branch_name is None."""
     project = Path("/project")
     installation = FakeClaudeInstallation.for_test(
         projects={
@@ -319,7 +322,7 @@ def test_find_local_sessions_returns_all_when_no_issue_number() -> None:
         }
     )
 
-    result = find_local_sessions_for_project(installation, project, limit=10, issue_number=None)
+    result = find_local_sessions_for_project(installation, project, limit=10, branch_name=None)
 
     assert len(result) == 2
     assert "session-a" in result
@@ -327,7 +330,7 @@ def test_find_local_sessions_returns_all_when_no_issue_number() -> None:
 
 
 def test_find_local_sessions_returns_empty_when_no_branch_matches() -> None:
-    """Test empty result when no sessions match the issue branch prefix."""
+    """Test empty result when no sessions match the branch name."""
     project = Path("/project")
     installation = FakeClaudeInstallation.for_test(
         projects={
@@ -348,6 +351,8 @@ def test_find_local_sessions_returns_empty_when_no_branch_matches() -> None:
         }
     )
 
-    result = find_local_sessions_for_project(installation, project, limit=10, issue_number=42)
+    result = find_local_sessions_for_project(
+        installation, project, limit=10, branch_name="P42-feature"
+    )
 
     assert result == []

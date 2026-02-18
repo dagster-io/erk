@@ -117,6 +117,7 @@ def _discover_sessions(
     repo_root: Path,
     cwd: Path,
     issue_number: int,
+    branch_name: str | None,
 ) -> GetLearnSessionsResultDict:
     """Discover all sessions for a plan issue.
 
@@ -126,6 +127,7 @@ def _discover_sessions(
         repo_root: Repository root path
         cwd: Current working directory
         issue_number: Plan issue number
+        branch_name: Current branch name for local session filtering
 
     Returns:
         GetLearnSessionsResultDict with all session data
@@ -157,7 +159,7 @@ def _discover_sessions(
             claude_installation,
             cwd,
             limit=10,
-            issue_number=issue_number,
+            branch_name=branch_name,
         )
         # Get paths for local sessions and build session sources
         for sid in local_session_ids:
@@ -221,6 +223,9 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)
 
+    # Get current branch for local session filtering
+    branch_name = git.branch.get_current_branch(cwd)
+
     # Resolve issue number: explicit argument or infer from branch
     issue_number: int | None = None
     if issue is not None:
@@ -232,11 +237,8 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
             )
             click.echo(json.dumps(error))
             raise SystemExit(1)
-    else:
-        # Try to infer from current branch
-        branch = git.branch.get_current_branch(cwd)
-        if branch is not None:
-            issue_number = extract_leading_issue_number(branch)
+    elif branch_name is not None:
+        issue_number = extract_leading_issue_number(branch_name)
 
     if issue_number is None:
         error = GetLearnSessionsErrorDict(
@@ -253,6 +255,7 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
         repo_root=repo_root,
         cwd=cwd,
         issue_number=issue_number,
+        branch_name=branch_name,
     )
 
     click.echo(json.dumps(result, indent=2))
