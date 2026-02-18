@@ -26,6 +26,8 @@ Rules triggered by matching actions in code.
 
 **adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
 
+**adding post-dispatch operations without matching submit.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. dispatch_one_shot() and \_submit_single_issue() in submit.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
+
 **adding subprocess calls to trigger-async-learn** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below.
 
 **after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .worker-impl/ with `git rm -rf .worker-impl/` and commit. Transient artifacts cause CI formatter failures (Prettier).
@@ -77,6 +79,8 @@ Rules triggered by matching actions in code.
 **creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
 
 **creating temp files for AI workflows** → Read [Scratch Storage](scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
+
+**delegating judgment steps to Haiku subagents** → Read [Command-Agent Delegation](agent-delegation.md) first. Prose reconciliation, design analysis, and architectural comparison need Opus-level reasoning. Delegating to a Haiku subagent loses quality. Also avoid delegating steps that require direct user interaction.
 
 **designing output routing for a multi-agent workflow** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Choose between embedded-prompt routing (in orchestrator Task prompts) and agent-file routing (in agent definitions). See this doc for the decision framework.
 
@@ -167,6 +171,8 @@ Rules triggered by matching actions in code.
 **using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
 
 **writing a plan step that says 'update X' without a file path** → Read [Context Preservation Patterns](context-preservation-patterns.md) first. Generic references force re-discovery. Include the full path, line numbers, and evidence. See the five dimensions below.
+
+**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See one_shot_dispatch.py:295-338.
 
 **writing to /tmp/** → Read [Scratch Storage](scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 

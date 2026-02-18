@@ -67,6 +67,22 @@ See [Backend Testing Composition](../testing/backend-testing-composition.md) for
 
 Some exec scripts still use direct GitHub CLI calls and are candidates for migration. These can be identified by grepping for `gh api` or `gh issue` patterns in `src/erk/cli/commands/exec/scripts/`.
 
+## Pre-Parsed Header Fields Pattern
+
+After PR #7350, plan-header YAML is parsed once in `issue_info_to_plan()` and stored in `Plan.header_fields`. Downstream consumers access pre-parsed values via typed helpers:
+
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/conversion.py, header_str, header_int, header_datetime -->
+
+See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`. These typed accessors replace the old `extract_plan_header_*()` functions, taking `plan.header_fields` and a key constant as arguments.
+
+**Key types:**
+
+- `Plan.header_fields: dict[str, object]` — Pre-parsed from plan-header metadata block
+- `Plan.metadata: dict[str, object]` — Contains `{"number": issue.number, "author": issue.author}`
+- `header_str()`, `header_int()`, `header_datetime()` — Typed accessors with isinstance narrowing
+
+**Canonical conversion point:** `issue_info_to_plan()` in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`
+
 ## Related Documentation
 
 - [Gateway vs Backend](gateway-vs-backend.md) - Backend ABC (3-place) vs Gateway ABC (5-place)

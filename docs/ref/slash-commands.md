@@ -22,7 +22,22 @@ Claude Code slash commands for in-session use.
 
 ## Navigation Commands
 
-<!-- TODO: /erk:land, /erk:objective-plan -->
+### /erk:land
+
+Merge a PR and clean up worktree. Optionally updates linked objectives.
+
+### /erk:objective-inspect
+
+View an objective's dependency graph, progress, and associated plans/PRs. Read-only command that works in plan mode.
+
+```bash
+/erk:objective-inspect 3679
+/erk:objective-inspect  # auto-detects from current branch
+```
+
+### /erk:objective-plan
+
+Create an implementation plan from a specific objective roadmap step.
 
 ## Documentation Commands
 

@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using background agents without waiting for completion before dependent operations"
     warning: "Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files."
+  - action: "delegating judgment steps to Haiku subagents"
+    warning: "Prose reconciliation, design analysis, and architectural comparison need Opus-level reasoning. Delegating to a Haiku subagent loses quality. Also avoid delegating steps that require direct user interaction."
 last_audited: "2026-02-16 04:53 PT"
 audit_result: clean
 ---
@@ -16,6 +18,16 @@ audit_result: clean
 ## Pattern Overview
 
 This guide covers the command-agent delegation pattern: when to use it, how to implement it, and common pitfalls to avoid.
+
+## When NOT to Delegate
+
+Subagent delegation should be avoided when:
+
+1. **Steps require judgment-quality models** — Prose reconciliation, design analysis, and architectural comparison need Opus-level reasoning. Delegating to a Haiku subagent loses quality.
+2. **Steps involve direct user interaction** — User prompts (e.g., "Should I close this?") must happen in the caller agent's context. Subagents cannot relay interactive prompts.
+3. **Context is already available** — If all data was fetched in Step 1, subsequent steps can use it directly without delegating.
+
+**Case Study:** `/erk:objective-update-with-landed-pr` (PR #7336) was refactored from subagent delegation to inline execution because Steps 3 (prose reconciliation) and 7 (closing prompt) required caller-level model quality and user interaction.
 
 ## Overview
 
