@@ -12,7 +12,6 @@ Storage layout:
 """
 
 import hashlib
-import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path

@@ -18,7 +18,11 @@ def test_create_plan_saved_marker_creates_file(tmp_path: Path) -> None:
     create_plan_saved_marker(session_id, tmp_path)
 
     marker_file = (
-        tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        tmp_path
+        / ".erk"
+        / "scratch"
+        / "sessions"
+        / session_id
         / "exit-plan-mode-hook.plan-saved.marker"
     )
     assert marker_file.exists()
@@ -31,7 +35,11 @@ def test_create_plan_saved_marker_has_descriptive_content(tmp_path: Path) -> Non
     create_plan_saved_marker(session_id, tmp_path)
 
     marker_file = (
-        tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        tmp_path
+        / ".erk"
+        / "scratch"
+        / "sessions"
+        / session_id
         / "exit-plan-mode-hook.plan-saved.marker"
     )
     content = marker_file.read_text(encoding="utf-8")
@@ -51,8 +59,7 @@ def test_create_plan_saved_issue_marker_stores_number(tmp_path: Path) -> None:
     create_plan_saved_issue_marker(session_id, tmp_path, 42)
 
     marker_file = (
-        tmp_path / ".erk" / "scratch" / "sessions" / session_id
-        / "plan-saved-issue.marker"
+        tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved-issue.marker"
     )
     assert marker_file.exists()
     assert marker_file.read_text(encoding="utf-8") == "42"
