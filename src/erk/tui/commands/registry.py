@@ -132,6 +132,11 @@ def _display_close_objective(ctx: CommandContext) -> str:
     return f"erk objective close {ctx.row.issue_number} --force"
 
 
+def _display_codespace_run_plan(ctx: CommandContext) -> str:
+    """Display name for codespace_run_plan command."""
+    return f"erk codespace run objective plan {ctx.row.issue_number}"
+
+
 def _display_open_objective(ctx: CommandContext) -> str:
     """Display name for open_objective command."""
     if ctx.row.issue_url:
@@ -242,6 +247,15 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut=None,
             is_available=lambda ctx: _is_objectives_view(ctx),
             get_display_name=_display_close_objective,
+        ),
+        CommandDefinition(
+            id="codespace_run_plan",
+            name="Codespace Run Plan",
+            description="codespace",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            is_available=lambda ctx: _is_objectives_view(ctx),
+            get_display_name=_display_codespace_run_plan,
         ),
         # === PLAN OPENS ===
         CommandDefinition(

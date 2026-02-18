@@ -977,6 +977,21 @@ class ErkDashApp(App):
                 timeout=30.0,
             )
 
+        elif command_id == "codespace_run_plan":
+            self._push_streaming_detail(
+                row=row,
+                command=[
+                    "erk",
+                    "codespace",
+                    "run",
+                    "objective",
+                    "plan",
+                    str(row.issue_number),
+                ],
+                title=f"Codespace Run Plan #{row.issue_number}",
+                timeout=600.0,
+            )
+
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
         """Handle Enter/double-click on row - show plan details."""
