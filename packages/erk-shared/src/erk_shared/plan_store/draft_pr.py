@@ -6,7 +6,7 @@ The "erk-plan" label identifies plan PRs vs regular draft PRs.
 """
 
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
 
 from erk_shared.gateway.github.abc import GitHub
@@ -26,6 +26,8 @@ from erk_shared.gateway.github.metadata.schemas import (
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails, PRNotFound
+from erk_shared.gateway.time.abc import Time
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import pr_details_to_plan
 from erk_shared.plan_store.types import (
@@ -110,13 +112,15 @@ class DraftPRPlanBackend(PlanBackend):
         Plan content here...
     """
 
-    def __init__(self, github: GitHub) -> None:
+    def __init__(self, github: GitHub, time: Time | None = None) -> None:
         """Initialize DraftPRPlanBackend with GitHub gateway.
 
         Args:
             github: GitHub gateway implementation (real or fake)
+            time: Time abstraction for deterministic timestamps. Defaults to RealTime().
         """
         self._github = github
+        self._time = time if time is not None else RealTime()
 
     def get_provider_name(self) -> str:
         """Get the provider name.
@@ -300,7 +304,7 @@ class DraftPRPlanBackend(PlanBackend):
             str(created_from_session_raw) if created_from_session_raw is not None else None
         )
 
-        created_at = datetime.now(UTC).isoformat()
+        created_at = self._time.now().replace(tzinfo=UTC).isoformat()
         metadata_body = format_plan_header_body(
             created_at=created_at,
             created_by=username,
