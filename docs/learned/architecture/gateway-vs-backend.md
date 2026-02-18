@@ -44,11 +44,11 @@ Gateways wrap external tools and system calls (subprocess, CLI, HTTP). They foll
 
 Backends abstract over business logic that may have multiple storage or provider implementations. They follow a **3-place pattern**:
 
-| Place        | Purpose                                          | Example File                |
-| ------------ | ------------------------------------------------ | --------------------------- |
-| `backend.py` | Abstract interface definition                    | `plan_store/backend.py`     |
-| `github.py`  | Provider-specific implementation                 | `plan_store/github.py`      |
-| `fake_*.py`  | Fake for testing ABC design (validates contract) | `plan_store/fake_linear.py` |
+| Place        | Purpose                                          | Example File                       |
+| ------------ | ------------------------------------------------ | ---------------------------------- |
+| `backend.py` | Abstract interface definition                    | `plan_store/backend.py`            |
+| `github.py`  | Provider-specific implementation                 | `plan_store/github.py`             |
+| `fake_*.py`  | Fake for testing ABC design (validates contract) | _(add when second backend exists)_ |
 
 **Key characteristics:**
 
@@ -57,7 +57,7 @@ Backends abstract over business logic that may have multiple storage or provider
 - To test code that uses a backend, inject fake **gateways** into the **real** backend
 - Fake backends exist only to validate the ABC contract works across different providers
 
-**Example:** `PlanBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with implementations for GitHub issues (`GitHubPlanStore`) and a fake Linear backend (`FakeLinearPlanBackend`).
+**Example:** `PlanBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `GitHubPlanStore` implementation backed by `GitHubIssues` gateway.
 
 **Testing pattern:**
 

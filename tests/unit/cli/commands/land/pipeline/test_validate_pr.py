@@ -63,7 +63,7 @@ def _resolved_state(tmp_path: Path, *, pr_details: PRDetails) -> LandState:
         use_graphite=False,
         target_child_branch=None,
         objective_number=None,
-        plan_issue_number=None,
+        plan_id=None,
         cleanup_confirmed=False,
         merged_pr_number=None,
     )

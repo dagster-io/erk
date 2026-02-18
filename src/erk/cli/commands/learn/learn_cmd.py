@@ -19,7 +19,6 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learn_materials_gist_url,
 )
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
 from erk_shared.sessions.discovery import (
     find_local_sessions_for_project,
@@ -118,7 +117,9 @@ def learn_cmd(
             user_output(click.style(f"Error: Invalid issue identifier: {issue}", fg="red"))
             raise SystemExit(1)
     elif branch_name is not None:
-        issue_number = extract_leading_issue_number(branch_name)
+        plan_id_str = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
+        if plan_id_str is not None:
+            issue_number = int(plan_id_str)
 
     if issue_number is None:
         user_output(

@@ -12,7 +12,6 @@ import click
 from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound, PlanState
 
@@ -83,11 +82,11 @@ def check_and_display_plan_issue_closure(
     Returns the plan issue number if found, None otherwise.
     This is fail-open: returns None silently if the issue doesn't exist.
     """
-    plan_number = extract_leading_issue_number(branch)
-    if plan_number is None:
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
+    if plan_id is None:
         return None
 
-    plan_id = str(plan_number)
+    plan_number = int(plan_id)
 
     has_closing_ref = has_issue_closing_reference(
         pr_body,
@@ -140,19 +139,15 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     """Extract objective issue number from branch's linked plan issue.
 
     Returns objective issue number if:
-    1. Branch has P<number>- prefix (plan issue link)
+    1. Branch is associated with a plan
     2. Plan issue has objective_id in its metadata
 
     Returns None otherwise (fail-open - never blocks landing).
     """
-    plan_number = extract_leading_issue_number(branch)
-    if plan_number is None:
-        return None
-
     # This is a fail-open feature (non-critical), so we return None
     # for any failure: plan not found, empty plan content, etc.
     try:
-        result = ctx.plan_store.get_plan(repo_root, str(plan_number))
+        result = ctx.plan_backend.get_plan_for_branch(repo_root, branch)
     except RuntimeError:
         return None
     if isinstance(result, PlanNotFound):

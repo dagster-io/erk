@@ -1,21 +1,7 @@
-"""Shared interface tests for PlanBackend implementations.
+"""Interface tests for PlanBackend implementations.
 
-These parameterized tests verify that both GitHubPlanStore and FakeLinearPlanBackend
-satisfy the PlanBackend ABC interface with consistent behavior.
-
-Purpose:
-- Validate the ABC abstraction works for fundamentally different backends
-- Catch interface drift between implementations
-- Ensure provider-agnostic code works with any backend
-
-Test Matrix:
-| Operation      | GitHub Backend         | Linear Backend        |
-|----------------|------------------------|-----------------------|
-| Plan IDs       | Integer-as-string      | UUID strings          |
-| States         | 2 (OPEN, CLOSED)       | 5 -> mapped to 2      |
-| Assignees      | List                   | Single -> list        |
-| Comment IDs    | Integer-as-string      | UUID strings          |
-| Metadata       | YAML in body           | custom_fields         |
+These tests verify that GitHubPlanStore satisfies the PlanBackend ABC interface.
+When additional backends are added, parameterize fixtures to run against all of them.
 """
 
 from datetime import UTC, datetime
@@ -25,7 +11,6 @@ import pytest
 
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.fake_linear import FakeLinearPlanBackend, LinearIssue
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue
@@ -35,63 +20,39 @@ from tests.test_utils.github_helpers import create_test_issue
 # =============================================================================
 
 
-@pytest.fixture(params=["github", "linear"])
-def plan_backend(request: pytest.FixtureRequest) -> PlanBackend:
-    """Parameterized fixture providing both backend implementations.
-
-    Each test using this fixture runs twice:
-    1. With GitHubPlanStore (backed by FakeGitHubIssues)
-    2. With FakeLinearPlanBackend
-    """
-    if request.param == "github":
-        fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-plan"})
-        return GitHubPlanStore(fake_issues)
-    else:
-        return FakeLinearPlanBackend()
+@pytest.fixture()
+def plan_backend() -> PlanBackend:
+    """Provide GitHubPlanStore backed by FakeGitHubIssues."""
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-plan"})
+    return GitHubPlanStore(fake_issues)
 
 
-@pytest.fixture(params=["github", "linear"])
-def backend_with_plan(request: pytest.FixtureRequest) -> tuple[PlanBackend, str]:
+@pytest.fixture()
+def backend_with_plan() -> tuple[PlanBackend, str]:
     """Fixture providing backend with a pre-existing plan.
 
     Returns:
         Tuple of (backend, plan_id)
     """
-    if request.param == "github":
-        issue = create_test_issue(
-            number=42,
-            title="Existing Plan",
-            body="Plan content",
-            labels=["erk-plan"],
-            created_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
-            updated_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=UTC),
-        )
-        fake_issues = FakeGitHubIssues(issues={42: issue})
-        return GitHubPlanStore(fake_issues), "42"
-    else:
-        now = datetime.now(UTC)
-        issue = LinearIssue(
-            id="LIN-existing",
-            title="Existing Plan",
-            description="Plan content",
-            state="todo",
-            url="https://linear.app/team/issue/LIN-existing",
-            labels=("erk-plan",),
-            assignee=None,
-            created_at=now,
-            updated_at=now,
-            custom_fields={},
-        )
-        return FakeLinearPlanBackend(issues={"LIN-existing": issue}), "LIN-existing"
+    issue = create_test_issue(
+        number=42,
+        title="Existing Plan",
+        body="Plan content",
+        labels=["erk-plan"],
+        created_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=UTC),
+    )
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    return GitHubPlanStore(fake_issues), "42"
 
 
 # =============================================================================
-# Interface contract tests - both backends must pass these
+# Interface contract tests
 # =============================================================================
 
 
 def test_get_provider_name_returns_string(plan_backend: PlanBackend) -> None:
-    """Both backends return a non-empty provider name string."""
+    """Backend returns a non-empty provider name string."""
     name = plan_backend.get_provider_name()
 
     assert isinstance(name, str)
@@ -99,7 +60,7 @@ def test_get_provider_name_returns_string(plan_backend: PlanBackend) -> None:
 
 
 def test_create_and_get_plan_roundtrip(plan_backend: PlanBackend) -> None:
-    """Both backends can create and retrieve a plan with same data."""
+    """Backend can create and retrieve a plan with same data."""
     result = plan_backend.create_plan(
         repo_root=Path("/repo"),
         title="Test Plan Title",
@@ -119,10 +80,9 @@ def test_create_and_get_plan_roundtrip(plan_backend: PlanBackend) -> None:
 
     # Verify Plan structure
     assert plan.plan_identifier == result.plan_id
-    # Title must CONTAIN the original (some backends may add suffixes like [erk-plan])
     assert "Test Plan Title" in plan.title
     assert plan.body == "# Plan Content\n\nThis is the plan body."
-    assert plan.state == PlanState.OPEN  # New plans are open
+    assert plan.state == PlanState.OPEN
     assert isinstance(plan.url, str)
     assert isinstance(plan.labels, list)
     assert isinstance(plan.assignees, list)
@@ -132,7 +92,7 @@ def test_create_and_get_plan_roundtrip(plan_backend: PlanBackend) -> None:
 
 
 def test_list_plans_returns_list(plan_backend: PlanBackend) -> None:
-    """Both backends return a list from list_plans (empty is valid)."""
+    """Backend returns a list from list_plans (empty is valid)."""
     results = plan_backend.list_plans(Path("/repo"), PlanQuery())
 
     assert isinstance(results, list)
@@ -141,14 +101,12 @@ def test_list_plans_returns_list(plan_backend: PlanBackend) -> None:
 def test_list_plans_filters_by_state(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
-    """Both backends filter by PlanState correctly."""
+    """Backend filters by PlanState correctly."""
     backend, plan_id = backend_with_plan
 
-    # Query for OPEN plans should find the plan
     open_results = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.OPEN))
     assert any(p.plan_identifier == plan_id for p in open_results)
 
-    # Query for CLOSED plans should not find it
     closed_results = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.CLOSED))
     assert not any(p.plan_identifier == plan_id for p in closed_results)
 
@@ -156,18 +114,15 @@ def test_list_plans_filters_by_state(
 def test_close_plan_changes_state(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
-    """Both backends close a plan by changing state to CLOSED."""
+    """Backend closes a plan by changing state to CLOSED."""
     backend, plan_id = backend_with_plan
 
-    # Verify initially OPEN
     plan_before = backend.get_plan(Path("/repo"), plan_id)
     assert not isinstance(plan_before, PlanNotFound)
     assert plan_before.state == PlanState.OPEN
 
-    # Close it
     backend.close_plan(Path("/repo"), plan_id)
 
-    # Verify now CLOSED
     plan_after = backend.get_plan(Path("/repo"), plan_id)
     assert not isinstance(plan_after, PlanNotFound)
     assert plan_after.state == PlanState.CLOSED
@@ -176,7 +131,7 @@ def test_close_plan_changes_state(
 def test_add_comment_returns_string_id(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
-    """Both backends return comment ID as string."""
+    """Backend returns comment ID as string."""
     backend, plan_id = backend_with_plan
 
     comment_id = backend.add_comment(
@@ -189,52 +144,37 @@ def test_add_comment_returns_string_id(
     assert len(comment_id) > 0
 
 
-def _get_nonexistent_id(plan_backend: PlanBackend) -> str:
-    """Get a valid-format but nonexistent plan ID for the backend.
-
-    GitHub requires numeric IDs, Linear uses UUID-style IDs.
-    """
-    if plan_backend.get_provider_name() == "github":
-        return "99999999"  # Valid numeric format but doesn't exist
-    else:
-        return "nonexistent-plan-id-12345"  # UUID-style for Linear
-
-
 def test_get_plan_not_found_returns_plan_not_found(plan_backend: PlanBackend) -> None:
-    """Both backends return PlanNotFound when plan not found."""
-    nonexistent_id = _get_nonexistent_id(plan_backend)
-    result = plan_backend.get_plan(Path("/repo"), nonexistent_id)
+    """Backend returns PlanNotFound when plan not found."""
+    result = plan_backend.get_plan(Path("/repo"), "99999999")
     assert isinstance(result, PlanNotFound)
-    assert result.plan_id == nonexistent_id
+    assert result.plan_id == "99999999"
 
 
 def test_add_comment_not_found_raises_runtime_error(plan_backend: PlanBackend) -> None:
-    """Both backends raise RuntimeError when plan not found for comment."""
-    nonexistent_id = _get_nonexistent_id(plan_backend)
+    """Backend raises RuntimeError when plan not found for comment."""
     with pytest.raises(RuntimeError):
         plan_backend.add_comment(
             repo_root=Path("/repo"),
-            plan_id=nonexistent_id,
+            plan_id="99999999",
             body="Comment",
         )
 
 
 def test_close_plan_not_found_raises_runtime_error(plan_backend: PlanBackend) -> None:
-    """Both backends raise RuntimeError when plan not found for close."""
-    nonexistent_id = _get_nonexistent_id(plan_backend)
+    """Backend raises RuntimeError when plan not found for close."""
     with pytest.raises(RuntimeError):
-        plan_backend.close_plan(Path("/repo"), nonexistent_id)
+        plan_backend.close_plan(Path("/repo"), "99999999")
 
 
 def test_update_metadata_not_found_raises_runtime_error(
     plan_backend: PlanBackend,
 ) -> None:
-    """Both backends raise RuntimeError when plan not found for update."""
-    nonexistent_id = _get_nonexistent_id(plan_backend)
+    """Backend raises RuntimeError when plan not found for update."""
     with pytest.raises(RuntimeError):
         plan_backend.update_metadata(
             repo_root=Path("/repo"),
-            plan_id=nonexistent_id,
+            plan_id="99999999",
             metadata={"key": "value"},
         )
 
@@ -242,28 +182,23 @@ def test_update_metadata_not_found_raises_runtime_error(
 def test_plan_identifier_is_string(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
-    """Both backends return plan_identifier as string (not int)."""
+    """Backend returns plan_identifier as string."""
     backend, plan_id = backend_with_plan
 
     plan = backend.get_plan(Path("/repo"), plan_id)
     assert not isinstance(plan, PlanNotFound)
-
     assert isinstance(plan.plan_identifier, str)
-    # Note: GitHub uses "42", Linear uses "LIN-abc123"
-    # Both are valid strings
 
 
 def test_assignees_is_list(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
-    """Both backends return assignees as list (even if empty or single)."""
+    """Backend returns assignees as list."""
     backend, plan_id = backend_with_plan
 
     plan = backend.get_plan(Path("/repo"), plan_id)
     assert not isinstance(plan, PlanNotFound)
-
     assert isinstance(plan.assignees, list)
-    # All items should be strings
     for assignee in plan.assignees:
         assert isinstance(assignee, str)
 
@@ -271,14 +206,12 @@ def test_assignees_is_list(
 def test_labels_is_list(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
-    """Both backends return labels as list."""
+    """Backend returns labels as list."""
     backend, plan_id = backend_with_plan
 
     plan = backend.get_plan(Path("/repo"), plan_id)
     assert not isinstance(plan, PlanNotFound)
-
     assert isinstance(plan.labels, list)
-    # All items should be strings
     for label in plan.labels:
         assert isinstance(label, str)
 
@@ -286,13 +219,11 @@ def test_labels_is_list(
 def test_timestamps_are_timezone_aware(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
-    """Both backends return timezone-aware datetime objects."""
+    """Backend returns timezone-aware datetime objects."""
     backend, plan_id = backend_with_plan
 
     plan = backend.get_plan(Path("/repo"), plan_id)
     assert not isinstance(plan, PlanNotFound)
-
-    # Both timestamps should be timezone-aware
     assert plan.created_at.tzinfo is not None
     assert plan.updated_at.tzinfo is not None
 
@@ -303,8 +234,7 @@ def test_timestamps_are_timezone_aware(
 
 
 def test_list_plans_with_limit(plan_backend: PlanBackend) -> None:
-    """Both backends respect limit parameter."""
-    # Create multiple plans
+    """Backend respects limit parameter."""
     for i in range(5):
         plan_backend.create_plan(
             repo_root=Path("/repo"),
@@ -314,14 +244,12 @@ def test_list_plans_with_limit(plan_backend: PlanBackend) -> None:
             metadata={},
         )
 
-    # Query with limit
     results = plan_backend.list_plans(Path("/repo"), PlanQuery(limit=2))
-
     assert len(results) <= 2
 
 
 def test_create_multiple_plans_have_unique_ids(plan_backend: PlanBackend) -> None:
-    """Both backends generate unique plan IDs."""
+    """Backend generates unique plan IDs."""
     results = []
     for i in range(3):
         result = plan_backend.create_plan(
@@ -333,7 +261,6 @@ def test_create_multiple_plans_have_unique_ids(plan_backend: PlanBackend) -> Non
         )
         results.append(result)
 
-    # All IDs should be unique
     ids = [r.plan_id for r in results]
     assert len(ids) == len(set(ids))
 
@@ -344,14 +271,13 @@ def test_create_multiple_plans_have_unique_ids(plan_backend: PlanBackend) -> Non
 
 
 def test_get_metadata_field_returns_plan_not_found(plan_backend: PlanBackend) -> None:
-    """Both backends return PlanNotFound for nonexistent plan."""
-    nonexistent_id = _get_nonexistent_id(plan_backend)
-    result = plan_backend.get_metadata_field(Path("/repo"), nonexistent_id, "worktree_name")
+    """Backend returns PlanNotFound for nonexistent plan."""
+    result = plan_backend.get_metadata_field(Path("/repo"), "99999999", "worktree_name")
     assert isinstance(result, PlanNotFound)
 
 
 def test_get_metadata_field_returns_none_for_missing_field(plan_backend: PlanBackend) -> None:
-    """Both backends return None when plan exists but field is absent."""
+    """Backend returns None when plan exists but field is absent."""
     created = plan_backend.create_plan(
         repo_root=Path("/repo"),
         title="Plan for metadata test",
@@ -367,7 +293,7 @@ def test_get_metadata_field_returns_none_for_missing_field(plan_backend: PlanBac
 def test_get_metadata_field_roundtrips_with_update_metadata(
     plan_backend: PlanBackend,
 ) -> None:
-    """Both backends can set and read back a metadata field."""
+    """Backend can set and read back a metadata field."""
     created = plan_backend.create_plan(
         repo_root=Path("/repo"),
         title="Plan for roundtrip",
@@ -392,16 +318,15 @@ def test_get_metadata_field_roundtrips_with_update_metadata(
 
 
 def test_get_all_metadata_fields_returns_plan_not_found(plan_backend: PlanBackend) -> None:
-    """Both backends return PlanNotFound for nonexistent plan."""
-    nonexistent_id = _get_nonexistent_id(plan_backend)
-    result = plan_backend.get_all_metadata_fields(Path("/repo"), nonexistent_id)
+    """Backend returns PlanNotFound for nonexistent plan."""
+    result = plan_backend.get_all_metadata_fields(Path("/repo"), "99999999")
     assert isinstance(result, PlanNotFound)
 
 
 def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
     plan_backend: PlanBackend,
 ) -> None:
-    """Both backends return empty dict when plan exists but has no metadata fields."""
+    """Backend returns empty dict when plan exists but has no metadata fields."""
     created = plan_backend.create_plan(
         repo_root=Path("/repo"),
         title="Plan for all-metadata test",
@@ -418,7 +343,7 @@ def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
 def test_get_all_metadata_fields_roundtrips_with_update_metadata(
     plan_backend: PlanBackend,
 ) -> None:
-    """Both backends can set metadata and read all fields back."""
+    """Backend can set metadata and read all fields back."""
     created = plan_backend.create_plan(
         repo_root=Path("/repo"),
         title="Plan for all-metadata roundtrip",
@@ -444,36 +369,10 @@ def test_get_all_metadata_fields_roundtrips_with_update_metadata(
 # =============================================================================
 
 
-def test_update_plan_content_updates_body(plan_backend: PlanBackend) -> None:
-    """Both backends can update plan content and verify via get_plan."""
-    created = plan_backend.create_plan(
-        repo_root=Path("/repo"),
-        title="Plan for content update",
-        content="# Original content",
-        labels=("erk-plan",),
-        metadata={},
-    )
-
-    plan_backend.update_plan_content(
-        Path("/repo"),
-        created.plan_id,
-        "# Updated content\n\nNew body text.",
-    )
-
-    plan = plan_backend.get_plan(Path("/repo"), created.plan_id)
-    assert not isinstance(plan, PlanNotFound)
-
-    # Linear updates description directly; GitHub updates the comment
-    # For Linear, body comes from description
-    if plan_backend.get_provider_name() == "linear":
-        assert plan.body == "# Updated content\n\nNew body text."
-
-
 def test_update_plan_content_not_found_raises(plan_backend: PlanBackend) -> None:
-    """Both backends raise RuntimeError for nonexistent plan."""
-    nonexistent_id = _get_nonexistent_id(plan_backend)
+    """Backend raises RuntimeError for nonexistent plan."""
     with pytest.raises(RuntimeError):
-        plan_backend.update_plan_content(Path("/repo"), nonexistent_id, "new content")
+        plan_backend.update_plan_content(Path("/repo"), "99999999", "new content")
 
 
 # =============================================================================
@@ -482,7 +381,7 @@ def test_update_plan_content_not_found_raises(plan_backend: PlanBackend) -> None
 
 
 def test_post_event_metadata_only(plan_backend: PlanBackend) -> None:
-    """Both backends handle metadata update without comment."""
+    """Backend handles metadata update without comment."""
     created = plan_backend.create_plan(
         repo_root=Path("/repo"),
         title="Plan for event",
@@ -503,7 +402,7 @@ def test_post_event_metadata_only(plan_backend: PlanBackend) -> None:
 
 
 def test_post_event_metadata_and_comment(plan_backend: PlanBackend) -> None:
-    """Both backends handle metadata update with comment."""
+    """Backend handles metadata update with comment."""
     created = plan_backend.create_plan(
         repo_root=Path("/repo"),
         title="Plan for event with comment",
@@ -524,12 +423,11 @@ def test_post_event_metadata_and_comment(plan_backend: PlanBackend) -> None:
 
 
 def test_post_event_not_found_raises(plan_backend: PlanBackend) -> None:
-    """Both backends raise RuntimeError for nonexistent plan."""
-    nonexistent_id = _get_nonexistent_id(plan_backend)
+    """Backend raises RuntimeError for nonexistent plan."""
     with pytest.raises(RuntimeError):
         plan_backend.post_event(
             Path("/repo"),
-            nonexistent_id,
+            "99999999",
             metadata={"worktree_name": "wt"},
             comment=None,
         )
@@ -553,7 +451,6 @@ def test_update_metadata_accepts_previously_blocked_fields() -> None:
         metadata={},
     )
 
-    # These fields were previously blocked by the whitelist
     backend.update_metadata(
         Path("/repo"),
         created.plan_id,

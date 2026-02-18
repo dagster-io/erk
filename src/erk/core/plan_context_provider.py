@@ -9,8 +9,7 @@ from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.naming import extract_leading_issue_number
-from erk_shared.plan_store.store import PlanStore
+from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -19,12 +18,12 @@ class PlanContext:
     """Context from an erk-plan issue for PR generation.
 
     Attributes:
-        issue_number: The erk-plan issue number
+        plan_id: The plan identifier (e.g., "123" for GitHub issue numbers)
         plan_content: The full plan markdown content
         objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
     """
 
-    issue_number: int
+    plan_id: str
     plan_content: str
     objective_summary: str | None
 
@@ -32,15 +31,16 @@ class PlanContext:
 class PlanContextProvider:
     """Provides plan context for branches linked to erk-plan issues.
 
-    This provider extracts plan content from GitHub issues when a branch
-    follows the naming convention P{issue_number}-{slug} or {issue_number}-{slug}.
+    This provider extracts plan content from the plan backend when a branch
+    is associated with a plan. Uses PlanBackend.get_plan_for_branch() to
+    encapsulate the branch→plan resolution strategy.
 
-    Uses PlanStore for plan fetching. GitHubIssues is retained solely for
-    objective title lookup (objectives are issues, not plans).
+    GitHubIssues is retained solely for objective title lookup (objectives
+    are issues, not plans).
     """
 
-    def __init__(self, *, plan_store: PlanStore, github_issues: GitHubIssues) -> None:
-        self._plan_store = plan_store
+    def __init__(self, *, plan_backend: PlanBackend, github_issues: GitHubIssues) -> None:
+        self._plan_backend = plan_backend
         self._github_issues = github_issues
 
     def get_plan_context(
@@ -52,9 +52,8 @@ class PlanContextProvider:
         """Get plan context for a branch, if available.
 
         Attempts to fetch plan context by:
-        1. Extracting issue number from branch name (P5763-fix-... -> 5763)
-        2. Fetching the plan via PlanStore
-        3. Optionally getting objective title if linked
+        1. Resolving branch to plan via PlanBackend.get_plan_for_branch()
+        2. Optionally getting objective title if linked
 
         Returns None on any failure, allowing graceful degradation for
         branches not linked to plans.
@@ -66,11 +65,7 @@ class PlanContextProvider:
         Returns:
             PlanContext if plan found, None otherwise
         """
-        issue_number = extract_leading_issue_number(branch_name)
-        if issue_number is None:
-            return None
-
-        result = self._plan_store.get_plan(repo_root, str(issue_number))
+        result = self._plan_backend.get_plan_for_branch(repo_root, branch_name)
         if isinstance(result, PlanNotFound):
             return None
 
@@ -80,7 +75,7 @@ class PlanContextProvider:
         )
 
         return PlanContext(
-            issue_number=issue_number,
+            plan_id=result.plan_identifier,
             plan_content=result.body,
             objective_summary=objective_summary,
         )

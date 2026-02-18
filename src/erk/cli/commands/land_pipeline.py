@@ -29,7 +29,6 @@ from erk_shared.gateway.github.types import MergeError, PRDetails
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound
 from erk_shared.stack.validation import validate_parent_is_trunk
@@ -66,7 +65,7 @@ class LandState:
 
     # Derived (populated by later steps)
     objective_number: int | None
-    plan_issue_number: int | None
+    plan_id: str | None
     cleanup_confirmed: bool
     merged_pr_number: int | None
 
@@ -336,24 +335,22 @@ def validate_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
 def check_learn_status(ctx: ErkContext, state: LandState) -> LandState | LandError:
     """Check learn status for plan branches, prompt if needed.
 
-    Populates: plan_issue_number.
+    Populates: plan_id.
     """
     from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
 
-    plan_issue_number = extract_leading_issue_number(state.branch)
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(state.main_repo_root, state.branch)
 
-    if plan_issue_number is not None and (
-        state.is_current_branch or state.worktree_path is not None
-    ):
+    if plan_id is not None and (state.is_current_branch or state.worktree_path is not None):
         _check_learn_status_and_prompt(
             ctx,
             repo_root=state.main_repo_root,
-            plan_issue_number=plan_issue_number,
+            plan_id=plan_id,
             force=state.force,
             script=state.script,
         )
 
-    return dataclasses.replace(state, plan_issue_number=plan_issue_number)
+    return dataclasses.replace(state, plan_id=plan_id)
 
 
 def gather_confirmations(ctx: ErkContext, state: LandState) -> LandState | LandError:
@@ -459,13 +456,11 @@ def update_objective(ctx: ErkContext, state: LandState) -> LandState | LandError
 
 def update_learn_plan(ctx: ErkContext, state: LandState) -> LandState | LandError:
     """Update parent plan learn_status if this is a learn plan."""
-    if state.plan_issue_number is None or state.merged_pr_number is None:
+    if state.plan_id is None or state.merged_pr_number is None:
         return state
 
-    plan_id = str(state.plan_issue_number)
-
     learned_from = ctx.plan_backend.get_metadata_field(
-        state.main_repo_root, plan_id, "learned_from_issue"
+        state.main_repo_root, state.plan_id, "learned_from_issue"
     )
     if isinstance(learned_from, PlanNotFound) or learned_from is None:
         return state
@@ -485,14 +480,14 @@ def update_learn_plan(ctx: ErkContext, state: LandState) -> LandState | LandErro
 
 def close_review_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     """Close review PR if plan has one."""
-    if state.plan_issue_number is None:
+    if state.plan_id is None:
         return state
 
     cleanup_review_pr(
         ctx,
         repo_root=state.main_repo_root,
-        issue_number=state.plan_issue_number,
-        reason=f"the plan (issue #{state.plan_issue_number}) was implemented and landed",
+        issue_number=int(state.plan_id),
+        reason=f"the plan (issue #{state.plan_id}) was implemented and landed",
     )
     return state
 
@@ -616,7 +611,7 @@ def make_initial_state(
         target_child_branch=None,
         # Derived (populated by later steps)
         objective_number=None,
-        plan_issue_number=None,
+        plan_id=None,
         cleanup_confirmed=False,
         merged_pr_number=None,
     )
@@ -639,10 +634,13 @@ def make_execution_state(
 ) -> LandState:
     """Create LandState for the execution pipeline from exec script args.
 
-    Re-derives repo_root, main_repo_root, plan_issue_number from the args
+    Re-derives repo_root, main_repo_root, plan_id from the args
     passed through the shell script serialization boundary.
     """
-    plan_issue_number = extract_leading_issue_number(branch)
+    from erk_shared.naming import extract_leading_issue_number
+
+    issue_number = extract_leading_issue_number(branch)
+    plan_id = str(issue_number) if issue_number is not None else None
 
     return LandState(
         cwd=cwd,
@@ -665,7 +663,7 @@ def make_execution_state(
         target_child_branch=target_child_branch,
         # Derived
         objective_number=objective_number,
-        plan_issue_number=plan_issue_number,
+        plan_id=plan_id,
         cleanup_confirmed=not no_cleanup,
         merged_pr_number=None,
     )

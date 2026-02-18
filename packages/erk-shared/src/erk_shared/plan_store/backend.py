@@ -24,6 +24,10 @@ from pathlib import Path
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery
 
+# ---------------------------------------------------------------------------
+# Branch → Plan Resolution
+# ---------------------------------------------------------------------------
+
 
 class PlanBackend(PlanStore):
     """Abstract interface for plan storage operations.
@@ -123,6 +127,44 @@ class PlanBackend(PlanStore):
         Returns:
             Dictionary of all metadata fields, or PlanNotFound if plan doesn't exist.
             Returns empty dict if plan exists but has no metadata block.
+        """
+        ...
+
+    # Branch → Plan resolution
+
+    @abstractmethod
+    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
+        """Look up the plan associated with a branch.
+
+        Resolves the branch name to a plan identifier and fetches the full plan.
+        Returns PlanNotFound if the branch is not a plan branch or the plan
+        doesn't exist.
+
+        Args:
+            repo_root: Repository root directory
+            branch_name: Git branch name (e.g., "P123-fix-bug-01-15-1430")
+
+        Returns:
+            Plan if found, PlanNotFound otherwise
+        """
+        ...
+
+    @abstractmethod
+    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
+        """Resolve plan identifier for a branch without fetching the full plan.
+
+        Lightweight resolution that does NOT verify the plan exists.
+        Returns None if the branch is not associated with a plan.
+
+        For GitHubPlanBackend this is a zero-cost regex operation.
+        Future backends (e.g., DraftPRPlanBackend) may require an API call.
+
+        Args:
+            repo_root: Repository root directory
+            branch_name: Git branch name
+
+        Returns:
+            Plan identifier string if branch is a plan branch, None otherwise
         """
         ...
 

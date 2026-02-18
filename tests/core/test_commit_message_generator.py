@@ -423,7 +423,7 @@ def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
     diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
 
     plan_context = PlanContext(
-        issue_number=123,
+        plan_id="123",
         plan_content="# Plan: Fix Authentication Bug\n\nFix session expiration.",
         objective_summary=None,
     )
@@ -460,7 +460,7 @@ def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -
     diff_file.write_text("diff content", encoding="utf-8")
 
     plan_context = PlanContext(
-        issue_number=456,
+        plan_id="456",
         plan_content="# Plan: Add Metrics\n\nAdd usage metrics tracking.",
         objective_summary="Objective #100: Improve Observability",
     )
@@ -495,7 +495,7 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
     diff_file.write_text("diff content", encoding="utf-8")
 
     plan_context = PlanContext(
-        issue_number=789,
+        plan_id="789",
         plan_content="# Plan: Refactor API\n\nSimplify the API layer.",
         objective_summary=None,
     )

@@ -50,7 +50,7 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
 
     # Should return without any interaction (plan already learned from)
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Verify positive feedback is shown
@@ -69,7 +69,7 @@ def test_check_learn_status_and_prompt_skips_when_force(
 
     # With force=True, should return immediately without calling find_sessions_for_plan
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=123, force=True, script=False
+        ctx, repo_root=repo_root, plan_id="123", force=True, script=False
     )
 
 
@@ -110,7 +110,7 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
 
     # Should show warning and continue
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Check that warning was shown
@@ -154,7 +154,7 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
     # Should raise SystemExit(0) when user chooses cancel
     with pytest.raises(SystemExit) as exc_info:
         _check_learn_status_and_prompt(
-            ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+            ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
         )
 
     assert exc_info.value.code == 0
@@ -200,7 +200,7 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
     # Should raise SystemExit(0) when user cancels, but with script output
     with pytest.raises(SystemExit) as exc_info:
         _check_learn_status_and_prompt(
-            ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=True
+            ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=True
         )
 
     assert exc_info.value.code == 0
@@ -238,7 +238,7 @@ def test_check_learn_status_and_prompt_skips_for_learn_plans(
 
     # Should return immediately without calling find_sessions_for_plan
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
 
@@ -258,7 +258,7 @@ def test_check_learn_status_and_prompt_skips_when_config_disabled(
 
     # With prompt_learn_on_land=False, should return immediately
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=123, force=False, script=False
+        ctx, repo_root=repo_root, plan_id="123", force=False, script=False
     )
 
 
@@ -294,7 +294,7 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
 
     # Should run the check and show positive feedback
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Verify positive feedback is shown (check actually ran)
@@ -330,7 +330,7 @@ def test_check_learn_status_completed_shows_success(
 
     # Should return immediately with success message
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Verify success message
@@ -363,7 +363,7 @@ def test_check_learn_status_pending_shows_progress(
 
     # Should return immediately with progress message
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Verify progress message
@@ -403,7 +403,7 @@ def test_check_learn_status_null_with_sessions_shows_success(
 
     # Should return with success message
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Verify success message
@@ -460,7 +460,7 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
 
     # Should auto-trigger async learn without prompting
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Verify async learn was triggered
@@ -512,7 +512,7 @@ def test_check_learn_status_and_prompt_manual_learn_preprocesses_and_continues(
 
     # Should return normally (no SystemExit) - landing continues
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Verify preprocessing was called
@@ -696,7 +696,7 @@ def test_option4_calls_preprocess_and_continues_landing(
 
     # Should return normally (no SystemExit) - landing continues after preprocessing
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        ctx, repo_root=repo_root, plan_id=str(issue_number), force=False, script=False
     )
 
     # Verify _preprocess_and_prepare_manual_learn was called with correct args

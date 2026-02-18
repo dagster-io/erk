@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 
 import click
 
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import PlanNotFound
@@ -79,8 +78,8 @@ def maybe_update_plan_dispatch_metadata(
         branch_name: Branch name to extract issue number from
         run_id: Workflow run ID from trigger response
     """
-    plan_issue_number = extract_leading_issue_number(branch_name)
-    if plan_issue_number is None:
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+    if plan_id is None:
         return
 
     node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
@@ -90,7 +89,6 @@ def maybe_update_plan_dispatch_metadata(
     # LBYL: Check if plan-header block exists before attempting update
     # This is expected to be missing for non-erk-plan issues that happen
     # to have P{number} prefix in their branch name
-    plan_id = str(plan_issue_number)
     schema_version = ctx.plan_backend.get_metadata_field(repo.root, plan_id, "schema_version")
     if isinstance(schema_version, PlanNotFound) or schema_version is None:
         return
@@ -105,6 +103,5 @@ def maybe_update_plan_dispatch_metadata(
         },
     )
     user_output(
-        click.style("\u2713", fg="green")
-        + f" Updated dispatch metadata on plan #{plan_issue_number}"
+        click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{plan_id}"
     )

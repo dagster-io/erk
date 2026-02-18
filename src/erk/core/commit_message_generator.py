@@ -208,7 +208,7 @@ class CommitMessageGenerator:
         if plan_context is not None:
             context_section += f"""
 
-## Implementation Plan (Issue #{plan_context.issue_number})
+## Implementation Plan (Issue #{plan_context.plan_id})
 
 The following plan describes the intent and rationale for these changes:
 

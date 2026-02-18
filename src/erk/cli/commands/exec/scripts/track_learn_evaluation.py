@@ -37,7 +37,6 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.time.abc import Time
 from erk_shared.learn.tracking import track_learn_invocation
-from erk_shared.naming import extract_leading_issue_number
 
 
 @dataclass(frozen=True)
@@ -172,7 +171,9 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         # Try to infer from current branch
         branch = git.branch.get_current_branch(cwd)
         if branch is not None:
-            issue_number = extract_leading_issue_number(branch)
+            plan_id_str = backend.resolve_plan_id_for_branch(repo_root, branch)
+            if plan_id_str is not None:
+                issue_number = int(plan_id_str)
 
     if issue_number is None:
         error = TrackLearnError(

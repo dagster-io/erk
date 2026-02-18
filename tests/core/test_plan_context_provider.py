@@ -37,8 +37,8 @@ def _make_issue_info(
 
 def _make_provider(github_issues: FakeGitHubIssues) -> PlanContextProvider:
     """Create a PlanContextProvider with GitHubPlanStore backed by fake issues."""
-    plan_store = GitHubPlanStore(github_issues)
-    return PlanContextProvider(plan_store=plan_store, github_issues=github_issues)
+    plan_backend = GitHubPlanStore(github_issues)
+    return PlanContextProvider(plan_backend=plan_backend, github_issues=github_issues)
 
 
 def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> None:
@@ -84,7 +84,7 @@ def test_get_plan_context_returns_content_for_old_format_issue(tmp_path: Path) -
     )
 
     assert result is not None
-    assert result.issue_number == 123
+    assert result.plan_id == "123"
     assert result.plan_content == "This is just a regular issue body"
 
 
@@ -131,7 +131,7 @@ def test_get_plan_context_falls_back_to_body_for_missing_comment(tmp_path: Path)
 
     # PlanStore falls back to issue body when comment is missing
     assert result is not None
-    assert result.issue_number == 123
+    assert result.plan_id == "123"
 
 
 def test_get_plan_context_extracts_plan_content(tmp_path: Path) -> None:
@@ -194,7 +194,7 @@ Fix the session token expiration logic."""
     )
 
     assert result is not None
-    assert result.issue_number == 123
+    assert result.plan_id == "123"
     assert "Fix Authentication Bug" in result.plan_content
     assert "session token expiration" in result.plan_content
     assert result.objective_summary is None
@@ -259,7 +259,7 @@ def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
     )
 
     assert result is not None
-    assert result.issue_number == 123
+    assert result.plan_id == "123"
     assert result.objective_summary == "Objective #200: Improve CI Reliability"
 
 
@@ -316,7 +316,7 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
     )
 
     assert result is not None
-    assert result.issue_number == 123
+    assert result.plan_id == "123"
     assert result.objective_summary is None
 
 
@@ -372,23 +372,23 @@ def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
     )
 
     assert result is not None
-    assert result.issue_number == 456
+    assert result.plan_id == "456"
 
 
 def test_plan_context_dataclass_frozen() -> None:
     """Test that PlanContext is immutable (frozen dataclass)."""
     context = PlanContext(
-        issue_number=123,
+        plan_id="123",
         plan_content="Plan content",
         objective_summary="Objective #1: Test",
     )
 
-    assert context.issue_number == 123
+    assert context.plan_id == "123"
     assert context.plan_content == "Plan content"
     assert context.objective_summary == "Objective #1: Test"
 
     try:
-        context.issue_number = 456  # type: ignore[misc]
+        context.plan_id = "456"  # type: ignore[misc]
         raise AssertionError("Expected FrozenInstanceError")
     except AttributeError:
         pass

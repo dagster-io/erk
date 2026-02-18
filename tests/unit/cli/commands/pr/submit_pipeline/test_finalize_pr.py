@@ -251,7 +251,7 @@ def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
     """Plan context embedded in PR body but NOT in commit message."""
     plan_content = "# My Plan\n\nSome implementation details"
     plan_ctx = PlanContext(
-        issue_number=1234,
+        plan_id="1234",
         plan_content=plan_content,
         objective_summary=None,
     )
