@@ -27,9 +27,6 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
-    _create_plan_saved_issue_marker,
-    _create_plan_saved_marker,
-    _get_existing_saved_issue,
     plan_save_to_issue,
 )
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
@@ -46,24 +43,13 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
-from erk_shared.scratch.scratch import get_scratch_dir
-
-
-def _extract_title_from_plan(plan_content: str) -> str:
-    """Extract title from plan content's first markdown heading.
-
-    Args:
-        plan_content: Plan markdown content
-
-    Returns:
-        Title text, or "Untitled Plan" if no heading found
-    """
-    for line in plan_content.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("# "):
-            return stripped[2:].strip()
-    return "Untitled Plan"
+from erk_shared.scratch.session_markers import (
+    create_plan_saved_issue_marker,
+    create_plan_saved_marker,
+    get_existing_saved_issue,
+)
 
 
 def _get_snapshot_result(
@@ -138,7 +124,7 @@ def _save_as_draft_pr(
     config = require_local_config(ctx)
     claude_installation = require_claude_installation(ctx)
 
-    title = _extract_title_from_plan(plan_content)
+    title = extract_title_from_plan(plan_content)
 
     # Generate branch name
     now = require_time(ctx).now()
@@ -190,8 +176,8 @@ def _save_as_draft_pr(
     # Create markers and snapshot
     snapshot_result: PlanSnapshot | None = None
     if session_id is not None:
-        _create_plan_saved_marker(session_id, repo_root)
-        _create_plan_saved_issue_marker(session_id, repo_root, plan_number)
+        create_plan_saved_marker(session_id, repo_root)
+        create_plan_saved_issue_marker(session_id, repo_root, plan_number)
 
         snapshot_result = _get_snapshot_result(
             session_id=session_id,
@@ -247,7 +233,7 @@ def _save_plan_via_draft_pr(
 
     # Session deduplication check
     if session_id is not None:
-        existing_issue = _get_existing_saved_issue(session_id, repo_root)
+        existing_issue = get_existing_saved_issue(session_id, repo_root)
         if existing_issue is not None:
             if output_format == "display":
                 click.echo(
@@ -269,18 +255,13 @@ def _save_plan_via_draft_pr(
             return
 
     # Extract plan content (same priority as plan-save-to-issue)
-    plan: str | None = None
-    if plan_file is not None:
-        plan = plan_file.read_text(encoding="utf-8")
-    else:
-        if session_id is not None:
-            scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
-            scratch_plan_path = scratch_dir / "plan.md"
-            if scratch_plan_path.exists():
-                plan = scratch_plan_path.read_text(encoding="utf-8")
-
-        if plan is None:
-            plan = claude_installation.get_latest_plan(cwd, session_id=session_id)
+    plan = resolve_plan_content(
+        plan_file=plan_file,
+        session_id=session_id,
+        repo_root=repo_root,
+        claude_installation=claude_installation,
+        cwd=cwd,
+    )
 
     if not plan:
         if output_format == "display":

@@ -43,65 +43,13 @@ from erk_shared.gateway.github.metadata.session import render_session_exchanges_
 from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.learn.extraction.session_schema import extract_session_exchanges_from_jsonl
 from erk_shared.output.next_steps import format_next_steps_plain
+from erk_shared.plan_store.plan_content import resolve_plan_content
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
-from erk_shared.scratch.scratch import get_scratch_dir
-
-
-def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
-    """Create marker file to indicate plan was saved to GitHub.
-
-    Args:
-        session_id: The session ID for the scratch directory.
-        repo_root: The repository root path.
-    """
-    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    marker_file = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
-    marker_file.write_text(
-        "Created by: exit-plan-mode-hook (via /erk:plan-save)\n"
-        "Trigger: Plan was successfully saved to GitHub\n"
-        "Effect: Next ExitPlanMode call will be BLOCKED (remain in plan mode, session complete)\n"
-        "Lifecycle: Deleted after being read by next hook invocation\n",
-        encoding="utf-8",
-    )
-
-
-def _create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_number: int) -> None:
-    """Create marker file storing the issue number of the saved plan.
-
-    This marker enables automatic plan updates - when user says "update plan",
-    Claude can read this marker to find the issue number and invoke /local:plan-update.
-
-    Args:
-        session_id: The session ID for the scratch directory.
-        repo_root: The repository root path.
-        issue_number: The GitHub issue number where the plan was saved.
-    """
-    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    marker_file = marker_dir / "plan-saved-issue.marker"
-    marker_file.write_text(str(issue_number), encoding="utf-8")
-
-
-def _get_existing_saved_issue(session_id: str, repo_root: Path) -> int | None:
-    """Check if this session already saved a plan and return the issue number.
-
-    This prevents duplicate plan creation when the agent calls plan-save multiple times
-    in the same session.
-
-    Args:
-        session_id: The session ID for the scratch directory.
-        repo_root: The repository root path.
-
-    Returns:
-        The issue number if plan was already saved, None otherwise.
-    """
-    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    marker_file = marker_dir / "plan-saved-issue.marker"
-    if not marker_file.exists():
-        return None
-    content = marker_file.read_text(encoding="utf-8").strip()
-    if not content.isdigit():
-        return None
-    return int(content)
+from erk_shared.scratch.session_markers import (
+    create_plan_saved_issue_marker,
+    create_plan_saved_marker,
+    get_existing_saved_issue,
+)
 
 
 @click.command(name="plan-save-to-issue")
@@ -175,7 +123,7 @@ def plan_save_to_issue(
     # Prevent duplicate plan creation when the agent calls plan-save multiple times
     # in the same session (e.g., due to exit-plan-mode-hook loop bug)
     if effective_session_id is not None:
-        existing_issue = _get_existing_saved_issue(effective_session_id, repo_root)
+        existing_issue = get_existing_saved_issue(effective_session_id, repo_root)
         if existing_issue is not None:
             if output_format == "display":
                 click.echo(
@@ -197,20 +145,13 @@ def plan_save_to_issue(
             return
 
     # Step 1: Extract plan (priority: plan_file > scratch directory > Claude plans directory)
-    plan: str | None = None
-    if plan_file:
-        plan = plan_file.read_text(encoding="utf-8")
-    else:
-        # Priority 1: Check scratch directory for session-scoped plan
-        if effective_session_id is not None:
-            scratch_dir = get_scratch_dir(effective_session_id, repo_root=repo_root)
-            scratch_plan_path = scratch_dir / "plan.md"
-            if scratch_plan_path.exists():
-                plan = scratch_plan_path.read_text(encoding="utf-8")
-
-        # Priority 2: Fall back to Claude installation lookup
-        if plan is None:
-            plan = claude_installation.get_latest_plan(cwd, session_id=effective_session_id)
+    plan = resolve_plan_content(
+        plan_file=plan_file,
+        session_id=effective_session_id,
+        repo_root=repo_root,
+        claude_installation=claude_installation,
+        cwd=cwd,
+    )
 
     if not plan:
         if output_format == "display":
@@ -296,13 +237,13 @@ def plan_save_to_issue(
     # Step 9: Create marker files to indicate plan was saved
     snapshot_result = None
     if effective_session_id:
-        _create_plan_saved_marker(effective_session_id, repo_root)
+        create_plan_saved_marker(effective_session_id, repo_root)
 
         # Step 9.0.1: Also store the issue number in a separate marker
         # This enables automatic plan updates - when user says "update plan",
         # Claude can read this marker to find the issue number
         if result.issue_number is not None:
-            _create_plan_saved_issue_marker(effective_session_id, repo_root, result.issue_number)
+            create_plan_saved_issue_marker(effective_session_id, repo_root, result.issue_number)
 
         # Step 9.0.2: Upload session exchanges as a metadata block comment
         # Each exchange pairs a user prompt with the preceding assistant message
