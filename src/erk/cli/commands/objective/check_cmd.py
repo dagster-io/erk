@@ -135,15 +135,15 @@ def validate_objective(
                 f"Step {node.id} has PR {node.pr} but status is '{node.status}' "
                 f"(expected 'in_progress' or 'done')"
             )
-        # Steps with plan reference should be in_progress (or planning/skipped)
+        # Steps with plan reference should be in_progress or done (or planning/skipped)
         if (
             node.plan
             and node.plan.startswith("#")
-            and node.status not in ("in_progress", "planning", "skipped")
+            and node.status not in ("in_progress", "done", "planning", "skipped")
         ):
             consistency_issues.append(
                 f"Step {node.id} has plan {node.plan} but status is '{node.status}' "
-                f"(expected 'in_progress')"
+                f"(expected 'in_progress' or 'done')"
             )
 
     if not consistency_issues:
