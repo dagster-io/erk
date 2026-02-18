@@ -60,6 +60,7 @@ Quick reference for all `erk exec` subcommands.
 | `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                     |
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                       |
+| `objective-update-after-land`     | Update objective after landing a PR.                                       |
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                            |
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.                |
 | `plan-review-complete`            | Close a plan review PR without merging.                                    |
@@ -782,6 +783,20 @@ Save plan as objective GitHub issue.
 | `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text)             |
 | `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                                     |
 | `--validate`   | FLAG   | No       | -       | Run objective validation after creation and include results in output |
+
+### objective-update-after-land
+
+Update objective after landing a PR.
+
+**Usage:** `erk exec objective-update-after-land`
+
+**Options:**
+
+| Flag          | Type    | Required | Default        | Description                    |
+| ------------- | ------- | -------- | -------------- | ------------------------------ |
+| `--objective` | INTEGER | Yes      | Sentinel.UNSET | Linked objective issue number  |
+| `--pr`        | INTEGER | Yes      | Sentinel.UNSET | PR number that was just landed |
+| `--branch`    | TEXT    | Yes      | Sentinel.UNSET | Branch name that was landed    |
 
 ### plan-create-review-branch
 
