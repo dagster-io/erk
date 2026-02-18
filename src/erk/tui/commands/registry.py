@@ -248,15 +248,6 @@ def get_all_commands() -> list[CommandDefinition]:
             is_available=lambda ctx: _is_objectives_view(ctx),
             get_display_name=_display_close_objective,
         ),
-        CommandDefinition(
-            id="codespace_run_plan",
-            name="Codespace Run Plan",
-            description="codespace",
-            category=CommandCategory.ACTION,
-            shortcut=None,
-            is_available=lambda ctx: _is_objectives_view(ctx),
-            get_display_name=_display_codespace_run_plan,
-        ),
         # === PLAN OPENS ===
         CommandDefinition(
             id="open_issue",
@@ -368,6 +359,15 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut="3",
             is_available=lambda ctx: _is_objectives_view(ctx),
             get_display_name=_display_copy_view,
+        ),
+        CommandDefinition(
+            id="codespace_run_plan",
+            name="Codespace Run Plan",
+            description="codespace",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            is_available=lambda ctx: _is_objectives_view(ctx),
+            get_display_name=_display_codespace_run_plan,
         ),
     ]
 

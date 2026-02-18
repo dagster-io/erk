@@ -978,19 +978,9 @@ class ErkDashApp(App):
             )
 
         elif command_id == "codespace_run_plan":
-            self._push_streaming_detail(
-                row=row,
-                command=[
-                    "erk",
-                    "codespace",
-                    "run",
-                    "objective",
-                    "plan",
-                    str(row.issue_number),
-                ],
-                title=f"Codespace Run Plan #{row.issue_number}",
-                timeout=600.0,
-            )
+            cmd = f"erk codespace run objective plan {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
 
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
