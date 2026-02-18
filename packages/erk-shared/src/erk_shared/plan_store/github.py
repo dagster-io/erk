@@ -7,7 +7,6 @@ Schema Version 2:
 """
 
 import dataclasses
-import re
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -37,6 +36,7 @@ from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, wi
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
+from erk_shared.naming import _extract_leading_issue_number
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import issue_info_to_plan
 from erk_shared.plan_store.types import (
@@ -47,24 +47,6 @@ from erk_shared.plan_store.types import (
     PlanQuery,
     PlanState,
 )
-
-
-def _extract_leading_issue_number(branch_name: str) -> int | None:
-    """Extract leading issue number from a branch name.
-
-    Branch names follow the pattern: P{issue_number}-{slug}-{timestamp}
-    Also supports legacy format without "P" prefix.
-
-    Args:
-        branch_name: Branch name to parse
-
-    Returns:
-        Issue number if branch starts with optional "P" followed by digits and hyphen, else None
-    """
-    match = re.match(r"^[Pp]?(\d+)-", branch_name)
-    if match:
-        return int(match.group(1))
-    return None
 
 
 def _parse_objective_id(value: object) -> int | None:
