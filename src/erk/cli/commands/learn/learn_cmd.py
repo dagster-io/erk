@@ -170,11 +170,12 @@ def learn_cmd(
     # Local session fallback: when GitHub has no tracked sessions, scan local sessions
     local_session_ids: list[str] = []
     if not readable_session_ids:
+        branch = ctx.git.branch.get_current_branch(ctx.cwd)
         local_session_ids = find_local_sessions_for_project(
             ctx.claude_installation,
             ctx.cwd,
             limit=10,
-            issue_number=issue_number,
+            branch_name=branch,
         )
         # Get paths for local sessions
         for sid in local_session_ids:
