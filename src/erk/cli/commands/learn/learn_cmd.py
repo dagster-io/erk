@@ -107,6 +107,9 @@ def learn_cmd(
 
         erk learn 123 -i           # Auto-launch Claude
     """
+    # Get current branch for local session filtering
+    branch_name = ctx.git.branch.get_current_branch(ctx.cwd)
+
     # Resolve issue number: explicit argument or infer from branch
     issue_number: int | None = None
     if issue is not None:
@@ -114,11 +117,8 @@ def learn_cmd(
         if issue_number is None:
             user_output(click.style(f"Error: Invalid issue identifier: {issue}", fg="red"))
             raise SystemExit(1)
-    else:
-        # Try to infer from current branch
-        branch = ctx.git.branch.get_current_branch(ctx.cwd)
-        if branch is not None:
-            issue_number = extract_leading_issue_number(branch)
+    elif branch_name is not None:
+        issue_number = extract_leading_issue_number(branch_name)
 
     if issue_number is None:
         user_output(
@@ -170,12 +170,11 @@ def learn_cmd(
     # Local session fallback: when GitHub has no tracked sessions, scan local sessions
     local_session_ids: list[str] = []
     if not readable_session_ids:
-        branch = ctx.git.branch.get_current_branch(ctx.cwd)
         local_session_ids = find_local_sessions_for_project(
             ctx.claude_installation,
             ctx.cwd,
             limit=10,
-            branch_name=branch,
+            branch_name=branch_name,
         )
         # Get paths for local sessions
         for sid in local_session_ids:
