@@ -150,6 +150,7 @@ jobs:
     needs:
       [format, lint, prettier, docs-check, ty, unit-tests, integration-tests]
     if: |
+      vars.CLAUDE_ENABLED != 'false' &&
       always() &&
       github.ref_name != 'master' &&
       github.ref_name != 'main' &&

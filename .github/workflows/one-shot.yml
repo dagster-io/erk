@@ -56,6 +56,7 @@ permissions:
 
 jobs:
   plan:
+    if: vars.CLAUDE_ENABLED != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:

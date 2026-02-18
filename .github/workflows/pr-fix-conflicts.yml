@@ -37,6 +37,7 @@ concurrency:
 
 jobs:
   rebase:
+    if: vars.CLAUDE_ENABLED != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
