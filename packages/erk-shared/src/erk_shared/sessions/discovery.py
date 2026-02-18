@@ -116,14 +116,6 @@ def find_sessions_for_plan(
     planning_session_id = extract_plan_header_created_from_session(issue.body)
     metadata_impl_session = extract_plan_header_local_impl_session(issue.body)
     metadata_learn_session = extract_plan_header_last_learn_session(issue.body)
-    last_remote_impl_at = extract_plan_header_remote_impl_at(issue.body)
-    last_remote_impl_run_id = extract_plan_header_remote_impl_run_id(issue.body)
-    last_remote_impl_session_id = extract_plan_header_remote_impl_session_id(issue.body)
-    # Extract new gist-based session fields
-    last_session_gist_url = extract_plan_header_session_gist_url(issue.body)
-    last_session_id = extract_plan_header_last_session_id(issue.body)
-    last_session_source = extract_plan_header_last_session_source(issue.body)
-
     # Get comments to find implementation and learn sessions
     comments = github.get_issue_comments(repo_root, issue_number)
 
@@ -160,12 +152,12 @@ def find_sessions_for_plan(
         planning_session_id=planning_session_id,
         implementation_session_ids=implementation_session_ids,
         learn_session_ids=learn_session_ids,
-        last_remote_impl_at=last_remote_impl_at,
-        last_remote_impl_run_id=last_remote_impl_run_id,
-        last_remote_impl_session_id=last_remote_impl_session_id,
-        last_session_gist_url=last_session_gist_url,
-        last_session_id=last_session_id,
-        last_session_source=last_session_source,
+        last_remote_impl_at=extract_plan_header_remote_impl_at(issue.body),
+        last_remote_impl_run_id=extract_plan_header_remote_impl_run_id(issue.body),
+        last_remote_impl_session_id=extract_plan_header_remote_impl_session_id(issue.body),
+        last_session_gist_url=extract_plan_header_session_gist_url(issue.body),
+        last_session_id=extract_plan_header_last_session_id(issue.body),
+        last_session_source=extract_plan_header_last_session_source(issue.body),
     )
 
 
