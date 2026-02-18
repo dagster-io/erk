@@ -179,12 +179,12 @@ class TestObjectiveFetchContext:
         data = json.loads(result.output)
         roadmap = data["roadmap"]
         assert roadmap["matched_steps"] == ["1.1", "1.2"]
-        assert roadmap["summary"]["total_steps"] == 3
+        assert roadmap["summary"]["total_nodes"] == 3
         assert roadmap["summary"]["done"] == 1
         assert roadmap["summary"]["in_progress"] == 1
         assert roadmap["summary"]["pending"] == 1
         assert roadmap["all_complete"] is False
-        assert roadmap["next_step"]["id"] == "2.1"
+        assert roadmap["next_node"]["id"] == "2.1"
         assert len(roadmap["phases"]) == 2
 
     def test_roadmap_all_complete(self, tmp_path: Path) -> None:
@@ -236,7 +236,7 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 0, result.output
         data = json.loads(result.output)
         assert data["roadmap"]["all_complete"] is True
-        assert data["roadmap"]["next_step"] is None
+        assert data["roadmap"]["next_node"] is None
 
     def test_roadmap_no_metadata_block(self, tmp_path: Path) -> None:
         """Returns empty roadmap when objective has no roadmap metadata block."""

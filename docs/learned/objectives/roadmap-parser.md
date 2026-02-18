@@ -107,7 +107,7 @@ The parser accepts both formats but emits a validation warning for letter-format
 
 ## Next Step Discovery
 
-`find_next_step()` returns the first step with `pending` status in phase order. This is used by `erk objective check --json-output` to populate the `next_step` field, and by `erk objective plan` to determine which step to plan next.
+`find_next_node()` returns the first step with `pending` status in phase order. This is used by `erk objective check --json-output` to populate the `next_node` field, and by `erk objective plan` to determine which step to plan next.
 
 ## Implementation Reference
 

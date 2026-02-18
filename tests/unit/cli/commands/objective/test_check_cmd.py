@@ -128,13 +128,13 @@ def test_valid_objective_json_output() -> None:
     assert output["success"] is True
     assert output["issue_number"] == 100
     assert len(output["phases"]) == 2
-    assert output["summary"]["total_steps"] == 6
+    assert output["summary"]["total_nodes"] == 6
     assert output["summary"]["done"] == 2
     assert output["summary"]["in_progress"] == 1
     assert output["summary"]["pending"] == 1
     assert output["summary"]["blocked"] == 1
     assert output["summary"]["skipped"] == 1
-    assert output["next_step"]["id"] == "1.3"
+    assert output["next_node"]["id"] == "1.3"
     assert output["all_complete"] is False
 
 
@@ -417,7 +417,7 @@ def test_validate_objective_returns_success_type() -> None:
     assert isinstance(result, ObjectiveValidationSuccess)
     assert result.passed is True
     assert len(result.graph.nodes) == 6
-    assert result.summary["total_steps"] == 6
+    assert result.summary["total_nodes"] == 6
 
 
 def test_validate_objective_returns_error_for_missing_issue() -> None:
@@ -476,7 +476,7 @@ steps:
     assert output["summary"]["done"] == 1
     assert output["summary"]["skipped"] == 1
     assert output["summary"]["pending"] == 0
-    assert output["next_step"] is None
+    assert output["next_node"] is None
     assert output["all_complete"] is True
 
 

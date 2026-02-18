@@ -4,7 +4,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
     compute_graph_summary,
-    find_graph_next_step,
+    find_graph_next_node,
     graph_from_phases,
     parse_graph,
     phases_from_graph,
@@ -14,7 +14,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     RoadmapStep,
     compute_summary,
-    find_next_step,
+    find_next_node,
 )
 
 
@@ -229,16 +229,16 @@ class TestGraphFromPhases:
 
 
 # ---------------------------------------------------------------------------
-# Equivalence with find_next_step()
+# Equivalence with find_next_node()
 # ---------------------------------------------------------------------------
 
 
-class TestEquivalenceWithFindNextStep:
-    """Verify graph.next_node() matches find_next_step() for sequential phases."""
+class TestEquivalenceWithFindNextNode:
+    """Verify graph.next_node() matches find_next_node() for sequential phases."""
 
     @staticmethod
     def _assert_equivalent(phases: list[RoadmapPhase]) -> None:
-        legacy_result = find_next_step(phases)
+        legacy_result = find_next_node(phases)
         graph_result = graph_from_phases(phases).next_node()
 
         if legacy_result is None:
@@ -564,7 +564,7 @@ class TestComputeGraphSummary:
         )
         summary = compute_graph_summary(graph)
 
-        assert summary["total_steps"] == 6
+        assert summary["total_nodes"] == 6
         assert summary["done"] == 1
         assert summary["in_progress"] == 1
         assert summary["pending"] == 1
@@ -576,7 +576,7 @@ class TestComputeGraphSummary:
         graph = DependencyGraph(nodes=())
         summary = compute_graph_summary(graph)
 
-        assert summary["total_steps"] == 0
+        assert summary["total_nodes"] == 0
         assert summary["done"] == 0
         assert summary["pending"] == 0
 
@@ -605,11 +605,11 @@ class TestComputeGraphSummary:
 
 
 # ---------------------------------------------------------------------------
-# find_graph_next_step() tests
+# find_graph_next_node() tests
 # ---------------------------------------------------------------------------
 
 
-class TestFindGraphNextStep:
+class TestFindGraphNextNode:
     def test_returns_next_pending_with_phase(self) -> None:
         phases = [
             _phase(
@@ -621,7 +621,7 @@ class TestFindGraphNextStep:
             ),
         ]
         graph = graph_from_phases(phases)
-        result = find_graph_next_step(graph, phases)
+        result = find_graph_next_node(graph, phases)
 
         assert result is not None
         assert result["id"] == "1.2"
@@ -639,7 +639,7 @@ class TestFindGraphNextStep:
             ),
         ]
         graph = graph_from_phases(phases)
-        result = find_graph_next_step(graph, phases)
+        result = find_graph_next_node(graph, phases)
 
         assert result is None
 
@@ -659,7 +659,7 @@ class TestFindGraphNextStep:
             ),
         ]
         graph = graph_from_phases(phases)
-        result = find_graph_next_step(graph, phases)
+        result = find_graph_next_node(graph, phases)
 
         assert result is not None
         assert result["id"] == "2.1"
@@ -684,14 +684,14 @@ class TestFindGraphNextStep:
             ),
         ]
         graph = graph_from_phases(phases)
-        result = find_graph_next_step(graph, phases)
+        result = find_graph_next_node(graph, phases)
 
         assert result is not None
         assert result["id"] == "2.1"
         assert result["description"] == "Step 2.1"
         assert result["phase"] == "Phase 2"
 
-    def test_matches_find_next_step(self) -> None:
+    def test_matches_find_next_node(self) -> None:
         """Verify graph next step matches phase-based next step."""
         phases = [
             _phase(
@@ -704,8 +704,8 @@ class TestFindGraphNextStep:
             ),
         ]
         graph = graph_from_phases(phases)
-        graph_result = find_graph_next_step(graph, phases)
-        legacy_result = find_next_step(phases)
+        graph_result = find_graph_next_node(graph, phases)
+        legacy_result = find_next_node(phases)
 
         assert graph_result is not None
         assert legacy_result is not None

@@ -26,7 +26,7 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     compute_graph_summary,
-    find_graph_next_step,
+    find_graph_next_node,
     graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.plan_header import (
@@ -606,24 +606,24 @@ class RealPlanDataProvider(PlanDataProvider):
         objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
 
         # Parse roadmap for objective-specific fields
-        objective_done_steps = 0
-        objective_total_steps = 0
+        objective_done_nodes = 0
+        objective_total_nodes = 0
         objective_progress_display = "-"
-        objective_next_step_display = "-"
+        objective_next_node_display = "-"
         if plan.body:
             phases, _errors = parse_roadmap(plan.body)
             if phases:
                 graph = graph_from_phases(phases)
                 summary = compute_graph_summary(graph)
-                objective_done_steps = summary["done"]
-                objective_total_steps = summary["total_steps"]
-                objective_progress_display = f"{objective_done_steps}/{objective_total_steps}"
-                next_step = find_graph_next_step(graph, phases)
-                if next_step is not None:
-                    step_text = f"{next_step['id']} {next_step['description']}"
+                objective_done_nodes = summary["done"]
+                objective_total_nodes = summary["total_nodes"]
+                objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+                next_node = find_graph_next_node(graph, phases)
+                if next_node is not None:
+                    step_text = f"{next_node['id']} {next_node['description']}"
                     if len(step_text) > 60:
                         step_text = step_text[:57] + "..."
-                    objective_next_step_display = step_text
+                    objective_next_node_display = step_text
 
         # Format updated_at display
         updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
@@ -673,10 +673,10 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_display_icon=learn_display_icon,
             objective_issue=objective_issue,
             objective_display=objective_display,
-            objective_done_steps=objective_done_steps,
-            objective_total_steps=objective_total_steps,
+            objective_done_nodes=objective_done_nodes,
+            objective_total_nodes=objective_total_nodes,
             objective_progress_display=objective_progress_display,
-            objective_next_step_display=objective_next_step_display,
+            objective_next_node_display=objective_next_node_display,
             updated_at=plan.updated_at,
             updated_display=updated_display,
             created_at=plan.created_at,

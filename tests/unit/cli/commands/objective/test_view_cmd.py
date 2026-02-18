@@ -235,10 +235,10 @@ def test_view_objective_displays_summary() -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "─── Summary ───" in result.output
-        assert "Steps:" in result.output
+        assert "Nodes:" in result.output
         # 2 done (with PRs), 1 in_progress (plan #), 1 pending (no PR), 1 blocked
         assert "2/5 done" in result.output
-        assert "Next step:" in result.output
+        assert "Next node:" in result.output
         assert "1.3" in result.output  # First pending step
 
 
@@ -296,9 +296,9 @@ def test_view_objective_phase_completion_counts() -> None:
         assert result.exit_code == 0, f"Failed: {result.output}"
         output = strip_ansi(result.output)
         # Phase 1: 1 done out of 3 (only 1.1 has completed PR, 1.2 is in_progress)
-        assert "Phase 1: Foundation (1/3 steps done)" in output
+        assert "Phase 1: Foundation (1/3 nodes done)" in output
         # Phase 2A: 1 done out of 2 (2A.1 has PR, 2A.2 is blocked)
-        assert "Phase 2A: Core Implementation (1/2 steps done)" in output
+        assert "Phase 2A: Core Implementation (1/2 nodes done)" in output
 
 
 def test_view_objective_status_emojis() -> None:

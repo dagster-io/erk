@@ -35,7 +35,7 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     compute_graph_summary,
-    find_graph_next_step,
+    find_graph_next_node,
     graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -81,7 +81,7 @@ def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapCont
             phases=[],
             matched_steps=[],
             summary={},
-            next_step=None,
+            next_node=None,
             all_complete=False,
         )
 
@@ -91,7 +91,7 @@ def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapCont
             phases=[],
             matched_steps=[],
             summary={},
-            next_step=None,
+            next_node=None,
             all_complete=False,
         )
 
@@ -102,13 +102,13 @@ def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapCont
     matched_steps = [step.id for step in steps if step.plan == plan_ref]
 
     summary = compute_graph_summary(graph)
-    next_step = find_graph_next_step(graph, phases)
+    next_node = find_graph_next_node(graph, phases)
 
     return RoadmapContextDict(
         phases=serialize_phases(phases),
         matched_steps=matched_steps,
         summary=summary,
-        next_step=next_step,
+        next_node=next_node,
         all_complete=graph.is_complete(),
     )
 

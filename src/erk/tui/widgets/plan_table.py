@@ -149,7 +149,7 @@ class PlanDataTable(DataTable):
         if self._view_mode == ViewMode.OBJECTIVES:
             self.add_column("prog", key="progress")
             col_index += 1
-            self.add_column("next step", key="next_step")
+            self.add_column("next node", key="next_node")
             col_index += 1
             self.add_column("updated", key="updated")
             col_index += 1
@@ -256,7 +256,7 @@ class PlanDataTable(DataTable):
                 plan_cell,
                 Text(display_title),
                 row.objective_progress_display,
-                Text(row.objective_next_step_display),
+                Text(row.objective_next_node_display),
                 row.updated_display,
                 row.author,
             )

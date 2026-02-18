@@ -21,7 +21,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
     compute_graph_summary,
-    find_graph_next_step,
+    find_graph_next_node,
     graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -68,13 +68,13 @@ def _format_ref_link(ref: str | None, repo_base_url: str) -> str:
     return f"[link={repo_base_url}/issues/{issue_number}]{escape(ref)}[/link]"
 
 
-def _format_step_status(status: str, *, plan: str | None, is_unblocked: bool) -> str:
-    """Format step status indicator with emoji and Rich markup.
+def _format_node_status(status: str, *, plan: str | None, is_unblocked: bool) -> str:
+    """Format node status indicator with emoji and Rich markup.
 
     Args:
-        status: Step status ("done", "in_progress", "pending", "blocked", "skipped")
+        status: Node status ("done", "in_progress", "pending", "blocked", "skipped")
         plan: Plan reference (e.g., "#6464") or None
-        is_unblocked: Whether the step's dependencies are all satisfied
+        is_unblocked: Whether the node's dependencies are all satisfied
 
     Returns:
         Rich markup string with emoji and color
@@ -218,8 +218,8 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
     node_by_id: dict[str, ObjectiveNode] = {n.id: n for n in graph.nodes}
     unblocked_ids = {n.id for n in graph.unblocked_nodes()}
 
-    # Find next step
-    next_step = find_graph_next_step(graph, phases)
+    # Find next node
+    next_node = find_graph_next_node(graph, phases)
 
     # Display objective details
     user_output("")
@@ -262,7 +262,7 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
                 max_id_width = max(max_id_width, cell_len(step.id))
                 node = node_by_id.get(step.id)
                 is_unblocked = step.id in unblocked_ids
-                status_markup = _format_step_status(
+                status_markup = _format_node_status(
                     step.status, plan=step.plan, is_unblocked=is_unblocked
                 )
                 max_status_width = max(
@@ -286,7 +286,7 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
             phase_id = f"Phase {phase.number}{phase.suffix}"
 
             # Format phase header
-            phase_header = f"{phase_id}: {phase.name} ({done_count}/{total_count} steps done)"
+            phase_header = f"{phase_id}: {phase.name} ({done_count}/{total_count} nodes done)"
             user_output(click.style(phase_header, bold=True))
 
             # Display steps as a Rich table for proper alignment
@@ -297,7 +297,7 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
                 pad_edge=False,
                 padding=(0, 1),
             )
-            table.add_column("step", style="cyan", no_wrap=True, min_width=max_id_width)
+            table.add_column("node", style="cyan", no_wrap=True, min_width=max_id_width)
             table.add_column("status", no_wrap=True, min_width=max_status_width)
             table.add_column("description", min_width=max_desc_width)
             table.add_column("depends_on", style="dim", min_width=max_deps_width)
@@ -310,7 +310,7 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
                 deps_str = ", ".join(node.depends_on) if node and node.depends_on else "-"
                 table.add_row(
                     escape(step.id),
-                    _format_step_status(step.status, plan=step.plan, is_unblocked=is_unblocked),
+                    _format_node_status(step.status, plan=step.plan, is_unblocked=is_unblocked),
                     escape(step.description),
                     escape(deps_str),
                     _format_ref_link(step.plan, repo_base_url),
@@ -327,9 +327,9 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
         # Format steps summary
         user_output(
             _format_field(
-                "Steps",
+                "Nodes",
                 (
-                    f"{summary['done']}/{summary['total_steps']} done,"
+                    f"{summary['done']}/{summary['total_nodes']} done,"
                     f" {summary['in_progress']} in progress,"
                     f" {summary['pending']} pending"
                 ),
@@ -344,16 +344,16 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
             )
         )
 
-        # Display next step if available
-        if next_step:
+        # Display next node if available
+        if next_node:
             user_output(
                 _format_field(
-                    "Next step",
-                    f"{next_step['id']} - {next_step['description']} (Phase: {next_step['phase']})",
+                    "Next node",
+                    f"{next_node['id']} - {next_node['description']} (Phase: {next_node['phase']})",
                 )
             )
         else:
-            user_output(_format_field("Next step", "None"))
+            user_output(_format_field("Next node", "None"))
 
     else:
         # No roadmap found
