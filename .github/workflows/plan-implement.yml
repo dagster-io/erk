@@ -80,6 +80,7 @@ concurrency:
 
 jobs:
   implement:
+    if: vars.CLAUDE_ENABLED != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
