@@ -4,7 +4,7 @@
 # Erk Documentation
 
 - **[branch-cleanup.md](branch-cleanup.md)** — cleaning up branches, removing dormant worktrees, managing branch lifecycle
-- **[branch-naming.md](branch-naming.md)** — creating or modifying branch name generation, extracting issue or objective numbers from branch names, working with generate_issue_branch_name() or extract functions
+- **[branch-naming.md](branch-naming.md)** — creating or modifying branch name generation, extracting issue or objective numbers from branch names, working with generate_issue_branch_name(), generate_draft_pr_branch_name(), or extract functions
 - **[codespace-machine-types.md](codespace-machine-types.md)** — creating or configuring codespaces, choosing a machine type for codespace setup, debugging codespace creation failures
 - **[codespace-remote-execution.md](codespace-remote-execution.md)** — modifying the codespace environment bootstrap sequence, debugging why a remote erk command fails before reaching the actual command, deciding whether a new remote command needs build_codespace_ssh_command
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt

@@ -56,7 +56,7 @@ Rules triggered by matching actions in code.
 
 **catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
 
-**changing branch naming convention (P{issue}- prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The P{issue}- prefix is a cross-cutting contract used by both branch creation (naming.generate_issue_branch_name) and PR recovery (get_pr_for_plan). Changing the prefix format requires updating both sides.
+**changing branch naming convention (P{issue}- or plan- prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The P{issue}- prefix (issue-based) and plan- prefix (draft-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers.
 
 **changing how sessions are classified as planning vs impl** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently.
 

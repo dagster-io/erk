@@ -705,7 +705,7 @@ def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
         validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
 
     error_msg = str(exc_info.value)
-    assert "P42" in error_msg
+    assert "42" in error_msg
     assert "#99" in error_msg
     assert "disagrees" in error_msg
 
@@ -757,3 +757,28 @@ def test_validate_plan_linkage_legacy_fallback(tmp_path: Path) -> None:
 
     result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
     assert result == "42"
+
+
+def test_validate_plan_linkage_draft_pr_with_plan_ref(tmp_path: Path) -> None:
+    """Test draft-PR branch returns plan_id from plan-ref.json."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_plan_ref(
+        impl_dir,
+        provider="github-draft-pr",
+        plan_id="789",
+        url="https://github.com/org/repo/pull/789",
+        labels=(),
+        objective_id=None,
+    )
+
+    result = validate_plan_linkage(impl_dir, "plan-fix-auth-bug-01-15-1430")
+    assert result == "789"
+
+
+def test_validate_plan_linkage_draft_pr_without_plan_ref(tmp_path: Path) -> None:
+    """Test draft-PR branch without plan-ref.json returns None."""
+    impl_dir = tmp_path / ".impl"
+
+    result = validate_plan_linkage(impl_dir, "plan-fix-auth-bug-01-15-1430")
+    assert result is None

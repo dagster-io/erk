@@ -245,8 +245,15 @@ def has_plan_ref(impl_dir: Path) -> bool:
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
     """Validate branch name and plan reference agree. Returns plan_id.
 
-    Branch names follow the pattern P{issue_number}-{slug} (e.g., "P2382-add-feature").
-    If both branch name and plan reference contain an issue number, they MUST match.
+    Supports two branch naming patterns:
+
+    - Issue-based: ``P{issue_number}-{slug}`` — issue number extracted from prefix
+    - Draft-PR: ``plan-{slug}-{timestamp}`` — no extractable issue number;
+      plan-ref.json is the sole source of truth
+
+    For issue-based branches, if both the branch name and plan reference contain
+    an issue number, they MUST match. For draft-PR branches, ``branch_issue`` is
+    None, so the function falls through to returning ``plan_id`` from plan-ref.json.
 
     Args:
         impl_dir: Path to .impl/ or .worker-impl/ directory
@@ -267,7 +274,7 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
     if branch_issue is not None and impl_plan_id is not None:
         if str(branch_issue) != impl_plan_id:
             raise ValueError(
-                f"Branch name (P{branch_issue}-...) disagrees with "
+                f"Branch issue ({branch_issue}) disagrees with "
                 f"plan reference (#{impl_plan_id}). Fix the mismatch before proceeding."
             )
         return impl_plan_id
