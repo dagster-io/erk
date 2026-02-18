@@ -14,7 +14,7 @@ tripwires:
     warning: "Codex uses Rust #[serde(flatten)] — item type-specific fields appear as siblings of id and type within the item object, not in a nested sub-object."
   - action: "reusing ClaudePromptExecutor parsing logic for Codex"
     warning: "The two formats share almost nothing structurally. A CodexPromptExecutor needs its own parser — don't parameterize the existing Claude parser."
-last_audited: "2026-02-16 14:30 PT"
+last_audited: "2026-02-18 11:08 PT"
 audit_result: clean
 ---
 
@@ -156,28 +156,31 @@ These differences explain why a `CodexPromptExecutor` needs entirely separate pa
 
 Claude's `type: "result"` event includes `num_turns`, which erk uses to detect hook blocking (emitted as `NoTurnsEvent`). Codex has no equivalent field. A future `CodexPromptExecutor` would need a different strategy for hook-blocking detection — for example, checking whether any `item.*` events appeared between `turn.started` and `turn.completed`. Without this, `NoTurnsEvent` and `NoOutputEvent` diagnostics cannot be ported directly.
 
-## Planned Event-to-ExecutorEvent Mapping
+## Event-to-ExecutorEvent Mapping
 
 <!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, ExecutorEvent -->
 
-No `CodexPromptExecutor` exists yet. This table captures the intended mapping from Codex events to erk's `ExecutorEvent` union (see `ExecutorEvent` in `packages/erk-shared/src/erk_shared/core/prompt_executor.py`).
+Implementation: `src/erk/core/codex_output_parser.py` (shipped in PR #7308, gap-filled in PR #7425).
 
-| Codex Event                            | Erk ExecutorEvent    | Rationale                                                    |
-| -------------------------------------- | -------------------- | ------------------------------------------------------------ |
-| `item.completed` + `agent_message`     | `TextEvent`          | Direct mapping — extract `text` field                        |
-| `item.started` + `command_execution`   | `SpinnerUpdateEvent` | Shows in-progress command name while executing               |
-| `item.completed` + `command_execution` | `ToolEvent`          | Summarize command + output + exit code                       |
-| `item.completed` + `file_change`       | `ToolEvent`          | Summarize file changes                                       |
-| `item.started` + `mcp_tool_call`       | `SpinnerUpdateEvent` | Shows tool name during invocation                            |
-| `item.completed` + `mcp_tool_call`     | `ToolEvent`          | Summarize tool result or error                               |
-| `turn.failed`                          | `ErrorEvent`         | Extract `error.message`                                      |
-| `error`                                | `ErrorEvent`         | Extract `message`                                            |
-| PR URLs in `agent_message` text        | `PrUrlEvent` etc.    | Reuse existing text-based PR metadata extraction             |
-| `thread.started`                       | (capture only)       | Store `thread_id` for logging; don't emit to event consumers |
-| `turn.started`                         | (ignored)            | No useful information for erk's event consumers              |
-| `turn.completed`                       | (ignored)            | Usage tracking only — may want to log tokens                 |
-| `item.started/updated` + `todo_list`   | `SpinnerUpdateEvent` | Optional — could show agent progress                         |
-| `item.completed` + `reasoning`         | (ignored)            | No erk consumer for reasoning summaries yet                  |
+| Codex Event                            | Erk ExecutorEvent    | Status      | Notes                                           |
+| -------------------------------------- | -------------------- | ----------- | ----------------------------------------------- |
+| `item.completed` + `agent_message`     | `TextEvent`          | Implemented | Extract `text` field                            |
+| `item.completed` + `agent_message`     | `PrUrlEvent` etc.    | Implemented | Reuse text-based PR metadata extraction         |
+| `item.completed` + `agent_message`     | `IssueNumberEvent`   | Implemented | Extract issue number from agent text            |
+| `item.started` + `command_execution`   | `SpinnerUpdateEvent` | Implemented | Shows in-progress command name while executing  |
+| `item.completed` + `command_execution` | `ToolEvent`          | Implemented | Summarize command + output + exit code          |
+| `item.completed` + `file_change`       | `ToolEvent`          | Implemented | Summarize file changes                          |
+| `item.started` + `mcp_tool_call`       | `SpinnerUpdateEvent` | Implemented | Shows tool name during invocation               |
+| `item.completed` + `mcp_tool_call`     | `ToolEvent`          | Implemented | Summarize tool result or error                  |
+| `item.started` + `web_search`          | `SpinnerUpdateEvent` | Implemented | Shows search query during execution             |
+| `turn.failed`                          | `ErrorEvent`         | Implemented | Extract `error.message`                         |
+| `error`                                | `ErrorEvent`         | Implemented | Extract `message`                               |
+| `thread.started`                       | (capture only)       | Implemented | Store `thread_id` in parser state               |
+| `turn.started`                         | (ignored)            | Implemented | No useful information for erk's event consumers |
+| `turn.completed`                       | (debug log only)     | Implemented | Logs token usage at debug level                 |
+| `item.completed` + `reasoning`         | (debug log only)     | Implemented | No erk consumer for reasoning summaries yet     |
+| `item.completed` + `todo_list`         | (debug log only)     | Implemented | No mapped ExecutorEvent                         |
+| `item.completed` + `collab_tool_call`  | (debug log only)     | Implemented | No mapped ExecutorEvent                         |
 
 **Open design question:** How to detect hook blocking without `num_turns`. `NoTurnsEvent` and `NoOutputEvent` depend on Claude's `type: "result"` event, which has no Codex equivalent.
 

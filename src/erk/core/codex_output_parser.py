@@ -17,6 +17,7 @@ from erk.core.output_filter import extract_pr_metadata_from_text
 from erk_shared.core.prompt_executor import (
     ErrorEvent,
     ExecutorEvent,
+    IssueNumberEvent,
     PrNumberEvent,
     PrTitleEvent,
     PrUrlEvent,
@@ -80,7 +81,10 @@ def parse_codex_jsonl_line(
     if event_type == "error":
         return _handle_top_level_error(data)
 
-    # turn.started, turn.completed, item.updated — ignored
+    if event_type == "turn.completed":
+        return _handle_turn_completed(data)
+
+    # turn.started, item.updated — ignored
     return []
 
 
@@ -136,6 +140,11 @@ def _handle_item_started(
         label = f"{server}/{tool_name}" if server else str(tool_name)
         return [SpinnerUpdateEvent(status=f"Using {label}...")]
 
+    if item_type == "web_search":
+        query = item.get("query", "")
+        summary = _truncate(query, 60) if isinstance(query, str) else "web"
+        return [SpinnerUpdateEvent(status=f"Searching: {summary}...")]
+
     return []
 
 
@@ -164,6 +173,10 @@ def _handle_item_completed(
         message = item.get("message", "Unknown item error")
         return [ErrorEvent(message=str(message))]
 
+    if item_type in ("reasoning", "todo_list", "collab_tool_call"):
+        logger.debug("Ignoring item type %s (no mapped ExecutorEvent)", item_type)
+        return []
+
     return []
 
 
@@ -190,6 +203,9 @@ def _handle_agent_message(
     pr_title = metadata.get("pr_title")
     if pr_title is not None:
         events.append(PrTitleEvent(title=str(pr_title)))
+    issue_number = metadata.get("issue_number")
+    if issue_number is not None:
+        events.append(IssueNumberEvent(number=int(issue_number)))
 
     return events
 
@@ -268,6 +284,22 @@ def _handle_mcp_tool_call(item: dict) -> list[ExecutorEvent]:
         return [ToolEvent(summary=f"MCP {label}: error - {_truncate(error, 80)}")]
 
     return [ToolEvent(summary=f"MCP {label}: {status}")]
+
+
+def _handle_turn_completed(data: dict) -> list[ExecutorEvent]:
+    """Log token usage from turn.completed at debug level."""
+    usage = data.get("usage")
+    if isinstance(usage, dict):
+        input_tokens = usage.get("input_tokens")
+        output_tokens = usage.get("output_tokens")
+        cached = usage.get("cached_input_tokens")
+        logger.debug(
+            "Codex turn completed — input=%s cached=%s output=%s",
+            input_tokens,
+            cached,
+            output_tokens,
+        )
+    return []
 
 
 def _handle_turn_failed(data: dict) -> list[ExecutorEvent]:

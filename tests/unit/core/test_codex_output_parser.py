@@ -8,6 +8,7 @@ from pathlib import Path
 from erk.core.codex_output_parser import CodexParserState, parse_codex_jsonl_line
 from erk_shared.core.prompt_executor import (
     ErrorEvent,
+    IssueNumberEvent,
     PrNumberEvent,
     PrUrlEvent,
     SpinnerUpdateEvent,
@@ -98,6 +99,22 @@ class TestItemStarted:
         )
         assert state.saw_any_items is True
 
+    def test_web_search_emits_spinner(self) -> None:
+        events = _parse(
+            {
+                "type": "item.started",
+                "item": {
+                    "id": "item_2",
+                    "type": "web_search",
+                    "query": "python asyncio tutorial",
+                },
+            }
+        )
+        assert len(events) == 1
+        assert isinstance(events[0], SpinnerUpdateEvent)
+        assert "Searching:" in events[0].status
+        assert "python asyncio tutorial" in events[0].status
+
     def test_unknown_item_type_returns_empty(self) -> None:
         events = _parse(
             {
@@ -166,6 +183,20 @@ class TestItemCompletedAgentMessage:
             isinstance(e, PrUrlEvent) and e.url == "https://github.com/o/r/pull/42" for e in events
         )
         assert any(isinstance(e, PrNumberEvent) and e.number == 42 for e in events)
+
+    def test_extracts_issue_number_from_text(self) -> None:
+        events = _parse(
+            {
+                "type": "item.completed",
+                "item": {
+                    "id": "item_0",
+                    "type": "agent_message",
+                    "text": "Linked to issue #123",
+                },
+            }
+        )
+        assert any(isinstance(e, TextEvent) for e in events)
+        assert any(isinstance(e, IssueNumberEvent) and e.number == 123 for e in events)
 
 
 class TestItemCompletedCommandExecution:
@@ -345,13 +376,10 @@ class TestTopLevelError:
         assert "Unknown error" in events[0].message
 
 
-class TestIgnoredEvents:
-    """Events that should produce no output."""
+class TestTurnCompleted:
+    """turn.completed logs token usage but emits no events."""
 
-    def test_turn_started_ignored(self) -> None:
-        assert _parse({"type": "turn.started"}) == []
-
-    def test_turn_completed_ignored(self) -> None:
+    def test_turn_completed_emits_no_events(self) -> None:
         events = _parse(
             {
                 "type": "turn.completed",
@@ -360,11 +388,53 @@ class TestIgnoredEvents:
         )
         assert events == []
 
+    def test_turn_completed_without_usage(self) -> None:
+        events = _parse({"type": "turn.completed"})
+        assert events == []
+
+
+class TestIgnoredEvents:
+    """Events that should produce no output."""
+
+    def test_turn_started_ignored(self) -> None:
+        assert _parse({"type": "turn.started"}) == []
+
     def test_item_updated_ignored(self) -> None:
         events = _parse(
             {
                 "type": "item.updated",
                 "item": {"id": "item_0", "type": "command_execution"},
+            }
+        )
+        assert events == []
+
+    def test_reasoning_item_ignored(self) -> None:
+        events = _parse(
+            {
+                "type": "item.completed",
+                "item": {"id": "item_0", "type": "reasoning", "text": "Thinking..."},
+            }
+        )
+        assert events == []
+
+    def test_todo_list_item_ignored(self) -> None:
+        events = _parse(
+            {
+                "type": "item.completed",
+                "item": {
+                    "id": "item_0",
+                    "type": "todo_list",
+                    "items": [{"text": "Step 1", "completed": False}],
+                },
+            }
+        )
+        assert events == []
+
+    def test_collab_tool_call_item_ignored(self) -> None:
+        events = _parse(
+            {
+                "type": "item.completed",
+                "item": {"id": "item_0", "type": "collab_tool_call", "tool": "spawn_agent"},
             }
         )
         assert events == []
