@@ -330,7 +330,7 @@ def test_plan_one_shot_no_pending_nodes() -> None:
         )
 
         assert result.exit_code == 0
-        assert "no pending steps" in result.output
+        assert "no pending nodes" in result.output
 
         # Verify no workflow was triggered
         github = ctx.github
