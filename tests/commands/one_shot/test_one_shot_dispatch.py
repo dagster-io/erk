@@ -121,7 +121,7 @@ def test_dispatch_with_extra_inputs() -> None:
             model=None,
             extra_workflow_inputs={
                 "objective_issue": "42",
-                "step_id": "1.1",
+                "node_id": "1.1",
             },
         )
 
@@ -134,7 +134,7 @@ def test_dispatch_with_extra_inputs() -> None:
         # Verify extra inputs are in workflow trigger
         _workflow, inputs = github.triggered_workflows[0]
         assert inputs["objective_issue"] == "42"
-        assert inputs["step_id"] == "1.1"
+        assert inputs["node_id"] == "1.1"
         assert inputs["instruction"] == "implement step 1.1"
         assert inputs["plan_issue_number"] == "1"
 

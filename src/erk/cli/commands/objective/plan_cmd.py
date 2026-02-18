@@ -57,7 +57,7 @@ def _find_node_in_phases(
     if node is None:
         return None
     for phase in phases:
-        if any(step.id == node_id for step in phase.steps):
+        if any(n.id == node_id for n in phase.nodes):
             return node, phase.name
     return None
 
@@ -425,7 +425,7 @@ def _handle_one_shot(
         model=model,
         extra_workflow_inputs={
             "objective_issue": str(issue_number),
-            "step_id": target_node.id,
+            "node_id": target_node.id,
         },
     )
 

@@ -34,8 +34,8 @@ on:
         required: false
         type: string
         default: ""
-      step_id:
-        description: "Roadmap step ID (when dispatched from implement --one-shot)"
+      node_id:
+        description: "Roadmap node ID (when dispatched from implement --one-shot)"
         required: false
         type: string
         default: ""
@@ -137,7 +137,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
-          STEP_ID: ${{ inputs.step_id }}
+          NODE_ID: ${{ inputs.node_id }}
           PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
 
       - name: Verify plan outputs exist
@@ -183,21 +183,21 @@ jobs:
             --submitted-by "${{ inputs.submitted_by }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-      - name: Update objective roadmap step
+      - name: Update objective roadmap node
         if: >
           steps.plan.outputs.plan_success == 'true'
           && steps.read_result.outputs.issue_number != ''
           && inputs.objective_issue != ''
-          && inputs.step_id != ''
+          && inputs.node_id != ''
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
-          STEP_ID: ${{ inputs.step_id }}
+          NODE_ID: ${{ inputs.node_id }}
           PLAN_NUMBER: ${{ steps.read_result.outputs.issue_number }}
         run: |
           erk exec update-objective-node \
             "$OBJECTIVE_ISSUE" \
-            --node "$STEP_ID" \
+            --node "$NODE_ID" \
             --plan "$PLAN_NUMBER"
 
       - name: Fail workflow if planning failed

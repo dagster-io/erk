@@ -145,7 +145,7 @@ parse_roadmap(body)
   │  ↓
   │  ├─ Valid YAML?
   │  │  ↓
-  │  │  group_steps_by_phase()
+  │  │  group_nodes_by_phase()
   │  │  ↓
   │  │  enrich_phase_names() (from markdown headers)
   │  │  ↓
@@ -162,7 +162,7 @@ There is no table-parsing fallback. Non-v2 content returns an empty phases list 
 
 Status comes directly from the YAML `status` field in frontmatter — no inference from plan/PR columns.
 
-- Phase names extracted from markdown headers via `_enrich_phase_names()` (not stored in YAML)
+- Phase names extracted from markdown headers via `enrich_phase_names()` (not stored in YAML)
 - Phase membership derived from step ID prefix (e.g., "1.2" → phase 1)
 
 ## Mutations

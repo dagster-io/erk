@@ -1,7 +1,7 @@
 """Shared parser, serializer, and data types for objective roadmap operations.
 
 This module provides:
-- Data types: RoadmapStepStatus, RoadmapStep, RoadmapPhase
+- Data types: RoadmapNodeStatus, RoadmapNode, RoadmapPhase
 - Parsing: parse_roadmap() (v2 frontmatter only)
 - Frontmatter: validate, parse, group, update
 - Utilities: compute_summary(), find_next_node(), serialize_phases()
@@ -23,16 +23,16 @@ from erk_shared.gateway.github.metadata.core import (
     parse_metadata_block_body,
 )
 
-RoadmapStepStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
+RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
 
 
 @dataclass(frozen=True)
-class RoadmapStep:
-    """A single step in a roadmap phase."""
+class RoadmapNode:
+    """A single node in a roadmap phase."""
 
     id: str
     description: str
-    status: RoadmapStepStatus
+    status: RoadmapNodeStatus
     plan: str | None  # None or "#123" (plan issue number)
     pr: str | None  # None or "#456" (landed PR number)
 
@@ -44,7 +44,7 @@ class RoadmapPhase:
     number: int
     suffix: str  # Letter suffix, e.g. "A" for "Phase 1A", "" for "Phase 1"
     name: str
-    steps: list[RoadmapStep]
+    nodes: list[RoadmapNode]
 
 
 # ---------------------------------------------------------------------------
@@ -54,7 +54,7 @@ class RoadmapPhase:
 
 def validate_roadmap_frontmatter(
     data: Mapping[str, object],
-) -> tuple[list[RoadmapStep] | None, list[str]]:
+) -> tuple[list[RoadmapNode] | None, list[str]]:
     """Validate parsed frontmatter against the roadmap schema.
 
     Args:
@@ -87,7 +87,7 @@ def validate_roadmap_frontmatter(
         return None, errors
 
     # Parse each step
-    steps: list[RoadmapStep] = []
+    steps: list[RoadmapNode] = []
     for i, step_data in enumerate(steps_data):
         if not isinstance(step_data, dict):
             errors.append(f"Step {i} is not a mapping")
@@ -129,10 +129,10 @@ def validate_roadmap_frontmatter(
             return None, errors
 
         steps.append(
-            RoadmapStep(
+            RoadmapNode(
                 id=step_id,
                 description=description,
-                status=cast(RoadmapStepStatus, status),
+                status=cast(RoadmapNodeStatus, status),
                 plan=raw_plan,
                 pr=raw_pr,
             )
@@ -141,7 +141,7 @@ def validate_roadmap_frontmatter(
     return steps, errors
 
 
-def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapStep] | None:
+def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapNode] | None:
     """Parse YAML from objective-roadmap metadata block content.
 
     Only supports ``<details>`` + code block format (v2).
@@ -164,15 +164,15 @@ def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapStep] | None:
     return steps
 
 
-def render_roadmap_block_inner(steps: list[RoadmapStep]) -> str:
-    """Render roadmap steps as <details> wrapped YAML code block.
+def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
+    """Render roadmap nodes as <details> wrapped YAML code block.
 
     This produces the same format as other metadata blocks (plan-header,
     objective-header), making roadmap blocks collapsible and well-formatted
     on GitHub.
 
     Args:
-        steps: Flat list of roadmap steps to render.
+        nodes: Flat list of roadmap nodes to render.
 
     Returns:
         Inner content for an objective-roadmap metadata block, wrapped in
@@ -188,7 +188,7 @@ def render_roadmap_block_inner(steps: list[RoadmapStep]) -> str:
                 "plan": s.plan,
                 "pr": s.pr,
             }
-            for s in steps
+            for s in nodes
         ],
     }
     yaml_content = yaml.safe_dump(
@@ -210,8 +210,8 @@ def render_roadmap_block_inner(steps: list[RoadmapStep]) -> str:
     )
 
 
-def group_steps_by_phase(steps: list[RoadmapStep]) -> list[RoadmapPhase]:
-    """Reconstruct RoadmapPhase objects from step ID prefixes.
+def group_nodes_by_phase(nodes: list[RoadmapNode]) -> list[RoadmapPhase]:
+    """Reconstruct RoadmapPhase objects from node ID prefixes.
 
     Phase membership is derived by convention:
     - "1.1", "1.2" → phase 1
@@ -223,24 +223,24 @@ def group_steps_by_phase(steps: list[RoadmapStep]) -> list[RoadmapPhase]:
     must extract them from markdown headers.
 
     Args:
-        steps: Flat list of steps
+        nodes: Flat list of nodes
 
     Returns:
         List of RoadmapPhase objects grouped by ID prefix
     """
-    # Group steps by parsed phase key (number, suffix) to merge equivalent phases.
+    # Group nodes by parsed phase key (number, suffix) to merge equivalent phases.
     # Raw phase_id strings like "1" and "1.2" both resolve to phase (1, ""),
     # so we group by the resolved key rather than the raw string.
-    phase_map: dict[tuple[int, str], list[RoadmapStep]] = {}
+    phase_map: dict[tuple[int, str], list[RoadmapNode]] = {}
 
-    for step in steps:
-        # Extract phase identifier from step ID
+    for node in nodes:
+        # Extract phase identifier from node ID
         # "1.1" → "1", "2A.1" → "2A", "1.2.3" → "1.2"
         # "1", "2", "A" (no dot) → default to phase (1, "")
-        if "." not in step.id:
+        if "." not in node.id:
             phase_key = (1, "")
         else:
-            phase_id = step.id.rsplit(".", 1)[0]
+            phase_id = node.id.rsplit(".", 1)[0]
             match = re.match(r"^(\d+)([A-Z]*)", phase_id)
             if match:
                 phase_key = (int(match.group(1)), match.group(2))
@@ -251,7 +251,7 @@ def group_steps_by_phase(steps: list[RoadmapStep]) -> list[RoadmapPhase]:
         if phase_key not in phase_map:
             phase_map[phase_key] = []
 
-        phase_map[phase_key].append(step)
+        phase_map[phase_key].append(node)
 
     # Convert to RoadmapPhase objects
     phases: list[RoadmapPhase] = []
@@ -264,7 +264,7 @@ def group_steps_by_phase(steps: list[RoadmapStep]) -> list[RoadmapPhase]:
                 number=phase_number,
                 suffix=phase_suffix,
                 name=phase_name,
-                steps=phase_steps,
+                nodes=phase_steps,
             )
         )
 
@@ -274,37 +274,37 @@ def group_steps_by_phase(steps: list[RoadmapStep]) -> list[RoadmapPhase]:
     return phases
 
 
-def update_step_in_frontmatter(
+def update_node_in_frontmatter(
     block_content: str,
-    step_id: str,
+    node_id: str,
     *,
     plan: str | None,
     pr: str | None,
-    status: RoadmapStepStatus | None,
+    status: RoadmapNodeStatus | None,
 ) -> str | None:
-    """Update a step's plan/PR fields (and optionally status) in frontmatter YAML.
+    """Update a node's plan/PR fields (and optionally status) in frontmatter YAML.
 
     Args:
         block_content: Raw content from metadata block
-        step_id: Step ID to update (e.g., "1.1")
+        node_id: Node ID to update (e.g., "1.1")
         plan: New plan value. None=preserve existing, ""=clear, "#6464"=set.
         pr: New PR value. None=preserve existing, ""=clear, "#123"=set.
         status: Explicit status to set, or None to infer from resolved values.
 
     Returns:
-        Updated block content with modified YAML, or None if step not found
+        Updated block content with modified YAML, or None if node not found
     """
     steps = parse_roadmap_frontmatter(block_content)
 
     if steps is None:
         return None
 
-    # Find and update the step
+    # Find and update the node
     found = False
-    updated_steps: list[RoadmapStep] = []
+    updated_steps: list[RoadmapNode] = []
 
     for step in steps:
-        if step.id == step_id:
+        if step.id == node_id:
             # Resolve PR: None=preserve, ""=clear, "#123"=set
             if pr is None:
                 resolved_pr = step.pr
@@ -320,13 +320,13 @@ def update_step_in_frontmatter(
                 resolved_plan = plan or None
 
             # Determine status: explicit > infer from resolved values > preserve
-            new_status: RoadmapStepStatus
+            new_status: RoadmapNodeStatus
             if status is not None:
                 new_status = status
             elif resolved_pr:
-                new_status = cast(RoadmapStepStatus, "in_progress")
+                new_status = cast(RoadmapNodeStatus, "in_progress")
             elif resolved_plan:
-                new_status = cast(RoadmapStepStatus, "in_progress")
+                new_status = cast(RoadmapNodeStatus, "in_progress")
             else:
                 new_status = step.status  # preserve existing status
 
@@ -420,7 +420,7 @@ def parse_v2_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]] | None:
     if steps is None:
         return None
 
-    phases = group_steps_by_phase(steps)
+    phases = group_nodes_by_phase(steps)
     phases = enrich_phase_names(body, phases)
     return (phases, errors)
 
@@ -449,7 +449,7 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             steps = None
 
         if steps is not None:
-            phases = group_steps_by_phase(steps)
+            phases = group_nodes_by_phase(steps)
             phases = enrich_phase_names(body, phases)
             return (phases, [])
 
@@ -472,14 +472,14 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
     sections: list[str] = []
 
     for phase in phases:
-        pr_count = sum(1 for step in phase.steps if step.pr is not None)
+        pr_count = sum(1 for step in phase.nodes if step.pr is not None)
         header = f"### Phase {phase.number}{phase.suffix}: {phase.name} ({pr_count} PR)"
 
         rows: list[str] = []
         rows.append("| Step | Description | Status | Plan | PR |")
         rows.append("|------|-------------|--------|------|----|")
 
-        for step in phase.steps:
+        for step in phase.nodes:
             status_display = step.status.replace("_", "-")
             cells = [
                 step.id,
@@ -511,7 +511,7 @@ def compute_summary(phases: list[RoadmapPhase]) -> dict[str, int]:
     skipped = 0
 
     for phase in phases:
-        for step in phase.steps:
+        for step in phase.nodes:
             total += 1
             if step.status == "pending":
                 pending += 1
@@ -544,7 +544,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
             "number": phase.number,
             "suffix": phase.suffix,
             "name": phase.name,
-            "steps": [
+            "nodes": [
                 {
                     "id": step.id,
                     "description": step.description,
@@ -552,7 +552,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
                     "plan": step.plan,
                     "pr": step.pr,
                 }
-                for step in phase.steps
+                for step in phase.nodes
             ],
         }
         for phase in phases
@@ -562,7 +562,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
 def find_next_node(phases: list[RoadmapPhase]) -> dict[str, str] | None:
     """Find the first pending step in phase order."""
     for phase in phases:
-        for step in phase.steps:
+        for step in phase.nodes:
             if step.status == "pending":
                 return {
                     "id": step.id,

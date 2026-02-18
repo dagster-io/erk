@@ -14,7 +14,7 @@ Read `.impl/task.md` to understand what you need to do.
 
 ## Step 2: Read Objective Context (if present)
 
-If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific step of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$STEP_ID` environment variable contains the specific roadmap step ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this step fits into it.
+If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
 
 ## Step 3: Load Context
 

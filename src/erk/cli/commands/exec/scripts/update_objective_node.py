@@ -61,10 +61,10 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.roadmap import (
     ROADMAP_TABLE_MARKER_END,
     ROADMAP_TABLE_MARKER_START,
-    RoadmapStepStatus,
+    RoadmapNodeStatus,
     extract_roadmap_table_section,
     parse_roadmap,
-    update_step_in_frontmatter,
+    update_node_in_frontmatter,
 )
 from erk_shared.gateway.github.types import BodyText
 
@@ -223,7 +223,7 @@ def _find_node_refs(body: str, node_id: str) -> tuple[str | None, str | None, bo
     """
     phases, _ = parse_roadmap(body)
     for phase in phases:
-        for step in phase.steps:
+        for step in phase.nodes:
             if step.id == node_id:
                 return step.plan, step.pr, True
     return None, None, False
@@ -268,12 +268,12 @@ def _replace_node_refs_in_body(
 
     # Pass None through to frontmatter API (preserves existing value).
     # Non-None values (including "") are forwarded as-is.
-    updated_block_content = update_step_in_frontmatter(
+    updated_block_content = update_node_in_frontmatter(
         roadmap_block.body,
         node_id,
         plan=new_plan,
         pr=new_pr,
-        status=cast(RoadmapStepStatus, explicit_status) if explicit_status is not None else None,
+        status=cast(RoadmapNodeStatus, explicit_status) if explicit_status is not None else None,
     )
 
     if updated_block_content is None:
@@ -315,7 +315,7 @@ def _replace_node_refs_in_body(
     "explicit_status",
     required=False,
     default=None,
-    type=click.Choice(list(get_args(RoadmapStepStatus))),
+    type=click.Choice(list(get_args(RoadmapNodeStatus))),
     help="Explicit status to set (default: infer from plan/PR value)",
 )
 @click.option(
@@ -399,7 +399,7 @@ def update_objective_node(
         raise SystemExit(0)
 
     # Validate all nodes exist before processing any
-    all_node_ids = {s.id for phase in phases for s in phase.steps}
+    all_node_ids = {s.id for phase in phases for s in phase.nodes}
     missing_nodes = [n for n in node if n not in all_node_ids]
     if missing_nodes:
         results = [

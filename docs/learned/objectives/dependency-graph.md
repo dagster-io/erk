@@ -57,9 +57,9 @@ Converts `list[RoadmapPhase]` into a `DependencyGraph`. See `graph_from_phases()
 
 ### Round-Trip Conversion
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py, steps_from_graph -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py, nodes_from_graph -->
 
-See `steps_from_graph()` and `phases_from_graph()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`.
+See `nodes_from_graph()` and `phases_from_graph()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`.
 
 **Phase name limitation:** `phases_from_graph()` returns placeholder phase names. Use `enrich_phase_names()` to restore actual names from body text. See `phase-name-enrichment.md` for details.
 

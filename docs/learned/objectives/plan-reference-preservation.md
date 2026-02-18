@@ -1,14 +1,14 @@
 ---
 title: Plan Reference Preservation in Roadmap Updates
 read_when:
-  - "calling update-roadmap-step with --pr but without --plan"
-  - "changing update_step_in_frontmatter() semantics for plan=None"
+  - "calling update-objective-node with --pr but without --plan"
+  - "changing update_node_in_frontmatter() semantics for plan=None"
   - "updating objective roadmap step plan or PR references"
   - "debugging lost plan references in objective roadmaps"
 tripwires:
-  - action: "calling update-roadmap-step with --pr but without --plan"
+  - action: "calling update-objective-node with --pr but without --plan"
     warning: "CLI validation requires --plan when --pr is set. Omitting --plan would silently lose the plan reference. Use --plan '#NNN' to preserve or --plan '' to explicitly clear."
-  - action: "changing update_step_in_frontmatter() semantics for plan=None"
+  - action: "changing update_node_in_frontmatter() semantics for plan=None"
     warning: "plan=None means 'preserve existing value', not 'clear'. This three-state pattern (None=preserve, ''=clear, '#NNN'=set) is used by both CLI and gateway. Changing it breaks preservation."
 ---
 
@@ -20,7 +20,7 @@ When updating a roadmap step's PR reference, the plan reference must not be sile
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:353-368 -->
 
-The `update-roadmap-step` exec script accepts `--plan` and `--pr` flags. Before the fix, calling `--pr #123` without `--plan` would set the PR but leave `plan=None`, which the gateway interpreted as "clear the plan field." This silently erased the plan reference.
+The `update-objective-node` exec script accepts `--plan` and `--pr` flags. Before the fix, calling `--pr #123` without `--plan` would set the PR but leave `plan=None`, which the gateway interpreted as "clear the plan field." This silently erased the plan reference.
 
 ## Defense-in-Depth: CLI + Gateway
 
@@ -42,7 +42,7 @@ This is the primary safeguard. It forces callers to state their intent explicitl
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:277-343 -->
 
-The `update_step_in_frontmatter()` function uses a three-state pattern for both `plan` and `pr` parameters:
+The `update_node_in_frontmatter()` function uses a three-state pattern for both `plan` and `pr` parameters:
 
 | Value    | Meaning           | Example          |
 | -------- | ----------------- | ---------------- |
@@ -64,8 +64,8 @@ This ensures that even if a caller passes `plan=None`, the existing value is pre
 
 Objective roadmaps exist in two formats that use identical semantics:
 
-1. **YAML frontmatter** — structured step data in a metadata block, updated by `update_step_in_frontmatter()`
-2. **Markdown table** — human-readable table in the issue body, updated by `update_step_in_table()`
+1. **YAML frontmatter** — structured node data in a metadata block, updated by `update_node_in_frontmatter()`
+2. **Markdown table** — human-readable table in the issue body, updated by `_replace_table_in_text()`
 
 Both use the same three-state pattern. When one is updated, the other should be updated with the same values to maintain consistency.
 

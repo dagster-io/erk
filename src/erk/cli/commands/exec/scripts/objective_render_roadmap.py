@@ -43,7 +43,7 @@ from typing import Any
 import click
 
 from erk_shared.gateway.github.metadata.roadmap import (
-    RoadmapStep,
+    RoadmapNode,
     render_roadmap_block_inner,
 )
 
@@ -102,7 +102,7 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
     Returns:
         Complete markdown string for the roadmap section.
     """
-    all_steps: list[RoadmapStep] = []
+    all_steps: list[RoadmapNode] = []
     sections: list[str] = []
 
     sections.append("## Roadmap")
@@ -133,7 +133,7 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
             sections.append(f"| {step_id} | {step_desc} | pending | - | - |")
 
             all_steps.append(
-                RoadmapStep(
+                RoadmapNode(
                     id=step_id,
                     description=step_desc,
                     status="pending",

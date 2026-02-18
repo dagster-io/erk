@@ -1,8 +1,8 @@
 """Unit tests for roadmap parsing, utility functions, and table rendering."""
 
 from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapNode,
     RoadmapPhase,
-    RoadmapStep,
     compute_summary,
     find_next_node,
     parse_roadmap,
@@ -69,18 +69,18 @@ def test_parse_roadmap_v2_well_formed() -> None:
     assert phases[0].number == 1
     assert phases[0].suffix == ""
     assert phases[0].name == "Foundation"
-    assert len(phases[0].steps) == 3
+    assert len(phases[0].nodes) == 3
 
     assert phases[1].number == 2
     assert phases[1].suffix == ""
     assert phases[1].name == "Core"
-    assert len(phases[1].steps) == 2
+    assert len(phases[1].nodes) == 2
 
 
 def test_parse_roadmap_v2_plan_and_pr_values() -> None:
     """Test that plan and PR values are parsed correctly from v2 frontmatter."""
     phases, _ = parse_roadmap(WELL_FORMED_V2_BODY)
-    steps = phases[0].steps
+    steps = phases[0].nodes
 
     assert steps[0].plan is None
     assert steps[0].pr == "#100"
@@ -93,7 +93,7 @@ def test_parse_roadmap_v2_plan_and_pr_values() -> None:
 def test_parse_roadmap_v2_statuses() -> None:
     """Test that statuses are correctly read from v2 frontmatter."""
     phases, _ = parse_roadmap(WELL_FORMED_V2_BODY)
-    steps = phases[0].steps + phases[1].steps
+    steps = phases[0].nodes + phases[1].nodes
 
     assert steps[0].status == "done"  # PR #100
     assert steps[1].status == "in_progress"  # plan #101
@@ -226,12 +226,12 @@ def test_compute_summary() -> None:
             number=1,
             suffix="",
             name="Test",
-            steps=[
-                RoadmapStep(id="1.1", description="A", status="done", plan=None, pr="#1"),
-                RoadmapStep(id="1.2", description="B", status="pending", plan=None, pr=None),
-                RoadmapStep(id="1.3", description="C", status="in_progress", plan="#2", pr=None),
-                RoadmapStep(id="1.4", description="D", status="blocked", plan=None, pr=None),
-                RoadmapStep(id="1.5", description="E", status="skipped", plan=None, pr=None),
+            nodes=[
+                RoadmapNode(id="1.1", description="A", status="done", plan=None, pr="#1"),
+                RoadmapNode(id="1.2", description="B", status="pending", plan=None, pr=None),
+                RoadmapNode(id="1.3", description="C", status="in_progress", plan="#2", pr=None),
+                RoadmapNode(id="1.4", description="D", status="blocked", plan=None, pr=None),
+                RoadmapNode(id="1.5", description="E", status="skipped", plan=None, pr=None),
             ],
         )
     ]
@@ -260,8 +260,8 @@ def test_serialize_phases() -> None:
             number=1,
             suffix="",
             name="Test",
-            steps=[
-                RoadmapStep(id="1.1", description="A", status="done", plan=None, pr="#1"),
+            nodes=[
+                RoadmapNode(id="1.1", description="A", status="done", plan=None, pr="#1"),
             ],
         )
     ]
@@ -271,11 +271,11 @@ def test_serialize_phases() -> None:
     assert result[0]["number"] == 1
     assert result[0]["suffix"] == ""
     assert result[0]["name"] == "Test"
-    assert len(result[0]["steps"]) == 1
-    assert result[0]["steps"][0]["id"] == "1.1"
-    assert result[0]["steps"][0]["status"] == "done"
-    assert result[0]["steps"][0]["plan"] is None
-    assert result[0]["steps"][0]["pr"] == "#1"
+    assert len(result[0]["nodes"]) == 1
+    assert result[0]["nodes"][0]["id"] == "1.1"
+    assert result[0]["nodes"][0]["status"] == "done"
+    assert result[0]["nodes"][0]["plan"] is None
+    assert result[0]["nodes"][0]["pr"] == "#1"
 
 
 def test_find_next_node_returns_first_pending() -> None:
@@ -285,10 +285,10 @@ def test_find_next_node_returns_first_pending() -> None:
             number=1,
             suffix="",
             name="Phase One",
-            steps=[
-                RoadmapStep(id="1.1", description="Done", status="done", plan=None, pr="#1"),
-                RoadmapStep(id="1.2", description="Pending", status="pending", plan=None, pr=None),
-                RoadmapStep(
+            nodes=[
+                RoadmapNode(id="1.1", description="Done", status="done", plan=None, pr="#1"),
+                RoadmapNode(id="1.2", description="Pending", status="pending", plan=None, pr=None),
+                RoadmapNode(
                     id="1.3", description="Also pending", status="pending", plan=None, pr=None
                 ),
             ],
@@ -308,8 +308,8 @@ def test_find_next_node_returns_none_when_all_done() -> None:
             number=1,
             suffix="",
             name="Done",
-            steps=[
-                RoadmapStep(id="1.1", description="A", status="done", plan=None, pr="#1"),
+            nodes=[
+                RoadmapNode(id="1.1", description="A", status="done", plan=None, pr="#1"),
             ],
         )
     ]
@@ -325,10 +325,10 @@ def test_compute_summary_counts_planning() -> None:
             number=1,
             suffix="",
             name="Test",
-            steps=[
-                RoadmapStep(id="1.1", description="A", status="planning", plan=None, pr="#200"),
-                RoadmapStep(id="1.2", description="B", status="pending", plan=None, pr=None),
-                RoadmapStep(id="1.3", description="C", status="done", plan=None, pr="#1"),
+            nodes=[
+                RoadmapNode(id="1.1", description="A", status="planning", plan=None, pr="#200"),
+                RoadmapNode(id="1.2", description="B", status="pending", plan=None, pr=None),
+                RoadmapNode(id="1.3", description="C", status="done", plan=None, pr="#1"),
             ],
         )
     ]
@@ -347,11 +347,11 @@ def test_find_next_node_skips_planning() -> None:
             number=1,
             suffix="",
             name="Phase One",
-            steps=[
-                RoadmapStep(
+            nodes=[
+                RoadmapNode(
                     id="1.1", description="Planning", status="planning", plan=None, pr="#200"
                 ),
-                RoadmapStep(id="1.2", description="Pending", status="pending", plan=None, pr=None),
+                RoadmapNode(id="1.2", description="Pending", status="pending", plan=None, pr=None),
             ],
         )
     ]
@@ -368,9 +368,9 @@ def test_find_next_node_all_planning_returns_none() -> None:
             number=1,
             suffix="",
             name="Phase One",
-            steps=[
-                RoadmapStep(id="1.1", description="Done", status="done", plan=None, pr="#1"),
-                RoadmapStep(
+            nodes=[
+                RoadmapNode(id="1.1", description="Done", status="done", plan=None, pr="#1"),
+                RoadmapNode(
                     id="1.2", description="Planning", status="planning", plan=None, pr="#200"
                 ),
             ],
@@ -435,18 +435,18 @@ def test_parse_v2_roadmap_success() -> None:
     assert phases[0].number == 1
     assert phases[0].suffix == ""
     assert phases[0].name == "Foundation"
-    assert len(phases[0].steps) == 2
-    assert phases[0].steps[0].id == "1.1"
-    assert phases[0].steps[0].status == "done"
-    assert phases[0].steps[0].pr == "#100"
-    assert phases[0].steps[1].id == "1.2"
-    assert phases[0].steps[1].plan == "#101"
+    assert len(phases[0].nodes) == 2
+    assert phases[0].nodes[0].id == "1.1"
+    assert phases[0].nodes[0].status == "done"
+    assert phases[0].nodes[0].pr == "#100"
+    assert phases[0].nodes[1].id == "1.2"
+    assert phases[0].nodes[1].plan == "#101"
 
     assert phases[1].number == 2
     assert phases[1].name == "Core"
-    assert len(phases[1].steps) == 1
-    assert phases[1].steps[0].id == "2.1"
-    assert phases[1].steps[0].status == "pending"
+    assert len(phases[1].nodes) == 1
+    assert phases[1].nodes[0].id == "2.1"
+    assert phases[1].nodes[0].status == "pending"
 
 
 def test_parse_v2_roadmap_no_metadata_block() -> None:
@@ -548,9 +548,9 @@ class TestRenderRoadmapTables:
                 number=1,
                 suffix="",
                 name="Foundation",
-                steps=[
-                    RoadmapStep(id="1.1", description="Setup", status="done", plan=None, pr="#10"),
-                    RoadmapStep(
+                nodes=[
+                    RoadmapNode(id="1.1", description="Setup", status="done", plan=None, pr="#10"),
+                    RoadmapNode(
                         id="1.2", description="Build", status="pending", plan=None, pr=None
                     ),
                 ],
@@ -568,8 +568,8 @@ class TestRenderRoadmapTables:
                 number=1,
                 suffix="",
                 name="Test",
-                steps=[
-                    RoadmapStep(
+                nodes=[
+                    RoadmapNode(
                         id="1.1",
                         description="Working",
                         status="in_progress",
@@ -590,8 +590,8 @@ class TestRenderRoadmapTables:
                 number=1,
                 suffix="",
                 name="Test",
-                steps=[
-                    RoadmapStep(id="1.1", description="Step", status="pending", plan=None, pr=None),
+                nodes=[
+                    RoadmapNode(id="1.1", description="Step", status="pending", plan=None, pr=None),
                 ],
             )
         ]
@@ -605,16 +605,16 @@ class TestRenderRoadmapTables:
                 number=1,
                 suffix="",
                 name="Foundation",
-                steps=[
-                    RoadmapStep(id="1.1", description="A", status="done", plan=None, pr="#1"),
+                nodes=[
+                    RoadmapNode(id="1.1", description="A", status="done", plan=None, pr="#1"),
                 ],
             ),
             RoadmapPhase(
                 number=2,
                 suffix="",
                 name="Core",
-                steps=[
-                    RoadmapStep(id="2.1", description="B", status="pending", plan=None, pr=None),
+                nodes=[
+                    RoadmapNode(id="2.1", description="B", status="pending", plan=None, pr=None),
                 ],
             ),
         ]
@@ -629,8 +629,8 @@ class TestRenderRoadmapTables:
                 number=1,
                 suffix="A",
                 name="First Part",
-                steps=[
-                    RoadmapStep(
+                nodes=[
+                    RoadmapNode(
                         id="1A.1", description="Step", status="pending", plan=None, pr=None
                     ),
                 ],
@@ -646,8 +646,8 @@ class TestRenderRoadmapTables:
                 number=1,
                 suffix="",
                 name="Test",
-                steps=[
-                    RoadmapStep(id="1.1", description="Step", status="pending", plan=None, pr=None),
+                nodes=[
+                    RoadmapNode(id="1.1", description="Step", status="pending", plan=None, pr=None),
                 ],
             )
         ]
@@ -663,8 +663,8 @@ class TestRenderRoadmapTables:
                 number=1,
                 suffix="",
                 name="Test",
-                steps=[
-                    RoadmapStep(
+                nodes=[
+                    RoadmapNode(
                         id="1.1", description="Done", status="done", plan="#100", pr="#200"
                     ),
                 ],

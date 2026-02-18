@@ -4,29 +4,29 @@ category: objectives
 read_when:
   - "working with phase names in roadmap parsing"
   - "assuming phase names are stored in YAML frontmatter"
-  - "understanding how group_steps_by_phase derives phase membership"
+  - "understanding how group_nodes_by_phase derives phase membership"
 tripwires:
   - action: "assuming phase names are stored in YAML frontmatter"
     warning: "Phase names come from markdown headers, not frontmatter. Read this doc."
-  - action: "looking for phase names in RoadmapStep fields"
-    warning: "Steps are stored flat. Phase membership is derived from step ID prefix. Phase names come from markdown headers via _enrich_phase_names()."
+  - action: "looking for phase names in RoadmapNode fields"
+    warning: "Nodes are stored flat. Phase membership is derived from node ID prefix. Phase names come from markdown headers via enrich_phase_names()."
 ---
 
 # Phase Name Enrichment
 
-Phase names are NOT stored in YAML frontmatter. They are extracted from markdown headers at parse time via `_enrich_phase_names()`.
+Phase names are NOT stored in YAML frontmatter. They are extracted from markdown headers at parse time via `enrich_phase_names()`.
 
 ## How It Works
 
-The YAML frontmatter stores steps as a flat list with IDs like `"1.1"`, `"2A.1"`. Phase membership is derived from the ID prefix:
+The YAML frontmatter stores nodes as a flat list with IDs like `"1.1"`, `"2A.1"`. Phase membership is derived from the ID prefix:
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, group_steps_by_phase -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, group_nodes_by_phase -->
 
-### Step 1: `group_steps_by_phase()` — Derive Phase Membership
+### Step 1: `group_nodes_by_phase()` — Derive Phase Membership
 
-Step IDs are parsed to extract a phase key `(number, suffix)`:
+Node IDs are parsed to extract a phase key `(number, suffix)`:
 
-| Step ID  | Phase Key  | Phase Label |
+| Node ID  | Phase Key  | Phase Label |
 | -------- | ---------- | ----------- |
 | `"1.1"`  | `(1, "")`  | Phase 1     |
 | `"1.2"`  | `(1, "")`  | Phase 1     |
@@ -34,13 +34,13 @@ Step IDs are parsed to extract a phase key `(number, suffix)`:
 | `"2A.2"` | `(2, "A")` | Phase 2A    |
 | `"3.1"`  | `(3, "")`  | Phase 3     |
 
-Steps with no dot in their ID (e.g., `"1"`, `"A"`) default to phase `(1, "")`.
+Nodes with no dot in their ID (e.g., `"1"`, `"A"`) default to phase `(1, "")`.
 
 Phase names at this stage are placeholders: `"Phase 1"`, `"Phase 2A"`, etc.
 
-### Step 2: `_enrich_phase_names()` — Extract Names from Headers
+### Step 2: `enrich_phase_names()` — Extract Names from Headers
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, _enrich_phase_names -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, enrich_phase_names -->
 
 A regex scans the full issue body for markdown headers matching:
 
@@ -62,5 +62,5 @@ Frontmatter stores only machine-readable data (step IDs, statuses, PR references
 
 | Function                 | File                                                                    |
 | ------------------------ | ----------------------------------------------------------------------- |
-| `group_steps_by_phase()` | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |
-| `_enrich_phase_names()`  | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |
+| `group_nodes_by_phase()` | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |
+| `enrich_phase_names()`   | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` |

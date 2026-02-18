@@ -46,7 +46,7 @@ When you run `erk exec update-objective-node 6423 --node 1.3 --plan "#6464"`, th
 
 ### None vs Empty-String vs Value Semantics
 
-The `update_step_in_frontmatter()` function uses a three-way convention for its `plan` and `pr` parameters:
+The `update_node_in_frontmatter()` function uses a three-way convention for its `plan` and `pr` parameters:
 
 | Value    | Meaning                             |
 | -------- | ----------------------------------- |
@@ -88,9 +88,9 @@ The update command uses two functions in `src/erk/cli/commands/exec/scripts/upda
 
 ### Status Inference Is Write-Time Only
 
-Status is computed by `update_step_in_frontmatter()` at mutation time. There is no read-time inference in the v2 YAML path — `parse_roadmap()` reads the `status` field directly from YAML. The inference logic (explicit > infer from PR/plan > preserve) runs only during writes:
+Status is computed by `update_node_in_frontmatter()` at mutation time. There is no read-time inference in the v2 YAML path — `parse_roadmap()` reads the `status` field directly from YAML. The inference logic (explicit > infer from PR/plan > preserve) runs only during writes:
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_step_in_frontmatter lines 322-331 -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_node_in_frontmatter -->
 
 1. **Explicit status provided** → use it directly
 2. **PR is set** → status = `"in_progress"`

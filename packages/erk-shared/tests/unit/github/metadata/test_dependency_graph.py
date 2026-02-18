@@ -6,13 +6,13 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     compute_graph_summary,
     find_graph_next_node,
     graph_from_phases,
+    nodes_from_graph,
     parse_graph,
     phases_from_graph,
-    steps_from_graph,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapNode,
     RoadmapPhase,
-    RoadmapStep,
     compute_summary,
     find_next_node,
 )
@@ -40,8 +40,8 @@ def _step(
     status: str,
     plan: str | None,
     pr: str | None,
-) -> RoadmapStep:
-    return RoadmapStep(
+) -> RoadmapNode:
+    return RoadmapNode(
         id=id,
         description=f"Step {id}",
         status=status,  # type: ignore[arg-type]
@@ -50,12 +50,12 @@ def _step(
     )
 
 
-def _phase(*, number: int, steps: list[RoadmapStep]) -> RoadmapPhase:
+def _phase(*, number: int, nodes: list[RoadmapNode]) -> RoadmapPhase:
     return RoadmapPhase(
         number=number,
         suffix="",
         name=f"Phase {number}",
-        steps=steps,
+        nodes=nodes,
     )
 
 
@@ -167,7 +167,7 @@ class TestGraphFromPhases:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="pending", plan=None, pr=None),
                     _step(id="1.2", status="pending", plan=None, pr=None),
                     _step(id="1.3", status="pending", plan=None, pr=None),
@@ -184,14 +184,14 @@ class TestGraphFromPhases:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="pending", plan=None, pr=None),
                     _step(id="1.2", status="pending", plan=None, pr=None),
                 ],
             ),
             _phase(
                 number=2,
-                steps=[
+                nodes=[
                     _step(id="2.1", status="pending", plan=None, pr=None),
                     _step(id="2.2", status="pending", plan=None, pr=None),
                 ],
@@ -214,7 +214,7 @@ class TestGraphFromPhases:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan="#100", pr="#200"),
                 ],
             )
@@ -251,7 +251,7 @@ class TestEquivalenceWithFindNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="pending", plan=None, pr=None),
                     _step(id="1.2", status="pending", plan=None, pr=None),
                 ],
@@ -263,7 +263,7 @@ class TestEquivalenceWithFindNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr=None),
                     _step(id="1.2", status="pending", plan=None, pr=None),
                     _step(id="1.3", status="pending", plan=None, pr=None),
@@ -276,14 +276,14 @@ class TestEquivalenceWithFindNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr=None),
                     _step(id="1.2", status="done", plan=None, pr=None),
                 ],
             ),
             _phase(
                 number=2,
-                steps=[
+                nodes=[
                     _step(id="2.1", status="pending", plan=None, pr=None),
                     _step(id="2.2", status="pending", plan=None, pr=None),
                 ],
@@ -295,7 +295,7 @@ class TestEquivalenceWithFindNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr=None),
                     _step(id="1.2", status="done", plan=None, pr=None),
                 ],
@@ -307,7 +307,7 @@ class TestEquivalenceWithFindNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="skipped", plan=None, pr=None),
                     _step(id="1.2", status="pending", plan=None, pr=None),
                     _step(id="1.3", status="pending", plan=None, pr=None),
@@ -318,7 +318,7 @@ class TestEquivalenceWithFindNextNode:
 
 
 # ---------------------------------------------------------------------------
-# steps_from_graph() tests
+# nodes_from_graph() tests
 # ---------------------------------------------------------------------------
 
 
@@ -336,7 +336,7 @@ class TestStepsFromGraph:
                 ),
             )
         )
-        steps = steps_from_graph(graph)
+        steps = nodes_from_graph(graph)
 
         assert len(steps) == 1
         assert steps[0].id == "1.1"
@@ -353,25 +353,25 @@ class TestStepsFromGraph:
                 _node(id="3.1", status="pending", depends_on=()),
             )
         )
-        steps = steps_from_graph(graph)
+        steps = nodes_from_graph(graph)
 
         assert [s.id for s in steps] == ["2.1", "1.1", "3.1"]
 
     def test_empty_graph(self) -> None:
         graph = DependencyGraph(nodes=())
-        steps = steps_from_graph(graph)
+        steps = nodes_from_graph(graph)
 
         assert steps == []
 
     def test_strips_depends_on(self) -> None:
-        """steps_from_graph returns RoadmapStep which has no depends_on field."""
+        """nodes_from_graph returns RoadmapNode which has no depends_on field."""
         graph = DependencyGraph(
             nodes=(
                 _node(id="1.1", status="done", depends_on=()),
                 _node(id="1.2", status="pending", depends_on=("1.1",)),
             )
         )
-        steps = steps_from_graph(graph)
+        steps = nodes_from_graph(graph)
 
         assert len(steps) == 2
         assert not hasattr(steps[0], "depends_on")
@@ -388,7 +388,7 @@ class TestPhasesFromGraph:
             [
                 _phase(
                     number=1,
-                    steps=[
+                    nodes=[
                         _step(id="1.1", status="pending", plan=None, pr=None),
                         _step(id="1.2", status="done", plan=None, pr=None),
                     ],
@@ -399,18 +399,18 @@ class TestPhasesFromGraph:
 
         assert len(phases) == 1
         assert phases[0].number == 1
-        assert len(phases[0].steps) == 2
+        assert len(phases[0].nodes) == 2
 
     def test_multi_phase(self) -> None:
         graph = graph_from_phases(
             [
                 _phase(
                     number=1,
-                    steps=[_step(id="1.1", status="pending", plan=None, pr=None)],
+                    nodes=[_step(id="1.1", status="pending", plan=None, pr=None)],
                 ),
                 _phase(
                     number=2,
-                    steps=[_step(id="2.1", status="pending", plan=None, pr=None)],
+                    nodes=[_step(id="2.1", status="pending", plan=None, pr=None)],
                 ),
             ]
         )
@@ -426,13 +426,13 @@ class TestPhasesFromGraph:
                 number=1,
                 suffix="A",
                 name="Phase 1A",
-                steps=[_step(id="1A.1", status="pending", plan=None, pr=None)],
+                nodes=[_step(id="1A.1", status="pending", plan=None, pr=None)],
             ),
             RoadmapPhase(
                 number=1,
                 suffix="B",
                 name="Phase 1B",
-                steps=[_step(id="1B.1", status="pending", plan=None, pr=None)],
+                nodes=[_step(id="1B.1", status="pending", plan=None, pr=None)],
             ),
         ]
         graph = graph_from_phases(phases_in)
@@ -462,8 +462,8 @@ class TestRoundTrip:
         original: list[RoadmapPhase], recovered: list[RoadmapPhase]
     ) -> None:
         """Assert that step data (id, description, status, plan, pr) matches across phases."""
-        original_steps = [s for p in original for s in p.steps]
-        recovered_steps = [s for p in recovered for s in p.steps]
+        original_steps = [s for p in original for s in p.nodes]
+        recovered_steps = [s for p in recovered for s in p.nodes]
         assert len(original_steps) == len(recovered_steps)
         for orig, rec in zip(original_steps, recovered_steps, strict=True):
             assert orig.id == rec.id
@@ -476,7 +476,7 @@ class TestRoundTrip:
         original = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="pending", plan=None, pr=None),
                     _step(id="1.2", status="done", plan="#10", pr="#20"),
                 ],
@@ -490,14 +490,14 @@ class TestRoundTrip:
         original = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr="#1"),
                     _step(id="1.2", status="in_progress", plan="#50", pr=None),
                 ],
             ),
             _phase(
                 number=2,
-                steps=[
+                nodes=[
                     _step(id="2.1", status="pending", plan=None, pr=None),
                 ],
             ),
@@ -512,13 +512,13 @@ class TestRoundTrip:
                 number=1,
                 suffix="A",
                 name="Phase 1A",
-                steps=[_step(id="1A.1", status="done", plan=None, pr="#5")],
+                nodes=[_step(id="1A.1", status="done", plan=None, pr="#5")],
             ),
             RoadmapPhase(
                 number=1,
                 suffix="B",
                 name="Phase 1B",
-                steps=[_step(id="1B.1", status="pending", plan=None, pr=None)],
+                nodes=[_step(id="1B.1", status="pending", plan=None, pr=None)],
             ),
         ]
         recovered = phases_from_graph(graph_from_phases(original))
@@ -531,7 +531,7 @@ class TestRoundTrip:
         original = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan="#10", pr="#20"),
                     _step(id="1.2", status="in_progress", plan="#30", pr=None),
                     _step(id="1.3", status="pending", plan=None, pr=None),
@@ -585,7 +585,7 @@ class TestComputeGraphSummary:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan="#10", pr="#20"),
                     _step(id="1.2", status="in_progress", plan="#30", pr=None),
                     _step(id="1.3", status="pending", plan=None, pr=None),
@@ -593,7 +593,7 @@ class TestComputeGraphSummary:
             ),
             _phase(
                 number=2,
-                steps=[
+                nodes=[
                     _step(id="2.1", status="blocked", plan=None, pr=None),
                     _step(id="2.2", status="skipped", plan=None, pr=None),
                 ],
@@ -614,7 +614,7 @@ class TestFindGraphNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr=None),
                     _step(id="1.2", status="pending", plan=None, pr=None),
                 ],
@@ -632,7 +632,7 @@ class TestFindGraphNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr=None),
                     _step(id="1.2", status="done", plan=None, pr=None),
                 ],
@@ -647,13 +647,13 @@ class TestFindGraphNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr=None),
                 ],
             ),
             _phase(
                 number=2,
-                steps=[
+                nodes=[
                     _step(id="2.1", status="pending", plan=None, pr=None),
                 ],
             ),
@@ -670,14 +670,14 @@ class TestFindGraphNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr=None),
                     _step(id="1.2", status="done", plan=None, pr=None),
                 ],
             ),
             _phase(
                 number=2,
-                steps=[
+                nodes=[
                     _step(id="2.1", status="in_progress", plan=None, pr=None),
                     _step(id="2.2", status="in_progress", plan=None, pr=None),
                 ],
@@ -696,7 +696,7 @@ class TestFindGraphNextNode:
         phases = [
             _phase(
                 number=1,
-                steps=[
+                nodes=[
                     _step(id="1.1", status="done", plan=None, pr=None),
                     _step(id="1.2", status="in_progress", plan=None, pr=None),
                     _step(id="1.3", status="pending", plan=None, pr=None),
@@ -775,7 +775,7 @@ class TestParseGraph:
 
         assert result is not None
         graph, phases, _errors = result
-        # Graph nodes should match flattened phase steps
-        phase_step_ids = [step.id for phase in phases for step in phase.steps]
+        # Graph nodes should match flattened phase nodes
+        phase_node_ids = [n.id for phase in phases for n in phase.nodes]
         graph_node_ids = [node.id for node in graph.nodes]
-        assert graph_node_ids == phase_step_ids
+        assert graph_node_ids == phase_node_ids
