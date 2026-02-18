@@ -19,7 +19,6 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.land_cmd import _execute_land
-from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk_shared.context.helpers import require_context
 
 
@@ -140,13 +139,10 @@ def land_execute(
             )
         resolved_target_child = children[0]
 
-    # Auto-detect objective from branch if not explicitly provided
-    resolved_objective_number = (
-        objective_number
-        if objective_number is not None
-        else get_objective_for_branch(erk_ctx, repo_root, branch)
-    )
-
+    # Objective update is now handled by a separate command
+    # (erk exec objective-update-after-land) emitted in the land script.
+    # --objective-number is still accepted for backwards compatibility with
+    # ephemeral scripts that may already exist, but the value is ignored.
     _execute_land(
         erk_ctx,
         pr_number=pr_number,
@@ -154,7 +150,7 @@ def land_execute(
         worktree_path=Path(worktree_path) if worktree_path else None,
         is_current_branch=is_current_branch,
         target_child_branch=resolved_target_child,
-        objective_number=resolved_objective_number,
+        objective_number=None,
         use_graphite=use_graphite,
         pull_flag=pull_flag,
         no_delete=no_delete,

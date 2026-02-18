@@ -1613,9 +1613,13 @@ def render_land_execution_script(
     **Baked-in (static, determined at script generation time):**
     - --worktree-path: worktree location
     - --is-current-branch: whether landing from that worktree
-    - --objective-number: linked objective
     - --use-graphite: whether Graphite is enabled
     - --no-cleanup: user declined cleanup during validation
+
+    **Objective update (separate command, fail-open):**
+    When objective_number is set, a second command line is emitted after
+    the land-execute command: ``erk exec objective-update-after-land``.
+    This runs without ``|| return 1`` because landing already succeeded.
 
     **Passed via "$@" (user-controllable flags):**
     - --up: navigate upstack (resolved at execution time)
@@ -1648,8 +1652,6 @@ def render_land_execution_script(
         cmd_parts.append(f"--worktree-path={worktree_path}")
     if is_current_branch:
         cmd_parts.append("--is-current-branch")
-    if objective_number is not None:
-        cmd_parts.append(f"--objective-number={objective_number}")
     if use_graphite:
         cmd_parts.append("--use-graphite")
     if not cleanup_confirmed:
@@ -1660,13 +1662,23 @@ def render_land_execution_script(
     erk_cmd = " ".join(cmd_parts)
     target_path_str = str(target_path)
 
+    # Build objective update command (separate, fail-open - no || return 1)
+    objective_line = ""
+    if objective_number is not None:
+        objective_line = (
+            f"\nerk exec objective-update-after-land"
+            f" --objective {objective_number}"
+            f' --pr "$PR_NUMBER"'
+            f' --branch "$BRANCH"'
+        )
+
     return f"""# erk land deferred execution
 # Usage: source land.sh <pr_number> <branch> [flags...]
 PR_NUMBER="${{1:?Error: PR number required}}"
 BRANCH="${{2:?Error: Branch name required}}"
 shift 2
 
-{erk_cmd} || return 1
+{erk_cmd} || return 1{objective_line}
 cd {target_path_str}
 """
 
