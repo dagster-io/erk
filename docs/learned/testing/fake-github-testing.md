@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "passing string values to comments_with_urls parameter of FakeGitHubIssues"
     warning: "comments_with_urls requires IssueComment objects, not strings. Strings cause silent empty-list returns. Match the parameter to the ABC getter method your code calls."
+  - action: "creating custom FakeGitHubIssues without passing to build_workspace_test_context"
+    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
 ---
 
 # FakeGitHubIssues Dual-Comment Parameters

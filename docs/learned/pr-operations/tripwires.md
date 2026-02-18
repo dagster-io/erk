@@ -38,6 +38,8 @@ Rules triggered by matching actions in code.
 
 **using raw gh pr view or gh pr create in Python code** → Read [PR Creation Decision Logic](pr-creation-patterns.md) first. Use the typed GitHub gateway (get_pr_for_branch, create_pr) instead of shelling out. The gateway returns PRDetails | PRNotFound for LBYL handling.
 
+**working on branch after erk pr submit** → Read [Git-Only PR Submission Path](pr-submission-workflow.md) first. Squash-force-push causes branch divergence. Run `git pull --rebase` after erk pr submit before making further changes.
+
 **writing checkout footer with issue number from .impl/issue.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures.
 
 **writing gh pr checkout in a PR footer** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. The checkout footer uses `erk pr checkout <number> --script`, NOT `gh pr checkout`. The footer format has changed.

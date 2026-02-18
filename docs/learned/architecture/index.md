@@ -19,6 +19,7 @@
 - **[claude-installation-gateway.md](claude-installation-gateway.md)** — working with Claude Code session logs, accessing ~/.claude/ directory, implementing session analysis features, working with plan files or settings operations
 - **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
 - **[cli-to-pipeline-boundary.md](cli-to-pipeline-boundary.md)** — refactoring complex CLI commands, separating business logic from Click layer, deciding when to extract pipeline from CLI command
+- **[click-context-di-pattern.md](click-context-di-pattern.md)** — adding dependency injection to a Click command, using @click.pass*context with require*\*() helpers, testing Click commands with ErkContext
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
 - **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
@@ -91,6 +92,7 @@
 - **[prompt-executor-patterns.md](prompt-executor-patterns.md)** — launching Claude from CLI commands, deciding which PromptExecutor method to use, testing code that executes Claude CLI
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[re-export-pattern.md](re-export-pattern.md)** — Creating public API surface from internal gateway modules, Simplifying import paths for commonly used types, Working with ruff import linting
+- **[rebase-conflict-patterns.md](rebase-conflict-patterns.md)** — resolving merge conflicts after rebase, debugging test failures after rebase, handling auto-generated file conflicts
 - **[roadmap-mutation-semantics.md](roadmap-mutation-semantics.md)** — modifying objective roadmap update logic, understanding status inference when updating roadmap steps, working with update-objective-node command
 - **[selection-preservation-by-value.md](selection-preservation-by-value.md)** — working with auto-refreshing lists or tables in UI components, implementing selection state that should persist across data updates, building real-time dashboard views with user-selected items, debugging cursor position resets in DataTable or list components
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
@@ -101,6 +103,7 @@
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
 - **[task-context-isolation.md](task-context-isolation.md)** — fetching large JSON responses from APIs, parsing PR review comments or GitHub issues, analyzing verbose API responses that pollute context, need to reduce context window usage, returning structured data from subagents, choosing between context: fork vs manual Task delegation
+- **[test-context-composition.md](test-context-composition.md)** — using build_workspace_test_context with custom fakes, debugging invisible metadata writes in tests, understanding issues_explicitly_passed flag
 - **[type-safety-patterns.md](type-safety-patterns.md)** — designing flexible collection types, working with union types in Python, handling mixed-type lists
 - **[typescript-multi-config.md](typescript-multi-config.md)** — setting up TypeScript type checking for multi-config projects, encountering TypeScript errors in subdirectories with separate configs, working with erkdesk TypeScript configuration, running tsc --noEmit from project root
 - **[validation-patterns.md](validation-patterns.md)** — adding regex validation to a field or input, implementing input validation with error messages, understanding module-level regex compilation

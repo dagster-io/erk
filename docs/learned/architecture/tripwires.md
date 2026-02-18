@@ -14,6 +14,8 @@ Rules triggered by matching actions in code.
 
 **FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
 
+**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+
 **accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
 
 **accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
@@ -88,6 +90,8 @@ Rules triggered by matching actions in code.
 
 **changing config section names ([interactive-claude] or [interactive-agent])** → Read [Interactive Agent Configuration](interactive-agent-config.md) first. Maintain fallback from [interactive-agent] to [interactive-claude] for backward compatibility.
 
+**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+
 **changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern.
 
 **changing permission_mode_to_claude() (or future permission_mode_to_codex()) implementations** → Read [PermissionMode Abstraction](permission-modes.md) first. Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings.
@@ -115,6 +119,8 @@ Rules triggered by matching actions in code.
 **creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
 
 **creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
+
+**creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
 
 **creating fake subgateway without shared state** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Fake subgateways must share state containers with parent via constructor parameters and call link_mutation_tracking(). Without this, mutations through subgateway won't be visible to parent queries.
 
@@ -190,6 +196,8 @@ Rules triggered by matching actions in code.
 
 **returning pre-rendered display strings from backend APIs** → Read [State Derivation Pattern](state-derivation-pattern.md) first. Return raw state fields instead. Derive display state in frontend pure functions for testability and reusability.
 
+**running tests immediately after rebase without checking for old symbols** → Read [Rebase Conflict Patterns](rebase-conflict-patterns.md) first. Hidden regressions can exist in non-conflicted files. Grep for old symbols that should have been renamed before running tests.
+
 **running tsc --noEmit from root in multi-config TypeScript project** → Read [TypeScript Multi-Config Project Checking](typescript-multi-config.md) first. tsc --noEmit from root breaks subdirectory configs. Use tsc -p <path> --noEmit for each tsconfig.json separately.
 
 **setting PR reference without providing --plan** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The CLI requires --plan when --pr is set (error: plan_required_with_pr). Use --plan '#NNN' to preserve or --plan '' to explicitly clear. Read roadmap-mutation-semantics.md for the None/empty/value semantics.
@@ -207,6 +215,8 @@ Rules triggered by matching actions in code.
 **try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
 
 **updating a roadmap step's PR cell** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The update-objective-node command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty.
+
+**using --force-with-lease in multi-step workflows where earlier steps push** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Force-push silently overwrites intermediate commits from earlier workflow steps. Always `git pull --rebase` before pushing in multi-step workflows.
 
 **using LiveDisplay in watch loops without try/finally blocks** → Read [LiveDisplay Gateway](live-display-gateway.md) first. guard with try/finally to ensure stop() is called even on KeyboardInterrupt
 

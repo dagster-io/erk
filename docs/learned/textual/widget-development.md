@@ -20,7 +20,7 @@ For standard Textual API patterns (ModalScreen, Bindings, compose(), CSS, widget
 | Main app  | `src/erk/tui/app.py` (`ErkDashApp`) |
 | Widgets   | `src/erk/tui/widgets/`              |
 | Screens   | `src/erk/tui/screens/`              |
-| CSS       | `src/erk/tui/css/`                  |
+| CSS       | `src/erk/tui/styles/`               |
 
 ## Reference Implementations
 

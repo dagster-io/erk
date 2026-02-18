@@ -92,13 +92,13 @@ The `close` command prompts for confirmation unless `--force` is provided. The c
 
 All objective commands use the `register_with_aliases()` pattern, which registers both the full command name and a short alias:
 
-| Command   | Alias | Why This Alias                                   |
-| --------- | ----- | ------------------------------------------------ |
-| `check`   | `ch`  | Prefix of "check", avoids collision with "close" |
-| `close`   | `c`   | First letter, unambiguous (check uses "ch")      |
-| `inspect` | `i`   | First letter of "inspect"                        |
-| `list`    | `ls`  | Unix convention (ls for list)                    |
-| `plan`    | —     | Direct, no alias needed                          |
+| Command | Alias | Why This Alias                                   |
+| ------- | ----- | ------------------------------------------------ |
+| `check` | `ch`  | Prefix of "check", avoids collision with "close" |
+| `close` | `c`   | First letter, unambiguous (check uses "ch")      |
+| `list`  | `ls`  | Unix convention (ls for list)                    |
+| `plan`  | —     | Direct, no alias needed                          |
+| `view`  | `v`   | First letter of "view"                           |
 
 ## view_objective() Command
 
@@ -112,6 +112,10 @@ The `view_objective()` command renders a roadmap using Rich tables for proper em
 - Clickable links for issue/PR references via `_format_ref_link()` pattern
 - Status indicators use Rich markup (see [output-styling.md](output-styling.md) for migration pattern)
 - Console outputs to stderr with `Console(stderr=True, force_terminal=True)`
+- `depends_on` column shows node dependency IDs (or `-` when none)
+- Pending nodes with all dependencies satisfied show `(unblocked)` annotation in green bold
+- Summary line includes unblocked pending count
+- `--json-output` flag emits structured JSON with `graph.nodes`, `graph.unblocked`, `graph.next_node`, and `summary` fields
 
 **Reference:** See [CLI Output Styling Guide](output-styling.md) for the full Rich table pattern details, particularly the sections on variable-width characters and pre-computed column widths.
 

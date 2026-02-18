@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**adding a DataTable column with add_column(key=...)** → Read [TUI Architecture Overview](architecture.md) first. Column key is a data binding contract — must match data field name. Silent failure when mismatched.
+
 **adding a column to PlanDataTable without updating make_plan_row** → Read [Column Addition Pattern](column-addition-pattern.md) first. Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist.
 
 **adding a command without an availability predicate** → Read [TUI Command Architecture](action-inventory.md) first. Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute.
@@ -26,11 +28,19 @@ Rules triggered by matching actions in code.
 
 **caching fetched data under self.\_view_mode after an async operation** → Read [TUI Async State Snapshot Pattern](async-state-snapshot.md) first. Cache under fetched_mode (snapshot at start), not self.\_view_mode (may have changed during fetch).
 
+**calling widget methods directly from @work(thread=True) background threads** → Read [TUI Architecture Overview](architecture.md) first. Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...).
+
+**calling widget methods from @work(thread=True) without call_from_thread()** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. Background thread widget mutations cause silent UI corruption. Use self.app.call_from_thread(callback, ...).
+
 **constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
+
+**creating a ModalScreen without CSS for dismiss behavior** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing.
 
 **duplicating command definitions for list and detail contexts** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Commands are defined once in the registry. Use a second Provider subclass with its own \_get_context() to serve the same commands from a new context.
 
 **duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below.
+
+**extending PlanDataProvider ABC** → Read [TUI Architecture Overview](architecture.md) first. Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in **init**. Missing init causes AttributeError at test time.
 
 **formatting display strings during table render** → Read [TUI Data Contract](data-contract.md) first. Display strings are pre-formatted at fetch time. Add new \*\_display fields to PlanRowData and format in RealPlanDataProvider.\_build_row_data(), not in the widget layer.
 
@@ -45,6 +55,8 @@ Rules triggered by matching actions in code.
 **reading self.\_view_mode during async data fetch without snapshotting** → Read [TUI Async State Snapshot Pattern](async-state-snapshot.md) first. Snapshot at fetch start with fetched_mode = self.\_view_mode. Read this doc.
 
 **registering a new TUI command without a view-mode predicate** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Every command must use \_is_plan_view() or \_is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views.
+
+**reusing same DOM element id across loading/empty/content states** → Read [TUI Architecture Overview](architecture.md) first. query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase.
 
 **using \_render() as a method name in Textual widgets** → Read [TUI View Switching](view-switching.md) first. Textual's LSP reserves \_render(). Use \_refresh_display() instead (see ViewBar).
 

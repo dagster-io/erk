@@ -478,6 +478,28 @@ def test_impl_init_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert "phases" in data
 ```
 
+## Pattern 6: FakeGitHub with Shared FakeGitHubIssues
+
+When testing code that uses both `PlanBackend` and direct `FakeGitHubIssues` operations, both must operate on the same instance:
+
+```python
+def test_plan_operations_with_shared_issues() -> None:
+    """Test that plan_backend and direct issue operations share state."""
+    issues = FakeGitHubIssues()
+    runner = CliRunner()
+
+    result = runner.invoke(
+        my_command,
+        obj=ErkContext.for_test(github_issues=issues),
+    )
+
+    # Both plan_backend metadata writes and direct issue queries
+    # see the same data because they share the issues instance
+    assert result.exit_code == 0
+```
+
+**Critical:** Always pass `issues=issues` to `build_workspace_test_context` when using custom `FakeGitHubIssues`. Without it, `plan_backend` operates on a different instance and metadata writes are invisible to your test assertions.
+
 ## See Also
 
 - [fake-driven-testing skill](/.claude/skills/fake-driven-testing/) - Complete 5-layer testing strategy

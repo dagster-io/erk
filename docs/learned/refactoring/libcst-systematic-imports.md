@@ -15,6 +15,12 @@ tripwires:
     warning: "Move ALL files first (git mv), THEN batch-update ALL imports. Interleaving creates intermediate broken states. See gateway-consolidation-checklist.md."
   - action: "running targeted edits after replace_all operations in the same file"
     warning: "During type migrations, complete all rename operations before attempting targeted edits. replace_all operations change strings that later edits expect to find."
+  - action: "using replace_all on lines with trailing comments"
+    warning: "Edit tool's replace_all removes surrounding whitespace, which can collapse lines and cause SyntaxError."
+  - action: "using replace_all to rename foo to _foo"
+    warning: "Corrupts existing _foo to __foo. Grep for existing underscored forms before applying replace_all renames."
+  - action: "completing a libcst-refactor batch rename"
+    warning: "After bulk rename, grep entire codebase for old symbol name. LibCST leave_Name visitor does NOT rename string literals used as dict keys. Subagent may miss files outside its scope."
 ---
 
 # LibCST Systematic Import Refactoring

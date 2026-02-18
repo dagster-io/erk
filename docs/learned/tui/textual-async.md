@@ -149,6 +149,22 @@ async with app.run_test() as pilot:
     assert app.screen_stack[-1]
 ```
 
+## Exception Handling in Background Workers (Error Boundary Pattern)
+
+When using `@work(thread=True)` for background data fetching, exceptions in the worker thread are swallowed by Textual unless explicitly handled. The approved pattern wraps the entire worker body in a try/except that calls `self.app.call_from_thread()` to report errors back to the UI thread:
+
+```python
+@work(thread=True)
+def _fetch_data(self) -> None:
+    try:
+        result = self._provider.fetch_something()
+        self.app.call_from_thread(self._on_data_loaded, result)
+    except Exception as e:
+        self.app.call_from_thread(self._on_error, str(e))
+```
+
+This is an **approved EAFP exception** for UI error boundaries — the try/except is not for control flow but for preventing silent worker failures. The `call_from_thread()` bridge ensures widget mutations happen on the UI thread.
+
 ## Related Documentation
 
 - [TUI Streaming Patterns](streaming-output.md)

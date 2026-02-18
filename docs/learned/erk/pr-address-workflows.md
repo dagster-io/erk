@@ -154,6 +154,18 @@ After the remote workflow completes, it posts (or updates) a summary comment on 
 
 The comment uses the marker `<!-- erk:pr-address-run -->` to find and update existing comments.
 
+## Classifier-to-Dash Alignment Invariant
+
+The PR feedback classifier's output must align with the TUI dashboard's unresolved comments count. Specifically, the total number of review threads reported by the classifier must equal the count shown in the TUI dashboard. Missing threads are silently dropped, so discrepancies indicate a classifier bug.
+
+## Bot Thread Inflation
+
+Bot-generated review threads (automated linting, CI notifications) inflate the `informational_count` but are expected behavior. The classifier categorizes bot threads as informational rather than actionable.
+
+## informational_count Field Semantics
+
+The `informational_count` field in classifier output covers **only** discussion comments (general PR-level comments), NOT review threads. All unresolved review threads must appear individually in `actionable_threads`. This is an important distinction: a high `informational_count` does not indicate missing actionable items.
+
 ## Related Topics
 
 - [PR Sync Workflow](pr-sync-workflow.md) - Syncing PR title/body from commits

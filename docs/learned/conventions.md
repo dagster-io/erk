@@ -15,6 +15,8 @@ tripwires:
     warning: 'Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)'
   - action: "adding a function with 5+ parameters"
     warning: "Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures and Click command callbacks."
+  - action: "editing source files directly on master branch"
+    warning: "Never edit source files on master. Even for one-line fixes, use plan-first workflow. Bypasses review, CI gates, and worktree isolation."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -164,3 +166,17 @@ In this case, use a slots-based class with underscore-prefixed internal fields. 
 - Constructor uses clean names (`session_id=`), not underscore-prefixed (`_session_id=`)
 - Internal slots use underscores (`_session_id`) to avoid shadowing properties
 - Immutability is by convention (underscore prefix signals "don't mutate"), not runtime enforcement
+
+## Single-Use Locals Line-Length Exception
+
+When a single-use local variable is introduced solely to avoid a line-length violation, prefer shortening the variable name rather than ignoring the single-use locals rule. A shorter but still descriptive name keeps the code compact without introducing an unnecessary intermediate binding:
+
+```python
+# Avoid: long variable name just to break line
+validation_result = check_objective(issue_number)
+print(validation_result)
+
+# Prefer: shorter name still readable
+result = check_objective(issue_number)
+print(result)
+```

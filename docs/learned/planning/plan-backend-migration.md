@@ -150,6 +150,23 @@ These represent opportunities for future migration.
 | `src/erk/cli/commands/exec/scripts/upload_session.py`             | LBYL pattern with partial success          |
 | `src/erk/cli/commands/exec/scripts/update_plan_remote_session.py` | LBYL pattern with error output             |
 
+## get_metadata_field Returns object | PlanNotFound
+
+`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.
+
+## Error Handling Asymmetry: get vs update
+
+`get_metadata_field()` returns `PlanNotFound` when the plan issue doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:
+
+- **get**: caller typically wants to branch on the result (display vs skip)
+- **update**: caller typically wants to report failure and continue
+
+This means get callers use LBYL branching, while update callers use LBYL with best-effort continuation.
+
+## Plan.header_fields over extract for loaded Plans
+
+When you already have a loaded `Plan` object, access header fields via `plan.header_fields` instead of re-extracting from the raw body. The `header_fields` property returns a parsed dict that avoids re-parsing the metadata block.
+
 ## Related Topics
 
 - [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) -- the broader error handling pattern

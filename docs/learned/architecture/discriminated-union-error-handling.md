@@ -290,6 +290,24 @@ def fetch() -> Result[Data, Error]: ...
 
 The union syntax is more pythonic and integrates better with isinstance checks and type narrowing.
 
+## When isinstance() Is NOT Required: Plain Optionals
+
+For return types like `T | None`, isinstance() is not needed. A simple `if result is None:` check suffices because None is not a class that could be confused with a success type. The isinstance() requirement applies specifically to discriminated unions where both variants are named types (e.g., `Data | DataNotFound`).
+
+```python
+# T | None: simple None check is fine
+result = find_next_node(graph, phases)
+if result is None:
+    return  # No next node
+
+# T | ErrorType: isinstance() required for type narrowing
+result = fetch_data()
+if isinstance(result, FetchError):
+    handle_error(result.message)
+    return
+# result is now narrowed to T
+```
+
 ## Related Documentation
 
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-place implementation pattern for gateway methods

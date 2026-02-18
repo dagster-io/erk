@@ -9,6 +9,8 @@ audit_result: clean
 tripwires:
   - action: "changing a gateway method signature"
     warning: "Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors."
+  - action: "changing erk_shared function signatures"
+    warning: "Grep all callers across full repo before committing. Missed call sites cause CI failures."
 ---
 
 # Gateway Signature Migration

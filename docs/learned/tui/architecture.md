@@ -4,6 +4,15 @@ read_when:
   - "understanding TUI structure"
   - "implementing TUI components"
   - "working with TUI data providers"
+tripwires:
+  - action: "reusing same DOM element id across loading/empty/content states"
+    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+  - action: "calling widget methods directly from @work(thread=True) background threads"
+    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+  - action: "extending PlanDataProvider ABC"
+    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+  - action: "adding a DataTable column with add_column(key=...)"
+    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
 last_audited: "2026-02-17 18:30 PT"
 audit_result: clean
 ---
@@ -56,7 +65,9 @@ The `PlanDataProvider` ABC and its fake live in `erk_shared` (not in `src/erk/tu
 
 Abstract interface for fetching plan data. Follows the same ABC/Fake pattern as gateways. Defined in `erk_shared.gateway.plan_data_provider.abc`.
 
-Key methods: `fetch_plans()`, `close_plan()`, `submit_to_queue()`, `fetch_branch_activity()`, `fetch_plan_content()`. Also exposes `repo_root`, `clipboard`, and `browser` properties. See the ABC source for the full interface.
+Key methods: `fetch_plans()`, `close_plan()`, `submit_to_queue()`, `fetch_branch_activity()`, `fetch_plan_content()`, `fetch_unresolved_comments()`. Also exposes `repo_root`, `clipboard`, and `browser` properties. See the ABC source for the full interface.
+
+The `fetch_unresolved_comments()` method returns `list[PRReviewThread]`, where each thread contains `id`, `is_resolved`, `path`, and `comments: list[PRReviewComment]`. Each comment has `body`, `author`, `created_at`, and `url` fields.
 
 ### PlanRowData
 

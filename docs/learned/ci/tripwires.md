@@ -64,6 +64,8 @@ Rules triggered by matching actions in code.
 
 **investigating a bot complaint about formatting** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Prettier is the formatting authority for markdown/YAML/JSON files. If prettier --check passes locally, dismiss the bot complaint. See docs/learned/pr-operations/automated-review-handling.md.
 
+**reading statusCheckRollup results immediately after push** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. After push, results show completed runs only, not in-progress. Wait for new check suite to appear before reading CI status.
+
 **running `git reset --hard` in workflows after staging cleanup** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. Verify all cleanup changes are committed BEFORE reset; staged changes without commit will be silently discarded.
 
 **running only prettier after editing Python files** → Read [Formatting Workflow Decision Tree](formatting-workflow.md) first. Prettier silently skips Python files. Always use 'make format' for .py files.

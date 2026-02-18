@@ -47,7 +47,7 @@ if environment is not None:
 
 Click options have implicit defaults: `required=False` and `default=None`. Omit these from decorators — they add noise without changing behavior.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:280-298 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py:313-320 -->
 
 ```python
 # WRONG - redundant defaults

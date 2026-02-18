@@ -65,6 +65,27 @@ See `nodes_from_graph()` and `phases_from_graph()` in `packages/erk-shared/src/e
 
 **Phase name limitation:** `phases_from_graph()` returns placeholder phase names. Use `enrich_phase_names()` to restore actual names from body text. See `phase-name-enrichment.md` for details.
 
+## Fallback Behavior: Pending -> In-Progress
+
+`find_graph_next_node()` (in `view_cmd.py`) applies a two-tier fallback when selecting the next actionable node:
+
+1. First, look for the first unblocked pending node via `graph.next_node()`
+2. If no pending nodes exist, fall back to the first `in_progress` node from the phase list
+
+This handles the common case where all steps have been dispatched (status = `in_progress`) but none have landed yet.
+
+## Node Discovery Function Comparison
+
+Three functions serve different next-node discovery needs:
+
+| Function                 | Location              | Dependency-Aware | Fallback to in_progress | Use Case                                   |
+| ------------------------ | --------------------- | ---------------- | ----------------------- | ------------------------------------------ |
+| `find_next_node()`       | `roadmap.py`          | No               | No                      | Position-based, for simple roadmaps        |
+| `find_graph_next_node()` | `view_cmd.py`         | Yes              | Yes                     | Display in `erk objective view`            |
+| `graph.next_node()`      | `dependency_graph.py` | Yes              | No                      | Core graph traversal, returns pending only |
+
+**Rule of thumb:** Use `graph.next_node()` for programmatic decisions (objective plan, implement). Use `find_graph_next_node()` for display contexts where showing an in-progress node is better than showing nothing.
+
 ## Usage Pattern
 
 ```python

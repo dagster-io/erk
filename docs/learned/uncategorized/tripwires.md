@@ -22,6 +22,8 @@ Rules triggered by matching actions in code.
 
 **calling os.chdir() in erk code** → Read [Universal Tripwires](universal-tripwires.md) first. After os.chdir(), regenerate context using regenerate_context().
 
+**editing source files directly on master branch** → Read [Code Conventions](conventions.md) first. Never edit source files on master. Even for one-line fixes, use plan-first workflow. Bypasses review, CI gates, and worktree isolation.
+
 **importing time module or calling time.sleep()/datetime.now()** → Read [Universal Tripwires](universal-tripwires.md) first. Use context.time.sleep() and context.time.now() for testability.
 
 **modifying business logic in src/ without adding a test** → Read [Universal Tripwires](universal-tripwires.md) first. Bug fixes require regression tests.

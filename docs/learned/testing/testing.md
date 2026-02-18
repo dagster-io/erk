@@ -15,6 +15,8 @@ tripwires:
     warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
   - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
     warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
+  - action: "asserting on YAML metadata field values with exact string matching"
+    warning: 'Assert on key-only format (''field_name:''), not ''field_name: "value"''. YAML serialization differs from Python repr.'
 ---
 
 # Erk Test Reference
@@ -350,6 +352,23 @@ When testing code that uses `shlex.quote()` for path quoting:
 - `shlex.quote()` only adds quotes for paths containing special characters (spaces, `$`, etc.)
 - Simple paths like `/tmp/foo` remain unquoted
 - Tests should not hardcode quoted paths like `'{path}'`
+
+## Legitimate Test Coverage Exclusions
+
+Not all source files require dedicated unit tests. These categories are excluded from coverage requirements:
+
+- **ABC files** (`abc.py`) — abstract definitions with no behavior to test
+- **Fake implementations** (`fake.py`) — test infrastructure, not production code
+- **Thin delegators** — modules that only forward calls to another layer
+- **Help-only commands** — CLI commands that only display help text
+
+## Private Module-Level Formatters Require Unit Tests
+
+Private formatting functions (e.g., `_format_status()`, `_build_table()`) at module level must have unit tests. They contain logic (conditional formatting, string assembly) that can break silently. Test them directly via import rather than relying on integration tests through the CLI layer.
+
+## Integration Tests Not in make fast-ci
+
+Integration tests (`tests/integration/`) are excluded from `make fast-ci` and `make test`. They run only via `make test-integration` or `make test-all`. This means changes to real gateway implementations (`real.py`) need explicit integration test runs to verify.
 
 **Wrong:**
 

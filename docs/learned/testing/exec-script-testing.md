@@ -17,6 +17,8 @@ tripwires:
   - action: "using Path.home() directly in production code"
     warning: "Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness."
     pattern: "Path\\.home\\(\\)"
+  - action: "importing or monkeypatching a module with 'exec' in its path"
+    warning: "`exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead."
 ---
 
 # Exec Script Testing Patterns

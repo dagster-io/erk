@@ -80,6 +80,8 @@ Rules triggered by matching actions in code.
 
 **creating temp files for AI workflows** → Read [Scratch Storage](scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
+**delegating batch file renames from a plan** → Read [Plan Lifecycle](lifecycle.md) first. Verify each file path exists before delegating. Wrong paths cause silent coverage gaps in rename operations.
+
 **delegating judgment steps to Haiku subagents** → Read [Command-Agent Delegation](agent-delegation.md) first. Prose reconciliation, design analysis, and architectural comparison need Opus-level reasoning. Delegating to a Haiku subagent loses quality. Also avoid delegating steps that require direct user interaction.
 
 **designing output routing for a multi-agent workflow** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Choose between embedded-prompt routing (in orchestrator Task prompts) and agent-file routing (in agent definitions). See this doc for the decision framework.
@@ -99,6 +101,8 @@ Rules triggered by matching actions in code.
 **implementing PR body generation with checkout footers** → Read [Plan Lifecycle](lifecycle.md) first. HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``
 
 **implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
+
+**importing functions directly from plan_header.py** → Read [Plan Header Privatization](plan-header-privatization.md) first. plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations.
 
 **including impl-signal or plan-save-to-issue in a Task tool sub-agent prompt** → Read [Sub-Agent Context Limitations](sub-agent-context-limitations.md) first. Sub-agents cannot access ${CLAUDE_SESSION_ID}. Session-dependent commands must run in the root agent context. See sub-agent-context-limitations.md.
 

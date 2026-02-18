@@ -105,9 +105,11 @@ The parser uses a two-tier status resolution system. For the complete specificat
 
 The parser accepts both formats but emits a validation warning for letter-format IDs. All templates now use plain numbers.
 
-## Next Step Discovery
+## Next Node Discovery
 
 `find_next_node()` returns the first step with `pending` status in phase order. This is used by `erk objective check --json-output` to populate the `next_node` field, and by `erk objective plan` to determine which step to plan next.
+
+For dependency-aware traversal, use `DependencyGraph.next_node()` instead. See [Dependency Graph Architecture](dependency-graph.md) for the three-function comparison table.
 
 ## Implementation Reference
 
