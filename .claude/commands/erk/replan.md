@@ -32,53 +32,81 @@ Store all issue numbers in a list. Set `CONSOLIDATION_MODE=true` if multiple iss
 
 If no argument provided, ask the user for the issue number.
 
-### Step 2: Validate All Plans (Parallel if Multiple)
+### Step 2: Validate Plans and Extract Metadata (Delegated)
 
-For each issue number, fetch and validate:
+Delegate all validation and metadata extraction to a single `general-purpose` haiku Task agent. This keeps the 2N bash calls (N × `get-issue-body` + N × `get-plan-metadata`) out of the main conversation context.
 
-```bash
-erk exec get-issue-body <number>
-```
+Launch a Task agent with:
 
-This returns JSON with `{success, issue_number, title, body, state, labels, url}`. Store each issue's title.
+- `subagent_type`: `general-purpose`
+- `model`: `haiku`
 
-Validate each issue:
+**Agent prompt** (adapt issue numbers from Step 1):
 
-1. Issue exists
-2. Issue has `erk-plan` label
-3. Track if issue has `erk-learn` label (for Step 7)
+> For each of the following issue numbers: [list issue numbers]
+>
+> 1. Run `erk exec get-issue-body <number>` for each issue
+> 2. Run `erk exec get-plan-metadata <number> objective_issue` for each issue
+>
+> Then return a structured summary in EXACTLY this format:
+>
+> ```
+> VALIDATION: PASS or FAIL
+> CONSOLIDATION_MODE: true or false (true if multiple issues)
+> IS_LEARN_PLAN: true or false (true if ANY issue has erk-learn label)
+>
+> ISSUES:
+> # | Title | State | erk-plan | erk-learn | objective_issue
+> <number> | <title> | <open/closed> | <yes/no> | <yes/no> | <number or none>
+> ...
+>
+> OBJECTIVE_STATUS: AGREED:<number>, AGREED:none, or CONFLICT
+>
+> ERRORS:
+> <only present if VALIDATION is FAIL, list each error>
+>
+> WARNINGS:
+> <only present if any issues are closed, list each warning>
+> ```
+>
+> Rules for OBJECTIVE_STATUS:
+>
+> - AGREED:<number> — all issues that have an objective_issue share the same value
+> - AGREED:none — no issues have an objective_issue
+> - CONFLICT — issues have different objective_issue values
+>
+> Rules for VALIDATION:
+>
+> - FAIL if any issue does not exist
+> - FAIL if any issue is missing the erk-plan label
+> - PASS otherwise (closed issues are warnings, not failures)
 
-Store whether ANY issue has the `erk-learn` label. Set `IS_LEARN_PLAN=true` if any source issue has this label.
+**After the agent returns**, parse the structured summary:
 
-If any issue is not an erk-plan issue, display error and abort:
+1. **If VALIDATION is FAIL**: Display each error and abort:
 
-```
-Error: Issue #<number> is not an erk-plan issue (missing erk-plan label).
-```
+   ```
+   Error: Issue #<number> is not an erk-plan issue (missing erk-plan label).
+   ```
 
-If any issue is already closed, display warning but continue:
+   ```
+   Error: Issue #<number> not found.
+   ```
 
-```
-Warning: Issue #<number> is already closed. Proceeding with replan anyway.
-```
+2. **If WARNINGS present**: Display each warning but continue:
 
-### Step 2.5: Extract Objective Issue
+   ```
+   Warning: Issue #<number> is already closed. Proceeding with replan anyway.
+   ```
 
-For each validated plan, extract the `objective_issue` metadata:
-
-```bash
-erk exec get-plan-metadata <number> objective_issue
-```
-
-Store the objective issue number(s) for later use when saving the new plan.
-
-**For single plan:** Use the `objective_issue` if present.
-
-**For consolidation mode:**
-
-- If all plans share the same `objective_issue`, use it
-- If plans have different `objective_issues`, warn the user and ask which to use
-- If only some plans have `objective_issues`, use the one(s) that exist
+3. **Store extracted data**:
+   - `IS_LEARN_PLAN` from the summary
+   - `CONSOLIDATION_MODE` from the summary
+   - Each issue's title (from the ISSUES table)
+   - Resolved `objective_issue`:
+     - If OBJECTIVE_STATUS is `AGREED:<number>`, use that number
+     - If OBJECTIVE_STATUS is `AGREED:none`, no objective
+     - If OBJECTIVE_STATUS is `CONFLICT`, ask the user which objective to use
 
 ### Step 3: Plan Content Fetching (Delegated to Step 4)
 
@@ -363,7 +391,7 @@ After the user approves the plan in Plan Mode:
 2. Run `/erk:plan-save` to create the new GitHub issue:
    - **If any source plan(s) had `erk-learn` label** (`IS_LEARN_PLAN=true`): Add `--plan-type=learn` to the command
    - **If the source plan(s) had an `objective_issue`**: Pass it with `--objective-issue=<objective_number>`
-   - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2.5
+   - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2
    - **Otherwise**: Run `/erk:plan-save` without flags
 3. **If `--objective-issue` was used**, verify the link was saved correctly:
    ```bash
