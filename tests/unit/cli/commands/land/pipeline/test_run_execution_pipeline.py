@@ -15,13 +15,14 @@ from erk.cli.commands.land_pipeline import (
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _make_plan_backend() -> GitHubPlanStore:
-    return GitHubPlanStore(FakeGitHub())
+    return GitHubPlanStore(FakeGitHubIssues())
 
 
 def _make_pr_details(
