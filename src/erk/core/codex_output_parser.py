@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
 from pathlib import Path
 
 from erk.core.output_filter import extract_pr_metadata_from_text
@@ -29,19 +28,18 @@ from erk_shared.core.prompt_executor import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class CodexParserState:
     """Mutable state accumulated across JSONL lines.
 
-    This is explicitly NOT frozen — it is mutable parsing state passed by
-    reference across parse_codex_jsonl_line() calls. This is the standard
-    pattern for stateful stream parsing.
+    Plain class (not a dataclass) because this is mutable parsing state passed
+    by reference across parse_codex_jsonl_line() calls.
     """
 
-    thread_id: str | None = None
-    saw_any_items: bool = False
-    saw_any_text: bool = False
-    _item_commands: dict[str, str] = field(default_factory=dict)
+    def __init__(self) -> None:
+        self.thread_id: str | None = None
+        self.saw_any_items: bool = False
+        self.saw_any_text: bool = False
+        self._item_commands: dict[str, str] = {}
 
 
 def parse_codex_jsonl_line(
