@@ -174,6 +174,7 @@ def learn_cmd(
             ctx.claude_installation,
             ctx.cwd,
             limit=10,
+            issue_number=issue_number,
         )
         # Get paths for local sessions
         for sid in local_session_ids:
