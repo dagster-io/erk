@@ -7,16 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- as-of: 941896b47 -->
+<!-- as-of: 8442713b3 -->
+
+### Major Changes
+
+- Overhaul objective vocabulary and structure toward graph-based model: rename 'step' to 'node' with schema v3, merge `objective inspect` into `objective view` with dependency graph display, rename `objective-implement` to `objective-plan`, and fix node status validation (ff55ce0, e45e1c6, 861c7a0, 7fa81768, 04bb893, 5210dcf, 97bec22)
+
+### Added
+
+- Add `erk admin gh-actions-api-key` command for managing GitHub Actions API key secrets (374ea93)
+- Add Claude inference kill switch via `CLAUDE_ENABLED` repository variable (2effff7)
+- Add `--up` option to `erk stack consolidate` for upstack-only consolidation (09cca66)
+- Add `--file` option to `erk one-shot` for passing long instructions via file (5e7f89d)
 
 ### Changed
 
 - Refresh workspace packages automatically on activation to keep CLI current across worktree switches (0393f9f)
+- Rename `objective-implement` command to `objective-plan` to reflect planning-focused purpose (04bb893)
+- Canonicalize branch naming to encode objective IDs consistently across submit and one-shot codepaths (c524572)
+- Add "Closes #N" reference to one-shot dispatch PR bodies at creation time for immediate TUI linkage (5457b02)
 
 ### Fixed
 
 - Fix plan reference loss when updating objective roadmap steps with PR numbers (456902a)
 - Fix `learned-docs` capability installation check to require all three directories and preserve user documentation on uninstall (5dc1e52)
+- Fix local session fallback in `/erk:learn` to filter by branch name, preventing unrelated sessions from other branches (97bb0ad)
+- Fix missing `branch_name` in plan-header metadata causing PR lookup failure during async learn (7be24b2)
+- Fix `erk-remote-setup` GitHub Action to accept either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` instead of requiring both (08cf227)
 
 ## [0.7.4] - 2026-02-16 05:33 PT
 
