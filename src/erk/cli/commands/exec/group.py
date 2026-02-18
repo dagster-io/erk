@@ -79,6 +79,9 @@ from erk.cli.commands.exec.scripts.list_sessions import list_sessions
 from erk.cli.commands.exec.scripts.mark_impl_ended import mark_impl_ended
 from erk.cli.commands.exec.scripts.mark_impl_started import mark_impl_started
 from erk.cli.commands.exec.scripts.marker import marker
+from erk.cli.commands.exec.scripts.migrate_objective_schema import (
+    migrate_objective_schema,
+)
 from erk.cli.commands.exec.scripts.normalize_tripwire_candidates import (
     normalize_tripwire_candidates,
 )
@@ -230,6 +233,7 @@ exec_group.add_command(list_sessions, name="list-sessions")
 exec_group.add_command(mark_impl_ended, name="mark-impl-ended")
 exec_group.add_command(mark_impl_started, name="mark-impl-started")
 exec_group.add_command(marker, name="marker")
+exec_group.add_command(migrate_objective_schema, name="migrate-objective-schema")
 exec_group.add_command(normalize_tripwire_candidates, name="normalize-tripwire-candidates")
 exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
