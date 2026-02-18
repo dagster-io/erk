@@ -76,7 +76,7 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
-from erk_shared.plan_store import PLAN_BACKEND
+from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
@@ -598,10 +598,10 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
     github: GitHub = RealGitHub(time, repo_info, issues=issues)
 
-    # Select plan backend based on constant
+    # Select plan backend based on env var
     plan_store: PlanStore
     plan_list_service: PlanListService
-    if PLAN_BACKEND == "draft_pr":
+    if get_plan_backend() == "draft_pr":
         plan_store = DraftPRPlanBackend(github)
         plan_list_service = DraftPRPlanListService(github)
     else:

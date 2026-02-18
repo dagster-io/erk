@@ -32,7 +32,7 @@ from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.plan_store import PLAN_BACKEND
+from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.store import PlanStore
 
@@ -75,7 +75,7 @@ def context_for_test(
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
         plan_store: Optional PlanStore. If None, creates GitHubPlanStore or
-            DraftPRPlanBackend based on PLAN_BACKEND constant.
+            DraftPRPlanBackend based on ERK_PLAN_BACKEND env var.
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -183,7 +183,7 @@ def context_for_test(
     resolved_plan_store: PlanStore
     if plan_store is not None:
         resolved_plan_store = plan_store
-    elif PLAN_BACKEND == "draft_pr":
+    elif get_plan_backend() == "draft_pr":
         resolved_plan_store = DraftPRPlanBackend(resolved_github)
     else:
         resolved_plan_store = GitHubPlanStore(resolved_issues, fake_time)
