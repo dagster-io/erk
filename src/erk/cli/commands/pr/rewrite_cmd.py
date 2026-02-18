@@ -86,7 +86,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
 
     pr_number = pr_info.number
 
-    click.echo(click.style("📝 Rewriting PR...", bold=True))
+    click.echo(click.style("📝 Rewriting PR title and description...", bold=True))
     click.echo("")
 
     # Phase 2: Squash commits (idempotent)
@@ -199,7 +199,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     cleanup_diff_file(diff_file)
 
     click.echo("")
-    click.echo(f"✅ PR rewritten: {title}")
+    click.echo(f"✅ PR title and description updated: {title}")
 
 
 def _run_squash(

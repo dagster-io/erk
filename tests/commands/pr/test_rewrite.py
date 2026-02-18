@@ -122,7 +122,7 @@ def test_pr_rewrite_happy_path() -> None:
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
 
         assert result.exit_code == 0, result.output
-        assert "PR rewritten" in result.output
+        assert "PR title and description updated" in result.output
         assert "Add awesome feature" in result.output
 
         # Verify commit was amended
@@ -158,7 +158,7 @@ def test_pr_rewrite_already_single_commit() -> None:
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
 
         assert result.exit_code == 0, result.output
-        assert "PR rewritten" in result.output
+        assert "PR title and description updated" in result.output
 
 
 def test_pr_rewrite_fails_when_no_pr() -> None:
