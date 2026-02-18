@@ -23,6 +23,7 @@ erk exec migrate-objective-schema <number> --dry-run
 ```
 
 Parse the JSON output. Categorize each objective into:
+
 - **Needs migration**: `migrated: true` (currently v2)
 - **Already v3**: `migrated: false` (nothing to do)
 - **Error**: `success: false` (report the error)

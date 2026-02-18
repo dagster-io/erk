@@ -54,6 +54,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker delete`                   | Delete a marker file.                                                      |
 | `marker exists`                   | Check if a marker file exists.                                             |
 | `marker read`                     | Read content from a marker file.                                           |
+| `migrate-objective-schema`        | Migrate an objective's roadmap YAML from schema v2 to v3.                  |
 | `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                 |
 | `objective-fetch-context`         | Fetch all context for objective update in a single call.                   |
 | `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                     |
@@ -710,6 +711,24 @@ Read content from a marker file.
 | Flag           | Type | Required | Default | Description                              |
 | -------------- | ---- | -------- | ------- | ---------------------------------------- |
 | `--session-id` | TEXT | No       | -       | Session ID for marker storage (required) |
+
+### migrate-objective-schema
+
+Migrate an objective's roadmap YAML from schema v2 to v3.
+
+**Usage:** `erk exec migrate-objective-schema` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag        | Type | Required | Default | Description              |
+| ----------- | ---- | -------- | ------- | ------------------------ |
+| `--dry-run` | FLAG | No       | -       | Preview without updating |
 
 ### normalize-tripwire-candidates
 
