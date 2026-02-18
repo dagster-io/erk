@@ -33,7 +33,6 @@ def _format_threads(threads: list[PRReviewThread]) -> str:
             # Format: **author** · date
             date_part = first_comment.created_at[:10] if first_comment.created_at else ""
             meta = f"**{first_comment.author}** · {date_part}"
-            body = first_comment.body
 
             reply_count = len(thread.comments) - 1
             if reply_count > 0:
@@ -41,7 +40,7 @@ def _format_threads(threads: list[PRReviewThread]) -> str:
             else:
                 reply_note = ""
 
-            parts.append(f"{header}\n{meta}\n\n{body}{reply_note}\n\n---")
+            parts.append(f"{header}\n{meta}\n\n{first_comment.body}{reply_note}\n\n---")
         else:
             parts.append(f"{header}\n\n*(empty thread)*\n\n---")
 
@@ -108,6 +107,11 @@ class UnresolvedCommentsScreen(ModalScreen):
     }
 
     #comments-loading {
+        color: $text-muted;
+        text-style: italic;
+    }
+
+    #comments-empty {
         color: $text-muted;
         text-style: italic;
     }
@@ -191,12 +195,11 @@ class UnresolvedCommentsScreen(ModalScreen):
         container = self.query_one("#comments-content-container", Container)
 
         # Remove the loading label
-        loading_label = container.query_one("#comments-loading", Label)
-        loading_label.remove()
+        container.query_one("#comments-loading", Label).remove()
 
         if error is not None:
             container.mount(Label(f"Error: {error}", id="comments-error"))
         elif threads:
             container.mount(Markdown(_format_threads(threads), id="comments-content"))
         else:
-            container.mount(Label("(No unresolved comments found)", id="comments-loading"))
+            container.mount(Label("(No unresolved comments found)", id="comments-empty"))
