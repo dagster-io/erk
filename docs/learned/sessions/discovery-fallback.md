@@ -70,18 +70,22 @@ The `erk exec list-sessions` command returns a JSON object. Key structure:
 
 When a learn workflow needs session data, the ideal source (planning session) is often unavailable because it was created in a different Claude Code session. The discovery system degrades through multiple levels rather than failing.
 
-| Priority | Source                    | How discovered                                              | Why it might be missing                                             |
-| -------- | ------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
-| 1        | Planning session          | `created_from_session` in plan-header                       | Created in a prior Claude Code session, since cleaned up            |
-| 2        | Implementation session    | `last_local_impl_session` in plan-header + issue comments   | Same reason — different session lifecycle                           |
-| 3        | Remote session (gist)     | `last_session_gist_url` in plan-header                      | Gist may have been deleted; requires download step                  |
-| 4        | Remote session (artifact) | `last_remote_impl_run_id` in plan-header                    | Legacy path; GitHub Actions artifacts expire after 90 days          |
-| 5        | Local fallback scan       | `find_local_sessions_for_project()` scans project directory | No metadata link to plan, but recent sessions may still be relevant |
-| 6        | Skip analysis             | Always available                                            | Produces no session insights, but workflow continues                |
+| Priority | Source                    | How discovered                                                                          | Why it might be missing                                             |
+| -------- | ------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1        | Planning session          | `created_from_session` in plan-header                                                   | Created in a prior Claude Code session, since cleaned up            |
+| 2        | Implementation session    | `last_local_impl_session` in plan-header + issue comments                               | Same reason — different session lifecycle                           |
+| 3        | Remote session (gist)     | `last_session_gist_url` in plan-header                                                  | Gist may have been deleted; requires download step                  |
+| 4        | Remote session (artifact) | `last_remote_impl_run_id` in plan-header                                                | Legacy path; GitHub Actions artifacts expire after 90 days          |
+| 5        | Local fallback scan       | `find_local_sessions_for_project()` scans project directory, filtered by current branch | No metadata link to plan, but recent sessions may still be relevant |
+| 6        | Skip analysis             | Always available                                                                        | Produces no session insights, but workflow continues                |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/get_learn_sessions.py, _discover_sessions -->
 
 The fallback logic is implemented in `_discover_sessions()` in `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`. The critical design decision: local fallback scanning only triggers when **no** GitHub-tracked sessions are readable on disk, preventing noisy irrelevant sessions from diluting plan-specific results.
+
+### Branch Filtering in Local Fallback
+
+When the local fallback scan activates, sessions are filtered by the current git branch name. Each session's JSONL log contains a `gitBranch` field, and only sessions whose branch matches the current worktree branch are included. This prevents worktree slot reuse from contaminating results — when a worktree is reused for a different plan, old sessions from a previous branch are excluded even though they exist in the same project directory.
 
 ### Anti-pattern: Hard failure on missing session
 

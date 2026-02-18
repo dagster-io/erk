@@ -86,6 +86,17 @@ Don't assume a critical operation succeeded. Add an explicit verification step t
 
 See `.github/actions/check-worker-impl/action.yml` for an example: the composite action checks whether `.worker-impl/` exists and exposes a `skip` output, allowing downstream steps to react to unexpected state.
 
+## Case Study: .worker-impl/ Master Pollution
+
+Root cause chain for `.worker-impl/` appearing on master:
+
+1. Agent committed `.worker-impl/` during implementation (instructions say not to, but agent behavior is non-deterministic)
+2. PR merged to master with `.worker-impl/` included
+3. All subsequent worktrees created from master inherit the polluted `.worker-impl/`
+4. Prettier CI checks fail on `.worker-impl/plan.md` in unrelated PRs
+
+**Fix**: Added deterministic pre-implementation cleanup step in the CI workflow (`git rm -rf .worker-impl/ && git commit`) that runs before the agent starts, regardless of agent instructions. This is the multi-layer resilience pattern: workflow guarantees what agents cannot.
+
 ## Related Documentation
 
 - [Defense-in-Depth Enforcement](../architecture/defense-in-depth-enforcement.md) — The broader pattern of multi-layer enforcement with reliability hierarchy

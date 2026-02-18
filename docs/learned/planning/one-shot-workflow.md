@@ -109,11 +109,28 @@ concurrency:
 
 `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs three independent operations that `erk plan submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
 
-1. **Dispatch metadata** -- writes `run_id`, `node_id`, `dispatched_at` to the plan issue's `plan-header` metadata block via `write_dispatch_metadata()` from `src/erk/cli/commands/pr/metadata_helpers.py`
+1. **Dispatch metadata** -- the primary metadata source is the CLI dispatch (`write_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py`), with CI registration as a fallback. Writes `run_id`, `node_id`, `dispatched_at` to the plan issue's `plan-header` metadata block.
 2. **Queued comment** -- adds a "Queued for Implementation" emoji comment to the issue with PR link and workflow run URL
 3. **PR closing reference** -- updates the PR body with `Closes #N` to enable auto-close on merge
 
 The command outputs JSON results for each operation with success/error details.
+
+### PR Closing Reference (Timing Constraint)
+
+The `Closes #N` reference must be in the initial PR body at creation time, not added via a post-creation update. GitHub's `willCloseTarget` behavior is evaluated at PR creation — adding it later does not enable auto-close. The one-shot dispatch handles this by including the closing reference in the initial `create_pr()` call.
+
+### Dispatch Metadata Two-Phase Write
+
+Dispatch metadata is written in two phases:
+
+1. **At dispatch time** (CLI): `write_dispatch_metadata()` writes `dispatched_at`, `run_id`, `node_id` immediately after workflow trigger
+2. **At registration time** (CI): `register_one_shot_plan.py` writes any remaining fields that weren't available at dispatch time
+
+The CLI write is the primary source; CI registration fills gaps when the CLI couldn't complete (e.g., network failure during dispatch).
+
+### Divergence Risk: One-Shot vs Plan-Submit
+
+One-shot dispatch and `erk plan submit` both push branches and create PRs, but one-shot uses force-push (squash) while plan-submit may use regular push. After a one-shot dispatch, the local branch may diverge from remote. Always `git pull --rebase` before making local changes to a one-shot branch.
 
 ## Claude Planning Command
 

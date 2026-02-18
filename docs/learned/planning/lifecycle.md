@@ -19,6 +19,8 @@ tripwires:
     warning: "HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``"
   - action: "calling commands that depend on `.impl/plan-ref.json` metadata"
     warning: "Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json."
+  - action: "delegating batch file renames from a plan"
+    warning: "Verify each file path exists before delegating. Wrong paths cause silent coverage gaps in rename operations."
 ---
 
 # Plan Lifecycle

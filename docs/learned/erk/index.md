@@ -13,6 +13,7 @@
 - **[placeholder-branches.md](placeholder-branches.md)** — working with worktree pool slots or slot commands, understanding why placeholder branches bypass BranchManager, debugging slot cleanup during erk land
 - **[pr-address-workflows.md](pr-address-workflows.md)** — addressing PR review comments, choosing between local and remote PR addressing, understanding erk launch pr-address, understanding /erk:pr-address command
 - **[pr-commands.md](pr-commands.md)** — generating or modifying PR body footers, debugging `erk pr check` footer validation failures
+- **[pr-feedback-classifier-schema.md](pr-feedback-classifier-schema.md)** — working with PR feedback classification output, debugging classifier-to-dash alignment issues, understanding informational_count vs actionable_threads
 - **[pr-sync-workflow.md](pr-sync-workflow.md)** — synchronizing a PR with Graphite, after erk pr checkout, enabling gt commands on external PR
 - **[remote-workflow-template.md](remote-workflow-template.md)** — creating a new remote workflow command, triggering GitHub Actions from CLI, building commands like erk launch pr-address
 - **[slot-pool-architecture.md](slot-pool-architecture.md)** — understanding slot pool design, implementing slot-related features, debugging slot assignment issues

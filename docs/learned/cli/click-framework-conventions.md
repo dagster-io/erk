@@ -49,6 +49,17 @@ When combining `default=None` with type constraints:
 
 Click validates the type only when the option is provided. With `default=None`, an unprovided option stays `None` without triggering type validation.
 
+## is_flag=True Carve-Out
+
+The "no non-None defaults" rule applies only to value options, not boolean flags. `is_flag=True` options have an implicit `default=False` which is correct Click convention:
+
+```python
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation")
+@click.option("--json-output", is_flag=True, help="Output as JSON")
+```
+
+Boolean flags are not three-state — they are either present (True) or absent (False). The `default=None` convention is for value options that need to distinguish "not provided" from "explicitly set."
+
 ## Related Documentation
 
 - [Command Organization](command-organization.md) — CLI command structure and verb placement

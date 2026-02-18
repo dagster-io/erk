@@ -13,6 +13,8 @@ tripwires:
     warning: "Structural validation (phase headers, table format) belongs in roadmap.py (packages/erk-shared). check_cmd.py handles semantic validation only."
   - action: "raising exceptions from validate_objective()"
     warning: "validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (_output_json, _output_human) raise SystemExit."
+  - action: "checking allowed-status tuples without terminal states"
+    warning: "Always include `done` and `skipped` in allowed-status checks. Omitting terminal states produces false positives for completed nodes."
 ---
 
 # Objective Check Command — Semantic Validation
@@ -35,13 +37,13 @@ This separation exists because structural parsing is shared across consumers —
 
 ## Why Each Semantic Check Exists
 
-| Check                 | Why it matters                                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `erk-objective` label | Prevents running check on plan issues or random issues that happen to contain markdown tables                       |
-| Roadmap parses        | Early exit — no point running semantic checks on unparseable content                                                |
-| Status/PR consistency | Catches stale status after manual table edits (someone adds a PR reference but forgets to update the Status column) |
-| No orphaned done      | Catches typos where someone marks a step done but forgets to add the PR number                                      |
-| Sequential phases     | Catches copy-paste errors (duplicate phase numbers, out-of-order phases)                                            |
+| Check                 | Why it matters                                                                                                                                                                                                                                                                          |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `erk-objective` label | Prevents running check on plan issues or random issues that happen to contain markdown tables                                                                                                                                                                                           |
+| Roadmap parses        | Early exit — no point running semantic checks on unparseable content                                                                                                                                                                                                                    |
+| Status/PR consistency | Catches stale status after manual table edits (someone adds a PR reference but forgets to update the Status column). Allowed statuses for nodes with plan references: `in_progress`, `done`, `planning`, `skipped`. Note: `done` + plan-ref is the expected end state after a PR lands. |
+| No orphaned done      | Catches typos where someone marks a step done but forgets to add the PR number                                                                                                                                                                                                          |
+| Sequential phases     | Catches copy-paste errors (duplicate phase numbers, out-of-order phases)                                                                                                                                                                                                                |
 
 The status/PR consistency check is particularly important because the [two-tier status system](roadmap-status-system.md) allows both explicit and inferred status. When a human manually edits a table, they can create contradictions that the parser silently accepts — for example, a step with PR `#123` but explicit status `pending`. The parser respects the explicit status (by design), but the check command flags the contradiction.
 

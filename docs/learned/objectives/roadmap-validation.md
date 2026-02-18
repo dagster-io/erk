@@ -52,9 +52,9 @@ The semantic checks in `validate_objective()` enforce invariants that connect th
 
 These invariants interact with the status inference system documented in [Roadmap Status System](roadmap-status-system.md). The update command avoids violating invariant #1 by resetting the status cell to `-` when changing the PR cell, letting inference derive the correct status.
 
-<!-- Source: update_roadmap_step.py, _replace_step_refs_in_body -->
+<!-- Source: update_objective_node.py, _replace_node_refs_in_body -->
 
-See `_replace_step_refs_in_body()` in `update_roadmap_step.py` for the status-reset-on-update logic.
+See `_replace_node_refs_in_body()` in `update_objective_node.py` for the status-reset-on-update logic.
 
 ## Anti-Patterns
 
@@ -80,9 +80,9 @@ This is why `validate_objective()` returns `ObjectiveValidationError` (couldn't 
 
 - Semantic validation: `validate_objective()` in `check_cmd.py`
 
-<!-- Source: update_roadmap_step.py, update_roadmap_step -->
+<!-- Source: update_objective_node.py, update_objective_node -->
 
-- Update-time validation: `update_roadmap_step()` in `update_roadmap_step.py`
+- Update-time validation: `update_objective_node()` in `update_objective_node.py`
 
 ## Related Documentation
 

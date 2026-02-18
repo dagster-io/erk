@@ -136,6 +136,16 @@ The `/repos/{owner}/{repo}/codespaces/machines` endpoint returns HTTP 500 for ce
 
 <!-- Source: src/erk/cli/commands/codespace/setup_cmd.py, default machine type selection -->
 
+## PR Closing Reference Timing
+
+GitHub's `willCloseTarget` behavior is evaluated at PR creation time. Adding a `Closes #N` reference via a post-creation body update does **not** enable auto-close. The closing reference must be present in the initial `create_pr()` call body.
+
+This affects one-shot dispatch and any workflow that creates a PR then later wants to link it to a plan issue. The registration step must ensure the closing reference is in the initial body, not appended afterward.
+
+## Hardcoded --repo Flag Returns Empty Output
+
+When using `gh api` with a hardcoded `--repo` flag (e.g., `--repo owner/repo`), the flag may silently return empty output if the repo format doesn't match what gh expects. Prefer letting gh infer the repo from the current git remote, or use the full API URL path (`repos/owner/repo/...`) instead.
+
 ## Cross-References
 
 - [GitHub API Diagnostics](github-api-diagnostics.md) — Repository-specific diagnostic methodology for GitHub API failures

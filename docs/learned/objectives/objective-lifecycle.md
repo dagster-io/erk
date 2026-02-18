@@ -12,6 +12,10 @@ tripwires:
     warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
   - action: "updating roadmap step in only one location (frontmatter or table)"
     warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically."
+  - action: "using erk objective inspect"
+    warning: "inspect command was removed in PR #7385. Use `erk objective view` or `/local:objective-view` instead."
+  - action: "running objective-fetch-context on master without --branch"
+    warning: "Auto-discovery fails on non-plan branches. Pass `--branch` explicitly when on master."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
 ---
@@ -442,7 +446,7 @@ No LLM inference or heuristics are involved. Only steps explicitly tagged with t
     "phases": [...],
     "matched_steps": [...],
     "summary": "...",
-    "next_step": "1.3",
+    "next_node": "1.3",
     "all_complete": false
   }
 }

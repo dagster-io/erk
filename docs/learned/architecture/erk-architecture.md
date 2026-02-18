@@ -1091,6 +1091,38 @@ except Exception:
 
 See [Stub PR Workflow Link](../pr-operations/stub-pr-workflow-link.md) for a real-world example of this pattern.
 
+## Constructor Call Site Inlining
+
+Extension to the single-use locals rule: when a constructor is called only once and its arguments are clear, inline the construction at the call site rather than assigning to a local variable first. This reduces scope pollution:
+
+```python
+# Prefer: inline construction
+return PipelineResult(status="success", output=formatted)
+
+# Avoid: unnecessary local
+result = PipelineResult(status="success", output=formatted)
+return result
+```
+
+## Hoist Scalar Derivation Above Branching Calls
+
+When a scalar value (branch name, issue number) is needed by multiple code paths, compute it once at the top of the function before the branching logic. This prevents duplicated derivation in each branch:
+
+```python
+def process(ctx: ErkContext) -> None:
+    # Hoist: compute once before branching
+    branch = ctx.git.branch.get_current_branch(ctx.cwd)
+
+    if condition_a:
+        do_thing_a(branch)
+    else:
+        do_thing_b(branch)
+```
+
+## Always Get Current Branch Unconditionally at Function Top
+
+Related to hoisting: when a function may need the current branch, always fetch it at the top of the function body. Don't defer the call to inside a conditional branch — this leads to duplicated calls or missed branches.
+
 ## Design Principles
 
 These patterns reflect erk's core design principles:

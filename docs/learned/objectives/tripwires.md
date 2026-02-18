@@ -32,6 +32,8 @@ Rules triggered by matching actions in code.
 
 **changing update_node_in_frontmatter() semantics for plan=None** → Read [Plan Reference Preservation in Roadmap Updates](plan-reference-preservation.md) first. plan=None means 'preserve existing value', not 'clear'. This three-state pattern (None=preserve, ''=clear, '#NNN'=set) is used by both CLI and gateway. Changing it breaks preservation.
 
+**checking allowed-status tuples without terminal states** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Always include `done` and `skipped` in allowed-status checks. Omitting terminal states produces false positives for completed nodes.
+
 **creating a learned doc that rephrases an objective's action comment lessons** → Read [Documentation Capture from Objective Work](research-documentation-integration.md) first. Objectives already capture lessons in action comments. Only create a learned doc when the insight is reusable beyond this specific objective.
 
 **creating a new roadmap data type without using frozen dataclass** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. RoadmapNode and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern.
@@ -60,6 +62,8 @@ Rules triggered by matching actions in code.
 
 **raising exceptions from validate_objective()** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (\_output_json, \_output_human) raise SystemExit.
 
+**running objective-fetch-context on master without --branch** → Read [Objective Lifecycle](objective-lifecycle.md) first. Auto-discovery fails on non-plan branches. Pass `--branch` explicitly when on master.
+
 **storing objective content directly in the issue body** → Read [Objective v2 Storage Format](objective-storage-format.md) first. Objective content goes in the first comment (objective-body block), not the issue body. The issue body holds only metadata blocks (objective-header, objective-roadmap).
 
 **treating status as a single-source value** → Read [Roadmap Status System](roadmap-status-system.md) first. Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns.
@@ -69,6 +73,8 @@ Rules triggered by matching actions in code.
 **using None/empty string interchangeably in update-objective-node parameters** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values.
 
 **using ObjectiveValidationSuccess.graph without checking issue_body for enrichment** → Read [Dependency Graph Architecture](dependency-graph.md) first. ObjectiveValidationSuccess includes issue_body specifically for phase name enrichment. Pass result.issue_body to enrich_phase_names() when you need phase names in display contexts.
+
+**using erk objective inspect** → Read [Objective Lifecycle](objective-lifecycle.md) first. inspect command was removed in PR #7385. Use `erk objective view` or `/local:objective-view` instead.
 
 **using find_next_node() for dependency-aware traversal** → Read [Dependency Graph Architecture](dependency-graph.md) first. Use DependencyGraph.next_node() instead. find_next_node() is position-based and ignores dependencies.
 

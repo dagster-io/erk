@@ -18,7 +18,7 @@ When updating a roadmap step's PR reference, the plan reference must not be sile
 
 ## The Failure Mode
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:353-368 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py:353-368 -->
 
 The `update-objective-node` exec script accepts `--plan` and `--pr` flags. Before the fix, calling `--pr #123` without `--plan` would set the PR but leave `plan=None`, which the gateway interpreted as "clear the plan field." This silently erased the plan reference.
 

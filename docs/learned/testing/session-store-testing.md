@@ -4,6 +4,9 @@ read_when:
   - "testing code that reads session data"
   - "using FakeClaudeInstallation"
   - "mocking session ID lookup"
+tripwires:
+  - action: "creating FakeSessionData without gitBranch JSONL"
+    warning: "Missing `gitBranch` field causes silent empty results from branch-filtered discovery. Always include gitBranch in fake session data."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
 ---

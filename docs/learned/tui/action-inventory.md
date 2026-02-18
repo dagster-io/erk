@@ -73,6 +73,24 @@ Six commands are registered for the Objectives view, spanning all three categori
 
 Objective commands use `_is_objectives_view(ctx)` as their view predicate, ensuring they only appear when the Objectives tab is active. Shortcuts are safely reused from plan commands because the view predicates guarantee mutual exclusivity. See [View-Aware Command Filtering](view-aware-commands.md) for the full filtering mechanism.
 
+## Key Binding: view_comments
+
+The `view_comments` action (`c` key) opens a modal screen displaying unresolved PR review comments. It follows the three-layer LBYL guard pattern before launching the modal:
+
+```python
+def action_view_comments(self) -> None:
+    row = self._get_selected_row()
+    if row is None:
+        return
+    if row.pr_number is None:
+        return
+    if row.unresolved_count is None or row.unresolved_count == 0:
+        return
+    self.push_screen(UnresolvedCommentsScreen(row))
+```
+
+This demonstrates the guard pattern: check data availability at each level (row exists, PR exists, comments exist) before attempting the operation. No exceptions, no error messages for expected empty states.
+
 ## Cross-Frontend Command Reuse
 
 The registry serves as a shared contract between the TUI and desktop dashboard:

@@ -75,6 +75,8 @@ See `find_sessions_for_plan()` in `packages/erk-shared/src/erk_shared/sessions/d
 
 Local fallback scanning (implemented in `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`) only triggers when **no** GitHub-tracked sessions are readable on disk. This is intentional: local scan results have no confirmed relationship to the plan, so mixing them with plan-tracked sessions would dilute signal. They're a last resort, not a supplement.
 
+When the local fallback triggers, it filters sessions by the current git branch to prevent worktree slot reuse contamination. Worktree slots are reused for different plans over time, so older sessions in the same project directory may belong to an entirely different branch. The `gitBranch` field in each session's JSONL log is matched against the current worktree branch to exclude stale sessions.
+
 ## Graceful Degradation Hierarchy
 
 When a workflow needs session data, it walks a priority-ordered hierarchy. Each level represents less certainty about plan relevance but still provides value.

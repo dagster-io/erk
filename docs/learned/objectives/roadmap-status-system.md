@@ -79,6 +79,24 @@ This creates a subtle trap: if you update the PR cell **without using the comman
 
 The `erk objective check` command validates status/PR consistency after parsing. It flags cases where explicit status contradicts the PR column — for example, a step with PR `#123` but status `pending`. Steps with a PR are expected to be `in_progress` (PR open) or `done` (PR merged); other statuses like `pending` usually indicate a forgotten status update rather than an intentional override.
 
+## Inference Rules vs Validity Constraints
+
+Status inference (Tier 2) determines what status _should be_ from PR/plan columns. Validity constraints (check command) determine what combinations are _allowed_. These are distinct:
+
+- **Inference**: "Status is `-`, PR is `#123` → infer `in_progress`"
+- **Validity**: "Status is `done` with `plan: #456` → flag as potentially inconsistent"
+
+### Valid Plan Reference States
+
+A node with a plan reference (`plan: #NNN`) can validly be in these statuses:
+
+- `in_progress` — actively being worked on
+- `done` — PR has landed (this is the expected end state after `objective-update-with-landed-pr`)
+- `planning` — dispatched for autonomous planning
+- `skipped` — explicitly marked as no longer needed
+
+A `done` node with a plan reference is normal — it means the plan produced a PR that has since landed.
+
 ## When to Use Each Tier
 
 | Situation                             | Approach                                | Why                                             |

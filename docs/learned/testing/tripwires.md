@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
 
+**asserting on YAML metadata field values with exact string matching** → Read [Erk Test Reference](testing.md) first. Assert on key-only format ('field_name:'), not 'field_name: "value"'. YAML serialization differs from Python repr.
+
 **asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`** → Read [Erk Test Reference](testing.md) first. Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper.
 
 **calling get_bundled_claude_dir() inside a testable function** → Read [Bundled Path Parameter Injection for Testability](parameter-injection-pattern.md) first. Accept bundled_claude_dir as a parameter instead. Production callers pass get_bundled_claude_dir(), tests pass tmp_path / 'bundled'. Read this doc.
@@ -36,11 +38,15 @@ Rules triggered by matching actions in code.
 
 **creating ErkPackageInfo directly in production code** → Read [ErkPackageInfo Value Object](erk-package-info-pattern.md) first. Use ErkPackageInfo.from_project_dir(). Direct construction is for tests only.
 
+**creating FakeSessionData without gitBranch JSONL** → Read [Testing with FakeClaudeInstallation](session-store-testing.md) first. Missing `gitBranch` field causes silent empty results from branch-filtered discovery. Always include gitBranch in fake session data.
+
 **creating a FakePlanBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHubIssues injected into GitHubPlanStore. Fake backends are only for validating ABC contract across providers.
 
 **creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
 
 **creating a fake that uses **init** when frozen dataclass would work** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses **init** because it has 30+ constructor params. Choose based on complexity.
+
+**creating custom FakeGitHubIssues without passing to build_workspace_test_context** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
 
 **creating inline PlanRow test data with all fields** → Read [Erkdesk Component Test Architecture](erkdesk-component-testing.md) first. Use the makePlan() factory with Partial<PlanRow> overrides. PlanRow has 18+ fields; inline objects go stale when the type changes. See any test file for the pattern.
 
@@ -55,6 +61,8 @@ Rules triggered by matching actions in code.
 **implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
 
 **importing FakePromptExecutor from erk_shared.gateway.prompt_executor.fake** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.core.fakes instead.
+
+**importing or monkeypatching a module with 'exec' in its path** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. `exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead.
 
 **mocking a browser API in an individual test file** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. Environment-level API stubs belong in setup.ts (runs before all tests), not in individual test files. Only mock behavior-specific values (like IPC responses) per-test.
 
