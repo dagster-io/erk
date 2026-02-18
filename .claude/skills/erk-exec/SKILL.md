@@ -42,7 +42,8 @@ When working with erk-plan issues:
 
 | Command                     | Purpose                            |
 | --------------------------- | ---------------------------------- |
-| `plan-save-to-issue`        | Save plan to GitHub issue          |
+| `plan-save`                 | Save plan (backend-aware dispatch) |
+| `plan-save-to-issue`        | Save plan to GitHub issue (used internally by dispatcher) |
 | `get-plan-metadata`         | Get metadata from plan issue       |
 | `setup-impl-from-issue`     | Set up .impl/ from issue           |
 | `plan-submit-for-review`    | Extract plan content for PR review |
