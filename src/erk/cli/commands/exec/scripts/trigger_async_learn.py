@@ -364,12 +364,14 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
     message = click.style("📋 Discovering sessions...", fg="cyan")
     click.echo(message, err=True)
 
+    current_branch = git.branch.get_current_branch(repo_root)
     sessions = _discover_sessions(
         github_issues=github_issues,
         claude_installation=claude_installation,
         repo_root=repo_root,
         cwd=cwd,
         issue_number=issue_number,
+        branch_name=current_branch,
     )
 
     if not sessions.get("success"):

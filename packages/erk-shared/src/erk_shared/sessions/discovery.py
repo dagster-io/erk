@@ -4,6 +4,7 @@ This module provides functions to discover Claude Code sessions
 associated with a plan issue.
 """
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +25,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_remote_impl_session_id,
     extract_plan_header_session_gist_url,
 )
+from erk_shared.learn.extraction.session_schema import extract_git_branch
 from erk_shared.learn.impl_events import (
     extract_implementation_sessions,
     extract_learn_sessions,
@@ -190,6 +192,7 @@ def find_local_sessions_for_project(
     project_cwd: Path,
     *,
     limit: int,
+    branch_name: str | None,
 ) -> list[str]:
     """Find local sessions for a project (fallback when GitHub metadata unavailable).
 
@@ -197,19 +200,49 @@ def find_local_sessions_for_project(
     Returns session IDs for sessions that exist locally for this project,
     sorted by modification time (newest first).
 
+    When branch_name is provided, filters to only sessions whose gitBranch
+    matches the given branch. This prevents unrelated sessions from other
+    branches being included in learn analysis.
+
     Args:
         claude_installation: Claude installation for session listing
         project_cwd: Current working directory for project lookup
         limit: Maximum number of sessions to return
+        branch_name: When set, only include sessions from this branch
 
     Returns:
         List of session IDs that exist locally for this project
     """
+    # Request more sessions when filtering to account for non-matching branches
+    fetch_limit = limit if branch_name is None else limit * 5
     sessions = claude_installation.find_sessions(
         project_cwd,
         current_session_id=None,
-        min_size=1024,  # Skip tiny sessions (likely empty/aborted)
-        limit=limit,
+        min_size=1024,
+        limit=fetch_limit,
         include_agents=False,
     )
-    return [s.session_id for s in sessions]
+
+    if branch_name is None:
+        return [s.session_id for s in sessions]
+
+    matching: list[str] = []
+    for session in sessions:
+        content = claude_installation.read_session(
+            project_cwd, session.session_id, include_agents=False
+        )
+        if content is None:
+            continue
+        branch = extract_git_branch(content.main_content)
+        if branch == branch_name:
+            matching.append(session.session_id)
+            if len(matching) >= limit:
+                break
+        else:
+            print(
+                f"Skipping session {session.session_id}: "
+                f"branch '{branch}' does not match '{branch_name}'",
+                file=sys.stderr,
+            )
+
+    return matching

@@ -21,6 +21,12 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
+
+def _session_content_with_branch(*, branch: str) -> str:
+    """Create JSONL session content with a gitBranch field."""
+    return json.dumps({"type": "user", "gitBranch": branch}) + "\n"
+
+
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
 # ============================================================================
@@ -228,27 +234,28 @@ def test_json_output_structure(tmp_path: Path) -> None:
 
 def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
     """Test session_sources includes properly structured LocalSessionSource data."""
-    fake_git = FakeGit()
-    test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
-    fake_issues = FakeGitHubIssues(issues={200: test_issue})
-
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
+        fake_git = FakeGit(current_branches={cwd: "P200-feature"})
+        test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
+        fake_issues = FakeGitHubIssues(issues={200: test_issue})
+
         # Set up fake claude installation with sessions that will be returned
-        # via the local session fallback path (when no readable_session_ids from GitHub)
+        # via the local session fallback path (when no readable_session_ids from GitHub).
+        # Sessions must have matching gitBranch for branch filtering.
         fake_claude = FakeClaudeInstallation.for_test(
             projects={
                 cwd: FakeProject(
                     sessions={
                         "session-abc-123": FakeSessionData(
-                            content='{"type": "user"}\n',
+                            content=_session_content_with_branch(branch="P200-feature"),
                             size_bytes=1024,
                             modified_at=1000.0,
                         ),
                         "session-def-456": FakeSessionData(
-                            content='{"type": "user"}\n',
+                            content=_session_content_with_branch(branch="P200-feature"),
                             size_bytes=2048,
                             modified_at=2000.0,
                         ),
@@ -344,7 +351,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
-        fake_git = FakeGit()
+        fake_git = FakeGit(current_branches={cwd: "P400-impl"})
 
         # Create issue with remote implementation metadata
         plan_body = format_plan_header_body_for_test(
@@ -355,13 +362,14 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
         test_issue = create_test_issue(400, "Test Plan #400", body=plan_body)
         fake_issues = FakeGitHubIssues(issues={400: test_issue})
 
-        # Set up fake claude installation with local sessions
+        # Set up fake claude installation with local sessions.
+        # Session must have matching gitBranch for branch filtering.
         fake_claude = FakeClaudeInstallation.for_test(
             projects={
                 cwd: FakeProject(
                     sessions={
                         "local-session-123": FakeSessionData(
-                            content='{"type": "user"}\n',
+                            content=_session_content_with_branch(branch="P400-impl"),
                             size_bytes=1024,
                             modified_at=1000.0,
                         ),
@@ -437,3 +445,75 @@ def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None
 
     # No remote session should be added without run_id
     assert not any(s["source_type"] == "remote" for s in output["session_sources"])
+
+
+# ============================================================================
+# Local Fallback Branch Filtering Tests
+# ============================================================================
+
+
+def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
+    """Test local session fallback only includes sessions from matching branch."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        fake_git = FakeGit(current_branches={cwd: "P600-feature"})
+        test_issue = create_test_issue(600, "Test Plan #600", "Plan body")
+        fake_issues = FakeGitHubIssues(issues={600: test_issue})
+
+        fake_claude = FakeClaudeInstallation.for_test(
+            projects={
+                cwd: FakeProject(
+                    sessions={
+                        "matching-session": FakeSessionData(
+                            content=_session_content_with_branch(branch="P600-feature"),
+                            size_bytes=1024,
+                            modified_at=3000.0,
+                        ),
+                        "wrong-branch-session": FakeSessionData(
+                            content=_session_content_with_branch(branch="P999-other"),
+                            size_bytes=1024,
+                            modified_at=2000.0,
+                        ),
+                        "no-branch-session": FakeSessionData(
+                            content='{"type": "user"}\n',
+                            size_bytes=1024,
+                            modified_at=1000.0,
+                        ),
+                    }
+                )
+            },
+        )
+
+        result = runner.invoke(
+            get_learn_sessions,
+            ["600"],
+            obj=ErkContext.for_test(
+                git=fake_git,
+                github_issues=fake_issues,
+                claude_installation=fake_claude,
+                cwd=cwd,
+                repo_root=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+
+    # Skip messages go to stderr but CliRunner mixes them into output.
+    # Extract only the JSON portion.
+    raw_lines = result.output.strip().splitlines()
+    json_lines = [line for line in raw_lines if not line.startswith("Skipping session")]
+    output = json.loads("\n".join(json_lines))
+
+    # Verify skip messages were logged
+    skip_lines = [line for line in raw_lines if line.startswith("Skipping session")]
+    assert len(skip_lines) == 2
+
+    # Only the matching session should appear in local_session_ids
+    assert output["local_session_ids"] == ["matching-session"]
+
+    # Session sources should only contain the matching session
+    local_sources = [s for s in output["session_sources"] if s["source_type"] == "local"]
+    assert len(local_sources) == 1
+    assert local_sources[0]["session_id"] == "matching-session"

@@ -3,6 +3,7 @@
 These tests verify that get_readable_sessions correctly uses global session lookup.
 """
 
+import json
 from pathlib import Path
 
 from erk_shared.gateway.claude_installation.fake import (
@@ -10,7 +11,11 @@ from erk_shared.gateway.claude_installation.fake import (
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.sessions.discovery import SessionsForPlan, get_readable_sessions
+from erk_shared.sessions.discovery import (
+    SessionsForPlan,
+    find_local_sessions_for_project,
+    get_readable_sessions,
+)
 
 
 def test_get_readable_sessions_finds_global_sessions() -> None:
@@ -248,3 +253,106 @@ def test_get_readable_sessions_preserves_order() -> None:
     session_ids = [sid for sid, _ in result]
     # Order should be: planning first, then impl, then learn
     assert session_ids == ["planning", "impl-1", "impl-2", "learn-1"]
+
+
+# ============================================================================
+# find_local_sessions_for_project branch filtering tests
+# ============================================================================
+
+
+def _make_session_content(*, git_branch: str) -> str:
+    """Create JSONL session content with a gitBranch field."""
+    return json.dumps({"type": "user", "gitBranch": git_branch}) + "\n"
+
+
+def test_find_local_sessions_filters_by_branch_name() -> None:
+    """Test that sessions are filtered to those matching the given branch name."""
+    project = Path("/project")
+    installation = FakeClaudeInstallation.for_test(
+        projects={
+            project: FakeProject(
+                sessions={
+                    "session-match": FakeSessionData(
+                        content=_make_session_content(git_branch="P42-feature"),
+                        size_bytes=1024,
+                        modified_at=3000.0,
+                    ),
+                    "session-no-match": FakeSessionData(
+                        content=_make_session_content(git_branch="P99-other-plan"),
+                        size_bytes=1024,
+                        modified_at=2000.0,
+                    ),
+                    "session-different-branch": FakeSessionData(
+                        content=_make_session_content(git_branch="P42-other-branch"),
+                        size_bytes=1024,
+                        modified_at=1000.0,
+                    ),
+                }
+            )
+        }
+    )
+
+    result = find_local_sessions_for_project(
+        installation, project, limit=10, branch_name="P42-feature"
+    )
+
+    # Only exact match, not prefix match
+    assert result == ["session-match"]
+
+
+def test_find_local_sessions_returns_all_when_no_branch_name() -> None:
+    """Test existing behavior is preserved when branch_name is None."""
+    project = Path("/project")
+    installation = FakeClaudeInstallation.for_test(
+        projects={
+            project: FakeProject(
+                sessions={
+                    "session-a": FakeSessionData(
+                        content='{"type": "user"}\n',
+                        size_bytes=1024,
+                        modified_at=2000.0,
+                    ),
+                    "session-b": FakeSessionData(
+                        content='{"type": "user"}\n',
+                        size_bytes=1024,
+                        modified_at=1000.0,
+                    ),
+                }
+            )
+        }
+    )
+
+    result = find_local_sessions_for_project(installation, project, limit=10, branch_name=None)
+
+    assert len(result) == 2
+    assert "session-a" in result
+    assert "session-b" in result
+
+
+def test_find_local_sessions_returns_empty_when_no_branch_matches() -> None:
+    """Test empty result when no sessions match the branch name."""
+    project = Path("/project")
+    installation = FakeClaudeInstallation.for_test(
+        projects={
+            project: FakeProject(
+                sessions={
+                    "session-1": FakeSessionData(
+                        content=_make_session_content(git_branch="P99-other"),
+                        size_bytes=1024,
+                        modified_at=2000.0,
+                    ),
+                    "session-2": FakeSessionData(
+                        content=_make_session_content(git_branch="main"),
+                        size_bytes=1024,
+                        modified_at=1000.0,
+                    ),
+                }
+            )
+        }
+    )
+
+    result = find_local_sessions_for_project(
+        installation, project, limit=10, branch_name="P42-feature"
+    )
+
+    assert result == []
