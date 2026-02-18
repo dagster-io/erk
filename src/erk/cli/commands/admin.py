@@ -1,5 +1,6 @@
 """Admin commands for repository configuration."""
 
+import os
 import subprocess
 from typing import Literal
 
@@ -115,6 +116,79 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             user_output("")
             user_output("Workflows can no longer create pull requests.")
 
+        except RuntimeError as e:
+            raise UserFacingCliError(str(e)) from e
+
+
+@admin_group.command("gh-actions-api-key")
+@click.option(
+    "--enable",
+    "action",
+    flag_value="enable",
+    help="Set ANTHROPIC_API_KEY secret from local environment",
+)
+@click.option(
+    "--disable",
+    "action",
+    flag_value="disable",
+    help="Delete ANTHROPIC_API_KEY secret from GitHub Actions",
+)
+@click.pass_obj
+def gh_actions_api_key(
+    ctx: ErkContext,
+    action: Literal["enable", "disable"] | None,
+) -> None:
+    """Manage ANTHROPIC_API_KEY secret in GitHub Actions.
+
+    Without flags: Check if ANTHROPIC_API_KEY secret exists
+    With --enable: Set ANTHROPIC_API_KEY secret from local environment variable
+    With --disable: Delete ANTHROPIC_API_KEY secret
+    """
+    repo = discover_repo_context(ctx, ctx.cwd)
+
+    github_id = Ensure.not_none(
+        repo.github,
+        "Not a GitHub repository\n"
+        "This command requires the repository to have a GitHub remote configured.",
+    )
+
+    admin = ctx.github_admin
+    location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
+    secret_name = "ANTHROPIC_API_KEY"
+
+    if action is None:
+        exists = admin.secret_exists(location, secret_name)
+        user_output(click.style("GitHub Actions API Key", bold=True))
+        user_output("")
+        if exists is True:
+            user_output(f"Status: {click.style('Enabled', fg='green')}")
+        elif exists is False:
+            user_output(f"Status: {click.style('Not found', fg='yellow')}")
+        else:
+            user_output(f"Status: {click.style('Error checking secret', fg='red')}")
+
+    elif action == "enable":
+        secret_value = os.environ.get(secret_name)
+        if secret_value is None:
+            raise UserFacingCliError(
+                f"{secret_name} not found in local environment\n"
+                f"Set the environment variable before running --enable."
+            )
+        try:
+            admin.set_secret(location, secret_name, secret_value)
+            user_output(
+                click.style("✓", fg="green") + f" Set {secret_name} secret in GitHub Actions"
+            )
+        except RuntimeError as e:
+            raise UserFacingCliError(str(e)) from e
+
+    elif action == "disable":
+        try:
+            admin.delete_secret(location, secret_name)
+            user_output(
+                click.style("✓", fg="green")
+                + f" Deleted {secret_name} secret from GitHub Actions"
+            )
         except RuntimeError as e:
             raise UserFacingCliError(str(e)) from e
 

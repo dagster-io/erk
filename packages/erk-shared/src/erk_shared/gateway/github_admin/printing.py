@@ -45,3 +45,13 @@ class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
     def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
         """Check if secret exists (read-only, no printing)."""
         return self._wrapped.secret_exists(location, secret_name)
+
+    def set_secret(self, location: GitHubRepoLocation, secret_name: str, secret_value: str) -> None:
+        """Set secret with printed output."""
+        self._emit(self._format_command(f"gh secret set {secret_name}"))
+        self._wrapped.set_secret(location, secret_name, secret_value)
+
+    def delete_secret(self, location: GitHubRepoLocation, secret_name: str) -> None:
+        """Delete secret with printed output."""
+        self._emit(self._format_command(f"gh secret delete {secret_name}"))
+        self._wrapped.delete_secret(location, secret_name)

@@ -40,3 +40,11 @@ class NoopGitHubAdmin(GitHubAdmin):
     def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.secret_exists(location, secret_name)
+
+    def set_secret(self, location: GitHubRepoLocation, secret_name: str, secret_value: str) -> None:
+        """No-op for setting secrets in dry-run mode."""
+        pass
+
+    def delete_secret(self, location: GitHubRepoLocation, secret_name: str) -> None:
+        """No-op for deleting secrets in dry-run mode."""
+        pass

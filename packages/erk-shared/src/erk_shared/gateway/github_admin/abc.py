@@ -86,3 +86,33 @@ class GitHubAdmin(ABC):
             True if secret exists, False if not, None if check failed (e.g., no permission)
         """
         ...
+
+    @abstractmethod
+    def set_secret(self, location: GitHubRepoLocation, secret_name: str, secret_value: str) -> None:
+        """Set a repository secret in GitHub Actions.
+
+        Creates or updates a repository secret. The value is write-only and
+        cannot be read back via the API.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            secret_name: Name of the secret to set
+            secret_value: Value for the secret (passed via stdin to avoid process list exposure)
+
+        Raises:
+            RuntimeError: If the gh CLI command fails
+        """
+        ...
+
+    @abstractmethod
+    def delete_secret(self, location: GitHubRepoLocation, secret_name: str) -> None:
+        """Delete a repository secret from GitHub Actions.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            secret_name: Name of the secret to delete
+
+        Raises:
+            RuntimeError: If the gh CLI command fails
+        """
+        ...
