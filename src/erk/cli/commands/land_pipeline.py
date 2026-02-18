@@ -483,6 +483,10 @@ def close_review_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     if state.plan_id is None:
         return state
 
+    # Draft-PR plans have no separate review PR to close
+    if ctx.plan_store.get_provider_name() == "github-draft-pr":
+        return state
+
     cleanup_review_pr(
         ctx,
         repo_root=state.main_repo_root,

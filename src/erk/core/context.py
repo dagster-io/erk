@@ -21,7 +21,7 @@ from erk.core.completion import RealCompletion
 from erk.core.prompt_executor import ClaudePromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
-from erk.core.services.plan_list_service import RealPlanListService
+from erk.core.services.plan_list_service import DraftPRPlanListService, RealPlanListService
 from erk.core.shell import RealShell
 
 # Re-export ErkContext from erk_shared for isinstance() compatibility
@@ -76,6 +76,7 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
 
@@ -595,8 +596,16 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # Use plans_repo for cross-repo plan issue management if configured
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
     github: GitHub = RealGitHub(time, repo_info, issues=issues)
-    plan_store: PlanStore = GitHubPlanStore(issues)
-    plan_list_service: PlanListService = RealPlanListService(github, issues)
+
+    # Select plan backend based on config
+    plan_store: PlanStore
+    plan_list_service: PlanListService
+    if local_config.plan_backend == "draft_pr":
+        plan_store = DraftPRPlanBackend(github)
+        plan_list_service = DraftPRPlanListService(github)
+    else:
+        plan_store = GitHubPlanStore(issues)
+        plan_list_service = RealPlanListService(github, issues)
 
     # 9. Apply dry-run wrappers if needed
     # Note: DryRunGitHub composes DryRunGitHubIssues internally,

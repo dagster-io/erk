@@ -12,6 +12,7 @@ from erk_shared.naming import (
     extract_objective_number,
     extract_plan_review_issue_number,
     extract_trailing_number,
+    generate_draft_pr_branch_name,
     generate_issue_branch_name,
     sanitize_branch_component,
     sanitize_worktree_name,
@@ -527,3 +528,91 @@ def test_extract_leading_issue_number_with_objective_format(
 )
 def test_extract_plan_review_issue_number(branch_name: str, expected: int | None) -> None:
     assert extract_plan_review_issue_number(branch_name) == expected
+
+
+# Tests for generate_draft_pr_branch_name
+@pytest.mark.parametrize(
+    ("title", "timestamp", "objective_id", "expected"),
+    [
+        # Standard case without objective
+        (
+            "Fix Auth Bug",
+            datetime(2024, 1, 15, 14, 30),
+            None,
+            "plan-fix-auth-bug-01-15-1430",
+        ),
+        # Different timestamp
+        (
+            "My Feature",
+            datetime(2024, 6, 20, 10, 0),
+            None,
+            "plan-my-feature-06-20-1000",
+        ),
+        # Midnight edge case
+        (
+            "Update Docs",
+            datetime(2024, 1, 1, 0, 0),
+            None,
+            "plan-update-docs-01-01-0000",
+        ),
+        # With objective ID
+        (
+            "Fix Auth Bug",
+            datetime(2024, 1, 15, 14, 30),
+            456,
+            "plan-O456-fix-auth-bug-01-15-1430",
+        ),
+        # Single digit objective
+        (
+            "Add Tests",
+            datetime(2024, 12, 31, 23, 59),
+            1,
+            "plan-O1-add-tests-12-31-2359",
+        ),
+    ],
+)
+def test_generate_draft_pr_branch_name_format(
+    title: str, timestamp: datetime, objective_id: int | None, expected: str
+) -> None:
+    """Branch name follows plan-{slug}-{timestamp} format."""
+    assert generate_draft_pr_branch_name(title, timestamp, objective_id=objective_id) == expected
+
+
+def test_generate_draft_pr_branch_name_truncates_long_title() -> None:
+    """Long titles are truncated before timestamp is appended."""
+    long_title = "This is a very long title that should be truncated before timestamp"
+    timestamp = datetime(2024, 1, 15, 14, 30)
+
+    result = generate_draft_pr_branch_name(long_title, timestamp, objective_id=None)
+
+    # Base (plan-...) should be truncated to 31 chars, then timestamp appended
+    # Total = 31 + 11 (timestamp with hyphen) = 42 chars max
+    assert len(result) <= 42
+    assert result.startswith("plan-")
+    assert result.endswith("-01-15-1430")
+    # No trailing hyphen before timestamp
+    assert not result[:-11].endswith("-")
+
+
+def test_generate_draft_pr_branch_name_handles_special_chars() -> None:
+    """Special characters in titles are sanitized."""
+    result = generate_draft_pr_branch_name(
+        "Fix: Bug #456!", datetime(2024, 1, 15, 14, 30), objective_id=None
+    )
+    assert ":" not in result
+    assert "#" not in result
+    assert "!" not in result
+    assert "--" not in result
+
+
+def test_generate_draft_pr_branch_name_with_objective_truncates() -> None:
+    """Long titles are truncated with objective ID prefix included."""
+    long_title = "This is a very long title that should be truncated before timestamp"
+    timestamp = datetime(2024, 1, 15, 14, 30)
+
+    result = generate_draft_pr_branch_name(long_title, timestamp, objective_id=456)
+
+    assert len(result) <= 42
+    assert result.startswith("plan-O456-")
+    assert result.endswith("-01-15-1430")
+    assert not result[:-11].endswith("-")

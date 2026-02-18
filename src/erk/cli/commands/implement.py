@@ -158,9 +158,10 @@ def _implement_from_issue(
     # Save plan reference for PR linking
     ctx.console.info("Saving plan reference for PR linking...")
     impl_dir = ctx.cwd / ".impl"
+    provider_name = ctx.plan_store.get_provider_name()
     save_plan_ref(
         impl_dir,
-        provider="github",
+        provider=provider_name,
         plan_id=str(issue_number),
         url=plan.url,
         labels=(),
