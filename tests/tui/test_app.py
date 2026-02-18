@@ -2053,6 +2053,40 @@ class TestViewSwitching:
             assert app._view_mode == ViewMode.PLANS
 
 
+class TestExecutePaletteCommandCodespaceRunPlan:
+    """Tests for execute_palette_command('codespace_run_plan').
+
+    This command copies the codespace run objective plan command to clipboard.
+    It is only available in the Objectives view.
+    """
+
+    @pytest.mark.asyncio
+    async def test_codespace_run_plan_copies_command_to_clipboard(self) -> None:
+        """Execute palette command codespace_run_plan copies correct command."""
+        clipboard = FakeClipboard()
+        objective_plans = [make_plan_row(7100, "Test Objective")]
+        provider = FakePlanDataProvider(
+            plans_by_labels={("erk-objective",): objective_plans},
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Switch to Objectives view
+            await pilot.press("3")
+            await pilot.pause()
+            await pilot.pause()
+
+            # Execute codespace_run_plan command
+            app.execute_palette_command("codespace_run_plan")
+
+            assert clipboard.last_copied == "erk codespace run objective plan 7100"
+
+
 class TestActionViewComments:
     """Tests for action_view_comments (c key)."""
 
