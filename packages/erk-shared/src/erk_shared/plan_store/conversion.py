@@ -1,15 +1,16 @@
-"""Shared IssueInfo-to-Plan conversion with pre-parsed header fields.
+"""Shared conversion helpers for Plan construction from provider-specific types.
 
-Provides a single-parse conversion that populates header_fields on Plan,
+Provides single-parse conversions that populate header_fields on Plan,
 eliminating repeated YAML parsing of the plan-header metadata block.
 Also provides typed accessor helpers for reading fields from header_fields.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
+from erk_shared.gateway.github.types import PRDetails
 from erk_shared.plan_store.types import Plan, PlanState
 
 
@@ -50,6 +51,57 @@ def issue_info_to_plan(issue: IssueInfo) -> Plan:
         created_at=issue.created_at,
         updated_at=issue.updated_at,
         metadata={"number": issue.number, "author": issue.author},
+        objective_id=objective_id,
+        header_fields=header_fields,
+    )
+
+
+def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
+    """Convert PRDetails to Plan with pre-parsed header fields.
+
+    Parallel to issue_info_to_plan() but for draft-PR-backed plans.
+    The PR body contains the plan-header metadata block followed by
+    plan content. If plan_body is provided, it overrides the body
+    content (used when plan content is extracted separately from the
+    metadata block).
+
+    Args:
+        pr: PRDetails from GitHub API
+        plan_body: Extracted plan content, or None to use pr.body
+
+    Returns:
+        Plan with header_fields populated from plan-header block
+    """
+    state = PlanState.OPEN if pr.state == "OPEN" else PlanState.CLOSED
+
+    # Parse plan-header block from PR body
+    header_fields: dict[str, object] = {}
+    block = find_metadata_block(pr.body, "plan-header")
+    if block is not None:
+        header_fields = dict(block.data)
+
+    # Extract objective_id from parsed header
+    objective_id: int | None = None
+    raw_objective = header_fields.get(OBJECTIVE_ISSUE)
+    if isinstance(raw_objective, int):
+        objective_id = raw_objective
+
+    body = plan_body if plan_body is not None else pr.body
+
+    # PRDetails lacks timestamps; use epoch as fallback
+    epoch = datetime(2000, 1, 1, tzinfo=UTC)
+
+    return Plan(
+        plan_identifier=str(pr.number),
+        title=pr.title,
+        body=body,
+        state=state,
+        url=pr.url,
+        labels=list(pr.labels),
+        assignees=[],
+        created_at=epoch,
+        updated_at=epoch,
+        metadata={"number": pr.number, "owner": pr.owner, "repo": pr.repo},
         objective_id=objective_id,
         header_fields=header_fields,
     )

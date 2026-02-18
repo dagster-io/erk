@@ -1,7 +1,7 @@
 """Interface tests for PlanBackend implementations.
 
-These tests verify that GitHubPlanStore satisfies the PlanBackend ABC interface.
-When additional backends are added, parameterize fixtures to run against all of them.
+These tests verify that all PlanBackend implementations satisfy the ABC interface.
+Tests are parameterized to run against both GitHubPlanStore and DraftPRPlanBackend.
 """
 
 from datetime import UTC, datetime
@@ -9,8 +9,10 @@ from pathlib import Path
 
 import pytest
 
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue
@@ -19,21 +21,40 @@ from tests.test_utils.github_helpers import create_test_issue
 # Fixtures
 # =============================================================================
 
+_BRANCH_COUNTER = 0
 
-@pytest.fixture()
-def plan_backend() -> PlanBackend:
-    """Provide GitHubPlanStore backed by FakeGitHubIssues."""
+
+def _next_branch() -> str:
+    """Generate a unique branch name for tests."""
+    global _BRANCH_COUNTER  # noqa: PLW0603
+    _BRANCH_COUNTER += 1
+    return f"test-branch-{_BRANCH_COUNTER}"
+
+
+def _make_github_plan_store() -> PlanBackend:
+    """Create a GitHubPlanStore backed by FakeGitHubIssues."""
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-plan"})
     return GitHubPlanStore(fake_issues)
 
 
-@pytest.fixture()
-def backend_with_plan() -> tuple[PlanBackend, str]:
-    """Fixture providing backend with a pre-existing plan.
+def _make_draft_pr_plan_backend() -> PlanBackend:
+    """Create a DraftPRPlanBackend backed by FakeGitHub."""
+    fake_github = FakeGitHub()
+    return DraftPRPlanBackend(fake_github)
 
-    Returns:
-        Tuple of (backend, plan_id)
+
+def _create_metadata(backend: PlanBackend) -> dict[str, object]:
+    """Build the required metadata dict for create_plan().
+
+    DraftPRPlanBackend requires branch_name; GitHubPlanStore does not.
     """
+    if isinstance(backend, DraftPRPlanBackend):
+        return {"branch_name": _next_branch()}
+    return {}
+
+
+def _make_github_backend_with_plan() -> tuple[PlanBackend, str]:
+    """Create GitHubPlanStore with a pre-existing plan."""
     issue = create_test_issue(
         number=42,
         title="Existing Plan",
@@ -44,6 +65,44 @@ def backend_with_plan() -> tuple[PlanBackend, str]:
     )
     fake_issues = FakeGitHubIssues(issues={42: issue})
     return GitHubPlanStore(fake_issues), "42"
+
+
+def _make_draft_pr_backend_with_plan() -> tuple[PlanBackend, str]:
+    """Create DraftPRPlanBackend with a pre-existing plan by creating one via API."""
+    fake_github = FakeGitHub()
+    backend = DraftPRPlanBackend(fake_github)
+
+    result = backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Existing Plan",
+        content="Plan content",
+        labels=("erk-plan",),
+        metadata={"branch_name": "existing-plan-branch"},
+    )
+    return backend, result.plan_id
+
+
+@pytest.fixture(params=["github_issues", "draft_pr"])
+def plan_backend(request: pytest.FixtureRequest) -> PlanBackend:
+    """Provide a PlanBackend implementation.
+
+    Parameterized to test both GitHubPlanStore and DraftPRPlanBackend.
+    """
+    if request.param == "github_issues":
+        return _make_github_plan_store()
+    return _make_draft_pr_plan_backend()
+
+
+@pytest.fixture(params=["github_issues", "draft_pr"])
+def backend_with_plan(request: pytest.FixtureRequest) -> tuple[PlanBackend, str]:
+    """Fixture providing backend with a pre-existing plan.
+
+    Returns:
+        Tuple of (backend, plan_id)
+    """
+    if request.param == "github_issues":
+        return _make_github_backend_with_plan()
+    return _make_draft_pr_backend_with_plan()
 
 
 # =============================================================================
@@ -66,7 +125,7 @@ def test_create_and_get_plan_roundtrip(plan_backend: PlanBackend) -> None:
         title="Test Plan Title",
         content="# Plan Content\n\nThis is the plan body.",
         labels=("erk-plan",),
-        metadata={},
+        metadata=_create_metadata(plan_backend),
     )
 
     # Verify CreatePlanResult structure
@@ -241,7 +300,7 @@ def test_list_plans_with_limit(plan_backend: PlanBackend) -> None:
             title=f"Plan {i}",
             content=f"Content {i}",
             labels=("erk-plan",),
-            metadata={},
+            metadata=_create_metadata(plan_backend),
         )
 
     results = plan_backend.list_plans(Path("/repo"), PlanQuery(limit=2))
@@ -257,7 +316,7 @@ def test_create_multiple_plans_have_unique_ids(plan_backend: PlanBackend) -> Non
             title=f"Plan {i}",
             content=f"Content {i}",
             labels=(),
-            metadata={},
+            metadata=_create_metadata(plan_backend),
         )
         results.append(result)
 
@@ -283,7 +342,7 @@ def test_get_metadata_field_returns_none_for_missing_field(plan_backend: PlanBac
         title="Plan for metadata test",
         content="# Test plan",
         labels=("erk-plan",),
-        metadata={},
+        metadata=_create_metadata(plan_backend),
     )
 
     result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
@@ -299,7 +358,7 @@ def test_get_metadata_field_roundtrips_with_update_metadata(
         title="Plan for roundtrip",
         content="# Roundtrip plan",
         labels=("erk-plan",),
-        metadata={},
+        metadata=_create_metadata(plan_backend),
     )
 
     plan_backend.update_metadata(
@@ -332,7 +391,7 @@ def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
         title="Plan for all-metadata test",
         content="# Test plan",
         labels=("erk-plan",),
-        metadata={},
+        metadata=_create_metadata(plan_backend),
     )
 
     result = plan_backend.get_all_metadata_fields(Path("/repo"), created.plan_id)
@@ -349,7 +408,7 @@ def test_get_all_metadata_fields_roundtrips_with_update_metadata(
         title="Plan for all-metadata roundtrip",
         content="# Roundtrip plan",
         labels=("erk-plan",),
-        metadata={},
+        metadata=_create_metadata(plan_backend),
     )
 
     plan_backend.update_metadata(
@@ -387,7 +446,7 @@ def test_post_event_metadata_only(plan_backend: PlanBackend) -> None:
         title="Plan for event",
         content="# Event plan",
         labels=("erk-plan",),
-        metadata={},
+        metadata=_create_metadata(plan_backend),
     )
 
     plan_backend.post_event(
@@ -408,7 +467,7 @@ def test_post_event_metadata_and_comment(plan_backend: PlanBackend) -> None:
         title="Plan for event with comment",
         content="# Event plan",
         labels=("erk-plan",),
-        metadata={},
+        metadata=_create_metadata(plan_backend),
     )
 
     plan_backend.post_event(
