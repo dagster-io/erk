@@ -4,7 +4,7 @@
 
 **[Read the Documentation](https://dagster-io.github.io/erk/)** for complete guides, tutorials, and reference. ([source](docs/))
 
-For the philosophy and design principles behind erk, see [The TAO of erk](TAO.md).
+For the philosophy and design principles behind erk, see [The TAO of erk](docs/TAO.md).
 
 ## Quick Start
 
@@ -21,7 +21,7 @@ erk init
 erk doctor
 ```
 
-Then follow [Your First Plan](docs/getting-started/first-plan.md) to learn the workflow.
+Then follow [Your First Plan](docs/tutorials/first-plan.md) to learn the workflow.
 
 ## The Workflow
 
@@ -42,17 +42,17 @@ erk pr submit
 /erk:pr-address
 
 # 5. Land
-erk pr land
+erk land
 ```
 
-See [The Workflow](docs/concepts/the-workflow.md) for the complete guide.
+See [The Workflow](docs/topics/the-workflow.md) for the complete guide.
 
 ## Documentation
 
-| Section                                  | Description                             |
-| ---------------------------------------- | --------------------------------------- |
-| [Getting Started](docs/getting-started/) | Setup, installation, first tutorial     |
-| [Concepts](docs/concepts/)               | Worktrees, stacked PRs, plan mode       |
-| [Guides](docs/guides/)                   | Workflows for common tasks              |
-| [Reference](docs/reference/)             | Commands, configuration, file locations |
-| [Troubleshooting](docs/troubleshooting/) | Common issues and solutions             |
+| Section                      | Description                              |
+| ---------------------------- | ---------------------------------------- |
+| [Tutorials](docs/tutorials/) | Setup, installation, first plan tutorial |
+| [Topics](docs/topics/)       | Worktrees, stacked PRs, plan mode        |
+| [How-to Guides](docs/howto/) | Workflows for common tasks               |
+| [Reference](docs/ref/)       | Commands, configuration, file locations  |
+| [FAQ](docs/faq/)             | Common questions and troubleshooting     |
