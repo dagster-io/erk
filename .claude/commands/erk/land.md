@@ -135,14 +135,14 @@ Run the `/erk:objective-update-with-landed-pr` workflow inline:
 1. Post an action comment to the objective issue with:
    - What was done (infer from PR title/description)
    - Lessons learned (infer from implementation)
-   - Roadmap updates (which steps are now done)
+   - Roadmap updates (which nodes are now done)
 
 2. Update the objective body:
-   - Mark relevant roadmap steps as `done`
-   - Add PR number to the step
+   - Mark relevant roadmap nodes as `done`
+   - Add PR number to the node
    - Reconcile stale prose sections (Design Decisions, Implementation Context)
 
-3. Check if all steps are complete - if so, offer to close the objective.
+3. Check if all nodes are complete - if so, offer to close the objective.
 
 **If user selects "Skip":** Just report success and remind them to update later.
 

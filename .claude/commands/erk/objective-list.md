@@ -32,4 +32,4 @@ If no objectives found, report: "No open objectives found."
 After listing, suggest:
 
 - `/local:objective-view <number>` — View dependency graph, dependencies, and progress
-- `/erk:objective-plan <number>` — Create a plan for the next step
+- `/erk:objective-plan <number>` — Create a plan for the next node

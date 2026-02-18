@@ -37,7 +37,7 @@ Do NOT create an objective for:
 1. **Define the goal** - What does success look like?
 2. **Identify phases** - Logical groupings of related work
 3. **Structure for steelthread** - Split phases into sub-phases (XA, XB, XC)
-4. **Break into steps** - Specific tasks within each sub-phase
+4. **Break into nodes** - Specific tasks within each sub-phase
 5. **Add test statements** - Each sub-phase needs "Test: [acceptance criteria]"
 6. **Lock design decisions** - Choices that guide implementation
 
@@ -90,39 +90,39 @@ EOF
 
 - Title: `Objective: [Verb] [What]` (e.g., "Objective: Unify Gateway Testing")
 - Sub-phases: `Phase NA: [Noun] [Type] (1 PR)` (e.g., "Phase 1A: Git Gateway Steelthread (1 PR)")
-- Steps: `NA.M` numbering (e.g., 1A.1, 1A.2, 1B.1)
+- Nodes: `NA.M` numbering (e.g., 1A.1, 1A.2, 1B.1)
 
 ## Spawning Erk-Plans
 
-Objectives coordinate work; erk-plans execute it. Spawn an erk-plan for individual steps.
+Objectives coordinate work; erk-plans execute it. Spawn an erk-plan for individual nodes.
 
 ### When to Spawn
 
 Spawn an erk-plan when:
 
-- A roadmap step is ready to implement
-- The step is well-defined and scoped
+- A roadmap node is ready to implement
+- The node is well-defined and scoped
 - Implementation can complete in one PR
 
 ### Spawning Steps
 
-1. **Identify the step** - Which roadmap step to implement
+1. **Identify the node** - Which roadmap node to implement
 2. **Create the plan** - Reference the objective
 
 ```bash
-# Create an erk-plan for a specific objective step
+# Create an erk-plan for a specific objective node
 erk plan create \
-  --title "[Step description]" \
+  --title "[Node description]" \
   --body "$(cat <<'EOF'
 ## Context
 
-Part of Objective #<issue-number>, Step <N.M>.
+Part of Objective #<issue-number>, Node <N.M>.
 
 [Link to objective]: https://github.com/<owner>/<repo>/issues/<issue-number>
 
 ## Goal
 
-[Specific deliverable for this step]
+[Specific deliverable for this node]
 
 ## Implementation
 
@@ -131,14 +131,14 @@ EOF
 )"
 ```
 
-3. **Update objective** - Mark step as in-progress
+3. **Update objective** - Mark node as in-progress
 
 ### After Plan Completion
 
 1. **Merge the PR** from the erk-plan
 2. **Post action comment** on the objective (see [updating.md](updating.md))
-3. **Update objective body** - step status, link PR
-4. **Check for closing** - If all steps done, see [closing.md](closing.md)
+3. **Update objective body** - node status, link PR
+4. **Check for closing** - If all nodes done, see [closing.md](closing.md)
 
 ## Resuming Work on an Objective
 
@@ -148,7 +148,7 @@ EOF
 # List open objectives
 gh issue list --label "erk-objective" --state open
 
-# View dependency graph and next step
+# View dependency graph and next node
 erk objective view <issue-number>
 # Or in-session: /local:objective-view <issue-number>
 
@@ -163,14 +163,14 @@ gh issue view <issue-number> --comments
 
 1. **Read the issue body** - Current state and design decisions
 2. **Read recent comments** - Latest actions and lessons
-3. **Check roadmap** - What steps are pending next
+3. **Check roadmap** - What nodes are pending next
 4. **Review linked PRs** - Context from completed work
 
 ### Continuing Work
 
-1. **Identify next step** from roadmap
+1. **Identify next node** from roadmap
 2. **Create erk-plan** if needed for implementation
-3. **Work on the step**
+3. **Work on the node**
 4. **Post action comment** when done (see [updating.md](updating.md))
 5. **Update body** with new status
 
@@ -199,20 +199,20 @@ Each major phase should be split into sub-phases:
 Split a phase if:
 
 - It has high technical risk (unproven patterns, new integrations, complex logic)
-- Steps mix infrastructure + wiring + commands
+- Nodes mix infrastructure + wiring + commands
 - You can't describe a single acceptance test
 - Multiple independent concerns are bundled
 
 ### Naming Convention
 
-- `Phase 1A` not `Phase 1.1` (sub-phases, not sub-steps)
+- `Phase 1A` not `Phase 1.1` (sub-phases, not sub-nodes)
 - Include "(1 PR)" to signal expected scope
 - Name should describe the slice: "Steelthread", "Complete", "Integration"
 
 ### Each Sub-Phase Must Have
 
 1. **Test statement** - "Test: [what proves this works]"
-2. **Coherent scope** - All steps relate to same concern
+2. **Coherent scope** - All nodes relate to same concern
 3. **Shippable state** - System works after merge
 
 ## Designing for Session Handoff
@@ -240,7 +240,7 @@ Every change to the objective follows two steps:
 
 This applies to:
 
-- Completing steps (obvious)
+- Completing nodes (obvious)
 - Adding context (often forgotten)
 - Refining decisions (often forgotten)
 - Adding phases (often forgotten)
@@ -251,7 +251,7 @@ This applies to:
 
 The issue body is the source of truth. After every significant change:
 
-- Update step statuses
+- Update node statuses
 - Reconcile stale prose sections (Design Decisions, Implementation Context)
 - Add new design decisions if any
 
@@ -268,6 +268,6 @@ Good: "The API requires pagination for lists > 100 items; always check response 
 
 ### Don't Over-Engineer
 
-- Start with minimal phases/steps
+- Start with minimal phases/nodes
 - Add detail as work progresses
-- Split steps when needed, not preemptively
+- Split nodes when needed, not preemptively

@@ -100,7 +100,7 @@ Post an action comment after completing work. See [format.md](references/format.
 ```bash
 gh issue comment <issue-number> --body "$(cat <<'EOF'
 ## Action: [Brief title]
-**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Step:** 1.2
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Node:** 1.2
 ### What Was Done
 ### Lessons Learned
 ### Roadmap Updates
@@ -112,7 +112,7 @@ After posting, update the issue body (roadmap statuses, reconcile stale prose se
 
 ### Viewing an Objective
 
-View an objective's dependency graph, dependencies, and next step:
+View an objective's dependency graph, dependencies, and next node:
 
 ```bash
 # CLI
@@ -124,20 +124,20 @@ erk objective view <issue-number>
 
 ### Spawning an Erk-Plan
 
-To implement a specific roadmap step, create an erk-plan that references the objective:
+To implement a specific roadmap node, create an erk-plan that references the objective:
 
 ```bash
-erk plan create --title "Implement [step description]" --body "Part of Objective #123, Step 1.2"
+erk plan create --title "Implement [node description]" --body "Part of Objective #123, Node 1.2"
 ```
 
 ## Workflow Summary
 
 1. **Create objective** - When starting multi-plan work
-2. **Inspect progress** - View dependency graph and next step
+2. **Inspect progress** - View dependency graph and next node
 3. **Log actions** - After completing each significant piece of work
 4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
-5. **Spawn erk-plans** - For individual implementation steps
-6. **Close** - When goal achieved or abandoned (proactively ask when all steps done)
+5. **Spawn erk-plans** - For individual implementation nodes
+6. **Close** - When goal achieved or abandoned (proactively ask when all nodes done)
 
 ## Resources
 

@@ -99,9 +99,9 @@ Exit without creating the plan-saved marker. The session continues so the user c
 
 **Only run this step if `--objective-issue` was provided and verification passed.**
 
-Update the objective's roadmap table to show that a plan has been created for this step:
+Update the objective's roadmap table to show that a plan has been created for this node:
 
-1. **Read the roadmap step marker** to get the step ID:
+1. **Read the roadmap node marker** to get the node ID:
 
 ```bash
 step_id=$(erk exec marker read --session-id "${CLAUDE_SESSION_ID}" roadmap-step)
@@ -115,11 +115,11 @@ If the marker doesn't exist (command fails), skip this step - the plan wasn't cr
 erk exec update-objective-node <objective-issue> --node "$step_id" --plan "#<issue_number>"
 ```
 
-This atomically fetches the issue body, finds the matching step row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
+This atomically fetches the issue body, finds the matching node row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
 
 3. **Report the update:**
 
-Display: `Updated objective #<objective-issue> roadmap: step <step_id> → plan #<issue_number>`
+Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan #<issue_number>`
 
 **Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
 
