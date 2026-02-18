@@ -154,3 +154,101 @@ class RealGitHubAdmin(GitHubAdmin):
             return None
         except (subprocess.TimeoutExpired, OSError):
             return None
+
+    def get_variable(self, location: GitHubRepoLocation, name: str) -> str | None:
+        """Get a repository variable value using gh CLI.
+
+        Uses GET /repos/{owner}/{repo}/actions/variables/{name}.
+        Returns the value if found, None if 404.
+        """
+        repo_id = location.repo_id
+        # GH-API-AUDIT: REST - GET actions/variables/{name}
+        cmd = [
+            "gh",
+            "api",
+            "-H",
+            "Accept: application/vnd.github+json",
+            "-H",
+            "X-GitHub-Api-Version: 2022-11-28",
+            f"/repos/{repo_id.owner}/{repo_id.repo}/actions/variables/{name}",
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+                cwd=location.root,
+            )
+            if result.returncode == 0:
+                data = json.loads(result.stdout)
+                return data.get("value")
+            # 404 means variable not found
+            if "404" in result.stderr or "Not Found" in result.stderr:
+                return None
+            return None
+        except (subprocess.TimeoutExpired, OSError):
+            return None
+
+    def set_variable(self, location: GitHubRepoLocation, name: str, value: str) -> None:
+        """Set a repository variable using gh CLI.
+
+        Tries PATCH first (update existing). If 404, uses POST to create.
+        """
+        repo_id = location.repo_id
+        # GH-API-AUDIT: REST - PATCH actions/variables/{name}
+        patch_cmd = [
+            "gh",
+            "api",
+            "--method",
+            "PATCH",
+            "-H",
+            "Accept: application/vnd.github+json",
+            "-H",
+            "X-GitHub-Api-Version: 2022-11-28",
+            f"/repos/{repo_id.owner}/{repo_id.repo}/actions/variables/{name}",
+            "-f",
+            f"value={value}",
+        ]
+
+        result = subprocess.run(
+            patch_cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+            cwd=location.root,
+        )
+
+        if result.returncode == 0:
+            return
+
+        # If variable doesn't exist, create it
+        if "404" in result.stderr or "Not Found" in result.stderr:
+            # GH-API-AUDIT: REST - POST actions/variables
+            post_cmd = [
+                "gh",
+                "api",
+                "--method",
+                "POST",
+                "-H",
+                "Accept: application/vnd.github+json",
+                "-H",
+                "X-GitHub-Api-Version: 2022-11-28",
+                f"/repos/{repo_id.owner}/{repo_id.repo}/actions/variables",
+                "-f",
+                f"name={name}",
+                "-f",
+                f"value={value}",
+            ]
+
+            run_subprocess_with_context(
+                cmd=post_cmd,
+                operation_context=f"create variable {name} for {repo_id.owner}/{repo_id.repo}",
+                cwd=location.root,
+            )
+            return
+
+        raise RuntimeError(f"Failed to set variable {name}: {result.stderr.strip()}")

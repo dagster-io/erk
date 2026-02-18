@@ -40,3 +40,11 @@ class NoopGitHubAdmin(GitHubAdmin):
     def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.secret_exists(location, secret_name)
+
+    def get_variable(self, location: GitHubRepoLocation, name: str) -> str | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_variable(location, name)
+
+    def set_variable(self, location: GitHubRepoLocation, name: str, value: str) -> None:
+        """No-op for setting variables in dry-run mode."""
+        pass

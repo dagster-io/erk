@@ -11,6 +11,10 @@ inputs:
   claude-code-oauth-token:
     description: "CLAUDE_CODE_OAUTH_TOKEN secret"
     required: false
+  auth-source:
+    description: "Name of the env var to use for Claude auth (ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN)"
+    required: false
+    default: "ANTHROPIC_API_KEY"
 
 runs:
   using: "composite"
@@ -22,9 +26,33 @@ runs:
           echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT not configured"
           exit 1
         fi
-        if [ -z "${{ inputs.anthropic-api-key }}" ] && [ -z "${{ inputs.claude-code-oauth-token }}" ]; then
-          echo "::error title=Missing Secret::Either ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN must be configured"
+
+        AUTH_SOURCE="${{ inputs.auth-source }}"
+        if [ "$AUTH_SOURCE" = "ANTHROPIC_API_KEY" ]; then
+          if [ -z "${{ inputs.anthropic-api-key }}" ]; then
+            echo "::error title=Missing Secret::ANTHROPIC_API_KEY secret is required (auth-source=$AUTH_SOURCE)"
+            exit 1
+          fi
+        elif [ "$AUTH_SOURCE" = "CLAUDE_CODE_OAUTH_TOKEN" ]; then
+          if [ -z "${{ inputs.claude-code-oauth-token }}" ]; then
+            echo "::error title=Missing Secret::CLAUDE_CODE_OAUTH_TOKEN secret is required (auth-source=$AUTH_SOURCE)"
+            exit 1
+          fi
+        else
+          echo "::error title=Invalid Auth Source::auth-source must be ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN, got: $AUTH_SOURCE"
           exit 1
+        fi
+
+    - name: Export Claude credential
+      shell: bash
+      run: |
+        AUTH_SOURCE="${{ inputs.auth-source }}"
+        if [ "$AUTH_SOURCE" = "ANTHROPIC_API_KEY" ]; then
+          echo "ANTHROPIC_API_KEY=${{ inputs.anthropic-api-key }}" >> "$GITHUB_ENV"
+          echo "Exported ANTHROPIC_API_KEY to environment"
+        elif [ "$AUTH_SOURCE" = "CLAUDE_CODE_OAUTH_TOKEN" ]; then
+          echo "CLAUDE_CODE_OAUTH_TOKEN=${{ inputs.claude-code-oauth-token }}" >> "$GITHUB_ENV"
+          echo "Exported CLAUDE_CODE_OAUTH_TOKEN to environment"
         fi
 
     - uses: astral-sh/setup-uv@v5
@@ -50,9 +78,6 @@ runs:
 
     - name: Validate Claude credentials
       shell: bash
-      env:
-        CLAUDE_CODE_OAUTH_TOKEN: ${{ inputs.claude-code-oauth-token }}
-        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
       run: erk exec validate-claude-credentials
 
     - name: Configure git identity

@@ -45,3 +45,16 @@ class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
     def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
         """Check if secret exists (read-only, no printing)."""
         return self._wrapped.secret_exists(location, secret_name)
+
+    def get_variable(self, location: GitHubRepoLocation, name: str) -> str | None:
+        """Get variable (read-only, no printing)."""
+        return self._wrapped.get_variable(location, name)
+
+    def set_variable(self, location: GitHubRepoLocation, name: str, value: str) -> None:
+        """Set variable with printed output."""
+        self._emit(
+            self._format_command(
+                f"gh api --method PATCH .../actions/variables/{name} (value={value})"
+            )
+        )
+        self._wrapped.set_variable(location, name, value)

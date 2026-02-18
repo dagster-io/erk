@@ -86,3 +86,32 @@ class GitHubAdmin(ABC):
             True if secret exists, False if not, None if check failed (e.g., no permission)
         """
         ...
+
+    @abstractmethod
+    def get_variable(self, location: GitHubRepoLocation, name: str) -> str | None:
+        """Get a repository variable value.
+
+        Uses GET /repos/{owner}/{repo}/actions/variables/{name}.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            name: Variable name to look up
+
+        Returns:
+            Variable value if found, None if not found
+        """
+        ...
+
+    @abstractmethod
+    def set_variable(self, location: GitHubRepoLocation, name: str, value: str) -> None:
+        """Set a repository variable value.
+
+        Creates or updates a repository variable using the GitHub Actions
+        variables API. Uses PATCH if the variable exists, POST if it does not.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            name: Variable name to set
+            value: Variable value to set
+        """
+        ...

@@ -119,6 +119,56 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             raise UserFacingCliError(str(e)) from e
 
 
+VALID_AUTH_SOURCES = ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN")
+
+
+@admin_group.command("auth-source")
+@click.option(
+    "--set",
+    "set_value",
+    type=click.Choice(VALID_AUTH_SOURCES),
+    help="Set the auth source to use for CI workflows",
+)
+@click.pass_obj
+def auth_source(ctx: ErkContext, set_value: str | None) -> None:
+    """Manage which credential CI workflows use for Claude authentication.
+
+    Without flags: Display current auth source setting
+    With --set: Set the auth source variable
+
+    \b
+    This controls the vars.CLAUDE_AUTH_SOURCE repository variable, which
+    determines whether CI workflows authenticate with ANTHROPIC_API_KEY
+    or CLAUDE_CODE_OAUTH_TOKEN.
+    """
+    repo = discover_repo_context(ctx, ctx.cwd)
+
+    github_id = Ensure.not_none(
+        repo.github,
+        "Not a GitHub repository\n"
+        "This command requires the repository to have a GitHub remote configured.",
+    )
+
+    admin = ctx.github_admin
+    location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
+
+    if set_value is None:
+        # Display current setting
+        current = admin.get_variable(location, "CLAUDE_AUTH_SOURCE")
+        user_output(click.style("CI Auth Source", bold=True))
+        user_output("")
+        if current is not None:
+            user_output(f"Current value: {click.style(current, fg='cyan')}")
+        else:
+            user_output(f"Not set (defaults to {click.style('ANTHROPIC_API_KEY', fg='cyan')})")
+    else:
+        admin.set_variable(location, "CLAUDE_AUTH_SOURCE", set_value)
+        user_output(
+            click.style("✓", fg="green")
+            + f" Set CI auth source to {click.style(set_value, fg='cyan')}"
+        )
+
+
 @admin_group.command("upgrade-repo")
 @click.pass_obj
 def upgrade_repo(ctx: ErkContext) -> None:
