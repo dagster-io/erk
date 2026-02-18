@@ -226,11 +226,55 @@ def test_dispatch_creates_skeleton_plan_issue() -> None:
         assert "erk-plan" in labels
 
         # Verify plan comment was added (create_plan_issue adds plan as comment)
-        assert len(issues.added_comments) == 1
+        # Plus queued event comment from dispatch
+        assert len(issues.added_comments) == 2
         issue_number, comment_body, _comment_id = issues.added_comments[0]
         assert issue_number == 1
         assert "One-shot" in comment_body
         assert "add user authentication" in comment_body
+
+        # Verify queued event comment
+        issue_number, queued_body, _comment_id = issues.added_comments[1]
+        assert issue_number == 1
+        assert "One-Shot Dispatched" in queued_body
+        assert "add user authentication" in queued_body
+
+
+def test_dispatch_posts_queued_event_comment() -> None:
+    """Test dispatch posts a queued event comment with workflow run URL and instruction."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FakeGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        params = OneShotDispatchParams(
+            instruction="refactor the auth module",
+            model=None,
+            extra_workflow_inputs={},
+        )
+
+        dispatch_one_shot(ctx, params=params, dry_run=False)
+
+        # create_plan_issue adds 1 comment, dispatch adds queued event comment
+        assert len(issues.added_comments) == 2
+
+        # The queued event comment is the last one
+        issue_number, comment_body, _comment_id = issues.added_comments[-1]
+        assert issue_number == 1
+        assert "One-Shot Dispatched" in comment_body
+        assert "refactor the auth module" in comment_body
+        assert "**Workflow run:**" in comment_body
+        assert "https://github.com/owner/repo/actions/runs/" in comment_body
 
 
 def test_dispatch_long_instruction_truncates_workflow_input() -> None:
