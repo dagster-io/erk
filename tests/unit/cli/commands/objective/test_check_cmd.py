@@ -680,6 +680,47 @@ steps:
     assert "missing '#' prefix" in result.output
 
 
+def test_done_step_with_plan_and_pr_passes() -> None:
+    """Test that a done step with both plan and PR references passes Check 3."""
+    body = """\
+# Objective: Done With Plan
+
+## Roadmap
+
+### Phase 1: Work
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: First step
+  status: done
+  plan: '#1234'
+  pr: '#5678'
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+    issue = _make_issue(2000, "Objective: Done With Plan", body)
+    fake_gh = FakeGitHubIssues(issues={2000: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["2000"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "[FAIL]" not in result.output
+    assert "Status/PR consistency" in result.output
+
+
 def test_valid_hash_prefix_refs_pass() -> None:
     """Test that properly prefixed plan/PR references pass Check 7."""
     issue = _make_issue(1900, "Objective: Good Refs", VALID_OBJECTIVE_BODY)
