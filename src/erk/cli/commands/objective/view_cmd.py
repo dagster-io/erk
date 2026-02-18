@@ -1,5 +1,6 @@
 """Command to fetch and display a single objective."""
 
+import json
 from datetime import datetime
 
 import click
@@ -17,12 +18,16 @@ from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.dependency_graph import (
+    DependencyGraph,
+    ObjectiveNode,
     compute_graph_summary,
     find_graph_next_step,
     graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapPhase,
     parse_v2_roadmap,
+    serialize_phases,
 )
 from erk_shared.output.output import user_output
 
@@ -63,12 +68,13 @@ def _format_ref_link(ref: str | None, repo_base_url: str) -> str:
     return f"[link={repo_base_url}/issues/{issue_number}]{escape(ref)}[/link]"
 
 
-def _format_step_status(status: str, *, plan: str | None) -> str:
+def _format_step_status(status: str, *, plan: str | None, is_unblocked: bool) -> str:
     """Format step status indicator with emoji and Rich markup.
 
     Args:
         status: Step status ("done", "in_progress", "pending", "blocked", "skipped")
         plan: Plan reference (e.g., "#6464") or None
+        is_unblocked: Whether the step's dependencies are all satisfied
 
     Returns:
         Rich markup string with emoji and color
@@ -83,6 +89,8 @@ def _format_step_status(status: str, *, plan: str | None) -> str:
     if status == "skipped":
         return "[dim]⏭ skipped[/dim]"
     # Default: pending
+    if is_unblocked:
+        return "[green bold]⏳ pending (unblocked)[/green bold]"
     return "[dim]⏳ pending[/dim]"
 
 
@@ -114,11 +122,52 @@ def _format_timestamp(dt_value: datetime, *, label: str) -> str:
     return _format_field(label, display)
 
 
+def _display_json(
+    *,
+    issue_number: int,
+    phases: list[RoadmapPhase],
+    graph: DependencyGraph,
+) -> None:
+    """Display JSON output for programmatic use."""
+    next_node = graph.next_node()
+    summary = compute_graph_summary(graph)
+
+    output = {
+        "issue_number": issue_number,
+        "phases": serialize_phases(phases),
+        "graph": {
+            "nodes": [
+                {
+                    "id": n.id,
+                    "description": n.description,
+                    "status": n.status,
+                    "plan": n.plan,
+                    "pr": n.pr,
+                    "depends_on": list(n.depends_on),
+                }
+                for n in graph.nodes
+            ],
+            "unblocked": [n.id for n in graph.unblocked_nodes()],
+            "next_node": next_node.id if next_node else None,
+            "is_complete": graph.is_complete(),
+        },
+        "summary": summary,
+    }
+    click.echo(json.dumps(output))
+
+
 @alias("v")
 @click.command("view")
 @click.argument("objective_ref", type=str)
+@click.option(
+    "--json-output",
+    "json_mode",
+    is_flag=True,
+    default=False,
+    help="Output structured JSON for programmatic use",
+)
 @click.pass_obj
-def view_objective(ctx: ErkContext, objective_ref: str) -> None:
+def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> None:
     """Fetch and display an objective by identifier.
 
     OBJECTIVE_REF can be a plain number (e.g., "42"), P-prefixed ("P42"),
@@ -156,6 +205,19 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
     graph = graph_from_phases(phases)
     summary = compute_graph_summary(graph)
 
+    # JSON output mode
+    if json_mode:
+        _display_json(
+            issue_number=issue_number,
+            phases=phases,
+            graph=graph,
+        )
+        return
+
+    # Build node lookup and compute unblocked set
+    node_by_id: dict[str, ObjectiveNode] = {n.id: n for n in graph.nodes}
+    unblocked_ids = {n.id for n in graph.unblocked_nodes()}
+
     # Find next step
     next_step = find_graph_next_step(graph, phases)
 
@@ -192,17 +254,24 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
         max_id_width = 0
         max_status_width = 0
         max_desc_width = 0
+        max_deps_width = 0
         max_plan_width = 0
         max_pr_width = 0
         for phase in phases:
             for step in phase.steps:
                 max_id_width = max(max_id_width, cell_len(step.id))
-                status_markup = _format_step_status(step.status, plan=step.plan)
+                node = node_by_id.get(step.id)
+                is_unblocked = step.id in unblocked_ids
+                status_markup = _format_step_status(
+                    step.status, plan=step.plan, is_unblocked=is_unblocked
+                )
                 max_status_width = max(
                     max_status_width,
                     cell_len(Text.from_markup(status_markup).plain),
                 )
                 max_desc_width = max(max_desc_width, cell_len(step.description))
+                deps_str = ", ".join(node.depends_on) if node and node.depends_on else "-"
+                max_deps_width = max(max_deps_width, cell_len(deps_str))
                 max_plan_width = max(
                     max_plan_width, cell_len("-" if step.plan is None else step.plan)
                 )
@@ -231,14 +300,19 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
             table.add_column("step", style="cyan", no_wrap=True, min_width=max_id_width)
             table.add_column("status", no_wrap=True, min_width=max_status_width)
             table.add_column("description", min_width=max_desc_width)
+            table.add_column("depends_on", style="dim", min_width=max_deps_width)
             table.add_column("plan", no_wrap=True, min_width=max_plan_width)
             table.add_column("pr", no_wrap=True, min_width=max_pr_width)
 
             for step in phase.steps:
+                node = node_by_id.get(step.id)
+                is_unblocked = step.id in unblocked_ids
+                deps_str = ", ".join(node.depends_on) if node and node.depends_on else "-"
                 table.add_row(
                     escape(step.id),
-                    _format_step_status(step.status, plan=step.plan),
+                    _format_step_status(step.status, plan=step.plan, is_unblocked=is_unblocked),
                     escape(step.description),
+                    escape(deps_str),
                     _format_ref_link(step.plan, repo_base_url),
                     _format_ref_link(step.pr, repo_base_url),
                 )
@@ -259,6 +333,14 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
                     f" {summary['in_progress']} in progress,"
                     f" {summary['pending']} pending"
                 ),
+            )
+        )
+
+        # Display unblocked count
+        user_output(
+            _format_field(
+                "Unblocked",
+                str(sum(1 for n in graph.unblocked_nodes() if n.status == "pending")),
             )
         )
 

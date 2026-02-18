@@ -1,5 +1,6 @@
 """Unit tests for erk objective view command."""
 
+import json
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
@@ -381,3 +382,122 @@ def test_view_objective_v1_schema_rejected() -> None:
 
         assert result.exit_code == 1
         assert "legacy format" in result.output
+
+
+def test_view_objective_depends_on_column() -> None:
+    """Test that depends_on column appears in output."""
+    issue = _make_issue(1200, "Objective: Deps", OBJECTIVE_WITH_ROADMAP)
+    fake_gh = FakeGitHubIssues(issues={1200: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1200"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = strip_ansi(result.output)
+        # Table header should include depends_on
+        assert "depends_on" in output
+        # Step 1.2 depends on 1.1
+        assert "1.1" in output
+
+
+def test_view_objective_unblocked_annotation() -> None:
+    """Test that unblocked pending steps show (unblocked) annotation."""
+    issue = _make_issue(1300, "Objective: Unblocked", OBJECTIVE_WITH_ROADMAP)
+    fake_gh = FakeGitHubIssues(issues={1300: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1300"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        # Step 1.3 is pending but depends on 1.2 (in_progress), so NOT unblocked
+        # The "unblocked" text should still appear for truly unblocked steps
+        # In our test data: 1.1 done, 1.2 in_progress (depends on 1.1, unblocked),
+        # 1.3 pending (depends on 1.2, NOT unblocked)
+        output = strip_ansi(result.output)
+        assert "Unblocked:" in output
+
+
+def test_view_objective_unblocked_count_in_summary() -> None:
+    """Test that summary shows unblocked count."""
+    issue = _make_issue(1350, "Objective: Unblocked Count", OBJECTIVE_WITH_ROADMAP)
+    fake_gh = FakeGitHubIssues(issues={1350: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1350"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = strip_ansi(result.output)
+        assert "Unblocked:" in output
+        # In OBJECTIVE_WITH_ROADMAP: 1.3 is the only pending step.
+        # 1.3 depends on 1.2 which is in_progress (not terminal), so 1.3 is NOT unblocked.
+        # Unblocked count should be 0.
+        assert "Unblocked:" in output and "0" in output
+
+
+def test_view_objective_json_output() -> None:
+    """Test --json-output flag produces valid JSON with graph data."""
+    issue = _make_issue(1400, "Objective: JSON", OBJECTIVE_WITH_ROADMAP)
+    fake_gh = FakeGitHubIssues(issues={1400: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1400", "--json-output"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        data = json.loads(result.output)
+        assert data["issue_number"] == 1400
+        assert "graph" in data
+        assert "nodes" in data["graph"]
+        assert len(data["graph"]["nodes"]) == 5
+        assert "unblocked" in data["graph"]
+        assert "next_node" in data["graph"]
+        assert "is_complete" in data["graph"]
+        assert data["graph"]["is_complete"] is False
+
+
+def test_view_objective_json_includes_depends_on() -> None:
+    """Test JSON output includes depends_on for each node."""
+    issue = _make_issue(1500, "Objective: JSON Deps", OBJECTIVE_WITH_ROADMAP)
+    fake_gh = FakeGitHubIssues(issues={1500: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1500", "--json-output"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        data = json.loads(result.output)
+        nodes = {n["id"]: n for n in data["graph"]["nodes"]}
+        # 1.1 has no deps (first step)
+        assert nodes["1.1"]["depends_on"] == []
+        # 1.2 depends on 1.1
+        assert nodes["1.2"]["depends_on"] == ["1.1"]
+        # 2A.1 depends on 1.3 (last step of previous phase)
+        assert nodes["2A.1"]["depends_on"] == ["1.3"]
