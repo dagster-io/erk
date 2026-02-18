@@ -251,3 +251,126 @@ def test_secret_exists_returns_none_on_os_error(monkeypatch: MonkeyPatch) -> Non
         result = admin.secret_exists(location, "MY_SECRET")
 
         assert result is None
+
+
+# ============================================================================
+# set_secret() Tests
+# ============================================================================
+
+
+def test_set_secret_constructs_correct_command(monkeypatch: MonkeyPatch) -> None:
+    """Test set_secret calls gh secret set with correct args and passes value via stdin."""
+    from pathlib import Path
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        assert cmd == [
+            "gh",
+            "secret",
+            "set",
+            "ANTHROPIC_API_KEY",
+            "--repo",
+            "test-owner/test-repo",
+        ]
+        assert kwargs.get("input") == "sk-secret-123"
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        admin.set_secret(location, "ANTHROPIC_API_KEY", "sk-secret-123")
+
+
+def test_set_secret_raises_on_failure(monkeypatch: MonkeyPatch) -> None:
+    """Test set_secret raises RuntimeError when gh command fails."""
+    from pathlib import Path
+
+    import pytest
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise subprocess.CalledProcessError(
+            returncode=1,
+            cmd=cmd,
+            stderr="gh: permission denied",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        with pytest.raises(RuntimeError):
+            admin.set_secret(location, "MY_SECRET", "my-value")
+
+
+# ============================================================================
+# delete_secret() Tests
+# ============================================================================
+
+
+def test_delete_secret_constructs_correct_command(monkeypatch: MonkeyPatch) -> None:
+    """Test delete_secret calls gh secret delete with correct args."""
+    from pathlib import Path
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        assert cmd == [
+            "gh",
+            "secret",
+            "delete",
+            "ANTHROPIC_API_KEY",
+            "--repo",
+            "test-owner/test-repo",
+        ]
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        admin.delete_secret(location, "ANTHROPIC_API_KEY")
+
+
+def test_delete_secret_raises_on_failure(monkeypatch: MonkeyPatch) -> None:
+    """Test delete_secret raises RuntimeError when gh command fails."""
+    from pathlib import Path
+
+    import pytest
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise subprocess.CalledProcessError(
+            returncode=1,
+            cmd=cmd,
+            stderr="gh: secret not found",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        with pytest.raises(RuntimeError):
+            admin.delete_secret(location, "NONEXISTENT_SECRET")
