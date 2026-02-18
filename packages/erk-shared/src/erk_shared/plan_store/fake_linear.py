@@ -258,6 +258,14 @@ class FakeLinearPlanBackend(PlanBackend):
 
         return results
 
+    def get_plan_for_branch(self, branch_name: str) -> int | None:
+        """Get plan number from branch name.
+
+        Linear doesn't use issue numbers in branch names, so this always returns None.
+        Linear uses UUIDs, not integer IDs.
+        """
+        return None
+
     def get_provider_name(self) -> str:
         """Get the provider name.
 

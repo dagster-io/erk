@@ -63,7 +63,6 @@ from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_learn_plan_completed,
 )
 from erk_shared.gateway.github.types import BodyText, PRDetails
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.sessions.discovery import find_sessions_for_plan
@@ -1068,7 +1067,7 @@ def _validate_pr_for_landing(
 
     # 5. Learn status check (for plan branches)
     # Check when: has plan issue AND (is_current_branch OR has worktree)
-    plan_issue_number = extract_leading_issue_number(target.branch)
+    plan_issue_number = ctx.plan_backend.get_plan_for_branch(target.branch)
     if plan_issue_number is not None and (
         target.is_current_branch or target.worktree_path is not None
     ):
@@ -1728,6 +1727,7 @@ def _execute_land(
     assert branch is not None
 
     state = make_execution_state(
+        plan_backend=ctx.plan_backend,
         cwd=ctx.cwd,
         pr_number=pr_number,
         branch=branch,

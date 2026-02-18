@@ -12,7 +12,6 @@ import click
 from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound, PlanState
 
@@ -83,7 +82,7 @@ def check_and_display_plan_issue_closure(
     Returns the plan issue number if found, None otherwise.
     This is fail-open: returns None silently if the issue doesn't exist.
     """
-    plan_number = extract_leading_issue_number(branch)
+    plan_number = ctx.plan_backend.get_plan_for_branch(branch)
     if plan_number is None:
         return None
 
@@ -145,7 +144,7 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
 
     Returns None otherwise (fail-open - never blocks landing).
     """
-    plan_number = extract_leading_issue_number(branch)
+    plan_number = ctx.plan_backend.get_plan_for_branch(branch)
     if plan_number is None:
         return None
 

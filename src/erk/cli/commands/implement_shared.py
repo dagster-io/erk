@@ -459,13 +459,11 @@ def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
         main → None
         feature-branch → None
     """
-    from erk_shared.naming import extract_leading_issue_number
-
     current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
     if current_branch is None:
         return None
 
-    issue_num = extract_leading_issue_number(current_branch)
+    issue_num = ctx.plan_backend.get_plan_for_branch(current_branch)
     if issue_num is None:
         return None
 

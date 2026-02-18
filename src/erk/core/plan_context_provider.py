@@ -9,8 +9,7 @@ from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.naming import extract_leading_issue_number
-from erk_shared.plan_store.store import PlanStore
+from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -39,7 +38,7 @@ class PlanContextProvider:
     objective title lookup (objectives are issues, not plans).
     """
 
-    def __init__(self, *, plan_store: PlanStore, github_issues: GitHubIssues) -> None:
+    def __init__(self, *, plan_store: PlanBackend, github_issues: GitHubIssues) -> None:
         self._plan_store = plan_store
         self._github_issues = github_issues
 
@@ -66,7 +65,7 @@ class PlanContextProvider:
         Returns:
             PlanContext if plan found, None otherwise
         """
-        issue_number = extract_leading_issue_number(branch_name)
+        issue_number = self._plan_store.get_plan_for_branch(branch_name)
         if issue_number is None:
             return None
 

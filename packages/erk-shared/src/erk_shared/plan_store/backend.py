@@ -219,6 +219,21 @@ class PlanBackend(PlanStore):
         ...
 
     @abstractmethod
+    def get_plan_for_branch(self, branch_name: str) -> int | None:
+        """Get the plan number associated with a branch.
+
+        For issue-backed plans: parses P{number}- from the branch name.
+        For draft-PR-backed plans: looks up the PR for the branch via API (cached).
+
+        Args:
+            branch_name: Git branch name to look up
+
+        Returns:
+            Plan number if branch is associated with a plan, None otherwise
+        """
+        ...
+
+    @abstractmethod
     def post_event(
         self,
         repo_root: Path,

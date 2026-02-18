@@ -23,6 +23,7 @@ from erk_shared.impl_folder import (
     save_plan_ref,
     validate_plan_linkage,
 )
+from erk_shared.plan_store.github import GitHubPlanStore
 
 # =============================================================================
 # create_impl_folder Tests
@@ -671,6 +672,11 @@ def test_has_plan_ref_not_exists(tmp_path: Path) -> None:
 # ============================================================================
 
 
+def _make_plan_backend() -> GitHubPlanStore:
+    """Create a GitHubPlanStore backed by fake issues for testing."""
+    return GitHubPlanStore(FakeGitHubIssues())
+
+
 def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
     """Test validation passes when branch and plan-ref.json match."""
     impl_dir = tmp_path / ".impl"
@@ -684,7 +690,9 @@ def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
         objective_id=None,
     )
 
-    result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
+    result = validate_plan_linkage(
+        impl_dir, "P42-add-feature-01-04-1234", plan_backend=_make_plan_backend()
+    )
     assert result == "42"
 
 
@@ -702,7 +710,9 @@ def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValueError) as exc_info:
-        validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
+        validate_plan_linkage(
+            impl_dir, "P42-add-feature-01-04-1234", plan_backend=_make_plan_backend()
+        )
 
     error_msg = str(exc_info.value)
     assert "P42" in error_msg
@@ -714,7 +724,9 @@ def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
     """Test validation returns branch issue as string when no plan ref exists."""
     impl_dir = tmp_path / ".impl"
 
-    result = validate_plan_linkage(impl_dir, "P123-some-feature-01-04-1234")
+    result = validate_plan_linkage(
+        impl_dir, "P123-some-feature-01-04-1234", plan_backend=_make_plan_backend()
+    )
     assert result == "123"
 
 
@@ -731,7 +743,7 @@ def test_validate_plan_linkage_impl_only(tmp_path: Path) -> None:
         objective_id=None,
     )
 
-    result = validate_plan_linkage(impl_dir, "main")
+    result = validate_plan_linkage(impl_dir, "main", plan_backend=_make_plan_backend())
     assert result == "456"
 
 
@@ -739,7 +751,7 @@ def test_validate_plan_linkage_neither(tmp_path: Path) -> None:
     """Test validation returns None when neither source has info."""
     impl_dir = tmp_path / ".impl"
 
-    result = validate_plan_linkage(impl_dir, "feature-branch")
+    result = validate_plan_linkage(impl_dir, "feature-branch", plan_backend=_make_plan_backend())
     assert result is None
 
 
@@ -755,5 +767,7 @@ def test_validate_plan_linkage_legacy_fallback(tmp_path: Path) -> None:
     }
     (impl_dir / "issue.json").write_text(json.dumps(legacy_data), encoding="utf-8")
 
-    result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
+    result = validate_plan_linkage(
+        impl_dir, "P42-add-feature-01-04-1234", plan_backend=_make_plan_backend()
+    )
     assert result == "42"

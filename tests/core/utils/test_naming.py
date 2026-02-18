@@ -5,10 +5,10 @@ import pytest
 
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
+    _extract_leading_issue_number,
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
-    extract_leading_issue_number,
     extract_objective_number,
     extract_plan_review_issue_number,
     extract_trailing_number,
@@ -504,7 +504,7 @@ def test_extract_leading_issue_number_with_objective_format(
     branch_name: str, expected: int | None
 ) -> None:
     """Extract leading issue number still works with objective ID in branch name."""
-    assert extract_leading_issue_number(branch_name) == expected
+    assert _extract_leading_issue_number(branch_name) == expected
 
 
 @pytest.mark.parametrize(

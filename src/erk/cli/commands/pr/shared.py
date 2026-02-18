@@ -26,7 +26,7 @@ from erk_shared.gateway.github.pr_footer import (
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.impl_folder import read_plan_ref
-from erk_shared.naming import extract_leading_issue_number
+from erk_shared.plan_store.backend import PlanBackend
 
 # ---------------------------------------------------------------------------
 # Branch Discovery
@@ -180,6 +180,7 @@ class IssueLinkageMismatch:
 
 def discover_issue_for_footer(
     *,
+    plan_backend: PlanBackend,
     impl_dir: Path,
     branch_name: str,
     existing_pr_body: str | None,
@@ -202,7 +203,7 @@ def discover_issue_for_footer(
         IssueLinkageMismatch if branch and .impl/issue.json disagree
     """
     # Primary: discover from .impl/plan-ref.json (or legacy issue.json) or branch name
-    branch_issue = extract_leading_issue_number(branch_name)
+    branch_issue = plan_backend.get_plan_for_branch(branch_name)
     plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
     impl_issue = int(plan_ref.plan_id) if plan_ref is not None else None
 

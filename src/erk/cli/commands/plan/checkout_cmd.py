@@ -17,7 +17,6 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
 
@@ -44,7 +43,7 @@ def _find_branches_for_issue(
     matching: list[str] = []
 
     for branch in local_branches:
-        branch_issue = extract_leading_issue_number(branch)
+        branch_issue = ctx.plan_backend.get_plan_for_branch(branch)
         if branch_issue == issue_number:
             matching.append(branch)
 

@@ -34,7 +34,7 @@ from pathlib import Path
 import click
 
 from erk.cli.config import load_config
-from erk_shared.context.helpers import get_current_branch, require_cwd
+from erk_shared.context.helpers import get_current_branch, require_cwd, require_plan_backend
 from erk_shared.impl_folder import validate_plan_linkage
 
 
@@ -73,7 +73,9 @@ def get_closing_text(ctx: click.Context) -> None:
 
     # Validate linkage and get plan ID (branch fallback if no .impl/)
     try:
-        plan_id = validate_plan_linkage(impl_dir, branch_name)
+        plan_id = validate_plan_linkage(
+            impl_dir, branch_name, plan_backend=require_plan_backend(ctx)
+        )
     except ValueError as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1) from None

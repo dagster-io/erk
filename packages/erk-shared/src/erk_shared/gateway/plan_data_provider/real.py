@@ -56,7 +56,6 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.conversion import (
     header_datetime,
     header_int,
@@ -431,7 +430,9 @@ class RealPlanDataProvider(PlanDataProvider):
         worktrees = self._ctx.git.worktree.list_worktrees(self._location.root)
         for worktree in worktrees:
             issue_number = (
-                extract_leading_issue_number(worktree.branch) if worktree.branch else None
+                self._ctx.plan_backend.get_plan_for_branch(worktree.branch)
+                if worktree.branch
+                else None
             )
             if issue_number is not None:
                 if issue_number not in worktree_by_issue:

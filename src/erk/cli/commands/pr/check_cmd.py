@@ -56,7 +56,7 @@ def pr_check(ctx: ErkContext) -> None:
     # This catches cases where branch name says "P42-..." but plan-ref says #99
     issue_number: int | None = None
     try:
-        plan_id = validate_plan_linkage(impl_dir, branch)
+        plan_id = validate_plan_linkage(impl_dir, branch, plan_backend=ctx.plan_backend)
         if plan_id is not None:
             issue_number = int(plan_id)
             checks.append((True, f"Branch name and plan reference agree (#{issue_number})"))

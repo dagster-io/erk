@@ -352,15 +352,6 @@ class RealGitBranchOps(GitBranchOps):
         is_diverged = ahead > 0 and behind > 0
         return BranchDivergence(is_diverged=is_diverged, ahead=ahead, behind=behind)
 
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name.
-
-        Branch names follow the pattern: P{issue_number}-{slug}-{timestamp}
-        """
-        from erk_shared.naming import extract_leading_issue_number
-
-        return extract_leading_issue_number(branch)
-
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get authors of commits on remote that are not in local branch."""
         # Check if branch has upstream

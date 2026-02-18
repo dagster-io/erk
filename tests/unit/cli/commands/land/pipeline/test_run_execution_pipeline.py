@@ -17,6 +17,11 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+from erk_shared.plan_store.github import GitHubPlanStore
+
+
+def _make_plan_backend() -> GitHubPlanStore:
+    return GitHubPlanStore(FakeGitHub())
 
 
 def _make_pr_details(
@@ -67,6 +72,7 @@ def test_merge_pr_step_succeeds(tmp_path: Path) -> None:
     )
 
     state = make_execution_state(
+        plan_backend=_make_plan_backend(),
         cwd=tmp_path,
         pr_number=pr_number,
         branch=branch,
@@ -108,6 +114,7 @@ def test_execution_pipeline_stops_on_merge_error(tmp_path: Path) -> None:
     )
 
     state = make_execution_state(
+        plan_backend=_make_plan_backend(),
         cwd=tmp_path,
         pr_number=pr_number,
         branch=branch,
@@ -132,6 +139,7 @@ def test_execution_pipeline_stops_on_merge_error(tmp_path: Path) -> None:
 def test_make_execution_state_no_cleanup_sets_cleanup_confirmed_false(tmp_path: Path) -> None:
     """make_execution_state with no_cleanup=True produces cleanup_confirmed=False."""
     state = make_execution_state(
+        plan_backend=_make_plan_backend(),
         cwd=tmp_path,
         pr_number=42,
         branch="feature-branch",
@@ -152,6 +160,7 @@ def test_make_execution_state_no_cleanup_sets_cleanup_confirmed_false(tmp_path: 
 def test_make_execution_state_default_cleanup_confirmed_true(tmp_path: Path) -> None:
     """make_execution_state with no_cleanup=False produces cleanup_confirmed=True."""
     state = make_execution_state(
+        plan_backend=_make_plan_backend(),
         cwd=tmp_path,
         pr_number=42,
         branch="feature-branch",

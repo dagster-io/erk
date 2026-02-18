@@ -100,12 +100,11 @@ def _get_impl_issue(
         if plan_ref is not None:
             return f"#{plan_ref.plan_id}", plan_ref.url
 
-    # Fallback to git config (no URL available from git config)
-    # If branch not provided, fetch it (for backwards compatibility)
+    # Fallback to branch name parsing (no URL available)
     if branch is None:
         branch = ctx.git.branch.get_current_branch(worktree_path)
     if branch is not None:
-        issue_num = ctx.git.branch.get_branch_issue(worktree_path, branch)
+        issue_num = ctx.plan_backend.get_plan_for_branch(branch)
         if issue_num is not None:
             return f"#{issue_num}", None
 

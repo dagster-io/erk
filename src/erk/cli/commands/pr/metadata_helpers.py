@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 
 import click
 
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import PlanNotFound
@@ -79,7 +78,7 @@ def maybe_update_plan_dispatch_metadata(
         branch_name: Branch name to extract issue number from
         run_id: Workflow run ID from trigger response
     """
-    plan_issue_number = extract_leading_issue_number(branch_name)
+    plan_issue_number = ctx.plan_backend.get_plan_for_branch(branch_name)
     if plan_issue_number is None:
         return
 

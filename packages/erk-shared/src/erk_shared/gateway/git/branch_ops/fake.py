@@ -41,7 +41,6 @@ class FakeGitBranchOps(GitBranchOps):
         ahead_behind: dict[tuple[Path, str], tuple[int, int]] | None = None,
         branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
         branch_sync_info: dict[Path, dict[str, BranchSyncInfo]] | None = None,
-        branch_issues: dict[str, int | None] | None = None,
         behind_commit_authors: dict[tuple[Path, str], list[str]] | None = None,
         branch_last_commit_times: dict[tuple[Path, str, str], str | None] | None = None,
         branch_commits_with_authors: dict[tuple[Path, str, str, int], list[dict[str, str]]]
@@ -62,7 +61,6 @@ class FakeGitBranchOps(GitBranchOps):
             ahead_behind: Mapping of (cwd, branch) -> (ahead, behind) tuple
             branch_divergence: Mapping of (cwd, branch, remote) -> BranchDivergence
             branch_sync_info: Mapping of repo_root -> dict of branch -> BranchSyncInfo
-            branch_issues: Mapping of branch name -> issue number
             behind_commit_authors: Mapping of (cwd, branch) -> list of author names
             branch_last_commit_times: Mapping of (repo_root, branch, trunk) -> timestamp
             branch_commits_with_authors: Mapping of (repo_root, branch, trunk, limit) -> commits
@@ -80,7 +78,6 @@ class FakeGitBranchOps(GitBranchOps):
         self._ahead_behind = ahead_behind if ahead_behind is not None else {}
         self._branch_divergence = branch_divergence if branch_divergence is not None else {}
         self._branch_sync_info = branch_sync_info if branch_sync_info is not None else {}
-        self._branch_issues = branch_issues if branch_issues is not None else {}
         self._behind_commit_authors = (
             behind_commit_authors if behind_commit_authors is not None else {}
         )
@@ -324,17 +321,6 @@ class FakeGitBranchOps(GitBranchOps):
         return self._branch_divergence.get(
             (cwd, branch, remote), BranchDivergence(is_diverged=False, ahead=0, behind=0)
         )
-
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name."""
-        # Check pre-configured mapping first
-        if branch in self._branch_issues:
-            return self._branch_issues[branch]
-
-        # Fall back to real parsing logic
-        from erk_shared.naming import extract_leading_issue_number
-
-        return extract_leading_issue_number(branch)
 
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get authors of commits on remote that are not in local branch."""

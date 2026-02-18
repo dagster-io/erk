@@ -97,10 +97,6 @@ class PrintingGitBranchOps(PrintingBase, GitBranchOps):
         """Check if a local branch has diverged from its remote tracking branch."""
         return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
 
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name."""
-        return self._wrapped.get_branch_issue(repo_root, branch)
-
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get authors of commits on remote that are not in local branch."""
         return self._wrapped.get_behind_commit_authors(cwd, branch)

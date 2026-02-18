@@ -35,7 +35,6 @@ from erk_shared.gateway.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -248,7 +247,7 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
         # Try to infer from current branch
         branch = ctx.git.branch.get_current_branch(ctx.cwd)
         if branch is not None:
-            issue_number = extract_leading_issue_number(branch)
+            issue_number = ctx.plan_backend.get_plan_for_branch(branch)
 
     if issue_number is None:
         user_output(

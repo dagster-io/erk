@@ -234,22 +234,6 @@ class GitBranchOps(ABC):
         ...
 
     @abstractmethod
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name.
-
-        Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
-        Examples: "2382-convert-erk-create-raw-ext-12-05-2359"
-
-        Args:
-            repo_root: Path to the git repository root (unused, kept for interface compat)
-            branch: Branch name to parse
-
-        Returns:
-            Issue number if branch starts with digits followed by hyphen, None otherwise
-        """
-        ...
-
-    @abstractmethod
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get authors of commits on remote that are not in local branch.
 

@@ -142,7 +142,6 @@ class FakeGit(Git):
         add_all_raises: Exception | None = None,
         fetch_branch_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
-        branch_issues: dict[str, int | None] | None = None,
         conflicted_files: list[str] | None = None,
         rebase_in_progress: bool | Callable[[Path], bool] = False,
         rebase_continue_raises: Exception | None = None,
@@ -199,7 +198,6 @@ class FakeGit(Git):
             add_all_raises: Exception to raise when add_all() is called
             fetch_branch_raises: Exception to raise when fetch_branch() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
-            branch_issues: Mapping of branch name -> issue number for get_branch_issue()
             conflicted_files: List of file paths with merge conflicts
             rebase_in_progress: Whether a rebase is currently in progress.
                 Can be a bool or a callable(cwd) -> bool for dynamic behavior.
@@ -254,7 +252,6 @@ class FakeGit(Git):
         self._add_all_raises = add_all_raises
         self._fetch_branch_raises = fetch_branch_raises
         self._pull_branch_raises = pull_branch_raises
-        self._branch_issues = branch_issues or {}
         self._conflicted_files = conflicted_files or []
         self._rebase_in_progress = rebase_in_progress
         self._rebase_continue_raises = rebase_continue_raises
@@ -342,7 +339,6 @@ class FakeGit(Git):
             ahead_behind=self._ahead_behind,
             branch_divergence=self._branch_divergence,
             branch_sync_info=self._branch_sync_info,
-            branch_issues=self._branch_issues,
             behind_commit_authors=self._behind_commit_authors,
             branch_last_commit_times=self._branch_last_commit_times,
             branch_commits_with_authors=self._branch_commits_with_authors,

@@ -22,7 +22,7 @@ from erk_shared.gateway.github.metadata.core import (
     render_erk_issue_event,
 )
 from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
-from erk_shared.naming import extract_leading_issue_number
+from erk_shared.plan_store.backend import PlanBackend
 
 
 def create_impl_folder(
@@ -242,7 +242,9 @@ def has_plan_ref(impl_dir: Path) -> bool:
     return (impl_dir / "plan-ref.json").exists() or (impl_dir / "issue.json").exists()
 
 
-def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
+def validate_plan_linkage(
+    impl_dir: Path, branch_name: str, *, plan_backend: PlanBackend
+) -> str | None:
     """Validate branch name and plan reference agree. Returns plan_id.
 
     Branch names follow the pattern P{issue_number}-{slug} (e.g., "P2382-add-feature").
@@ -251,6 +253,7 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
     Args:
         impl_dir: Path to .impl/ or .worker-impl/ directory
         branch_name: Current git branch name
+        plan_backend: PlanBackend for branch-to-plan resolution
 
     Returns:
         Plan ID (as string) if discoverable from either source, None if neither has one.
@@ -258,7 +261,7 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
     Raises:
         ValueError: If both sources have issue numbers and they disagree.
     """
-    branch_issue = extract_leading_issue_number(branch_name)
+    branch_issue = plan_backend.get_plan_for_branch(branch_name)
 
     plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
     impl_plan_id = plan_ref.plan_id if plan_ref is not None else None

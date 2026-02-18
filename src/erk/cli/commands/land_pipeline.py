@@ -29,8 +29,8 @@ from erk_shared.gateway.github.types import MergeError, PRDetails
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound
 from erk_shared.stack.validation import validate_parent_is_trunk
 
@@ -340,7 +340,7 @@ def check_learn_status(ctx: ErkContext, state: LandState) -> LandState | LandErr
     """
     from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
 
-    plan_issue_number = extract_leading_issue_number(state.branch)
+    plan_issue_number = ctx.plan_backend.get_plan_for_branch(state.branch)
 
     if plan_issue_number is not None and (
         state.is_current_branch or state.worktree_path is not None
@@ -624,6 +624,7 @@ def make_initial_state(
 
 def make_execution_state(
     *,
+    plan_backend: PlanBackend,
     cwd: Path,
     pr_number: int,
     branch: str,
@@ -642,7 +643,7 @@ def make_execution_state(
     Re-derives repo_root, main_repo_root, plan_issue_number from the args
     passed through the shell script serialization boundary.
     """
-    plan_issue_number = extract_leading_issue_number(branch)
+    plan_issue_number = plan_backend.get_plan_for_branch(branch)
 
     return LandState(
         cwd=cwd,
