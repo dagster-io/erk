@@ -26,7 +26,7 @@ The `RoadmapNode` dataclass has five fields (`id`, `description`, `status`, `pla
 The canonical table format:
 
 ```markdown
-| Step | Description | Status      | Plan  | PR   |
+| Node | Description | Status      | Plan  | PR   |
 | ---- | ----------- | ----------- | ----- | ---- |
 | 1.1  | Add auth    | done        | -     | #123 |
 | 1.2  | Add tests   | in-progress | #6464 | -    |
@@ -37,7 +37,7 @@ The canonical table format:
 The old 4-column format where plan and PR shared a single column is no longer actively parsed by `parse_roadmap()`. The parser now requires v2 YAML frontmatter and returns a legacy format error for non-v2 content.
 
 ```markdown
-| Step | Description | Status | PR         |
+| Node | Description | Status | PR         |
 | ---- | ----------- | ------ | ---------- |
 | 1.1  | Add auth    | done   | #123       |
 | 1.2  | Add tests   | -      | plan #6464 |
@@ -51,10 +51,10 @@ The surgical update command uses **header-based format detection** — it checks
 
 Key design choices:
 
-- **5-col header canonical**: `| Step | Description | Status | Plan | PR |`
+- **5-col header canonical**: `| Node | Description | Status | Plan | PR |`
 - **4-col handled on write**: When editing a 4-col table in the rendered view, the table is auto-upgraded to 5-col
-- **Frontmatter schema v2**: The YAML frontmatter uses `schema_version: "2"` with separate `plan` and `pr` fields
-- **v2-only parsing**: `parse_roadmap()` returns a legacy format error for non-v2 content (no table-parsing fallback)
+- **Frontmatter schema v3**: The YAML frontmatter uses `schema_version: "3"` with the `nodes` key (v2 used `steps`). The parser accepts both v2 and v3; the renderer always emits v3.
+- **v2/v3 parsing**: `parse_roadmap()` accepts both schema versions. Returns a legacy format error for non-v2/v3 content (no table-parsing fallback)
 
 ## Historical: Planned 7-Column Extension (Never Built)
 

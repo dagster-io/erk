@@ -545,8 +545,8 @@ Progress is tracked in `.impl/progress.md`:
 
 ```markdown
 ---
-completed_steps: 3
-total_steps: 5
+completed_nodes: 3
+total_nodes: 5
 steps:
   - text: "1. First step"
     completed: true
@@ -902,8 +902,8 @@ issue_number: 123
 
 ```yaml
 status: in_progress # pending, in_progress, complete, failed
-completed_steps: 3
-total_steps: 5
+completed_nodes: 3
+total_nodes: 5
 timestamp: 2025-01-15T10:30:00Z
 step_description: "Implementing feature X" # optional
 ```

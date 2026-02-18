@@ -24,8 +24,8 @@ def test_create_block_with_valid_schema() -> None:
     schema = ImplementationStatusSchema()
     data = {
         "status": "complete",
-        "completed_steps": 5,
-        "total_steps": 5,
+        "completed_nodes": 5,
+        "total_nodes": 5,
         "timestamp": "2025-11-22T12:00:00Z",
     }
     block = create_metadata_block(
@@ -42,8 +42,8 @@ def test_create_block_with_invalid_data_raises() -> None:
     schema = ImplementationStatusSchema()
     data = {
         "status": "invalid-status",
-        "completed_steps": 3,
-        "total_steps": 5,
+        "completed_nodes": 3,
+        "total_nodes": 5,
         "timestamp": "2025-11-22T12:00:00Z",
     }
 

@@ -107,21 +107,21 @@ Use haiku inference (via model parameter in prompts) to analyze the objective bo
 >   "phases": [
 >     {
 >       "name": "Phase 1A",
->       "total_steps": 2,
->       "done_steps": 2,
+>       "total_nodes": 2,
+>       "done_nodes": 2,
 >       "complete": true
 >     },
 >     {
 >       "name": "Phase 1B",
->       "total_steps": 3,
->       "done_steps": 1,
+>       "total_nodes": 3,
+>       "done_nodes": 1,
 >       "complete": false
 >     }
 >   ],
 >   "total_phases": 2,
 >   "complete_phases": 1,
->   "total_steps": 5,
->   "done_steps": 3
+>   "total_nodes": 5,
+>   "done_nodes": 3
 > }
 > ```
 >
@@ -153,7 +153,7 @@ Format output as:
 ### Progress
 
 - **Activities:** <comment_count> comments
-- **Roadmap:** <complete_phases>/<total_phases> phases, <done_steps>/<total_steps> steps completed
+- **Roadmap:** <complete_phases>/<total_phases> phases, <done_nodes>/<total_nodes> steps completed
 
 ### Phase Details
 

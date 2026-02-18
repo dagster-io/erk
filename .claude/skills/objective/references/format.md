@@ -39,7 +39,7 @@ Locked decisions that guide all related work:
 
 Minimal vertical slice proving the concept works.
 
-| Step | Description              | Status  | PR  |
+| Node | Description              | Status  | PR  |
 | ---- | ------------------------ | ------- | --- |
 | 1.1  | [Minimal infrastructure] | pending |     |
 | 1.2  | [Wire into one command]  | pending |     |
@@ -50,7 +50,7 @@ Minimal vertical slice proving the concept works.
 
 Fill out remaining functionality.
 
-| Step | Description                    | Status  | PR  |
+| Node | Description                    | Status  | PR  |
 | ---- | ------------------------------ | ------- | --- |
 | 2.1  | [Extend to remaining commands] | pending |     |
 | 2.2  | [Full test coverage]           | pending |     |
@@ -229,7 +229,7 @@ All gateway ABCs have:
 
 ### Phase 1: Git Gateway Steelthread (1 PR)
 
-| Step | Description                                         | Status | PR   |
+| Node | Description                                         | Status | PR   |
 | ---- | --------------------------------------------------- | ------ | ---- |
 | 1.1  | Create FakeGit with just `commit()` and `get_log()` | done   | #301 |
 | 1.2  | Wire into one test as proof of concept              | done   | #301 |
@@ -238,7 +238,7 @@ All gateway ABCs have:
 
 ### Phase 2: Complete Git Gateway (1 PR)
 
-| Step | Description                                            | Status | PR   |
+| Node | Description                                            | Status | PR   |
 | ---- | ------------------------------------------------------ | ------ | ---- |
 | 2.1  | Add remaining FakeGit methods (branch, checkout, etc.) | done   | #305 |
 | 2.2  | Add DryRunGit wrapper                                  | done   | #305 |
@@ -248,7 +248,7 @@ All gateway ABCs have:
 
 ### Phase 3: GitHub Gateway Steelthread (1 PR)
 
-| Step | Description                               | Status  | PR  |
+| Node | Description                               | Status  | PR  |
 | ---- | ----------------------------------------- | ------- | --- |
 | 3.1  | Create FakeGitHub with just `create_pr()` | pending |     |
 | 3.2  | Wire into PR submission test              | pending |     |
@@ -257,7 +257,7 @@ All gateway ABCs have:
 
 ### Phase 4: Complete GitHub Gateway (1 PR)
 
-| Step | Description                      | Status  | PR  |
+| Node | Description                      | Status  | PR  |
 | ---- | -------------------------------- | ------- | --- |
 | 4.1  | Add remaining FakeGitHub methods | pending |     |
 | 4.2  | Add DryRunGitHub wrapper         | pending |     |
@@ -566,7 +566,7 @@ Returns JSON with:
 | `issue_number`      | int          | The objective issue number                                        |
 | `checks`            | array        | List of {passed, description} for each check                      |
 | `phases`            | array        | Parsed phases with steps (id, description, status, pr)            |
-| `summary`           | object       | Counts: total_steps, pending, done, in_progress, blocked, skipped |
+| `summary`           | object       | Counts: total_nodes, pending, done, in_progress, blocked, skipped |
 | `next_step`         | object\|null | First pending step (id, description, phase)                       |
 | `validation_errors` | array        | List of parsing or format issues                                  |
 

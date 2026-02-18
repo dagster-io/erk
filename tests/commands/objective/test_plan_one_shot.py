@@ -49,14 +49,14 @@ steps:
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup infra | pending | - | - |
 | 1.2 | Add tests | pending | - | - |
 
 ### Phase 2: Core
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 2.1 | Build feature | pending | - | - |
 """
@@ -92,7 +92,7 @@ steps:
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup infra | done | - | #100 |
 | 1.2 | Add tests | done | - | #101 |
@@ -258,7 +258,7 @@ steps:
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup infra | done | - | #100 |
 | 1.2 | Add tests | pending | - | - |

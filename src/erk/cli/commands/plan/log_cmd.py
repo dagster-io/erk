@@ -53,9 +53,9 @@ class ImplementationStatusMetadata(TypedDict, total=False):
     """Metadata for implementation_status event."""
 
     status: str
-    completed_steps: int
-    total_steps: int
-    step_description: str
+    completed_nodes: int
+    total_nodes: int
+    node_description: str
     worktree: str
     branch: str
 
@@ -287,12 +287,15 @@ def _extract_implementation_status_event(data: dict) -> Event | None:
 
     metadata: ImplementationStatusMetadata = {"status": status}
 
-    if "completed_steps" in data:
-        metadata["completed_steps"] = data["completed_steps"]
-    if "total_steps" in data:
-        metadata["total_steps"] = data["total_steps"]
-    if "step_description" in data:
-        metadata["step_description"] = data["step_description"]
+    completed = data.get("completed_nodes", data.get("completed_steps"))
+    if completed is not None:
+        metadata["completed_nodes"] = completed
+    total = data.get("total_nodes", data.get("total_steps"))
+    if total is not None:
+        metadata["total_nodes"] = total
+    desc = data.get("node_description", data.get("step_description"))
+    if desc is not None:
+        metadata["node_description"] = desc
     if "worktree" in data:
         metadata["worktree"] = data["worktree"]
     if "branch" in data:

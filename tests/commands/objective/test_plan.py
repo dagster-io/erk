@@ -212,7 +212,7 @@ steps:
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup infra | pending | - | - |
 | 1.2 | Add tests | pending | - | - |
@@ -244,7 +244,7 @@ steps:
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup infra | done | - | #100 |
 """

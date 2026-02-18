@@ -123,7 +123,7 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
             sections.append("")
 
         # Table header
-        sections.append("| Step | Description | Status | Plan | PR |")
+        sections.append("| Node | Description | Status | Plan | PR |")
         sections.append("|------|-------------|--------|------|----|")
 
         # Table rows

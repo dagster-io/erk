@@ -90,7 +90,7 @@ OBJECTIVE_LEGACY_TABLE = """\
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup infrastructure | done | - | #123 |
 """

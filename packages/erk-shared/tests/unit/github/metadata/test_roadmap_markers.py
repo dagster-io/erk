@@ -16,14 +16,14 @@ Some description.
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup infra | pending | - | - |
 | 1.2 | Add tests | done | - | #100 |
 
 ### Phase 2: Core
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 2.1 | Build feature | pending | - | - |
 
@@ -63,7 +63,7 @@ def test_wrap_replaces_existing_markers() -> None:
     content = """<!-- erk:roadmap-table -->
 ### Phase 1: Foundation
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup | pending | - | - |
 <!-- /erk:roadmap-table -->
@@ -80,7 +80,7 @@ def test_extract_returns_section_when_markers_present() -> None:
     text = """Some prefix.
 <!-- erk:roadmap-table -->
 ### Phase 1: Test
-| 1.1 | Step | pending | - | - |
+| 1.1 | Node | pending | - | - |
 <!-- /erk:roadmap-table -->
 Some suffix."""
 
@@ -98,7 +98,7 @@ Some suffix."""
 def test_extract_returns_none_without_markers() -> None:
     """Extract returns None when no markers are present."""
     text = """### Phase 1: Test
-| 1.1 | Step | pending | - | - |
+| 1.1 | Node | pending | - | - |
 """
     result = extract_roadmap_table_section(text)
 
@@ -109,7 +109,7 @@ def test_extract_returns_none_with_only_start_marker() -> None:
     """Extract returns None when only start marker is present."""
     text = """<!-- erk:roadmap-table -->
 ### Phase 1: Test
-| 1.1 | Step | pending | - | - |
+| 1.1 | Node | pending | - | - |
 """
     result = extract_roadmap_table_section(text)
 
@@ -120,7 +120,7 @@ def test_wrap_single_phase() -> None:
     """Single phase is wrapped correctly."""
     content = """### Phase 1: Only Phase
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Step one | pending | - | - |
 """
