@@ -221,13 +221,24 @@ def dispatch_one_shot(
         if isinstance(push_result, PushError):
             Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
 
+        # Build closing reference for plan issue linkage
+        # GitHub only sets willCloseTarget at PR creation, not on subsequent body edits
+        closing_ref = ""
+        if plan_issue_number is not None:
+            plans_repo = ctx.local_config.plans_repo
+            closing_ref = (
+                f"\n\nCloses {plans_repo}#{plan_issue_number}"
+                if plans_repo
+                else f"\n\nCloses #{plan_issue_number}"
+            )
+
         # Create draft PR
         user_output("Creating draft PR...")
         pr_number = ctx.github.create_pr(
             repo.root,
             branch_name,
             pr_title,
-            f"Autonomous one-shot execution.\n\n**Instruction:** {params.instruction}",
+            f"Autonomous one-shot execution.\n\n**Instruction:** {params.instruction}{closing_ref}",
             trunk,
             draft=True,
         )
@@ -274,7 +285,7 @@ def dispatch_one_shot(
                 pr_body = (
                     f"Autonomous one-shot execution.\n\n"
                     f"**Instruction:** {params.instruction}\n\n"
-                    f"**Workflow run:** {run_url}"
+                    f"**Workflow run:** {run_url}{closing_ref}"
                 )
                 ctx.github.update_pr_body(repo.root, pr_number, pr_body)
             except Exception as e:
