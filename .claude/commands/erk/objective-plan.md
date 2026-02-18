@@ -104,11 +104,11 @@ ROADMAP:
 | 1.2 | Phase 1 | <description> | pending |
 | 2.1 | Phase 2 | <description> | blocked |
 
-PENDING_STEPS:
+PENDING_NODES:
 - 1.2: <description>
 - 3.1: <description>
 
-RECOMMENDED: <step-id or "none">
+RECOMMENDED: <node-id or "none">
 
 WARNINGS: <any warnings about labels, roadmap format, etc., or "none">
 
@@ -119,7 +119,7 @@ Status mapping:
 - "blocked" → "blocked"
 - "skipped" → "skipped"
 
-Only include steps with status "pending" in PENDING_STEPS section.
+Only include nodes with status "pending" in PENDING_NODES section.
 Use the "next_step" field from check output as RECOMMENDED.
 ```
 
@@ -135,47 +135,47 @@ Load the `objective` skill for format templates and guidance.
 
 Display the roadmap table from the Task agent's output to the user.
 
-Then use AskUserQuestion to ask which step to plan:
+Then use AskUserQuestion to ask which node to plan:
 
 ```
-Which step should I create a plan for?
-- Step 1A.1: <description> (Recommended) ← first pending step without plan in progress
-- Step 1A.2: <description>
-- Step 2B.1: <description> (plan in progress, #456) ← shown but not recommended
-- (Other - specify step number or description)
+Which node should I create a plan for?
+- Node 1A.1: <description> (Recommended) ← first pending node without plan in progress
+- Node 1A.2: <description>
+- Node 2B.1: <description> (plan in progress, #456) ← shown but not recommended
+- (Other - specify node number or description)
 ```
 
 **Filtering rules (based on JSON `status` field):**
 
-- **Show as options:** Steps with status `"pending"`
-- **Show but deprioritize:** Steps with status `"in_progress"` - still selectable via "Other" but not recommended
-- **Hide from options:** Steps with status `"done"`, `"blocked"`, or `"skipped"`
+- **Show as options:** Nodes with status `"pending"`
+- **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
+- **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
 
-**Recommendation rule:** Use the `next_step` field from the roadmap check JSON as the recommended option. If `next_step` is null, no step is recommended.
+**Recommendation rule:** Use the `next_step` field from the roadmap check JSON as the recommended option. If `next_step` is null, no node is recommended.
 
-If all steps are complete or have plans in progress, report appropriately:
+If all nodes are complete or have plans in progress, report appropriately:
 
-- All complete: "All roadmap steps are complete! Consider closing the objective."
-- All have plans: "All pending steps have plans in progress. You can still select one via 'Other' to create a parallel plan."
+- All complete: "All roadmap nodes are complete! Consider closing the objective."
+- All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
 
-### Step 5: Create Roadmap Step Marker
+### Step 5: Create Roadmap Node Marker
 
-After the user selects a step, create a marker to store the selected step ID for later use by `plan-save`:
+After the user selects a node, create a marker to store the selected node ID for later use by `plan-save`:
 
 ```bash
 erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
   --content "<step-id>" roadmap-step
 ```
 
-Replace `<step-id>` with the step ID selected by the user (e.g., "2A.1"). This marker enables `plan-save` to automatically update the objective's roadmap table with the plan issue number.
+Replace `<step-id>` with the node ID selected by the user (e.g., "2A.1"). This marker enables `plan-save` to automatically update the objective's roadmap table with the plan issue number.
 
 ### Step 6: Gather Context
 
 Before entering plan mode, gather relevant context:
 
 1. **Objective context:** Goal, design decisions, implementation context
-2. **Step context:** What the specific step requires
-3. **Prior work:** Look at completed steps and their PRs for patterns
+2. **Node context:** What the specific node requires
+3. **Prior work:** Look at completed nodes and their PRs for patterns
 
 Use this context to inform the plan.
 
@@ -184,14 +184,14 @@ Use this context to inform the plan.
 Enter plan mode to create the implementation plan:
 
 1. Use the EnterPlanMode tool
-2. Focus the plan on the specific step selected
+2. Focus the plan on the specific node selected
 3. Reference the parent objective in the plan
 
 **Plan should include:**
 
-- Reference to objective: `Part of Objective #<number>, Step <step-id>`
-- Clear goal for this specific step
-- Implementation phases (typically 1-3 for a single step)
+- Reference to objective: `Part of Objective #<number>, Node <step-id>`
+- Clear goal for this specific node
+- Implementation phases (typically 1-3 for a single node)
 - Files to modify
 - Test requirements
 
@@ -244,8 +244,8 @@ Check the `body` field in the JSON response contains `objective_issue`.
 ## Output Format
 
 - **Start:** "Loading objective #<number>..."
-- **After parsing:** Display roadmap steps with status
-- **After selection:** "Creating plan for step <step-id>: <description>"
+- **After parsing:** Display roadmap nodes with status
+- **After selection:** "Creating plan for node <step-id>: <description>"
 - **In plan mode:** Show plan content
 - **End:** Guide to `/erk:plan-save`
 
@@ -257,9 +257,9 @@ Check the `body` field in the JSON response contains `objective_issue`.
 | --------------------------------------- | ---------------------------------------------------------------- |
 | Issue not found                         | Report error and exit                                            |
 | Issue is erk-plan                       | Redirect to `/erk:plan-implement`                                |
-| No pending steps                        | Report all steps complete, suggest closing                       |
+| No pending nodes                        | Report all nodes complete, suggest closing                       |
 | Invalid argument format                 | Prompt for valid issue number                                    |
-| Roadmap not parseable                   | Ask user to specify which step to plan                           |
+| Roadmap not parseable                   | Ask user to specify which node to plan                           |
 | Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
 
 ---
@@ -267,6 +267,6 @@ Check the `body` field in the JSON response contains `objective_issue`.
 ## Important Notes
 
 - **Objective context matters:** Read the full objective for design decisions and lessons learned
-- **One step at a time:** Each plan should focus on a single roadmap step
+- **One node at a time:** Each plan should focus on a single roadmap node
 - **Link back:** Always reference the parent objective in the plan
-- **Steelthread pattern:** If planning a Phase A step, focus on minimal vertical slice
+- **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice

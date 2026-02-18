@@ -6,12 +6,12 @@ This document covers when and how to close objectives, including proactive trigg
 
 **CRITICAL**: When any of these conditions are detected, the agent MUST ask the user about closing the objective. Do not let objectives linger in a "ready to close" state.
 
-### Trigger 1: All Steps Complete
+### Trigger 1: All Nodes Complete
 
-When updating an objective and ALL roadmap steps show `done` or `skipped` status:
+When updating an objective and ALL roadmap nodes show `done` or `skipped` status:
 
 ```
-All roadmap steps are complete. Should I close objective #<number> now?
+All roadmap nodes are complete. Should I close objective #<number> now?
 - Yes, close with final summary
 - Not yet, there may be follow-up work
 - I'll close it manually later
@@ -33,16 +33,16 @@ This PR completes objective #<number>. Should I close it now?
 
 ### Trigger 3: Post-Update Check
 
-After any objective update that marks the last pending step as done, proactively check:
+After any objective update that marks the last pending node as done, proactively check:
 
-1. Are all steps now done/skipped?
+1. Are all nodes now done/skipped?
 2. If yes, ask about closing
 
 ## When to Close
 
 Close an objective when:
 
-- All roadmap steps are done or explicitly skipped
+- All roadmap nodes are done or explicitly skipped
 - The goal has been achieved
 - The objective is abandoned (document why)
 
@@ -56,7 +56,7 @@ Do NOT close if:
 
 Before closing, verify:
 
-- [ ] All roadmap steps are `done` or `skipped` (with reasons for skipped)
+- [ ] All roadmap nodes are `done` or `skipped` (with reasons for skipped)
 - [ ] All related PRs are merged
 - [ ] Action comments capture key lessons learned
 - [ ] Issue body reflects final state
@@ -127,7 +127,7 @@ Agent should:
 2. Ask: "This PR completes objective #3472. Should I close it after landing?"
 3. If yes:
    - Post final action comment summarizing the work
-   - Update issue body if needed (ensure all steps marked done)
+   - Update issue body if needed (ensure all nodes marked done)
    - Close the issue
    - Report: "Objective #3472 closed successfully"
 
@@ -135,7 +135,7 @@ Agent should:
 
 **Don't leave objectives in limbo.** These states indicate a missed closing opportunity:
 
-- All steps are done but no final summary posted
+- All nodes are done but no final summary posted
 - Last update was days ago with completion language
 
 If you notice these states, proactively ask about closing.

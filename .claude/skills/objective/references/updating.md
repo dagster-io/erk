@@ -12,7 +12,7 @@ The two-step pattern applies to ALL objective changes, not just completions:
 
 | Change Type        | Comment                                               | Body Update           |
 | ------------------ | ----------------------------------------------------- | --------------------- |
-| Complete a step    | "Action: Completed X"                                 | Status → done, add PR |
+| Complete a node    | "Action: Completed X"                                 | Status → done, add PR |
 | Add context        | "Action: Added X"                                     | Add section to body   |
 | Refine decision    | "Action: Refined X"                                   | Update decision text  |
 | Add phase          | "Action: Added Phase X"                               | Add phase to roadmap  |

@@ -96,9 +96,9 @@ Use haiku inference (via model parameter in prompts) to analyze the objective bo
 > Analyze this objective issue's Roadmap section. For each phase, identify:
 >
 > 1. Phase name (e.g., "Phase 1A: Git Gateway Steelthread")
-> 2. Total steps in that phase
-> 3. Completed steps (status is "done")
-> 4. Phase completion status (all steps done = complete)
+> 2. Total nodes in that phase
+> 3. Completed nodes (status is "done")
+> 4. Phase completion status (all nodes done = complete)
 >
 > Return as JSON:
 >
@@ -153,11 +153,11 @@ Format output as:
 ### Progress
 
 - **Activities:** <comment_count> comments
-- **Roadmap:** <complete_phases>/<total_phases> phases, <done_nodes>/<total_nodes> steps completed
+- **Roadmap:** <complete_phases>/<total_phases> phases, <done_nodes>/<total_nodes> nodes completed
 
 ### Phase Details
 
-| Phase    | Steps      | Status      |
+| Phase    | Nodes      | Status      |
 | -------- | ---------- | ----------- |
 | Phase 1A | 2/2 (100%) | ✅ Complete |
 | Phase 1B | 1/3 (33%)  | In Progress |

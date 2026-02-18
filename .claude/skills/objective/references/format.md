@@ -97,7 +97,7 @@ Each action comment logs work done and lessons learned. Post one comment per sig
 
 **Date:** YYYY-MM-DD
 **PR:** #123 (if applicable)
-**Phase/Step:** 1.2
+**Phase/Node:** 1.2
 
 ### What Was Done
 
@@ -113,7 +113,7 @@ Each action comment logs work done and lessons learned. Post one comment per sig
 
 ### Roadmap Updates
 
-- Step 1.2: pending → done
+- Node 1.2: pending → done
 - [Any other status changes]
 
 ### Body Reconciliation
@@ -144,11 +144,11 @@ Use past-tense to indicate completed action:
 
 Update after:
 
-- Completing one or more roadmap steps
+- Completing one or more roadmap nodes
 - Merging a related PR
 - **Adding implementation context**
 - **Adding or refining design decisions**
-- **Adding new phases or steps**
+- **Adding new phases or nodes**
 - Hitting a blocker that changes the plan
 - Discovering new work that needs adding to the roadmap
 - Changing direction or design decisions
@@ -156,7 +156,7 @@ Update after:
 
 Do NOT update for:
 
-- Minor progress within a step
+- Minor progress within a node
 - Work-in-progress status
 - Questions (use PR comments instead)
 
@@ -164,10 +164,10 @@ Do NOT update for:
 
 After posting an action comment, update these sections in the issue body:
 
-- **Roadmap tables** - Change step statuses, add PR links (via exec commands)
+- **Roadmap tables** - Change node statuses, add PR links (via exec commands)
 - **Design Decisions** - Revise any decisions that were overridden during implementation
 - **Implementation Context** - Correct architecture descriptions that no longer match reality
-- **Step descriptions** - Adjust scope if what was built differs from what was planned
+- **Node descriptions** - Adjust scope if what was built differs from what was planned
 
 ### Adding Context (Non-Completion Action)
 
@@ -294,7 +294,7 @@ See `erk/gateways/git/` for the full pattern.
 
 **Date:** 2025-01-15
 **PR:** #301
-**Phase/Step:** 1
+**Phase/Node:** 1
 
 ### What Was Done
 
@@ -310,7 +310,7 @@ See `erk/gateways/git/` for the full pattern.
 
 ### Roadmap Updates
 
-- Phase 1: all steps → done
+- Phase 1: all nodes → done
 ```
 
 ```markdown
@@ -318,7 +318,7 @@ See `erk/gateways/git/` for the full pattern.
 
 **Date:** 2025-01-18
 **PR:** #305
-**Phase/Step:** 2
+**Phase/Node:** 2
 
 ### What Was Done
 
@@ -334,21 +334,21 @@ See `erk/gateways/git/` for the full pattern.
 
 ### Roadmap Updates
 
-- Phase 2: all steps → done
+- Phase 2: all nodes → done
 ```
 
 ## Common Patterns
 
 ### Completing a Phase
 
-When all steps in a phase are done:
+When all nodes in a phase are done:
 
 1. Mark phase header with ✅ (e.g., "### Phase 1: Git Gateway ✅")
 2. Consider adding a summary note under the phase
 
 ### Blocking Dependencies
 
-When a step is blocked:
+When a node is blocked:
 
 ```markdown
 | 2.3 | Integrate with CI | blocked | | <!-- Blocked on #400 -->
@@ -360,7 +360,7 @@ Log the blocker in an action comment:
 ## Action: Identified CI integration blocker
 
 **Date:** 2025-01-20
-**Phase/Step:** 2.3
+**Phase/Node:** 2.3
 
 ### What Was Done
 
@@ -374,18 +374,18 @@ Log the blocker in an action comment:
 
 ### Roadmap Updates
 
-- Step 2.3: pending → blocked (waiting on #400)
+- Node 2.3: pending → blocked (waiting on #400)
 ```
 
-### Skipping Steps
+### Skipping Nodes
 
-When deciding to skip a step:
+When deciding to skip a node:
 
 ```markdown
 ## Action: Decided to skip Graphite dry-run
 
 **Date:** 2025-01-22
-**Phase/Step:** 3.2
+**Phase/Node:** 3.2
 
 ### What Was Done
 
@@ -399,32 +399,32 @@ When deciding to skip a step:
 
 ### Roadmap Updates
 
-- Step 3.2: pending → skipped (no mutations to preview)
+- Node 3.2: pending → skipped (no mutations to preview)
 ```
 
-### Splitting Steps
+### Splitting Nodes
 
-When a step turns out to need subdivision:
+When a node turns out to need subdivision:
 
 ```markdown
-## Action: Split authentication step
+## Action: Split authentication node
 
 **Date:** 2025-01-25
-**Phase/Step:** 2.1
+**Phase/Node:** 2.1
 
 ### What Was Done
 
 - Started work on FakeGitHub
-- Realized authentication is complex enough to warrant separate step
+- Realized authentication is complex enough to warrant separate node
 
 ### Lessons Learned
 
 - OAuth vs PAT handling differs significantly
-- Better to have granular steps than monolithic ones
+- Better to have granular nodes than monolithic ones
 
 ### Roadmap Updates
 
-- Step 2.1 split into:
+- Node 2.1 split into:
   - 2.1a: FakeGitHub core (pending)
   - 2.1b: FakeGitHub authentication (pending)
 ```
@@ -446,7 +446,7 @@ When a single PR completes substantial work across multiple phases:
 
 **Date:** 2025-12-30
 **PR:** #3485
-**Phase/Step:** 2.1-6.3
+**Phase/Node:** 2.1-6.3
 
 ### What Was Done
 
@@ -465,15 +465,15 @@ When a single PR completes substantial work across multiple phases:
 
 ### Roadmap Updates
 
-- Phase 2-6: all steps → done (#3485)
+- Phase 2-6: all nodes → done (#3485)
 - Added new Phase 7 for follow-up work discovered during deletion
 ```
 
 **Body Changes:**
 
-- Changed all Phase 2-6 step statuses from `pending` to `done`
-- Added PR #3485 link to each completed step
-- Added new Phase 7 section with steps for discovered follow-up work
+- Changed all Phase 2-6 node statuses from `pending` to `done`
+- Added PR #3485 link to each completed node
+- Added new Phase 7 section with nodes for discovered follow-up work
 
 ### Adding Discovered Work
 
@@ -485,7 +485,7 @@ When implementation reveals additional scope:
 ## Action: Discovered Follow-up Work During Kit Deletion
 
 **Date:** 2025-12-30
-**Phase/Step:** N/A (scope expansion)
+**Phase/Node:** N/A (scope expansion)
 
 ### What Was Done
 
@@ -515,7 +515,7 @@ When implementation reveals additional scope:
 
 **Date:** 2025-01-22
 **PR:** #412
-**Phase/Step:** 2.3
+**Phase/Node:** 2.3
 
 ### What Was Done
 
@@ -531,12 +531,12 @@ When implementation reveals additional scope:
 
 ### Roadmap Updates
 
-- Step 2.3: blocked → done
+- Node 2.3: blocked → done
 ```
 
 **Body Changes:**
 
-- Changed step 2.3 status from `blocked` to `done`
+- Changed node 2.3 status from `blocked` to `done`
 - Removed HTML comment about blocker
 - Added PR #412 link
 
@@ -565,13 +565,13 @@ Returns JSON with:
 | `success`           | boolean      | Whether all checks passed                                         |
 | `issue_number`      | int          | The objective issue number                                        |
 | `checks`            | array        | List of {passed, description} for each check                      |
-| `phases`            | array        | Parsed phases with steps (id, description, status, pr)            |
+| `phases`            | array        | Parsed phases with nodes (id, description, status, pr)            |
 | `summary`           | object       | Counts: total_nodes, pending, done, in_progress, blocked, skipped |
-| `next_step`         | object\|null | First pending step (id, description, phase)                       |
+| `next_step`         | object\|null | First pending node (id, description, phase)                       |
 | `validation_errors` | array        | List of parsing or format issues                                  |
 
-### Updating Roadmap Steps
+### Updating Roadmap Nodes
 
-Use `erk exec update-objective-node` for surgical updates to a single step's Plan, PR, and Status cells. This command handles the correct status computation and table formatting automatically.
+Use `erk exec update-objective-node` for surgical updates to a single node's Plan, PR, and Status cells. This command handles the correct status computation and table formatting automatically.
 
-For multi-step updates or structural changes, agents can also rewrite the full objective body via `erk exec update-issue-body`.
+For multi-node updates or structural changes, agents can also rewrite the full objective body via `erk exec update-issue-body`.

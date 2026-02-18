@@ -252,7 +252,7 @@ The user may:
 - **Approve as-is**: Proceed to Step 6
 - **Request changes**: Make the requested adjustments and show again
 - **Add information**: Incorporate new details and show again
-- **Restructure**: Reorganize phases/steps based on feedback
+- **Restructure**: Reorganize phases/nodes based on feedback
 
 Continue iterating until the user approves.
 
@@ -292,8 +292,8 @@ Once approved:
 
    Next steps:
    - Use /local:objective-view <number> to view the dependency graph
-   - Use /erk:objective-plan <number> to create plans for specific steps
-   - Track progress by updating step status in the issue
+   - Use /erk:objective-plan <number> to create plans for specific nodes
+   - Track progress by updating node status in the issue
    ```
 
 ---
