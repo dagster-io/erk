@@ -2,7 +2,6 @@
 
 import os
 from pathlib import Path
-from unittest.mock import Mock
 
 import click
 import pytest
@@ -76,14 +75,13 @@ def test_complete_branch_names_local_branches(tmp_path: Path) -> None:
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
-    # Create mock Click context
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = ctx_obj
-    mock_ctx.find_root.return_value = mock_root_ctx
+    # Create real Click context with parent chain for find_root()
+    root_ctx = click.Context(click.Command("root"))
+    root_ctx.obj = ctx_obj
+    child_ctx = click.Context(click.Command("complete"), parent=root_ctx)
 
     # Act
-    result = complete_branch_names(mock_ctx, None, "")
+    result = complete_branch_names(child_ctx, None, "")
 
     # Assert
     assert sorted(result) == ["feature-a", "feature-b", "main"]
@@ -113,14 +111,13 @@ def test_complete_branch_names_remote_branches_strip_prefix(tmp_path: Path) -> N
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
-    # Create mock Click context
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = ctx_obj
-    mock_ctx.find_root.return_value = mock_root_ctx
+    # Create real Click context with parent chain for find_root()
+    root_ctx = click.Context(click.Command("root"))
+    root_ctx.obj = ctx_obj
+    child_ctx = click.Context(click.Command("complete"), parent=root_ctx)
 
     # Act
-    result = complete_branch_names(mock_ctx, None, "")
+    result = complete_branch_names(child_ctx, None, "")
 
     # Assert
     assert sorted(result) == ["feature-c", "feature-d", "main"]
@@ -150,14 +147,13 @@ def test_complete_branch_names_deduplication(tmp_path: Path) -> None:
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
-    # Create mock Click context
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = ctx_obj
-    mock_ctx.find_root.return_value = mock_root_ctx
+    # Create real Click context with parent chain for find_root()
+    root_ctx = click.Context(click.Command("root"))
+    root_ctx.obj = ctx_obj
+    child_ctx = click.Context(click.Command("complete"), parent=root_ctx)
 
     # Act
-    result = complete_branch_names(mock_ctx, None, "")
+    result = complete_branch_names(child_ctx, None, "")
 
     # Assert
     # Should see each branch only once, not duplicated
@@ -188,14 +184,13 @@ def test_complete_branch_names_filters_by_prefix(tmp_path: Path) -> None:
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
-    # Create mock Click context
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = ctx_obj
-    mock_ctx.find_root.return_value = mock_root_ctx
+    # Create real Click context with parent chain for find_root()
+    root_ctx = click.Context(click.Command("root"))
+    root_ctx.obj = ctx_obj
+    child_ctx = click.Context(click.Command("complete"), parent=root_ctx)
 
     # Act
-    result = complete_branch_names(mock_ctx, None, "feat")
+    result = complete_branch_names(child_ctx, None, "feat")
 
     # Assert
     assert sorted(result) == ["feature-a", "feature-b"]
@@ -230,14 +225,13 @@ def test_complete_plan_files_finds_markdown_files(tmp_path: Path) -> None:
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
-    # Create mock Click context
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = ctx_obj
-    mock_ctx.find_root.return_value = mock_root_ctx
+    # Create real Click context with parent chain for find_root()
+    root_ctx = click.Context(click.Command("root"))
+    root_ctx.obj = ctx_obj
+    child_ctx = click.Context(click.Command("complete"), parent=root_ctx)
 
     # Act
-    result = complete_plan_files(mock_ctx, None, "")
+    result = complete_plan_files(child_ctx, None, "")
 
     # Assert
     assert sorted(result) == ["bugfix-plan.md", "feature-plan.md", "readme.md"]
@@ -271,14 +265,13 @@ def test_complete_plan_files_no_markdown_files(tmp_path: Path) -> None:
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
-    # Create mock Click context
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = ctx_obj
-    mock_ctx.find_root.return_value = mock_root_ctx
+    # Create real Click context with parent chain for find_root()
+    root_ctx = click.Context(click.Command("root"))
+    root_ctx.obj = ctx_obj
+    child_ctx = click.Context(click.Command("complete"), parent=root_ctx)
 
     # Act
-    result = complete_plan_files(mock_ctx, None, "")
+    result = complete_plan_files(child_ctx, None, "")
 
     # Assert
     assert result == []
@@ -313,14 +306,13 @@ def test_complete_plan_files_filters_by_prefix(tmp_path: Path) -> None:
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
-    # Create mock Click context
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = ctx_obj
-    mock_ctx.find_root.return_value = mock_root_ctx
+    # Create real Click context with parent chain for find_root()
+    root_ctx = click.Context(click.Command("root"))
+    root_ctx.obj = ctx_obj
+    child_ctx = click.Context(click.Command("complete"), parent=root_ctx)
 
     # Act
-    result = complete_plan_files(mock_ctx, None, "fea")
+    result = complete_plan_files(child_ctx, None, "fea")
 
     # Assert
     assert result == ["feature-plan.md"]
@@ -355,14 +347,13 @@ def test_complete_plan_files_returns_sorted_results(tmp_path: Path) -> None:
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
-    # Create mock Click context
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = ctx_obj
-    mock_ctx.find_root.return_value = mock_root_ctx
+    # Create real Click context with parent chain for find_root()
+    root_ctx = click.Context(click.Command("root"))
+    root_ctx.obj = ctx_obj
+    child_ctx = click.Context(click.Command("complete"), parent=root_ctx)
 
     # Act
-    result = complete_plan_files(mock_ctx, None, "")
+    result = complete_plan_files(child_ctx, None, "")
 
     # Assert
     assert result == ["a-plan.md", "m-plan.md", "z-plan.md"]
