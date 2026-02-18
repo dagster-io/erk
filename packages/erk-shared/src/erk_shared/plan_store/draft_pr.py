@@ -202,25 +202,23 @@ class DraftPRPlanBackend(PlanBackend):
         else:
             pr_state = "all"
 
-        prs = self._github.list_prs(repo_root, state=pr_state)
+        # Push label and draft filtering to list_prs
+        all_labels = [_PLAN_LABEL]
+        if query.labels is not None:
+            all_labels.extend(query.labels)
+
+        prs = self._github.list_prs(
+            repo_root,
+            state=pr_state,
+            labels=all_labels,
+            draft=True,
+        )
 
         plans: list[Plan] = []
         for _branch, pr_info in prs.items():
-            if not pr_info.is_draft:
-                continue
-
-            # Check erk-plan label via get_pr for full details
             pr_details = self._github.get_pr(repo_root, pr_info.number)
             if isinstance(pr_details, PRNotFound):
                 continue
-
-            if _PLAN_LABEL not in pr_details.labels:
-                continue
-
-            # Apply label filter from query
-            if query.labels is not None:
-                if not all(label in pr_details.labels for label in query.labels):
-                    continue
 
             plans.append(self._convert_to_plan(pr_details))
 

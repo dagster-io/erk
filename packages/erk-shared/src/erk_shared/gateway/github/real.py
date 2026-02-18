@@ -1476,14 +1476,23 @@ query {{
         repo_root: Path,
         *,
         state: PRListState,
+        labels: list[str] | None = None,
+        author: str | None = None,
+        draft: bool | None = None,
     ) -> dict[str, PullRequestInfo]:
         """List PRs for the repository, keyed by head branch name.
 
-        Uses REST API to fetch PRs in a single call.
+        Uses REST API to fetch PRs in a single call. Filters by labels, author,
+        and draft status are applied client-side on the REST response data
+        (the REST pulls endpoint does not support these filters natively).
 
         Args:
             repo_root: Repository root directory
             state: Filter by state - "open", "closed", or "all"
+            labels: Filter to PRs with ALL specified labels. None means no label filter.
+            author: Filter to PRs by this author username. None means no author filter.
+            draft: Filter by draft status. True=only drafts, False=only non-drafts,
+                None=no draft filter.
 
         Returns:
             Dict mapping head branch name to PullRequestInfo.
@@ -1509,6 +1518,23 @@ query {{
         result: dict[str, PullRequestInfo] = {}
 
         for pr_data in data:
+            # Apply draft filter
+            pr_is_draft = pr_data.get("draft", False)
+            if draft is not None and pr_is_draft != draft:
+                continue
+
+            # Apply author filter (REST returns user.login)
+            if author is not None:
+                pr_author = pr_data.get("user", {}).get("login")
+                if pr_author != author:
+                    continue
+
+            # Apply label filter (REST returns labels[].name)
+            if labels is not None:
+                pr_label_names = {label["name"] for label in pr_data.get("labels", [])}
+                if not all(label in pr_label_names for label in labels):
+                    continue
+
             # Derive state (REST API uses "open"/"closed" + merged boolean)
             if pr_data.get("merged"):
                 pr_state = "MERGED"
@@ -1522,7 +1548,7 @@ query {{
                 number=pr_data["number"],
                 state=pr_state,
                 url=pr_data["html_url"],
-                is_draft=pr_data.get("draft", False),
+                is_draft=pr_is_draft,
                 title=pr_data.get("title"),
                 checks_passing=None,  # Not fetched in batch API
                 owner=self._repo_info.owner,

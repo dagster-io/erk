@@ -43,9 +43,10 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
-from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
+from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
@@ -63,6 +64,48 @@ def _extract_title_from_plan(plan_content: str) -> str:
         if stripped.startswith("# "):
             return stripped[2:].strip()
     return "Untitled Plan"
+
+
+def _get_snapshot_result(
+    *,
+    session_id: str,
+    plan_file: Path | None,
+    cwd: Path,
+    claude_installation: ClaudeInstallation,
+    repo_root: Path,
+) -> PlanSnapshot | None:
+    """Archive the plan file to session-scoped scratch storage.
+
+    Plan snapshots preserve the original plan content at save time, creating
+    an immutable record tied to the session. This enables deduplication
+    (detecting if a session already saved a plan) and provides an audit trail
+    (what was the plan content when it was saved).
+
+    Args:
+        session_id: Claude session ID
+        plan_file: Explicit plan file path (highest priority)
+        cwd: Current working directory
+        claude_installation: ClaudeInstallation gateway for plan discovery
+        repo_root: Repository root for scratch directory
+
+    Returns:
+        PlanSnapshot with archive path, or None if no plan file found.
+    """
+    if plan_file is not None:
+        snapshot_path = plan_file
+    else:
+        snapshot_path = claude_installation.find_plan_for_session(cwd, session_id)
+
+    if snapshot_path is None or not snapshot_path.exists():
+        return None
+
+    return snapshot_plan_for_session(
+        session_id=session_id,
+        plan_file_path=snapshot_path,
+        project_cwd=cwd,
+        claude_installation=claude_installation,
+        repo_root=repo_root,
+    )
 
 
 def _save_as_draft_pr(
@@ -139,28 +182,24 @@ def _save_as_draft_pr(
         metadata=metadata,
     )
 
+    if not result.plan_id.isdigit():
+        msg = f"Expected numeric plan_id from draft PR creation, got: {result.plan_id!r}"
+        raise RuntimeError(msg)
     plan_number = int(result.plan_id)
 
-    # Create marker files
-    snapshot_result = None
+    # Create markers and snapshot
+    snapshot_result: PlanSnapshot | None = None
     if session_id is not None:
         _create_plan_saved_marker(session_id, repo_root)
         _create_plan_saved_issue_marker(session_id, repo_root, plan_number)
 
-        # Snapshot the plan file to session-scoped storage
-        if plan_file is not None:
-            snapshot_path = plan_file
-        else:
-            snapshot_path = claude_installation.find_plan_for_session(cwd, session_id)
-
-        if snapshot_path is not None and snapshot_path.exists():
-            snapshot_result = snapshot_plan_for_session(
-                session_id=session_id,
-                plan_file_path=snapshot_path,
-                project_cwd=cwd,
-                claude_installation=claude_installation,
-                repo_root=repo_root,
-            )
+        snapshot_result = _get_snapshot_result(
+            session_id=session_id,
+            plan_file=plan_file,
+            cwd=cwd,
+            claude_installation=claude_installation,
+            repo_root=repo_root,
+        )
 
     # Output
     if output_format == "display":
@@ -183,50 +222,7 @@ def _save_as_draft_pr(
         click.echo(json.dumps(output_data))
 
 
-@click.command(name="plan-save")
-@click.option(
-    "--format",
-    "output_format",
-    type=click.Choice(["json", "display"]),
-    default="json",
-    help="Output format: json (default) or display (formatted text)",
-)
-@click.option(
-    "--plan-file",
-    type=click.Path(exists=True, path_type=Path),
-    default=None,
-    help="Path to specific plan file (highest priority)",
-)
-@click.option(
-    "--session-id",
-    default=None,
-    help="Session ID for scoped plan lookup",
-)
-@click.option(
-    "--objective-issue",
-    type=int,
-    default=None,
-    help="Link plan to parent objective issue number",
-)
-@click.option(
-    "--plan-type",
-    type=click.Choice(["standard", "learn"]),
-    default=None,
-    help="Plan type: standard (default) or learn",
-)
-@click.option(
-    "--learned-from-issue",
-    type=int,
-    default=None,
-    help="Parent plan issue number (for learn plans)",
-)
-@click.option(
-    "--created-from-workflow-run-url",
-    default=None,
-    help="GitHub Actions workflow run URL",
-)
-@click.pass_context
-def plan_save(
+def _save_plan_via_draft_pr(
     ctx: click.Context,
     *,
     output_format: str,
@@ -234,32 +230,17 @@ def plan_save(
     session_id: str | None,
     objective_issue: int | None,
     plan_type: str | None,
-    learned_from_issue: int | None,
-    created_from_workflow_run_url: str | None,
 ) -> None:
-    """Backend-aware plan save: dispatches to issue or draft-PR based on config.
+    """Handle draft-PR backend: dedup check, plan extraction, validation, and save.
 
-    When plan_backend is "draft_pr", creates a draft PR.
-    Otherwise delegates to plan-save-to-issue.
+    Args:
+        ctx: Click context
+        output_format: Output format (json or display)
+        plan_file: Explicit plan file path (highest priority)
+        session_id: Session ID for dedup and markers
+        objective_issue: Optional objective issue number
+        plan_type: Plan type (standard or learn)
     """
-    config = require_local_config(ctx)
-
-    # Default backend: delegate to issue-based save
-    if config.plan_backend != "draft_pr":
-        # Invoke the existing plan-save-to-issue command
-        ctx.invoke(
-            plan_save_to_issue,
-            output_format=output_format,
-            plan_file=plan_file,
-            session_id=session_id,
-            objective_issue=objective_issue,
-            plan_type=plan_type,
-            learned_from_issue=learned_from_issue,
-            created_from_workflow_run_url=created_from_workflow_run_url,
-        )
-        return
-
-    # Draft PR backend
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
@@ -334,4 +315,89 @@ def plan_save(
         plan_type=plan_type,
         output_format=output_format,
         plan_file=plan_file,
+    )
+
+
+@click.command(name="plan-save")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["json", "display"]),
+    default="json",
+    help="Output format: json (default) or display (formatted text)",
+)
+@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Path to specific plan file (highest priority)",
+)
+@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for scoped plan lookup",
+)
+@click.option(
+    "--objective-issue",
+    type=int,
+    default=None,
+    help="Link plan to parent objective issue number",
+)
+@click.option(
+    "--plan-type",
+    type=click.Choice(["standard", "learn"]),
+    default=None,
+    help="Plan type: standard (default) or learn",
+)
+@click.option(
+    "--learned-from-issue",
+    type=int,
+    default=None,
+    help="Parent plan issue number (for learn plans)",
+)
+@click.option(
+    "--created-from-workflow-run-url",
+    default=None,
+    help="GitHub Actions workflow run URL",
+)
+@click.pass_context
+def plan_save(
+    ctx: click.Context,
+    *,
+    output_format: str,
+    plan_file: Path | None,
+    session_id: str | None,
+    objective_issue: int | None,
+    plan_type: str | None,
+    learned_from_issue: int | None,
+    created_from_workflow_run_url: str | None,
+) -> None:
+    """Backend-aware plan save: dispatches to issue or draft-PR based on config.
+
+    When plan_backend is "draft_pr", creates a draft PR.
+    Otherwise delegates to plan-save-to-issue.
+    """
+    config = require_local_config(ctx)
+
+    # Default backend: delegate to issue-based save
+    if config.plan_backend != "draft_pr":
+        ctx.invoke(
+            plan_save_to_issue,
+            output_format=output_format,
+            plan_file=plan_file,
+            session_id=session_id,
+            objective_issue=objective_issue,
+            plan_type=plan_type,
+            learned_from_issue=learned_from_issue,
+            created_from_workflow_run_url=created_from_workflow_run_url,
+        )
+        return
+
+    _save_plan_via_draft_pr(
+        ctx,
+        output_format=output_format,
+        plan_file=plan_file,
+        session_id=session_id,
+        objective_issue=objective_issue,
+        plan_type=plan_type,
     )

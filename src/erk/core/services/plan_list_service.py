@@ -65,7 +65,7 @@ class DraftPRPlanListService(PlanListService):
             state: Filter by state
             limit: Maximum number of results
             skip_workflow_runs: Ignored (no workflow runs for draft PRs)
-            creator: Filter by creator (not supported, ignored)
+            creator: Filter by PR author username
 
         Returns:
             PlanListData with plans from draft PRs
@@ -73,24 +73,23 @@ class DraftPRPlanListService(PlanListService):
         pr_state: PRListState = "open"
         if state in ("open", "closed", "all"):
             pr_state = state  # type: ignore[assignment]
-        prs = self._github.list_prs(location.root, state=pr_state)
+
+        # Push label, author, and draft filtering to list_prs so the gateway
+        # handles as much filtering as possible (server-side for REST data).
+        all_labels = [_PLAN_LABEL, *labels]
+        prs = self._github.list_prs(
+            location.root,
+            state=pr_state,
+            labels=all_labels,
+            author=creator,
+            draft=True,
+        )
 
         plans = []
         for _branch, pr_info in prs.items():
-            if not pr_info.is_draft:
-                continue
-
             pr_details = self._github.get_pr(location.root, pr_info.number)
             if isinstance(pr_details, PRNotFound):
                 continue
-
-            if _PLAN_LABEL not in pr_details.labels:
-                continue
-
-            # Check additional label filters
-            if labels:
-                if not all(label in pr_details.labels for label in labels):
-                    continue
 
             plan_body = _extract_plan_content_from_body(pr_details.body)
             plans.append(pr_details_to_plan(pr_details, plan_body=plan_body))

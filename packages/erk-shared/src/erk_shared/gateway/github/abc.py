@@ -404,6 +404,9 @@ class GitHub(ABC):
         repo_root: Path,
         *,
         state: PRListState,
+        labels: list[str] | None = None,
+        author: str | None = None,
+        draft: bool | None = None,
     ) -> dict[str, PullRequestInfo]:
         """List PRs for the repository, keyed by head branch name.
 
@@ -413,6 +416,10 @@ class GitHub(ABC):
         Args:
             repo_root: Repository root directory
             state: Filter by state - "open", "closed", or "all"
+            labels: Filter to PRs with ALL specified labels. None means no label filter.
+            author: Filter to PRs by this author username. None means no author filter.
+            draft: Filter by draft status. True=only drafts, False=only non-drafts,
+                None=no draft filter.
 
         Returns:
             Dict mapping head branch name to PullRequestInfo.
