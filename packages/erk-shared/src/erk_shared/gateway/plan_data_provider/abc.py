@@ -7,6 +7,7 @@ from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
+from erk_shared.gateway.github.types import PRReviewThread
 
 
 class PlanDataProvider(ABC):
@@ -119,5 +120,17 @@ class PlanDataProvider(ABC):
 
         Returns:
             The extracted objective content, or None if not found
+        """
+        ...
+
+    @abstractmethod
+    def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
+        """Fetch unresolved review threads for a pull request.
+
+        Args:
+            pr_number: The PR number to fetch threads for
+
+        Returns:
+            List of unresolved PRReviewThread objects sorted by (path, line)
         """
         ...

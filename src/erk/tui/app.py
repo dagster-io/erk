@@ -22,6 +22,7 @@ from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.screens.issue_body_screen import IssueBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
 from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import BranchActivity, SortKey, SortState
 from erk.tui.views.types import (
@@ -72,8 +73,7 @@ class ErkDashApp(App):
         Binding("space", "show_detail", "Detail", show=False),
         Binding("o", "open_row", "Open", show=False),
         Binding("p", "open_pr", "Open PR"),
-        # NOTE: 'c' binding removed - close_plan now accessible via command palette
-        # in the plan detail modal (Enter → Ctrl+P → "Close Plan")
+        Binding("c", "view_comments", "Comments", show=False),
         Binding("i", "show_implement", "Implement"),
         Binding("v", "view_issue_body", "View", show=False),
         Binding("slash", "start_filter", "Filter", key_display="/"),
@@ -559,6 +559,30 @@ class ErkDashApp(App):
                 issue_body=row.issue_body,
                 full_title=row.full_title,
                 content_type=content_type,
+            )
+        )
+
+    def action_view_comments(self) -> None:
+        """Display unresolved PR review comments in a modal."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        if row.pr_number is None:
+            if self._status_bar is not None:
+                self._status_bar.set_message("No PR linked to this plan")
+            return
+        unresolved = row.total_comment_count - row.resolved_comment_count
+        if unresolved == 0:
+            if self._status_bar is not None:
+                self._status_bar.set_message("No unresolved comments")
+            return
+        self.push_screen(
+            UnresolvedCommentsScreen(
+                provider=self._provider,
+                pr_number=row.pr_number,
+                full_title=row.full_title,
+                resolved_count=row.resolved_comment_count,
+                total_count=row.total_comment_count,
             )
         )
 
