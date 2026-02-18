@@ -196,9 +196,7 @@ class TestItemCompletedAgentMessage:
             }
         )
         assert any(isinstance(e, TextEvent) for e in events)
-        assert any(
-            isinstance(e, IssueNumberEvent) and e.number == 123 for e in events
-        )
+        assert any(isinstance(e, IssueNumberEvent) and e.number == 123 for e in events)
 
 
 class TestItemCompletedCommandExecution:
