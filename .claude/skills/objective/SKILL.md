@@ -110,16 +110,16 @@ EOF
 
 After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
 
-### Inspecting an Objective
+### Viewing an Objective
 
-View an objective's dependency graph and next step:
+View an objective's dependency graph, dependencies, and next step:
 
 ```bash
 # CLI
-erk objective inspect <issue-number>
+erk objective view <issue-number>
 
 # Slash command (in-session)
-/erk:objective-inspect <issue-number>
+/local:objective-view <issue-number>
 ```
 
 ### Spawning an Erk-Plan

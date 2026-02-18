@@ -291,7 +291,7 @@ Once approved:
    Roadmap validation: clean
 
    Next steps:
-   - Use /erk:objective-inspect <number> to view the dependency graph
+   - Use /local:objective-view <number> to view the dependency graph
    - Use /erk:objective-plan <number> to create plans for specific steps
    - Track progress by updating step status in the issue
    ```
