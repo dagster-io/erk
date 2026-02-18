@@ -5,6 +5,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
     compute_graph_summary,
     find_graph_next_node,
+    graph_from_nodes,
     graph_from_phases,
     nodes_from_graph,
     parse_graph,
@@ -47,6 +48,7 @@ def _step(
         status=status,  # type: ignore[arg-type]
         plan=plan,
         pr=pr,
+        depends_on=None,
     )
 
 
@@ -363,8 +365,8 @@ class TestStepsFromGraph:
 
         assert steps == []
 
-    def test_strips_depends_on(self) -> None:
-        """nodes_from_graph returns RoadmapNode which has no depends_on field."""
+    def test_preserves_depends_on(self) -> None:
+        """nodes_from_graph preserves depends_on from ObjectiveNode to RoadmapNode."""
         graph = DependencyGraph(
             nodes=(
                 _node(id="1.1", status="done", depends_on=()),
@@ -374,7 +376,8 @@ class TestStepsFromGraph:
         steps = nodes_from_graph(graph)
 
         assert len(steps) == 2
-        assert not hasattr(steps[0], "depends_on")
+        assert steps[0].depends_on == ()
+        assert steps[1].depends_on == ("1.1",)
 
 
 # ---------------------------------------------------------------------------
@@ -779,3 +782,148 @@ class TestParseGraph:
         phase_node_ids = [n.id for phase in phases for n in phase.nodes]
         graph_node_ids = [node.id for node in graph.nodes]
         assert graph_node_ids == phase_node_ids
+
+    def test_uses_explicit_deps_when_present(self) -> None:
+        """parse_graph uses graph_from_nodes when nodes have explicit depends_on."""
+        body = """\
+# Objective
+
+### Phase 1: Foundation
+
+### Phase 2: Build
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '3'
+nodes:
+- id: '1.1'
+  description: Setup infra
+  status: done
+  plan: null
+  pr: '#100'
+  depends_on: []
+- id: '2.1'
+  description: Build core
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '1.1'
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+        result = parse_graph(body)
+
+        assert result is not None
+        graph, phases, errors = result
+        assert errors == []
+        assert len(graph.nodes) == 2
+        assert graph.nodes[0].depends_on == ()
+        assert graph.nodes[1].depends_on == ("1.1",)
+        assert len(phases) == 2
+
+    def test_falls_back_to_inferred_deps(self) -> None:
+        """parse_graph uses graph_from_phases when no node has explicit depends_on."""
+        result = parse_graph(_V2_BODY)
+
+        assert result is not None
+        graph, _phases, _errors = result
+        # graph_from_phases infers sequential deps
+        assert graph.nodes[0].depends_on == ()
+        assert graph.nodes[1].depends_on == ("1.1",)
+
+
+# ---------------------------------------------------------------------------
+# graph_from_nodes() tests
+# ---------------------------------------------------------------------------
+
+
+class TestGraphFromNodes:
+    def test_explicit_deps(self) -> None:
+        """graph_from_nodes uses explicit depends_on from RoadmapNode."""
+        nodes = [
+            RoadmapNode(
+                id="1.1", description="A", status="done", plan=None, pr=None, depends_on=()
+            ),
+            RoadmapNode(
+                id="1.2",
+                description="B",
+                status="pending",
+                plan=None,
+                pr=None,
+                depends_on=("1.1",),
+            ),
+        ]
+        graph = graph_from_nodes(nodes)
+
+        assert len(graph.nodes) == 2
+        assert graph.nodes[0].depends_on == ()
+        assert graph.nodes[1].depends_on == ("1.1",)
+
+    def test_fan_out(self) -> None:
+        """Two nodes depend on the same parent (fan-out)."""
+        nodes = [
+            RoadmapNode(
+                id="1.1", description="Root", status="done", plan=None, pr=None, depends_on=()
+            ),
+            RoadmapNode(
+                id="2.1",
+                description="Branch A",
+                status="pending",
+                plan=None,
+                pr=None,
+                depends_on=("1.1",),
+            ),
+            RoadmapNode(
+                id="2.2",
+                description="Branch B",
+                status="pending",
+                plan=None,
+                pr=None,
+                depends_on=("1.1",),
+            ),
+        ]
+        graph = graph_from_nodes(nodes)
+
+        assert len(graph.nodes) == 3
+        assert graph.nodes[1].depends_on == ("1.1",)
+        assert graph.nodes[2].depends_on == ("1.1",)
+
+    def test_fan_in(self) -> None:
+        """One node depends on two parents (fan-in)."""
+        nodes = [
+            RoadmapNode(
+                id="1.1", description="A", status="done", plan=None, pr=None, depends_on=()
+            ),
+            RoadmapNode(
+                id="2.1", description="B", status="done", plan=None, pr=None, depends_on=()
+            ),
+            RoadmapNode(
+                id="3.1",
+                description="Merge",
+                status="pending",
+                plan=None,
+                pr=None,
+                depends_on=("1.1", "2.1"),
+            ),
+        ]
+        graph = graph_from_nodes(nodes)
+
+        assert len(graph.nodes) == 3
+        assert graph.nodes[2].depends_on == ("1.1", "2.1")
+
+    def test_none_depends_on_treated_as_no_deps(self) -> None:
+        """Nodes with depends_on=None are treated as having no dependencies."""
+        nodes = [
+            RoadmapNode(
+                id="1.1", description="A", status="pending", plan=None, pr=None, depends_on=None
+            ),
+        ]
+        graph = graph_from_nodes(nodes)
+
+        assert graph.nodes[0].depends_on == ()

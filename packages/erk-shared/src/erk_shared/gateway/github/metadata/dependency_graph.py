@@ -105,11 +105,32 @@ def graph_from_phases(phases: list[RoadmapPhase]) -> DependencyGraph:
     return DependencyGraph(nodes=tuple(nodes))
 
 
+def graph_from_nodes(nodes: list[RoadmapNode]) -> DependencyGraph:
+    """Build DependencyGraph from nodes with explicit depends_on fields.
+
+    Uses node.depends_on directly instead of inferring from phase ordering.
+    Nodes with depends_on=None are treated as having no dependencies.
+    """
+    return DependencyGraph(
+        nodes=tuple(
+            ObjectiveNode(
+                id=node.id,
+                description=node.description,
+                status=node.status,
+                plan=node.plan,
+                pr=node.pr,
+                depends_on=node.depends_on if node.depends_on is not None else (),
+            )
+            for node in nodes
+        )
+    )
+
+
 def nodes_from_graph(graph: DependencyGraph) -> list[RoadmapNode]:
     """Convert graph nodes to flat RoadmapNode list (inverse of graph_from_phases).
 
-    Strips dependency information, returning plain nodes suitable for
-    serialization to YAML frontmatter via render_roadmap_block_inner().
+    Preserves dependency information so it can be serialized to YAML frontmatter
+    via render_roadmap_block_inner().
     """
     return [
         RoadmapNode(
@@ -118,6 +139,7 @@ def nodes_from_graph(graph: DependencyGraph) -> list[RoadmapNode]:
             status=node.status,
             plan=node.plan,
             pr=node.pr,
+            depends_on=node.depends_on,
         )
         for node in graph.nodes
     ]
@@ -195,8 +217,11 @@ def find_graph_next_node(
 def parse_graph(body: str) -> tuple[DependencyGraph, list[RoadmapPhase], list[str]] | None:
     """Parse a v2 roadmap body into both graph and phases.
 
-    Convenience function combining parse_v2_roadmap + graph_from_phases.
+    Convenience function combining parse_v2_roadmap + graph_from_phases/graph_from_nodes.
     Most callers need both graph (for logic) and phases (for display grouping).
+
+    When any node has explicit depends_on, uses graph_from_nodes() for the graph.
+    Otherwise falls back to graph_from_phases() which infers sequential dependencies.
 
     Args:
         body: Full objective body text with metadata blocks and markdown headers.
@@ -208,5 +233,10 @@ def parse_graph(body: str) -> tuple[DependencyGraph, list[RoadmapPhase], list[st
     if v2_result is None:
         return None
     phases, errors = v2_result
-    graph = graph_from_phases(phases)
+    all_nodes = [node for phase in phases for node in phase.nodes]
+    has_explicit_deps = any(node.depends_on is not None for node in all_nodes)
+    if has_explicit_deps:
+        graph = graph_from_nodes(all_nodes)
+    else:
+        graph = graph_from_phases(phases)
     return (graph, phases, errors)
