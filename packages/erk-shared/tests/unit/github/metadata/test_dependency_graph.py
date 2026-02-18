@@ -665,6 +665,32 @@ class TestFindGraphNextStep:
         assert result["id"] == "2.1"
         assert result["phase"] == "Phase 2"
 
+    def test_falls_back_to_in_progress_when_no_pending(self) -> None:
+        """When all remaining steps are in_progress, returns the first one."""
+        phases = [
+            _phase(
+                number=1,
+                steps=[
+                    _step(id="1.1", status="done", plan=None, pr=None),
+                    _step(id="1.2", status="done", plan=None, pr=None),
+                ],
+            ),
+            _phase(
+                number=2,
+                steps=[
+                    _step(id="2.1", status="in_progress", plan=None, pr=None),
+                    _step(id="2.2", status="in_progress", plan=None, pr=None),
+                ],
+            ),
+        ]
+        graph = graph_from_phases(phases)
+        result = find_graph_next_step(graph, phases)
+
+        assert result is not None
+        assert result["id"] == "2.1"
+        assert result["description"] == "Step 2.1"
+        assert result["phase"] == "Phase 2"
+
     def test_matches_find_next_step(self) -> None:
         """Verify graph next step matches phase-based next step."""
         phases = [
