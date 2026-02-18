@@ -16,10 +16,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.navigation_helpers import check_clean_working_tree
-from erk.cli.commands.objective_helpers import (
-    get_objective_for_branch,
-    prompt_objective_update,
-)
+from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -440,20 +437,6 @@ def merge_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     return dataclasses.replace(state, merged_pr_number=merged_pr_number)
 
 
-def update_objective(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Update objective if linked."""
-    if state.objective_number is not None and state.merged_pr_number is not None:
-        prompt_objective_update(
-            ctx,
-            repo_root=state.main_repo_root,
-            objective_number=state.objective_number,
-            pr_number=state.merged_pr_number,
-            branch=state.branch,
-            force=True,
-        )
-    return state
-
-
 def update_learn_plan(ctx: ErkContext, state: LandState) -> LandState | LandError:
     """Update parent plan learn_status if this is a learn plan."""
     if state.plan_id is None or state.merged_pr_number is None:
@@ -511,7 +494,6 @@ def cleanup_and_navigate(ctx: ErkContext, state: LandState) -> LandState | LandE
         force=True,
         is_current_branch=state.is_current_branch,
         target_child_branch=state.target_child_branch,
-        objective_number=state.objective_number,
         no_delete=state.no_delete,
         skip_activation_output=True,
         cleanup_confirmed=state.cleanup_confirmed,
@@ -539,7 +521,6 @@ def _validation_pipeline() -> tuple[LandStep, ...]:
 def _execution_pipeline() -> tuple[LandStep, ...]:
     return (
         merge_pr,
-        update_objective,
         update_learn_plan,
         close_review_pr,
         cleanup_and_navigate,
@@ -628,7 +609,6 @@ def make_execution_state(
     branch: str,
     worktree_path: Path | None,
     is_current_branch: bool,
-    objective_number: int | None,
     use_graphite: bool,
     pull_flag: bool,
     no_delete: bool,
@@ -666,7 +646,7 @@ def make_execution_state(
         use_graphite=use_graphite,
         target_child_branch=target_child_branch,
         # Derived
-        objective_number=objective_number,
+        objective_number=None,  # Only used in validation pipeline path
         plan_id=plan_id,
         cleanup_confirmed=not no_cleanup,
         merged_pr_number=None,

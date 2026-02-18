@@ -97,6 +97,9 @@ from erk.cli.commands.exec.scripts.objective_render_roadmap import (
 from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
 )
+from erk.cli.commands.exec.scripts.objective_update_after_land import (
+    objective_update_after_land,
+)
 from erk.cli.commands.exec.scripts.plan_create_review_branch import (
     plan_create_review_branch,
 )
@@ -239,6 +242,7 @@ exec_group.add_command(normalize_tripwire_candidates, name="normalize-tripwire-c
 exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
+exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
 exec_group.add_command(plan_create_review_branch, name="plan-create-review-branch")
 exec_group.add_command(plan_create_review_pr, name="plan-create-review-pr")

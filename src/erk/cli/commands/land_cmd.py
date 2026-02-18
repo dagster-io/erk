@@ -103,7 +103,6 @@ class CleanupContext:
     force: bool
     is_current_branch: bool
     target_child_branch: str | None
-    objective_number: int | None
     no_delete: bool
     skip_activation_output: bool
     cleanup_confirmed: bool  # Pre-gathered from validation phase
@@ -1402,7 +1401,6 @@ def _cleanup_and_navigate(
     force: bool,
     is_current_branch: bool,
     target_child_branch: str | None,
-    objective_number: int | None,
     no_delete: bool,
     skip_activation_output: bool,
     cleanup_confirmed: bool,
@@ -1421,7 +1419,6 @@ def _cleanup_and_navigate(
         force: Whether to skip cleanup confirmation (legacy, kept for compatibility)
         is_current_branch: True if landing from the branch's worktree
         target_child_branch: Target child branch for --up navigation (None for trunk)
-        objective_number: Issue number of the objective linked to this branch (if any)
         no_delete: Whether to preserve the branch and slot assignment
         skip_activation_output: If True, skip activation message (used in execute mode
             where the script's cd command handles navigation)
@@ -1440,7 +1437,6 @@ def _cleanup_and_navigate(
         force=force,
         is_current_branch=is_current_branch,
         target_child_branch=target_child_branch,
-        objective_number=objective_number,
         no_delete=no_delete,
         skip_activation_output=skip_activation_output,
         cleanup_confirmed=cleanup_confirmed,
@@ -1613,9 +1609,13 @@ def render_land_execution_script(
     **Baked-in (static, determined at script generation time):**
     - --worktree-path: worktree location
     - --is-current-branch: whether landing from that worktree
-    - --objective-number: linked objective
     - --use-graphite: whether Graphite is enabled
     - --no-cleanup: user declined cleanup during validation
+
+    **Objective update (separate command, fail-open):**
+    When objective_number is set, a second command line is emitted after
+    the land-execute command: ``erk exec objective-update-after-land``.
+    This runs without ``|| return 1`` because landing already succeeded.
 
     **Passed via "$@" (user-controllable flags):**
     - --up: navigate upstack (resolved at execution time)
@@ -1648,8 +1648,6 @@ def render_land_execution_script(
         cmd_parts.append(f"--worktree-path={worktree_path}")
     if is_current_branch:
         cmd_parts.append("--is-current-branch")
-    if objective_number is not None:
-        cmd_parts.append(f"--objective-number={objective_number}")
     if use_graphite:
         cmd_parts.append("--use-graphite")
     if not cleanup_confirmed:
@@ -1660,13 +1658,23 @@ def render_land_execution_script(
     erk_cmd = " ".join(cmd_parts)
     target_path_str = str(target_path)
 
+    # Build objective update command (separate, fail-open - no || return 1)
+    objective_line = ""
+    if objective_number is not None:
+        objective_line = (
+            f"\nerk exec objective-update-after-land"
+            f" --objective {objective_number}"
+            f' --pr "$PR_NUMBER"'
+            f' --branch "$BRANCH"'
+        )
+
     return f"""# erk land deferred execution
 # Usage: source land.sh <pr_number> <branch> [flags...]
 PR_NUMBER="${{1:?Error: PR number required}}"
 BRANCH="${{2:?Error: Branch name required}}"
 shift 2
 
-{erk_cmd} || return 1
+{erk_cmd} || return 1{objective_line}
 cd {target_path_str}
 """
 
@@ -1679,7 +1687,6 @@ def _execute_land(
     worktree_path: Path | None,
     is_current_branch: bool,
     target_child_branch: str | None,
-    objective_number: int | None,
     use_graphite: bool,
     pull_flag: bool,
     no_delete: bool,
@@ -1703,7 +1710,6 @@ def _execute_land(
         worktree_path: Path to worktree being cleaned up (if any)
         is_current_branch: Whether landing from the branch's own worktree
         target_child_branch: Target child branch for --up navigation
-        objective_number: Linked objective issue number (if any)
         use_graphite: Whether to use Graphite for merge
         pull_flag: Whether to pull after landing
         no_delete: Whether to preserve branch and slot
@@ -1723,7 +1729,6 @@ def _execute_land(
         branch=branch,
         worktree_path=worktree_path,
         is_current_branch=is_current_branch,
-        objective_number=objective_number,
         use_graphite=use_graphite,
         pull_flag=pull_flag,
         no_delete=no_delete,

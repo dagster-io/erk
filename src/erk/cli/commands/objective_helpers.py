@@ -9,7 +9,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.output.output import user_output
@@ -154,86 +153,3 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
         return None
 
     return result.objective_id
-
-
-def prompt_objective_update(
-    ctx: ErkContext,
-    *,
-    repo_root: Path,
-    objective_number: int,
-    pr_number: int,
-    branch: str,
-    force: bool,
-) -> None:
-    """Prompt user to update objective after landing.
-
-    Args:
-        ctx: ErkContext with prompt_executor
-        repo_root: Repository root path for Claude execution
-        objective_number: The linked objective issue number
-        pr_number: The PR number that was just landed
-        branch: The branch name that was landed
-        force: If True, skip prompt (print command to run later)
-    """
-    user_output(f"   Linked to Objective #{objective_number}")
-
-    # Build the command with all arguments for context-free execution
-    # --auto-close enables automatic objective closing when all steps are complete
-    cmd = (
-        f"/erk:objective-update-with-landed-pr "
-        f"--pr {pr_number} --objective {objective_number} --branch {branch} --auto-close"
-    )
-
-    if force:
-        # --force skips prompt but still executes the update
-        user_output("")
-        user_output("Starting objective update...")
-
-        result = stream_command_with_feedback(
-            executor=ctx.prompt_executor,
-            command=cmd,
-            worktree_path=repo_root,
-            dangerous=True,
-            permission_mode="edits",
-        )
-
-        if result.success:
-            user_output("")
-            user_output(click.style("✓", fg="green") + " Objective updated successfully")
-        else:
-            user_output("")
-            user_output(
-                click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
-            )
-            user_output("  Run '/erk:objective-update-with-landed-pr' manually to retry")
-        return
-
-    # Ask y/n prompt
-    user_output("")
-    if not ctx.console.confirm("Update objective now? (runs Claude agent)", default=True):
-        user_output("")
-        user_output("Skipped. To update later, run:")
-        user_output(f"  {cmd}")
-    else:
-        # Add feedback BEFORE streaming starts (important for visibility)
-        user_output("")
-        user_output("Starting objective update...")
-
-        result = stream_command_with_feedback(
-            executor=ctx.prompt_executor,
-            command=cmd,
-            worktree_path=repo_root,
-            dangerous=True,
-            permission_mode="edits",
-        )
-
-        # Add feedback AFTER streaming completes
-        if result.success:
-            user_output("")
-            user_output(click.style("✓", fg="green") + " Objective updated successfully")
-        else:
-            user_output("")
-            user_output(
-                click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
-            )
-            user_output("  Run '/erk:objective-update-with-landed-pr' manually to retry")
