@@ -9,6 +9,7 @@ from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.gateway.github.types import PRReviewThread
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
@@ -49,6 +50,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._fetch_error = fetch_error
         self._plan_content_by_issue: dict[int, str] = {}
         self._objective_content_by_issue: dict[int, str] = {}
+        self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
 
     @property
     def repo_root(self) -> Path:
@@ -183,6 +185,28 @@ class FakePlanDataProvider(PlanDataProvider):
             content: The objective content to return
         """
         self._objective_content_by_issue[issue_number] = content
+
+    def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
+        """Fake unresolved comments fetch implementation.
+
+        Returns configured review threads for a PR, or empty list.
+
+        Args:
+            pr_number: The PR number to fetch threads for
+
+        Returns:
+            Configured list of PRReviewThread for this PR, or empty list
+        """
+        return self._review_threads_by_pr.get(pr_number, [])
+
+    def set_review_threads(self, pr_number: int, threads: list[PRReviewThread]) -> None:
+        """Set the review threads to return for a specific PR.
+
+        Args:
+            pr_number: The PR number
+            threads: List of PRReviewThread to return
+        """
+        self._review_threads_by_pr[pr_number] = threads
 
 
 def make_plan_row(

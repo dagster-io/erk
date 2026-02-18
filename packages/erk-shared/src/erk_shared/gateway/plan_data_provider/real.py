@@ -50,6 +50,7 @@ from erk_shared.gateway.github.metadata.schemas import (
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
+    PRReviewThread,
     PullRequestInfo,
     WorkflowRun,
 )
@@ -402,6 +403,19 @@ class RealPlanDataProvider(PlanDataProvider):
         comment_body = response.get("body", "")
 
         return extract_objective_from_comment(comment_body)
+
+    def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
+        """Fetch unresolved review threads for a pull request.
+
+        Args:
+            pr_number: The PR number to fetch threads for
+
+        Returns:
+            List of unresolved PRReviewThread objects sorted by (path, line)
+        """
+        return self._ctx.github.get_pr_review_threads(
+            self._location.root, pr_number, include_resolved=False
+        )
 
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of issue number to (worktree name, branch).
