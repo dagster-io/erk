@@ -11,6 +11,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -30,7 +31,7 @@ def test_dispatch_happy_path() -> None:
         issues = FakeGitHubIssues()
         github = FakeGitHub(authenticated=True, issues_gateway=issues)
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
             instruction="fix the import in config.py",
@@ -66,11 +67,12 @@ def test_dispatch_happy_path() -> None:
         # Verify push to remote
         assert len(git.pushed_branches) == 1
 
-        # Verify PR was created
+        # Verify PR was created with closing reference
         assert len(github.created_prs) == 1
-        _branch, _title, _body, base, draft = github.created_prs[0]
+        _branch, _title, pr_body, base, draft = github.created_prs[0]
         assert draft is True
         assert base == "main"
+        assert "Closes #1" in pr_body
 
         # Verify workflow was triggered with plan_issue_number
         assert len(github.triggered_workflows) == 1
@@ -79,11 +81,19 @@ def test_dispatch_happy_path() -> None:
         assert inputs["instruction"] == "fix the import in config.py"
         assert inputs["plan_issue_number"] == "1"
 
-        # Verify PR body was updated with workflow run link
+        # Verify PR body was updated with workflow run link and closing reference
         assert len(github.updated_pr_bodies) == 1
         _pr_num, updated_body = github.updated_pr_bodies[0]
         assert "**Workflow run:**" in updated_body
         assert "https://github.com/owner/repo/actions/runs/" in updated_body
+        assert "Closes #1" in updated_body
+
+        # Verify dispatch metadata was written to plan issue
+        issue_info = issues.get_issue(env.cwd, 1)
+        assert not isinstance(issue_info, IssueNotFound)
+        assert "last_dispatched_run_id" in issue_info.body
+        assert "last_dispatched_node_id" in issue_info.body
+        assert "last_dispatched_at" in issue_info.body
 
         # Verify we're back on original branch
         assert git.branch.get_current_branch(env.cwd) == "main"
@@ -104,7 +114,7 @@ def test_dispatch_with_extra_inputs() -> None:
         issues = FakeGitHubIssues()
         github = FakeGitHub(authenticated=True, issues_gateway=issues)
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
             instruction="implement step 1.1",
@@ -209,7 +219,7 @@ def test_dispatch_creates_skeleton_plan_issue() -> None:
         issues = FakeGitHubIssues()
         github = FakeGitHub(authenticated=True, issues_gateway=issues)
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
             instruction="add user authentication",
@@ -255,7 +265,7 @@ def test_dispatch_posts_queued_event_comment() -> None:
         issues = FakeGitHubIssues()
         github = FakeGitHub(authenticated=True, issues_gateway=issues)
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
             instruction="refactor the auth module",
@@ -277,6 +287,39 @@ def test_dispatch_posts_queued_event_comment() -> None:
         assert "https://github.com/owner/repo/actions/runs/" in comment_body
 
 
+def test_dispatch_writes_metadata_to_plan_issue() -> None:
+    """Test that dispatch writes run_id, node_id, and timestamp metadata to the plan issue."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FakeGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+        params = OneShotDispatchParams(
+            instruction="add logging to api routes",
+            model=None,
+            extra_workflow_inputs={},
+        )
+
+        dispatch_one_shot(ctx, params=params, dry_run=False)
+
+        # Read the plan issue and verify dispatch metadata was written
+        issue_info = issues.get_issue(env.cwd, 1)
+        assert not isinstance(issue_info, IssueNotFound)
+        assert "last_dispatched_run_id: '1234567890'" in issue_info.body
+        assert "last_dispatched_node_id: WFR_fake_node_id_1234567890" in issue_info.body
+        assert "last_dispatched_at:" in issue_info.body
+
+
 def test_dispatch_long_instruction_truncates_workflow_input() -> None:
     """Test that long instructions are truncated in workflow input but committed in full."""
     runner = CliRunner()
@@ -292,7 +335,7 @@ def test_dispatch_long_instruction_truncates_workflow_input() -> None:
         issues = FakeGitHubIssues()
         github = FakeGitHub(authenticated=True, issues_gateway=issues)
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         long_instruction = "x" * 1000
 
