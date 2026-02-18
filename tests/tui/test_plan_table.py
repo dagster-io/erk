@@ -396,10 +396,10 @@ class TestObjectivesViewRowConversion:
         row = make_plan_row(
             42,
             "Objective: Build Feature",
-            objective_done_steps=3,
-            objective_total_steps=7,
+            objective_done_nodes=3,
+            objective_total_nodes=7,
             objective_progress_display="3/7",
-            objective_next_step_display="1.3 Add tests",
+            objective_next_node_display="1.3 Add tests",
             updated_display="2h ago",
         )
 

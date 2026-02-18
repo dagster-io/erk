@@ -18,7 +18,7 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     compute_graph_summary,
-    find_graph_next_step,
+    find_graph_next_node,
     graph_from_phases,
     phases_from_graph,
 )
@@ -51,7 +51,7 @@ class ObjectiveValidationSuccess:
     failed_count: int
     graph: DependencyGraph
     summary: dict[str, int]
-    next_step: dict[str, str] | None
+    next_node: dict[str, str] | None
     validation_errors: list[str]
     issue_body: str
 
@@ -115,7 +115,7 @@ def validate_objective(
             failed_count=failed_count,
             graph=DependencyGraph(nodes=()),
             summary={},
-            next_step=None,
+            next_node=None,
             validation_errors=validation_errors,
             issue_body=issue.body,
         )
@@ -194,7 +194,7 @@ def validate_objective(
         checks.append((False, f"Invalid reference format: {invalid_refs[0]}"))
 
     summary = compute_graph_summary(graph)
-    next_step = find_graph_next_step(graph, phases)
+    next_node = find_graph_next_node(graph, phases)
     failed_count = sum(1 for passed, _ in checks if not passed)
 
     return ObjectiveValidationSuccess(
@@ -203,7 +203,7 @@ def validate_objective(
         failed_count=failed_count,
         graph=graph,
         summary=summary,
-        next_step=next_step,
+        next_node=next_node,
         validation_errors=validation_errors,
         issue_body=issue.body,
     )
@@ -265,7 +265,7 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
                 ],
                 "phases": serialize_phases(phases),
                 "summary": result.summary,
-                "next_step": result.next_step,
+                "next_node": result.next_node,
                 "validation_errors": result.validation_errors,
                 "all_complete": result.graph.is_complete(),
             }

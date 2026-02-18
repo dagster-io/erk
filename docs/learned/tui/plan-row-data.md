@@ -97,10 +97,10 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 | ----------------------------- | ------------- | ---------------------------------------------------- | --------------------- |
 | `objective_issue`             | `int \| None` | Objective issue number (linking plans to objectives) | Yes                   |
 | `objective_display`           | `str`         | Formatted display string (e.g., "#123" or "-")       | Never (dash possible) |
-| `objective_done_steps`        | `int`         | Count of done steps in objective roadmap             | Never (0 if no obj)   |
-| `objective_total_steps`       | `int`         | Total steps in objective roadmap                     | Never (0 if no obj)   |
+| `objective_done_nodes`        | `int`         | Count of done nodes in objective roadmap             | Never (0 if no obj)   |
+| `objective_total_nodes`       | `int`         | Total nodes in objective roadmap                     | Never (0 if no obj)   |
 | `objective_progress_display`  | `str`         | Progress display (e.g., "3/7" or "-")                | Never (dash possible) |
-| `objective_next_step_display` | `str`         | Next pending step (e.g., "1.3 Add tests" or "-")     | Never (dash possible) |
+| `objective_next_node_display` | `str`         | Next pending node (e.g., "1.3 Add tests" or "-")     | Never (dash possible) |
 
 ### Metadata
 
@@ -170,8 +170,8 @@ Many pieces of data have both a raw value and a display value:
 | `full_title`                                   | (is raw)                             | Full title for modals   |
 | `learn_status`                                 | `learn_display`/`learn_display_icon` | Learn workflow state    |
 | `objective_issue`                              | `objective_display`                  | Objective link          |
-| `objective_done_steps`/`objective_total_steps` | `objective_progress_display`         | Objective progress      |
-| (none)                                         | `objective_next_step_display`        | Next objective step     |
+| `objective_done_nodes`/`objective_total_nodes` | `objective_progress_display`         | Objective progress      |
+| (none)                                         | `objective_next_node_display`        | Next objective node     |
 | `updated_at`                                   | `updated_display`                    | Last update time        |
 | `created_at`                                   | `created_display`                    | Creation time           |
 | `author`                                       | (used directly in display)           | Issue creator           |

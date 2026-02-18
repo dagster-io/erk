@@ -52,10 +52,10 @@ class PlanRowData:
         learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12")
         objective_issue: Objective issue number (for linking plans to objectives)
         objective_display: Formatted display string (e.g., "#123" or "-")
-        objective_done_steps: Count of done steps in objective roadmap
-        objective_total_steps: Total steps in objective roadmap
+        objective_done_nodes: Count of done nodes in objective roadmap
+        objective_total_nodes: Total nodes in objective roadmap
         objective_progress_display: Progress display (e.g., "3/7" or "-")
-        objective_next_step_display: Next pending step (e.g., "1.3 Add tests" or "-")
+        objective_next_node_display: Next pending node (e.g., "1.3 Add tests" or "-")
         updated_at: Last update datetime of the issue
         updated_display: Formatted relative time for last update (e.g., "2h ago")
         created_at: Creation datetime of the issue
@@ -101,10 +101,10 @@ class PlanRowData:
     learn_display_icon: str
     objective_issue: int | None
     objective_display: str
-    objective_done_steps: int
-    objective_total_steps: int
+    objective_done_nodes: int
+    objective_total_nodes: int
     objective_progress_display: str
-    objective_next_step_display: str
+    objective_next_node_display: str
     updated_at: datetime
     updated_display: str
     created_at: datetime

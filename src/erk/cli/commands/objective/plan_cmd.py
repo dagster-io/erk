@@ -390,17 +390,17 @@ def _handle_one_shot(
                 )
             target_node, phase_name = found
         else:
-            # Use next_step from validation (finds first pending step by position)
-            if result.next_step is None:
+            # Use next_node from validation (finds first pending node by position)
+            if result.next_node is None:
                 user_output(
-                    click.style("All steps completed!", fg="green")
-                    + f" Objective #{issue_number} has no pending steps."
+                    click.style("All nodes completed!", fg="green")
+                    + f" Objective #{issue_number} has no pending nodes."
                 )
                 return
-            found = _find_node_in_phases(phases, result.next_step["id"])
+            found = _find_node_in_phases(phases, result.next_node["id"])
             if found is None:
                 raise click.ClickException(
-                    f"Internal error: next_step '{result.next_step['id']}' not found"
+                    f"Internal error: next_node '{result.next_node['id']}' not found"
                 )
             target_node, phase_name = found
 

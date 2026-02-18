@@ -4,7 +4,7 @@ This module provides:
 - Data types: RoadmapStepStatus, RoadmapStep, RoadmapPhase
 - Parsing: parse_roadmap() (v2 frontmatter only)
 - Frontmatter: validate, parse, group, update
-- Utilities: compute_summary(), find_next_step(), serialize_phases()
+- Utilities: compute_summary(), find_next_node(), serialize_phases()
 
 Previously split across objective_roadmap_shared.py and
 objective_roadmap_frontmatter.py in the erk package. Consolidated
@@ -527,7 +527,7 @@ def compute_summary(phases: list[RoadmapPhase]) -> dict[str, int]:
                 skipped += 1
 
     return {
-        "total_steps": total,
+        "total_nodes": total,
         "pending": pending,
         "planning": planning,
         "done": done,
@@ -559,7 +559,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
     ]
 
 
-def find_next_step(phases: list[RoadmapPhase]) -> dict[str, str] | None:
+def find_next_node(phases: list[RoadmapPhase]) -> dict[str, str] | None:
     """Find the first pending step in phase order."""
     for phase in phases:
         for step in phase.steps:

@@ -42,7 +42,7 @@ class RoadmapContextDict(TypedDict):
     phases: list[dict]
     matched_steps: list[str]
     summary: dict[str, int]
-    next_step: dict[str, str] | None
+    next_node: dict[str, str] | None
     all_complete: bool
 
 

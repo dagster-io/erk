@@ -4,7 +4,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     RoadmapStep,
     compute_summary,
-    find_next_step,
+    find_next_node,
     parse_roadmap,
     parse_v2_roadmap,
     render_roadmap_tables,
@@ -237,7 +237,7 @@ def test_compute_summary() -> None:
     ]
     summary = compute_summary(phases)
 
-    assert summary["total_steps"] == 5
+    assert summary["total_nodes"] == 5
     assert summary["done"] == 1
     assert summary["pending"] == 1
     assert summary["in_progress"] == 1
@@ -249,7 +249,7 @@ def test_compute_summary_empty() -> None:
     """Test summary computation with no phases."""
     summary = compute_summary([])
 
-    assert summary["total_steps"] == 0
+    assert summary["total_nodes"] == 0
     assert summary["done"] == 0
 
 
@@ -278,8 +278,8 @@ def test_serialize_phases() -> None:
     assert result[0]["steps"][0]["pr"] == "#1"
 
 
-def test_find_next_step_returns_first_pending() -> None:
-    """Test that find_next_step returns the first pending step."""
+def test_find_next_node_returns_first_pending() -> None:
+    """Test that find_next_node returns the first pending node."""
     phases = [
         RoadmapPhase(
             number=1,
@@ -294,15 +294,15 @@ def test_find_next_step_returns_first_pending() -> None:
             ],
         )
     ]
-    result = find_next_step(phases)
+    result = find_next_node(phases)
 
     assert result is not None
     assert result["id"] == "1.2"
     assert result["phase"] == "Phase One"
 
 
-def test_find_next_step_returns_none_when_all_done() -> None:
-    """Test that find_next_step returns None when no pending steps exist."""
+def test_find_next_node_returns_none_when_all_done() -> None:
+    """Test that find_next_node returns None when no pending nodes exist."""
     phases = [
         RoadmapPhase(
             number=1,
@@ -313,7 +313,7 @@ def test_find_next_step_returns_none_when_all_done() -> None:
             ],
         )
     ]
-    result = find_next_step(phases)
+    result = find_next_node(phases)
 
     assert result is None
 
@@ -334,14 +334,14 @@ def test_compute_summary_counts_planning() -> None:
     ]
     summary = compute_summary(phases)
 
-    assert summary["total_steps"] == 3
+    assert summary["total_nodes"] == 3
     assert summary["planning"] == 1
     assert summary["pending"] == 1
     assert summary["done"] == 1
 
 
-def test_find_next_step_skips_planning() -> None:
-    """Test that find_next_step skips steps with planning status."""
+def test_find_next_node_skips_planning() -> None:
+    """Test that find_next_node skips nodes with planning status."""
     phases = [
         RoadmapPhase(
             number=1,
@@ -355,14 +355,14 @@ def test_find_next_step_skips_planning() -> None:
             ],
         )
     ]
-    result = find_next_step(phases)
+    result = find_next_node(phases)
 
     assert result is not None
     assert result["id"] == "1.2"
 
 
-def test_find_next_step_all_planning_returns_none() -> None:
-    """Test that find_next_step returns None when only planning steps remain."""
+def test_find_next_node_all_planning_returns_none() -> None:
+    """Test that find_next_node returns None when only planning nodes remain."""
     phases = [
         RoadmapPhase(
             number=1,
@@ -376,7 +376,7 @@ def test_find_next_step_all_planning_returns_none() -> None:
             ],
         )
     ]
-    result = find_next_step(phases)
+    result = find_next_node(phases)
 
     assert result is None
 

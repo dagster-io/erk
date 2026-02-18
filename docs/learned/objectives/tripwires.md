@@ -66,7 +66,7 @@ Rules triggered by matching actions in code.
 
 **using None/empty string interchangeably in update-objective-node parameters** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values.
 
-**using find_next_step() for dependency-aware traversal** → Read [Dependency Graph Architecture](dependency-graph.md) first. Use DependencyGraph.next_node() instead. find_next_step() is position-based and ignores dependencies.
+**using find_next_node() for dependency-aware traversal** → Read [Dependency Graph Architecture](dependency-graph.md) first. Use DependencyGraph.next_node() instead. find_next_node() is position-based and ignores dependencies.
 
 **using full-body update for single-cell changes** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions.
 

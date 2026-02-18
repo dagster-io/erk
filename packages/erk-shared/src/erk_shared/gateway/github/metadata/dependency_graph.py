@@ -141,7 +141,7 @@ def compute_graph_summary(graph: DependencyGraph) -> dict[str, int]:
     """
     counts = Counter(node.status for node in graph.nodes)
     return {
-        "total_steps": len(graph.nodes),
+        "total_nodes": len(graph.nodes),
         "pending": counts.get("pending", 0),
         "planning": counts.get("planning", 0),
         "done": counts.get("done", 0),
@@ -158,7 +158,7 @@ def _find_node_by_status(
     return next((node for node in nodes if node.status == status), None)
 
 
-def find_graph_next_step(
+def find_graph_next_node(
     graph: DependencyGraph, phases: list[RoadmapPhase]
 ) -> dict[str, str] | None:
     """Find the next actionable node by graph order, returning the dict format needed by JSON APIs.

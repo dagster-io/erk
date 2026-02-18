@@ -5,8 +5,8 @@ read_when:
   - "implementing dependency-aware step traversal"
   - "converting between roadmap phases and graph representations"
 tripwires:
-  - action: "using find_next_step() for dependency-aware traversal"
-    warning: "Use DependencyGraph.next_node() instead. find_next_step() is position-based and ignores dependencies."
+  - action: "using find_next_node() for dependency-aware traversal"
+    warning: "Use DependencyGraph.next_node() instead. find_next_node() is position-based and ignores dependencies."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
 ---

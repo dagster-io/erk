@@ -913,9 +913,9 @@ When migrating CLI output to Rich tables, status indicators need Rich markup for
 
 Functions that previously returned click-styled strings now return Rich markup strings. The return type stays `str`, but the content format changes.
 
-<!-- Source: src/erk/cli/commands/objective/view_cmd.py, _format_step_status -->
+<!-- Source: src/erk/cli/commands/objective/view_cmd.py, _format_node_status -->
 
-See `_format_step_status()` in `src/erk/cli/commands/objective/view_cmd.py` for an example migration from click.style() to Rich markup.
+See `_format_node_status()` in `src/erk/cli/commands/objective/view_cmd.py` for an example migration from click.style() to Rich markup.
 
 ### Escaping User Content
 

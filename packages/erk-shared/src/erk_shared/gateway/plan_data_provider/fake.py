@@ -235,10 +235,10 @@ def make_plan_row(
     learn_plan_pr: int | None = None,
     learn_run_url: str | None = None,
     objective_issue: int | None = None,
-    objective_done_steps: int = 0,
-    objective_total_steps: int = 0,
+    objective_done_nodes: int = 0,
+    objective_total_nodes: int = 0,
     objective_progress_display: str = "-",
-    objective_next_step_display: str = "-",
+    objective_next_node_display: str = "-",
     updated_at: datetime | None = None,
     updated_display: str = "-",
     created_at: datetime | None = None,
@@ -272,10 +272,10 @@ def make_plan_row(
         learn_plan_pr: PR number that implemented the learn plan
         learn_run_url: URL to GitHub Actions workflow run (for pending status)
         objective_issue: Objective issue number (for linking plans to objectives)
-        objective_done_steps: Count of done steps in objective roadmap
-        objective_total_steps: Total steps in objective roadmap
+        objective_done_nodes: Count of done nodes in objective roadmap
+        objective_total_nodes: Total nodes in objective roadmap
         objective_progress_display: Progress display (e.g., "3/7" or "-")
-        objective_next_step_display: Next pending step display (e.g., "1.3 Add tests" or "-")
+        objective_next_node_display: Next pending node display (e.g., "1.3 Add tests" or "-")
         updated_at: Last update datetime (defaults to same as created_at)
         updated_display: Formatted relative time for last update
         created_at: Creation datetime (defaults to 2025-01-01T00:00:00Z)
@@ -377,10 +377,10 @@ def make_plan_row(
         learn_display_icon=learn_display_icon,
         objective_issue=objective_issue,
         objective_display=objective_display,
-        objective_done_steps=objective_done_steps,
-        objective_total_steps=objective_total_steps,
+        objective_done_nodes=objective_done_nodes,
+        objective_total_nodes=objective_total_nodes,
         objective_progress_display=objective_progress_display,
-        objective_next_step_display=objective_next_step_display,
+        objective_next_node_display=objective_next_node_display,
         updated_at=effective_updated_at,
         updated_display=updated_display,
         created_at=effective_created_at,
