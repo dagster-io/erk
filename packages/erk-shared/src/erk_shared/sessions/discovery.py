@@ -4,6 +4,7 @@ This module provides functions to discover Claude Code sessions
 associated with a plan issue.
 """
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -238,5 +239,11 @@ def find_local_sessions_for_project(
             matching.append(session.session_id)
             if len(matching) >= limit:
                 break
+        else:
+            print(
+                f"Skipping session {session.session_id}: "
+                f"branch '{branch}' does not match '{branch_prefix}*'",
+                file=sys.stderr,
+            )
 
     return matching

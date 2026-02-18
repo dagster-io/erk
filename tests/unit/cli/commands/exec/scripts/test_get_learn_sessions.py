@@ -499,7 +499,16 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
         )
 
     assert result.exit_code == 0, result.output
-    output = json.loads(result.output)
+
+    # Skip messages go to stderr but CliRunner mixes them into output.
+    # Extract only the JSON portion (lines starting with { or whitespace-indented).
+    raw_lines = result.output.strip().splitlines()
+    json_lines = [line for line in raw_lines if not line.startswith("Skipping session")]
+    output = json.loads("\n".join(json_lines))
+
+    # Verify skip messages were logged
+    skip_lines = [line for line in raw_lines if line.startswith("Skipping session")]
+    assert len(skip_lines) == 2
 
     # Only the matching session should appear in local_session_ids
     assert output["local_session_ids"] == ["matching-session"]
