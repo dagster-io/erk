@@ -1,6 +1,5 @@
 """Unit tests for plan_snapshots module."""
 
-import json
 from pathlib import Path
 
 from erk_shared.scratch.plan_snapshots import (
@@ -115,12 +114,12 @@ def test_determine_next_sequence_ignores_malformed() -> None:
 
 
 def test_get_plans_snapshot_dir_returns_correct_path(tmp_path: Path) -> None:
-    """Verify returns correct plans subdirectory path."""
+    """Verify returns correct plan_snapshots subdirectory path."""
     session_id = "test-session-123"
 
     result = get_plans_snapshot_dir(session_id, repo_root=tmp_path)
 
-    expected = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plans"
+    expected = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan_snapshots"
     assert result == expected
 
 
@@ -161,11 +160,13 @@ def test_snapshot_plan_file_preserves_filename(tmp_path: Path) -> None:
 
     assert result.plan_file.name == "quirky-drifting-comet.md"
     assert result.plan_file.exists()
-    assert result.plan_file.read_text(encoding="utf-8") == "# Plan Content"
+    # Content includes frontmatter + original content
+    file_content = result.plan_file.read_text(encoding="utf-8")
+    assert "# Plan Content" in file_content
 
 
-def test_snapshot_plan_file_writes_metadata(tmp_path: Path) -> None:
-    """Verify metadata file is written with correct content."""
+def test_snapshot_plan_file_writes_frontmatter(tmp_path: Path) -> None:
+    """Verify metadata is embedded as YAML frontmatter in the plan file."""
     session_id = "test-session-123"
     plan_file = tmp_path / "test-plan.md"
     plan_content = "# My Plan"
@@ -179,15 +180,42 @@ def test_snapshot_plan_file_writes_metadata(tmp_path: Path) -> None:
         repo_root=tmp_path,
     )
 
-    assert result.metadata_file.exists()
-    assert result.metadata_file.name == "test-slug.meta.json"
-    metadata = json.loads(result.metadata_file.read_text(encoding="utf-8"))
+    file_content = result.plan_file.read_text(encoding="utf-8")
 
-    assert metadata["slug"] == "test-slug"
-    assert metadata["source_path"] == str(plan_file)
-    assert metadata["planning_agent_ids"] == ["agent-abc123", "agent-def456"]
-    assert metadata["content_hash"].startswith("sha256:")
-    assert "captured_at" in metadata
+    # Frontmatter is delimited by ---
+    assert file_content.startswith("---\n")
+    assert "\n---\n" in file_content
+
+    # Metadata fields are present
+    assert "slug: test-slug" in file_content
+    assert f"source_path: '{plan_file}'" in file_content
+    assert "- agent-abc123" in file_content
+    assert "- agent-def456" in file_content
+    assert "content_hash: 'sha256:" in file_content
+    assert "captured_at:" in file_content
+
+    # Original plan content follows the frontmatter
+    assert file_content.endswith("# My Plan")
+
+
+def test_snapshot_plan_file_no_separate_metadata_file(tmp_path: Path) -> None:
+    """Verify no separate .meta.json file is created."""
+    session_id = "test-session-123"
+    plan_file = tmp_path / "test-plan.md"
+    plan_file.write_text("# Plan", encoding="utf-8")
+
+    result = snapshot_plan_file(
+        session_id=session_id,
+        plan_file_path=plan_file,
+        slug="test-slug",
+        planning_agent_ids=[],
+        repo_root=tmp_path,
+    )
+
+    # Only one file in the snapshot directory
+    files = list(result.snapshot_dir.iterdir())
+    assert len(files) == 1
+    assert files[0].suffix == ".md"
 
 
 def test_snapshot_plan_file_increments_sequence(tmp_path: Path) -> None:
@@ -237,3 +265,29 @@ def test_snapshot_plan_file_hash_in_folder_name(tmp_path: Path) -> None:
     folder_name = result.snapshot_dir.name
     assert folder_name.startswith("000001-")
     assert result.content_hash_short in folder_name
+
+
+def test_snapshot_plan_file_hashes_original_content(tmp_path: Path) -> None:
+    """Verify content hash is computed on original content, not frontmatter+content."""
+    session_id = "test-session-123"
+    plan_file = tmp_path / "test-plan.md"
+    plan_content = "# My Plan\n\nSome content"
+    plan_file.write_text(plan_content, encoding="utf-8")
+
+    result = snapshot_plan_file(
+        session_id=session_id,
+        plan_file_path=plan_file,
+        slug="test-slug",
+        planning_agent_ids=[],
+        repo_root=tmp_path,
+    )
+
+    # The hash in the frontmatter should match the original content hash
+    from erk_shared.scratch.plan_snapshots import compute_content_hash, extract_short_hash
+
+    expected_hash = compute_content_hash(plan_content)
+    expected_short = extract_short_hash(expected_hash)
+    assert result.content_hash_short == expected_short
+
+    file_content = result.plan_file.read_text(encoding="utf-8")
+    assert f"content_hash: '{expected_hash}'" in file_content
