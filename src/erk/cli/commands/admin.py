@@ -125,7 +125,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
     "--enable",
     "action",
     flag_value="enable",
-    help="Set ANTHROPIC_API_KEY secret from GH_ACTIONS_ANTHROPIC_API_KEY env var or interactive prompt",
+    help="Set ANTHROPIC_API_KEY secret from GH_ACTIONS_ANTHROPIC_API_KEY env var or prompt",
 )
 @click.option(
     "--disable",
@@ -178,8 +178,7 @@ def gh_actions_api_key(
         try:
             admin.set_secret(location, github_secret_name, secret_value)
             user_output(
-                click.style("✓", fg="green")
-                + f" Set {github_secret_name} secret in GitHub Actions"
+                click.style("✓", fg="green") + f" Set {github_secret_name} secret in GitHub Actions"
             )
         except RuntimeError as e:
             raise UserFacingCliError(str(e)) from e
