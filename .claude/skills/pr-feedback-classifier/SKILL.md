@@ -59,12 +59,18 @@ Check `$ARGUMENTS` for flags.
 
 For each comment, determine:
 
-### Actionability
+### Classification
+
+Classification determines how the thread is presented to the user, not whether it appears.
 
 - **Actionable**: Code changes requested, violations to fix, missing tests, documentation updates requested
-- **Informational**: CI status updates, CI results, Graphite stack comments, acknowledgments, PR description summaries
+- **Informational**: Bot suggestions (optional/could), CI-generated style suggestions, acknowledgments on review threads
 
-### Complexity (for actionable items)
+**Important:** Every unresolved review thread goes into `actionable_threads`, regardless of whether it's from a bot or human. The `classification` field distinguishes how the user should handle it.
+
+Discussion comments that are purely informational (CI status updates, Graphite stack comments, PR description summaries) are still counted in `informational_count` and do NOT appear in `actionable_threads`.
+
+### Complexity
 
 - `local`: Single line change at specified location
 - `single_file`: Multiple changes in one file
@@ -77,6 +83,7 @@ For each comment, determine:
 2. **Single-File** (auto_proceed: true): Multi-location in one file
 3. **Cross-Cutting** (auto_proceed: false): Multiple files
 4. **Complex** (auto_proceed: false): Architectural changes
+5. **Informational** (auto_proceed: false): Threads classified as `informational` — user decides to act or dismiss
 
 ## Output Format
 
@@ -95,9 +102,21 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
       "path": "src/api.py",
       "line": 42,
       "is_outdated": false,
+      "classification": "actionable",
       "action_summary": "Add integration tests for new endpoint",
       "complexity": "local",
       "original_comment": "This needs integration tests"
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5q73Nf",
+      "type": "review",
+      "path": "src/utils.py",
+      "line": 10,
+      "is_outdated": false,
+      "classification": "informational",
+      "action_summary": "Bot suggestion: extract helper function (optional)",
+      "complexity": "local",
+      "original_comment": "Consider extracting this into a helper"
     }
   ],
   "discussion_actions": [
@@ -121,6 +140,12 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
       "complexity": "cross_cutting",
       "auto_proceed": false,
       "item_indices": [0]
+    },
+    {
+      "name": "Informational",
+      "complexity": "informational",
+      "auto_proceed": false,
+      "item_indices": [1]
     }
   ],
   "error": null
@@ -131,8 +156,10 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
 
 - `thread_id`: The ID needed for `erk exec resolve-review-thread`
 - `comment_id`: The ID needed for `erk exec reply-to-discussion-comment`
+- `classification`: `"actionable"` or `"informational"` — determines how the user handles the thread
 - `item_indices`: References into `actionable_threads` (type=review) or `discussion_actions` (type=discussion)
 - `original_comment`: First 200 characters of the comment text
+- `informational_count`: Count of informational **discussion** comments only (CI status, Graphite stack). Review threads always appear individually in `actionable_threads` with a `classification` field
 
 ## Error Case
 
