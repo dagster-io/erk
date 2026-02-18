@@ -3,13 +3,20 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from erk.cli.commands.submit import ERK_PLAN_LABEL
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store
+
+
+@pytest.fixture(params=["github", "draft_pr"])
+def plan_backend_type(request: pytest.FixtureRequest) -> str:
+    return request.param
 
 
 def make_plan_body(content: str = "Implementation details...") -> str:
@@ -75,6 +82,7 @@ def setup_submit_context(
     use_graphite: bool = False,
     confirm_responses: list[bool] | None = None,
     remote_branch_refs: list[str] | None = None,
+    backend: str = "github",
 ):
     """Setup common context for submit tests.
 
@@ -85,19 +93,22 @@ def setup_submit_context(
                           If None, uses default FakeConsole with no responses configured.
         remote_branch_refs: List of remote branch refs (e.g., ["origin/branch", "origin/master"]).
                            These are passed to FakeGit's remote_branches keyed by repo_root.
+        backend: Plan store backend type - "github" or "draft_pr".
 
-    Returns (ctx, fake_git, fake_github, fake_github_issues, fake_graphite, repo_root)
+    Returns (ctx, fake_git, fake_github, fake_backing, fake_graphite, repo_root)
+        where fake_backing is FakeGitHubIssues (github) or FakeGitHub (draft_pr).
     """
     from erk_shared.context.types import GlobalConfig
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.git.fake import FakeGit
     from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.graphite.fake import FakeGraphite
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    fake_plan_store, fake_github_issues = create_plan_store_with_plans(plans)
+    fake_plan_store, fake_backing = create_plan_store(plans, backend=backend)
 
     git_kwargs = git_kwargs or {}
     if "current_branches" not in git_kwargs:
@@ -120,10 +131,10 @@ def setup_submit_context(
 
         fake_graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
-    # Update issues kwargs if provided
-    if issues_kwargs:
+    # Update issues kwargs if provided (only applicable to github backend)
+    if issues_kwargs and isinstance(fake_backing, FakeGitHubIssues):
         for key, value in issues_kwargs.items():
-            setattr(fake_github_issues, f"_{key}", value)
+            setattr(fake_backing, f"_{key}", value)
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -145,11 +156,15 @@ def setup_submit_context(
         confirm_responses=confirm_responses,
     )
 
+    # Wire up issues gateway: for github backend, use the fake backing;
+    # for draft_pr backend, let context_for_test create a default FakeGitHubIssues
+    fake_issues = fake_backing if isinstance(fake_backing, FakeGitHubIssues) else None
+
     ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
-        issues=fake_github_issues,
+        issues=fake_issues,
         plan_store=fake_plan_store,
         graphite=fake_graphite,
         repo=repo,
@@ -157,4 +172,4 @@ def setup_submit_context(
         console=fake_console,
     )
 
-    return ctx, fake_git, fake_github, fake_github_issues, fake_graphite, repo_root
+    return ctx, fake_git, fake_github, fake_backing, fake_graphite, repo_root

@@ -58,7 +58,7 @@ Parse the JSON output. If `success` is not `true`, stop and report the error. Ot
 **If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new issue (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
 
 ```bash
-erk exec plan-save-to-issue --plan-file .impl/plan.md --format json --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
+erk exec plan-save --plan-file .impl/plan.md --format json --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
 ```
 
 If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.

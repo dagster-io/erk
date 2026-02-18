@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
@@ -16,12 +17,18 @@ from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import (
+    create_plan_store,
     create_plan_store_with_plans,
     format_plan_header_body_for_test,
 )
 
 
-def test_implement_from_plain_issue_number() -> None:
+@pytest.fixture(params=["github", "draft_pr"])
+def plan_backend_type(request: pytest.FixtureRequest) -> str:
+    return request.param
+
+
+def test_implement_from_plain_issue_number(plan_backend_type: str) -> None:
     """Test implementing from GitHub issue number without # prefix."""
     plan_issue = create_sample_plan_issue("123")
 
@@ -32,7 +39,7 @@ def test_implement_from_plain_issue_number() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
+        store, _ = create_plan_store({"123": plan_issue}, backend=plan_backend_type)
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -48,7 +55,7 @@ def test_implement_from_plain_issue_number() -> None:
         assert '"plan_id": "123"' in plan_ref_content
 
 
-def test_implement_from_issue_number() -> None:
+def test_implement_from_issue_number(plan_backend_type: str) -> None:
     """Test implementing from GitHub issue number with # prefix."""
     plan_issue = create_sample_plan_issue()
 
@@ -59,7 +66,7 @@ def test_implement_from_issue_number() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -75,7 +82,7 @@ def test_implement_from_issue_number() -> None:
         assert (impl_path / "plan-ref.json").exists()
 
 
-def test_implement_from_issue_url() -> None:
+def test_implement_from_issue_url(plan_backend_type: str) -> None:
     """Test implementing from GitHub issue URL."""
     plan_issue = create_sample_plan_issue("123")
 
@@ -86,7 +93,7 @@ def test_implement_from_issue_url() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
+        store, _ = create_plan_store({"123": plan_issue}, backend=plan_backend_type)
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -102,7 +109,7 @@ def test_implement_from_issue_url() -> None:
         assert '"plan_id": "123"' in plan_ref_content
 
 
-def test_implement_creates_impl_folder_in_cwd() -> None:
+def test_implement_creates_impl_folder_in_cwd(plan_backend_type: str) -> None:
     """Test that implement creates .impl/ folder in current directory."""
     plan_issue = create_sample_plan_issue()
 
@@ -113,7 +120,7 @@ def test_implement_creates_impl_folder_in_cwd() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -128,7 +135,11 @@ def test_implement_creates_impl_folder_in_cwd() -> None:
 
 
 def test_implement_from_issue_fails_without_erk_plan_label() -> None:
-    """Test that command fails when issue doesn't have erk-plan label."""
+    """Test that command fails when issue doesn't have erk-plan label.
+
+    This test is GitHub-only because label validation behavior differs
+    between plan backends.
+    """
     plan_issue = Plan(
         plan_identifier="42",
         title="Regular Issue",
@@ -160,7 +171,7 @@ def test_implement_from_issue_fails_without_erk_plan_label() -> None:
         assert "erk-plan" in result.output
 
 
-def test_implement_from_issue_fails_when_not_found() -> None:
+def test_implement_from_issue_fails_when_not_found(plan_backend_type: str) -> None:
     """Test that command fails when issue doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -169,7 +180,7 @@ def test_implement_from_issue_fails_when_not_found() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_plan_store({}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#999", "--dry-run"], obj=ctx)
@@ -178,7 +189,7 @@ def test_implement_from_issue_fails_when_not_found() -> None:
         assert "Error" in result.output
 
 
-def test_implement_from_issue_dry_run() -> None:
+def test_implement_from_issue_dry_run(plan_backend_type: str) -> None:
     """Test dry-run mode for issue implementation."""
     plan_issue = create_sample_plan_issue()
 
@@ -189,7 +200,7 @@ def test_implement_from_issue_dry_run() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
@@ -204,7 +215,11 @@ def test_implement_from_issue_dry_run() -> None:
 
 
 def test_auto_detect_plan_from_branch_name() -> None:
-    """Test auto-detection of plan number from PXXXX-* branch."""
+    """Test auto-detection of plan number from PXXXX-* branch.
+
+    This test is GitHub-only because it relies on the P{id}-... branch naming
+    pattern which is specific to GitHub branch-based implementation detection.
+    """
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
@@ -247,7 +262,11 @@ def test_auto_detect_fails_on_non_plan_branch() -> None:
 
 
 def test_implement_from_issue_closes_review_pr() -> None:
-    """Test that implementing from an issue closes its associated review PR."""
+    """Test that implementing from an issue closes its associated review PR.
+
+    This test is GitHub-only because it relies on GitHub issue metadata and
+    the plan-header mechanism for storing review_pr references.
+    """
     # Build issue body with plan-header metadata containing review_pr: 99
     issue_body = format_plan_header_body_for_test()
     issue_body_with_review_pr = update_plan_header_review_pr(issue_body, 99)

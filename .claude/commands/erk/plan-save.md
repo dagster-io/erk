@@ -1,11 +1,11 @@
 ---
-description: Save the current session's plan to GitHub as an issue
+description: Save the current session's plan to GitHub
 argument-hint: "[--objective-issue=<number>] [--plan-type=learn]"
 ---
 
 # /erk:plan-save
 
-Save the current session's plan to GitHub as an issue with session context.
+Save the current session's plan to GitHub with session context.
 
 ## Usage
 
@@ -17,14 +17,14 @@ Save the current session's plan to GitHub as an issue with session context.
 
 When creating a plan from an objective (via `/erk:objective-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
 
-## Issue Structure
+## Plan Storage
 
-The created issue has a specific structure:
+The plan is saved using the configured backend:
 
-- **Issue body**: Contains only the metadata header (schema version, timestamps, etc.)
-- **First comment**: Contains the actual plan content
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
 
-This separation keeps machine-readable metadata in the body while the human-readable plan is in the first comment.
+The JSON output contract is the same for both backends (`issue_number`, `issue_url`, `title`, `branch_name`).
 
 ## Agent Instructions
 
@@ -53,7 +53,7 @@ Else:
 Run this command with the session ID and optional flags:
 
 ```bash
-erk exec plan-save-to-issue --format json --session-id="${CLAUDE_SESSION_ID}" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
 ```
 
 Parse the JSON output to extract `issue_number` for verification in Step 3.
@@ -149,7 +149,7 @@ If objective was verified, also display: `Verified objective link: #<objective-n
 
 If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: <slot_name> → #<objective-number>`
 
-**Note:** Slot objective updates are handled automatically by `plan-save-to-issue` when `--objective-issue` is provided - no separate command call needed.
+**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.
 
 On failure, display the error message and suggest:
 

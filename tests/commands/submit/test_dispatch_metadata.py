@@ -1,4 +1,10 @@
-"""Tests for workflow dispatch metadata tracking."""
+"""Tests for workflow dispatch metadata tracking.
+
+These tests exercise submit command behavior around dispatch metadata
+(writing run_id, node_id to plan headers). They use the GitHub Issues
+backend because submit_cmd validates via ctx.issues.get_issue(), which
+requires the issues gateway to be populated with plan data.
+"""
 
 from pathlib import Path
 
@@ -12,7 +18,7 @@ from tests.commands.submit.conftest import create_plan, setup_submit_context
 def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
     """Test submit updates issue body with dispatch info after triggering workflow."""
     plan = create_plan("123", "Implement feature X")
-    ctx, _, _, fake_github_issues, _, repo_root = setup_submit_context(tmp_path, {"123": plan})
+    ctx, _, _, fake_backing, _, repo_root = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
@@ -21,7 +27,7 @@ def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
     assert "Dispatch metadata written to issue" in result.output
 
     # Verify issue body was updated with dispatch info
-    updated_issue = fake_github_issues.get_issue(repo_root, 123)
+    updated_issue = fake_backing.get_issue(repo_root, 123)
     assert "last_dispatched_run_id: '1234567890'" in updated_issue.body
     assert "last_dispatched_node_id: WFR_fake_node_id_1234567890" in updated_issue.body
     assert "last_dispatched_at:" in updated_issue.body
