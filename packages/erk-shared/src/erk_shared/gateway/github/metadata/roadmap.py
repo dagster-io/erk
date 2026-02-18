@@ -164,15 +164,15 @@ def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapNode] | None:
     return steps
 
 
-def render_roadmap_block_inner(steps: list[RoadmapNode]) -> str:
-    """Render roadmap steps as <details> wrapped YAML code block.
+def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
+    """Render roadmap nodes as <details> wrapped YAML code block.
 
     This produces the same format as other metadata blocks (plan-header,
     objective-header), making roadmap blocks collapsible and well-formatted
     on GitHub.
 
     Args:
-        steps: Flat list of roadmap steps to render.
+        nodes: Flat list of roadmap nodes to render.
 
     Returns:
         Inner content for an objective-roadmap metadata block, wrapped in
@@ -188,7 +188,7 @@ def render_roadmap_block_inner(steps: list[RoadmapNode]) -> str:
                 "plan": s.plan,
                 "pr": s.pr,
             }
-            for s in steps
+            for s in nodes
         ],
     }
     yaml_content = yaml.safe_dump(
@@ -210,8 +210,8 @@ def render_roadmap_block_inner(steps: list[RoadmapNode]) -> str:
     )
 
 
-def group_nodes_by_phase(steps: list[RoadmapNode]) -> list[RoadmapPhase]:
-    """Reconstruct RoadmapPhase objects from step ID prefixes.
+def group_nodes_by_phase(nodes: list[RoadmapNode]) -> list[RoadmapPhase]:
+    """Reconstruct RoadmapPhase objects from node ID prefixes.
 
     Phase membership is derived by convention:
     - "1.1", "1.2" → phase 1
@@ -223,24 +223,24 @@ def group_nodes_by_phase(steps: list[RoadmapNode]) -> list[RoadmapPhase]:
     must extract them from markdown headers.
 
     Args:
-        steps: Flat list of steps
+        nodes: Flat list of nodes
 
     Returns:
         List of RoadmapPhase objects grouped by ID prefix
     """
-    # Group steps by parsed phase key (number, suffix) to merge equivalent phases.
+    # Group nodes by parsed phase key (number, suffix) to merge equivalent phases.
     # Raw phase_id strings like "1" and "1.2" both resolve to phase (1, ""),
     # so we group by the resolved key rather than the raw string.
     phase_map: dict[tuple[int, str], list[RoadmapNode]] = {}
 
-    for step in steps:
-        # Extract phase identifier from step ID
+    for node in nodes:
+        # Extract phase identifier from node ID
         # "1.1" → "1", "2A.1" → "2A", "1.2.3" → "1.2"
         # "1", "2", "A" (no dot) → default to phase (1, "")
-        if "." not in step.id:
+        if "." not in node.id:
             phase_key = (1, "")
         else:
-            phase_id = step.id.rsplit(".", 1)[0]
+            phase_id = node.id.rsplit(".", 1)[0]
             match = re.match(r"^(\d+)([A-Z]*)", phase_id)
             if match:
                 phase_key = (int(match.group(1)), match.group(2))
@@ -251,7 +251,7 @@ def group_nodes_by_phase(steps: list[RoadmapNode]) -> list[RoadmapPhase]:
         if phase_key not in phase_map:
             phase_map[phase_key] = []
 
-        phase_map[phase_key].append(step)
+        phase_map[phase_key].append(node)
 
     # Convert to RoadmapPhase objects
     phases: list[RoadmapPhase] = []

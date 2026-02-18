@@ -26,7 +26,7 @@ Rules triggered by matching actions in code.
 
 **assuming phase names are stored in YAML frontmatter** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Phase names come from markdown headers, not frontmatter. Read this doc.
 
-**calling update-roadmap-step with --pr but without --plan** → Read [Plan Reference Preservation in Roadmap Updates](plan-reference-preservation.md) first. CLI validation requires --plan when --pr is set. Omitting --plan would silently lose the plan reference. Use --plan '#NNN' to preserve or --plan '' to explicitly clear.
+**calling update-objective-node with --pr but without --plan** → Read [Plan Reference Preservation in Roadmap Updates](plan-reference-preservation.md) first. CLI validation requires --plan when --pr is set. Omitting --plan would silently lose the plan reference. Use --plan '#NNN' to preserve or --plan '' to explicitly clear.
 
 **changing update_node_in_frontmatter() semantics for plan=None** → Read [Plan Reference Preservation in Roadmap Updates](plan-reference-preservation.md) first. plan=None means 'preserve existing value', not 'clear'. This three-state pattern (None=preserve, ''=clear, '#NNN'=set) is used by both CLI and gateway. Changing it breaks preservation.
 

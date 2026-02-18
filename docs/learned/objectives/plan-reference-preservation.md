@@ -1,12 +1,12 @@
 ---
 title: Plan Reference Preservation in Roadmap Updates
 read_when:
-  - "calling update-roadmap-step with --pr but without --plan"
+  - "calling update-objective-node with --pr but without --plan"
   - "changing update_node_in_frontmatter() semantics for plan=None"
   - "updating objective roadmap step plan or PR references"
   - "debugging lost plan references in objective roadmaps"
 tripwires:
-  - action: "calling update-roadmap-step with --pr but without --plan"
+  - action: "calling update-objective-node with --pr but without --plan"
     warning: "CLI validation requires --plan when --pr is set. Omitting --plan would silently lose the plan reference. Use --plan '#NNN' to preserve or --plan '' to explicitly clear."
   - action: "changing update_node_in_frontmatter() semantics for plan=None"
     warning: "plan=None means 'preserve existing value', not 'clear'. This three-state pattern (None=preserve, ''=clear, '#NNN'=set) is used by both CLI and gateway. Changing it breaks preservation."
@@ -20,7 +20,7 @@ When updating a roadmap step's PR reference, the plan reference must not be sile
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:353-368 -->
 
-The `update-roadmap-step` exec script accepts `--plan` and `--pr` flags. Before the fix, calling `--pr #123` without `--plan` would set the PR but leave `plan=None`, which the gateway interpreted as "clear the plan field." This silently erased the plan reference.
+The `update-objective-node` exec script accepts `--plan` and `--pr` flags. Before the fix, calling `--pr #123` without `--plan` would set the PR but leave `plan=None`, which the gateway interpreted as "clear the plan field." This silently erased the plan reference.
 
 ## Defense-in-Depth: CLI + Gateway
 
