@@ -151,6 +151,13 @@ def compute_graph_summary(graph: DependencyGraph) -> dict[str, int]:
     }
 
 
+def _find_node_by_status(
+    nodes: tuple[ObjectiveNode, ...], status: RoadmapStepStatus
+) -> ObjectiveNode | None:
+    """Find the first node with the given status, or None."""
+    return next((node for node in nodes if node.status == status), None)
+
+
 def find_graph_next_step(
     graph: DependencyGraph, phases: list[RoadmapPhase]
 ) -> dict[str, str] | None:
@@ -169,15 +176,9 @@ def find_graph_next_step(
     Returns:
         Dict with {id, description, phase} or None if no pending or in_progress nodes.
     """
-    target_node = next(
-        (node for node in graph.nodes if node.status == "pending"),
-        None,
-    )
+    target_node = _find_node_by_status(graph.nodes, "pending")
     if target_node is None:
-        target_node = next(
-            (node for node in graph.nodes if node.status == "in_progress"),
-            None,
-        )
+        target_node = _find_node_by_status(graph.nodes, "in_progress")
     if target_node is None:
         return None
 
