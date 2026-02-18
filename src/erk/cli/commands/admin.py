@@ -125,7 +125,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
     "--enable",
     "action",
     flag_value="enable",
-    help="Set ANTHROPIC_API_KEY secret from local environment",
+    help="Set ANTHROPIC_API_KEY secret from GH_ACTIONS_ANTHROPIC_API_KEY env var or interactive prompt",
 )
 @click.option(
     "--disable",
@@ -141,7 +141,8 @@ def gh_actions_api_key(
     """Manage ANTHROPIC_API_KEY secret in GitHub Actions.
 
     Without flags: Check if ANTHROPIC_API_KEY secret exists
-    With --enable: Set ANTHROPIC_API_KEY secret from local environment variable
+    With --enable: Set ANTHROPIC_API_KEY secret from GH_ACTIONS_ANTHROPIC_API_KEY env var
+                   (prompts interactively if env var is not set)
     With --disable: Delete ANTHROPIC_API_KEY secret
     """
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -154,10 +155,11 @@ def gh_actions_api_key(
 
     admin = ctx.github_admin
     location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
-    secret_name = "ANTHROPIC_API_KEY"
+    github_secret_name = "ANTHROPIC_API_KEY"
+    local_env_var = "GH_ACTIONS_ANTHROPIC_API_KEY"
 
     if action is None:
-        exists = admin.secret_exists(location, secret_name)
+        exists = admin.secret_exists(location, github_secret_name)
         user_output(click.style("GitHub Actions API Key", bold=True))
         user_output("")
         if exists is True:
@@ -168,26 +170,26 @@ def gh_actions_api_key(
             user_output(f"Status: {click.style('Error checking secret', fg='red')}")
 
     elif action == "enable":
-        secret_value = os.environ.get(secret_name)
+        secret_value = os.environ.get(local_env_var)
         if secret_value is None:
-            raise UserFacingCliError(
-                f"{secret_name} not found in local environment\n"
-                f"Set the environment variable before running --enable."
+            secret_value = click.prompt(
+                f"{local_env_var} not set. Enter the API key", hide_input=True
             )
         try:
-            admin.set_secret(location, secret_name, secret_value)
+            admin.set_secret(location, github_secret_name, secret_value)
             user_output(
-                click.style("✓", fg="green") + f" Set {secret_name} secret in GitHub Actions"
+                click.style("✓", fg="green")
+                + f" Set {github_secret_name} secret in GitHub Actions"
             )
         except RuntimeError as e:
             raise UserFacingCliError(str(e)) from e
 
     elif action == "disable":
         try:
-            admin.delete_secret(location, secret_name)
+            admin.delete_secret(location, github_secret_name)
             user_output(
                 click.style("✓", fg="green")
-                + f" Deleted {secret_name} secret from GitHub Actions"
+                + f" Deleted {github_secret_name} secret from GitHub Actions"
             )
         except RuntimeError as e:
             raise UserFacingCliError(str(e)) from e

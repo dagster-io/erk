@@ -55,13 +55,13 @@ def test_status_api_error() -> None:
 
 
 def test_enable_sets_secret() -> None:
-    """--enable reads local env var and sets GitHub Actions secret."""
+    """--enable reads GH_ACTIONS_ANTHROPIC_API_KEY env var and sets GitHub Actions secret."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         admin = FakeGitHubAdmin(secrets=set())
         ctx = env.build_context(github_admin=admin)
 
-        with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "sk-test-123"}):
+        with patch.dict("os.environ", {"GH_ACTIONS_ANTHROPIC_API_KEY": "sk-test-123"}):
             result = runner.invoke(cli, ["admin", "gh-actions-api-key", "--enable"], obj=ctx)
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
@@ -72,25 +72,28 @@ def test_enable_sets_secret() -> None:
         assert value == "sk-test-123"
 
 
-def test_enable_errors_without_env_var() -> None:
-    """--enable fails when ANTHROPIC_API_KEY is not in local environment."""
+def test_enable_prompts_when_env_var_not_set() -> None:
+    """--enable prompts interactively when GH_ACTIONS_ANTHROPIC_API_KEY is not set."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         admin = FakeGitHubAdmin(secrets=set())
         ctx = env.build_context(github_admin=admin)
 
-        with patch.dict("os.environ", {}, clear=False):
-            # Ensure ANTHROPIC_API_KEY is not set
-            env_copy = dict(**os.environ)
-            env_copy.pop("ANTHROPIC_API_KEY", None)
-            with patch.dict("os.environ", env_copy, clear=True):
-                result = runner.invoke(
-                    cli, ["admin", "gh-actions-api-key", "--enable"], obj=ctx
-                )
+        env_copy = {k: v for k, v in os.environ.items() if k != "GH_ACTIONS_ANTHROPIC_API_KEY"}
+        with patch.dict("os.environ", env_copy, clear=True):
+            result = runner.invoke(
+                cli,
+                ["admin", "gh-actions-api-key", "--enable"],
+                obj=ctx,
+                input="sk-prompted-key\n",
+            )
 
-        assert result.exit_code == 1
-        assert "not found in local environment" in result.output
-        assert len(admin.set_secret_calls) == 0
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert "Set ANTHROPIC_API_KEY" in result.output
+        assert len(admin.set_secret_calls) == 1
+        name, value = admin.set_secret_calls[0]
+        assert name == "ANTHROPIC_API_KEY"
+        assert value == "sk-prompted-key"
 
 
 # --- Disable tests ---
