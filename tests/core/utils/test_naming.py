@@ -472,9 +472,13 @@ def test_generate_issue_branch_name_with_objective_truncates_long_title() -> Non
         # Lowercase o prefix (case insensitive)
         ("P123-o456-fix-bug", 456),
         ("p123-o789-feature", 789),
+        # Draft-PR branches with objective ID
+        ("plan-O456-fix-auth-bug-01-15-1430", 456),
+        ("plan-O1-add-tests-12-31-2359", 1),
         # Without objective ID
         ("P123-fix-auth-bug-01-15-1430", None),
         ("P42-my-feature", None),
+        ("plan-fix-auth-bug-01-15-1430", None),
         ("feature-branch", None),
         ("master", None),
     ],
@@ -496,6 +500,9 @@ def test_extract_objective_number(branch_name: str, expected: int | None) -> Non
         # Legacy format without P prefix
         ("2382-convert-erk-create-raw-ext-12-05-2359", 2382),
         ("42-fix-bug", 42),
+        # Draft-PR branches return None (no extractable issue number)
+        ("plan-fix-auth-bug-01-15-1430", None),
+        ("plan-O456-fix-auth-01-15-1430", None),
         # Invalid formats
         ("feature-branch", None),
         ("master", None),

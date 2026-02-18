@@ -188,8 +188,12 @@ def discover_issue_for_footer(
     """Discover issue number for PR footer from .impl/ or existing PR body.
 
     Tries two sources in order:
-    1. .impl/issue.json or branch name pattern (P{N}-{slug})
+    1. .impl/plan-ref.json (or legacy issue.json) or branch name pattern
+       (``P{N}-{slug}`` for issue-based, ``plan-{slug}`` for draft-PR)
     2. Closing reference in existing PR footer (fallback)
+
+    For draft-PR branches (``plan-{slug}-{timestamp}``), ``branch_issue`` is None,
+    so the function relies entirely on plan-ref.json for the issue number.
 
     Args:
         impl_dir: Path to .impl/ directory
@@ -202,6 +206,8 @@ def discover_issue_for_footer(
         IssueLinkageMismatch if branch and .impl/issue.json disagree
     """
     # Primary: discover from .impl/plan-ref.json (or legacy issue.json) or branch name
+    # For issue-based branches (P{N}-...), branch_issue is extracted from the prefix.
+    # For draft-PR branches (plan-...), branch_issue is None.
     branch_issue = extract_leading_issue_number(branch_name)
     plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
     impl_issue = int(plan_ref.plan_id) if plan_ref is not None else None
@@ -209,8 +215,8 @@ def discover_issue_for_footer(
     if branch_issue is not None and impl_issue is not None and branch_issue != impl_issue:
         return IssueLinkageMismatch(
             message=(
-                f"Branch name (P{branch_issue}-...) disagrees with "
-                f".impl/issue.json (#{impl_issue}). Fix the mismatch before proceeding."
+                f"Branch issue ({branch_issue}) disagrees with "
+                f".impl/plan-ref.json (#{impl_issue}). Fix the mismatch before proceeding."
             )
         )
 

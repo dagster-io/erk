@@ -213,5 +213,5 @@ def test_get_closing_text_branch_issue_json_mismatch(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "disagrees" in result.output
-    assert "P42" in result.output
+    assert "(42)" in result.output
     assert "#99" in result.output
