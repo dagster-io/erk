@@ -40,11 +40,13 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
     branch_name, title, body, base, draft = fake_github.created_prs[0]
     assert title == "Implement feature X"  # NOT "Implement feature X [erk-plan]"
 
-    # Verify PR body was updated with checkout footer (includes source + --script)
-    assert len(fake_github.updated_pr_bodies) == 1
+    # Verify PR body was updated: first with checkout footer, then with workflow run link
+    assert len(fake_github.updated_pr_bodies) == 2
     pr_number, updated_body = fake_github.updated_pr_bodies[0]
     assert pr_number == 999  # FakeGitHub returns 999 for created PRs
     assert 'source "$(erk pr checkout 999 --script)" && erk pr sync --dangerous' in updated_body
+    _, workflow_body = fake_github.updated_pr_bodies[1]
+    assert "Workflow run:" in workflow_body
 
 
 def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
@@ -70,9 +72,11 @@ def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
         "Closes #123 must be in initial PR body for GitHub's willCloseTarget to work"
     )
 
-    # Verify PR body was also updated (to add checkout command footer)
-    assert len(fake_github.updated_pr_bodies) == 1
+    # Verify PR body was updated: first with checkout footer, then with workflow run link
+    assert len(fake_github.updated_pr_bodies) == 2
     pr_number, updated_body = fake_github.updated_pr_bodies[0]
     assert pr_number == 999  # FakeGitHub returns 999 for created PRs
     assert "Closes #123" in updated_body
     assert 'source "$(erk pr checkout 999 --script)" && erk pr sync --dangerous' in updated_body
+    _, workflow_body = fake_github.updated_pr_bodies[1]
+    assert "Workflow run:" in workflow_body

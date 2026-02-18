@@ -60,10 +60,12 @@ def test_submit_learn_plan_adds_skip_learn_label(tmp_path: Path) -> None:
     assert pr_number == 999  # FakeGitHub returns 999 for created PRs
     assert label == ERK_SKIP_LEARN_LABEL
 
-    # Verify PR body was updated (checkout command, no learn marker)
-    assert len(fake_github.updated_pr_bodies) == 1
+    # Verify PR body was updated: first with checkout footer, then with workflow run link
+    assert len(fake_github.updated_pr_bodies) == 2
     _, updated_body = fake_github.updated_pr_bodies[0]
     assert "erk pr checkout" in updated_body
+    _, workflow_body = fake_github.updated_pr_bodies[1]
+    assert "Workflow run:" in workflow_body
 
 
 def test_submit_standard_plan_does_not_add_skip_learn_label(tmp_path: Path) -> None:
@@ -81,10 +83,12 @@ def test_submit_standard_plan_does_not_add_skip_learn_label(tmp_path: Path) -> N
     # Verify NO label was added (standard plan, not learn)
     assert len(fake_github.added_labels) == 0
 
-    # Verify PR body was updated (checkout command only)
-    assert len(fake_github.updated_pr_bodies) == 1
+    # Verify PR body was updated: first with checkout footer, then with workflow run link
+    assert len(fake_github.updated_pr_bodies) == 2
     _, updated_body = fake_github.updated_pr_bodies[0]
     assert "erk pr checkout" in updated_body
+    _, workflow_body = fake_github.updated_pr_bodies[1]
+    assert "Workflow run:" in workflow_body
 
 
 def _make_learn_plan_body_with_parent(learned_from_issue: int) -> str:
