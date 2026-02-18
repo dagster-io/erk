@@ -7,8 +7,10 @@ from erk_shared.gateway.github.metadata.roadmap import (
     find_next_node,
     parse_roadmap,
     parse_v2_roadmap,
+    render_roadmap_block_inner,
     render_roadmap_tables,
     serialize_phases,
+    validate_roadmap_frontmatter,
 )
 
 WELL_FORMED_V2_BODY = """\
@@ -537,6 +539,142 @@ steps:
 
 
 # ---------------------------------------------------------------------------
+# v3 schema tests (nodes key, schema_version "3")
+# ---------------------------------------------------------------------------
+
+WELL_FORMED_V3_BODY = """\
+# Objective: Test
+
+## Roadmap
+
+### Phase 1: Foundation
+
+### Phase 2: Core
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '3'
+nodes:
+- id: '1.1'
+  description: Setup infra
+  status: done
+  plan: null
+  pr: '#100'
+- id: '1.2'
+  description: Add tests
+  status: in_progress
+  plan: '#101'
+  pr: null
+- id: '2.1'
+  description: Build feature
+  status: pending
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+def test_parse_roadmap_v3_well_formed() -> None:
+    """Test parsing a well-formed v3 roadmap body with 'nodes' key."""
+    phases, errors = parse_roadmap(WELL_FORMED_V3_BODY)
+
+    assert len(phases) == 2
+    assert errors == []
+
+    assert phases[0].number == 1
+    assert phases[0].name == "Foundation"
+    assert len(phases[0].steps) == 2
+
+    assert phases[1].number == 2
+    assert phases[1].name == "Core"
+    assert len(phases[1].steps) == 1
+
+
+def test_parse_v2_roadmap_accepts_v3() -> None:
+    """parse_v2_roadmap accepts v3 schema bodies."""
+    result = parse_v2_roadmap(WELL_FORMED_V3_BODY)
+
+    assert result is not None
+    phases, errors = result
+    assert errors == []
+    assert len(phases) == 2
+
+
+def test_validate_roadmap_frontmatter_v3_nodes_key() -> None:
+    """validate_roadmap_frontmatter accepts v3 with 'nodes' key."""
+    data = {
+        "schema_version": "3",
+        "nodes": [
+            {"id": "1.1", "description": "Test", "status": "pending", "plan": None, "pr": None},
+        ],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is not None
+    assert errors == []
+    assert len(steps) == 1
+    assert steps[0].id == "1.1"
+
+
+def test_validate_roadmap_frontmatter_v2_steps_key_still_works() -> None:
+    """validate_roadmap_frontmatter still accepts v2 with 'steps' key."""
+    data = {
+        "schema_version": "2",
+        "steps": [
+            {"id": "1.1", "description": "Test", "status": "pending", "plan": None, "pr": None},
+        ],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is not None
+    assert errors == []
+    assert len(steps) == 1
+
+
+def test_validate_roadmap_frontmatter_missing_both_keys() -> None:
+    """validate_roadmap_frontmatter fails when neither 'nodes' nor 'steps' present."""
+    data = {
+        "schema_version": "3",
+        "items": [],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is None
+    assert len(errors) == 1
+    assert "nodes" in errors[0]
+
+
+def test_render_roadmap_block_inner_emits_v3() -> None:
+    """render_roadmap_block_inner emits schema_version '3' and 'nodes' key."""
+    steps = [
+        RoadmapNode(id="1.1", description="Test", status="pending", plan=None, pr=None),
+    ]
+    result = render_roadmap_block_inner(steps)
+
+    assert "schema_version: '3'" in result
+    assert "nodes:" in result
+    assert "steps:" not in result
+
+
+def test_v2_body_round_trips_through_v3_render() -> None:
+    """Parsing a v2 body and re-rendering produces v3 output."""
+    phases, errors = parse_roadmap(WELL_FORMED_V2_BODY)
+    assert errors == []
+
+    all_steps = [step for phase in phases for step in phase.steps]
+    rendered = render_roadmap_block_inner(all_steps)
+
+    assert "schema_version: '3'" in rendered
+    assert "nodes:" in rendered
+
+
+# ---------------------------------------------------------------------------
 # render_roadmap_tables tests
 # ---------------------------------------------------------------------------
 
@@ -654,7 +792,7 @@ class TestRenderRoadmapTables:
         result = render_roadmap_tables(phases)
         lines = result.split("\n")
 
-        assert lines[1] == "| Step | Description | Status | Plan | PR |"
+        assert lines[1] == "| Node | Description | Status | Plan | PR |"
         assert lines[2] == "|------|-------------|--------|------|----|"
 
     def test_plan_and_pr_values(self) -> None:

@@ -25,7 +25,7 @@ Erk has two distinct strategies for mutating objective roadmap tables, each opti
 
 ## Why Two Patterns?
 
-The roadmap table is a 5-column markdown table stored in a GitHub issue body (`| Step | Description | Status | Plan | PR |`). Two fundamentally different mutation shapes arise from different workflow events:
+The roadmap table is a 5-column markdown table stored in a GitHub issue body (`| Node | Description | Status | Plan | PR |`). Two fundamentally different mutation shapes arise from different workflow events:
 
 - **Single-step updates** (plan saved, PR created): Only the plan/PR columns of one step change. The rest of the table — descriptions, other steps, layout — should be untouched. Fetching, parsing, and rewriting the entire table for a single step change would risk overwriting concurrent edits by other agents or humans.
 

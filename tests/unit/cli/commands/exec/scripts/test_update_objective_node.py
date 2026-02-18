@@ -57,7 +57,7 @@ steps:
 
 ### Phase 1: Foundation (1 PR)
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Set up project structure | done | - | #100 |
 | 1.2 | Add core types | in-progress | #200 | - |
@@ -65,7 +65,7 @@ steps:
 
 ### Phase 2: Implementation (1 PR)
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 2.1 | Implement main feature | pending | - | - |
 | 2.2 | Add tests | blocked | - | - |
@@ -626,7 +626,7 @@ def test_no_metadata_block_returns_no_roadmap() -> None:
 
 ### Phase 1: Foundation (1 PR)
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Set up project structure | done | - | #100 |
 """
@@ -708,7 +708,7 @@ V2_COMMENT_BODY = """\
 
 ### Phase 1: Foundation (1 PR)
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Set up project structure | done | - | #100 |
 | 1.2 | Add core types | in-progress | #200 | - |
@@ -815,7 +815,7 @@ def test_replace_table_plan_only_with_existing_pr_derives_in_progress() -> None:
     from erk.cli.commands.exec.scripts.update_objective_node import _replace_table_in_text
 
     text = """\
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 2.1 | Implement main feature | planning | - | #200 |
 """
@@ -832,7 +832,7 @@ def test_replace_table_in_text_basic() -> None:
     from erk.cli.commands.exec.scripts.update_objective_node import _replace_table_in_text
 
     text = """\
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Set up project | done | - | #100 |
 | 1.2 | Add core types | pending | - | - |
@@ -856,7 +856,7 @@ def test_replace_table_in_text_preserves_plan_when_pr_set() -> None:
     from erk.cli.commands.exec.scripts.update_objective_node import _replace_table_in_text
 
     text = """\
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Set up project | in-progress | #200 | - |
 """
@@ -871,7 +871,7 @@ def test_replace_table_in_text_preserves_plan_when_no_pr() -> None:
     from erk.cli.commands.exec.scripts.update_objective_node import _replace_table_in_text
 
     text = """\
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Set up project | in-progress | #200 | - |
 """

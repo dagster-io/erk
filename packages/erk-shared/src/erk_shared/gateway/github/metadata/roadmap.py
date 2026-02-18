@@ -72,16 +72,18 @@ def validate_roadmap_frontmatter(
         errors.append("Missing required field: schema_version")
         return None, errors
 
-    if schema_version != "2":
+    if schema_version not in ("2", "3"):
         errors.append(f"Unsupported schema_version: {schema_version}")
         return None, errors
 
-    # Validate steps is a list
-    if "steps" not in data:
-        errors.append("Missing required field: steps")
+    # Validate items list — accept "nodes" (v3) or "steps" (v2)
+    if "nodes" in data:
+        steps_data = data["nodes"]
+    elif "steps" in data:
+        steps_data = data["steps"]
+    else:
+        errors.append("Missing required field: nodes (or steps for v2)")
         return None, errors
-
-    steps_data = data["steps"]
     if not isinstance(steps_data, list):
         errors.append("Field 'steps' must be a list")
         return None, errors
@@ -179,8 +181,8 @@ def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
         ``<details>`` with a YAML code block.
     """
     data = {
-        "schema_version": "2",
-        "steps": [
+        "schema_version": "3",
+        "nodes": [
             {
                 "id": s.id,
                 "description": s.description,
@@ -413,7 +415,7 @@ def parse_v2_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]] | None:
 
     data = parse_metadata_block_body(roadmap_block.body)
 
-    if data.get("schema_version") != "2":
+    if data.get("schema_version") not in ("2", "3"):
         return None
 
     steps, errors = validate_roadmap_frontmatter(data)
@@ -462,7 +464,7 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
 
     Format per phase:
         ### Phase {number}{suffix}: {name} ({N} PR)
-        | Step | Description | Status | Plan | PR |
+        | Node | Description | Status | Plan | PR |
         |------|-------------|--------|------|----|
         | {id} | {desc}      | {status} | {plan} | {pr} |
 
@@ -476,7 +478,7 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
         header = f"### Phase {phase.number}{phase.suffix}: {phase.name} ({pr_count} PR)"
 
         rows: list[str] = []
-        rows.append("| Step | Description | Status | Plan | PR |")
+        rows.append("| Node | Description | Status | Plan | PR |")
         rows.append("|------|-------------|--------|------|----|")
 
         for step in phase.nodes:

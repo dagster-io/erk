@@ -397,14 +397,14 @@ This objective describes the implementation of a new feature.
 
 ### Phase 1: Foundation (1 PR)
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Set up project structure | pending | - | - |
 | 1.2 | Add core types | pending | - | - |
 
 ### Phase 2: Implementation (1 PR)
 
-| Step | Description | Status | Plan | PR |
+| Node | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 2.1 | Implement main feature | pending | - | - |
 
@@ -463,7 +463,7 @@ def test_objective_save_to_issue_with_roadmap_creates_frontmatter() -> None:
     created_body = fake_gh.created_issues[0][1]
     assert "erk:metadata-block:objective-header" in created_body
     assert "erk:metadata-block:objective-roadmap" in created_body
-    assert "schema_version: '2'" in created_body or 'schema_version: "2"' in created_body
+    assert "schema_version: '3'" in created_body or 'schema_version: "3"' in created_body
 
     # Should contain step IDs in frontmatter
     assert "id: '1.1'" in created_body or 'id: "1.1"' in created_body

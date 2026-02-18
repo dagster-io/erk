@@ -71,7 +71,7 @@ gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(c
 
 Minimal vertical slice proving the concept works.
 
-| Step | Description | Status | PR |
+| Node | Description | Status | PR |
 |------|-------------|--------|-----|
 | 1.1 | [Minimal infrastructure] | pending | |
 | 1.2 | [Wire into one command] | pending | |
@@ -82,7 +82,7 @@ Minimal vertical slice proving the concept works.
 
 Fill out remaining functionality.
 
-| Step | Description | Status | PR |
+| Node | Description | Status | PR |
 |------|-------------|--------|-----|
 | 2.1 | [Extend to remaining commands] | pending | |
 | 2.2 | [Full test coverage] | pending | |

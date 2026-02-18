@@ -224,8 +224,8 @@ The `.impl/progress.md` file tracks completion status:
 
 ```markdown
 ---
-completed_steps: 3
-total_steps: 5
+completed_nodes: 3
+total_nodes: 5
 ---
 
 # Progress Tracking

@@ -286,8 +286,8 @@ submitted_by: username # Set at queue time
 workflow_run_id: "1234567890" # Set when started
 workflow_run_url: https://... # Set when started
 branch_name: feature-25-01-15 # Set when started
-completed_steps: 3 # Updated during progress
-total_steps: 5 # Updated during progress
+completed_nodes: 3 # Updated during progress
+total_nodes: 5 # Updated during progress
 ```
 
 **Status transitions:**

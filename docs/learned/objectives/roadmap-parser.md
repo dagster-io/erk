@@ -41,7 +41,7 @@ For full details on the check command, JSON schema, and validation rules, see [o
 ### Parsing Rules
 
 1. **Phase headers**: Matches `### Phase N: Name` (with optional letter suffix and `(N PR)` trailer)
-2. **Table structure**: Expects `| Step | Description | Status | PR |` header with separator
+2. **Table structure**: Expects `| Node | Description | Status | PR |` header with separator
 3. **Row extraction**: Each `| id | desc | status | pr |` row becomes a `RoadmapNode`
 
 ### Validation

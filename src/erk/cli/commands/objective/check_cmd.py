@@ -296,7 +296,7 @@ def _output_human(result: ObjectiveValidationResult, issue_number: int) -> None:
         summary = result.summary
         user_output(
             click.style("Objective validation passed", fg="green")
-            + f" ({summary.get('done', 0)}/{summary.get('total_steps', 0)} done)"
+            + f" ({summary.get('done', 0)}/{summary.get('total_nodes', 0)} done)"
         )
         raise SystemExit(0)
     else:

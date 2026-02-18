@@ -64,7 +64,7 @@ See `_serialize_plan_row()` in `src/erk/cli/commands/exec/scripts/dash_data.py`.
 
 ## Checklist
 
-| Step | File                         | Change                    |
+| Node | File                         | Change                    |
 | ---- | ---------------------------- | ------------------------- |
 | 1    | `tui/data/types.py`          | Add raw + display fields  |
 | 2    | `plan_data_provider/real.py` | Populate from source data |

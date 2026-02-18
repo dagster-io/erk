@@ -99,7 +99,7 @@ OBJECTIVE: #<number> — <title>
 STATUS: <OPEN|CLOSED>
 
 ROADMAP:
-| Step | Phase | Description | Status |
+| Node | Phase | Description | Status |
 | 1.1 | Phase 1 | <description> | done (PR #123) |
 | 1.2 | Phase 1 | <description> | pending |
 | 2.1 | Phase 2 | <description> | blocked |

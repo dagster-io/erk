@@ -40,16 +40,16 @@ def test_convenience_function_create_implementation_status_block() -> None:
     """Test create_implementation_status_block convenience function."""
     block = create_implementation_status_block(
         status="in_progress",
-        completed_steps=3,
-        total_steps=5,
+        completed_nodes=3,
+        total_nodes=5,
         timestamp="2025-11-22T12:00:00Z",
         summary="Making progress",
     )
 
     assert block.key == "erk-implementation-status"
     assert block.data["status"] == "in_progress"
-    assert block.data["completed_steps"] == 3
-    assert block.data["total_steps"] == 5
+    assert block.data["completed_nodes"] == 3
+    assert block.data["total_nodes"] == 5
     assert block.data["summary"] == "Making progress"
     assert block.data["timestamp"] == "2025-11-22T12:00:00Z"
 
@@ -58,8 +58,8 @@ def test_convenience_function_create_implementation_status_block_without_summary
     """Test create_implementation_status_block without optional summary."""
     block = create_implementation_status_block(
         status="complete",
-        completed_steps=5,
-        total_steps=5,
+        completed_nodes=5,
+        total_nodes=5,
         timestamp="2025-11-22T12:00:00Z",
     )
 
@@ -73,8 +73,8 @@ def test_convenience_function_validates_data() -> None:
     with pytest.raises(ValueError, match="Invalid status"):
         create_implementation_status_block(
             status="bad-status",
-            completed_steps=3,
-            total_steps=5,
+            completed_nodes=3,
+            total_nodes=5,
             timestamp="2025-11-22T12:00:00Z",
             summary="Test",
         )
@@ -92,8 +92,8 @@ We're making good progress on this feature!
 <summary><code>erk-implementation-status</code></summary>
 ```yaml
 status: in_progress
-completed_steps: 3
-total_steps: 5
+completed_nodes: 3
+total_nodes: 5
 summary: Core functionality implemented
 timestamp: '2025-11-22T12:00:00Z'
 ```
@@ -109,12 +109,12 @@ Next steps:
     block = find_metadata_block(comment, "erk-implementation-status")
     assert block is not None
     assert block.data["status"] == "in_progress"
-    assert block.data["completed_steps"] == 3
-    assert block.data["total_steps"] == 5
+    assert block.data["completed_nodes"] == 3
+    assert block.data["total_nodes"] == 5
 
     # Extract values
     status = extract_metadata_value(comment, "erk-implementation-status", "status")
     assert status == "in_progress"
 
-    completed = extract_metadata_value(comment, "erk-implementation-status", "completed_steps")
+    completed = extract_metadata_value(comment, "erk-implementation-status", "completed_nodes")
     assert completed == 3

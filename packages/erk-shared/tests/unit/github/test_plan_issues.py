@@ -717,7 +717,7 @@ class TestCreateObjectiveIssue:
             "# My Objective\n\n"
             "## Roadmap\n\n"
             "### Phase 1: Foundation\n\n"
-            "| Step | Description | Status | Plan | PR |\n"
+            "| Node | Description | Status | Plan | PR |\n"
             "|------|-------------|--------|------|-----|\n"
             "| 1.1 | Set up structure | pending | - | - |\n"
             "| 1.2 | Add types | pending | - | - |\n"
@@ -765,7 +765,7 @@ class TestCreateObjectiveIssue:
         assert "<details>" in updated_body
         assert "<summary><code>objective-roadmap</code></summary>" in updated_body
         assert "```yaml" in updated_body
-        assert "schema_version: '2'" in updated_body
+        assert "schema_version: '3'" in updated_body
 
 
 class TestCreatePlanIssueCommandsSection:

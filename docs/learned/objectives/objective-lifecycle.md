@@ -83,14 +83,14 @@ When created, objectives have:
 
 ### Phase 1: Foundation
 
-| Step | Description     | Status  | PR  |
+| Node | Description     | Status  | PR  |
 | ---- | --------------- | ------- | --- |
 | 1.1  | Add user model  | pending | -   |
 | 1.2  | Add JWT library | pending | -   |
 
 ### Phase 2: Implementation
 
-| Step | Description     | Status  | PR  |
+| Node | Description     | Status  | PR  |
 | ---- | --------------- | ------- | --- |
 | 2.1  | Implement login | pending | -   |
 ```

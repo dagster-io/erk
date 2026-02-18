@@ -51,10 +51,16 @@ class ImplementationStatusSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-implementation-status data structure."""
+        # Normalize legacy field names (completed_steps → completed_nodes, etc.)
+        if "completed_steps" in data and "completed_nodes" not in data:
+            data["completed_nodes"] = data.pop("completed_steps")
+        if "total_steps" in data and "total_nodes" not in data:
+            data["total_nodes"] = data.pop("total_steps")
+
         required_fields = {
             "status",
-            "completed_steps",
-            "total_steps",
+            "completed_nodes",
+            "total_nodes",
             "timestamp",
         }
 
@@ -72,16 +78,16 @@ class ImplementationStatusSchema(MetadataBlockSchema):
             )
 
         # Validate numeric fields
-        if not isinstance(data["completed_steps"], int):
-            raise ValueError("completed_steps must be an integer")
-        if not isinstance(data["total_steps"], int):
-            raise ValueError("total_steps must be an integer")
-        if data["completed_steps"] < 0:
-            raise ValueError("completed_steps must be non-negative")
-        if data["total_steps"] < 1:
-            raise ValueError("total_steps must be at least 1")
-        if data["completed_steps"] > data["total_steps"]:
-            raise ValueError("completed_steps cannot exceed total_steps")
+        if not isinstance(data["completed_nodes"], int):
+            raise ValueError("completed_nodes must be an integer")
+        if not isinstance(data["total_nodes"], int):
+            raise ValueError("total_nodes must be an integer")
+        if data["completed_nodes"] < 0:
+            raise ValueError("completed_nodes must be non-negative")
+        if data["total_nodes"] < 1:
+            raise ValueError("total_nodes must be at least 1")
+        if data["completed_nodes"] > data["total_nodes"]:
+            raise ValueError("completed_nodes cannot exceed total_nodes")
 
     def get_key(self) -> str:
         return "erk-implementation-status"
@@ -301,8 +307,8 @@ def render_erk_issue_event(
 def create_implementation_status_block(
     *,
     status: str,
-    completed_steps: int,
-    total_steps: int,
+    completed_nodes: int,
+    total_nodes: int,
     timestamp: str,
     summary: str | None = None,
 ) -> MetadataBlock:
@@ -310,8 +316,8 @@ def create_implementation_status_block(
     schema = ImplementationStatusSchema()
     data = {
         "status": status,
-        "completed_steps": completed_steps,
-        "total_steps": total_steps,
+        "completed_nodes": completed_nodes,
+        "total_nodes": total_nodes,
         "timestamp": timestamp,
     }
     if summary is not None:
