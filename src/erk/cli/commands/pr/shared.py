@@ -116,7 +116,7 @@ def echo_plan_context_status(plan_context: PlanContext | None) -> None:
     if plan_context is not None:
         click.echo(
             click.style(
-                f"   Incorporating plan from issue #{plan_context.issue_number}",
+                f"   Incorporating plan from issue #{plan_context.plan_id}",
                 fg="green",
             )
         )
@@ -148,7 +148,7 @@ def cleanup_diff_file(diff_file: Path | None) -> None:
 
 def build_plan_details_section(plan_context: PlanContext) -> str:
     """Build a collapsed <details> section embedding the plan in the PR body."""
-    issue_num = plan_context.issue_number
+    issue_num = plan_context.plan_id
     parts = [
         "",
         "## Implementation Plan",

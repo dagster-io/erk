@@ -474,7 +474,9 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
     """Fetch plan context from linked erk-plan issue."""
     click.echo(click.style("Phase 3: Fetching plan context", bold=True))
 
-    plan_provider = PlanContextProvider(plan_store=ctx.plan_store, github_issues=ctx.github_issues)
+    plan_provider = PlanContextProvider(
+        plan_backend=ctx.plan_backend, github_issues=ctx.github_issues
+    )
     plan_context = plan_provider.get_plan_context(
         repo_root=state.repo_root,
         branch_name=state.branch_name,

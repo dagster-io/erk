@@ -63,7 +63,6 @@ from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_learn_plan_completed,
 )
 from erk_shared.gateway.github.types import BodyText, PRDetails
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.sessions.discovery import find_sessions_for_plan
@@ -259,7 +258,7 @@ def _check_learn_status_and_prompt(
     ctx: ErkContext,
     *,
     repo_root: Path,
-    plan_issue_number: int,
+    plan_id: str,
     force: bool,
     script: bool,
 ) -> None:
@@ -275,7 +274,7 @@ def _check_learn_status_and_prompt(
     Args:
         ctx: ErkContext
         repo_root: Repository root path
-        plan_issue_number: Issue number of the plan
+        plan_id: Plan identifier string
         force: If True, skip the check entirely
         script: If True, output no-op activation script on abort
 
@@ -296,16 +295,16 @@ def _check_learn_status_and_prompt(
         return
 
     # Skip learn check for learn plans (they don't need to be learned from)
-    plan_result = ctx.plan_store.get_plan(repo_root, str(plan_issue_number))
+    plan_result = ctx.plan_store.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
-        user_output(click.style("Warning: ", fg="yellow") + f"Issue #{plan_issue_number} not found")
+        user_output(click.style("Warning: ", fg="yellow") + f"Issue #{plan_id} not found")
         return
     if "erk-learn" in plan_result.labels:
         return
 
     # Check learn_status from plan header metadata
     learn_status = ctx.plan_backend.get_metadata_field(
-        repo_root, str(plan_issue_number), "learn_status"
+        repo_root, plan_id, "learn_status"
     )
     if isinstance(learn_status, PlanNotFound):
         return
@@ -314,25 +313,26 @@ def _check_learn_status_and_prompt(
     completed_statuses = {"completed_no_plan", "completed_with_plan", "plan_completed"}
     if learn_status in completed_statuses:
         user_output(
-            click.style("✓", fg="green") + f" Learn completed for plan #{plan_issue_number}"
+            click.style("✓", fg="green") + f" Learn completed for plan #{plan_id}"
         )
         return
 
     # Handle pending status - async learn is in progress
     if learn_status == "pending":
         user_output(
-            click.style("⏳", fg="cyan") + f" Async learn in progress for plan #{plan_issue_number}"
+            click.style("⏳", fg="cyan") + f" Async learn in progress for plan #{plan_id}"
         )
         return
 
     # learn_status is null or not_started - fall through to check sessions
 
     # Check for existing learn sessions (backward compatibility)
+    plan_issue_number = int(plan_id)
     sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
 
     if sessions.learn_session_ids:
         user_output(
-            click.style("✓", fg="green") + f" Learn completed for plan #{plan_issue_number}"
+            click.style("✓", fg="green") + f" Learn completed for plan #{plan_id}"
         )
         return
 
@@ -1068,14 +1068,14 @@ def _validate_pr_for_landing(
 
     # 5. Learn status check (for plan branches)
     # Check when: has plan issue AND (is_current_branch OR has worktree)
-    plan_issue_number = extract_leading_issue_number(target.branch)
-    if plan_issue_number is not None and (
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, target.branch)
+    if plan_id is not None and (
         target.is_current_branch or target.worktree_path is not None
     ):
         _check_learn_status_and_prompt(
             ctx,
             repo_root=main_repo_root,
-            plan_issue_number=plan_issue_number,
+            plan_id=plan_id,
             force=force,
             script=script,
         )

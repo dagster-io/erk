@@ -35,7 +35,6 @@ from erk_shared.gateway.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -240,33 +239,46 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
     ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
     repo_root = repo.root  # Use git repository root for GitHub operations
 
-    # Resolve issue number: explicit argument or infer from branch
-    issue_number: int | None = None
+    # Resolve plan: explicit argument or infer from branch
     if identifier is not None:
         issue_number = parse_issue_identifier(identifier)
+        if issue_number is None:
+            user_output(
+                click.style("Error: ", fg="red")
+                + f"Invalid identifier: {identifier}"
+            )
+            raise SystemExit(1)
+        result = ctx.plan_store.get_plan(repo_root, str(issue_number))
+        plan_id = str(issue_number)
     else:
         # Try to infer from current branch
         branch = ctx.git.branch.get_current_branch(ctx.cwd)
-        if branch is not None:
-            issue_number = extract_leading_issue_number(branch)
+        if branch is None:
+            user_output(
+                click.style("Error: ", fg="red")
+                + "No identifier specified and could not infer from branch name"
+            )
+            user_output("Usage: erk plan view <identifier>")
+            user_output("Or run from a branch named P{issue}-...")
+            raise SystemExit(1)
+        result = ctx.plan_backend.get_plan_for_branch(repo_root, branch)
+        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
+        if plan_id is None:
+            user_output(
+                click.style("Error: ", fg="red")
+                + "No identifier specified and could not infer from branch name"
+            )
+            user_output("Usage: erk plan view <identifier>")
+            user_output("Or run from a branch named P{issue}-...")
+            raise SystemExit(1)
 
-    if issue_number is None:
-        user_output(
-            click.style("Error: ", fg="red")
-            + "No identifier specified and could not infer from branch name"
-        )
-        user_output("Usage: erk plan view <identifier>")
-        user_output("Or run from a branch named P{issue}-...")
-        raise SystemExit(1)
-
-    result = ctx.plan_store.get_plan(repo_root, str(issue_number))
     if isinstance(result, PlanNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+        user_output(click.style("Error: ", fg="red") + f"Issue #{plan_id} not found")
         raise SystemExit(1)
     plan = result
 
     # Extract header info via plan_backend for branch display and later header section
-    all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, str(issue_number))
+    all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, plan_id)
     if isinstance(all_meta, PlanNotFound):
         header_info: dict[str, object] = {}
     else:
@@ -281,7 +293,7 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
     user_output(_format_field("State", click.style(plan.state.value, fg=state_color)))
 
     # Make ID clickable using OSC 8 if URL is available
-    id_text = f"#{issue_number}"
+    id_text = f"#{plan_id}"
     if plan.url:
         colored_id = click.style(id_text, fg="cyan")
         clickable_id = f"\033]8;;{plan.url}\033\\{colored_id}\033]8;;\033\\"

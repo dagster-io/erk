@@ -64,7 +64,7 @@ def _execution_state(
         use_graphite=False,
         target_child_branch=None,
         objective_number=None,
-        plan_issue_number=None,
+        plan_id=None,
         cleanup_confirmed=True,
         merged_pr_number=None,
     )

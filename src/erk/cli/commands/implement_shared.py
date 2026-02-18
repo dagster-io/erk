@@ -445,13 +445,13 @@ def detect_target_type(target: str) -> TargetInfo:
 
 
 def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
-    """Extract plan number from current branch name if it follows PXXXX-* pattern.
+    """Extract plan identifier from current branch name if it's a plan branch.
 
     Args:
-        ctx: ErkContext with git access
+        ctx: ErkContext with plan_backend access
 
     Returns:
-        Plan number as string if current branch follows PXXXX-* pattern, else None
+        Plan identifier as string if current branch is a plan branch, else None
 
     Examples:
         P123-fix-bug → "123"
@@ -459,17 +459,11 @@ def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
         main → None
         feature-branch → None
     """
-    from erk_shared.naming import extract_leading_issue_number
-
     current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
     if current_branch is None:
         return None
 
-    issue_num = extract_leading_issue_number(current_branch)
-    if issue_num is None:
-        return None
-
-    return str(issue_num)
+    return ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, current_branch)
 
 
 @dataclass(frozen=True)

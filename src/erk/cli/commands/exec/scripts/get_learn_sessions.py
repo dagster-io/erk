@@ -50,7 +50,6 @@ from erk_shared.learn.extraction.session_source import (
     RemoteSessionSource,
     SessionSource,
 )
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.sessions.discovery import (
     SessionsForPlan,
     find_local_sessions_for_project,
@@ -238,7 +237,12 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
             click.echo(json.dumps(error))
             raise SystemExit(1)
     elif branch_name is not None:
-        issue_number = extract_leading_issue_number(branch_name)
+        from erk_shared.context.helpers import require_plan_backend
+
+        plan_backend = require_plan_backend(ctx)
+        plan_id_str = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
+        if plan_id_str is not None:
+            issue_number = int(plan_id_str)
 
     if issue_number is None:
         error = GetLearnSessionsErrorDict(
