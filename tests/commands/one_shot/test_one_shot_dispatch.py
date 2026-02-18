@@ -266,7 +266,7 @@ def test_dispatch_posts_queued_event_comment() -> None:
         dispatch_one_shot(ctx, params=params, dry_run=False)
 
         # create_plan_issue adds 1 comment, dispatch adds queued event comment
-        assert len(issues.added_comments) >= 2
+        assert len(issues.added_comments) == 2
 
         # The queued event comment is the last one
         issue_number, comment_body, _comment_id = issues.added_comments[-1]

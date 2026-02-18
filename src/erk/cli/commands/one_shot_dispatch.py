@@ -7,7 +7,7 @@ dispatch tasks through the same CI workflow.
 
 import logging
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC
 
 import click
 
@@ -266,7 +266,7 @@ def dispatch_one_shot(
         run_url: str | None = None
         if repo.github is not None:
             run_url = construct_workflow_run_url(repo.github.owner, repo.github.repo, run_id)
-        queued_at = datetime.now(UTC).isoformat()
+        queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
 
         # Update PR body with workflow run link (best-effort)
         if run_url is not None:
@@ -315,7 +315,7 @@ def dispatch_one_shot(
                     metadata=metadata_block,
                     description=(
                         f"One-shot submitted by **{submitted_by}** at {queued_at}.\n\n"
-                        f"**Workflow run:** {run_url}\n\n"
+                        f"**Workflow run:** {run_url or 'N/A'}\n\n"
                         f"**Instruction:** {params.instruction}"
                     ),
                 )
