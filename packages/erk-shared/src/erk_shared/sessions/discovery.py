@@ -212,18 +212,8 @@ def find_local_sessions_for_project(
     Returns:
         List of session IDs that exist locally for this project
     """
-    if issue_number is None:
-        sessions = claude_installation.find_sessions(
-            project_cwd,
-            current_session_id=None,
-            min_size=1024,
-            limit=limit,
-            include_agents=False,
-        )
-        return [s.session_id for s in sessions]
-
-    # Request more sessions than limit to account for filtering
-    fetch_limit = limit * 5
+    # Request more sessions when filtering to account for non-matching branches
+    fetch_limit = limit if issue_number is None else limit * 5
     sessions = claude_installation.find_sessions(
         project_cwd,
         current_session_id=None,
@@ -231,6 +221,9 @@ def find_local_sessions_for_project(
         limit=fetch_limit,
         include_agents=False,
     )
+
+    if issue_number is None:
+        return [s.session_id for s in sessions]
 
     branch_prefix = f"P{issue_number}-"
     matching: list[str] = []

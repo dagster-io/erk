@@ -22,7 +22,7 @@ from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
-def _session_content_with_branch(branch: str) -> str:
+def _session_content_with_branch(*, branch: str) -> str:
     """Create JSONL session content with a gitBranch field."""
     return json.dumps({"type": "user", "gitBranch": branch}) + "\n"
 
@@ -250,12 +250,12 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
                 cwd: FakeProject(
                     sessions={
                         "session-abc-123": FakeSessionData(
-                            content=_session_content_with_branch("P200-feature-a"),
+                            content=_session_content_with_branch(branch="P200-feature-a"),
                             size_bytes=1024,
                             modified_at=1000.0,
                         ),
                         "session-def-456": FakeSessionData(
-                            content=_session_content_with_branch("P200-feature-b"),
+                            content=_session_content_with_branch(branch="P200-feature-b"),
                             size_bytes=2048,
                             modified_at=2000.0,
                         ),
@@ -369,7 +369,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
                 cwd: FakeProject(
                     sessions={
                         "local-session-123": FakeSessionData(
-                            content=_session_content_with_branch("P400-impl"),
+                            content=_session_content_with_branch(branch="P400-impl"),
                             size_bytes=1024,
                             modified_at=1000.0,
                         ),
@@ -467,12 +467,12 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
                 cwd: FakeProject(
                     sessions={
                         "matching-session": FakeSessionData(
-                            content=_session_content_with_branch("P600-feature"),
+                            content=_session_content_with_branch(branch="P600-feature"),
                             size_bytes=1024,
                             modified_at=3000.0,
                         ),
                         "wrong-branch-session": FakeSessionData(
-                            content=_session_content_with_branch("P999-other"),
+                            content=_session_content_with_branch(branch="P999-other"),
                             size_bytes=1024,
                             modified_at=2000.0,
                         ),
