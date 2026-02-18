@@ -154,3 +154,43 @@ class RealGitHubAdmin(GitHubAdmin):
             return None
         except (subprocess.TimeoutExpired, OSError):
             return None
+
+    def set_secret(self, location: GitHubRepoLocation, secret_name: str, secret_value: str) -> None:
+        """Set a repository secret using gh CLI.
+
+        Uses `gh secret set` with value via stdin to avoid exposing it in process list.
+        """
+        repo_id = location.repo_id
+        cmd = [
+            "gh",
+            "secret",
+            "set",
+            secret_name,
+            "--repo",
+            f"{repo_id.owner}/{repo_id.repo}",
+        ]
+
+        run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"set secret {secret_name} for {repo_id.owner}/{repo_id.repo}",
+            cwd=location.root,
+            input=secret_value,
+        )
+
+    def delete_secret(self, location: GitHubRepoLocation, secret_name: str) -> None:
+        """Delete a repository secret using gh CLI."""
+        repo_id = location.repo_id
+        cmd = [
+            "gh",
+            "secret",
+            "delete",
+            secret_name,
+            "--repo",
+            f"{repo_id.owner}/{repo_id.repo}",
+        ]
+
+        run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"delete secret {secret_name} for {repo_id.owner}/{repo_id.repo}",
+            cwd=location.root,
+        )

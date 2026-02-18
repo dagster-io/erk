@@ -60,6 +60,8 @@ class FakeGitHubAdmin(GitHubAdmin):
 
         # Mutation tracking
         self._set_permission_calls: list[tuple[Path, bool]] = []
+        self._set_secret_calls: list[tuple[str, str]] = []
+        self._delete_secret_calls: list[str] = []
 
     def get_workflow_permissions(self, location: GitHubRepoLocation) -> dict[str, Any]:
         """Return pre-configured workflow permissions."""
@@ -91,3 +93,23 @@ class FakeGitHubAdmin(GitHubAdmin):
         if self._secret_check_error:
             return None
         return secret_name in self._secrets
+
+    def set_secret(self, location: GitHubRepoLocation, secret_name: str, secret_value: str) -> None:
+        """Record secret set in mutation tracking and update internal state."""
+        self._set_secret_calls.append((secret_name, secret_value))
+        self._secrets.add(secret_name)
+
+    def delete_secret(self, location: GitHubRepoLocation, secret_name: str) -> None:
+        """Record secret deletion in mutation tracking and update internal state."""
+        self._delete_secret_calls.append(secret_name)
+        self._secrets.discard(secret_name)
+
+    @property
+    def set_secret_calls(self) -> tuple[tuple[str, str], ...]:
+        """Read-only access to tracked secret set calls for test assertions."""
+        return tuple(self._set_secret_calls)
+
+    @property
+    def delete_secret_calls(self) -> tuple[str, ...]:
+        """Read-only access to tracked secret delete calls for test assertions."""
+        return tuple(self._delete_secret_calls)
