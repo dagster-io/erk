@@ -39,7 +39,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
-    group_steps_by_phase,
+    group_nodes_by_phase,
     parse_roadmap_frontmatter,
     serialize_phases,
 )
@@ -70,7 +70,7 @@ def _error_json(error: str) -> str:
 def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapContextDict:
     """Parse roadmap from objective body and match steps for this plan.
 
-    Uses parse_roadmap_frontmatter() + group_steps_by_phase() directly
+    Uses parse_roadmap_frontmatter() + group_nodes_by_phase() directly
     (not parse_roadmap() which enriches phase names from markdown headers).
     """
     raw_blocks = extract_raw_metadata_blocks(objective_body)
@@ -95,7 +95,7 @@ def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapCont
             all_complete=False,
         )
 
-    phases = group_steps_by_phase(steps)
+    phases = group_nodes_by_phase(steps)
     graph = graph_from_phases(phases)
 
     plan_ref = f"#{plan_number}"

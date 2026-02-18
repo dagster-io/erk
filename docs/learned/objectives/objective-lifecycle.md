@@ -145,7 +145,7 @@ parse_roadmap(body)
   │  ↓
   │  ├─ Valid YAML?
   │  │  ↓
-  │  │  group_steps_by_phase()
+  │  │  group_nodes_by_phase()
   │  │  ↓
   │  │  enrich_phase_names() (from markdown headers)
   │  │  ↓

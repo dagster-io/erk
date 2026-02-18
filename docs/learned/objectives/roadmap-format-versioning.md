@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "adding columns to the roadmap table format"
     warning: "The 4→5 column migration is the established pattern. Read this doc to understand the header-based detection and auto-upgrade strategy before adding columns."
-  - action: "adding step_type, issue, or depends_on fields to RoadmapStep"
+  - action: "adding step_type, issue, or depends_on fields to RoadmapNode"
     warning: "These fields were planned but never built. The parser, serializer, and all callers would need coordinated changes."
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
@@ -19,9 +19,9 @@ This document captures the design thinking around extending the roadmap table fo
 
 ## Current State: 5-Column Format (Canonical)
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapStep -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapNode -->
 
-The `RoadmapStep` dataclass has five fields (`id`, `description`, `status`, `plan`, `pr`). The `plan` and `pr` fields are separate: `plan` holds a plan issue reference (`"#6464"`), while `pr` holds a landed PR reference (`"#123"`). Both are `str | None`.
+The `RoadmapNode` dataclass has five fields (`id`, `description`, `status`, `plan`, `pr`). The `plan` and `pr` fields are separate: `plan` holds a plan issue reference (`"#6464"`), while `pr` holds a landed PR reference (`"#123"`). Both are `str | None`.
 
 The canonical table format:
 
@@ -43,7 +43,7 @@ The old 4-column format where plan and PR shared a single column is no longer ac
 | 1.2  | Add tests   | -      | plan #6464 |
 ```
 
-The surgical update command uses two functions: `_replace_step_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered 5-column markdown table in the objective-body comment.
+The surgical update command uses two functions: `_replace_node_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered 5-column markdown table in the objective-body comment.
 
 ## Migration Strategy: Header-Based Detection
 
@@ -62,9 +62,9 @@ The original plan added three more columns: **Type** (task/milestone/research), 
 
 ## Status Inference: Write-Time Only
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_step_in_frontmatter -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_node_in_frontmatter -->
 
-Status inference exists only at **write time** in `update_step_in_frontmatter()`: when no explicit status is provided, it infers `done` from a PR reference, `in_progress` from a plan reference, or preserves the existing status. The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
+Status inference exists only at **write time** in `update_node_in_frontmatter()`: when no explicit status is provided, it infers `done` from a PR reference, `in_progress` from a plan reference, or preserves the existing status. The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
 
 ## Related Documentation
 

@@ -258,7 +258,7 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
         max_plan_width = 0
         max_pr_width = 0
         for phase in phases:
-            for step in phase.steps:
+            for step in phase.nodes:
                 max_id_width = max(max_id_width, cell_len(step.id))
                 node = node_by_id.get(step.id)
                 is_unblocked = step.id in unblocked_ids
@@ -279,8 +279,8 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
 
         for phase in phases:
             # Count done steps in this phase
-            done_count = sum(1 for step in phase.steps if step.status == "done")
-            total_count = len(phase.steps)
+            done_count = sum(1 for step in phase.nodes if step.status == "done")
+            total_count = len(phase.nodes)
 
             # Format phase identifier (e.g., "Phase 1A" or "Phase 1")
             phase_id = f"Phase {phase.number}{phase.suffix}"
@@ -304,7 +304,7 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
             table.add_column("plan", no_wrap=True, min_width=max_plan_width)
             table.add_column("pr", no_wrap=True, min_width=max_pr_width)
 
-            for step in phase.steps:
+            for step in phase.nodes:
                 node = node_by_id.get(step.id)
                 is_unblocked = step.id in unblocked_ids
                 deps_str = ", ".join(node.depends_on) if node and node.depends_on else "-"

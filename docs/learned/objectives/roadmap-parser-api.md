@@ -6,9 +6,9 @@ read_when:
   - "understanding why the shared parser exists separately from its consumers"
 tripwires:
   - action: "creating a new roadmap data type without using frozen dataclass"
-    warning: "RoadmapStep and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern."
-  - action: "accessing step_id on a RoadmapStep"
-    warning: "The field is named 'id', not 'step_id'. This is a common mistake — check the actual dataclass definition."
+    warning: "RoadmapNode and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern."
+  - action: "accessing node_id on a RoadmapNode"
+    warning: "The field is named 'id', not 'node_id'. This is a common mistake — check the actual dataclass definition."
   - action: "importing parse_roadmap into a new consumer"
     warning: "The shared module lives in erk_shared.gateway.github.metadata.roadmap and is consumed by both exec scripts and CLI commands. Import from this shared location."
   - action: "using parse_roadmap() when strict v2 validation is needed"
@@ -25,22 +25,22 @@ The roadmap parser is a shared module consumed by two commands with fundamentall
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py -->
 
-The `roadmap.py` module in `erk_shared.gateway.github.metadata` exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_roadmap_step.py` consume the shared parser, but differ in scope: `check_cmd` uses all 4 functions and both data types for full validation workflow, while `update_roadmap_step` only imports `parse_roadmap` for validation before surgical regex edits.
+The `roadmap.py` module in `erk_shared.gateway.github.metadata` exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_objective_node.py` consume the shared parser, but differ in scope: `check_cmd` uses all 4 functions and both data types for full validation workflow, while `update_objective_node` only imports `parse_roadmap` for validation before surgical regex edits.
 
 <!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
 
-The key insight: `update_roadmap_step` calls `parse_roadmap` for **validation**, not for mutation. It confirms the target step ID exists in the parsed output, then performs a separate regex replacement on the raw markdown. The parsed data is thrown away. This means the parser's job is to be a source of truth about table structure, not a round-trip serializer.
+The key insight: `update_objective_node` calls `parse_roadmap` for **validation**, not for mutation. It confirms the target node ID exists in the parsed output, then performs a separate regex replacement on the raw markdown. The parsed data is thrown away. This means the parser's job is to be a source of truth about table structure, not a round-trip serializer.
 
 ## Non-Obvious Data Model Choices
 
-### Field naming: `id` not `step_id`
+### Field naming: `id` not `node_id`
 
-The `RoadmapStep.id` field is named `id`, not `step_id`. Every consumer accesses `step.id` (e.g., `step.id` in check_cmd's consistency checks). This catches people who expect the field name to mirror the table column header "Step".
+The `RoadmapNode.id` field is named `id`, not `node_id`. Every consumer accesses `node.id` (e.g., `node.id` in check_cmd's consistency checks). This catches people who expect the field name to mirror the table column header "Step".
 
 ### Phase suffix for sub-phases
 
-`RoadmapPhase` has a `suffix` field (empty string or a letter like `"A"`, `"B"`) to support sub-phase numbering (`Phase 1A`, `Phase 1B`). This is used by `check_cmd.py` for sequential ordering validation — phases are sorted by `(number, suffix)` tuple comparison, which gives correct ordering for both `1, 2, 3` and `1A, 1B, 2` patterns.
+`RoadmapPhase` has a `suffix` field (empty string or a letter like `"A"`, `"B"`) to support sub-phase numbering (`Phase 1A`, `Phase 1B`). Phases are sorted by `(number, suffix)` tuple comparison, which gives correct ordering for both `1, 2, 3` and `1A, 1B, 2` patterns.
 
 ### Parser returns warnings, not errors
 
@@ -66,7 +66,7 @@ Extracts all metadata blocks from text using HTML comment markers. Returns `list
 def replace_metadata_block_in_body(body: str, key: str, new_block_content: str) -> str
 ```
 
-Replaces an entire metadata block's content in the body. Finds the block by key and substitutes the content between the HTML comment markers. Used during roadmap mutations to replace the frontmatter block after updating step data.
+Replaces an entire metadata block's content in the body. Finds the block by key and substitutes the content between the HTML comment markers. Used during roadmap mutations to replace the frontmatter block after updating node data.
 
 ### `_enrich_phase_names()` (from roadmap.py)
 
@@ -78,9 +78,9 @@ def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPh
 
 Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and replaces placeholder names in parsed `RoadmapPhase` objects. Called by `parse_roadmap()` after frontmatter parsing because frontmatter stores flat steps without phase names. Uses regex pattern `^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)` to match headers.
 
-### Separate plan and pr fields on RoadmapStep
+### Separate plan and pr fields on RoadmapNode
 
-`RoadmapStep` has separate `plan` and `pr` fields (both `str | None`). The `plan` field holds a plan issue reference (e.g., `"#6464"`), while `pr` holds a landed PR reference (e.g., `"#123"`). This replaces the old convention where `pr` held both formats (`"plan #456"` vs `"#123"`). The parser reads these as separate YAML fields from v2 frontmatter — no table-based migration occurs during parsing.
+`RoadmapNode` has separate `plan` and `pr` fields (both `str | None`). The `plan` field holds a plan issue reference (e.g., `"#6464"`), while `pr` holds a landed PR reference (e.g., `"#123"`). This replaces the old convention where `pr` held both formats (`"plan #456"` vs `"#123"`). The parser reads these as separate YAML fields from v2 frontmatter — no table-based migration occurs during parsing.
 
 ## Dual-Parser Pattern
 

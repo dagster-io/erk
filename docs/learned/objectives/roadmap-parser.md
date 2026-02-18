@@ -3,7 +3,7 @@ title: Roadmap Parser
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 read_when:
-  - "understanding how roadmap steps are parsed"
+  - "understanding how roadmap nodes are parsed"
   - "working with objective roadmap check or update commands"
   - "debugging roadmap parsing issues"
   - "using erk objective check or erk exec update-objective-node"
@@ -42,7 +42,7 @@ For full details on the check command, JSON schema, and validation rules, see [o
 
 1. **Phase headers**: Matches `### Phase N: Name` (with optional letter suffix and `(N PR)` trailer)
 2. **Table structure**: Expects `| Step | Description | Status | PR |` header with separator
-3. **Row extraction**: Each `| id | desc | status | pr |` row becomes a `RoadmapStep`
+3. **Row extraction**: Each `| id | desc | status | pr |` row becomes a `RoadmapNode`
 
 ### Validation
 
@@ -113,7 +113,7 @@ The parser accepts both formats but emits a validation warning for letter-format
 
 - Shared parser: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
 - Check command: `src/erk/cli/commands/objective/check_cmd.py`
-- Update command: `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`
+- Update command: `src/erk/cli/commands/exec/scripts/update_objective_node.py`
 
 ## Related Documentation
 
