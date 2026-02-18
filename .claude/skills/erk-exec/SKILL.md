@@ -40,16 +40,16 @@ When addressing PR review comments or resolving threads:
 
 When working with erk-plan issues:
 
-| Command                     | Purpose                            |
-| --------------------------- | ---------------------------------- |
-| `plan-save`                 | Save plan (backend-aware dispatch) |
+| Command                     | Purpose                                                   |
+| --------------------------- | --------------------------------------------------------- |
+| `plan-save`                 | Save plan (backend-aware dispatch)                        |
 | `plan-save-to-issue`        | Save plan to GitHub issue (used internally by dispatcher) |
-| `get-plan-metadata`         | Get metadata from plan issue       |
-| `setup-impl-from-issue`     | Set up .impl/ from issue           |
-| `plan-submit-for-review`    | Extract plan content for PR review |
-| `plan-create-review-branch` | Create review branch with plan     |
-| `get-issue-body`            | Fetch issue body (REST API)        |
-| `update-issue-body`         | Update issue body (REST API)       |
+| `get-plan-metadata`         | Get metadata from plan issue                              |
+| `setup-impl-from-issue`     | Set up .impl/ from issue                                  |
+| `plan-submit-for-review`    | Extract plan content for PR review                        |
+| `plan-create-review-branch` | Create review branch with plan                            |
+| `get-issue-body`            | Fetch issue body (REST API)                               |
+| `update-issue-body`         | Update issue body (REST API)                              |
 
 ### Session Operations
 
