@@ -157,6 +157,7 @@ def _discover_sessions(
             claude_installation,
             cwd,
             limit=10,
+            issue_number=issue_number,
         )
         # Get paths for local sessions and build session sources
         for sid in local_session_ids:
