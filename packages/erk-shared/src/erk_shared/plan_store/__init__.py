@@ -12,3 +12,5 @@ Import from submodules:
 Note: PlanBackend is a BACKEND (composes gateways), not a gateway. It has no
 fake implementation. Test by injecting fake gateways into real backends.
 """
+
+PLAN_BACKEND: str = "github"  # "github" (issues) or "draft_pr" (draft PRs)

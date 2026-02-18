@@ -1,9 +1,9 @@
-"""Backend-aware plan save: dispatches to issue or draft-PR based on config.
+"""Backend-aware plan save: dispatches to issue or draft-PR based on constant.
 
 Usage:
     erk exec plan-save [OPTIONS]
 
-When plan_backend is "draft_pr", creates a draft PR with the plan.
+When PLAN_BACKEND is "draft_pr", creates a draft PR with the plan.
 Otherwise delegates to the existing plan-save-to-issue logic.
 
 Options:
@@ -42,6 +42,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.naming import generate_draft_pr_branch_name
+from erk_shared.plan_store import PLAN_BACKEND
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
@@ -353,15 +354,13 @@ def plan_save(
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
 ) -> None:
-    """Backend-aware plan save: dispatches to issue or draft-PR based on config.
+    """Backend-aware plan save: dispatches to issue or draft-PR based on constant.
 
-    When plan_backend is "draft_pr", creates a draft PR.
+    When PLAN_BACKEND is "draft_pr", creates a draft PR.
     Otherwise delegates to plan-save-to-issue.
     """
-    config = require_local_config(ctx)
-
     # Default backend: delegate to issue-based save
-    if config.plan_backend != "draft_pr":
+    if PLAN_BACKEND != "draft_pr":
         ctx.invoke(
             plan_save_to_issue,
             output_format=output_format,

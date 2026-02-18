@@ -1,18 +1,25 @@
 """Unit tests for plan-save command (backend-aware dispatcher)."""
 
+import importlib
 import json
 from pathlib import Path
+from types import ModuleType
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_save import plan_save
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
-from erk_shared.context.types import LoadedConfig
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+
+# Module reference for monkeypatching PLAN_BACKEND constant.
+# Cannot use `import erk.cli.commands.exec.scripts.plan_save as mod` because
+# `exec` in the path conflicts with Python's builtin.
+plan_save_mod: ModuleType = importlib.import_module("erk.cli.commands.exec.scripts.plan_save")
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
@@ -24,13 +31,18 @@ This plan describes the implementation of a new feature.
 - Step 3: Add tests and documentation"""
 
 
+@pytest.fixture(autouse=True)
+def _use_draft_pr_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Set PLAN_BACKEND to draft_pr for all tests in this module."""
+    monkeypatch.setattr(plan_save_mod, "PLAN_BACKEND", "draft_pr")
+
+
 def _draft_pr_context(
     *,
     tmp_path: Path,
     fake_github: FakeGitHub | None = None,
     fake_git: FakeGit | None = None,
     fake_claude: FakeClaudeInstallation | None = None,
-    plan_backend: str = "draft_pr",
 ) -> ErkContext:
     """Build an ErkContext configured for draft-PR plan backend."""
     if fake_git is None:
@@ -41,7 +53,6 @@ def _draft_pr_context(
         fake_claude = FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT})
 
     return context_for_test(
-        local_config=LoadedConfig.test(plan_backend=plan_backend),
         github=fake_github,
         git=fake_git,
         claude_installation=fake_claude,
@@ -78,12 +89,14 @@ def test_draft_pr_success_display(tmp_path: Path) -> None:
     assert "Branch: plan-" in result.output
 
 
-def test_delegates_to_issue_when_not_draft_pr(tmp_path: Path) -> None:
-    """plan_backend=None delegates to plan_save_to_issue."""
+def test_delegates_to_issue_when_not_draft_pr(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PLAN_BACKEND="github" delegates to plan_save_to_issue."""
+    monkeypatch.setattr(plan_save_mod, "PLAN_BACKEND", "github")
     fake_issues = FakeGitHubIssues()
     fake_github = FakeGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(
-        local_config=LoadedConfig.test(plan_backend=None),
         github=fake_github,
         claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
         cwd=tmp_path,
