@@ -187,6 +187,20 @@ jobs:
           EOF
           echo "Created .impl/run-info.json"
 
+      - name: Remove .worker-impl/ from git tracking
+        env:
+          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+          SUBMITTED_BY: ${{ inputs.submitted_by }}
+        run: |
+          if [ -d .worker-impl/ ]; then
+            git config user.name "$SUBMITTED_BY"
+            git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+            git rm -rf .worker-impl/
+            git commit -m "Remove .worker-impl/ before implementation"
+            git push origin "$BRANCH_NAME"
+            echo "Removed .worker-impl/ from git tracking (content preserved in .impl/)"
+          fi
+
       - name: Save pre-implementation HEAD
         id: pre_impl
         run: echo "head=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
