@@ -157,7 +157,7 @@ def branch_create(
     local_branches = ctx.git.branch.list_local_branches(repo.root)
     branch_exists_locally = branch_name in local_branches
 
-    if setup is not None and setup.branch_preexists:
+    if setup is not None and setup.branch_must_preexist:
         # Draft PR backend: branch was created by plan-save, so it's expected to exist
         if branch_exists_locally:
             user_output(f"Using existing branch: {branch_name}")

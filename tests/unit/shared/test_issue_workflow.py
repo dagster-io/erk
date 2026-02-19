@@ -51,7 +51,7 @@ def test_prepare_plan_valid_returns_setup() -> None:
     result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueBranchSetup)
-    assert result.branch_preexists is False
+    assert result.branch_must_preexist is False
     assert result.warnings == ()
 
 
@@ -167,7 +167,7 @@ def test_draft_pr_backend_uses_existing_branch() -> None:
     assert isinstance(result, IssueBranchSetup)
     assert result.branch_name == "plan-add-new-feature-01-15-1430"
     assert result.issue_number == 456
-    assert result.branch_preexists is True
+    assert result.branch_must_preexist is True
 
 
 def test_draft_pr_backend_missing_branch_returns_failure() -> None:
