@@ -1,3 +1,38 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-19T17:11:21.657420+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22202252272'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFK1t78A
+last_dispatched_at: '2026-02-19T22:11:57.206998+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-fix-remaining-missing-data-02-19-1711
+created_from_session: 928b4973-deb5-4606-9ebe-d5a35d09d5ad
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary><code>original-plan</code></summary>
+
 # Fix Remaining Missing Data in Draft PR Plans
 
 ## Context
@@ -122,3 +157,14 @@ Performance improvement: 1 API call instead of N+1.
    - `chks` shows actual check status (pass/fail emoji + counts) instead of pending emoji
    - `comments` shows actual review thread counts instead of `0/0`
 3. Compare column population between issue-based and draft-PR views — should be equivalent for shared columns
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7631 --script)" && erk pr sync --dangerous
+```
