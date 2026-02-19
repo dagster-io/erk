@@ -64,7 +64,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
     assert workflow == "plan-implement.yml"
-    assert inputs["issue_number"] == "123"
+    assert inputs["plan_id"] == "123"
 
     # Verify local branch is preserved (for Graphite lineage tracking)
     assert len(fake_git._deleted_branches) == 0

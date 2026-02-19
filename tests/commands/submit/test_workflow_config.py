@@ -191,7 +191,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     workflow, inputs = fake_github.triggered_workflows[0]
     assert workflow == "plan-implement.yml"
     # Required inputs
-    assert inputs["issue_number"] == "123"
+    assert inputs["plan_id"] == "123"
     assert inputs["submitted_by"] == "test-user"
     # Config-based input from .erk/config.toml
     assert inputs["model_name"] == "claude-sonnet-4-5"
