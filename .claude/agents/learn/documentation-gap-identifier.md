@@ -115,6 +115,10 @@ Assign a classification to each item:
    Classify as SHOULD_BE_CODE.
 3. **Single-location insight** (behavior of one function or one code block) →
    should be a code comment. Classify as SHOULD_BE_CODE.
+4. **Names specific symbols** (functions, methods, especially private `_underscore` ones) in prose →
+   default is SHOULD_BE_CODE. The symbol's behavior belongs in its docstring, not a learned doc.
+   Only name symbols that are central, stable concepts (e.g., core ABCs, stable public classes).
+   Flag for removal of symbol names; retain the conceptual pattern if cross-cutting.
 
 If the insight spans multiple files or connects systems, it belongs in docs/learned/.
 The test is: "Does this knowledge attach to a single code artifact?" If yes → SHOULD_BE_CODE.

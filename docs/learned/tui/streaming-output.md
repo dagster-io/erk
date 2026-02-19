@@ -71,15 +71,15 @@ Production usage: see `src/erk/tui/screens/plan_detail_screen.py` and `src/erk/t
 
 ## Pattern 3: Status Bar Streaming
 
-For lightweight progress display (not full command output), use `subprocess.Popen` with status bar updates via `call_from_thread()`. This pattern is used by `_land_pr_async()` in `src/erk/tui/app.py`.
+For lightweight progress display (not full command output), use `subprocess.Popen` with status bar updates via `call_from_thread()`. See `src/erk/tui/app.py` and `src/erk/tui/screens/plan_detail_screen.py` for production implementations.
 
 ### Key Components
 
 1. **Line-buffered subprocess**: `subprocess.Popen` with `bufsize=1`, `text=True` for real-time line output
 2. **Thread-safe status bar updates**: `call_from_thread()` to update the status bar from the background thread
 3. **ANSI code stripping**: `click.unstyle()` removes ANSI escape codes before displaying in plain text widgets
-4. **Output collection**: Lines stored in `output_lines` list for error context extraction on failure
-5. **Diagnostic helper**: `_last_meaningful_line(lines)` returns the last non-empty line for error messages
+4. **Output collection**: Lines stored in a list for error context extraction on failure
+5. **Last non-empty line extraction**: On failure, extract the last non-empty line from output for error messages
 
 ### Pattern
 
@@ -102,13 +102,13 @@ def _run_async(self) -> None:
             self.call_from_thread(self._set_status, clean)
     return_code = proc.wait()
     if return_code != 0:
-        msg = _last_meaningful_line(output_lines) or "Unknown error"
+        msg = next((ln for ln in reversed(output_lines) if ln), "Unknown error")
         self.call_from_thread(self.notify, msg, severity="error")
 ```
 
 ### Production Usage
 
-- `_push_streaming_detail()` in `src/erk/tui/app.py` — Pushes a streaming detail screen for long-running commands (land PR, submit to queue, etc.). Used with an `on_success` callback (e.g., `_on_land_success`) for post-completion actions like objective updates.
+The streaming detail pattern in `src/erk/tui/app.py` pushes a streaming screen for long-running commands (land PR, submit to queue, etc.) with a success callback for post-completion actions like objective updates. See also `src/erk/tui/screens/plan_detail_screen.py` for screen-level streaming.
 
 ## Related Documentation
 

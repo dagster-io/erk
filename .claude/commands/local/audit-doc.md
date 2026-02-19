@@ -139,7 +139,7 @@ For each section of the document, classify it into one of these value categories
 | ------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | **DUPLICATIVE**     | Restates what code already says (signatures, imports, basic behavior)                                           | Replace with "Read `path`" reference                            |
 | **INACCURATE**      | States something that doesn't match current code (wrong names, broken imports, incorrect behavior, moved files) | Fix to match reality; correct or replace with code reference    |
-| **DRIFT RISK**      | Documents specific values, paths, or behaviors that will change                                                 | Flag as high-maintenance; consider code reference instead       |
+| **DRIFT RISK**      | Documents specific values, paths, symbol names (especially private `_method()`), or behaviors that will change  | Flag as high-maintenance; consider code reference instead       |
 | **HIGH VALUE**      | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                          | Keep                                                            |
 | **CONTEXTUAL**      | Connects multiple code locations into a coherent narrative the code alone can't provide                         | Keep                                                            |
 | **REFERENCE CACHE** | Distilled third-party reference material OR discovered/undocumented API quirks (with `## Sources` section)      | Keep — expensive or impossible to re-acquire                    |

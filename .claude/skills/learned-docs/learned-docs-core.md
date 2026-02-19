@@ -31,7 +31,9 @@ CORRECT: "We use LBYL instead of EAFP because exception-based control flow creat
 
 WRONG: "The `check_path()` function checks if a path exists before using it"
 
-The "what" is already in the code. The "why" is what agents can't derive from reading source.
+WRONG: "`_resolve_dependencies()` iterates the graph and calls `_check_status()` on each node"
+
+The "what" is already in the code. The "why" is what agents can't derive from reading source. Naming specific functions (especially private `_underscore` methods) is a "what" statement — it describes the code, not the insight.
 
 ### Cross-Cutting Insight Is the Sweet Spot
 
@@ -89,6 +91,7 @@ For source pointer format, see `docs/learned/documentation/source-pointers.md`.
 - Code that duplicates source (use source pointers)
 - Single-artifact knowledge (use code comments or docstrings)
 - Enumerable catalogs (error types, status values, config options) — encode as Literal types, Enums, or typed constants in source code with inline comments; reference with source pointers, not tables
+- **Symbol names in prose** — default to NOT naming functions/methods/classes in documentation text. Describe patterns conceptually and point to files. Only name symbols that are central, stable concepts unlikely to change (e.g., core ABCs, stable public classes). Private `_underscore` methods must never appear — they are the most volatile identifiers in a codebase and their behavior belongs in docstrings, not learned docs
 
 ## See Also
 
