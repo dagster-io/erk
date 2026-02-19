@@ -22,13 +22,25 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING
 
+from erk_shared.gateway.github.metadata.plan_header import (
+    extract_plan_header_created_from_session,
+    extract_plan_header_last_learn_session,
+    extract_plan_header_last_session_id,
+    extract_plan_header_last_session_source,
+    extract_plan_header_local_impl_session,
+    extract_plan_header_remote_impl_at,
+    extract_plan_header_remote_impl_run_id,
+    extract_plan_header_remote_impl_session_id,
+    extract_plan_header_session_gist_url,
+)
+from erk_shared.learn.impl_events import (
+    extract_implementation_sessions,
+    extract_learn_sessions,
+)
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery
-
-if TYPE_CHECKING:
-    from erk_shared.sessions.discovery import SessionsForPlan
+from erk_shared.sessions.discovery import SessionsForPlan
 
 # ---------------------------------------------------------------------------
 # Branch → Plan Resolution
@@ -185,23 +197,6 @@ class PlanBackend(PlanStore):
         Raises:
             RuntimeError: If plan not found
         """
-        from erk_shared.gateway.github.metadata.plan_header import (
-            extract_plan_header_created_from_session,
-            extract_plan_header_last_learn_session,
-            extract_plan_header_last_session_id,
-            extract_plan_header_last_session_source,
-            extract_plan_header_local_impl_session,
-            extract_plan_header_remote_impl_at,
-            extract_plan_header_remote_impl_run_id,
-            extract_plan_header_remote_impl_session_id,
-            extract_plan_header_session_gist_url,
-        )
-        from erk_shared.learn.impl_events import (
-            extract_implementation_sessions,
-            extract_learn_sessions,
-        )
-        from erk_shared.sessions.discovery import SessionsForPlan as _SessionsForPlan
-
         plan = self.get_plan(repo_root, plan_id)
         if isinstance(plan, PlanNotFound):
             msg = f"Plan {plan_id} not found"
@@ -238,7 +233,7 @@ class PlanBackend(PlanStore):
                 learn_session_ids.append(session_id)
                 learn_seen.add(session_id)
 
-        return _SessionsForPlan(
+        return SessionsForPlan(
             planning_session_id=planning_session_id,
             implementation_session_ids=implementation_session_ids,
             learn_session_ids=learn_session_ids,
