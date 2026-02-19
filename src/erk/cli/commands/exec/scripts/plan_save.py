@@ -135,11 +135,25 @@ def _save_as_draft_pr(
         objective_id=objective_issue,
     )
 
-    # Create and push branch
+    # Create branch and commit plan file
     current_branch = git.branch.get_current_branch(cwd)
     start_point = current_branch if current_branch is not None else "HEAD"
     git.branch.create_branch(cwd, branch_name, start_point, force=False)
-    git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
+
+    # Temporarily checkout plan branch to commit plan file.
+    # Since the plan branch was created from the same commit as the current branch,
+    # checkout won't conflict with uncommitted work.
+    git.branch.checkout_branch(cwd, branch_name)
+    try:
+        plan_dir = repo_root / ".erk" / "plan"
+        plan_dir.mkdir(parents=True, exist_ok=True)
+        plan_file_path = plan_dir / "PLAN.md"
+        plan_file_path.write_text(plan_content, encoding="utf-8")
+        git.commit.stage_files(repo_root, [".erk/plan/PLAN.md"])
+        git.commit.commit(repo_root, f"Add plan: {title}")
+        git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
+    finally:
+        git.branch.checkout_branch(cwd, start_point)
 
     # Build metadata
     trunk = git.branch.detect_trunk_branch(cwd)
