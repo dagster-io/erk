@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "creating branches in erk code"
     warning: "Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager."
-last_audited: "2026-02-17 00:00 PT"
+last_audited: "2026-02-19 00:00 PT"
 audit_result: clean
 ---
 
@@ -68,14 +68,18 @@ The `slot init-pool` command in `src/erk/cli/commands/slot/init_pool_cmd.py` cre
 **Why**: BranchManager abstracts over Graphite vs plain Git modes. In Graphite mode, it delegates to `GraphiteBranchOps` to run `gt track`. In Git mode, it creates plain branches without metadata. Commands use `ctx.branch_manager` so they work in both modes without conditional logic.
 
 <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py, setup_impl_from_issue -->
+<!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py, _save_as_draft_pr -->
 
 See `setup_impl_from_issue()` in `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py` for the pattern: `branch_manager.create_branch()` followed by `branch_manager.checkout_branch()` to set up a plan implementation branch.
+
+See `_save_as_draft_pr()` in `src/erk/cli/commands/exec/scripts/plan_save.py:143-150` for the draft PR plan branch pattern: `branch_manager.create_branch()` with the current branch as start point.
 
 ### Examples
 
 1. **Plan implementation branches** — created by `setup-impl-from-issue`, will have PRs
-2. **User-created feature branches** — `gt create feature/new-thing`, managed by Graphite
-3. **Stacked branches** — depend on other branches, require Graphite metadata for upstack/downstack operations
+2. **Draft PR plan branches** — created by `erk plan save --draft-pr` via `_save_as_draft_pr()`. These are user-facing branches that become PRs. They MUST use `ctx.branch_manager.create_branch()` for Graphite tracking. Without tracking, Graphite rejects operations on untracked branches during `erk prepare`.
+3. **User-created feature branches** — `gt create feature/new-thing`, managed by Graphite
+4. **Stacked branches** — depend on other branches, require Graphite metadata for upstack/downstack operations
 
 ## Multi-Worktree Constraint
 

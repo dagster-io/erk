@@ -3,6 +3,7 @@
 
 # Objectives Documentation
 
+- **[batch-objective-update.md](batch-objective-update.md)** — modifying objective node status in bulk, working with --all-unblocked dispatch, asserting on FakeGitHubIssues.updated_bodies in tests
 - **[dependency-graph.md](dependency-graph.md)** — working with ObjectiveNode or DependencyGraph types, implementing dependency-aware step traversal, converting between roadmap phases and graph representations
 - **[objective-create-workflow.md](objective-create-workflow.md)** — modifying the objective creation flow, understanding how objective-render-roadmap and objective-save-to-issue work together, debugging objective creation failures
 - **[objective-lifecycle.md](objective-lifecycle.md)** — creating or modifying objective lifecycle code, understanding how objectives are created, mutated, and closed, adding new mutation paths to objective roadmaps, working with objective-fetch-context or auto-discovery, using --next flag on objective implement

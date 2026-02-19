@@ -26,6 +26,8 @@ Rules triggered by matching actions in code.
 
 **adding structural validation to check_cmd.py** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Structural validation (phase headers, table format) belongs in roadmap.py (packages/erk-shared). check_cmd.py handles semantic validation only.
 
+**asserting on FakeGitHubIssues.updated_bodies without filtering by issue number** → Read [Batch Objective Node Update Pattern](batch-objective-update.md) first. updated_bodies is global across all issues. Filter to your target issue number to avoid false positives from plan issue creation side effects.
+
 **assuming phase names are stored in YAML frontmatter** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Phase names come from markdown headers, not frontmatter. Read this doc.
 
 **calling update-objective-node with --pr but without --plan** → Read [Plan Reference Preservation in Roadmap Updates](plan-reference-preservation.md) first. CLI validation requires --plan when --pr is set. Omitting --plan would silently lose the plan reference. Use --plan '#NNN' to preserve or --plan '' to explicitly clear.

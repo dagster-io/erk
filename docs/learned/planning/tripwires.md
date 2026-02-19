@@ -114,6 +114,8 @@ Rules triggered by matching actions in code.
 
 **manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
+**manually extracting metadata from plan issue body instead of using Plan.objective_id** → Read [Backend-Agnostic Plan Identity](backend-agnostic-plan-identity.md) first. Use pre-parsed Plan fields. Plan.objective_id is extracted during conversion. Manual regex/YAML parsing is error-prone.
+
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
 **merging a plan review PR** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan review PRs are NEVER merged. They exist only for inline review comments. Close without merging when review is complete.
@@ -161,6 +163,8 @@ Rules triggered by matching actions in code.
 **staging git changes (git add/git rm) without an immediate commit before a git reset --hard** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step.
 
 **treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+
+**typing plan identifiers as just int** → Read [Backend-Agnostic Plan Identity](backend-agnostic-plan-identity.md) first. Plan identifiers must be str | int to accommodate both issue-based and draft-PR-based plans.
 
 **updating imports one file at a time during gateway consolidation** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Use LibCST for systematic import updates. Manual editing misses call sites and creates partial migration states. See docs/learned/refactoring/libcst-systematic-imports.md.
 

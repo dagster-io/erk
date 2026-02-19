@@ -9,7 +9,7 @@ tripwires:
     warning: "Use DependencyGraph.next_node() instead. find_next_node() is position-based and ignores dependencies."
   - action: "using ObjectiveValidationSuccess.graph without checking issue_body for enrichment"
     warning: "ObjectiveValidationSuccess includes issue_body specifically for phase name enrichment. Pass result.issue_body to enrich_phase_names() when you need phase names in display contexts."
-last_audited: "2026-02-17 00:00 PT"
+last_audited: "2026-02-19 00:00 PT"
 audit_result: clean
 ---
 
@@ -35,13 +35,28 @@ Frozen dataclass containing a tuple of `ObjectiveNode` with traversal methods. S
 
 **Key methods:**
 
-| Method              | Purpose                                                                    |
-| ------------------- | -------------------------------------------------------------------------- |
-| `unblocked_nodes()` | Returns nodes whose dependencies are all in terminal status (done/skipped) |
-| `next_node()`       | Returns first unblocked pending node, or `None` if all complete            |
-| `is_complete()`     | Returns `True` if all nodes are in terminal status                         |
+| Method                      | Purpose                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| `unblocked_nodes()`         | Returns nodes whose dependencies are all in terminal status (done/skipped)     |
+| `pending_unblocked_nodes()` | Returns unblocked nodes with pending status, in position order                 |
+| `min_dep_status()`          | Returns minimum status among a node's upstream dependencies, or `None` if none |
+| `next_node()`               | Returns first unblocked pending node, or `None` if all complete                |
+| `is_complete()`             | Returns `True` if all nodes are in terminal status                             |
 
 Terminal statuses: `{"done", "skipped"}`.
+
+### min_dep_status()
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py, DependencyGraph.min_dep_status -->
+
+`DependencyGraph.min_dep_status(node_id)` returns the minimum status among a node's blocking dependencies, or `None` if the node has no dependencies or is not found. Status ordering is defined by `_STATUS_ORDER` in `dependency_graph.py`.
+
+**Use case:** Powers the "deps" column in the TUI Objectives view via `PlanRowData.objective_deps_display` (see `src/erk/tui/data/types.py`). This allows operators to see at a glance whether a node's dependencies are satisfied.
+
+**Return semantics:**
+
+- `None` → node has no dependencies (or node_id not found)
+- `RoadmapNodeStatus` → the lowest-priority status among all upstream dependencies
 
 ## Conversion Functions
 

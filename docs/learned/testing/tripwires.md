@@ -64,6 +64,8 @@ Rules triggered by matching actions in code.
 
 **importing or monkeypatching a module with 'exec' in its path** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. `exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead.
 
+**injecting FakeBranchManager directly in tests** → Read [Branch Manager Testing Patterns](branch-manager-testing.md) first. BranchManager is a lazy property on ErkContext. Inject FakeGraphite via context_for_test(graphite=fake_graphite) instead.
+
 **mocking a browser API in an individual test file** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. Environment-level API stubs belong in setup.ts (runs before all tests), not in individual test files. Only mock behavior-specific values (like IPC responses) per-test.
 
 **modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.

@@ -14,7 +14,7 @@ tripwires:
     warning: "GraphiteBranchManager.create_branch() restores the original branch after Graphite tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
   - action: "calling delete_branch() without passing the force parameter through"
     warning: "The force flag controls -D (force) vs -d (safe) git delete. Dropping it silently changes behavior. Always flow force=force through all layers."
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-02-19 00:00 PT"
 audit_result: clean
 ---
 
@@ -55,6 +55,24 @@ Both implementations satisfy the same ABC interface, but their behavior diverges
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py, GitBranchManager -->
 
 The restore-after-create behavior exists because `gt track` requires the branch to be checked out. GraphiteBranchManager temporarily switches branches to satisfy Graphite's constraint, then restores the original branch to avoid side effects.
+
+## Test Expectations: Checkout Counts
+
+When converting from `git.branch.create_branch()` to `branch_manager.create_branch()`, expect **+2 checkouts** from BranchManager's internal `gt track` sequence. Your code's own checkout/restore adds more. Update test checkout count assertions accordingly.
+
+For example, `plan_save` uses `branch_manager.create_branch()` (2 checkouts for track) plus its own checkout/restore for committing the plan file (2 more), totaling 4 checkouts:
+
+```python
+assert len(fake_git.checked_out_branches) == 4
+assert fake_git.checked_out_branches[0][1].startswith("plan-")  # gt track checkout
+assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # gt track restore
+assert fake_git.checked_out_branches[2][1].startswith("plan-")  # plan commit checkout
+assert fake_git.checked_out_branches[3] == (tmp_path, "feature-branch")  # plan commit restore
+```
+
+<!-- Source: tests/unit/cli/commands/exec/scripts/test_plan_save.py, test_draft_pr_restores_original_branch -->
+
+See `test_draft_pr_restores_original_branch()` in `tests/unit/cli/commands/exec/scripts/test_plan_save.py:220-236` for the full example.
 
 ## The Ephemeral Branch Exception
 

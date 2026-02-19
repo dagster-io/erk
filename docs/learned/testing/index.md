@@ -6,6 +6,7 @@
 - **[admin-command-testing.md](admin-command-testing.md)** — writing tests for admin CLI commands, using FakeGitHubAdmin in tests, testing permission-related CLI commands
 - **[alias-verification-pattern.md](alias-verification-pattern.md)** — enforcing the no-import-aliases rule, building automated alias detection, distinguishing re-exports from alias violations
 - **[backend-testing-composition.md](backend-testing-composition.md)** — testing code that uses PlanBackend, deciding whether to fake a backend or gateway, writing tests for exec scripts with backend operations
+- **[branch-manager-testing.md](branch-manager-testing.md)** — writing tests that involve branch creation or Graphite tracking, injecting FakeBranchManager or FakeGraphite in tests, debugging checkout count assertion failures in branch-related tests
 - **[cli-test-error-assertions.md](cli-test-error-assertions.md)** — writing CLI tests with error assertions, testing error messages in Click commands, asserting on CLI output
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action

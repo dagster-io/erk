@@ -13,6 +13,7 @@
 - **[data-contract.md](data-contract.md)** — building an alternate frontend consuming plan data, adding fields to PlanRowData or PlanDataProvider, understanding the display-vs-raw field duality, serializing plan data to JSON for external consumers
 - **[dual-handler-pattern.md](dual-handler-pattern.md)** — implementing a TUI command that works from both list and detail views, understanding how MainListCommandProvider and PlanCommandProvider share commands, adding command palette support to a new screen
 - **[modal-screen-pattern.md](modal-screen-pattern.md)** — adding a new modal screen to the TUI, implementing a ModalScreen subclass, displaying detail views or confirmation dialogs
+- **[modal-streaming-pattern.md](modal-streaming-pattern.md)** — adding a new long-running CLI operation to the TUI, working with PlanDetailScreen or CommandOutputPanel, implementing real-time subprocess output in TUI modals, debugging thread safety issues in Textual widgets
 - **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
 - **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
 - **[streaming-output.md](streaming-output.md)** — displaying streaming command output in TUI, executing long-running commands with progress, cross-thread UI updates in Textual
