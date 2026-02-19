@@ -21,6 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import NamedTuple
 
+from erk_shared.plan_store import get_plan_backend
 from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
 from erk_statusline.context import StatuslineContext
 
@@ -1188,6 +1189,9 @@ def main():
         objective_issue = None
         github_data = None
 
+        backend_type = get_plan_backend()
+        backend_display = "draft-pr" if backend_type == "draft_pr" else "issue"
+
         if cwd:
             # Create context with real gateways
             ctx = create_context(cwd)
@@ -1254,6 +1258,7 @@ def main():
                     issue_number=issue_number,
                     objective_issue=objective_issue,
                 ),
+                TokenSeq((Token("(be:"), Token(backend_display), Token(")"))),
                 TokenSeq((Token("│ ("), Token(model_code), Token(")"))),
             )
         )

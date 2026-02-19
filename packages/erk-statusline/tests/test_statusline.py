@@ -1718,6 +1718,41 @@ class TestFetchGitHubDataViaGateway:
         assert result.from_fallback is False
 
 
+class TestBackendLabel:
+    """Test plan backend label in statusline output."""
+
+    def test_default_backend_shows_issue(self) -> None:
+        """Default backend (github) should show (be:issue) in output."""
+        os.environ.pop("ERK_PLAN_BACKEND", None)
+        stdin_payload = {
+            "workspace": {"current_dir": ""},
+            "session_id": "test",
+            "model": {"display_name": "opus", "id": "opus"},
+        }
+        with patch("json.load", return_value=stdin_payload):
+            with patch("builtins.print") as mock_print:
+                main()
+        output = mock_print.call_args[0][0]
+        assert "(be:issue)" in output
+
+    def test_draft_pr_backend_shows_draft_pr(self) -> None:
+        """draft_pr backend should show (be:draft-pr) in output."""
+        os.environ["ERK_PLAN_BACKEND"] = "draft_pr"
+        try:
+            stdin_payload = {
+                "workspace": {"current_dir": ""},
+                "session_id": "test",
+                "model": {"display_name": "opus", "id": "opus"},
+            }
+            with patch("json.load", return_value=stdin_payload):
+                with patch("builtins.print") as mock_print:
+                    main()
+            output = mock_print.call_args[0][0]
+            assert "(be:draft-pr)" in output
+        finally:
+            os.environ.pop("ERK_PLAN_BACKEND", None)
+
+
 class TestMainSetsGitOptionalLocks:
     """Test that main() sets GIT_OPTIONAL_LOCKS=0 to prevent lock contention."""
 
