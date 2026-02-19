@@ -357,14 +357,15 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        # Objectives view: plan, title, progress, next, updated, author
-        assert len(values) == 6
+        # Objectives view: plan, title, progress, next, deps, updated, author
+        assert len(values) == 7
         assert _text_to_str(values[0]) == "#42"
         assert _text_to_str(values[1]) == "Objective Plan"
         assert values[2] == "-"  # progress_display
         assert _text_to_str(values[3]) == "-"  # next_step_display
-        assert values[4] == "-"  # updated_display
-        assert values[5] == "test-user"  # author
+        assert values[4] == "-"  # deps_display
+        assert values[5] == "-"  # updated_display
+        assert values[6] == "test-user"  # author
 
     def test_objectives_view_strips_title_prefix(self) -> None:
         """Objectives view strips 'Objective: ' prefix from title."""
@@ -407,4 +408,5 @@ class TestObjectivesViewRowConversion:
 
         assert values[2] == "3/7"  # progress
         assert _text_to_str(values[3]) == "1.3 Add tests"  # next step
-        assert values[4] == "2h ago"  # updated
+        assert values[4] == "-"  # deps
+        assert values[5] == "2h ago"  # updated

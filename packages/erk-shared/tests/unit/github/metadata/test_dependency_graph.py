@@ -225,6 +225,54 @@ class TestDependencyGraphBasics:
 
 
 # ---------------------------------------------------------------------------
+# min_dep_status() tests
+# ---------------------------------------------------------------------------
+
+
+class TestMinDepStatus:
+    def test_no_deps_returns_none(self) -> None:
+        graph = DependencyGraph(nodes=(_node(id="1.1", status="pending", depends_on=()),))
+        assert graph.min_dep_status("1.1") is None
+
+    def test_all_deps_done_returns_done(self) -> None:
+        graph = DependencyGraph(
+            nodes=(
+                _node(id="1.1", status="done", depends_on=()),
+                _node(id="1.2", status="done", depends_on=()),
+                _node(id="2.1", status="pending", depends_on=("1.1", "1.2")),
+            )
+        )
+        assert graph.min_dep_status("2.1") == "done"
+
+    def test_mixed_statuses_returns_lowest(self) -> None:
+        graph = DependencyGraph(
+            nodes=(
+                _node(id="1.1", status="pending", depends_on=()),
+                _node(id="1.2", status="done", depends_on=()),
+                _node(id="2.1", status="pending", depends_on=("1.1", "1.2")),
+            )
+        )
+        assert graph.min_dep_status("2.1") == "pending"
+
+    def test_all_statuses_returns_pending(self) -> None:
+        graph = DependencyGraph(
+            nodes=(
+                _node(id="1.1", status="pending", depends_on=()),
+                _node(id="1.2", status="blocked", depends_on=()),
+                _node(id="1.3", status="planning", depends_on=()),
+                _node(id="1.4", status="in_progress", depends_on=()),
+                _node(id="1.5", status="done", depends_on=()),
+                _node(id="2.1", status="pending", depends_on=("1.1", "1.2", "1.3", "1.4", "1.5")),
+            )
+        )
+        assert graph.min_dep_status("2.1") == "pending"
+
+    def test_unknown_node_id_returns_none(self) -> None:
+        graph = DependencyGraph(nodes=(_node(id="1.1", status="done", depends_on=()),))
+        assert graph.min_dep_status("nonexistent") is None
+
+
+# ---------------------------------------------------------------------------
 # graph_from_phases() conversion
 # ---------------------------------------------------------------------------
 
