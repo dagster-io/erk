@@ -2,6 +2,8 @@
 
 from datetime import UTC, datetime
 
+import click
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -206,9 +208,6 @@ class TestResolveAllUnblocked:
                 current_branches={env.cwd: "main"},
             )
             ctx = build_workspace_test_context(env, git=git, issues=issues)
-
-            import click
-            import pytest
 
             with pytest.raises(click.ClickException, match="no pending unblocked nodes"):
                 _resolve_all_unblocked(ctx, issue_ref="42")
