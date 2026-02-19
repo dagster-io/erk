@@ -23,6 +23,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
     extract_objective_header_comment_id,
+    find_metadata_block,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     _TERMINAL_STATUSES,
@@ -386,14 +387,19 @@ class RealPlanDataProvider(PlanDataProvider):
         return result
 
     def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Fetch plan content from the first comment of an issue.
+        """Fetch plan content from the first comment of an issue, or return body directly.
 
-        Uses the plan_comment_id from the issue body metadata to fetch
-        the specific comment containing the plan content.
+        For issue-based plans: uses plan_comment_id from the issue body metadata to
+        fetch the specific comment containing the plan content.
+
+        For draft PR plans: plan_body IS the plan content (already extracted from the
+        PR body by DraftPRPlanListService). No metadata block is present, so return
+        plan_body directly.
 
         Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (to extract plan_comment_id from metadata)
+            plan_id: The GitHub issue/PR number
+            plan_body: The body text — either an issue body (with plan-header metadata
+                and plan_comment_id) or already-extracted plan content (draft PR case)
 
         Returns:
             The extracted plan content, or None if not found
@@ -401,6 +407,10 @@ class RealPlanDataProvider(PlanDataProvider):
         # Extract plan_comment_id from issue body metadata
         comment_id = extract_plan_header_comment_id(plan_body)
         if comment_id is None:
+            # Draft PR plans: plan_body IS the content (no plan-header metadata block)
+            block = find_metadata_block(plan_body, "plan-header")
+            if block is None:
+                return plan_body if plan_body.strip() else None
             return None
 
         # Fetch the comment via HTTP client

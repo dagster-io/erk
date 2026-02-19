@@ -763,3 +763,103 @@ class TestDraftPRPlanListService:
         assert "The real content" in result.plans[0].body
         # Metadata portion should not be in the plan body
         assert "<!-- metadata -->" not in result.plans[0].body
+
+    def test_fetches_workflow_runs_from_dispatch_node_id(self) -> None:
+        """Draft PR with last_dispatched_node_id in header gets workflow run fetched."""
+        pr_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_run_id: '99999'
+last_dispatched_node_id: 'WFR_draft123'
+last_dispatched_at: '2024-06-01T10:00:00Z'
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+# Plan content
+"""
+        run = WorkflowRun(
+            run_id="99999",
+            status="completed",
+            conclusion="success",
+            branch="plan-branch",
+            head_sha="abc123",
+        )
+        fake_github = FakeGitHub(
+            prs={"plan-branch": _make_pr_info(number=100)},
+            pr_details={100: _make_draft_pr_details(number=100, title="Plan", body=pr_body)},
+            workflow_runs_by_node_id={"WFR_draft123": run},
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert len(result.plans) == 1
+        assert 100 in result.workflow_runs
+        assert result.workflow_runs[100] is not None
+        assert result.workflow_runs[100].run_id == "99999"
+
+    def test_skip_workflow_runs_flag_respected(self) -> None:
+        """skip_workflow_runs=True skips workflow run fetching."""
+        pr_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_node_id: 'WFR_draft456'
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+        run = WorkflowRun(
+            run_id="12345",
+            status="completed",
+            conclusion="success",
+            branch="plan-branch",
+            head_sha="abc",
+        )
+        fake_github = FakeGitHub(
+            prs={"plan-branch": _make_pr_info(number=101)},
+            pr_details={101: _make_draft_pr_details(number=101, title="Plan", body=pr_body)},
+            workflow_runs_by_node_id={"WFR_draft456": run},
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION, labels=[], skip_workflow_runs=True
+        )
+
+        assert len(result.plans) == 1
+        assert result.workflow_runs == {}
+
+    def test_workflow_run_api_failure_returns_empty_runs(self) -> None:
+        """API failure during workflow run fetch still returns plans with empty runs."""
+        pr_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_node_id: 'WFR_draft789'
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+        fake_github = FakeGitHub(
+            prs={"plan-branch": _make_pr_info(number=102)},
+            pr_details={102: _make_draft_pr_details(number=102, title="Plan", body=pr_body)},
+            workflow_runs_error="Network unreachable",
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert len(result.plans) == 1
+        assert result.plans[0].plan_identifier == "102"
+        assert result.workflow_runs == {}
