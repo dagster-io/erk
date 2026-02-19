@@ -1,3 +1,39 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-19T12:08:31.767033+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22191972315'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFKr6f2w
+last_dispatched_at: '2026-02-19T17:10:01.105996+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-O7390-plan-enhance-objecti-02-19-1208
+objective_issue: 7390
+created_from_session: 387aed58-b13d-43ce-a558-ad0689a3c266
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary>original-plan</summary>
+
 # Plan: Enhance Objective View for Parallel In-Flight Status
 
 **Objective**: #7390 node 2.3
@@ -105,3 +141,14 @@ New tests:
 2. Run type checker on changed files
 3. Run linter/formatter
 4. Manual check: `erk objective view 7390` to verify output against the real objective
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7591 --script)" && erk pr sync --dangerous
+```
