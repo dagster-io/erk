@@ -7,8 +7,8 @@ from unittest.mock import Mock, patch
 from erk_shared.subprocess_utils import (
     _GH_COMMAND_TIMEOUT,
     _build_timing_description,
+    copied_env_for_git_subprocess,
     execute_gh_command,
-    git_subprocess_env,
 )
 
 
@@ -56,17 +56,17 @@ def test_build_timing_description_graphql_multiline_query() -> None:
     assert f"query=<{len(query)} chars>" in result
 
 
-def test_git_subprocess_env_sets_git_terminal_prompt() -> None:
-    """git_subprocess_env sets GIT_TERMINAL_PROMPT=0."""
-    with git_subprocess_env() as env:
-        assert env["GIT_TERMINAL_PROMPT"] == "0"
+def test_copied_env_for_git_subprocess_sets_git_terminal_prompt() -> None:
+    """copied_env_for_git_subprocess sets GIT_TERMINAL_PROMPT=0."""
+    env = copied_env_for_git_subprocess()
+    assert env["GIT_TERMINAL_PROMPT"] == "0"
 
 
-def test_git_subprocess_env_preserves_existing_env() -> None:
-    """git_subprocess_env preserves existing environment variables."""
-    with git_subprocess_env() as env:
-        # PATH should always be present in the environment
-        assert "PATH" in env
+def test_copied_env_for_git_subprocess_preserves_existing_env() -> None:
+    """copied_env_for_git_subprocess preserves existing environment variables."""
+    env = copied_env_for_git_subprocess()
+    # PATH should always be present in the environment
+    assert "PATH" in env
 
 
 def test_execute_gh_command_forwards_timeout() -> None:
