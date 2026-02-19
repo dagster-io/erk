@@ -29,7 +29,6 @@ from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
-from erk_shared.gateway.time.real import RealTime
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import pr_details_to_plan
 from erk_shared.plan_store.draft_pr_lifecycle import (
@@ -88,20 +87,19 @@ class DraftPRPlanBackend(PlanBackend):
         Plan content here...
     """
 
-    def __init__(
-        self, github: GitHub, github_issues: GitHubIssues, time: Time | None = None
-    ) -> None:
+    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
         """Initialize DraftPRPlanBackend with GitHub and issues gateways.
 
         Args:
             github: GitHub gateway implementation (real or fake)
             github_issues: GitHubIssues gateway for comment access. On GitHub,
                 PR discussion comments share the same API as issue comments.
-            time: Time abstraction for deterministic timestamps. Defaults to RealTime().
+            time: Time abstraction for deterministic timestamps. Use RealTime() in
+                production, FakeTime() in tests that assert on timestamps.
         """
         self._github = github
         self._github_issues = github_issues
-        self._time = time if time is not None else RealTime()
+        self._time = time
 
     def get_provider_name(self) -> str:
         """Get the provider name.

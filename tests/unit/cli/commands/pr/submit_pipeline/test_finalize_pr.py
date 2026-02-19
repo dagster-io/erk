@@ -14,6 +14,7 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -348,7 +349,7 @@ def test_finalize_pr_draft_pr_backend_extracts_metadata(tmp_path: Path) -> None:
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
-        plan_store=DraftPRPlanBackend(fake_github, fake_github.issues),
+        plan_store=DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime()),
         cwd=tmp_path,
     )
     state = _make_state(cwd=tmp_path, title="Implement feature", body="Summary of work")

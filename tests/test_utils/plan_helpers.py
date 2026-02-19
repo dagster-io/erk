@@ -16,6 +16,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import (
     DETAILS_CLOSE,
@@ -187,7 +188,7 @@ def create_draft_pr_store_with_plans(
     for pr_number, labels in pr_labels.items():
         fake_github.set_pr_labels(pr_number, labels)
 
-    return DraftPRPlanBackend(fake_github, fake_github.issues), fake_github
+    return DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
 
 
 def create_plan_store(

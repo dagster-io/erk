@@ -11,6 +11,7 @@ import pytest
 
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.github import GitHubPlanStore
@@ -40,7 +41,7 @@ def _make_github_plan_store() -> PlanBackend:
 def _make_draft_pr_plan_backend() -> PlanBackend:
     """Create a DraftPRPlanBackend backed by FakeGitHub."""
     fake_github = FakeGitHub()
-    return DraftPRPlanBackend(fake_github, fake_github.issues)
+    return DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
 
 def _create_metadata(backend: PlanBackend) -> dict[str, object]:
@@ -70,7 +71,7 @@ def _make_github_backend_with_plan() -> tuple[PlanBackend, str]:
 def _make_draft_pr_backend_with_plan() -> tuple[PlanBackend, str]:
     """Create DraftPRPlanBackend with a pre-existing plan by creating one via API."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github, fake_github.issues)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),

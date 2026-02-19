@@ -19,6 +19,7 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
 from tests.fakes.prompt_executor import FakePromptExecutor
@@ -417,7 +418,7 @@ def test_update_pr_description_draft_pr_backend_preserves_metadata() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=DraftPRPlanBackend(github, github.issues),
+            plan_store=DraftPRPlanBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
