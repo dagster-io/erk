@@ -5,7 +5,7 @@ eliminating repeated YAML parsing of the plan-header metadata block.
 Also provides typed accessor helpers for reading fields from header_fields.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
@@ -88,9 +88,6 @@ def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
 
     body = plan_body if plan_body is not None else pr.body
 
-    # PRDetails lacks timestamps; use epoch as fallback
-    epoch = datetime(2000, 1, 1, tzinfo=UTC)
-
     return Plan(
         plan_identifier=str(pr.number),
         title=pr.title,
@@ -99,9 +96,9 @@ def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
         url=pr.url,
         labels=list(pr.labels),
         assignees=[],
-        created_at=epoch,
-        updated_at=epoch,
-        metadata={"number": pr.number, "owner": pr.owner, "repo": pr.repo},
+        created_at=pr.created_at,
+        updated_at=pr.updated_at,
+        metadata={"number": pr.number, "owner": pr.owner, "repo": pr.repo, "author": pr.author},
         objective_id=objective_id,
         header_fields=header_fields,
     )

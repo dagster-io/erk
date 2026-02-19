@@ -138,6 +138,7 @@ class PlanFilters:
     show_prs: bool
     show_runs: bool
     creator: str | None = None
+    show_pr_column: bool = True
 
     @staticmethod
     def default() -> PlanFilters:

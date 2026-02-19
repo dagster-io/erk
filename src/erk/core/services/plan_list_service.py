@@ -17,8 +17,6 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
-    PRListState,
-    PRNotFound,
     WorkflowRun,
 )
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
@@ -30,9 +28,9 @@ _PLAN_LABEL = "erk-plan"
 class DraftPRPlanListService(PlanListService):
     """Plan list service for draft-PR-backed plans.
 
-    Lists open draft PRs with the erk-plan label and converts them to
-    PlanListData. Draft PRs don't have issue-based PR linkages or workflow
-    runs, so those fields are empty.
+    Uses a single GraphQL query to fetch draft PRs with the erk-plan label
+    along with rich data (checks, review threads, merge status). Converts
+    results to PlanListData with fully populated PullRequestInfo for display.
     """
 
     def __init__(self, github: GitHub) -> None:
@@ -53,54 +51,62 @@ class DraftPRPlanListService(PlanListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
     ) -> PlanListData:
-        """Fetch plan list data from draft PRs.
+        """Fetch plan list data from draft PRs via single GraphQL call.
 
-        Lists draft PRs with erk-plan label and converts to PlanListData.
-        PR linkages and workflow runs are empty since draft PRs are the plans
-        themselves (not linked issues).
+        Uses list_plan_prs_with_details() to get PRDetails (for plan content)
+        and PullRequestInfo (with checks, review threads, merge status) in one
+        API call. Workflow runs are fetched separately via batch GraphQL lookup.
 
         Args:
             location: GitHub repository location
             labels: Labels to filter by
             state: Filter by state
             limit: Maximum number of results
-            skip_workflow_runs: Ignored (no workflow runs for draft PRs)
+            skip_workflow_runs: If True, skip fetching workflow runs
             creator: Filter by PR author username
 
         Returns:
             PlanListData with plans from draft PRs
         """
-        pr_state: PRListState = "open"
-        if state in ("open", "closed", "all"):
-            pr_state = state  # type: ignore[assignment]
-
-        # Push label, author, and draft filtering to list_prs so the gateway
-        # handles as much filtering as possible (server-side for REST data).
         all_labels = [_PLAN_LABEL, *labels]
-        prs = self._github.list_prs(
-            location.root,
-            state=pr_state,
+
+        # Single GraphQL call returns both PRDetails and rich PullRequestInfo
+        pr_details_list, pr_linkages = self._github.list_plan_prs_with_details(
+            location,
             labels=all_labels,
+            state=state,
+            limit=limit,
             author=creator,
-            draft=True,
         )
 
         plans = []
-        for _branch, pr_info in prs.items():
-            pr_details = self._github.get_pr(location.root, pr_info.number)
-            if isinstance(pr_details, PRNotFound):
-                continue
-
+        node_id_to_plan: dict[str, int] = {}
+        for pr_details in pr_details_list:
             plan_body = extract_plan_content(pr_details.body)
-            plans.append(pr_details_to_plan(pr_details, plan_body=plan_body))
+            plan = pr_details_to_plan(pr_details, plan_body=plan_body)
+            plans.append(plan)
 
-            if limit is not None and len(plans) >= limit:
-                break
+            # Capture dispatch node_id for workflow run batch fetch
+            _, node_id, _ = extract_plan_header_dispatch_info(pr_details.body)
+            if node_id is not None:
+                node_id_to_plan[node_id] = pr_details.number
+
+        workflow_runs: dict[int, WorkflowRun | None] = {}
+        if not skip_workflow_runs and node_id_to_plan:
+            try:
+                runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
+                    location.root,
+                    list(node_id_to_plan.keys()),
+                )
+                for node_id, run in runs_by_node_id.items():
+                    workflow_runs[node_id_to_plan[node_id]] = run
+            except Exception as e:
+                logging.warning("Failed to fetch workflow runs: %s", e)
 
         return PlanListData(
             plans=plans,
-            pr_linkages={},
-            workflow_runs={},
+            pr_linkages=pr_linkages,
+            workflow_runs=workflow_runs,
         )
 
 

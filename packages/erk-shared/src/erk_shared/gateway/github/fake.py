@@ -6,6 +6,7 @@ in its constructor. Construct instances directly with keyword arguments.
 
 import dataclasses
 from collections.abc import Callable
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,8 @@ from erk_shared.gateway.github.types import (
     RepoInfo,
     WorkflowRun,
 )
+from erk_shared.gateway.time.abc import Time
+from erk_shared.gateway.time.fake import FakeTime
 
 
 class FakeGitHub(GitHub):
@@ -67,6 +70,8 @@ class FakeGitHub(GitHub):
         workflow_runs_error: str | None = None,
         artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
         gist_create_error: str | None = None,
+        plan_pr_details: tuple[list[PRDetails], dict[int, list[PullRequestInfo]]] | None = None,
+        time: Time | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -107,6 +112,8 @@ class FakeGitHub(GitHub):
                 files in destination to simulate artifact content. Return True for success,
                 False or raise to simulate failure.
             gist_create_error: If set, create_gist() returns GistCreateError with this message.
+        plan_pr_details: Pre-configured data for list_plan_prs_with_details().
+            Tuple of (pr_details_list, pr_linkages). Defaults to empty.
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -143,6 +150,7 @@ class FakeGitHub(GitHub):
         self._workflow_runs_error = workflow_runs_error
         self._artifact_download_callback = artifact_download_callback
         self._gist_create_error = gist_create_error
+        self._time = time if time is not None else FakeTime()
         self._downloaded_artifacts: list[tuple[str, str, Path]] = []
         # (filename, content, description, public)
         self._created_gists: list[tuple[str, str, str, bool]] = []
@@ -171,6 +179,7 @@ class FakeGitHub(GitHub):
         self._operation_log: list[tuple[Any, ...]] = []
         # (repo, sha, state, context, description)
         self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
+        self._plan_pr_details = plan_pr_details or ([], {})
 
     @property
     def issues(self) -> GitHubIssues:
@@ -305,6 +314,10 @@ class FakeGitHub(GitHub):
             merge_state_status="UNKNOWN",
             owner=self._repo_info.owner,
             repo=self._repo_info.name,
+            labels=(),
+            created_at=self._time.now().replace(tzinfo=UTC),
+            updated_at=self._time.now().replace(tzinfo=UTC),
+            author=self._repo_info.owner,
         )
         self._pr_details[pr_number] = details
         self._prs_by_branch[branch] = details
@@ -711,6 +724,18 @@ class FakeGitHub(GitHub):
             result[branch] = pr
 
         return result
+
+    def list_plan_prs_with_details(
+        self,
+        location: GitHubRepoLocation,
+        *,
+        labels: list[str],
+        state: str | None,
+        limit: int | None,
+        author: str | None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Return pre-configured plan PR details and linkages."""
+        return self._plan_pr_details
 
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
