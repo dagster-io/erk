@@ -7,7 +7,9 @@ including validation, branch naming, and metadata extraction. Used by both
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
 
+from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
 from erk_shared.naming import generate_issue_branch_name, sanitize_worktree_name
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -56,7 +58,8 @@ def prepare_plan_for_worktree(
     plan: Plan,
     timestamp: datetime,
     *,
-    warn_non_open: bool = True,
+    plan_backend: Literal["draft_pr", "github"],
+    warn_non_open: bool,
 ) -> PrepareIssueResult:
     """Prepare and validate plan data for worktree creation.
 
@@ -94,12 +97,25 @@ def prepare_plan_for_worktree(
             f"Issue #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway..."
         )
 
-    branch_name = generate_issue_branch_name(
-        issue_number,
-        plan.title,
-        timestamp,
-        objective_id=plan.objective_id,
-    )
+    # Two code paths based on backend:
+    # - Draft PR backend: branch always exists in plan-header (set by plan_save)
+    # - Issue backend: branch is always generated fresh
+    if plan_backend == "draft_pr":
+        existing_branch = plan.header_fields.get(BRANCH_NAME)
+        if not isinstance(existing_branch, str) or len(existing_branch) == 0:
+            return IssueValidationFailed(
+                f"Draft PR plan #{plan.plan_identifier} is missing required "
+                f"branch_name in plan-header metadata. "
+                f"This indicates the plan was not saved correctly."
+            )
+        branch_name = existing_branch
+    else:
+        branch_name = generate_issue_branch_name(
+            issue_number,
+            plan.title,
+            timestamp,
+            objective_id=plan.objective_id,
+        )
     worktree_name = sanitize_worktree_name(branch_name)
 
     return IssueBranchSetup(
