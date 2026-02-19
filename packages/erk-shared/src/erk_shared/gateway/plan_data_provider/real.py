@@ -31,10 +31,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     compute_graph_summary,
     find_graph_next_node,
 )
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_from_comment,
-    extract_plan_header_comment_id,
-)
+from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
 )
@@ -46,6 +43,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     LEARN_RUN_ID,
     LEARN_STATUS,
     OBJECTIVE_ISSUE,
+    PLAN_COMMENT_ID,
     REVIEW_PR,
     WORKTREE_NAME,
 )
@@ -404,13 +402,15 @@ class RealPlanDataProvider(PlanDataProvider):
         Returns:
             The extracted plan content, or None if not found
         """
-        # Extract plan_comment_id from issue body metadata
-        comment_id = extract_plan_header_comment_id(plan_body)
-        if comment_id is None:
-            # Draft PR plans: plan_body IS the content (no plan-header metadata block)
-            block = find_metadata_block(plan_body, "plan-header")
-            if block is None:
-                return plan_body if plan_body.strip() else None
+        # Check for plan-header metadata block to distinguish plan types:
+        # - Draft PR plans: no metadata block; plan_body IS the extracted content
+        # - Issue-based plans: metadata block with plan_comment_id pointing to the comment
+        block = find_metadata_block(plan_body, "plan-header")
+        if block is None:
+            return plan_body if plan_body.strip() else None
+
+        comment_id = block.data.get(PLAN_COMMENT_ID)
+        if not isinstance(comment_id, int):
             return None
 
         # Fetch the comment via HTTP client

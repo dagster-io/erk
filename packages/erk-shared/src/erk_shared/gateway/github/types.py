@@ -8,6 +8,11 @@ from typing import Literal
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
 
+def _epoch_sentinel() -> datetime:
+    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    return datetime(2000, 1, 1, tzinfo=UTC)
+
+
 @dataclass(frozen=True)
 class BodyText:
     """Body content as inline text.
@@ -132,8 +137,8 @@ class PRDetails:
     owner: str
     repo: str
     labels: tuple[str, ...] = ()
-    created_at: datetime = field(default_factory=lambda: datetime(2000, 1, 1, tzinfo=UTC))
-    updated_at: datetime = field(default_factory=lambda: datetime(2000, 1, 1, tzinfo=UTC))
+    created_at: datetime = field(default_factory=_epoch_sentinel)
+    updated_at: datetime = field(default_factory=_epoch_sentinel)
     author: str = ""
 
 

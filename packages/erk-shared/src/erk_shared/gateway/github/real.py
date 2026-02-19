@@ -1465,7 +1465,9 @@ query {{
         )
 
         # Extract author login
-        author = data.get("user", {}).get("login", "") if data.get("user") else ""
+        author = ""
+        if "user" in data and data["user"] and "login" in data["user"]:
+            author = data["user"]["login"]
 
         # Check if head repo exists (can be None for deleted forks)
         head_repo = data["head"].get("repo")
