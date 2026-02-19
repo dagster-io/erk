@@ -21,27 +21,11 @@ The TUI needs both UI callback exposure (`CommandExecutor`) and subprocess execu
 
 ## Solution: Lambda Injection
 
-The TUI app bridges the two ABCs using lambda injection when constructing `RealCommandExecutor`:
-
-```python
-executor = RealCommandExecutor(
-    browser_launch=self._provider.browser.launch,
-    clipboard_copy=self._provider.clipboard.copy,
-    close_plan_fn=self._provider.close_plan,
-    notify_fn=self._notify_with_severity,
-    refresh_fn=self.action_refresh,
-    submit_to_queue_fn=self._provider.submit_to_queue,
-    update_objective_fn=lambda oi, pn, br: self._update_objective_async(
-        objective_issue=oi,
-        pr_num=pn,
-        branch=br,
-    ),
-)
-```
+The TUI app bridges the two ABCs using lambda injection when constructing `RealCommandExecutor`. Each callback maps a `PlanDataProvider` method or app method to a `RealCommandExecutor` constructor parameter, with abbreviated lambda parameters for the `update_objective_fn` bridge.
 
 <!-- Source: src/erk/tui/app.py, _push_streaming_detail -->
 
-See `_push_streaming_detail()` in `src/erk/tui/app.py:519-558`.
+See `_push_streaming_detail()` in `src/erk/tui/app.py:519-558` for the full constructor call.
 
 ## Lambda Parameter Abbreviation Convention
 
@@ -73,18 +57,11 @@ The `CommandExecutor` ABC in `packages/erk-shared/src/erk_shared/gateway/command
 
 ## Testing
 
-`FakeCommandExecutor` tracks calls for assertion:
+`FakeCommandExecutor` tracks calls for assertion by recording arguments to `updated_objectives` (and similar lists for other methods).
 
-```python
-class FakeCommandExecutor(CommandExecutor):
-    def __init__(self):
-        self.updated_objectives: list[tuple[int, int, str]] = []
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py, FakeCommandExecutor -->
 
-    def update_objective_after_land(
-        self, *, objective_issue, pr_num, branch
-    ):
-        self.updated_objectives.append((objective_issue, pr_num, branch))
-```
+See `FakeCommandExecutor` in `packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py` for the full implementation.
 
 ## Related Topics
 

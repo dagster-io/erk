@@ -49,18 +49,15 @@ Plans carry pre-parsed metadata fields to avoid repeated YAML parsing by callers
 
 Typed accessors for `header_fields`: `header_str()`, `header_int()`, `header_datetime()`.
 
-See `plan_from_issue_body()` in `packages/erk-shared/src/erk_shared/plan_store/conversion.py` for the single-parse conversion that populates these fields.
+See `issue_info_to_plan()` and `pr_details_to_plan()` in `packages/erk-shared/src/erk_shared/plan_store/conversion.py` for the single-parse conversions that populate these fields.
 
 ## Plan Identifier Typing
 
-`PlanInfoDict.number` is typed as `str | int` to accommodate both backends:
-
-```python
-class PlanInfoDict(TypedDict):
-    number: str | int  # Issue number (int) or PR identifier (str)
-```
+`PlanInfoDict.number` is typed as `str | int` to accommodate both backends — issue numbers are `int`, draft PR identifiers are `str`.
 
 <!-- Source: packages/erk-shared/src/erk_shared/objective_fetch_context_result.py, PlanInfoDict -->
+
+See `PlanInfoDict` in `packages/erk-shared/src/erk_shared/objective_fetch_context_result.py` for the full TypedDict definition.
 
 When writing code that handles plan identifiers, always use `str | int`, not bare `int`.
 

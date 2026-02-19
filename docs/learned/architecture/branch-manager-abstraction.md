@@ -60,19 +60,11 @@ The restore-after-create behavior exists because `gt track` requires the branch 
 
 When converting from `git.branch.create_branch()` to `branch_manager.create_branch()`, expect **+2 checkouts** from BranchManager's internal `gt track` sequence. Your code's own checkout/restore adds more. Update test checkout count assertions accordingly.
 
-For example, `plan_save` uses `branch_manager.create_branch()` (2 checkouts for track) plus its own checkout/restore for committing the plan file (2 more), totaling 4 checkouts:
-
-```python
-assert len(fake_git.checked_out_branches) == 4
-assert fake_git.checked_out_branches[0][1].startswith("plan-")  # gt track checkout
-assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # gt track restore
-assert fake_git.checked_out_branches[2][1].startswith("plan-")  # plan commit checkout
-assert fake_git.checked_out_branches[3] == (tmp_path, "feature-branch")  # plan commit restore
-```
+For example, `plan_save` uses `branch_manager.create_branch()` (2 checkouts for track) plus its own checkout/restore for committing the plan file (2 more), totaling 4 checkouts: gt track checkout → gt track restore → plan commit checkout → plan commit restore.
 
 <!-- Source: tests/unit/cli/commands/exec/scripts/test_plan_save.py, test_draft_pr_restores_original_branch -->
 
-See `test_draft_pr_restores_original_branch()` in `tests/unit/cli/commands/exec/scripts/test_plan_save.py:220-236` for the full example.
+See `test_draft_pr_restores_original_branch()` in `tests/unit/cli/commands/exec/scripts/test_plan_save.py:220-236` for the checkout count assertions.
 
 ## The Ephemeral Branch Exception
 

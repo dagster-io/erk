@@ -29,17 +29,11 @@ See `run_streaming_command()` in `src/erk/tui/screens/plan_detail_screen.py:395-
 
 ## Method Signature
 
-```python
-def run_streaming_command(
-    self,
-    command: list[str],
-    cwd: Path,
-    title: str,
-    *,
-    timeout: float = 30.0,
-    on_success: Callable[[], None] | None = None,
-) -> None:
-```
+`run_streaming_command(self, command, cwd, title, *, timeout=30.0, on_success=None)` takes a command list, working directory, display title, optional timeout, and optional success callback.
+
+<!-- Source: src/erk/tui/screens/plan_detail_screen.py, run_streaming_command -->
+
+See `run_streaming_command()` in `src/erk/tui/screens/plan_detail_screen.py:395-402` for the full typed signature.
 
 ## Timeouts
 

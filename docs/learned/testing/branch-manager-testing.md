@@ -17,37 +17,19 @@ BranchManager is a lazy property on `ErkContext` (constructed from `context.py`)
 
 ## Injection Pattern
 
-Inject `FakeGraphite` via `context_for_test()`:
-
-```python
-from tests.fakes import FakeGraphite, context_for_test
-
-fake_graphite = FakeGraphite()
-ctx = context_for_test(
-    graphite=fake_graphite,
-    # ... other fakes
-)
-```
-
-The context constructs a `GraphiteBranchManager` internally using the provided `FakeGraphite`. This mirrors production behavior where `BranchManager` is built from the real `Graphite` gateway.
-
-## Verifying Branch Tracking
-
-`FakeGraphite` exposes `track_branch_calls` for asserting that Graphite tracking was invoked:
-
-```python
-assert len(fake_graphite.track_branch_calls) == 1
-tracked_call = fake_graphite.track_branch_calls[0]
-assert tracked_call[0] == tmp_path      # repo_root
-assert tracked_call[1] == branch_name   # branch_name
-assert tracked_call[2] == "main"        # parent_branch
-```
-
-`FakeGraphite.create_linked_branch_ops()` creates ops with shared mutation tracking, so all assertions go through the single `FakeGraphite` instance.
+Inject `FakeGraphite` via `context_for_test(graphite=fake_graphite)`. The context constructs a `GraphiteBranchManager` internally using the provided `FakeGraphite`, mirroring production behavior where `BranchManager` is built from the real `Graphite` gateway.
 
 <!-- Source: tests/unit/cli/commands/exec/scripts/test_plan_save.py, test_draft_pr_tracks_branch_with_graphite -->
 
-See `test_draft_pr_tracks_branch_with_graphite()` in `tests/unit/cli/commands/exec/scripts/test_plan_save.py:278-303` for a complete example.
+See `test_draft_pr_tracks_branch_with_graphite()` in `tests/unit/cli/commands/exec/scripts/test_plan_save.py:278-288` for the injection pattern.
+
+## Verifying Branch Tracking
+
+`FakeGraphite` exposes `track_branch_calls` for asserting that Graphite tracking was invoked. Each entry is a tuple of `(repo_root, branch_name, parent_branch)`. `FakeGraphite.create_linked_branch_ops()` creates ops with shared mutation tracking, so all assertions go through the single `FakeGraphite` instance.
+
+<!-- Source: tests/unit/cli/commands/exec/scripts/test_plan_save.py, test_draft_pr_tracks_branch_with_graphite -->
+
+See `test_draft_pr_tracks_branch_with_graphite()` in `tests/unit/cli/commands/exec/scripts/test_plan_save.py:278-303` for the complete assertion example.
 
 ## Checkout Count Expectations
 
@@ -63,19 +45,11 @@ For example, `plan_save` does:
 3. Plan save's restore of original branch → 1 checkout
 4. **Total: 4 checkouts**
 
-```python
-# Four checkouts: branch_manager.create_branch() does checkout+restore for gt track,
-# then plan_save does checkout+restore for committing plan file
-assert len(fake_git.checked_out_branches) == 4
-assert fake_git.checked_out_branches[0][1].startswith("plan-")    # for gt track
-assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # restore
-assert fake_git.checked_out_branches[2][1].startswith("plan-")    # for plan commit
-assert fake_git.checked_out_branches[3] == (tmp_path, "feature-branch")  # final restore
-```
+The sequence is: gt track checkout → gt track restore → plan commit checkout → plan commit restore (4 total).
 
 <!-- Source: tests/unit/cli/commands/exec/scripts/test_plan_save.py, test_draft_pr_restores_original_branch -->
 
-See `test_draft_pr_restores_original_branch()` in `tests/unit/cli/commands/exec/scripts/test_plan_save.py:220-236` for the full example.
+See `test_draft_pr_restores_original_branch()` in `tests/unit/cli/commands/exec/scripts/test_plan_save.py:220-236` for the checkout count assertions.
 
 ## Related Topics
 
