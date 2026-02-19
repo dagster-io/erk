@@ -1,3 +1,38 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-19T18:37:43.647049+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22204813274'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFK4KP2g
+last_dispatched_at: '2026-02-19T23:39:52.090731+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-plan-skip-impl-for-draft-p-02-19-1837
+created_from_session: c2b88dd1-9acd-4f67-ab21-981e1a87a084
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary><code>original-plan</code></summary>
+
 # Plan: Skip .impl/ for Draft PR Backend, Use impl-context Instead
 
 ## Context
@@ -168,3 +203,14 @@ Update `test_impl_init_errors_missing_impl_folder` to expect the new error messa
    - Confirm `.erk/impl-context/plan-ref.json` exists
 3. Run `erk exec impl-init --json` on a draft PR branch:
    - Expect `{"valid": true, "impl_type": "impl-context", "has_issue_tracking": true, "issue_number": <pr_number>}`
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7638 --script)" && erk pr sync --dangerous
+```
