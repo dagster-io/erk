@@ -55,13 +55,13 @@ fi
 
 ## Files to modify
 
-| File | Change |
-|------|--------|
-| `src/erk/cli/constants.py` | Add `PLANNED_PR_TITLE_PREFIX` |
-| `src/erk/cli/commands/submit.py` | Add `_add_planned_prefix()`, apply at lines 493, 627 |
-| `src/erk/cli/commands/pr/submit_pipeline.py` | Add prefix in `finalize_pr()` when plan-linked |
-| `.claude/commands/erk/git-pr-push.md` | Add `.impl/` check for prefix |
-| `tests/commands/submit/test_pr_creation.py` | Update existing + add new tests |
+| File                                         | Change                                               |
+| -------------------------------------------- | ---------------------------------------------------- |
+| `src/erk/cli/constants.py`                   | Add `PLANNED_PR_TITLE_PREFIX`                        |
+| `src/erk/cli/commands/submit.py`             | Add `_add_planned_prefix()`, apply at lines 493, 627 |
+| `src/erk/cli/commands/pr/submit_pipeline.py` | Add prefix in `finalize_pr()` when plan-linked       |
+| `.claude/commands/erk/git-pr-push.md`        | Add `.impl/` check for prefix                        |
+| `tests/commands/submit/test_pr_creation.py`  | Update existing + add new tests                      |
 
 ## Verification
 
