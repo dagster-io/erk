@@ -37,19 +37,19 @@ PREPARE_SLASH_COMMAND = "/erk:prepare"
 
 def format_next_steps_plain(issue_number: int) -> str:
     """Format for CLI output (plain text)."""
-    s = IssueNextSteps(issue_number)
+    steps = IssueNextSteps(issue_number)
     return f"""Next steps:
 
-View Issue: {s.view}
+View Issue: {steps.view}
 
 In Claude Code:
   Prepare worktree: {PREPARE_SLASH_COMMAND}
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
-  Local: {s.prepare}
-  Prepare+Implement: {s.prepare_and_implement}
-  Submit to Queue: {s.submit}"""
+  Local: {steps.prepare}
+  Prepare+Implement: {steps.prepare_and_implement}
+  Submit to Queue: {steps.submit}"""
 
 
 def format_next_steps_draft_pr(plan_number: int) -> str:
@@ -70,12 +70,12 @@ OR exit Claude Code first, then run one of:
 
 def format_next_steps_markdown(issue_number: int) -> str:
     """Format for issue body (markdown)."""
-    s = IssueNextSteps(issue_number)
+    steps = IssueNextSteps(issue_number)
     return f"""## Execution Commands
 
 **Submit to Erk Queue:**
 ```bash
-{s.submit}
+{steps.submit}
 ```
 
 ---
@@ -84,5 +84,5 @@ def format_next_steps_markdown(issue_number: int) -> str:
 
 **Prepare worktree:**
 ```bash
-{s.prepare}
+{steps.prepare}
 ```"""
