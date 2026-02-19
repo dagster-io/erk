@@ -5,6 +5,7 @@
 When the draft PR backend (`ERK_PLAN_BACKEND=draft_pr`) is active, plans live in `.erk/impl-context/plan.md` (committed to the plan branch at plan-save time) rather than being stored as GitHub issues. The current code always creates a `.impl/` folder during implementation setup, even for draft PR plans — duplicating content already on the branch and creating confusion. Additionally, `erk exec impl-init` can't find the plan in `.erk/impl-context/`, breaking the `plan-implement` flow.
 
 Two changes are needed:
+
 1. Don't create `.impl/` when the draft PR backend is active
 2. Make `impl-init` recognize `.erk/impl-context/` as a valid plan location
 
