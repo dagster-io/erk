@@ -1,3 +1,38 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-19T14:15:58.978211+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22196474827'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFKwNTyw
+last_dispatched_at: '2026-02-19T19:19:28.330568+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-plan-publish-draft-prs-in-02-19-1415
+created_from_session: 28f1b12d-bcd8-4a55-aaf1-bec741bf35f3
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary><code>original-plan</code></summary>
+
 # Plan: Publish Draft PRs in `erk pr submit`
 
 ## Context
@@ -53,4 +88,15 @@ Then run the full submit pipeline tests for regression:
 
 ```bash
 uv run pytest tests/unit/cli/commands/pr/submit_pipeline/ -v
+```
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7618 --script)" && erk pr sync --dangerous
 ```
