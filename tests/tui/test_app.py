@@ -1167,6 +1167,131 @@ class TestLandPrAsync:
             ]
             assert kwargs["cwd"] == tmp_path
 
+    @pytest.mark.asyncio
+    async def test_objective_update_called_when_objective_issue_set(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """When objective_issue is not None, subprocess is called with correct objective update args."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def capture_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_calls.append(cmd)
+            return subprocess.CompletedProcess(args=cmd, returncode=0)
+
+        monkeypatch.setattr(subprocess, "run", capture_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app._land_pr_async(456, "my-branch", tmp_path, 42)
+            await pilot.pause(0.3)
+
+            # Two subprocess calls: land-execute then objective-update-after-land
+            assert len(captured_calls) == 2
+            assert captured_calls[1] == [
+                "erk",
+                "exec",
+                "objective-update-after-land",
+                "--objective=42",
+                "--pr=456",
+                "--branch=my-branch",
+            ]
+
+    @pytest.mark.asyncio
+    async def test_objective_update_skipped_when_objective_issue_none(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """When objective_issue is None, only the land-execute subprocess is called."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def capture_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_calls.append(cmd)
+            return subprocess.CompletedProcess(args=cmd, returncode=0)
+
+        monkeypatch.setattr(subprocess, "run", capture_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app._land_pr_async(456, "my-branch", tmp_path, None)
+            await pilot.pause(0.3)
+
+            # Only one subprocess call: land-execute (objective update skipped)
+            assert len(captured_calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_refresh_triggered_after_objective_update(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """action_refresh is called after successful land when objective_issue is set."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *args, **kwargs: subprocess.CompletedProcess(args=[], returncode=0),
+        )
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            count_before = provider.fetch_count
+
+            app._land_pr_async(456, "test-branch", tmp_path, 42)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+    @pytest.mark.asyncio
+    async def test_refresh_triggered_even_when_objective_update_fails(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """action_refresh is called even when the objective update subprocess fails."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        call_count = 0
+
+        def mixed_return(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+            nonlocal call_count
+            call_count += 1
+            # First call (land-execute) succeeds, second (objective update) fails
+            returncode = 0 if call_count == 1 else 1
+            return subprocess.CompletedProcess(args=[], returncode=returncode)
+
+        monkeypatch.setattr(subprocess, "run", mixed_return)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            count_before = provider.fetch_count
+
+            app._land_pr_async(456, "test-branch", tmp_path, 42)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
 
 class TestExecutePaletteCommandFixConflictsRemote:
     """Tests for execute_palette_command('fix_conflicts_remote').

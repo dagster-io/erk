@@ -518,7 +518,7 @@ class ErkDashApp(App):
                 # Update objective if linked
                 if objective_issue is not None:
                     self.call_from_thread(self.notify, f"Updating objective #{objective_issue}...")
-                    obj_result = subprocess.run(
+                    if subprocess.run(
                         [
                             "erk",
                             "exec",
@@ -533,8 +533,7 @@ class ErkDashApp(App):
                         stdin=subprocess.DEVNULL,
                         text=True,
                         check=False,
-                    )
-                    if obj_result.returncode == 0:
+                    ).returncode == 0:
                         self.call_from_thread(self.notify, f"Objective #{objective_issue} updated", timeout=5)
                     else:
                         self.call_from_thread(

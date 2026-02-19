@@ -772,8 +772,7 @@ class PlanDetailScreen(ModalScreen):
                         else self._row.objective_display
                     )
                     if self._row.plan_url:
-                        repo_url = self._row.plan_url.rsplit("/issues/", 1)[0]
-                        objective_url = f"{repo_url}/issues/{self._row.objective_issue}"
+                        objective_url = f"{self._row.plan_url.rsplit('/issues/', 1)[0]}/issues/{self._row.objective_issue}"
                         yield ClickableLink(display_text, objective_url, classes="info-value")
                     else:
                         yield Label(display_text, classes="info-value", markup=False)
