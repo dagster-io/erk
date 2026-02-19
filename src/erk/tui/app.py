@@ -1174,7 +1174,8 @@ class ErkDashApp(App):
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.objective_issue is not None and row.plan_url:
-                objective_url = _build_github_url(row.plan_url, "issues", row.objective_issue)
-                self._provider.browser.launch(objective_url)
+                self._provider.browser.launch(
+                    _build_github_url(row.plan_url, "issues", row.objective_issue)
+                )
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened objective #{row.objective_issue}")
