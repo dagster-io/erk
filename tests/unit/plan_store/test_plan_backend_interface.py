@@ -425,6 +425,30 @@ def test_get_all_metadata_fields_roundtrips_with_update_metadata(
 
 
 # =============================================================================
+# update_plan_title tests
+# =============================================================================
+
+
+def test_update_plan_title_roundtrip(
+    backend_with_plan: tuple[PlanBackend, str],
+) -> None:
+    """Backend can update and retrieve a plan title."""
+    backend, plan_id = backend_with_plan
+
+    backend.update_plan_title(Path("/repo"), plan_id, "New Title")
+
+    plan = backend.get_plan(Path("/repo"), plan_id)
+    assert not isinstance(plan, PlanNotFound)
+    assert "New Title" in plan.title
+
+
+def test_update_plan_title_not_found_raises(plan_backend: PlanBackend) -> None:
+    """Backend raises RuntimeError for nonexistent plan."""
+    with pytest.raises(RuntimeError):
+        plan_backend.update_plan_title(Path("/repo"), "99999999", "Title")
+
+
+# =============================================================================
 # update_plan_content tests
 # =============================================================================
 

@@ -1,4 +1,4 @@
-"""Close a GitHub issue with a comment using REST API (avoids GraphQL rate limits).
+"""Close a plan with a comment.
 
 Usage:
     erk exec close-issue-with-comment <ISSUE_NUMBER> --comment "Closing because..."
@@ -7,8 +7,8 @@ Output:
     JSON with {success, issue_number, comment_id}
 
 Exit Codes:
-    0: Success - issue closed with comment
-    1: Error - issue not found or API error
+    0: Success - plan closed with comment
+    1: Error - plan not found or API error
 """
 
 import json
@@ -16,9 +16,7 @@ import json
 import click
 
 from erk_shared.context.helpers import (
-    require_issues as require_github_issues,
-)
-from erk_shared.context.helpers import (
+    require_plan_backend,
     require_repo_root,
 )
 
@@ -37,13 +35,14 @@ def close_issue_with_comment(
     *,
     comment: str,
 ) -> None:
-    """Close a GitHub issue with a comment using REST API."""
-    github = require_github_issues(ctx)
+    """Close a plan with a comment."""
+    backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
+    plan_id = str(issue_number)
 
     # Add the comment first
     try:
-        comment_id = github.add_comment(repo_root, issue_number, comment)
+        comment_id = backend.add_comment(repo_root, plan_id, comment)
     except RuntimeError as e:
         click.echo(
             json.dumps(
@@ -55,9 +54,9 @@ def close_issue_with_comment(
         )
         raise SystemExit(1) from e
 
-    # Then close the issue
+    # Then close the plan
     try:
-        github.close_issue(repo_root, issue_number)
+        backend.close_plan(repo_root, plan_id)
     except RuntimeError as e:
         click.echo(
             json.dumps(

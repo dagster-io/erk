@@ -551,6 +551,25 @@ class GitHubPlanStore(PlanBackend):
         msg = f"No plan content comment found for issue #{issue_number}"
         raise RuntimeError(msg)
 
+    def update_plan_title(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        title: str,
+    ) -> None:
+        """Update the title of a plan issue.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Issue number as string (e.g., "42")
+            title: New issue title
+
+        Raises:
+            RuntimeError: If issue not found or update fails
+        """
+        issue_number = self._parse_identifier(plan_id)
+        self._github_issues.update_issue_title(repo_root, issue_number, title)
+
     def add_comment(
         self,
         repo_root: Path,

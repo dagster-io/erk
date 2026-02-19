@@ -1,6 +1,7 @@
 """Unit tests for close-issue-with-comment command.
 
-Tests use FakeGitHubIssues for dependency injection.
+Tests use FakeGitHubIssues for dependency injection via ErkContext.for_test().
+The command now uses PlanBackend (which wraps GitHubIssues internally).
 """
 
 import json
@@ -54,16 +55,18 @@ def test_close_issue_with_comment_success() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["issue_number"] == 42
-    assert output["comment_id"] == 1000  # FakeGitHubIssues starts at 1000
+    # PlanBackend.add_comment returns string ID
+    assert output["comment_id"] == "1000"
 
-    # Verify the comment was added
-    assert len(fake_gh.added_comments) == 1
+    # Verify the user comment was added (via PlanBackend -> GitHubIssues)
+    assert len(fake_gh.added_comments) >= 1
+    # First added comment is the user's comment
     issue_number, comment_body, comment_id = fake_gh.added_comments[0]
     assert issue_number == 42
     assert comment_body == "Closing: work is done."
     assert comment_id == 1000
 
-    # Verify the issue was closed
+    # Verify the issue was closed (close_plan adds its own audit comment + closes)
     assert 42 in fake_gh.closed_issues
 
 

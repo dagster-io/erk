@@ -27,7 +27,7 @@ from erk_shared.gateway.github.metadata.schemas import (
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
-from erk_shared.gateway.github.types import PRDetails, PRNotFound
+from erk_shared.gateway.github.types import BodyText, PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import pr_details_to_plan
@@ -498,6 +498,38 @@ class DraftPRPlanBackend(PlanBackend):
             updated_body = content
 
         self._github.update_pr_body(repo_root, pr_number, updated_body)
+
+    def update_plan_title(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        title: str,
+    ) -> None:
+        """Update the title of a plan's draft PR.
+
+        Fetches the current PR body and uses update_pr_title_and_body to
+        update the title while preserving the existing body.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: PR number as string (e.g., "42")
+            title: New PR title
+
+        Raises:
+            RuntimeError: If PR not found or update fails
+        """
+        pr_number = int(plan_id)
+        result = self._github.get_pr(repo_root, pr_number)
+        if isinstance(result, PRNotFound):
+            msg = f"PR #{pr_number} not found"
+            raise RuntimeError(msg)
+
+        self._github.update_pr_title_and_body(
+            repo_root=repo_root,
+            pr_number=pr_number,
+            title=title,
+            body=BodyText(content=result.body),
+        )
 
     def add_comment(
         self,
