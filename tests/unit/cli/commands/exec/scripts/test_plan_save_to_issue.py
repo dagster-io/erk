@@ -54,6 +54,7 @@ This is a comprehensive feature plan that includes all the necessary details.
     assert output["success"] is True
     assert output["issue_number"] == 1
     assert output["title"] == "My Feature"
+    assert output["plan_backend"] == "github"
 
 
 def test_plan_save_to_issue_no_plan() -> None:

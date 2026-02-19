@@ -308,6 +308,7 @@ def plan_save_to_issue(
             "issue_number": result.issue_number,
             "issue_url": result.issue_url,
             "title": result.title,
+            "plan_backend": "github",
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
