@@ -21,36 +21,51 @@ Plans represent implementation work to be done. Since users interact with plans 
 **Top-level plan commands:**
 
 ```bash
-erk create        # Create a new plan issue
-erk get           # View a plan
 erk dash          # Display plan dashboard
-erk close         # Close a plan
-erk implement     # Implement a plan
+erk implement     # Implement a plan in current directory
+erk prepare       # Create a worktree from a plan issue
+
+# Most plan management operations are under `erk plan`:
+erk plan create   # Create a new plan issue
+erk plan view     # View a plan
+erk plan close    # Close a plan
 erk plan submit   # Submit a plan for remote execution
-erk log           # View plan execution logs
+erk plan log      # View plan execution logs
 ```
 
 **Why top-level?**
 
-- High-frequency operations: Users create, view, and implement plans constantly
+- Highest-frequency entry points: `implement`, `prepare`, and `dash` are the most common workflow starters
 - Natural mental model: "I want to work on a plan" → `erk implement 42`
-- Minimal friction: 2 words instead of 3 (`erk plan get` → `erk get`)
+- Plan management via `erk plan <subcommand>`: `create`, `view`, `close`, `submit`, `log`, etc.
 
 ## Command Categories
 
 ### Top-Level Plan Operations
 
-Plan commands appear at the top level without a noun prefix:
+Only the highest-frequency workflow entry points are at the top level:
 
-| Command     | Description                     | Frequency |
-| ----------- | ------------------------------- | --------- |
-| `dash`      | Display plan dashboard          | Very High |
-| `get`       | View plan details               | High      |
-| `create`    | Create new plan issue           | High      |
-| `close`     | Close a plan                    | Medium    |
-| `implement` | Start implementing a plan       | Very High |
-| `submit`    | Queue plan for remote execution | High      |
-| `log`       | View plan execution history     | Medium    |
+| Command     | Description                           | Frequency |
+| ----------- | ------------------------------------- | --------- |
+| `dash`      | Display plan dashboard                | Very High |
+| `implement` | Implement a plan in current directory | Very High |
+| `prepare`   | Create a worktree from a plan issue   | High      |
+
+### `erk plan` Subcommands
+
+All other plan management operations are under the `erk plan` group (table reflects `erk plan --help` output):
+
+| Subcommand | Description                        |
+| ---------- | ---------------------------------- |
+| `create`   | Create a new plan issue            |
+| `view`     | View a plan                        |
+| `list`     | List open plans                    |
+| `close`    | Close a plan                       |
+| `submit`   | Submit a plan for remote execution |
+| `log`      | View plan execution logs           |
+| `replan`   | Replan an existing plan issue      |
+| `co`       | Check out a plan's branch          |
+| `check`    | Check plan status                  |
 
 ### Grouped Commands
 
@@ -64,12 +79,12 @@ Worktree manipulation is a supporting operation, not the primary workflow:
 erk wt create <name>        # Create a new worktree
 erk wt delete <name>        # Delete a worktree
 erk wt list                 # List worktrees
-erk wt prune                # Clean up stale worktrees
+erk wt checkout <branch>    # Switch to worktree for branch
 ```
 
 **Why grouped?**
 
-- Lower frequency: Most worktrees are created automatically via `erk implement`
+- Lower frequency: Worktrees are created implicitly during plan implementation, not managed directly
 - Infrastructure concern: Users think "I want to implement this plan" not "I want a worktree"
 - Namespace clarity: Avoids collision with plan commands
 
@@ -78,9 +93,10 @@ erk wt prune                # Clean up stale worktrees
 Graphite stack management for dependent branches:
 
 ```bash
-erk stack submit           # Submit entire stack
-erk stack sync             # Sync stack with remote
-erk stack restack          # Rebase stack on trunk
+erk stack consolidate      # Consolidate stack changes
+erk stack list             # List stack items
+erk stack move             # Move item in stack
+erk stack split            # Split stack at a point
 ```
 
 **Why grouped?**
@@ -129,9 +145,22 @@ When adding a new command, use this flowchart to determine placement:
     └─────┬─────┘
           │
     ┌─────▼──────────────────────────────────────┐
-    │ Place at TOP LEVEL                          │
-    │ Examples: create, get, implement, close     │
-    └─────────────────────────────────────────────┘
+    │ Is this a high-frequency entry point?       │
+    │ (implement, prepare, dash)                  │
+    └─────────┬──────────────────────────────────┘
+              │
+        ┌─────▼─────┐     ┌──────────────────────────────┐
+        │    YES    │────▶│ Place at TOP LEVEL            │
+        └─────┬─────┘     │ Examples: implement, prepare  │
+              │            └──────────────────────────────┘
+        ┌─────▼─────┐
+        │    NO     │
+        └─────┬─────┘
+              │
+        ┌─────▼──────────────────────────────────┐
+        │ Group under `erk plan <verb>`           │
+        │ Examples: plan create, plan view        │
+        └─────────────────────────────────────────┘
 
           │ NO
     ┌─────▼─────────────────────────────────┐
@@ -151,7 +180,7 @@ When adding a new command, use this flowchart to determine placement:
               │ NO
         ┌─────▼───────────────────────────────┐
         │ Is this Graphite stack management?   │
-        │ (restack, sync, submit stack)        │
+        │ (consolidate, move, split stack)     │
         └─────────┬───────────────────────────┘
                   │
             ┌─────▼─────┐
@@ -160,7 +189,7 @@ When adding a new command, use this flowchart to determine placement:
                   │
             ┌─────▼────────────────────────────┐
             │ Group under `erk stack <verb>`    │
-            │ Examples: stack submit, stack sync│
+            │ Examples: stack consolidate, stack list│
             └───────────────────────────────────┘
 
                   │ NO
@@ -182,27 +211,28 @@ When adding a new command, use this flowchart to determine placement:
                 ┌─────▼──────────────────────────┐
                 │ Place at TOP LEVEL              │
                 │ (default for misc operations)   │
-                │ Examples: init, config, status  │
+                │ Examples: init, config          │
                 └─────────────────────────────────┘
 ```
 
 ## Good Patterns
 
-### ✅ Plan Operations at Top Level
+### ✅ Plan Operations: Top-Level vs `erk plan` Subcommands
 
 ```bash
-# GOOD: Direct, minimal keystrokes
-erk create --file plan.md
+# GOOD: Top-level for highest-frequency entry points
 erk implement 42
-erk get 42
+erk prepare 42
+erk dash
 
-# BAD: Unnecessary grouping adds friction
+# GOOD: erk plan subcommands for plan management operations
 erk plan create --file plan.md
-erk plan implement 42
-erk plan get 42
+erk plan view 42
+erk plan close 42
+erk plan submit 42
 ```
 
-**Why?** Plans are the primary workflow object. Extra nesting adds cognitive load.
+**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. All other plan operations (create, view, close, submit, log, etc.) live under `erk plan <subcommand>`.
 
 ### ✅ Infrastructure Grouped Under Noun
 
@@ -210,12 +240,12 @@ erk plan get 42
 # GOOD: Clear namespace, infrastructure is grouped
 erk wt create my-feature
 erk wt delete old-feature
-erk stack restack
+erk stack consolidate
 
 # BAD: Conflicts with plan operations, unclear ownership
 erk create my-feature     # Is this a plan or worktree?
 erk delete old-feature    # What am I deleting?
-erk restack               # Restack what?
+erk consolidate           # Consolidate what?
 ```
 
 **Why?** Grouping clarifies the target domain and prevents naming collisions.
@@ -238,20 +268,6 @@ erk nav down
 
 ## Anti-Patterns
 
-### ❌ Grouping High-Frequency Operations
-
-```bash
-# BAD: Adds friction to common operations
-erk plan create
-erk plan implement
-erk plan get
-
-# GOOD: Direct access for frequent tasks
-erk create
-erk implement
-erk get
-```
-
 ### ❌ Top-Level Infrastructure Commands
 
 ```bash
@@ -260,9 +276,9 @@ erk create <name>         # Create what? Plan or worktree?
 erk delete <name>         # Delete what?
 
 # GOOD: Explicit namespace
-erk create --file plan.md  # Clearly a plan
-erk wt create <name>       # Clearly a worktree
-erk wt delete <name>       # Clearly a worktree
+erk plan create --file plan.md  # Clearly a plan
+erk wt create <name>            # Clearly a worktree
+erk wt delete <name>            # Clearly a worktree
 ```
 
 ### ❌ Inconsistent Grouping
@@ -285,30 +301,29 @@ erk wt list
 
 ```bash
 # Create a plan
-erk create --file implementation-plan.md
+erk plan create --file implementation-plan.md
 
 # View plans
 erk dash                  # Display plan dashboard
-erk get 42                # View specific plan
+erk plan view 42          # View specific plan
 
 # Work on a plan
-erk implement 42          # Create worktree and start work
+erk implement 42          # Set up .impl/ and implement in current directory
 
 # Submit for execution
 erk plan submit 42        # Queue for remote execution
 
 # Track progress
-erk log 42                # View execution history
-erk status                # Current worktree status
+erk plan log 42           # View execution history
 
 # Finish
-erk close 42              # Close completed plan
+erk plan close 42         # Close completed plan
 ```
 
 ### Worktree Management
 
 ```bash
-# Create worktrees (rare - usually via implement)
+# Create worktrees
 erk wt create my-feature
 
 # List and inspect
@@ -316,7 +331,7 @@ erk wt list               # List worktrees
 
 # Clean up
 erk wt delete my-feature
-erk wt prune              # Remove stale worktrees
+erk wt checkout my-branch # Switch to worktree for branch
 ```
 
 ### Navigation
@@ -345,12 +360,12 @@ erk down                  # Move to child branch
 
 **Step 3: Register in `src/erk/cli/cli.py`**
 
-For plan commands (top-level):
+For plan subcommands:
 
 ```python
 from erk.cli.commands.plan.create_cmd import create_plan
 
-cli.add_command(create_plan, name="create")  # Plan command
+plan_group.add_command(create_plan, name="create")  # Plan subcommand
 ```
 
 For grouped commands:
@@ -369,14 +384,14 @@ wt_group.add_command(create_wt)  # Grouped under wt
 
 ### Code Locations
 
-| Component         | Location                                     |
-| ----------------- | -------------------------------------------- |
-| CLI entry point   | `src/erk/cli/cli.py`                         |
-| Plan commands     | `src/erk/cli/commands/plan/`                 |
-| Worktree commands | `src/erk/cli/commands/wt/`                   |
-| Stack commands    | `src/erk/cli/commands/stack/`                |
-| Navigation        | `src/erk/cli/commands/{checkout,up,down}.py` |
-| Setup             | `src/erk/cli/commands/{init,config}.py`      |
+| Component         | Location                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| CLI entry point   | `src/erk/cli/cli.py`                                                                                        |
+| Plan commands     | `src/erk/cli/commands/plan/`                                                                                |
+| Worktree commands | `src/erk/cli/commands/wt/`                                                                                  |
+| Stack commands    | `src/erk/cli/commands/stack/`                                                                               |
+| Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `src/erk/cli/commands/up.py`, `src/erk/cli/commands/down.py` |
+| Setup             | `src/erk/cli/commands/init/` (directory), `src/erk/cli/commands/config.py`                                  |
 
 ## Related Documentation
 
