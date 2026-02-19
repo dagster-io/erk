@@ -96,6 +96,58 @@ GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY = """query($nodeIds: [ID!]!) {
 
 # Parameterized query for issues with PR linkages
 # Note: filterBy is optional - pass null if not filtering by creator
+# Parameterized query for draft plan PRs with rich details
+# Returns PRs with status checks, review threads, and mergeable state
+# Client-side filtering for draft=True and author is required
+GET_PLAN_PRS_WITH_DETAILS_QUERY = """query(
+  $owner: String!
+  $repo: String!
+  $labels: [String!]!
+  $states: [PullRequestState!]!
+  $first: Int!
+) {
+  repository(owner: $owner, name: $repo) {
+    pullRequests(
+      labels: $labels
+      states: $states
+      first: $first
+      orderBy: {field: UPDATED_AT, direction: DESC}
+    ) {
+      nodes {
+        number
+        title
+        body
+        state
+        url
+        isDraft
+        author { login }
+        labels(first: 100) { nodes { name } }
+        createdAt
+        updatedAt
+        headRefName
+        baseRefName
+        isCrossRepository
+        mergeable
+        mergeStateStatus
+        statusCheckRollup {
+          state
+          contexts(last: 1) {
+            totalCount
+            checkRunCountsByState { state count }
+            statusContextCountsByState { state count }
+          }
+        }
+        reviewThreads(first: 100) {
+          totalCount
+          nodes { isResolved }
+        }
+      }
+    }
+  }
+}"""
+
+# Parameterized query for issues with PR linkages
+# Note: filterBy is optional - pass null if not filtering by creator
 GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
   $owner: String!
   $repo: String!

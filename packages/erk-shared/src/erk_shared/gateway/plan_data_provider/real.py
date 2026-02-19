@@ -56,6 +56,7 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.impl_folder import read_plan_ref
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.conversion import (
     header_datetime,
@@ -479,6 +480,11 @@ class RealPlanDataProvider(PlanDataProvider):
             issue_number = (
                 extract_leading_issue_number(worktree.branch) if worktree.branch else None
             )
+            if issue_number is None and worktree.branch and worktree.branch.startswith("plan-"):
+                impl_dir = worktree.path / ".impl"
+                plan_ref = read_plan_ref(impl_dir)
+                if plan_ref is not None and plan_ref.plan_id.isdigit():
+                    issue_number = int(plan_ref.plan_id)
             if issue_number is not None:
                 if issue_number not in worktree_by_plan_id:
                     worktree_by_plan_id[issue_number] = (

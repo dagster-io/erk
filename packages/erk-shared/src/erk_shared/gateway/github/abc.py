@@ -369,6 +369,36 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def list_plan_prs_with_details(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+        author: str | None = None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Fetch draft plan PRs with rich details in a single GraphQL query.
+
+        Returns PRs with status checks, review threads, and mergeable state.
+        Client-side filtering is applied for draft status and author.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            labels: Labels to filter by (e.g., ["erk-plan"])
+            state: Filter by state ("open", "closed", or None for open)
+            limit: Maximum PRs to return (default: 30)
+            author: Filter by author username. If provided,
+                only PRs by this author are returned.
+
+        Returns:
+            Tuple of (pr_details_list, pr_linkages) where:
+            - pr_details_list: List of PRDetails objects for matching PRs
+            - pr_linkages: Mapping of pr_number -> list of PullRequestInfo
+        """
+        ...
+
+    @abstractmethod
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Get comprehensive PR details in a single API call.
 

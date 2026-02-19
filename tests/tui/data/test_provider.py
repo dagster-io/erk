@@ -194,6 +194,114 @@ class TestBuildWorktreeMapping:
         # Detached HEAD should not produce an entry in mapping
         assert len(mapping) == 0
 
+    def test_plan_dash_branch_falls_back_to_plan_ref_json(self, tmp_path: Path) -> None:
+        """Worktree with plan-* branch name uses plan-ref.json fallback."""
+        import json
+
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        worktree_path = tmp_path / "worktrees" / "plan-my-feature"
+        worktree_path.mkdir(parents=True)
+
+        # Create .impl/plan-ref.json in the worktree
+        impl_dir = worktree_path / ".impl"
+        impl_dir.mkdir()
+        plan_ref_data = {
+            "provider": "github",
+            "plan_id": "7777",
+            "url": "https://github.com/test/repo/issues/7777",
+            "created_at": "2024-06-01T00:00:00Z",
+            "synced_at": "2024-06-01T00:00:00Z",
+            "labels": [],
+        }
+        (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data))
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=worktree_path, branch="plan-my-feature", is_root=False
+                    ),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        mapping = provider._build_worktree_mapping()
+
+        assert 7777 in mapping
+        worktree_name, worktree_branch = mapping[7777]
+        assert worktree_name == "plan-my-feature"
+        assert worktree_branch == "plan-my-feature"
+
+    def test_plan_dash_branch_without_plan_ref_not_in_mapping(self, tmp_path: Path) -> None:
+        """Worktree with plan-* branch but no plan-ref.json is not in mapping."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        worktree_path = tmp_path / "worktrees" / "plan-orphan"
+        worktree_path.mkdir(parents=True)
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=worktree_path, branch="plan-orphan", is_root=False
+                    ),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        mapping = provider._build_worktree_mapping()
+
+        assert len(mapping) == 0
+
     def test_non_plan_branch_not_in_mapping(self, tmp_path: Path) -> None:
         """Worktree with non-P-prefixed branch should not be in mapping."""
         repo_root = tmp_path / "repo"

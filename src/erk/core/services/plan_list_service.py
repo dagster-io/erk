@@ -17,9 +17,6 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
-    PRListState,
-    PRNotFound,
-    PullRequestInfo,
     WorkflowRun,
 )
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
@@ -31,9 +28,9 @@ _PLAN_LABEL = "erk-plan"
 class DraftPRPlanListService(PlanListService):
     """Plan list service for draft-PR-backed plans.
 
-    Lists open draft PRs with the erk-plan label and converts them to
-    PlanListData. Draft PRs don't have issue-based PR linkages or workflow
-    runs, so those fields are empty.
+    Uses a single GraphQL query to fetch draft PRs with rich details
+    (status checks, review threads, mergeable state) instead of N+1
+    REST API calls. Workflow runs are fetched via batch GraphQL lookup.
     """
 
     def __init__(self, github: GitHub) -> None:
@@ -54,12 +51,11 @@ class DraftPRPlanListService(PlanListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
     ) -> PlanListData:
-        """Fetch plan list data from draft PRs.
+        """Fetch plan list data from draft PRs via single GraphQL query.
 
-        Lists draft PRs with erk-plan label and converts to PlanListData.
-        PR linkages are populated from each PR's own number. Workflow runs
-        are fetched via batch GraphQL lookup when last_dispatched_node_id is
-        present in the PR body's plan-header metadata.
+        Uses list_plan_prs_with_details() to get all draft PRs with rich
+        details in one API call, then extracts plan content and optionally
+        fetches workflow runs via batch GraphQL lookup.
 
         Args:
             location: GitHub repository location
@@ -72,41 +68,26 @@ class DraftPRPlanListService(PlanListService):
         Returns:
             PlanListData with plans from draft PRs
         """
-        pr_state: PRListState = "open"
-        if state in ("open", "closed", "all"):
-            pr_state = state  # type: ignore[assignment]
-
-        # Push label, author, and draft filtering to list_prs so the gateway
-        # handles as much filtering as possible (server-side for REST data).
         all_labels = [_PLAN_LABEL, *labels]
-        prs = self._github.list_prs(
-            location.root,
-            state=pr_state,
+        pr_details_list, pr_linkages = self._github.list_plan_prs_with_details(
+            location=location,
             labels=all_labels,
+            state=state,
+            limit=limit,
             author=creator,
-            draft=True,
         )
 
         plans = []
-        pr_linkages: dict[int, list[PullRequestInfo]] = {}
         node_id_to_plan: dict[str, int] = {}
-        for _branch, pr_info in prs.items():
-            pr_details = self._github.get_pr(location.root, pr_info.number)
-            if isinstance(pr_details, PRNotFound):
-                continue
-
+        for pr_details in pr_details_list:
             plan_body = extract_plan_content(pr_details.body)
             plan = pr_details_to_plan(pr_details, plan_body=plan_body)
             plans.append(plan)
-            pr_linkages[pr_info.number] = [pr_info]
 
             # Capture dispatch node_id for workflow run batch fetch
             _, node_id, _ = extract_plan_header_dispatch_info(pr_details.body)
             if node_id is not None:
-                node_id_to_plan[node_id] = pr_info.number
-
-            if limit is not None and len(plans) >= limit:
-                break
+                node_id_to_plan[node_id] = pr_details.number
 
         workflow_runs: dict[int, WorkflowRun | None] = {}
         if not skip_workflow_runs and node_id_to_plan:

@@ -22,6 +22,7 @@ from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
 from erk_shared.gateway.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    GET_PLAN_PRS_WITH_DETAILS_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
     GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
     ISSUE_PR_LINKAGE_FRAGMENT,
@@ -1365,6 +1366,154 @@ query {{
                 pr_linkages[issue.number] = [pr for pr, _ in prs_with_timestamps]
 
         return (issues, pr_linkages)
+
+    def list_plan_prs_with_details(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+        author: str | None = None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Fetch draft plan PRs with rich details in a single GraphQL query.
+
+        Returns PRs with status checks, review threads, and mergeable state.
+        Client-side filtering is applied for draft status and author.
+        """
+        repo_id = location.repo_id
+
+        # Build states array - default to OPEN to match gh CLI behavior
+        states = [state.upper()] if state else ["OPEN"]
+        effective_limit = limit if limit is not None else 30
+
+        # GH-API-AUDIT: GraphQL - PRs with status checks and review threads
+        # WHY GRAPHQL: Complex nested query (PRs + status rollup + review threads)
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={GET_PLAN_PRS_WITH_DETAILS_QUERY}",
+            "-f",
+            f"owner={repo_id.owner}",
+            "-f",
+            f"repo={repo_id.repo}",
+            "-F",
+            f"first={effective_limit}",
+        ]
+
+        for label in labels:
+            cmd.extend(["-f", f"labels[]={label}"])
+
+        for state_val in states:
+            cmd.extend(["-f", f"states[]={state_val}"])
+
+        stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
+        response = json.loads(stdout)
+        return self._parse_plan_prs_with_details(response, repo_id, author=author)
+
+    def _parse_plan_prs_with_details(
+        self,
+        response: dict[str, Any],
+        repo_id: GitHubRepoId,
+        *,
+        author: str | None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Parse GraphQL response to extract draft plan PRs with rich details.
+
+        Client-side filters for draft=True and optional author match.
+        """
+        pr_details_list: list[PRDetails] = []
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+
+        repo_data = response.get("data", {}).get("repository", {})
+        pr_nodes = repo_data.get("pullRequests", {}).get("nodes", [])
+
+        for node in pr_nodes:
+            if node is None:
+                continue
+
+            # Client-side draft filter
+            if not node.get("isDraft", False):
+                continue
+
+            # Client-side author filter
+            if author is not None:
+                node_author = node.get("author")
+                node_login = node_author.get("login", "") if node_author else ""
+                if node_login != author:
+                    continue
+
+            pr_number = node.get("number")
+            if pr_number is None:
+                continue
+
+            # Parse timestamps
+            created_at_str = node.get("createdAt", "")
+            updated_at_str = node.get("updatedAt", "")
+            created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+
+            # Extract labels
+            labels_data = node.get("labels", {}).get("nodes", [])
+            labels = tuple(label.get("name", "") for label in labels_data if label)
+
+            # Extract author login
+            author_data = node.get("author")
+            node_author_login = author_data.get("login", "") if author_data else ""
+
+            # Map mergeable GraphQL enum to string
+            mergeable_raw = node.get("mergeable", "UNKNOWN")
+            merge_state_status = (node.get("mergeStateStatus") or "UNKNOWN").upper()
+
+            details = PRDetails(
+                number=pr_number,
+                url=node.get("url", ""),
+                title=node.get("title") or "",
+                body=node.get("body") or "",
+                state=node.get("state", "OPEN"),
+                is_draft=True,
+                base_ref_name=node.get("baseRefName", ""),
+                head_ref_name=node.get("headRefName", ""),
+                is_cross_repository=node.get("isCrossRepository", False),
+                mergeable=mergeable_raw,
+                merge_state_status=merge_state_status,
+                owner=repo_id.owner,
+                repo=repo_id.repo,
+                labels=labels,
+                created_at=created_at,
+                updated_at=updated_at,
+                author=node_author_login,
+            )
+            pr_details_list.append(details)
+
+            # Build PullRequestInfo for pr_linkages
+            checks_passing, checks_counts = self._parse_status_rollup(
+                node.get("statusCheckRollup")
+            )
+            has_conflicts = self._parse_mergeable_status(node.get("mergeable"))
+            review_thread_counts = self._parse_review_thread_counts(
+                node.get("reviewThreads")
+            )
+
+            pr_info = PullRequestInfo(
+                number=pr_number,
+                state=node.get("state", "OPEN"),
+                url=node.get("url", ""),
+                is_draft=True,
+                title=node.get("title"),
+                checks_passing=checks_passing,
+                owner=repo_id.owner,
+                repo=repo_id.repo,
+                has_conflicts=has_conflicts,
+                checks_counts=checks_counts,
+                review_thread_counts=review_thread_counts,
+                head_branch=node.get("headRefName"),
+            )
+            pr_linkages[pr_number] = [pr_info]
+
+        return (pr_details_list, pr_linkages)
 
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Get comprehensive PR details via GitHub REST API.

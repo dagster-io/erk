@@ -639,6 +639,63 @@ class FakeGitHub(GitHub):
 
         return (filtered_issues, pr_linkages)
 
+    def list_plan_prs_with_details(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+        author: str | None = None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Get draft plan PRs with details from pre-configured state.
+
+        Filters pr_details by draft status, labels, state, and author.
+
+        Args:
+            location: GitHub repository location (ignored in fake)
+            labels: Labels to filter by
+            state: Filter by state ("open", "closed", or None for OPEN default)
+            limit: Maximum PRs to return (default: all)
+            author: Filter by author username
+
+        Returns:
+            Tuple of (pr_details_list, pr_linkages for those PRs)
+        """
+        effective_state = state if state is not None else "open"
+        pr_details_list: list[PRDetails] = []
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+
+        for _branch, pr in self._prs.items():
+            # State filter
+            if effective_state != "all" and pr.state != effective_state.upper():
+                continue
+
+            # Draft filter
+            if not pr.is_draft:
+                continue
+
+            # Get details for label and author filtering
+            details = self._pr_details.get(pr.number)
+            if details is None:
+                continue
+
+            # Label filter
+            if not all(label in details.labels for label in labels):
+                continue
+
+            # Author filter
+            if author is not None and details.author != author:
+                continue
+
+            pr_details_list.append(details)
+            pr_linkages[pr.number] = [pr]
+
+            if limit is not None and len(pr_details_list) >= limit:
+                break
+
+        return (pr_details_list, pr_linkages)
+
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Get comprehensive PR details from pre-configured state.
 

@@ -178,6 +178,20 @@ class DryRunGitHub(GitHub):
             location=location, labels=labels, state=state, limit=limit, creator=creator
         )
 
+    def list_plan_prs_with_details(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+        author: str | None = None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.list_plan_prs_with_details(
+            location=location, labels=labels, state=state, limit=limit, author=author
+        )
+
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr(repo_root, pr_number)
