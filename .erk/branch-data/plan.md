@@ -37,6 +37,7 @@ The `repo_base_url` would be `https://github.com/owner/repo` extracted from `pla
 The `PlanBodyScreen` doesn't currently have repo context, but the caller (`app.py:712`) passes a `PlanDataProvider` which knows the repo. Two options:
 
 **Option A (simpler):** Pass `plan_url` to `PlanBodyScreen` and extract the base from it:
+
 ```python
 # plan_url = "https://github.com/owner/repo/issues/123"
 # base = "https://github.com/owner/repo"
