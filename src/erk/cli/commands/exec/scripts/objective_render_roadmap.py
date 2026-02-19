@@ -28,6 +28,7 @@ Output:
     - Phase headers (### Phase 1: Name (1 PR))
     - Phase descriptions
     - 5-column markdown tables (Step | Description | Status | Plan | PR)
+      or 6-column when depends_on present (Step | Description | Depends On | Status | Plan | PR)
     - Test sections per phase
     - Metadata block (auto-generated, guaranteed in sync)
 
@@ -90,6 +91,17 @@ def _validate_input(data: Any) -> tuple[list[dict[str, Any]], str | None]:
                 if field not in step:
                     return [], f"Phase {i} step {j} missing required field: {field}"
 
+            if "depends_on" in step:
+                depends_on = step["depends_on"]
+                if not isinstance(depends_on, list):
+                    return [], f"Phase {i} step {j} field 'depends_on' must be a list"
+                for k, item in enumerate(depends_on):
+                    if not isinstance(item, str):
+                        return (
+                            [],
+                            f"Phase {i} step {j} field 'depends_on' item {k} must be a string",
+                        )
+
     return phases, None
 
 
@@ -104,6 +116,11 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
     """
     all_steps: list[RoadmapNode] = []
     sections: list[str] = []
+
+    # Check if any step across all phases has depends_on
+    any_has_depends_on = any(
+        "depends_on" in step_data for phase in phases for step_data in phase["steps"]
+    )
 
     sections.append("## Roadmap")
     sections.append("")
@@ -122,15 +139,30 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
             sections.append(description)
             sections.append("")
 
-        # Table header
-        sections.append("| Node | Description | Status | Plan | PR |")
-        sections.append("|------|-------------|--------|------|----|")
+        # Table header (conditional Depends On column)
+        if any_has_depends_on:
+            sections.append("| Node | Description | Depends On | Status | Plan | PR |")
+            sections.append("|------|-------------|------------|--------|------|----|")
+        else:
+            sections.append("| Node | Description | Status | Plan | PR |")
+            sections.append("|------|-------------|--------|------|----|")
 
         # Table rows
         for step_data in phase["steps"]:
             step_id = step_data["id"]
             step_desc = step_data["description"]
-            sections.append(f"| {step_id} | {step_desc} | pending | - | - |")
+            raw_depends_on = step_data.get("depends_on")
+            depends_on: tuple[str, ...] | None = (
+                tuple(raw_depends_on) if raw_depends_on is not None else None
+            )
+
+            if any_has_depends_on:
+                depends_display = ", ".join(depends_on) if depends_on else "-"
+                sections.append(
+                    f"| {step_id} | {step_desc} | {depends_display} | pending | - | - |"
+                )
+            else:
+                sections.append(f"| {step_id} | {step_desc} | pending | - | - |")
 
             all_steps.append(
                 RoadmapNode(
@@ -139,7 +171,7 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
                     status="pending",
                     plan=None,
                     pr=None,
-                    depends_on=None,
+                    depends_on=depends_on,
                 )
             )
 
