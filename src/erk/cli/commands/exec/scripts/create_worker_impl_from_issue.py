@@ -1,6 +1,6 @@
-"""Create .worker-impl/ folder from GitHub issue with plan content.
+"""Create .worker-impl/ folder from plan content.
 
-This exec command fetches a plan from a GitHub issue and creates the .worker-impl/
+This exec command fetches a plan via PlanBackend and creates the .worker-impl/
 folder structure, providing a testable alternative to inline workflow scripts.
 
 Usage:
@@ -11,59 +11,48 @@ Output:
 
 Exit Codes:
     0: Success (.worker-impl/ folder created)
-    1: Error (issue not found, plan fetch failed, folder creation failed)
+    1: Error (plan not found, fetch failed, folder creation failed)
 
 Examples:
     $ erk exec create-worker-impl-from-issue 1028
     {"success": true, "worker_impl_path": "/path/to/.worker-impl", "issue_number": 1028}
 
     $ erk exec create-worker-impl-from-issue 999
-    {"success": false, "error": "issue_not_found", "message": "..."}
+    {"success": false, "error": "plan_not_found", "message": "..."}
 """
 
 import json
-from pathlib import Path
 
 import click
 
-from erk_shared.gateway.github.issues.real import RealGitHubIssues
-from erk_shared.gateway.time.real import RealTime
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.context.helpers import (
+    require_plan_backend,
+    require_repo_root,
+)
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 
 @click.command(name="create-worker-impl-from-issue")
 @click.argument("issue_number", type=int)
-@click.option(
-    "--repo-root",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=None,
-    help="Repository root directory (defaults to current directory)",
-)
+@click.pass_context
 def create_worker_impl_from_issue(
+    ctx: click.Context,
     issue_number: int,
-    repo_root: Path | None,
 ) -> None:
-    """Create .worker-impl/ folder from GitHub issue with plan content.
+    """Create .worker-impl/ folder from plan content.
 
-    Fetches plan content from GitHub issue and creates .worker-impl/ folder structure
+    Fetches plan content via PlanBackend and creates .worker-impl/ folder structure
     with plan.md, issue.json, and metadata.
 
-    ISSUE_NUMBER: GitHub issue number containing the plan
+    ISSUE_NUMBER: Plan identifier (e.g., GitHub issue number)
     """
-    # Default to current directory if not specified
-    if repo_root is None:
-        repo_root = Path.cwd()
+    backend = require_plan_backend(ctx)
+    repo_root = require_repo_root(ctx)
+    plan_id = str(issue_number)
 
-    # Direct instantiation of required dependencies (avoids erk import)
-    # This allows the command to work when run via erk kit exec without uv
-    time = RealTime()
-    github_issues = RealGitHubIssues(target_repo=None, time=time)
-    plan_store = GitHubPlanStore(github_issues, time)
-
-    # Fetch plan from GitHub
-    result = plan_store.get_plan(repo_root, str(issue_number))
+    # Fetch plan via PlanBackend
+    result = backend.get_plan(repo_root, plan_id)
     if isinstance(result, PlanNotFound):
         error_output = {
             "success": False,
@@ -79,7 +68,7 @@ def create_worker_impl_from_issue(
     worker_impl_path = repo_root / ".worker-impl"
     create_worker_impl_folder(
         plan_content=plan.body,
-        plan_id=str(issue_number),
+        plan_id=plan_id,
         url=plan.url,
         repo_root=repo_root,
         objective_id=plan.objective_id,

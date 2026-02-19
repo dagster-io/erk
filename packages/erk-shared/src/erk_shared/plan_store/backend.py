@@ -354,6 +354,25 @@ class PlanBackend(PlanStore):
     # close_plan is inherited from PlanStore
 
     @abstractmethod
+    def update_plan_title(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        title: str,
+    ) -> None:
+        """Update the title of a plan.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier (e.g., "42")
+            title: New plan title
+
+        Raises:
+            RuntimeError: If plan not found or update fails
+        """
+        ...
+
+    @abstractmethod
     def add_comment(
         self,
         repo_root: Path,

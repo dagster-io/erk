@@ -30,7 +30,6 @@ import click
 from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
-    require_issues,
     require_plan_backend,
     require_repo_root,
 )
@@ -84,7 +83,6 @@ def plan_update_issue(
 
     # Get dependencies from context
     backend = require_plan_backend(ctx)
-    github = require_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
@@ -122,7 +120,7 @@ def plan_update_issue(
     full_title = f"{title_tag} {new_title}"
 
     try:
-        github.update_issue_title(repo_root, issue_number, full_title)
+        backend.update_plan_title(repo_root, plan_id, full_title)
     except RuntimeError as e:
         _handle_update_error(f"Failed to update title: {e}", cause=e)
 

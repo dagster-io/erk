@@ -734,6 +734,14 @@ class FakeGitHub(GitHub):
         self._updated_pr_titles.append((pr_number, title))
         self._updated_pr_bodies.append((pr_number, body_content))
 
+        # Update in-memory state so subsequent get_pr() reflects the change
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, title=title, body=body_content)
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
+
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
         """Mark a draft PR as ready for review (fake is a no-op)."""
         pass
