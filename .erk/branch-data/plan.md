@@ -26,12 +26,12 @@ The howto doc `docs/howto/pr-checkout-sync.md` was written during a remote imple
 
 ### Actual Command Flags (from --help)
 
-| Command | Flags |
-|---------|-------|
-| `erk pr co` | `--no-slot`, `-f/--force` |
-| `erk pr sync` | `-d/--dangerous` |
-| `erk pr submit` | `--no-graphite`, `-f/--force`, `--debug`, `--session-id` |
-| `erk land` | `--up`, `-f/--force`, `--pull/--no-pull`, `--dry-run`, `--no-delete` |
+| Command         | Flags                                                                |
+| --------------- | -------------------------------------------------------------------- |
+| `erk pr co`     | `--no-slot`, `-f/--force`                                            |
+| `erk pr sync`   | `-d/--dangerous`                                                     |
+| `erk pr submit` | `--no-graphite`, `-f/--force`, `--debug`, `--session-id`             |
+| `erk land`      | `--up`, `-f/--force`, `--pull/--no-pull`, `--dry-run`, `--no-delete` |
 
 ## Implementation Steps
 
