@@ -54,6 +54,9 @@ This is a comprehensive feature plan that includes all the necessary details.
     assert output["success"] is True
     assert output["issue_number"] == 1
     assert output["title"] == "My Feature"
+    assert output["saved_as_label"] == "issue"
+    assert output["view_command"] == "gh issue view 1 --web"
+    assert "Next steps:" in output["next_steps"]
 
 
 def test_plan_save_to_issue_no_plan() -> None:

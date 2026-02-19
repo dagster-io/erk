@@ -67,6 +67,9 @@ def test_draft_pr_success_json(tmp_path: Path) -> None:
     assert "issue_number" in output
     assert "branch_name" in output
     assert output["branch_name"].startswith("plan-")
+    assert output["saved_as_label"] == "draft PR"
+    assert output["view_command"] == f"gh pr view {output['issue_number']} --web"
+    assert "Next steps:" in output["next_steps"]
 
 
 def test_draft_pr_success_display(tmp_path: Path) -> None:
