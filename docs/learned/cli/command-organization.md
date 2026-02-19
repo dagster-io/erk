@@ -391,7 +391,7 @@ wt_group.add_command(create_wt)  # Grouped under wt
 | Worktree commands | `src/erk/cli/commands/wt/`                                                                                  |
 | Stack commands    | `src/erk/cli/commands/stack/`                                                                               |
 | Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `src/erk/cli/commands/up.py`, `src/erk/cli/commands/down.py` |
-| Setup             | `src/erk/cli/commands/init/` (directory), `src/erk/cli/commands/config.py` |
+| Setup             | `src/erk/cli/commands/init/` (directory), `src/erk/cli/commands/config.py`                                  |
 
 ## Related Documentation
 
