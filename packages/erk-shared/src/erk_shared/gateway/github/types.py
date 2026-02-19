@@ -1,7 +1,7 @@
 """Type definitions for GitHub operations."""
 
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -132,6 +132,9 @@ class PRDetails:
     owner: str
     repo: str
     labels: tuple[str, ...] = ()
+    created_at: datetime = field(default_factory=lambda: datetime(2000, 1, 1, tzinfo=UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime(2000, 1, 1, tzinfo=UTC))
+    author: str = ""
 
 
 @dataclass(frozen=True)
