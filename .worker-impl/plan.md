@@ -1,3 +1,38 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-19T15:57:56.134956+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22199870253'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFKzcjLQ
+last_dispatched_at: '2026-02-19T20:59:29.545158+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-fix-setup-impl-from-issue-02-19-1557
+created_from_session: db1faa93-4e43-4678-8fb5-d59845f81ef9
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary><code>original-plan</code></summary>
+
 # Fix: setup-impl-from-issue Switches to Wrong Branch in CI
 
 ## Context
@@ -64,3 +99,14 @@ Add one new test after `test_draft_pr_plan_already_on_plan_branch`:
    — all existing tests must still pass (behavior unchanged for non-CI cases)
 2. New test passes: `test_draft_pr_plan_skips_checkout_when_impl_exists`
 3. Type check: `ty check src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7626 --script)" && erk pr sync --dangerous
+```
