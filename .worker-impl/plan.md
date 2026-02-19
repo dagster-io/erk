@@ -1,3 +1,38 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-19T18:27:30.049339+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22204763001'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFK4HLeQ
+last_dispatched_at: '2026-02-19T23:37:51.473259+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-fix-tui-plan-body-displayi-02-19-1827
+created_from_session: 10ff7777-a82b-494b-a2fd-aca32a747953
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary><code>original-plan</code></summary>
+
 # Fix TUI plan body displaying footer instead of content for rewritten draft PRs
 
 ## Context
@@ -84,3 +119,14 @@ if not has_original_plan_section(pr_details.body):
 1. Run `make fast-ci` to confirm no regressions
 2. Run the new test specifically: `pytest tests/unit/services/test_plan_list_service.py -k rewritten`
 3. Manual: `erk dash -i`, press `v` on a draft PR that has been through remote implementation (like #7626) — should display the full Summary/Files Changed/Key Changes content instead of just the footer
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7637 --script)" && erk pr sync --dangerous
+```
