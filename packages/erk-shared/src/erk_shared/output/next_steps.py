@@ -14,6 +14,10 @@ class IssueNextSteps:
         return f"gh issue view {self.issue_number} --web"
 
     @property
+    def view_pr(self) -> str:
+        return f"gh pr view {self.issue_number} --web"
+
+    @property
     def prepare(self) -> str:
         return f"erk prepare {self.issue_number}"
 
@@ -53,7 +57,7 @@ def format_next_steps_draft_pr(plan_number: int) -> str:
     steps = IssueNextSteps(plan_number)
     return f"""Next steps:
 
-View PR: gh pr view {plan_number} --web
+View PR: {steps.view_pr}
 
 In Claude Code:
   Submit to queue: {SUBMIT_SLASH_COMMAND} — Submit plan for remote agent implementation
