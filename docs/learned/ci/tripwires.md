@@ -36,6 +36,8 @@ Rules triggered by matching actions in code.
 
 **Writing GitHub Actions workflow steps that pass large content to `gh` CLI commands (e.g., `gh pr comment --body "$VAR"`)** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. Use `--body-file` or other file-based input to avoid Linux ARG_MAX limit (~2MB on command-line arguments). Large CI outputs like rebase logs can exceed this limit.
 
+**adding a new CI job that invokes Claude without checking CLAUDE_ENABLED** → Read [Claude Kill Switch](claude-kill-switch.md) first. All Claude CI jobs must check vars.CLAUDE_ENABLED != 'false' before invoking Claude. See claude-kill-switch.md.
+
 **adding a test job to autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Test jobs (erkdesk-tests, unit-tests, integration-tests) must NEVER block autofix. Only jobs whose failures can be auto-resolved (format, lint, prettier, docs-check, ty) should be dependencies. Adding test jobs creates a deadlock: tests fail → autofix blocked → format/lint issues never fixed → developer must manually fix both.
 
 **adding new Claude-dependent exec scripts to workflows** → Read [Exec Script Environment Requirements](exec-script-environment-requirements.md) first. Check workflow environment: ANTHROPIC_API_KEY, GH_TOKEN, CLAUDE_CODE_OAUTH_TOKEN

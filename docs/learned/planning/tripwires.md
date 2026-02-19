@@ -26,6 +26,8 @@ Rules triggered by matching actions in code.
 
 **adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
 
+**adding plan storage behavior without checking plan backend type** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Two backends exist (github, draft_pr). Verify behavior works for both. See draft-pr-plan-backend.md.
+
 **adding post-dispatch operations without matching submit.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. dispatch_one_shot() and \_submit_single_issue() in submit.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
 
 **adding subprocess calls to trigger-async-learn** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below.
@@ -35,6 +37,8 @@ Rules triggered by matching actions in code.
 **analyzing sessions larger than 100k characters** → Read [Scratch Storage](scratch-storage.md) first. Use `erk exec preprocess-session` first. Achieves ~99% token reduction (e.g., 6.2M -> 67k chars). Critical for fitting large sessions in agent context windows.
 
 **assigning opus to a mechanical extraction agent** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. Model escalation: haiku/sonnet for extraction and rule-based work, opus only for creative authoring. See the model escalation decision table.
+
+**assuming branch names always follow the P-prefix format** → Read [Branch Plan Resolution](branch-plan-resolution.md) first. Branch resolution supports multiple formats (P-prefix, objective). Use resolve_plan_id_for_branch() rather than manual parsing. See branch-plan-resolution.md.
 
 **assuming branch_name is always present in plan-header metadata** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. branch_name is null until Phase 2 (plan submit). Check the plan metadata field lifecycle in lifecycle.md.
 
@@ -112,6 +116,8 @@ Rules triggered by matching actions in code.
 
 **making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
 
+**making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
+
 **manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
@@ -163,6 +169,8 @@ Rules triggered by matching actions in code.
 **treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
 
 **updating imports one file at a time during gateway consolidation** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Use LibCST for systematic import updates. Manual editing misses call sites and creates partial migration states. See docs/learned/refactoring/libcst-systematic-imports.md.
+
+**using 'steps' instead of 'nodes' in new plan metadata code** → Read [Schema V3 Migration](schema-v3-migration.md) first. Schema v3 uses 'nodes' (not 'steps'). The parser accepts both for backward compatibility but the renderer always emits v3. See schema-v3-migration.md.
 
 **using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
 

@@ -102,6 +102,8 @@ Rules triggered by matching actions in code.
 
 **checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code** [pattern: `isinstance\(.*GraphiteDisabled\)`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager.
 
+**checking out a branch in plan_save without restoring the original** → Read [Plan Save Branch Restoration](plan-save-branch-restoration.md) first. Plan save must always restore the original branch via try/finally. See plan-save-branch-restoration.md.
+
 **choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
 
 **choosing between post_event and update_metadata** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline.
@@ -184,6 +186,8 @@ Rules triggered by matching actions in code.
 
 **passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
 
+**passing secret values as command-line arguments** → Read [GitHub Admin Gateway](github-admin-gateway.md) first. Secret values must be passed via stdin (input= parameter) to avoid process list exposure. See github-admin-gateway.md.
+
 **passing variables to gh api graphql as JSON blob** [pattern: `gh\s+api\s+graphql`] → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
 **reading agent output with TaskOutput then writing it to a file with Write** → Read [Context Efficiency Patterns](context-efficiency.md) first. This is the 'content relay' anti-pattern — it causes 2x context duplication. Instead, have agents accept an output_path parameter and write directly. See /erk:learn for the canonical implementation.
@@ -249,6 +253,8 @@ Rules triggered by matching actions in code.
 **using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
 
 **using git pull or git pull --rebase on a Graphite-managed branch** [pattern: `git\s+pull`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
+
+**using mutable list fields directly for mutation tracking in fakes** → Read [Fake Mutation Tracking](fake-mutation-tracking.md) first. Expose mutation tracking via @property returning tuple or .copy(). Internal lists should be private. See fake-mutation-tracking.md.
 
 **using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** [pattern: `os\.environ.*CLAUDE_CODE_SESSION_ID`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
 
