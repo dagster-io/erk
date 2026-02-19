@@ -1,13 +1,15 @@
 """Unit tests for run_submit_pipeline and make_initial_state."""
 
 from pathlib import Path
+from unittest.mock import patch
 
 from erk.cli.commands.pr.submit_pipeline import (
     SubmitError,
+    SubmitState,
     make_initial_state,
     run_submit_pipeline,
 )
-from erk.core.context import context_for_test
+from erk.core.context import ErkContext, context_for_test
 from erk_shared.gateway.git.fake import FakeGit
 
 
@@ -94,3 +96,31 @@ def test_make_initial_state_sets_placeholders(tmp_path: Path) -> None:
     assert state.plan_context is None
     assert state.title is None
     assert state.body is None
+
+
+def test_catches_unhandled_exception_from_step(tmp_path: Path) -> None:
+    """Unhandled exception in a step becomes SubmitError, not a propagated exception."""
+
+    def _exploding_step(_ctx: ErkContext, _state: SubmitState) -> SubmitState | SubmitError:
+        msg = "database connection lost"
+        raise ConnectionError(msg)
+
+    ctx = context_for_test(cwd=tmp_path)
+    state = make_initial_state(
+        cwd=tmp_path,
+        use_graphite=False,
+        force=False,
+        debug=False,
+        session_id="test",
+    )
+
+    with patch(
+        "erk.cli.commands.pr.submit_pipeline._submit_pipeline",
+        return_value=(_exploding_step,),
+    ):
+        result = run_submit_pipeline(ctx, state)
+
+    assert isinstance(result, SubmitError)
+    assert result.error_type == "unhandled_exception"
+    assert result.phase == "_exploding_step"
+    assert "database connection lost" in result.message

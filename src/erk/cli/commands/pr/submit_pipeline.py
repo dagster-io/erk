@@ -578,10 +578,14 @@ def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -> SubmitState | 
         error_msg = str(e).lower()
         if "nothing to submit" in error_msg or "no changes" in error_msg:
             click.echo(click.style("   PR already up to date with Graphite", fg="green"))
-        else:
-            click.echo(click.style(f"   Warning: {e}", fg="yellow"))
-        click.echo("")
-        return state
+            click.echo("")
+            return state
+        return SubmitError(
+            phase="enhance_with_graphite",
+            error_type="graphite_enhance_failed",
+            message=f"Graphite enhancement failed: {e}",
+            details={},
+        )
 
     # Get Graphite URL
     remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
@@ -737,7 +741,16 @@ def _submit_pipeline() -> tuple[SubmitStep, ...]:
 def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Run the submit pipeline, returning final state or first error."""
     for step in _submit_pipeline():
-        result = step(ctx, state)
+        try:
+            result = step(ctx, state)
+        except Exception as e:
+            step_name = getattr(step, "__name__", repr(step))
+            return SubmitError(
+                phase=step_name,
+                error_type="unhandled_exception",
+                message=f"Unexpected error in {step_name}: {e}",
+                details={},
+            )
         if isinstance(result, SubmitError):
             return result
         state = result

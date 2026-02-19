@@ -24,6 +24,17 @@ from erk_shared.gateway.time.abc import Time
 logger = logging.getLogger(__name__)
 
 
+def copied_env_for_git_subprocess() -> dict[str, str]:
+    """Return a copy of the environment for git subprocess calls.
+
+    Sets GIT_TERMINAL_PROMPT=0 so git commands fail fast with an error
+    instead of hanging while waiting for credentials or other interactive input.
+    """
+    env = os.environ.copy()
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
 def build_claude_subprocess_env() -> dict[str, str]:
     """Build environment for Claude subprocess with nested session guard removed.
 
@@ -64,6 +75,7 @@ def run_subprocess_with_context(
     cmd: Sequence[str],
     operation_context: str,
     cwd: Path | None = None,
+    timeout: float | None = None,
     capture_output: bool = True,
     text: bool = True,
     encoding: str = "utf-8",
@@ -81,6 +93,7 @@ def run_subprocess_with_context(
         cmd: Command and arguments to execute
         operation_context: Human-readable description of operation
         cwd: Working directory for command execution
+        timeout: Timeout in seconds for the subprocess. None means no timeout.
         capture_output: Whether to capture stdout/stderr (default: True)
         text: Whether to decode output as text (default: True)
         encoding: Text encoding to use (default: "utf-8")
@@ -93,7 +106,7 @@ def run_subprocess_with_context(
         CompletedProcess instance from subprocess.run()
 
     Raises:
-        RuntimeError: If command fails with enriched error context
+        RuntimeError: If command fails or times out, with enriched error context
         FileNotFoundError: If command binary is not found
     """
     timing_desc = _build_timing_description(cmd)
@@ -109,6 +122,7 @@ def run_subprocess_with_context(
         result = subprocess.run(
             cmd,
             cwd=cwd,
+            timeout=timeout,
             capture_output=capture_output,
             text=text,
             encoding=encoding,
@@ -120,6 +134,12 @@ def run_subprocess_with_context(
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         logger.debug("Completed in %dms: %s", elapsed_ms, timing_desc)
         return result
+
+    except subprocess.TimeoutExpired as e:
+        cmd_str = " ".join(str(arg) for arg in cmd)
+        error_msg = f"Timed out after {timeout}s trying to {operation_context}"
+        error_msg += f"\nCommand: {cmd_str}"
+        raise RuntimeError(error_msg) from e
 
     except subprocess.CalledProcessError as e:
         cmd_str = " ".join(str(arg) for arg in cmd)
@@ -148,6 +168,12 @@ def run_subprocess_with_context(
         raise RuntimeError(error_msg) from e
 
 
+# Timeout in seconds for individual gh CLI commands.
+# Each gh call gets 60 seconds; the retry wrapper can still retry on
+# transient errors, but each attempt won't hang indefinitely.
+_GH_COMMAND_TIMEOUT = 60
+
+
 def execute_gh_command(cmd: list[str], cwd: Path) -> str:
     """Execute a gh CLI command and return stdout.
 
@@ -159,7 +185,7 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
         stdout from the command
 
     Raises:
-        RuntimeError: If command fails with enriched error context
+        RuntimeError: If command fails or times out, with enriched error context
         FileNotFoundError: If gh is not installed
     """
     timing_desc = _build_timing_description(cmd)
@@ -167,6 +193,7 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
         cmd=cmd,
         operation_context=f"execute gh command '{timing_desc}'",
         cwd=cwd,
+        timeout=_GH_COMMAND_TIMEOUT,
     )
     stdout_preview = result.stdout[:200] if result.stdout else "(empty)"
     logger.debug("gh command stdout preview: %s", stdout_preview)
