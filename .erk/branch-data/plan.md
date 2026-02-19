@@ -6,22 +6,22 @@ We're experiencing hangs in automation because several `gt` subprocess invocatio
 
 ## Inventory of all `gt` subprocess calls
 
-| Command | File | Has `--no-interactive`? |
-|---|---|---|
-| `gt sync` | `graphite/real.py:63` | **NO** |
-| `gt restack` | `graphite/real.py:99` | Conditional (param) |
-| `gt auth` | `graphite/real.py:242` | **NO** |
-| `gt squash` | `graphite/real.py:281` | YES |
-| `gt submit` | `graphite/real.py:301` | YES |
-| `gt branch info` | `graphite/real.py:342` | **NO** |
-| `gt continue` | `graphite/real.py:352` | **NO** |
-| `gt track --branch` | `branch_ops/real.py:37` | **NO** |
-| `gt delete -f` | `branch_ops/real.py:45` | **NO** |
-| `gt submit --branch` | `branch_ops/real.py:66` | YES |
-| `gt track` (retrack) | `branch_ops/real.py:94` | **NO** |
-| `gt create` | `wt/create_cmd.py:315` | YES |
-| `gt parent` | `erk-dev codex_review:30` | **NO** |
-| `gt parent` | `erk-dev branch_commit_count:15` | **NO** |
+| Command              | File                             | Has `--no-interactive`? |
+| -------------------- | -------------------------------- | ----------------------- |
+| `gt sync`            | `graphite/real.py:63`            | **NO**                  |
+| `gt restack`         | `graphite/real.py:99`            | Conditional (param)     |
+| `gt auth`            | `graphite/real.py:242`           | **NO**                  |
+| `gt squash`          | `graphite/real.py:281`           | YES                     |
+| `gt submit`          | `graphite/real.py:301`           | YES                     |
+| `gt branch info`     | `graphite/real.py:342`           | **NO**                  |
+| `gt continue`        | `graphite/real.py:352`           | **NO**                  |
+| `gt track --branch`  | `branch_ops/real.py:37`          | **NO**                  |
+| `gt delete -f`       | `branch_ops/real.py:45`          | **NO**                  |
+| `gt submit --branch` | `branch_ops/real.py:66`          | YES                     |
+| `gt track` (retrack) | `branch_ops/real.py:94`          | **NO**                  |
+| `gt create`          | `wt/create_cmd.py:315`           | YES                     |
+| `gt parent`          | `erk-dev codex_review:30`        | **NO**                  |
+| `gt parent`          | `erk-dev branch_commit_count:15` | **NO**                  |
 
 **9 of 14 calls are missing `--no-interactive`.**
 
@@ -52,6 +52,7 @@ We're experiencing hangs in automation because several `gt` subprocess invocatio
 ### 5. Test assertions
 
 Update tests that assert on exact command lists:
+
 - `tests/real/test_real_graphite.py` — `gt sync` and `gt branch info` assertions
 - `tests/integration/test_real_graphite_branch_ops.py` — `gt track` and `gt delete` assertions
 
@@ -60,6 +61,7 @@ Update tests that assert on exact command lists:
 Every caller already passes `no_interactive=True`. Remove the parameter and hardcode `--no-interactive`:
 
 **Files to update:**
+
 - `packages/erk-shared/src/erk_shared/gateway/graphite/abc.py` — Remove `no_interactive` from `restack()` and `restack_idempotent()` signatures
 - `packages/erk-shared/src/erk_shared/gateway/graphite/real.py` — Hardcode `--no-interactive` in `restack()`
 - `packages/erk-shared/src/erk_shared/gateway/graphite/fake.py` — Remove param from `restack()`, update `_restack_calls` type
