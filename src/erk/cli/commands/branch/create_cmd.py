@@ -159,7 +159,8 @@ def branch_create(
     local_branches = ctx.git.branch.list_local_branches(repo.root)
     branch_exists_locally = branch_name in local_branches
 
-    # PLAN_BACKEND_SPLIT: draft-PR backend tracks existing remote branch; github backend creates new branch
+    # PLAN_BACKEND_SPLIT: draft-PR backend tracks existing remote branch;
+    # github backend creates new branch
     if setup is not None and plan_backend == "draft_pr":
         # Draft PR backend: branch was created by plan-save, so it's expected to exist
         if branch_exists_locally:

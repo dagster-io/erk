@@ -97,7 +97,8 @@ def prepare_plan_for_worktree(
             f"Issue #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway..."
         )
 
-    # PLAN_BACKEND_SPLIT: draft-PR backend reuses plan-header branch; issue backend generates fresh branch
+    # PLAN_BACKEND_SPLIT: draft-PR backend reuses plan-header branch;
+    # issue backend generates fresh branch
     # Two code paths based on backend:
     # - Draft PR backend: branch always exists in plan-header (set by plan_save)
     # - Issue backend: branch is always generated fresh

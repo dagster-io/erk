@@ -183,7 +183,8 @@ def context_for_test(
     resolved_plan_store: PlanStore
     if plan_store is not None:
         resolved_plan_store = plan_store
-    # PLAN_BACKEND_SPLIT: test context mirrors production - selects DraftPRPlanBackend or GitHubPlanStore
+    # PLAN_BACKEND_SPLIT: test context mirrors production
+    # - selects DraftPRPlanBackend or GitHubPlanStore
     elif get_plan_backend() == "draft_pr":
         resolved_plan_store = DraftPRPlanBackend(resolved_github, resolved_issues, time=FakeTime())
     else:
