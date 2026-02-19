@@ -61,7 +61,7 @@ The provider transforms `PlanListData` from the service layer into `PlanRowData`
 
 Immutable dataclass containing:
 
-- Raw data for actions (issue_number, issue_url, pr_number, pr_url)
+- Raw data for actions (plan_id, plan_url, pr_number, pr_url)
 - Pre-formatted display strings (title, pr_display, checks_display, etc.)
 
 ### PlanDataTable (`widgets/plan_table.py`)

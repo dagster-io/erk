@@ -13,9 +13,9 @@ def test_serialize_plan_row_basic() -> None:
     row = make_plan_row(123, "Test Plan")
     result = _serialize_plan_row(row)
 
-    assert result["issue_number"] == 123
+    assert result["plan_id"] == 123
     assert result["title"] == "Test Plan"
-    assert result["issue_url"] == "https://github.com/test/repo/issues/123"
+    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
     assert result["pr_number"] is None
     assert result["exists_locally"] is False
     assert result["last_local_impl_at"] is None
@@ -26,8 +26,8 @@ def test_serialize_plan_row_datetime_fields() -> None:
     """Test that datetime fields are converted to ISO 8601 strings."""
     now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
     row = PlanRowData(
-        issue_number=456,
-        issue_url="https://github.com/test/repo/issues/456",
+        plan_id=456,
+        plan_url="https://github.com/test/repo/issues/456",
         title="Datetime Test",
         pr_number=None,
         pr_url=None,
@@ -41,7 +41,7 @@ def test_serialize_plan_row_datetime_fields() -> None:
         run_state_display="-",
         run_url=None,
         full_title="Datetime Test",
-        issue_body="",
+        plan_body="",
         pr_title=None,
         pr_state=None,
         pr_head_branch=None,
@@ -85,8 +85,8 @@ def test_serialize_plan_row_datetime_fields() -> None:
 def test_serialize_plan_row_tuple_to_list() -> None:
     """Test that tuple fields (log_entries) are converted to lists."""
     row = PlanRowData(
-        issue_number=789,
-        issue_url="https://github.com/test/repo/issues/789",
+        plan_id=789,
+        plan_url="https://github.com/test/repo/issues/789",
         title="Tuple Test",
         pr_number=None,
         pr_url=None,
@@ -100,7 +100,7 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         run_state_display="-",
         run_url=None,
         full_title="Tuple Test",
-        issue_body="",
+        plan_body="",
         pr_title=None,
         pr_state=None,
         pr_head_branch=None,
@@ -166,8 +166,8 @@ def test_serialize_plan_row_all_fields_present() -> None:
     result = _serialize_plan_row(row)
 
     expected_fields = {
-        "issue_number",
-        "issue_url",
+        "plan_id",
+        "plan_url",
         "title",
         "pr_number",
         "pr_url",
@@ -181,7 +181,7 @@ def test_serialize_plan_row_all_fields_present() -> None:
         "run_state_display",
         "run_url",
         "full_title",
-        "issue_body",
+        "plan_body",
         "pr_title",
         "pr_state",
         "pr_head_branch",
@@ -222,8 +222,8 @@ def test_serialize_plan_row_json_roundtrip() -> None:
     """Test that serialized output is valid JSON."""
     now = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
     row = PlanRowData(
-        issue_number=42,
-        issue_url="https://github.com/test/repo/issues/42",
+        plan_id=42,
+        plan_url="https://github.com/test/repo/issues/42",
         title="JSON Test",
         pr_number=99,
         pr_url="https://github.com/test/repo/pull/99",
@@ -237,7 +237,7 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         run_state_display="-",
         run_url=None,
         full_title="JSON Test Full Title",
-        issue_body="Some body",
+        plan_body="Some body",
         pr_title="Fix it",
         pr_state="MERGED",
         pr_head_branch="feature-branch",
@@ -276,7 +276,7 @@ def test_serialize_plan_row_json_roundtrip() -> None:
     json_str = json.dumps(result)
     parsed = json.loads(json_str)
 
-    assert parsed["issue_number"] == 42
+    assert parsed["plan_id"] == 42
     assert parsed["last_local_impl_at"] == "2025-01-15T10:00:00+00:00"
     assert parsed["last_remote_impl_at"] is None
     assert parsed["log_entries"] == [["started", "2025-01-01T00:00:00Z", "https://example.com"]]

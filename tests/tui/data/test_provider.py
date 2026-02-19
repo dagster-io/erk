@@ -492,11 +492,10 @@ class TestCommentCountsDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages=pr_linkages,
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={},
         )
@@ -574,11 +573,10 @@ class TestCommentCountsDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages=pr_linkages,
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={},
         )
@@ -642,11 +640,10 @@ class TestCommentCountsDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages=pr_linkages,
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={},
         )
@@ -713,11 +710,10 @@ class TestLearnStatusDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={},
         )
@@ -783,11 +779,10 @@ class TestLearnStatusDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={},
         )
@@ -851,11 +846,10 @@ class TestLearnStatusDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={},
         )
@@ -921,11 +915,10 @@ class TestLearnStatusDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={},
         )
@@ -993,11 +986,10 @@ class TestLearnStatusDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={},
         )
@@ -1066,11 +1058,10 @@ class TestLearnStatusDisplay:
         # Learn issue 456 is closed
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={456: True},
         )
@@ -1140,11 +1131,10 @@ class TestLearnStatusDisplay:
         # Learn issue 456 is open
         row = provider._build_row_data(
             plan=plan,
-            issue_number=123,
-            author="test-user",
+            plan_id=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_issue={},
+            worktree_by_plan_id={},
             use_graphite=False,
             learn_issue_states={456: False},
         )

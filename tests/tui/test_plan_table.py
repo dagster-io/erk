@@ -55,9 +55,9 @@ class TestPlanRowData:
     def test_make_plan_row_defaults(self) -> None:
         """make_plan_row creates row with sensible defaults."""
         row = make_plan_row(123, "Test Plan")
-        assert row.issue_number == 123
+        assert row.plan_id == 123
         assert row.title == "Test Plan"
-        assert row.issue_url == "https://github.com/test/repo/issues/123"
+        assert row.plan_url == "https://github.com/test/repo/issues/123"
         assert row.pr_number is None
         assert row.pr_display == "-"
         assert row.worktree_name == ""

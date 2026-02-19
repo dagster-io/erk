@@ -85,7 +85,7 @@ Show a loading indicator while data is being fetched. Use unique DOM element IDs
 ## Reference Implementations
 
 - `UnresolvedCommentsScreen` — fetches and displays PR review comments
-- `IssueBodyScreen` — fetches and displays GitHub issue body content
+- `PlanBodyScreen` — fetches and displays plan body content
 - `PlanDetailScreen` — displays plan details with markdown rendering
 
 ## Related Documentation

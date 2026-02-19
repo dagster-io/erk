@@ -675,9 +675,7 @@ def _run_interactive_mode(
     )
 
     # Convert sort string to SortState
-    initial_sort = SortState(
-        key=SortKey.BRANCH_ACTIVITY if sort == "activity" else SortKey.ISSUE_NUMBER
-    )
+    initial_sort = SortState(key=SortKey.BRANCH_ACTIVITY if sort == "activity" else SortKey.PLAN_ID)
 
     # Run the TUI app
     app = ErkDashApp(

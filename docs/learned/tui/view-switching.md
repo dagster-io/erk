@@ -4,13 +4,13 @@ read_when:
   - "adding a new view mode to the TUI"
   - "understanding how view switching and caching work"
   - "debugging data not appearing in a specific view"
-  - "working with IssueBodyScreen content type parameterization"
+  - "working with PlanBodyScreen content type parameterization"
 tripwires:
   - action: "adding a new ViewMode without updating VIEW_CONFIGS"
     warning: "Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime."
   - action: "using _render() as a method name in Textual widgets"
     warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
-  - action: "pushing IssueBodyScreen without explicit content_type"
+  - action: "pushing PlanBodyScreen without explicit content_type"
     warning: "Content type must come from view_mode at push time, not derived inside the screen."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
@@ -118,15 +118,15 @@ When a fetch is in progress and the user switches tabs, the fetched data could b
 
 In brief: `_load_data()` snapshots `self._view_mode` at fetch start, and `_update_table()` only updates the display if the current view still matches the snapshot.
 
-## Content Type Parameterization: IssueBodyScreen
+## Content Type Parameterization: PlanBodyScreen
 
-<!-- Source: src/erk/tui/screens/issue_body_screen.py -->
+<!-- Source: src/erk/tui/screens/plan_body_screen.py -->
 
-`IssueBodyScreen` accepts a `content_type: Literal["Plan", "Objective"]` parameter that controls both the UI display labels and which gateway method is called:
+`PlanBodyScreen` accepts a `content_type: Literal["Plan", "Objective"]` parameter that controls both the UI display labels and which gateway method is called:
 
-<!-- Source: src/erk/tui/screens/issue_body_screen.py, IssueBodyScreen.__init__ -->
+<!-- Source: src/erk/tui/screens/plan_body_screen.py, PlanBodyScreen.__init__ -->
 
-See `IssueBodyScreen.__init__()` in `src/erk/tui/screens/issue_body_screen.py`. Accepts `provider`, `issue_number`, `issue_body`, `full_title`, and `content_type: Literal["Plan", "Objective"]` keyword arguments.
+See `PlanBodyScreen.__init__()` in `src/erk/tui/screens/plan_body_screen.py`. Accepts `provider`, `plan_id`, `plan_body`, `full_title`, and `content_type: Literal["Plan", "Objective"]` keyword arguments.
 
 **View-mode-aware routing:** The app determines `content_type` from `_view_mode` BEFORE pushing the screen — it is not derived from state inside the screen:
 

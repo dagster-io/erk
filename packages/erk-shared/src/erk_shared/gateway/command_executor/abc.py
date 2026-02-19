@@ -29,12 +29,12 @@ class CommandExecutor(ABC):
         ...
 
     @abstractmethod
-    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
+    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
         """Close plan and linked PRs.
 
         Args:
-            issue_number: The issue number to close
-            issue_url: The issue URL for PR linkage lookup
+            plan_id: The plan ID to close
+            plan_url: The plan URL for PR linkage lookup
 
         Returns:
             List of PR numbers that were also closed
@@ -57,11 +57,11 @@ class CommandExecutor(ABC):
         ...
 
     @abstractmethod
-    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
+    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Submit plan to queue for remote AI implementation.
 
         Args:
-            issue_number: The issue number to submit
-            issue_url: The issue URL for repository context
+            plan_id: The plan ID to submit
+            plan_url: The plan URL for repository context
         """
         ...

@@ -20,7 +20,7 @@ from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.screens.help_screen import HelpScreen
-from erk.tui.screens.issue_body_screen import IssueBodyScreen
+from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
 from erk.tui.sorting.logic import sort_plans
@@ -38,18 +38,18 @@ from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
-def _build_github_url(issue_url: str, resource_type: str, number: int) -> str:
-    """Build a GitHub URL for a PR or issue from an existing issue URL.
+def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
+    """Build a GitHub URL for a PR or issue from an existing plan URL.
 
     Args:
-        issue_url: Base issue URL (e.g., https://github.com/owner/repo/issues/123)
+        plan_url: Base plan URL (e.g., https://github.com/owner/repo/issues/123)
         resource_type: Either "pull" or "issues"
         number: The PR or issue number
 
     Returns:
         Full URL (e.g., https://github.com/owner/repo/pull/456)
     """
-    base_url = issue_url.rsplit("/issues/", 1)[0]
+    base_url = plan_url.rsplit("/issues/", 1)[0]
     return f"{base_url}/{resource_type}/{number}"
 
 
@@ -75,7 +75,7 @@ class ErkDashApp(App):
         Binding("p", "open_pr", "Open PR"),
         Binding("c", "view_comments", "Comments", show=False),
         Binding("i", "show_implement", "Implement"),
-        Binding("v", "view_issue_body", "View", show=False),
+        Binding("v", "view_plan_body", "View", show=False),
         Binding("slash", "start_filter", "Filter", key_display="/"),
         Binding("s", "toggle_sort", "Sort"),
         Binding("ctrl+p", "command_palette", "Commands"),
@@ -129,7 +129,7 @@ class ErkDashApp(App):
         self._loading = True
         self._filter_state = FilterState.initial()
         self._sort_state = initial_sort if initial_sort is not None else SortState.initial()
-        self._activity_by_issue: dict[int, BranchActivity] = {}
+        self._activity_by_plan: dict[int, BranchActivity] = {}
         self._activity_loading = False
         self._view_mode: ViewMode = ViewMode.PLANS
         self._view_bar: ViewBar | None = None
@@ -194,7 +194,7 @@ class ErkDashApp(App):
                 activity = await loop.run_in_executor(
                     None, self._provider.fetch_branch_activity, rows
                 )
-                self._activity_by_issue = activity
+                self._activity_by_plan = activity
 
         except Exception as e:
             # GitHub API failure, network error, etc.
@@ -274,7 +274,7 @@ class ErkDashApp(App):
         return sort_plans(
             filtered,
             self._sort_state.key,
-            self._activity_by_issue if self._sort_state.key == SortKey.BRANCH_ACTIVITY else None,
+            self._activity_by_plan if self._sort_state.key == SortKey.BRANCH_ACTIVITY else None,
         )
 
     @staticmethod
@@ -423,7 +423,7 @@ class ErkDashApp(App):
         self._sort_state = self._sort_state.toggle()
 
         # If switching to activity sort, load activity data in background
-        if self._sort_state.key == SortKey.BRANCH_ACTIVITY and not self._activity_by_issue:
+        if self._sort_state.key == SortKey.BRANCH_ACTIVITY and not self._activity_by_plan:
             self._load_activity_and_resort()
         else:
             # Re-sort with current data
@@ -448,7 +448,7 @@ class ErkDashApp(App):
 
     def _on_activity_loaded(self, activity: dict[int, BranchActivity]) -> None:
         """Handle activity data loaded - resort the table."""
-        self._activity_by_issue = activity
+        self._activity_by_plan = activity
         self._activity_loading = False
 
         # Re-sort with new activity data
@@ -457,22 +457,22 @@ class ErkDashApp(App):
             self._table.populate(self._rows)
 
     @work(thread=True)
-    def _close_plan_async(self, issue_number: int, issue_url: str) -> None:
+    def _close_plan_async(self, plan_id: int, plan_url: str) -> None:
         """Close plan in background thread with toast notifications.
 
         Args:
-            issue_number: The plan issue number
-            issue_url: The GitHub issue URL
+            plan_id: The plan identifier
+            plan_url: The plan URL
         """
         # Error boundary: catch all exceptions from the close operation to display
         # them as toast notifications rather than crashing the TUI.
         try:
-            closed_prs = self._provider.close_plan(issue_number, issue_url)
+            closed_prs = self._provider.close_plan(plan_id, plan_url)
             # Success toast
             if closed_prs:
-                msg = f"Closed plan #{issue_number} (and {len(closed_prs)} linked PRs)"
+                msg = f"Closed plan #{plan_id} (and {len(closed_prs)} linked PRs)"
             else:
-                msg = f"Closed plan #{issue_number}"
+                msg = f"Closed plan #{plan_id}"
             self.call_from_thread(self.notify, msg, timeout=3)
             # Trigger data refresh
             self.call_from_thread(self.action_refresh)
@@ -480,7 +480,7 @@ class ErkDashApp(App):
             # Error toast
             self.call_from_thread(
                 self.notify,
-                f"Failed to close plan #{issue_number}: {e}",
+                f"Failed to close plan #{plan_id}: {e}",
                 severity="error",
                 timeout=5,
             )
@@ -545,7 +545,7 @@ class ErkDashApp(App):
             )
         )
 
-    def action_view_issue_body(self) -> None:
+    def action_view_plan_body(self) -> None:
         """Display the plan/objective content in a modal (fetched on-demand)."""
         row = self._get_selected_row()
         if row is None:
@@ -553,10 +553,10 @@ class ErkDashApp(App):
         content_type = "Objective" if self._view_mode == ViewMode.OBJECTIVES else "Plan"
         # Push screen that will fetch content on-demand
         self.push_screen(
-            IssueBodyScreen(
+            PlanBodyScreen(
                 provider=self._provider,
-                issue_number=row.issue_number,
-                issue_body=row.issue_body,
+                plan_id=row.plan_id,
+                plan_body=row.plan_body,
                 full_title=row.full_title,
                 content_type=content_type,
             )
@@ -644,10 +644,10 @@ class ErkDashApp(App):
             self._provider.browser.launch(row.pr_url)
             if self._status_bar is not None:
                 self._status_bar.set_message(f"Opened PR #{row.pr_number}")
-        elif row.issue_url:
-            self._provider.browser.launch(row.issue_url)
+        elif row.plan_url:
+            self._provider.browser.launch(row.plan_url)
             if self._status_bar is not None:
-                self._status_bar.set_message(f"Opened issue #{row.issue_number}")
+                self._status_bar.set_message(f"Opened issue #{row.plan_id}")
 
     def action_open_pr(self) -> None:
         """Open selected PR in browser."""
@@ -669,7 +669,7 @@ class ErkDashApp(App):
         if row is None:
             return
 
-        cmd = f"erk implement {row.issue_number}"
+        cmd = f"erk implement {row.plan_id}"
         if self._status_bar is not None:
             self._status_bar.set_message(f"Copy: {cmd}")
 
@@ -686,13 +686,13 @@ class ErkDashApp(App):
         if row is None:
             return
 
-        if row.issue_url is None:
+        if row.plan_url is None:
             self.notify("Cannot close plan: no issue URL", severity="warning")
             return
 
         # Show starting toast and run async - no blocking
-        self.notify(f"Closing plan #{row.issue_number}...")
-        self._close_plan_async(row.issue_number, row.issue_url)
+        self.notify(f"Closing plan #{row.plan_id}...")
+        self._close_plan_async(row.plan_id, row.plan_url)
 
     def _copy_checkout_command(self, row: PlanRowData) -> None:
         """Copy appropriate checkout command based on row state.
@@ -744,15 +744,15 @@ class ErkDashApp(App):
             return
 
         if command_id == "open_browser":
-            url = row.pr_url or row.issue_url
+            url = row.pr_url or row.plan_url
             if url:
                 self._provider.browser.launch(url)
                 self.notify(f"Opened {url}")
 
         elif command_id == "open_issue":
-            if row.issue_url:
-                self._provider.browser.launch(row.issue_url)
-                self.notify(f"Opened issue #{row.issue_number}")
+            if row.plan_url:
+                self._provider.browser.launch(row.plan_url)
+                self.notify(f"Opened issue #{row.plan_id}")
 
         elif command_id == "open_pr":
             if row.pr_url:
@@ -773,24 +773,22 @@ class ErkDashApp(App):
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_prepare":
-            cmd = f"erk prepare {row.issue_number}"
+            cmd = f"erk prepare {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_prepare_activate":
-            cmd = (
-                f'source "$(erk prepare {row.issue_number} --script)" && erk implement --dangerous'
-            )
+            cmd = f'source "$(erk prepare {row.plan_id} --script)" && erk implement --dangerous'
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_submit":
-            cmd = f"erk plan submit {row.issue_number}"
+            cmd = f"erk plan submit {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_replan":
-            cmd = f"erk plan replan {row.issue_number}"
+            cmd = f"erk plan replan {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
@@ -853,13 +851,13 @@ class ErkDashApp(App):
                 )
 
         elif command_id == "close_plan":
-            if row.issue_url:
+            if row.plan_url:
                 # Show starting toast and run async - no modal blocking
-                self.notify(f"Closing plan #{row.issue_number}...")
-                self._close_plan_async(row.issue_number, row.issue_url)
+                self.notify(f"Closing plan #{row.plan_id}...")
+                self._close_plan_async(row.plan_id, row.plan_url)
 
         elif command_id == "submit_to_queue":
-            if row.issue_url:
+            if row.plan_url:
                 # Open detail modal to show streaming output
                 executor = RealCommandExecutor(
                     browser_launch=self._provider.browser.launch,
@@ -880,9 +878,9 @@ class ErkDashApp(App):
                 # Trigger the streaming command after screen is mounted
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "plan", "submit", str(row.issue_number)],
+                        ["erk", "plan", "submit", str(row.plan_id)],
                         cwd=self._provider.repo_root,
-                        title=f"Submitting Plan #{row.issue_number}",
+                        title=f"Submitting Plan #{row.plan_id}",
                     )
                 )
 
@@ -927,25 +925,25 @@ class ErkDashApp(App):
                 )
 
         elif command_id == "copy_replan":
-            cmd = f"/erk:replan {row.issue_number}"
+            cmd = f"/erk:replan {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         # === OBJECTIVE COMMANDS ===
         elif command_id == "copy_plan":
-            cmd = f"erk objective plan {row.issue_number}"
+            cmd = f"erk objective plan {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_view":
-            cmd = f"erk objective view {row.issue_number}"
+            cmd = f"erk objective view {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "open_objective":
-            if row.issue_url:
-                self._provider.browser.launch(row.issue_url)
-                self.notify(f"Opened objective #{row.issue_number}")
+            if row.plan_url:
+                self._provider.browser.launch(row.plan_url)
+                self.notify(f"Opened objective #{row.plan_id}")
 
         elif command_id == "one_shot_plan":
             self._push_streaming_detail(
@@ -954,31 +952,31 @@ class ErkDashApp(App):
                     "erk",
                     "objective",
                     "plan",
-                    str(row.issue_number),
+                    str(row.plan_id),
                     "--one-shot",
                 ],
-                title=f"Implement (One-Shot) #{row.issue_number}",
+                title=f"Implement (One-Shot) #{row.plan_id}",
                 timeout=600.0,
             )
 
         elif command_id == "check_objective":
             self._push_streaming_detail(
                 row=row,
-                command=["erk", "objective", "check", str(row.issue_number)],
-                title=f"Check Objective #{row.issue_number}",
+                command=["erk", "objective", "check", str(row.plan_id)],
+                title=f"Check Objective #{row.plan_id}",
                 timeout=30.0,
             )
 
         elif command_id == "close_objective":
             self._push_streaming_detail(
                 row=row,
-                command=["erk", "objective", "close", str(row.issue_number), "--force"],
-                title=f"Close Objective #{row.issue_number}",
+                command=["erk", "objective", "close", str(row.plan_id), "--force"],
+                title=f"Close Objective #{row.plan_id}",
                 timeout=30.0,
             )
 
         elif command_id == "codespace_run_plan":
-            cmd = f"erk codespace run objective plan {row.issue_number}"
+            cmd = f"erk codespace run objective plan {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
@@ -1004,10 +1002,10 @@ class ErkDashApp(App):
         """Handle click on plan cell - open issue in browser."""
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
-            if row.issue_url:
-                self._provider.browser.launch(row.issue_url)
+            if row.plan_url:
+                self._provider.browser.launch(row.plan_url)
                 if self._status_bar is not None:
-                    self._status_bar.set_message(f"Opened issue #{row.issue_number}")
+                    self._status_bar.set_message(f"Opened issue #{row.plan_id}")
 
     @on(PlanDataTable.PrClicked)
     def on_pr_clicked(self, event: PlanDataTable.PrClicked) -> None:
@@ -1050,13 +1048,13 @@ class ErkDashApp(App):
             row = self._rows[event.row_index]
             # Build URL based on which field is set
             # PR takes priority (plan_completed state)
-            if row.learn_plan_pr is not None and row.issue_url:
-                pr_url = _build_github_url(row.issue_url, "pull", row.learn_plan_pr)
+            if row.learn_plan_pr is not None and row.plan_url:
+                pr_url = _build_github_url(row.plan_url, "pull", row.learn_plan_pr)
                 self._provider.browser.launch(pr_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened learn PR #{row.learn_plan_pr}")
-            elif row.learn_plan_issue is not None and row.issue_url:
-                issue_url = _build_github_url(row.issue_url, "issues", row.learn_plan_issue)
+            elif row.learn_plan_issue is not None and row.plan_url:
+                issue_url = _build_github_url(row.plan_url, "issues", row.learn_plan_issue)
                 self._provider.browser.launch(issue_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened learn issue #{row.learn_plan_issue}")
@@ -1072,8 +1070,8 @@ class ErkDashApp(App):
         """Handle click on objective cell - open objective issue in browser."""
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
-            if row.objective_issue is not None and row.issue_url:
-                objective_url = _build_github_url(row.issue_url, "issues", row.objective_issue)
+            if row.objective_issue is not None and row.plan_url:
+                objective_url = _build_github_url(row.plan_url, "issues", row.objective_issue)
                 self._provider.browser.launch(objective_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened objective #{row.objective_issue}")

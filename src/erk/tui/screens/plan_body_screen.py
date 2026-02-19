@@ -14,7 +14,7 @@ from textual.widgets import Label, Markdown
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
-class IssueBodyScreen(ModalScreen):
+class PlanBodyScreen(ModalScreen):
     """Modal screen displaying the full plan text fetched on-demand."""
 
     BINDINGS = [
@@ -24,7 +24,7 @@ class IssueBodyScreen(ModalScreen):
     ]
 
     DEFAULT_CSS = """
-    IssueBodyScreen {
+    PlanBodyScreen {
         align: center middle;
     }
 
@@ -93,8 +93,8 @@ class IssueBodyScreen(ModalScreen):
         self,
         *,
         provider: PlanDataProvider,
-        issue_number: int,
-        issue_body: str,
+        plan_id: int,
+        plan_body: str,
         full_title: str,
         content_type: Literal["Plan", "Objective"],
     ) -> None:
@@ -102,15 +102,15 @@ class IssueBodyScreen(ModalScreen):
 
         Args:
             provider: Data provider for fetching plan/objective content
-            issue_number: The GitHub issue number
-            issue_body: The issue body (contains metadata with comment ID)
+            plan_id: The plan identifier
+            plan_body: The plan body (contains metadata with comment ID)
             full_title: The full plan/objective title for display
             content_type: Display label - "Plan" or "Objective"
         """
         super().__init__()
         self._provider = provider
-        self._issue_number = issue_number
-        self._issue_body = issue_body
+        self._plan_id = plan_id
+        self._plan_body = plan_body
         self._full_title = full_title
         self._content_type = content_type
         self._content: str | None = None
@@ -123,7 +123,7 @@ class IssueBodyScreen(ModalScreen):
         with Vertical(id="body-dialog"):
             # Header: Plan/Objective number + title
             with Vertical(id="body-header"):
-                yield Label(f"{self._content_type} #{self._issue_number}", id="body-plan-number")
+                yield Label(f"{self._content_type} #{self._plan_id}", id="body-plan-number")
                 yield Label(self._full_title, id="body-title", markup=False)
 
             # Divider
@@ -149,11 +149,9 @@ class IssueBodyScreen(ModalScreen):
         # them in the UI rather than crashing the TUI.
         try:
             if self._content_type == "Objective":
-                content = self._provider.fetch_objective_content(
-                    self._issue_number, self._issue_body
-                )
+                content = self._provider.fetch_objective_content(self._plan_id, self._plan_body)
             else:
-                content = self._provider.fetch_plan_content(self._issue_number, self._issue_body)
+                content = self._provider.fetch_plan_content(self._plan_id, self._plan_body)
         except Exception as e:
             error = str(e)
 
