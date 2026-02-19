@@ -10,7 +10,7 @@ Usage:
 
     # Upload and update plan issue
     erk exec upload-session --session-file /path/to/session.jsonl \\
-        --session-id abc-123 --source remote --issue-number 2521
+        --session-id abc-123 --source remote --plan-id 2521
 
 Output:
     Structured JSON output with gist info and updated plan header fields
@@ -21,14 +21,14 @@ Exit Codes:
 
 Examples:
     $ erk exec upload-session --session-file session.jsonl \\
-          --session-id abc --source remote --issue-number 123
+          --session-id abc --source remote --plan-id 123
     {
       "success": true,
       "gist_id": "abc123...",
       "gist_url": "https://gist.github.com/user/abc123...",
       "raw_url": "https://gist.githubusercontent.com/...",
       "session_id": "abc",
-      "issue_number": 123,
+      "plan_id": 123,
       "issue_updated": true
     }
 """
@@ -69,9 +69,9 @@ from erk_shared.plan_store.types import PlanNotFound
     help="Session source: 'local' or 'remote'",
 )
 @click.option(
-    "--issue-number",
+    "--plan-id",
     type=int,
-    help="Optional erk-plan issue number to update with gist info",
+    help="Optional plan identifier to update with gist info",
 )
 @click.pass_context
 def upload_session(
@@ -79,12 +79,12 @@ def upload_session(
     session_file: Path,
     session_id: str,
     source: Literal["local", "remote"],
-    issue_number: int | None,
+    plan_id: int | None,
 ) -> None:
     """Upload a session JSONL to GitHub Gist and update plan header.
 
     Creates a secret gist containing the session JSONL file, then optionally
-    updates the plan-header metadata in the associated erk-plan issue with
+    updates the plan-header metadata in the associated plan with
     the gist URL and session information.
     """
     repo_root = require_repo_root(ctx)
@@ -122,12 +122,12 @@ def upload_session(
         "session_id": session_id,
     }
 
-    # Update plan issue if requested
-    if issue_number is not None:
-        result["issue_number"] = issue_number
+    # Update plan if requested
+    if plan_id is not None:
+        result["plan_id"] = plan_id
 
         backend = require_plan_backend(ctx)
-        plan_id = str(issue_number)
+        plan_id_str = str(plan_id)
         timestamp = time.now().replace(tzinfo=UTC).isoformat()
         metadata: dict[str, object] = {
             "last_session_gist_url": gist_result.gist_url,
@@ -138,17 +138,17 @@ def upload_session(
         }
 
         # LBYL: Check plan exists before updating
-        plan_result = backend.get_plan(repo_root, plan_id)
+        plan_result = backend.get_plan(repo_root, plan_id_str)
         if isinstance(plan_result, PlanNotFound):
-            # Issue not found but gist was created - partial success
+            # Plan not found but gist was created - partial success
             result["issue_updated"] = False
-            result["issue_update_error"] = f"Issue #{issue_number} not found"
+            result["issue_update_error"] = f"Plan #{plan_id} not found"
         else:
             try:
-                backend.update_metadata(repo_root, plan_id, metadata)
+                backend.update_metadata(repo_root, plan_id_str, metadata)
                 result["issue_updated"] = True
             except RuntimeError as e:
-                # Issue update failed but gist was created - partial success
+                # Plan update failed but gist was created - partial success
                 result["issue_updated"] = False
                 result["issue_update_error"] = str(e)
 

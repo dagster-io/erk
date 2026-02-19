@@ -55,7 +55,7 @@ def test_create_worker_impl_success(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_id"] == 42
 
     # Verify .worker-impl/ was created
     worker_impl = tmp_path / ".worker-impl"

@@ -60,8 +60,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
-      issue_number: ${{ steps.read_result.outputs.issue_number }}
-      issue_title: ${{ steps.read_result.outputs.issue_title }}
+      plan_id: ${{ steps.read_result.outputs.plan_id }}
+      plan_title: ${{ steps.read_result.outputs.plan_title }}
       base_branch: ${{ steps.trunk.outputs.trunk_branch }}
     steps:
       - name: Validate required secrets
@@ -158,27 +158,27 @@ jobs:
         id: read_result
         if: steps.plan.outputs.plan_success == 'true'
         run: |
-          ISSUE_NUMBER=$(jq -r '.issue_number' .impl/plan-result.json)
-          ISSUE_TITLE=$(jq -r '.title' .impl/plan-result.json)
-          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
-          echo "issue_title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
-          echo "Plan saved as issue #$ISSUE_NUMBER: $ISSUE_TITLE"
+          PLAN_ID=$(jq -r '.issue_number' .impl/plan-result.json)
+          PLAN_TITLE=$(jq -r '.title' .impl/plan-result.json)
+          echo "plan_id=$PLAN_ID" >> $GITHUB_OUTPUT
+          echo "plan_title=$PLAN_TITLE" >> $GITHUB_OUTPUT
+          echo "Plan saved as #$PLAN_ID: $PLAN_TITLE"
 
       - name: Validate plan format
-        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.issue_number != ''
+        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.plan_id != ''
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
-          erk plan check ${{ steps.read_result.outputs.issue_number }}
+          erk plan check ${{ steps.read_result.outputs.plan_id }}
 
       - name: Register one-shot plan with issue and PR
-        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.issue_number != ''
+        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.plan_id != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
           erk exec register-one-shot-plan \
-            --issue-number "${{ steps.read_result.outputs.issue_number }}" \
+            --issue-number "${{ steps.read_result.outputs.plan_id }}" \
             --run-id "${{ github.run_id }}" \
             --pr-number "${{ inputs.pr_number }}" \
             --submitted-by "${{ inputs.submitted_by }}" \
@@ -187,14 +187,14 @@ jobs:
       - name: Update objective roadmap node
         if: >
           steps.plan.outputs.plan_success == 'true'
-          && steps.read_result.outputs.issue_number != ''
+          && steps.read_result.outputs.plan_id != ''
           && inputs.objective_issue != ''
           && inputs.node_id != ''
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
           NODE_ID: ${{ inputs.node_id }}
-          PLAN_NUMBER: ${{ steps.read_result.outputs.issue_number }}
+          PLAN_NUMBER: ${{ steps.read_result.outputs.plan_id }}
         run: |
           erk exec update-objective-node \
             "$OBJECTIVE_ISSUE" \
@@ -209,11 +209,11 @@ jobs:
 
   implement:
     needs: plan
-    if: needs.plan.outputs.issue_number != ''
+    if: needs.plan.outputs.plan_id != ''
     uses: ./.github/workflows/plan-implement.yml
     with:
-      plan_id: ${{ needs.plan.outputs.issue_number }}
-      issue_title: ${{ needs.plan.outputs.issue_title }}
+      plan_id: ${{ needs.plan.outputs.plan_id }}
+      plan_title: ${{ needs.plan.outputs.plan_title }}
       submitted_by: ${{ inputs.submitted_by }}
       distinct_id: ${{ inputs.distinct_id }}
       branch_name: ${{ inputs.branch_name }}

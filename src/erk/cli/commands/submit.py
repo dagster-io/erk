@@ -763,7 +763,7 @@ def _submit_single_issue(
         # Required inputs (always passed)
         "plan_id": str(issue_number),
         "submitted_by": submitted_by,
-        "issue_title": issue.title,
+        "plan_title": issue.title,
         "branch_name": branch_name,
         "pr_number": str(pr_number),
         "base_branch": base_branch,

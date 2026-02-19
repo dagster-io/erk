@@ -9,7 +9,7 @@ This replaces ~40 lines of bash heredoc template assembly in GitHub Actions work
 
 Usage:
     erk exec post-workflow-started-comment \\
-        --issue-number 123 \\
+        --plan-id 123 \\
         --branch-name my-feature-branch \\
         --pr-number 456 \\
         --run-id 12345678 \\
@@ -25,7 +25,7 @@ Exit Codes:
 
 Examples:
     $ erk exec post-workflow-started-comment \\
-        --issue-number 123 \\
+        --plan-id 123 \\
         --branch-name feat-auth \\
         --pr-number 456 \\
         --run-id 99999 \\
@@ -33,7 +33,7 @@ Examples:
         --repository acme/app
     {
       "success": true,
-      "issue_number": 123
+      "plan_id": 123
     }
 """
 
@@ -52,7 +52,7 @@ class PostSuccess:
     """Success result when comment is posted."""
 
     success: bool
-    issue_number: int
+    plan_id: int
 
 
 @dataclass(frozen=True)
@@ -66,7 +66,7 @@ class PostError:
 
 def _build_workflow_started_comment(
     *,
-    issue_number: int,
+    plan_id: int,
     branch_name: str,
     pr_number: int,
     run_id: str,
@@ -76,7 +76,7 @@ def _build_workflow_started_comment(
     """Build the workflow started comment body.
 
     Args:
-        issue_number: GitHub issue number
+        plan_id: Plan identifier
         branch_name: Git branch name
         pr_number: Pull request number
         run_id: GitHub Actions workflow run ID
@@ -101,7 +101,7 @@ started_at: {started_at}
 workflow_run_id: "{run_id}"
 workflow_run_url: {run_url}
 branch_name: {branch_name}
-issue_number: {issue_number}
+plan_id: {plan_id}
 ```
 <!-- /erk:metadata-block:workflow-started -->
 
@@ -120,7 +120,7 @@ Setup completed successfully.
 
 
 @click.command(name="post-workflow-started-comment")
-@click.option("--issue-number", type=int, required=True, help="GitHub issue number")
+@click.option("--plan-id", type=int, required=True, help="Plan identifier")
 @click.option("--branch-name", type=str, required=True, help="Git branch name")
 @click.option("--pr-number", type=int, required=True, help="Pull request number")
 @click.option("--run-id", type=str, required=True, help="GitHub Actions workflow run ID")
@@ -130,7 +130,7 @@ Setup completed successfully.
 def post_workflow_started_comment(
     ctx: click.Context,
     *,
-    issue_number: int,
+    plan_id: int,
     branch_name: str,
     pr_number: int,
     run_id: str,
@@ -140,14 +140,14 @@ def post_workflow_started_comment(
     """Post a workflow started comment to a GitHub issue.
 
     Posts a structured comment with YAML metadata block indicating that a
-    GitHub Actions workflow has started processing the issue.
+    GitHub Actions workflow has started processing the plan.
     """
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
 
     # Build comment body
     comment_body = _build_workflow_started_comment(
-        issue_number=issue_number,
+        plan_id=plan_id,
         branch_name=branch_name,
         pr_number=pr_number,
         run_id=run_id,
@@ -157,8 +157,8 @@ def post_workflow_started_comment(
 
     # Post comment
     try:
-        github.add_comment(repo_root, issue_number, comment_body)
-        result = PostSuccess(success=True, issue_number=issue_number)
+        github.add_comment(repo_root, plan_id, comment_body)
+        result = PostSuccess(success=True, plan_id=plan_id)
         click.echo(json.dumps(asdict(result), indent=2))
     except RuntimeError as e:
         result = PostError(

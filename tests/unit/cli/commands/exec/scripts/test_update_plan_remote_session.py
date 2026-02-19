@@ -70,7 +70,7 @@ def test_update_plan_remote_session_success(tmp_path: Path) -> None:
     result = runner.invoke(
         update_plan_remote_session,
         [
-            "--issue-number",
+            "--plan-id",
             "42",
             "--run-id",
             "12345678",
@@ -83,7 +83,7 @@ def test_update_plan_remote_session_success(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_id"] == 42
 
     # Verify the body was actually updated
     assert len(fake_gh.updated_bodies) == 1
@@ -106,7 +106,7 @@ def test_update_plan_remote_session_issue_not_found(tmp_path: Path) -> None:
     result = runner.invoke(
         update_plan_remote_session,
         [
-            "--issue-number",
+            "--plan-id",
             "999",
             "--run-id",
             "12345",
@@ -120,7 +120,7 @@ def test_update_plan_remote_session_issue_not_found(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "issue-not-found"
+    assert output["error_type"] == "plan-not-found"
     assert "999" in output["message"]
 
 
@@ -133,7 +133,7 @@ def test_update_plan_remote_session_missing_plan_header(tmp_path: Path) -> None:
     result = runner.invoke(
         update_plan_remote_session,
         [
-            "--issue-number",
+            "--plan-id",
             "42",
             "--run-id",
             "12345",
@@ -185,7 +185,7 @@ def test_update_plan_remote_session_preserves_existing_fields(tmp_path: Path) ->
     result = runner.invoke(
         update_plan_remote_session,
         [
-            "--issue-number",
+            "--plan-id",
             "42",
             "--run-id",
             "new-run-999",
@@ -228,7 +228,7 @@ def test_update_plan_remote_session_with_branch_name(tmp_path: Path) -> None:
     result = runner.invoke(
         update_plan_remote_session,
         [
-            "--issue-number",
+            "--plan-id",
             "42",
             "--run-id",
             "12345678",
@@ -260,7 +260,7 @@ def test_update_plan_remote_session_without_branch_name(tmp_path: Path) -> None:
     result = runner.invoke(
         update_plan_remote_session,
         [
-            "--issue-number",
+            "--plan-id",
             "42",
             "--run-id",
             "12345678",

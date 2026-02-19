@@ -9,7 +9,7 @@ replacing ~30 lines of bash in GitHub Actions workflows.
 
 Usage:
     erk exec ci-update-pr-body \\
-        --issue-number 123 \\
+        --plan-id 123 \\
         [--run-id 456789] \\
         [--run-url https://github.com/owner/repo/actions/runs/456789]
 
@@ -21,14 +21,14 @@ Exit Codes:
     1: Error (no PR for branch, empty diff, Claude failure, or GitHub API failed)
 
 Examples:
-    $ erk exec ci-update-pr-body --issue-number 123
+    $ erk exec ci-update-pr-body --plan-id 123
     {
       "success": true,
       "pr_number": 789
     }
 
     $ erk exec ci-update-pr-body \\
-        --issue-number 123 \\
+        --plan-id 123 \\
         --run-id 456789 \\
         --run-url https://github.com/owner/repo/actions/runs/456789
     {
@@ -271,13 +271,13 @@ def _update_pr_body_impl(
 
 
 @click.command(name="ci-update-pr-body")
-@click.option("--issue-number", type=int, required=True, help="Issue number to close on merge")
+@click.option("--plan-id", type=int, required=True, help="Plan identifier to close on merge")
 @click.option("--run-id", type=str, default=None, help="Optional workflow run ID")
 @click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
 @click.pass_context
 def ci_update_pr_body(
     ctx: click.Context,
-    issue_number: int,
+    plan_id: int,
     run_id: str | None,
     run_url: str | None,
 ) -> None:
@@ -301,7 +301,7 @@ def ci_update_pr_body(
         github=github,
         executor=executor,
         repo_root=repo_root,
-        issue_number=issue_number,
+        issue_number=plan_id,
         run_id=run_id,
         run_url=run_url,
         plans_repo=plans_repo,

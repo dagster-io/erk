@@ -60,7 +60,7 @@ def _create_github_with_issue(issue_number: int) -> tuple[FakeGitHub, FakeGitHub
 def test_build_pr_body_includes_all_sections() -> None:
     """Test that _build_pr_body includes all required sections."""
     body = _build_pr_body(
-        issue_number=456,
+        plan_id=456,
         behind_count=5,
         base_branch="master",
         recent_commits="abc1234 Fix bug\ndef5678 Add feature",
@@ -84,7 +84,7 @@ def test_build_pr_body_includes_all_sections() -> None:
 def test_build_pr_body_without_recent_commits() -> None:
     """Test that _build_pr_body works without recent commits."""
     body = _build_pr_body(
-        issue_number=456,
+        plan_id=456,
         behind_count=0,
         base_branch="main",
         recent_commits=None,
@@ -103,7 +103,7 @@ def test_build_pr_body_without_recent_commits() -> None:
 def test_build_pr_body_with_empty_recent_commits() -> None:
     """Test that _build_pr_body handles empty recent commits string."""
     body = _build_pr_body(
-        issue_number=123,
+        plan_id=123,
         behind_count=3,
         base_branch="master",
         recent_commits="",
@@ -128,7 +128,7 @@ def test_build_issue_comment() -> None:
 def test_build_no_changes_title() -> None:
     """Test that _build_no_changes_title formats correctly."""
     title = _build_no_changes_title(
-        issue_number=5799, original_title="Fix RealGraphite Cache Invalidation"
+        plan_id=5799, original_title="Fix RealGraphite Cache Invalidation"
     )
 
     assert title == "[no-changes] P5799 Impl Attempt: Fix RealGraphite Cache Invalidation"
@@ -136,7 +136,7 @@ def test_build_no_changes_title() -> None:
 
 def test_build_no_changes_title_preserves_original() -> None:
     """Test that _build_no_changes_title preserves the original title exactly."""
-    title = _build_no_changes_title(issue_number=123, original_title="Add [feature] flag support")
+    title = _build_no_changes_title(plan_id=123, original_title="Add [feature] flag support")
 
     assert title == "[no-changes] P123 Impl Attempt: Add [feature] flag support"
 
@@ -160,7 +160,7 @@ def test_cli_success(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "5",
@@ -180,7 +180,7 @@ def test_cli_success(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["pr_number"] == 123
-    assert output["issue_number"] == 456
+    assert output["plan_id"] == 456
 
 
 def test_cli_success_minimal_options(tmp_path: Path) -> None:
@@ -197,7 +197,7 @@ def test_cli_success_minimal_options(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "0",
@@ -228,7 +228,7 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "5",
@@ -268,7 +268,7 @@ def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "0",
@@ -301,7 +301,7 @@ def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "0",
@@ -328,7 +328,7 @@ def test_cli_requires_pr_number() -> None:
     result = runner.invoke(
         handle_no_changes_command,
         [
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "0",
@@ -341,8 +341,8 @@ def test_cli_requires_pr_number() -> None:
     assert "Missing option" in result.output or "required" in result.output.lower()
 
 
-def test_cli_requires_issue_number() -> None:
-    """Test that --issue-number is required."""
+def test_cli_requires_plan_id() -> None:
+    """Test that --plan-id is required."""
     runner = CliRunner()
 
     result = runner.invoke(
@@ -370,7 +370,7 @@ def test_cli_requires_behind_count() -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--base-branch",
             "main",
@@ -390,7 +390,7 @@ def test_cli_requires_base_branch() -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "0",
@@ -412,7 +412,7 @@ def test_cli_requires_original_title() -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "0",
@@ -439,7 +439,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "0",
@@ -457,12 +457,12 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     # Verify expected keys
     assert "success" in output
     assert "pr_number" in output
-    assert "issue_number" in output
+    assert "plan_id" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
     assert isinstance(output["pr_number"], int)
-    assert isinstance(output["issue_number"], int)
+    assert isinstance(output["plan_id"], int)
 
 
 def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
@@ -479,7 +479,7 @@ def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--issue-number",
+            "--plan-id",
             "456",
             "--behind-count",
             "5",
@@ -502,10 +502,10 @@ def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
 
 def test_success_dataclass_frozen() -> None:
     """Test that HandleNoChangesSuccess is immutable."""
-    success = HandleNoChangesSuccess(success=True, pr_number=123, issue_number=456)
+    success = HandleNoChangesSuccess(success=True, pr_number=123, plan_id=456)
     assert success.success is True
     assert success.pr_number == 123
-    assert success.issue_number == 456
+    assert success.plan_id == 456
 
 
 def test_error_dataclass_frozen() -> None:

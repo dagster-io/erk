@@ -9,7 +9,7 @@ This replaces workflow failure with an informational PR that users can review an
 Usage:
     erk exec handle-no-changes \
         --pr-number 123 \
-        --issue-number 456 \
+        --plan-id 456 \
         --behind-count 5 \
         --base-branch master \
         [--recent-commits "abc1234 Fix bug\\ndef5678 Add feature"] \
@@ -38,7 +38,7 @@ class HandleNoChangesSuccess:
 
     success: bool
     pr_number: int
-    issue_number: int
+    plan_id: int
 
 
 @dataclass(frozen=True)
@@ -56,22 +56,22 @@ _LABEL_NO_CHANGES_DESC = "Implementation produced no code changes"
 _LABEL_NO_CHANGES_COLOR = "FFA500"
 
 
-def _build_no_changes_title(*, issue_number: int, original_title: str) -> str:
+def _build_no_changes_title(*, plan_id: int, original_title: str) -> str:
     """Build PR title indicating no changes were produced.
 
     Args:
-        issue_number: Plan issue number
+        plan_id: Plan identifier
         original_title: Original PR title
 
     Returns:
-        New title with [no-changes] prefix and issue reference
+        New title with [no-changes] prefix and plan reference
     """
-    return f"[no-changes] P{issue_number} Impl Attempt: {original_title}"
+    return f"[no-changes] P{plan_id} Impl Attempt: {original_title}"
 
 
 def _build_pr_body(
     *,
-    issue_number: int,
+    plan_id: int,
     behind_count: int,
     base_branch: str,
     recent_commits: str | None,
@@ -80,7 +80,7 @@ def _build_pr_body(
     """Build PR body explaining why no changes were made.
 
     Args:
-        issue_number: Plan issue number for linking
+        plan_id: Plan identifier for linking
         behind_count: How many commits behind base branch
         base_branch: Base branch name
         recent_commits: Recent commits on base branch (newline-separated)
@@ -113,12 +113,12 @@ def _build_pr_body(
     parts.append("### Next Steps")
     parts.append("")
     parts.append("1. Review the recent commits above to check if the work is done")
-    parts.append(f"2. If done: Close this PR and the linked plan issue #{issue_number}")
+    parts.append(f"2. If done: Close this PR and the linked plan #{plan_id}")
     parts.append("3. If not done: Investigate why no changes were produced")
     parts.append("")
     parts.append("---")
     parts.append("")
-    parts.append(f"Closes #{issue_number}")
+    parts.append(f"Closes #{plan_id}")
 
     if run_url:
         parts.append("")
@@ -145,7 +145,7 @@ def _build_issue_comment(*, pr_number: int) -> str:
 
 @click.command(name="handle-no-changes")
 @click.option("--pr-number", type=int, required=True, help="PR number to update")
-@click.option("--issue-number", type=int, required=True, help="Plan issue number")
+@click.option("--plan-id", type=int, required=True, help="Plan identifier")
 @click.option("--behind-count", type=int, required=True, help="How many commits behind base branch")
 @click.option("--base-branch", type=str, required=True, help="Base branch name")
 @click.option("--original-title", type=str, required=True, help="Original PR title")
@@ -161,7 +161,7 @@ def handle_no_changes(
     ctx: click.Context,
     *,
     pr_number: int,
-    issue_number: int,
+    plan_id: int,
     behind_count: int,
     base_branch: str,
     original_title: str,
@@ -172,7 +172,7 @@ def handle_no_changes(
 
     Updates the PR with diagnostic information explaining why no changes were made,
     adds the no-changes label, marks the PR ready for review, and adds a comment
-    to the plan issue.
+    to the plan.
 
     Exits with code 0 on success (making the workflow succeed rather than fail).
     """
@@ -181,9 +181,9 @@ def handle_no_changes(
     repo_root = require_repo_root(ctx)
 
     # Build PR title and body
-    new_title = _build_no_changes_title(issue_number=issue_number, original_title=original_title)
+    new_title = _build_no_changes_title(plan_id=plan_id, original_title=original_title)
     pr_body = _build_pr_body(
-        issue_number=issue_number,
+        plan_id=plan_id,
         behind_count=behind_count,
         base_branch=base_branch,
         recent_commits=recent_commits,
@@ -237,15 +237,15 @@ def handle_no_changes(
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
 
-    # 4. Add comment to plan issue via PlanBackend
+    # 4. Add comment to plan via PlanBackend
     try:
         comment = _build_issue_comment(pr_number=pr_number)
-        backend.add_comment(repo_root, str(issue_number), comment)
+        backend.add_comment(repo_root, str(plan_id), comment)
     except RuntimeError as e:
         result = HandleNoChangesError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to add issue comment: {e}",
+            message=f"Failed to add plan comment: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
@@ -254,6 +254,6 @@ def handle_no_changes(
     result = HandleNoChangesSuccess(
         success=True,
         pr_number=pr_number,
-        issue_number=issue_number,
+        plan_id=plan_id,
     )
     click.echo(json.dumps(asdict(result), indent=2))

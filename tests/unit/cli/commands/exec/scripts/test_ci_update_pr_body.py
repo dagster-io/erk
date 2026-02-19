@@ -470,7 +470,7 @@ def test_cli_success(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--issue-number", "456"],
+        ["--plan-id", "456"],
         obj=ctx,
     )
 
@@ -529,7 +529,7 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
     result = runner.invoke(
         ci_update_pr_body_command,
         [
-            "--issue-number",
+            "--plan-id",
             "456",
             "--run-id",
             "789",
@@ -558,7 +558,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--issue-number", "456"],
+        ["--plan-id", "456"],
         obj=ctx,
     )
 
@@ -568,8 +568,8 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     assert output["error"] == "pr-not-found"
 
 
-def test_cli_requires_issue_number() -> None:
-    """Test that --issue-number is required."""
+def test_cli_requires_plan_id() -> None:
+    """Test that --plan-id is required."""
     runner = CliRunner()
 
     result = runner.invoke(ci_update_pr_body_command, [])
@@ -626,7 +626,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--issue-number", "456"],
+        ["--plan-id", "456"],
         obj=ctx,
     )
 
@@ -655,7 +655,7 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--issue-number", "456"],
+        ["--plan-id", "456"],
         obj=ctx,
     )
 

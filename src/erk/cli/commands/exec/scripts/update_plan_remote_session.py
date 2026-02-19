@@ -1,11 +1,11 @@
 """Update plan-header metadata with remote session artifact location.
 
-This exec command updates the plan-header metadata block in a GitHub issue
+This exec command updates the plan-header metadata block in a plan
 with the remote implementation session information (run ID, session ID, timestamp).
 This is called from CI after uploading the session artifact.
 
 Usage:
-    erk exec update-plan-remote-session --issue-number 123 --run-id 12345 --session-id abc
+    erk exec update-plan-remote-session --plan-id 123 --run-id 12345 --session-id abc
 
 Output:
     JSON with success status or error information
@@ -15,12 +15,12 @@ Exit Codes:
     1: Missing required arguments
 
 Examples:
-    $ erk exec update-plan-remote-session --issue-number 123 --run-id 12345 \\
+    $ erk exec update-plan-remote-session --plan-id 123 --run-id 12345 \\
         --session-id test-session
-    {"success": true, "issue_number": 123}
+    {"success": true, "plan_id": 123}
 
-    $ erk exec update-plan-remote-session --issue-number 999 --run-id 12345 --session-id test
-    {"success": false, "error_type": "issue-not-found", "message": "..."}
+    $ erk exec update-plan-remote-session --plan-id 999 --run-id 12345 --session-id test
+    {"success": false, "error_type": "plan-not-found", "message": "..."}
 """
 
 import json
@@ -38,7 +38,7 @@ class UpdateSuccess:
     """Success response for update plan remote session."""
 
     success: bool
-    issue_number: int
+    plan_id: int
 
 
 @dataclass(frozen=True)
@@ -63,10 +63,10 @@ def _output_error(error_type: str, message: str) -> None:
 
 @click.command(name="update-plan-remote-session")
 @click.option(
-    "--issue-number",
+    "--plan-id",
     required=True,
     type=int,
-    help="GitHub issue number to update",
+    help="Plan identifier to update",
 )
 @click.option(
     "--run-id",
@@ -90,14 +90,14 @@ def _output_error(error_type: str, message: str) -> None:
 def update_plan_remote_session(
     ctx: click.Context,
     *,
-    issue_number: int,
+    plan_id: int,
     run_id: str,
     session_id: str,
     branch_name: str | None,
 ) -> None:
     """Update plan-header metadata with remote session artifact location.
 
-    Updates the plan-header block in a GitHub issue with:
+    Updates the plan-header block in a plan with:
     - last_remote_impl_at (current timestamp)
     - last_remote_impl_run_id (GitHub Actions run ID)
     - last_remote_impl_session_id (Claude Code session ID)
@@ -115,7 +115,7 @@ def update_plan_remote_session(
     timestamp = time.now().replace(tzinfo=UTC).isoformat()
 
     # Build metadata dict
-    plan_id = str(issue_number)
+    plan_id_str = str(plan_id)
     metadata: dict[str, object] = {
         "last_remote_impl_at": timestamp,
         "last_remote_impl_run_id": run_id,
@@ -125,14 +125,14 @@ def update_plan_remote_session(
         metadata["branch_name"] = branch_name
 
     # LBYL: Check plan exists before updating
-    plan_result = backend.get_plan(repo_root, plan_id)
+    plan_result = backend.get_plan(repo_root, plan_id_str)
     if isinstance(plan_result, PlanNotFound):
-        _output_error("issue-not-found", f"Issue #{issue_number} not found")
+        _output_error("plan-not-found", f"Plan #{plan_id} not found")
         return  # Never reached, but helps type checker
 
     # Update metadata via PlanBackend
     try:
-        backend.update_metadata(repo_root, plan_id, metadata)
+        backend.update_metadata(repo_root, plan_id_str, metadata)
     except PlanHeaderNotFoundError as e:
         _output_error("no-plan-header-block", str(e))
     except RuntimeError as e:
@@ -141,6 +141,6 @@ def update_plan_remote_session(
 
     result_success = UpdateSuccess(
         success=True,
-        issue_number=issue_number,
+        plan_id=plan_id,
     )
     click.echo(json.dumps(asdict(result_success), indent=2))
