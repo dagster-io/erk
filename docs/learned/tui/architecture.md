@@ -65,7 +65,7 @@ The `PlanDataProvider` ABC and its fake live in `erk_shared` (not in `src/erk/tu
 
 Abstract interface for fetching plan data. Follows the same ABC/Fake pattern as gateways. Defined in `erk_shared.gateway.plan_data_provider.abc`.
 
-Key methods: `fetch_plans()`, `close_plan()`, `submit_to_queue()`, `fetch_branch_activity()`, `fetch_plan_content()`, `fetch_unresolved_comments()`. Also exposes `repo_root`, `clipboard`, and `browser` properties. See the ABC source for the full interface.
+Key methods: `fetch_plans()`, `close_plan()`, `submit_to_queue()`, `fetch_branch_activity()`, `fetch_plan_content()`, `fetch_objective_content()`, `fetch_unresolved_comments()`. Also exposes `repo_root`, `clipboard`, and `browser` properties. See the ABC source for the full interface.
 
 The `fetch_unresolved_comments()` method returns `list[PRReviewThread]`, where each thread contains `id`, `is_resolved`, `path`, and `comments: list[PRReviewComment]`. Each comment has `body`, `author`, `created_at`, and `url` fields.
 
