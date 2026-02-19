@@ -16,8 +16,8 @@ on:
         description: "Unique identifier for run discovery (base36)"
         required: true
         type: string
-      issue_title:
-        description: "Issue title for workflow run display"
+      plan_title:
+        description: "Plan title for workflow run display"
         required: true
         type: string
       branch_name:
@@ -52,8 +52,8 @@ on:
         required: false
         type: string
         default: "called"
-      issue_title:
-        description: "Issue title for workflow run display"
+      plan_title:
+        description: "Plan title for workflow run display"
         required: true
         type: string
       branch_name:
@@ -137,14 +137,14 @@ jobs:
           rm -rf .worker-impl
           erk exec create-worker-impl-from-issue "$PLAN_ID"
           if [ $? -ne 0 ]; then
-            gh issue comment "$PLAN_ID" --body "Could not fetch plan content for #$PLAN_ID."
+            gh issue comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
             exit 1
           fi
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
           git add .worker-impl
           if [[ -n $(git status --porcelain) ]]; then
-            git commit -m "Update plan for #$PLAN_ID (rerun)"
+            git commit -m "Update plan for plan #$PLAN_ID (rerun)"
             git push origin "$BRANCH_NAME"
           fi
           echo "Checked out branch: $BRANCH_NAME"
@@ -157,7 +157,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           erk exec post-workflow-started-comment \
-            --issue-number "$PLAN_ID" \
+            --plan-id "$PLAN_ID" \
             --branch-name "$BRANCH_NAME" \
             --pr-number "$PR_NUMBER" \
             --run-id "${{ github.run_id }}" \
@@ -257,7 +257,7 @@ jobs:
             --session-file "$SESSION_FILE" \
             --session-id "$SESSION_ID" \
             --source remote \
-            --issue-number "$PLAN_ID"
+            --plan-id "$PLAN_ID"
 
       - name: Update plan header with remote impl info
         if: always() && steps.session.outputs.session_id
@@ -270,7 +270,7 @@ jobs:
           BRANCH_NAME: ${{ inputs.branch_name }}
         run: |
           erk exec update-plan-remote-session \
-            --issue-number "$PLAN_ID" \
+            --plan-id "$PLAN_ID" \
             --run-id "$RUN_ID" \
             --session-id "$SESSION_ID" \
             --branch-name "$BRANCH_NAME"
@@ -281,7 +281,7 @@ jobs:
         env:
           BASE_BRANCH: ${{ inputs.base_branch }}
           PLAN_ID: ${{ inputs.plan_id }}
-          ISSUE_TITLE: ${{ inputs.issue_title }}
+          PLAN_TITLE: ${{ inputs.plan_title }}
           PR_NUMBER: ${{ inputs.pr_number }}
           PRE_IMPL_HEAD: ${{ steps.pre_impl.outputs.head }}
           GH_TOKEN: ${{ github.token }}
@@ -309,10 +309,10 @@ jobs:
             # Call exec command to handle no-changes scenario
             erk exec handle-no-changes \
               --pr-number "$PR_NUMBER" \
-              --issue-number "$PLAN_ID" \
+              --plan-id "$PLAN_ID" \
               --behind-count "$BEHIND_COUNT" \
               --base-branch "$BASE_BRANCH" \
-              --original-title "$ISSUE_TITLE" \
+              --original-title "$PLAN_TITLE" \
               --recent-commits "$RECENT_COMMITS" \
               --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
@@ -400,7 +400,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           erk exec ci-update-pr-body \
-            --issue-number "${{ inputs.plan_id }}" \
+            --plan-id "${{ inputs.plan_id }}" \
             --run-id "${{ github.run_id }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 

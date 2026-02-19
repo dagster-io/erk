@@ -172,11 +172,11 @@ Update PR body with AI-generated summary and footer.
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description                    |
-| ---------------- | ------- | -------- | -------------- | ------------------------------ |
-| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | Issue number to close on merge |
-| `--run-id`       | TEXT    | No       | -              | Optional workflow run ID       |
-| `--run-url`      | TEXT    | No       | -              | Optional workflow run URL      |
+| Flag        | Type    | Required | Default        | Description                       |
+| ----------- | ------- | -------- | -------------- | --------------------------------- |
+| `--plan-id` | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to close on merge |
+| `--run-id`  | TEXT    | No       | -              | Optional workflow run ID          |
+| `--run-url` | TEXT    | No       | -              | Optional workflow run URL         |
 
 ### ci-verify-autofix
 
@@ -231,13 +231,13 @@ Create GitHub issue from plan content with erk-plan label.
 
 Create .worker-impl/ folder from plan content.
 
-**Usage:** `erk exec create-worker-impl-from-issue` <issue_number>
+**Usage:** `erk exec create-worker-impl-from-issue` <plan_id>
 
 **Arguments:**
 
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
+| Name      | Required | Description |
+| --------- | -------- | ----------- |
+| `PLAN_ID` | Yes      | -           |
 
 ### dash-data
 
@@ -521,7 +521,7 @@ Handle no-changes scenario gracefully.
 | Flag               | Type    | Required | Default        | Description                                       |
 | ------------------ | ------- | -------- | -------------- | ------------------------------------------------- |
 | `--pr-number`      | INTEGER | Yes      | Sentinel.UNSET | PR number to update                               |
-| `--issue-number`   | INTEGER | Yes      | Sentinel.UNSET | Plan issue number                                 |
+| `--plan-id`        | INTEGER | Yes      | Sentinel.UNSET | Plan identifier                                   |
 | `--behind-count`   | INTEGER | Yes      | Sentinel.UNSET | How many commits behind base branch               |
 | `--base-branch`    | TEXT    | Yes      | Sentinel.UNSET | Base branch name                                  |
 | `--original-title` | TEXT    | Yes      | Sentinel.UNSET | Original PR title                                 |
@@ -978,14 +978,14 @@ Post a workflow started comment to a GitHub issue.
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description                     |
-| ---------------- | ------- | -------- | -------------- | ------------------------------- |
-| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number             |
-| `--branch-name`  | TEXT    | Yes      | Sentinel.UNSET | Git branch name                 |
-| `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | Pull request number             |
-| `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions workflow run ID  |
-| `--run-url`      | TEXT    | Yes      | Sentinel.UNSET | Full URL to workflow run        |
-| `--repository`   | TEXT    | Yes      | Sentinel.UNSET | Repository in owner/repo format |
+| Flag            | Type    | Required | Default        | Description                     |
+| --------------- | ------- | -------- | -------------- | ------------------------------- |
+| `--plan-id`     | INTEGER | Yes      | Sentinel.UNSET | Plan identifier                 |
+| `--branch-name` | TEXT    | Yes      | Sentinel.UNSET | Git branch name                 |
+| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET | Pull request number             |
+| `--run-id`      | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions workflow run ID  |
+| `--run-url`     | TEXT    | Yes      | Sentinel.UNSET | Full URL to workflow run        |
+| `--repository`  | TEXT    | Yes      | Sentinel.UNSET | Repository in owner/repo format |
 
 ### pr-sync-commit
 
@@ -1275,12 +1275,12 @@ Update plan-header metadata with remote session artifact location.
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description                                  |
-| ---------------- | ------- | -------- | -------------- | -------------------------------------------- |
-| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update                |
-| `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID                        |
-| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                       |
-| `--branch-name`  | TEXT    | No       | -              | Branch name to store in plan-header metadata |
+| Flag            | Type    | Required | Default        | Description                                  |
+| --------------- | ------- | -------- | -------------- | -------------------------------------------- |
+| `--plan-id`     | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to update                    |
+| `--run-id`      | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID                        |
+| `--session-id`  | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                       |
+| `--branch-name` | TEXT    | No       | -              | Branch name to store in plan-header metadata |
 
 ### update-pr-description
 
@@ -1316,12 +1316,12 @@ Upload a session JSONL to GitHub Gist and update plan header.
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description                                             |
-| ---------------- | ------- | -------- | -------------- | ------------------------------------------------------- |
-| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to the session JSONL file to upload                |
-| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                                  |
-| `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'                     |
-| `--issue-number` | INTEGER | No       | Sentinel.UNSET | Optional erk-plan issue number to update with gist info |
+| Flag             | Type    | Required | Default        | Description                                       |
+| ---------------- | ------- | -------- | -------------- | ------------------------------------------------- |
+| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to the session JSONL file to upload          |
+| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                            |
+| `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'               |
+| `--plan-id`      | INTEGER | No       | Sentinel.UNSET | Optional plan identifier to update with gist info |
 
 ### user-prompt-hook
 

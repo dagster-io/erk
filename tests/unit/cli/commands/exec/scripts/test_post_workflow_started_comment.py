@@ -47,7 +47,7 @@ def _create_test_issue(issue_number: int) -> IssueInfo:
 def test_build_comment_contains_all_fields() -> None:
     """Test that built comment contains all required fields."""
     comment = _build_workflow_started_comment(
-        issue_number=123,
+        plan_id=123,
         branch_name="my-feature",
         pr_number=456,
         run_id="99999",
@@ -57,7 +57,7 @@ def test_build_comment_contains_all_fields() -> None:
 
     assert "⚙️ GitHub Action Started" in comment
     assert "branch_name: my-feature" in comment
-    assert "issue_number: 123" in comment
+    assert "plan_id: 123" in comment
     assert 'workflow_run_id: "99999"' in comment
     assert "https://github.com/owner/repo/actions/runs/99999" in comment
 
@@ -65,7 +65,7 @@ def test_build_comment_contains_all_fields() -> None:
 def test_build_comment_has_metadata_block() -> None:
     """Test that comment has properly formatted metadata block."""
     comment = _build_workflow_started_comment(
-        issue_number=123,
+        plan_id=123,
         branch_name="feat-auth",
         pr_number=456,
         run_id="12345",
@@ -82,7 +82,7 @@ def test_build_comment_has_metadata_block() -> None:
 def test_build_comment_has_pr_link() -> None:
     """Test that comment has proper PR link."""
     comment = _build_workflow_started_comment(
-        issue_number=10,
+        plan_id=10,
         branch_name="fix-bug",
         pr_number=42,
         run_id="888",
@@ -96,7 +96,7 @@ def test_build_comment_has_pr_link() -> None:
 def test_build_comment_has_branch_display() -> None:
     """Test that comment displays branch name."""
     comment = _build_workflow_started_comment(
-        issue_number=1,
+        plan_id=1,
         branch_name="feature-xyz",
         pr_number=2,
         run_id="3",
@@ -110,7 +110,7 @@ def test_build_comment_has_branch_display() -> None:
 def test_build_comment_has_workflow_link() -> None:
     """Test that comment has workflow run link."""
     comment = _build_workflow_started_comment(
-        issue_number=1,
+        plan_id=1,
         branch_name="b",
         pr_number=2,
         run_id="3",
@@ -124,7 +124,7 @@ def test_build_comment_has_workflow_link() -> None:
 def test_build_comment_has_valid_timestamp() -> None:
     """Test that comment contains a valid ISO 8601 timestamp."""
     comment = _build_workflow_started_comment(
-        issue_number=1,
+        plan_id=1,
         branch_name="b",
         pr_number=2,
         run_id="3",
@@ -156,7 +156,7 @@ def test_cli_success(tmp_path: Path) -> None:
     result = runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--issue-number",
+            "--plan-id",
             "123",
             "--branch-name",
             "my-branch",
@@ -175,7 +175,7 @@ def test_cli_success(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 123
+    assert output["plan_id"] == 123
 
     # Verify comment was added via mutation tracking
     assert len(fake_github.added_comments) == 1
@@ -194,7 +194,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     result = runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--issue-number",
+            "--plan-id",
             "123",
             "--branch-name",
             "branch",
@@ -222,7 +222,7 @@ def test_cli_missing_required_option() -> None:
 
     result = runner.invoke(
         post_workflow_started_comment_command,
-        ["--issue-number", "123"],  # Missing other required options
+        ["--plan-id", "123"],  # Missing other required options
     )
 
     assert result.exit_code != 0
@@ -240,7 +240,7 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--issue-number",
+            "--plan-id",
             "789",
             "--branch-name",
             "test-branch",

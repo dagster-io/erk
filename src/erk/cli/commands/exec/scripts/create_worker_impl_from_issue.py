@@ -4,7 +4,7 @@ This exec command fetches a plan via PlanBackend and creates the .worker-impl/
 folder structure, providing a testable alternative to inline workflow scripts.
 
 Usage:
-    erk exec create-worker-impl-from-issue <issue-number>
+    erk exec create-worker-impl-from-issue <plan-id>
 
 Output:
     Structured JSON output with success status and folder details
@@ -15,7 +15,7 @@ Exit Codes:
 
 Examples:
     $ erk exec create-worker-impl-from-issue 1028
-    {"success": true, "worker_impl_path": "/path/to/.worker-impl", "issue_number": 1028}
+    {"success": true, "worker_impl_path": "/path/to/.worker-impl", "plan_id": 1028}
 
     $ erk exec create-worker-impl-from-issue 999
     {"success": false, "error": "plan_not_found", "message": "..."}
@@ -34,31 +34,31 @@ from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 
 @click.command(name="create-worker-impl-from-issue")
-@click.argument("issue_number", type=int)
+@click.argument("plan_id", type=int)
 @click.pass_context
 def create_worker_impl_from_issue(
     ctx: click.Context,
-    issue_number: int,
+    plan_id: int,
 ) -> None:
     """Create .worker-impl/ folder from plan content.
 
     Fetches plan content via PlanBackend and creates .worker-impl/ folder structure
     with plan.md, issue.json, and metadata.
 
-    ISSUE_NUMBER: Plan identifier (e.g., GitHub issue number)
+    PLAN_ID: Plan identifier (e.g., GitHub issue number or PR number)
     """
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
-    plan_id = str(issue_number)
+    plan_id_str = str(plan_id)
 
     # Fetch plan via PlanBackend
-    result = backend.get_plan(repo_root, plan_id)
+    result = backend.get_plan(repo_root, plan_id_str)
     if isinstance(result, PlanNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for issue #{issue_number}: Issue not found. "
-            f"Ensure issue has erk-plan label and plan content.",
+            "message": f"Could not fetch plan for #{plan_id}: Not found. "
+            f"Ensure plan has erk-plan label and plan content.",
         }
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)
@@ -68,7 +68,7 @@ def create_worker_impl_from_issue(
     worker_impl_path = repo_root / ".worker-impl"
     create_worker_impl_folder(
         plan_content=plan.body,
-        plan_id=plan_id,
+        plan_id=plan_id_str,
         url=plan.url,
         repo_root=repo_root,
         objective_id=plan.objective_id,
@@ -78,7 +78,7 @@ def create_worker_impl_from_issue(
     output = {
         "success": True,
         "worker_impl_path": str(worker_impl_path),
-        "issue_number": issue_number,
-        "issue_url": plan.url,
+        "plan_id": plan_id,
+        "plan_url": plan.url,
     }
     click.echo(json.dumps(output))

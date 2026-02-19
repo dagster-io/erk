@@ -45,7 +45,7 @@ def _write_session_file(tmp_path: Path) -> Path:
 
 
 def test_upload_session_gist_only(tmp_path: Path) -> None:
-    """Gist created without issue update when no --issue-number."""
+    """Gist created without issue update when no --plan-id."""
     session_file = _write_session_file(tmp_path)
     runner = CliRunner()
 
@@ -69,12 +69,12 @@ def test_upload_session_gist_only(tmp_path: Path) -> None:
     assert "gist_url" in output
     assert "raw_url" in output
     assert output["session_id"] == "test-session-abc"
-    assert "issue_number" not in output
+    assert "plan_id" not in output
     assert "issue_updated" not in output
 
 
 def test_upload_session_with_issue_update(tmp_path: Path) -> None:
-    """Gist created and issue metadata updated when --issue-number provided."""
+    """Gist created and issue metadata updated when --plan-id provided."""
     session_file = _write_session_file(tmp_path)
     issue = _make_plan_issue(number=42)
     fake_gh = FakeGitHubIssues(issues={42: issue})
@@ -89,7 +89,7 @@ def test_upload_session_with_issue_update(tmp_path: Path) -> None:
             "test-session-xyz",
             "--source",
             "remote",
-            "--issue-number",
+            "--plan-id",
             "42",
         ],
         obj=ErkContext.for_test(github_issues=fake_gh, cwd=tmp_path),
@@ -98,7 +98,7 @@ def test_upload_session_with_issue_update(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_id"] == 42
     assert output["issue_updated"] is True
 
     # Verify the plan-header was updated with session gist info
@@ -128,7 +128,7 @@ def test_upload_session_issue_not_found(tmp_path: Path) -> None:
             "test-session-xyz",
             "--source",
             "local",
-            "--issue-number",
+            "--plan-id",
             "999",
         ],
         obj=ErkContext.for_test(github_issues=fake_gh, cwd=tmp_path),
