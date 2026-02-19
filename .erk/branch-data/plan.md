@@ -64,19 +64,20 @@ Returns `(pr_details_list, pr_linkages)` — parallels the `get_issues_with_pr_l
 
 **Files** (5-place pattern):
 
-| File | Action |
-|------|--------|
-| `github/abc.py` | Add abstract method |
-| `github/real.py` | Execute GraphQL query, parse response. Reuse `_parse_status_rollup()`, `_parse_mergeable_status()`, `_parse_review_thread_counts()` for parsing. Client-side filter for `draft=True` and `author`. |
-| `github/fake.py` | Return from constructor-injected `_plan_pr_details` / `_plan_pr_linkages` data |
-| `github/dry_run.py` | Delegate to wrapped (read-only) |
-| `github/printing.py` | Delegate to wrapped (read-only) |
+| File                 | Action                                                                                                                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `github/abc.py`      | Add abstract method                                                                                                                                                                                |
+| `github/real.py`     | Execute GraphQL query, parse response. Reuse `_parse_status_rollup()`, `_parse_mergeable_status()`, `_parse_review_thread_counts()` for parsing. Client-side filter for `draft=True` and `author`. |
+| `github/fake.py`     | Return from constructor-injected `_plan_pr_details` / `_plan_pr_linkages` data                                                                                                                     |
+| `github/dry_run.py`  | Delegate to wrapped (read-only)                                                                                                                                                                    |
+| `github/printing.py` | Delegate to wrapped (read-only)                                                                                                                                                                    |
 
 ### 4. Rewrite DraftPRPlanListService to use GraphQL
 
 **File**: `src/erk/core/services/plan_list_service.py`
 
 Replace the current N+1 REST approach:
+
 ```python
 # OLD: 1 REST list + N REST get_pr
 prs = self._github.list_prs(...)
@@ -87,6 +88,7 @@ for _branch, pr_info in prs.items():
 ```
 
 With single GraphQL call:
+
 ```python
 # NEW: 1 GraphQL call returns everything
 pr_details_list, pr_linkage_map = self._github.list_plan_prs_with_details(
@@ -105,13 +107,16 @@ Performance improvement: 1 API call instead of N+1.
 ### 5. Tests
 
 **File**: `tests/tui/data/test_provider.py`
+
 - Add test: worktree with `plan-*` branch + `.impl/plan-ref.json` on disk → appears in worktree mapping
 
 **File**: `tests/core/services/test_plan_list_service.py` (or wherever DraftPRPlanListService is tested)
+
 - Update tests for the new GraphQL-based data flow
 - Verify PullRequestInfo has rich fields (checks_passing, review_thread_counts)
 
 **File**: `tests/gateway/github/test_fake.py` (or equivalent)
+
 - Add test for new `list_plan_prs_with_details()` fake behavior
 
 ## Verification
