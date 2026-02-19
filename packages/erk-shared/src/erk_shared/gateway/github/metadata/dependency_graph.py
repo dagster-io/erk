@@ -126,6 +126,15 @@ def graph_from_nodes(nodes: list[RoadmapNode]) -> DependencyGraph:
     )
 
 
+def build_graph(phases: list[RoadmapPhase]) -> DependencyGraph:
+    """Build graph from phases, using explicit deps when available."""
+    all_nodes = [node for phase in phases for node in phase.nodes]
+    has_explicit_deps = any(node.depends_on is not None for node in all_nodes)
+    if has_explicit_deps:
+        return graph_from_nodes(all_nodes)
+    return graph_from_phases(phases)
+
+
 def nodes_from_graph(graph: DependencyGraph) -> list[RoadmapNode]:
     """Convert graph nodes to flat RoadmapNode list (inverse of graph_from_phases).
 
@@ -233,10 +242,5 @@ def parse_graph(body: str) -> tuple[DependencyGraph, list[RoadmapPhase], list[st
     if v2_result is None:
         return None
     phases, errors = v2_result
-    all_nodes = [node for phase in phases for node in phase.nodes]
-    has_explicit_deps = any(node.depends_on is not None for node in all_nodes)
-    if has_explicit_deps:
-        graph = graph_from_nodes(all_nodes)
-    else:
-        graph = graph_from_phases(phases)
+    graph = build_graph(phases)
     return (graph, phases, errors)

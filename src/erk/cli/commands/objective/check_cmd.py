@@ -17,9 +17,9 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
+    build_graph,
     compute_graph_summary,
     find_graph_next_node,
-    graph_from_phases,
     phases_from_graph,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -120,7 +120,7 @@ def validate_objective(
             issue_body=issue.body,
         )
 
-    graph = graph_from_phases(phases)
+    graph = build_graph(phases)
 
     # Check 3: Status/PR consistency (iterate graph nodes)
     consistency_issues: list[str] = []

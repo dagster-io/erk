@@ -3,6 +3,7 @@
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
+    build_graph,
     compute_graph_summary,
     find_graph_next_node,
     graph_from_nodes,
@@ -16,6 +17,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     compute_summary,
     find_next_node,
+    render_roadmap_block_inner,
 )
 
 
@@ -49,6 +51,22 @@ def _step(
         plan=plan,
         pr=pr,
         depends_on=None,
+    )
+
+
+def _step_with_deps(
+    *,
+    id: str,
+    status: str,
+    depends_on: tuple[str, ...],
+) -> RoadmapNode:
+    return RoadmapNode(
+        id=id,
+        description=f"Step {id}",
+        status=status,  # type: ignore[arg-type]
+        plan=None,
+        pr=None,
+        depends_on=depends_on,
     )
 
 
@@ -927,3 +945,197 @@ class TestGraphFromNodes:
         graph = graph_from_nodes(nodes)
 
         assert graph.nodes[0].depends_on == ()
+
+
+# ---------------------------------------------------------------------------
+# build_graph() tests
+# ---------------------------------------------------------------------------
+
+
+class TestBuildGraph:
+    def test_uses_explicit_deps_when_present(self) -> None:
+        """Fan-out nodes with explicit deps — both children unblocked simultaneously."""
+        phases = [
+            _phase(
+                number=1,
+                nodes=[
+                    _step_with_deps(id="1.1", status="done", depends_on=()),
+                ],
+            ),
+            _phase(
+                number=2,
+                nodes=[
+                    _step_with_deps(id="2.1", status="pending", depends_on=("1.1",)),
+                    _step_with_deps(id="2.2", status="pending", depends_on=("1.1",)),
+                ],
+            ),
+        ]
+        graph = build_graph(phases)
+
+        # Both 2.1 and 2.2 depend only on 1.1 (fan-out), not sequentially
+        assert graph.nodes[1].depends_on == ("1.1",)
+        assert graph.nodes[2].depends_on == ("1.1",)
+        unblocked_ids = [n.id for n in graph.unblocked_nodes() if n.status == "pending"]
+        assert unblocked_ids == ["2.1", "2.2"]
+
+    def test_falls_back_to_inferred_deps(self) -> None:
+        """Nodes with depends_on=None — verify sequential inference."""
+        phases = [
+            _phase(
+                number=1,
+                nodes=[
+                    _step(id="1.1", status="done", plan=None, pr=None),
+                    _step(id="1.2", status="pending", plan=None, pr=None),
+                ],
+            ),
+        ]
+        graph = build_graph(phases)
+
+        # Sequential: 1.2 depends on 1.1
+        assert graph.nodes[0].depends_on == ()
+        assert graph.nodes[1].depends_on == ("1.1",)
+
+    def test_fan_out_unblocked_simultaneously(self) -> None:
+        """1 parent (done) + 2 children → both children unblocked."""
+        phases = [
+            _phase(
+                number=1,
+                nodes=[
+                    _step_with_deps(id="1.1", status="done", depends_on=()),
+                ],
+            ),
+            _phase(
+                number=2,
+                nodes=[
+                    _step_with_deps(id="2.1", status="pending", depends_on=("1.1",)),
+                    _step_with_deps(id="2.2", status="pending", depends_on=("1.1",)),
+                ],
+            ),
+        ]
+        graph = build_graph(phases)
+
+        unblocked = graph.unblocked_nodes()
+        unblocked_pending = [n for n in unblocked if n.status == "pending"]
+        assert len(unblocked_pending) == 2
+        assert {n.id for n in unblocked_pending} == {"2.1", "2.2"}
+
+    def test_fan_in_blocked_until_all_parents_done(self) -> None:
+        """2 parents (1 done, 1 pending) + 1 merge → merge blocked."""
+        phases = [
+            _phase(
+                number=1,
+                nodes=[
+                    _step_with_deps(id="1.1", status="done", depends_on=()),
+                    _step_with_deps(id="1.2", status="pending", depends_on=()),
+                ],
+            ),
+            _phase(
+                number=2,
+                nodes=[
+                    _step_with_deps(id="2.1", status="pending", depends_on=("1.1", "1.2")),
+                ],
+            ),
+        ]
+        graph = build_graph(phases)
+
+        unblocked_ids = {n.id for n in graph.unblocked_nodes()}
+        # 2.1 should NOT be unblocked because 1.2 is still pending
+        assert "2.1" not in unblocked_ids
+
+    def test_fan_in_unblocked_when_all_parents_done(self) -> None:
+        """2 parents (both done) + 1 merge → merge unblocked."""
+        phases = [
+            _phase(
+                number=1,
+                nodes=[
+                    _step_with_deps(id="1.1", status="done", depends_on=()),
+                    _step_with_deps(id="1.2", status="done", depends_on=()),
+                ],
+            ),
+            _phase(
+                number=2,
+                nodes=[
+                    _step_with_deps(id="2.1", status="pending", depends_on=("1.1", "1.2")),
+                ],
+            ),
+        ]
+        graph = build_graph(phases)
+
+        unblocked_ids = {n.id for n in graph.unblocked_nodes()}
+        assert "2.1" in unblocked_ids
+
+    def test_empty_phases(self) -> None:
+        """Empty input returns empty graph."""
+        graph = build_graph([])
+
+        assert graph.nodes == ()
+
+
+# ---------------------------------------------------------------------------
+# Fan-out/fan-in round-trip test
+# ---------------------------------------------------------------------------
+
+
+def test_fan_out_fan_in_round_trip() -> None:
+    """Create nodes with fan-out + fan-in → render to YAML → parse back → verify."""
+    nodes = [
+        RoadmapNode(
+            id="1.1", description="Root", status="done", plan=None, pr="#100", depends_on=()
+        ),
+        RoadmapNode(
+            id="2.1",
+            description="Branch A",
+            status="pending",
+            plan=None,
+            pr=None,
+            depends_on=("1.1",),
+        ),
+        RoadmapNode(
+            id="2.2",
+            description="Branch B",
+            status="pending",
+            plan=None,
+            pr=None,
+            depends_on=("1.1",),
+        ),
+        RoadmapNode(
+            id="3.1",
+            description="Merge",
+            status="pending",
+            plan=None,
+            pr=None,
+            depends_on=("2.1", "2.2"),
+        ),
+    ]
+
+    # Render to YAML via render_roadmap_block_inner
+    yaml_content = render_roadmap_block_inner(nodes)
+
+    # Wrap in metadata block markers for parse_graph
+    body = (
+        "# Objective\n\n"
+        "### Phase 1: Root\n\n"
+        "### Phase 2: Branches\n\n"
+        "### Phase 3: Merge\n\n"
+        f"<!-- erk:metadata-block:objective-roadmap -->\n"
+        f"{yaml_content}\n"
+        f"<!-- /erk:metadata-block:objective-roadmap -->\n"
+    )
+
+    result = parse_graph(body)
+    assert result is not None
+    graph, phases, errors = result
+
+    assert errors == []
+    assert len(graph.nodes) == 4
+
+    # Verify depends_on preserved
+    node_map = {n.id: n for n in graph.nodes}
+    assert node_map["1.1"].depends_on == ()
+    assert node_map["2.1"].depends_on == ("1.1",)
+    assert node_map["2.2"].depends_on == ("1.1",)
+    assert node_map["3.1"].depends_on == ("2.1", "2.2")
+
+    # Verify unblocked nodes: 1.1 is done, so 2.1 and 2.2 are unblocked
+    unblocked_pending = [n for n in graph.unblocked_nodes() if n.status == "pending"]
+    assert {n.id for n in unblocked_pending} == {"2.1", "2.2"}

@@ -34,9 +34,9 @@ from erk_shared.gateway.github.metadata.core import (
     extract_raw_metadata_blocks,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
+    build_graph,
     compute_graph_summary,
     find_graph_next_node,
-    graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     group_nodes_by_phase,
@@ -96,7 +96,7 @@ def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapCont
         )
 
     phases = group_nodes_by_phase(steps)
-    graph = graph_from_phases(phases)
+    graph = build_graph(phases)
 
     plan_ref = f"#{plan_number}"
     matched_steps = [step.id for step in steps if step.plan == plan_ref]
