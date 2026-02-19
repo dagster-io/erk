@@ -25,7 +25,7 @@ Key properties:
 
 - Saves current branch name before checkout
 - Creates plan branch from the same commit (no conflict with uncommitted work)
-- Commits plan to `.erk/plan/PLAN.md`
+- Commits plan to `.erk/branch-data/plan.md`
 - Pushes to origin with upstream tracking
 - **Always** restores to `start_point` in the finally block, even if push fails
 
@@ -36,7 +36,7 @@ Key properties:
 
 ## Testing
 
-11 tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py`, including a dedicated `test_draft_pr_restores_original_branch` test that verifies:
+12 tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py`, including a dedicated `test_draft_pr_restores_original_branch` test that verifies:
 
 - Two checkouts occur (plan branch, then back to original)
 - The second checkout restores the exact original branch name

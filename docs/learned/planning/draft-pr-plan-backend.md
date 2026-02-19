@@ -45,7 +45,7 @@ Plan PRs use a structured body format: metadata block + separator + plan content
 - **Label**: `"erk-plan"`
 - **Structure**: `<!-- plan-header metadata -->` + separator + `# Plan: Title` + content
 
-Helper functions `_build_pr_body()` and `_extract_plan_content_from_body()` handle composition and extraction.
+Helper functions `build_plan_stage_body()` and `extract_plan_content()` (public, in `draft_pr_lifecycle.py`) handle composition and extraction.
 
 ## Plan File Commit
 

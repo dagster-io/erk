@@ -29,7 +29,7 @@ See `FakeGitHubAdmin._set_secret_calls` (private mutable list) and `set_secret_c
 
 - `set_secret_calls` — `tuple[tuple[str, str], ...]` (name, value)
 - `delete_secret_calls` — `tuple[str, ...]` (secret names)
-- `set_permission_calls` — `tuple[tuple[Path, bool], ...]`
+- `set_permission_calls` — `list[tuple[Path, bool]]`
 
 ### FakeGitHub
 
