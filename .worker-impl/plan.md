@@ -1,3 +1,38 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-19T15:57:51.622019+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22199911238'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFKzfDRg
+last_dispatched_at: '2026-02-19T21:00:41.925166+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-add-no-interactive-to-all-02-19-1557
+created_from_session: 9a932d4f-e339-4165-b7de-a3f11e1eff8f
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary><code>original-plan</code></summary>
+
 # Add `--no-interactive` to all `gt` subprocess calls
 
 ## Context
@@ -73,3 +108,14 @@ Every caller already passes `no_interactive=True`. Remove the parameter and hard
 
 1. `rg '"gt"' --type py | grep -v no-interactive | grep -v test` — confirm all production gt calls have it
 2. `make fast-ci` — run tests to catch regressions
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7625 --script)" && erk pr sync --dangerous
+```
