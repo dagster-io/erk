@@ -8,7 +8,8 @@ import logging
 import os
 import subprocess
 import time
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 from typing import IO, Any
 
@@ -24,15 +25,18 @@ from erk_shared.gateway.time.abc import Time
 logger = logging.getLogger(__name__)
 
 
-def build_git_subprocess_env() -> dict[str, str]:
-    """Build environment for git subprocess that prevents interactive prompts.
+@contextmanager
+def git_subprocess_env() -> Generator[dict[str, str], None, None]:
+    """Context manager providing environment for git subprocess calls.
 
     Sets GIT_TERMINAL_PROMPT=0 so git commands fail fast with an error
     instead of hanging while waiting for credentials or other interactive input.
+    Use as a context manager to make the lifetime of the modified environment
+    explicit and bounded to the subprocess call.
     """
     env = os.environ.copy()
     env["GIT_TERMINAL_PROMPT"] = "0"
-    return env
+    yield env
 
 
 def build_claude_subprocess_env() -> dict[str, str]:
