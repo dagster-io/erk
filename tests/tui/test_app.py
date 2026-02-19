@@ -1328,7 +1328,9 @@ class TestExecutePaletteCommandSubmitToQueue:
     ) -> None:
         """submit_to_queue calls _submit_to_queue_async with correct args."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", plan_url="https://github.com/test/repo/issues/123")],
+            plans=[
+                make_plan_row(123, "Test Plan", plan_url="https://github.com/test/repo/issues/123")
+            ],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
