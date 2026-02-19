@@ -72,6 +72,7 @@ Quick reference for all `erk exec` subcommands.
 | `objective-update-after-land`     | Update objective after landing a PR.                                        |
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                             |
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.                 |
+| `plan-migrate-to-draft-pr`        | Migrate an issue-based plan to a draft-PR-based plan.                       |
 | `plan-review-complete`            | Close a plan review PR without merging.                                     |
 | `plan-save`                       | Backend-aware plan save: dispatches to issue or draft-PR based on constant. |
 | `plan-save-to-issue`              | Extract plan from ~/.claude/plans/ and create GitHub issue.                 |
@@ -832,6 +833,25 @@ Create a draft PR for plan review and update plan metadata.
 | `ISSUE_NUMBER` | Yes      | -           |
 | `BRANCH_NAME`  | Yes      | -           |
 | `PLAN_TITLE`   | Yes      | -           |
+
+### plan-migrate-to-draft-pr
+
+Migrate an issue-based plan to a draft-PR-based plan.
+
+**Usage:** `erk exec plan-migrate-to-draft-pr` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag        | Type   | Required | Default | Description                                               |
+| ----------- | ------ | -------- | ------- | --------------------------------------------------------- |
+| `--dry-run` | FLAG   | No       | -       | Preview the migration without making any changes          |
+| `--format`  | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text) |
 
 ### plan-review-complete
 
