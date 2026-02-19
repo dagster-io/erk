@@ -26,6 +26,7 @@ erk get           # View a plan
 erk dash          # Display plan dashboard
 erk close         # Close a plan
 erk implement     # Implement a plan
+erk prepare       # Create worktree from a plan issue
 erk plan submit   # Submit a plan for remote execution
 erk log           # View plan execution logs
 ```
@@ -42,15 +43,16 @@ erk log           # View plan execution logs
 
 Plan commands appear at the top level without a noun prefix:
 
-| Command     | Description                     | Frequency |
-| ----------- | ------------------------------- | --------- |
-| `dash`      | Display plan dashboard          | Very High |
-| `get`       | View plan details               | High      |
-| `create`    | Create new plan issue           | High      |
-| `close`     | Close a plan                    | Medium    |
-| `implement` | Start implementing a plan       | Very High |
-| `submit`    | Queue plan for remote execution | High      |
-| `log`       | View plan execution history     | Medium    |
+| Command     | Description                           | Frequency |
+| ----------- | ------------------------------------- | --------- |
+| `dash`      | Display plan dashboard                | Very High |
+| `get`       | View plan details                     | High      |
+| `create`    | Create new plan issue                 | High      |
+| `close`     | Close a plan                          | Medium    |
+| `implement` | Implement a plan in current directory | Very High |
+| `prepare`   | Create worktree from a plan issue     | Medium    |
+| `submit`    | Queue plan for remote execution       | High      |
+| `log`       | View plan execution history           | Medium    |
 
 ### Grouped Commands
 
@@ -69,7 +71,7 @@ erk wt prune                # Clean up stale worktrees
 
 **Why grouped?**
 
-- Lower frequency: Most worktrees are created automatically via `erk implement`
+- Lower frequency: Worktrees are created via `erk prepare`, not during normal plan implementation
 - Infrastructure concern: Users think "I want to implement this plan" not "I want a worktree"
 - Namespace clarity: Avoids collision with plan commands
 
@@ -292,7 +294,7 @@ erk dash                  # Display plan dashboard
 erk get 42                # View specific plan
 
 # Work on a plan
-erk implement 42          # Create worktree and start work
+erk implement 42          # Set up .impl/ and implement in current directory
 
 # Submit for execution
 erk plan submit 42        # Queue for remote execution
@@ -308,7 +310,7 @@ erk close 42              # Close completed plan
 ### Worktree Management
 
 ```bash
-# Create worktrees (rare - usually via implement)
+# Create worktrees (via prepare or directly)
 erk wt create my-feature
 
 # List and inspect
