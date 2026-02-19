@@ -13,6 +13,7 @@ from erk.tui.app import (
     PlanBodyScreen,
     PlanDetailScreen,
     _build_github_url,
+    _last_meaningful_line,
 )
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
@@ -985,6 +986,7 @@ class TestExecutePaletteCommandLandPR:
 
         def mock_land_pr_async(
             self: ErkDashApp,
+            *,
             pr_num: int,
             branch: str,
             repo_root: Path,
@@ -1041,6 +1043,51 @@ class TestExecutePaletteCommandLandPR:
             assert len(app.screen_stack) == initial_stack_len
 
 
+class _FakePopen:
+    """Minimal Popen substitute for _land_pr_async tests."""
+
+    def __init__(
+        self,
+        args: list[str],
+        *,
+        return_code: int,
+        output_lines: list[str] | None,
+        **kwargs: object,
+    ) -> None:
+        self.args = args
+        self._return_code = return_code
+        self.stdout: list[str] | None = (
+            [line + "\n" for line in output_lines] if output_lines is not None else None
+        )
+
+    def wait(self) -> int:
+        return self._return_code
+
+    def __iter__(self) -> object:
+        if self.stdout is not None:
+            return iter(self.stdout)
+        return iter([])
+
+
+class TestLastMeaningfulLine:
+    """Unit tests for _last_meaningful_line helper."""
+
+    def test_returns_last_nonempty_line(self) -> None:
+        assert _last_meaningful_line(["first", "second", "third"]) == "third"
+
+    def test_skips_trailing_empty_lines(self) -> None:
+        assert _last_meaningful_line(["content", "", "  "]) == "content"
+
+    def test_returns_none_for_empty_list(self) -> None:
+        assert _last_meaningful_line([]) is None
+
+    def test_returns_none_for_all_blank(self) -> None:
+        assert _last_meaningful_line(["", "  ", "\t"]) is None
+
+    def test_strips_whitespace(self) -> None:
+        assert _last_meaningful_line(["  padded  "]) == "padded"
+
+
 class TestLandPrAsync:
     """Layer 4 business logic tests for _land_pr_async().
 
@@ -1048,7 +1095,9 @@ class TestLandPrAsync:
     - Success path triggers action_refresh
     - Non-zero returncode does not trigger refresh
     - OSError is caught without crashing
-    - subprocess.run is called with the correct arguments
+    - Popen is called with the correct arguments
+    - Status bar receives progress messages
+    - Error toast includes last meaningful output line
     """
 
     @pytest.mark.asyncio
@@ -1065,15 +1114,17 @@ class TestLandPrAsync:
 
         monkeypatch.setattr(
             subprocess,
-            "run",
-            lambda *args, **kwargs: subprocess.CompletedProcess(args=[], returncode=0),
+            "Popen",
+            lambda *args, **kwargs: _FakePopen(args[0], return_code=0, output_lines=["Merging PR"]),
         )
 
         async with app.run_test() as pilot:
             await pilot.pause()
             count_before = provider.fetch_count
 
-            app._land_pr_async(456, "test-branch", tmp_path, None)
+            app._land_pr_async(
+                pr_num=456, branch="test-branch", repo_root=tmp_path, objective_issue=None
+            )
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -1092,22 +1143,26 @@ class TestLandPrAsync:
 
         monkeypatch.setattr(
             subprocess,
-            "run",
-            lambda *args, **kwargs: subprocess.CompletedProcess(args=[], returncode=1),
+            "Popen",
+            lambda *args, **kwargs: _FakePopen(
+                args[0], return_code=1, output_lines=["error: merge conflict"]
+            ),
         )
 
         async with app.run_test() as pilot:
             await pilot.pause()
             count_before = provider.fetch_count
 
-            app._land_pr_async(456, "test-branch", tmp_path, None)
+            app._land_pr_async(
+                pr_num=456, branch="test-branch", repo_root=tmp_path, objective_issue=None
+            )
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
 
     @pytest.mark.asyncio
     async def test_os_error_no_crash(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """OSError from subprocess is caught without crashing the app."""
+        """OSError from Popen is caught without crashing the app."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
             repo_root=tmp_path,
@@ -1118,22 +1173,24 @@ class TestLandPrAsync:
         def raise_os_error(*args: object, **kwargs: object) -> None:
             raise OSError("erk not found")
 
-        monkeypatch.setattr(subprocess, "run", raise_os_error)
+        monkeypatch.setattr(subprocess, "Popen", raise_os_error)
 
         async with app.run_test() as pilot:
             await pilot.pause()
 
-            app._land_pr_async(456, "test-branch", tmp_path, None)
+            app._land_pr_async(
+                pr_num=456, branch="test-branch", repo_root=tmp_path, objective_issue=None
+            )
             await pilot.pause(0.3)
 
             # App is still running and no refresh was triggered
             assert len(app.screen_stack) > 0
 
     @pytest.mark.asyncio
-    async def test_subprocess_called_with_correct_args(
+    async def test_popen_called_with_correct_args(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """subprocess.run is called with the correct erk exec land-execute command."""
+        """Popen is called with the correct erk exec land-execute command and bufsize=1."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
             repo_root=tmp_path,
@@ -1143,16 +1200,18 @@ class TestLandPrAsync:
 
         captured_calls: list[tuple[list[str], dict[str, object]]] = []
 
-        def capture_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        def capture_popen(cmd: list[str], **kwargs: object) -> _FakePopen:
             captured_calls.append((cmd, kwargs))
-            return subprocess.CompletedProcess(args=cmd, returncode=0)
+            return _FakePopen(cmd, return_code=0, output_lines=[])
 
-        monkeypatch.setattr(subprocess, "run", capture_run)
+        monkeypatch.setattr(subprocess, "Popen", capture_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
 
-            app._land_pr_async(456, "my-branch", tmp_path, None)
+            app._land_pr_async(
+                pr_num=456, branch="my-branch", repo_root=tmp_path, objective_issue=None
+            )
             await pilot.pause(0.3)
 
             assert len(captured_calls) == 1
@@ -1166,6 +1225,105 @@ class TestLandPrAsync:
                 "-f",
             ]
             assert kwargs["cwd"] == tmp_path
+            assert kwargs["bufsize"] == 1
+
+    @pytest.mark.asyncio
+    async def test_status_bar_updated_during_progress(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Status bar receives prefixed progress messages during landing."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        monkeypatch.setattr(
+            subprocess,
+            "Popen",
+            lambda *args, **kwargs: _FakePopen(
+                args[0],
+                return_code=0,
+                output_lines=["Merging PR", "Cleaning up branch"],
+            ),
+        )
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            status_messages: list[str | None] = []
+            status_bar = app.query_one(StatusBar)
+            original_set_message = status_bar.set_message
+
+            def capture_set_message(message: str | None) -> None:
+                status_messages.append(message)
+                original_set_message(message)
+
+            monkeypatch.setattr(status_bar, "set_message", capture_set_message)
+
+            app._land_pr_async(
+                pr_num=456, branch="test-branch", repo_root=tmp_path, objective_issue=None
+            )
+            await pilot.pause(0.3)
+
+            # Should have progress messages and a final clear (None)
+            prefixed = [
+                m for m in status_messages if m is not None and m.startswith("Landing #456:")
+            ]
+            assert len(prefixed) >= 2
+            assert "Landing #456: Merging PR" in prefixed
+            assert "Landing #456: Cleaning up branch" in prefixed
+            # Status bar cleared on success
+            assert None in status_messages
+
+    @pytest.mark.asyncio
+    async def test_error_toast_includes_output_context(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Failure toast includes the last meaningful output line."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        monkeypatch.setattr(
+            subprocess,
+            "Popen",
+            lambda *args, **kwargs: _FakePopen(
+                args[0],
+                return_code=1,
+                output_lines=["Checking merge status", "error: merge conflict in README.md"],
+            ),
+        )
+
+        notifications: list[tuple[str, str]] = []
+
+        def capture_notify(
+            message: object,
+            *,
+            title: str = "",
+            severity: str = "information",
+            timeout: float = 5,
+        ) -> None:
+            notifications.append((str(message), severity))
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            monkeypatch.setattr(app, "notify", capture_notify)
+
+            app._land_pr_async(
+                pr_num=456, branch="test-branch", repo_root=tmp_path, objective_issue=None
+            )
+            await pilot.pause(0.3)
+
+            error_notifications = [(msg, sev) for msg, sev in notifications if sev == "error"]
+            assert len(error_notifications) >= 1
+            error_msg = error_notifications[0][0]
+            assert "Landing PR #456 failed" in error_msg
+            assert "merge conflict in README.md" in error_msg
 
     @pytest.mark.asyncio
     async def test_objective_update_called_when_objective_issue_set(
@@ -1179,10 +1337,16 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        captured_calls: list[list[str]] = []
+        captured_run_calls: list[list[str]] = []
+
+        monkeypatch.setattr(
+            subprocess,
+            "Popen",
+            lambda *args, **kwargs: _FakePopen(args[0], return_code=0, output_lines=["Merged"]),
+        )
 
         def capture_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_calls.append(cmd)
+            captured_run_calls.append(cmd)
             return subprocess.CompletedProcess(args=cmd, returncode=0)
 
         monkeypatch.setattr(subprocess, "run", capture_run)
@@ -1190,12 +1354,14 @@ class TestLandPrAsync:
         async with app.run_test() as pilot:
             await pilot.pause()
 
-            app._land_pr_async(456, "my-branch", tmp_path, 42)
+            app._land_pr_async(
+                pr_num=456, branch="my-branch", repo_root=tmp_path, objective_issue=42
+            )
             await pilot.pause(0.3)
 
-            # Two subprocess calls: land-execute then objective-update-after-land
-            assert len(captured_calls) == 2
-            assert captured_calls[1] == [
+            # Only the objective-update call goes through subprocess.run
+            assert len(captured_run_calls) == 1
+            assert captured_run_calls[0] == [
                 "erk",
                 "exec",
                 "objective-update-after-land",
@@ -1208,7 +1374,7 @@ class TestLandPrAsync:
     async def test_objective_update_skipped_when_objective_issue_none(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """When objective_issue is None, only the land-execute subprocess is called."""
+        """When objective_issue is None, no subprocess.run calls are made (only Popen)."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
             repo_root=tmp_path,
@@ -1216,10 +1382,16 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        captured_calls: list[list[str]] = []
+        captured_run_calls: list[list[str]] = []
+
+        monkeypatch.setattr(
+            subprocess,
+            "Popen",
+            lambda *args, **kwargs: _FakePopen(args[0], return_code=0, output_lines=["Merged"]),
+        )
 
         def capture_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_calls.append(cmd)
+            captured_run_calls.append(cmd)
             return subprocess.CompletedProcess(args=cmd, returncode=0)
 
         monkeypatch.setattr(subprocess, "run", capture_run)
@@ -1227,11 +1399,13 @@ class TestLandPrAsync:
         async with app.run_test() as pilot:
             await pilot.pause()
 
-            app._land_pr_async(456, "my-branch", tmp_path, None)
+            app._land_pr_async(
+                pr_num=456, branch="my-branch", repo_root=tmp_path, objective_issue=None
+            )
             await pilot.pause(0.3)
 
-            # Only one subprocess call: land-execute (objective update skipped)
-            assert len(captured_calls) == 1
+            # No subprocess.run calls (objective update skipped, land via Popen)
+            assert len(captured_run_calls) == 0
 
     @pytest.mark.asyncio
     async def test_refresh_triggered_after_objective_update(
@@ -1247,6 +1421,11 @@ class TestLandPrAsync:
 
         monkeypatch.setattr(
             subprocess,
+            "Popen",
+            lambda *args, **kwargs: _FakePopen(args[0], return_code=0, output_lines=["Merged"]),
+        )
+        monkeypatch.setattr(
+            subprocess,
             "run",
             lambda *args, **kwargs: subprocess.CompletedProcess(args=[], returncode=0),
         )
@@ -1255,7 +1434,9 @@ class TestLandPrAsync:
             await pilot.pause()
             count_before = provider.fetch_count
 
-            app._land_pr_async(456, "test-branch", tmp_path, 42)
+            app._land_pr_async(
+                pr_num=456, branch="test-branch", repo_root=tmp_path, objective_issue=42
+            )
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -1272,22 +1453,26 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        call_count = 0
-
-        def mixed_return(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
-            nonlocal call_count
-            call_count += 1
-            # First call (land-execute) succeeds, second (objective update) fails
-            returncode = 0 if call_count == 1 else 1
-            return subprocess.CompletedProcess(args=[], returncode=returncode)
-
-        monkeypatch.setattr(subprocess, "run", mixed_return)
+        # Land-execute via Popen succeeds
+        monkeypatch.setattr(
+            subprocess,
+            "Popen",
+            lambda *args, **kwargs: _FakePopen(args[0], return_code=0, output_lines=["Merged"]),
+        )
+        # Objective update via subprocess.run fails
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *args, **kwargs: subprocess.CompletedProcess(args=[], returncode=1),
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
             count_before = provider.fetch_count
 
-            app._land_pr_async(456, "test-branch", tmp_path, 42)
+            app._land_pr_async(
+                pr_num=456, branch="test-branch", repo_root=tmp_path, objective_issue=42
+            )
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
