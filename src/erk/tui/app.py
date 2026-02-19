@@ -574,25 +574,24 @@ class ErkDashApp(App):
             repo_root: Path to repository root for running commands
         """
         try:
-            result = subprocess.run(
+            subprocess.run(
                 ["erk", "plan", "submit", str(plan_id), "-f"],
                 cwd=repo_root,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.DEVNULL,
                 text=True,
-                check=False,
+                check=True,
             )
-            if result.returncode == 0:
-                self.call_from_thread(self.notify, f"Plan #{plan_id} submitted", timeout=5)
-                self.call_from_thread(self.action_refresh)
-            else:
-                self.call_from_thread(
-                    self.notify,
-                    f"Submitting plan #{plan_id} failed",
-                    severity="error",
-                    timeout=8,
-                )
+            self.call_from_thread(self.notify, f"Plan #{plan_id} submitted", timeout=5)
+            self.call_from_thread(self.action_refresh)
+        except subprocess.CalledProcessError:
+            self.call_from_thread(
+                self.notify,
+                f"Submitting plan #{plan_id} failed",
+                severity="error",
+                timeout=8,
+            )
         except OSError as e:
             self.call_from_thread(
                 self.notify,

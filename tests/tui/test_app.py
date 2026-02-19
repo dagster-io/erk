@@ -1420,11 +1420,10 @@ class TestSubmitToQueueAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        monkeypatch.setattr(
-            subprocess,
-            "run",
-            lambda *args, **kwargs: subprocess.CompletedProcess(args=[], returncode=1),
-        )
+        def raise_called_process_error(*args: object, **kwargs: object) -> None:
+            raise subprocess.CalledProcessError(returncode=1, cmd=["erk", "plan", "submit"])
+
+        monkeypatch.setattr(subprocess, "run", raise_called_process_error)
 
         async with app.run_test() as pilot:
             await pilot.pause()
