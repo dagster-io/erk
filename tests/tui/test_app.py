@@ -1171,7 +1171,7 @@ class TestLandPrAsync:
     async def test_objective_update_called_when_objective_issue_set(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """When objective_issue is not None, subprocess is called with correct objective update args."""
+        """When objective_issue is set, objective update subprocess called with correct args."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
             repo_root=tmp_path,
