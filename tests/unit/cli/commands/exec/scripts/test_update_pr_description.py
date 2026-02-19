@@ -417,7 +417,7 @@ def test_update_pr_description_draft_pr_backend_preserves_metadata() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=DraftPRPlanBackend(github),
+            plan_store=DraftPRPlanBackend(github, github.issues),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)

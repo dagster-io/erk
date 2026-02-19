@@ -388,7 +388,7 @@ def test_pr_rewrite_draft_pr_backend_preserves_metadata() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
-            plan_store=DraftPRPlanBackend(github),
+            plan_store=DraftPRPlanBackend(github, github.issues),
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)

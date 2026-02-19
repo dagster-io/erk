@@ -311,7 +311,7 @@ def test_extract_plan_content_backward_compat_flat_format() -> None:
 def test_create_plan_includes_checkout_footer() -> None:
     """create_plan appends a checkout footer to the PR body."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues)
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
