@@ -224,9 +224,7 @@ class TestBuildWorktreeMapping:
             worktrees={
                 repo_root: [
                     WorktreeInfo(path=repo_root, branch="main", is_root=True),
-                    WorktreeInfo(
-                        path=worktree_path, branch="plan-my-feature", is_root=False
-                    ),
+                    WorktreeInfo(path=worktree_path, branch="plan-my-feature", is_root=False),
                 ]
             },
             git_common_dirs={repo_root: repo_root / ".git"},
@@ -272,9 +270,7 @@ class TestBuildWorktreeMapping:
             worktrees={
                 repo_root: [
                     WorktreeInfo(path=repo_root, branch="main", is_root=True),
-                    WorktreeInfo(
-                        path=worktree_path, branch="plan-orphan", is_root=False
-                    ),
+                    WorktreeInfo(path=worktree_path, branch="plan-orphan", is_root=False),
                 ]
             },
             git_common_dirs={repo_root: repo_root / ".git"},

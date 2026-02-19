@@ -1489,13 +1489,9 @@ query {{
             pr_details_list.append(details)
 
             # Build PullRequestInfo for pr_linkages
-            checks_passing, checks_counts = self._parse_status_rollup(
-                node.get("statusCheckRollup")
-            )
+            checks_passing, checks_counts = self._parse_status_rollup(node.get("statusCheckRollup"))
             has_conflicts = self._parse_mergeable_status(node.get("mergeable"))
-            review_thread_counts = self._parse_review_thread_counts(
-                node.get("reviewThreads")
-            )
+            review_thread_counts = self._parse_review_thread_counts(node.get("reviewThreads"))
 
             pr_info = PullRequestInfo(
                 number=pr_number,
