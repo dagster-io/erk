@@ -1,5 +1,14 @@
 <!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
-<!-- Run 'erk-dev gen-exec-reference-docs' to regenerate. -->
+<!--
+  Regenerate: erk-dev gen-exec-reference-docs
+  CI check:   erk-dev gen-exec-reference-docs --check (included in make fast-ci)
+
+  Source of truth: Live Click command tree in src/erk/cli/commands/exec/group.py
+  Generator code: packages/erk-dev/src/erk_dev/exec_reference/generate.py
+  Generator docs: docs/learned/cli/auto-generated-reference-docs.md
+
+  Regenerate after: adding/modifying/removing exec commands or changing help text
+-->
 
 # erk exec Commands Reference
 
