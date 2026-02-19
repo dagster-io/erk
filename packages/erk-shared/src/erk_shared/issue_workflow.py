@@ -8,6 +8,7 @@ including validation, branch naming, and metadata extraction. Used by both
 from dataclasses import dataclass
 from datetime import datetime
 
+from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
 from erk_shared.naming import generate_issue_branch_name, sanitize_worktree_name
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -94,12 +95,19 @@ def prepare_plan_for_worktree(
             f"Issue #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway..."
         )
 
-    branch_name = generate_issue_branch_name(
-        issue_number,
-        plan.title,
-        timestamp,
-        objective_id=plan.objective_id,
-    )
+    # Two code paths based on backend:
+    # - Draft PR plans always have branch_name in header_fields (set by plan_save)
+    # - Issue plans don't have it yet (set later by erk plan submit)
+    existing_branch = plan.header_fields.get(BRANCH_NAME)
+    if isinstance(existing_branch, str) and len(existing_branch) > 0:
+        branch_name = existing_branch
+    else:
+        branch_name = generate_issue_branch_name(
+            issue_number,
+            plan.title,
+            timestamp,
+            objective_id=plan.objective_id,
+        )
     worktree_name = sanitize_worktree_name(branch_name)
 
     return IssueBranchSetup(

@@ -14,12 +14,14 @@ from erk_shared.plan_store.types import Plan, PlanState
 
 
 def _make_plan(
+    *,
     plan_identifier: str = "123",
     title: str = "Test Issue",
     body: str = "Plan content",
     state: PlanState = PlanState.OPEN,
     url: str = "https://github.com/org/repo/issues/123",
     labels: list[str] | None = None,
+    header_fields: dict[str, object] | None = None,
 ) -> Plan:
     """Create a minimal Plan for testing."""
     return Plan(
@@ -34,6 +36,7 @@ def _make_plan(
         updated_at=datetime(2024, 1, 1),
         metadata={},
         objective_id=None,
+        header_fields=header_fields if header_fields is not None else {},
     )
 
 
@@ -144,3 +147,19 @@ def test_prepare_plan_without_objective_id_has_none() -> None:
 
     assert isinstance(result, IssueBranchSetup)
     assert result.objective_issue is None
+
+
+def test_prepare_plan_with_draft_pr_branch_reuses_existing_branch() -> None:
+    """Plan with branch_name in header_fields uses it instead of generating a new one."""
+    plan = _make_plan(
+        plan_identifier="456",
+        title="Add New Feature",
+        header_fields={"branch_name": "plan-add-new-feature-01-15-1430"},
+    )
+    timestamp = datetime(2024, 3, 10, 9, 15)
+
+    result = prepare_plan_for_worktree(plan, timestamp)
+
+    assert isinstance(result, IssueBranchSetup)
+    assert result.branch_name == "plan-add-new-feature-01-15-1430"
+    assert result.issue_number == 456
