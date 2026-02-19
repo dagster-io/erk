@@ -7,16 +7,15 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.objective_fetch_context import (
-    _parse_plan_number_from_branch,
-    objective_fetch_context,
-)
-from erk_shared.context.context import ErkContext
+from erk.cli.commands.exec.scripts.objective_fetch_context import objective_fetch_context
+from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 
 
 def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
@@ -107,22 +106,25 @@ PLAN_BODY_WITH_OBJECTIVE = textwrap.dedent("""\
     # Plan content
 """)
 
+DRAFT_PR_BODY_WITH_OBJECTIVE = textwrap.dedent("""\
+    <!-- erk:metadata-block:plan-header -->
 
-class TestParsePlanNumberFromBranch:
-    def test_valid_pattern(self) -> None:
-        assert _parse_plan_number_from_branch("P6513-phase-1b-implement") == 6513
+    <details>
+    <summary><code>plan-header</code></summary>
 
-    def test_single_digit(self) -> None:
-        assert _parse_plan_number_from_branch("P1-fix") == 1
+    ```yaml
+    objective_issue: 7419
+    title: Draft PR Plan
+    ```
 
-    def test_no_match(self) -> None:
-        assert _parse_plan_number_from_branch("feature-branch") is None
+    </details>
 
-    def test_lowercase_p(self) -> None:
-        assert _parse_plan_number_from_branch("p123-branch") is None
+    <!-- /erk:metadata-block:plan-header -->
 
-    def test_no_hyphen_after_number(self) -> None:
-        assert _parse_plan_number_from_branch("P123") is None
+    ---
+
+    # Draft PR plan content
+""")
 
 
 class TestObjectiveFetchContext:
@@ -139,7 +141,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -151,7 +153,7 @@ class TestObjectiveFetchContext:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["objective"]["number"] == 6423
-        assert data["plan"]["number"] == 6513
+        assert data["plan"]["number"] == "6513"
         assert data["pr"]["number"] == 6517
 
     def test_roadmap_context_included(self, tmp_path: Path) -> None:
@@ -167,7 +169,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -225,7 +227,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "200", "--objective", "6423", "--branch", "P100-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -251,7 +253,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -277,7 +279,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "9999", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -302,7 +304,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "9999", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -316,7 +318,7 @@ class TestObjectiveFetchContext:
         assert "9999" in data["error"]
 
     def test_bad_branch_pattern(self, tmp_path: Path) -> None:
-        """Returns error JSON when branch doesn't match P<number>-... pattern."""
+        """Returns error JSON when branch doesn't match any plan pattern."""
         fake_issues = FakeGitHubIssues()
         fake_github = FakeGitHub()
 
@@ -324,7 +326,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "feature-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -335,6 +337,7 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
+        assert "No plan found for branch" in data["error"]
         assert "feature-branch" in data["error"]
 
     def test_plan_not_found(self, tmp_path: Path) -> None:
@@ -349,7 +352,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -360,7 +363,7 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "6513" in data["error"]
+        assert "No plan found for branch" in data["error"]
 
 
 class TestDiscoveryMode:
@@ -378,7 +381,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 git=fake_git,
@@ -390,7 +393,7 @@ class TestDiscoveryMode:
         assert result.exit_code == 0, result.output
         data = json.loads(result.output)
         assert data["success"] is True
-        assert data["plan"]["number"] == 6513
+        assert data["plan"]["number"] == "6513"
 
     def test_discover_objective_from_plan_metadata(self, tmp_path: Path) -> None:
         """Auto-discovers objective when --objective is omitted."""
@@ -405,7 +408,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -436,7 +439,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -468,7 +471,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             [],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 git=fake_git,
@@ -481,7 +484,7 @@ class TestDiscoveryMode:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["objective"]["number"] == 6423
-        assert data["plan"]["number"] == 6513
+        assert data["plan"]["number"] == "6513"
         assert data["pr"]["number"] == 6517
         assert data["roadmap"]["matched_steps"] == ["1.1", "1.2"]
 
@@ -495,7 +498,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 git=fake_git,
@@ -520,7 +523,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -535,14 +538,16 @@ class TestDiscoveryMode:
 
     def test_discover_pr_not_found_error(self, tmp_path: Path) -> None:
         """Returns error when no PR found for the branch."""
-        fake_issues = FakeGitHubIssues()
+        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+
+        fake_issues = FakeGitHubIssues(issues={6513: plan})
         fake_github = FakeGitHub()
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
             ["--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -554,3 +559,114 @@ class TestDiscoveryMode:
         data = json.loads(result.output)
         assert data["success"] is False
         assert "No PR found" in data["error"]
+
+
+class TestDraftPRBackend:
+    def test_happy_path_draft_pr_plan(self, tmp_path: Path) -> None:
+        """Draft PR branch with plan-header resolves plan and objective correctly."""
+        objective = _make_issue(number=7419, title="My Objective", body=ROADMAP_BODY)
+        draft_pr = _make_pr_details(
+            number=8001,
+            title="Draft PR Plan",
+            body=DRAFT_PR_BODY_WITH_OBJECTIVE,
+            head_ref_name="plan-draft-pr-plan",
+        )
+        pr = _make_pr_details(
+            number=8002,
+            title="Impl PR",
+            body="implementation pr body",
+            head_ref_name="plan-draft-pr-plan",
+        )
+
+        fake_issues = FakeGitHubIssues(issues={7419: objective})
+        fake_github = FakeGitHub(
+            prs_by_branch={"plan-draft-pr-plan": draft_pr},
+            pr_details={8002: pr},
+        )
+        draft_pr_backend = DraftPRPlanBackend(fake_github, fake_issues, time=FakeTime())
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--pr", "8002", "--objective", "7419", "--branch", "plan-draft-pr-plan"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                plan_store=draft_pr_backend,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert data["objective"]["number"] == 7419
+        assert data["plan"]["number"] == "8001"
+        assert data["plan"]["title"] == "Draft PR Plan"
+        assert data["pr"]["number"] == 8002
+
+    def test_draft_pr_objective_discovery(self, tmp_path: Path) -> None:
+        """Auto-discovers objective from draft PR plan's plan-header metadata."""
+        objective = _make_issue(number=7419, title="My Objective", body=ROADMAP_BODY)
+        draft_pr = _make_pr_details(
+            number=8001,
+            title="Draft PR Plan",
+            body=DRAFT_PR_BODY_WITH_OBJECTIVE,
+            head_ref_name="plan-draft-pr-plan",
+        )
+        pr = _make_pr_details(
+            number=8002,
+            title="Impl PR",
+            body="implementation pr body",
+            head_ref_name="plan-draft-pr-plan",
+        )
+
+        fake_issues = FakeGitHubIssues(issues={7419: objective})
+        fake_github = FakeGitHub(
+            prs_by_branch={"plan-draft-pr-plan": draft_pr},
+            pr_details={8002: pr},
+        )
+        draft_pr_backend = DraftPRPlanBackend(fake_github, fake_issues, time=FakeTime())
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--pr", "8002", "--branch", "plan-draft-pr-plan"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                plan_store=draft_pr_backend,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert data["objective"]["number"] == 7419
+
+    def test_draft_pr_plan_not_found(self, tmp_path: Path) -> None:
+        """Returns error when no PR exists for a plan-... branch."""
+        fake_issues = FakeGitHubIssues()
+        fake_github = FakeGitHub()
+        draft_pr_backend = DraftPRPlanBackend(fake_github, fake_issues, time=FakeTime())
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--pr", "8002", "--objective", "7419", "--branch", "plan-no-such-plan"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                plan_store=draft_pr_backend,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "No plan found for branch" in data["error"]

@@ -22,7 +22,7 @@ class ObjectiveInfoDict(TypedDict):
 class PlanInfoDict(TypedDict):
     """Plan issue information."""
 
-    number: int
+    number: str | int
     title: str
     body: str
 

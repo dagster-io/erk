@@ -17,7 +17,6 @@ Exit Codes:
 """
 
 import json
-import re
 
 import click
 
@@ -26,13 +25,11 @@ from erk_shared.context.helpers import (
     require_git,
     require_github,
     require_issues,
+    require_plan_backend,
     require_repo_root,
 )
 from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.core import (
-    extract_metadata_value,
-    extract_raw_metadata_blocks,
-)
+from erk_shared.gateway.github.metadata.core import extract_raw_metadata_blocks
 from erk_shared.gateway.github.metadata.dependency_graph import (
     build_graph,
     compute_graph_summary,
@@ -52,14 +49,7 @@ from erk_shared.objective_fetch_context_result import (
     PRInfoDict,
     RoadmapContextDict,
 )
-
-
-def _parse_plan_number_from_branch(branch: str) -> int | None:
-    """Extract plan issue number from branch pattern P<number>-..."""
-    match = re.match(r"^P(\d+)-", branch)
-    if match is None:
-        return None
-    return int(match.group(1))
+from erk_shared.plan_store.types import PlanNotFound
 
 
 def _error_json(error: str) -> str:
@@ -67,7 +57,17 @@ def _error_json(error: str) -> str:
     return json.dumps(result)
 
 
-def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapContextDict:
+def _empty_roadmap() -> RoadmapContextDict:
+    return RoadmapContextDict(
+        phases=[],
+        matched_steps=[],
+        summary={},
+        next_node=None,
+        all_complete=False,
+    )
+
+
+def _build_roadmap_context(objective_body: str, plan_id: str) -> RoadmapContextDict:
     """Parse roadmap from objective body and match steps for this plan.
 
     Uses parse_roadmap_frontmatter() + group_nodes_by_phase() directly
@@ -77,28 +77,16 @@ def _build_roadmap_context(objective_body: str, plan_number: int) -> RoadmapCont
     matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
 
     if not matching_blocks:
-        return RoadmapContextDict(
-            phases=[],
-            matched_steps=[],
-            summary={},
-            next_node=None,
-            all_complete=False,
-        )
+        return _empty_roadmap()
 
     steps = parse_roadmap_frontmatter(matching_blocks[0].body)
     if steps is None:
-        return RoadmapContextDict(
-            phases=[],
-            matched_steps=[],
-            summary={},
-            next_node=None,
-            all_complete=False,
-        )
+        return _empty_roadmap()
 
     phases = group_nodes_by_phase(steps)
     graph = build_graph(phases)
 
-    plan_ref = f"#{plan_number}"
+    plan_ref = f"#{plan_id}"
     matched_steps = [step.id for step in steps if step.plan == plan_ref]
 
     summary = compute_graph_summary(graph)
@@ -143,6 +131,7 @@ def objective_fetch_context(
     issues = require_issues(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
+    plan_backend = require_plan_backend(ctx)
 
     # Discovery: auto-fill branch from git state
     if branch_name is None:
@@ -153,37 +142,21 @@ def objective_fetch_context(
             click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
             raise SystemExit(1)
 
-    # Parse plan number from branch
-    plan_number = _parse_plan_number_from_branch(branch_name)
-    if plan_number is None:
-        click.echo(_error_json(f"Branch '{branch_name}' does not match P<number>-... pattern"))
+    # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
+    plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
+    if isinstance(plan_result, PlanNotFound):
+        click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
         raise SystemExit(1)
 
-    # Discovery: auto-fill objective from plan issue metadata
+    plan_id = plan_result.plan_identifier
+
+    # Discovery: auto-fill objective from plan metadata
     if objective_number is None:
-        plan_for_discovery = issues.get_issue(repo_root, plan_number)
-        if isinstance(plan_for_discovery, IssueNotFound):
-            msg = f"Plan issue #{plan_number} not found (needed to discover objective)"
+        if plan_result.objective_id is None:
+            msg = f"Plan #{plan_id} has no objective_issue in plan-header metadata"
             click.echo(_error_json(msg))
             raise SystemExit(1)
-        discovered_objective = extract_metadata_value(
-            plan_for_discovery.body, "plan-header", "objective_issue"
-        )
-        if discovered_objective is None:
-            msg = f"Plan issue #{plan_number} has no objective_issue in plan-header metadata"
-            click.echo(_error_json(msg))
-            raise SystemExit(1)
-        if isinstance(discovered_objective, int):
-            objective_number = discovered_objective
-        elif isinstance(discovered_objective, str) and discovered_objective.isdigit():
-            objective_number = int(discovered_objective)
-        else:
-            msg = (
-                f"Plan issue #{plan_number} has invalid objective_issue value:"
-                f" {discovered_objective}"
-            )
-            click.echo(_error_json(msg))
-            raise SystemExit(1)
+        objective_number = plan_result.objective_id
 
     # Discovery: auto-fill PR from branch
     if pr_number is None:
@@ -199,19 +172,13 @@ def objective_fetch_context(
         click.echo(_error_json(f"Objective issue #{objective_number} not found"))
         raise SystemExit(1)
 
-    # Fetch plan issue
-    plan = issues.get_issue(repo_root, plan_number)
-    if isinstance(plan, IssueNotFound):
-        click.echo(_error_json(f"Plan issue #{plan_number} not found"))
-        raise SystemExit(1)
-
     # Fetch PR details
     pr = github.get_pr(repo_root, pr_number)
     if isinstance(pr, PRNotFound):
         click.echo(_error_json(f"PR #{pr_number} not found"))
         raise SystemExit(1)
 
-    roadmap = _build_roadmap_context(objective.body, plan_number)
+    roadmap = _build_roadmap_context(objective.body, plan_id)
 
     objective_info: ObjectiveInfoDict = {
         "number": objective.number,
@@ -222,9 +189,9 @@ def objective_fetch_context(
         "url": objective.url,
     }
     plan_info: PlanInfoDict = {
-        "number": plan.number,
-        "title": plan.title,
-        "body": plan.body,
+        "number": plan_id,
+        "title": plan_result.title,
+        "body": plan_result.body,
     }
     pr_info: PRInfoDict = {
         "number": pr.number,
