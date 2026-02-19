@@ -482,7 +482,7 @@ def _format_depends_on(depends_on: tuple[str, ...] | None) -> str:
 
     None or empty tuple renders as ``-``, non-empty tuple as comma-separated IDs.
     """
-    if depends_on is None or len(depends_on) == 0:
+    if not depends_on:
         return "-"
     return ", ".join(depends_on)
 
