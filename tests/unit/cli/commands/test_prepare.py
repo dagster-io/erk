@@ -2,7 +2,6 @@
 
 from datetime import UTC, datetime
 
-import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -430,15 +429,11 @@ def test_prepare_behaves_same_as_br_create_for_plan() -> None:
     assert "Created .impl/ folder from issue #300" in result2.output
 
 
-def test_prepare_with_draft_pr_backend_existing_branch(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_prepare_with_draft_pr_backend_existing_branch() -> None:
     """Draft PR backend with locally existing branch succeeds with 'Using existing branch'."""
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
-
     branch_name = "plan-add-feature-01-15-1030"
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"ERK_PLAN_BACKEND": "draft_pr"}) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -485,15 +480,11 @@ def test_prepare_with_draft_pr_backend_existing_branch(
         assert "Created .impl/ folder from issue #500" in result.output
 
 
-def test_prepare_with_draft_pr_backend_remote_only_branch(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_prepare_with_draft_pr_backend_remote_only_branch() -> None:
     """Draft PR backend with branch only on remote fetches and creates tracking branch."""
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
-
     branch_name = "plan-fix-bug-01-15-1030"
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"ERK_PLAN_BACKEND": "draft_pr"}) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
