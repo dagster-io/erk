@@ -606,6 +606,41 @@ class ErkDashApp(App):
                 timeout=8,
             )
 
+    @work(thread=True)
+    def _submit_to_queue_async(self, plan_id: int, repo_root: Path) -> None:
+        """Submit plan to queue in background thread with toast notifications.
+
+        Args:
+            plan_id: The plan identifier
+            repo_root: Path to repository root for running commands
+        """
+        try:
+            subprocess.run(
+                ["erk", "plan", "submit", str(plan_id), "-f"],
+                cwd=repo_root,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                text=True,
+                check=True,
+            )
+            self.call_from_thread(self.notify, f"Plan #{plan_id} submitted", timeout=5)
+            self.call_from_thread(self.action_refresh)
+        except subprocess.CalledProcessError:
+            self.call_from_thread(
+                self.notify,
+                f"Submitting plan #{plan_id} failed",
+                severity="error",
+                timeout=8,
+            )
+        except OSError as e:
+            self.call_from_thread(
+                self.notify,
+                f"Submitting plan #{plan_id} failed: {e}",
+                severity="error",
+                timeout=8,
+            )
+
     def _push_streaming_detail(
         self,
         *,
@@ -979,31 +1014,8 @@ class ErkDashApp(App):
 
         elif command_id == "submit_to_queue":
             if row.plan_url:
-                # Open detail modal to show streaming output
-                executor = RealCommandExecutor(
-                    browser_launch=self._provider.browser.launch,
-                    clipboard_copy=self._provider.clipboard.copy,
-                    close_plan_fn=self._provider.close_plan,
-                    notify_fn=self._notify_with_severity,
-                    refresh_fn=self.action_refresh,
-                    submit_to_queue_fn=self._provider.submit_to_queue,
-                )
-                detail_screen = PlanDetailScreen(
-                    row=row,
-                    clipboard=self._provider.clipboard,
-                    browser=self._provider.browser,
-                    executor=executor,
-                    repo_root=self._provider.repo_root,
-                )
-                self.push_screen(detail_screen)
-                # Trigger the streaming command after screen is mounted
-                detail_screen.call_after_refresh(
-                    lambda: detail_screen.run_streaming_command(
-                        ["erk", "plan", "submit", str(row.plan_id)],
-                        cwd=self._provider.repo_root,
-                        title=f"Submitting Plan #{row.plan_id}",
-                    )
-                )
+                self.notify(f"Submitting plan #{row.plan_id}...")
+                self._submit_to_queue_async(row.plan_id, self._provider.repo_root)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:

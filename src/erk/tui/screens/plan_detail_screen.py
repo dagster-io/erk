@@ -675,14 +675,12 @@ class PlanDetailScreen(ModalScreen):
 
         elif command_id == "submit_to_queue":
             if row.plan_url and self._repo_root is not None:
-                # Use streaming output for submit command
-                # -f flag prevents blocking on existing branch prompts in TUI context
-                self.run_streaming_command(
-                    ["erk", "plan", "submit", str(row.plan_id), "-f"],
-                    cwd=self._repo_root,
-                    title=f"Submitting Plan #{row.plan_id}",
-                )
-                # Don't dismiss - user must press Esc after completion
+                plan_id = row.plan_id
+                repo_root = self._repo_root
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Submitting plan #{plan_id}...")
+                    self.app._submit_to_queue_async(plan_id, repo_root)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch and self._repo_root is not None:

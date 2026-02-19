@@ -198,9 +198,9 @@ class TestExecuteCommandClosePlan:
 class TestExecuteCommandSubmitToQueue:
     """Tests for submit_to_queue command.
 
-    Note: submit_to_queue now uses streaming output via subprocess when repo_root
-    is provided. These tests verify the guard conditions but actual streaming
-    behavior is tested via integration tests.
+    Note: submit_to_queue now uses a non-blocking toast + background worker pattern
+    (like close_plan and land_pr). These tests verify the guard conditions. The
+    async worker behavior is tested in test_app.py.
     """
 
     def test_submit_to_queue_does_nothing_without_repo_root(self) -> None:
