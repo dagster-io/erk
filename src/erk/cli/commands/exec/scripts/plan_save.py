@@ -46,6 +46,7 @@ from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import generate_draft_pr_branch_name
+from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
 from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
@@ -237,6 +238,8 @@ def _save_as_draft_pr(
         click.echo(f"Branch: {branch_name}")
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
+        click.echo()
+        click.echo(format_draft_pr_next_steps_plain(plan_number))
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
