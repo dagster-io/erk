@@ -16,9 +16,13 @@ from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 
 
 class TestGetCurrentBranch:
@@ -356,3 +360,197 @@ class TestSetupImplFromIssueBranchManager:
         assert output["success"] is True
         assert output["branch"] == existing_branch
         assert output["issue_number"] == 77
+
+
+# =============================================================================
+# Draft-PR plan branch sync tests
+# =============================================================================
+
+
+def _make_draft_pr_backend(tmp_path: Path, plan_branch: str) -> tuple[DraftPRPlanBackend, int]:
+    """Create a DraftPRPlanBackend with a pre-registered draft PR.
+
+    Returns (backend, pr_number).
+    """
+    fake_github = FakeGitHub()
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_plan(
+        repo_root=tmp_path,
+        title="My Plan",
+        content="# Plan\n\nImplement something.",
+        labels=("erk-plan",),
+        metadata={"branch_name": plan_branch},
+    )
+    return backend, int(plan_result.plan_id)
+
+
+def test_draft_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
+    """Draft-PR plan with branch_name checks out the plan branch and syncs with remote."""
+    plan_branch = "my-plan-branch-02-19"
+    backend, pr_number = _make_draft_pr_backend(tmp_path, plan_branch)
+
+    fake_git = FakeGit(
+        current_branches={tmp_path: "master"},
+        local_branches={tmp_path: [plan_branch]},
+    )
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+        plan_store=backend,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        setup_impl_from_issue,
+        [str(pr_number), "--no-impl"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    # Fetch was called for the plan branch
+    assert fake_git.fetched_branches == [("origin", plan_branch)]
+
+    # Branch was checked out
+    assert (tmp_path, plan_branch) in fake_git.checked_out_branches
+
+    # Pull-rebase was called to sync with remote
+    assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
+
+    # Output contains the plan branch name
+    output_lines = result.output.strip().split("\n")
+    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+    output = json.loads(json_line)
+    assert output["success"] is True
+    assert output["branch"] == plan_branch
+
+
+def test_draft_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
+    """Already on the plan branch — no checkout needed, just fetch and pull-rebase."""
+    plan_branch = "my-plan-branch-02-19"
+    backend, pr_number = _make_draft_pr_backend(tmp_path, plan_branch)
+
+    fake_git = FakeGit(
+        current_branches={tmp_path: plan_branch},  # Already on the plan branch
+    )
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+        plan_store=backend,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        setup_impl_from_issue,
+        [str(pr_number), "--no-impl"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    # Fetch was called
+    assert fake_git.fetched_branches == [("origin", plan_branch)]
+
+    # No checkout (already on the plan branch)
+    assert all(b != plan_branch for _, b in fake_git.checked_out_branches)
+
+    # Pull-rebase was called to sync
+    assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
+
+    assert f"Already on plan branch '{plan_branch}'" in result.output
+
+
+def test_draft_pr_plan_sync_failure_reports_error(tmp_path: Path) -> None:
+    """Pull-rebase failure exits with code 1 and reports error JSON."""
+    plan_branch = "my-plan-branch-02-19"
+    backend, pr_number = _make_draft_pr_backend(tmp_path, plan_branch)
+
+    fake_git = FakeGit(
+        current_branches={tmp_path: plan_branch},  # Already on the plan branch
+        pull_rebase_error=PullRebaseError(message="Rebase conflict"),
+    )
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+        plan_store=backend,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        setup_impl_from_issue,
+        [str(pr_number), "--no-impl"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1
+
+    # Error JSON is present in output
+    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+    assert json_lines, "Expected JSON error output in command output"
+    error_data = json.loads(json_lines[0])
+    assert error_data["success"] is False
+    assert error_data["error"] == "pull_rebase_failed"
+    assert "Rebase conflict" in error_data["message"]
+
+
+def test_issue_plan_without_branch_name_uses_p_prefix(tmp_path: Path) -> None:
+    """Issue-based plan without BRANCH_NAME in header_fields uses P{issue}-... naming."""
+    now = datetime.now(UTC)
+    plan_issue = IssueInfo(
+        number=42,
+        title="Test Plan",
+        body="# Plan Content\n\nSome plan details here.",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="test-author",
+    )
+    fake_issues = FakeGitHubIssues(issues={42: plan_issue})
+
+    fake_git = FakeGit(
+        current_branches={tmp_path: "master"},
+    )
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        github_issues=fake_issues,
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        setup_impl_from_issue,
+        ["42", "--no-impl"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    # No remote fetch or sync for issue-based plans
+    assert len(fake_git.fetched_branches) == 0
+    assert len(fake_git.pull_rebase_calls) == 0
+
+    # Branch name uses P{issue}-... prefix
+    output_lines = result.output.strip().split("\n")
+    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+    output = json.loads(json_line)
+    assert output["success"] is True
+    assert output["branch"].startswith("P42-")

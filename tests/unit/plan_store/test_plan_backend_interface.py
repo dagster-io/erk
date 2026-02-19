@@ -49,6 +49,7 @@ def _create_metadata(backend: PlanBackend) -> dict[str, object]:
 
     DraftPRPlanBackend requires branch_name; GitHubPlanStore does not.
     """
+    # PLAN_BACKEND_SPLIT: DraftPRPlanBackend requires branch_name metadata; GitHubPlanStore does not
     if isinstance(backend, DraftPRPlanBackend):
         return {"branch_name": _next_branch()}
     return {}

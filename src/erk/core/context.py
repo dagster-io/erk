@@ -598,7 +598,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
     github: GitHub = RealGitHub(time, repo_info, issues=issues)
 
-    # Select plan backend based on env var
+    # PLAN_BACKEND_SPLIT: selects DraftPRPlanBackend or GitHubPlanStore based on ERK_PLAN_BACKEND
     plan_store: PlanStore
     plan_list_service: PlanListService
     if get_plan_backend() == "draft_pr":

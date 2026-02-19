@@ -49,6 +49,7 @@ def test_view_plan_displays_issue(plan_backend_type: str) -> None:
         assert "#42" in result.output
         assert "erk-plan" in result.output
         assert "bug" in result.output
+        # PLAN_BACKEND_SPLIT: PRDetails (draft_pr) has no assignees field; GitHubIssue does
         if plan_backend_type == "github":
             assert "alice" in result.output  # PRDetails has no assignees field
         # Body should NOT be displayed without --full

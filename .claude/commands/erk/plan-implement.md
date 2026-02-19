@@ -58,7 +58,10 @@ First, check if `.impl/` already exists and is valid:
 erk exec impl-init --json
 ```
 
-If this succeeds with `"valid": true`, the `.impl/` folder is already configured. **Skip directly to Step 3** (Read Plan and Load Context).
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 3** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
 
 Otherwise, set up from the specified issue:
 
@@ -68,8 +71,9 @@ erk exec setup-impl-from-issue <ISSUE_ARG>
 
 This command:
 
-- Creates a feature branch from current branch (stacked) or trunk
-- Checks out the new branch in the current worktree
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
 - Creates `.impl/` folder with the plan content
 - Saves issue reference for PR linking
 
@@ -115,9 +119,10 @@ Check if implementation is already set up:
 erk exec impl-init --json
 ```
 
-If this succeeds with `"valid": true`, the `.impl/` folder is already configured. **Skip directly to Step 3** (Read Plan and Load Context).
+If this succeeds with `"valid": true`:
 
-Note: `has_issue_tracking` may be `true` (issue-based) or `false` (file-based).
+- If `has_issue_tracking: false`: **Skip directly to Step 3** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue <issue_number>`** to sync the local branch with remote, then proceed to Step 3. The `issue_number` is available in `.impl/issue.json`.
 
 If it fails or returns `"valid": false`, continue to Step 2.
 

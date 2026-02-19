@@ -275,6 +275,7 @@ def build_blocking_message(
         editor: Value of EDITOR env var for TUI detection.
         plan_backend: Plan backend type ("github" or "draft_pr").
     """
+    # PLAN_BACKEND_SPLIT: affects which save action is offered and which messages are shown
     is_draft_pr = plan_backend == "draft_pr"
     # Build context lines for the question
     context_lines: list[str] = []
@@ -494,6 +495,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     # IMPORTANT: Do NOT delete the marker - keep it so subsequent ExitPlanMode calls
     # continue to block with "session complete" instead of prompting again
     if hook_input.plan_saved_marker_exists:
+        # PLAN_BACKEND_SPLIT: "session complete" message differs between draft-PR and issue backends
         if hook_input.plan_backend == "draft_pr":
             saved_msg = "✅ Plan PR already created. Session complete - no further action needed."
         else:
