@@ -384,6 +384,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
@@ -416,6 +417,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         # Should have both question: and header: instructions
         assert 'question: "' in message
@@ -435,6 +437,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert 'header: "Plan Action"' in message
 
@@ -451,6 +454,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "WARNING" in message
         assert "main" in message
@@ -470,6 +474,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "WARNING" in message
         assert "master" in message
@@ -488,6 +493,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "WARNING" not in message
         assert "trunk branch" not in message
@@ -505,6 +511,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "WARNING" not in message
         assert "trunk branch" not in message
@@ -522,6 +529,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "View/Edit the plan" in message
         assert "Open plan in editor" in message
@@ -539,6 +547,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -557,6 +566,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         # The option is still listed (as it's hardcoded), but no instructions
         assert "View/Edit the plan" in message
@@ -575,6 +585,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "/erk:plan-save --objective-issue=3679" in message
 
@@ -591,6 +602,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         # Should have /erk:plan-save but not --objective-issue
         assert "/erk:plan-save" in message
@@ -609,6 +621,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "📋 Add Feature X" in message
         assert "What would you like to do with this plan?" in message
@@ -626,6 +639,7 @@ class TestBuildBlockingMessage:
             pr_number=4230,
             plan_issue_number=4224,
             editor=None,
+            plan_backend="github",
         )
         # Title should be present
         assert "📋 Add Feature X" in message
@@ -650,6 +664,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=4224,
             editor=None,
+            plan_backend="github",
         )
         # No title emoji
         assert "📋" not in message
@@ -671,6 +686,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         # Should still have the basic question
         assert "What would you like to do with this plan?" in message
@@ -692,6 +708,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor="vim",
+            plan_backend="github",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert "vim is a terminal-based editor that cannot" in message
@@ -715,6 +732,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor="/opt/homebrew/bin/nvim",
+            plan_backend="github",
         )
         assert "nvim is a terminal-based editor" in message
         assert f"/opt/homebrew/bin/nvim {plan_path}" in message
@@ -732,6 +750,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor="code",
+            plan_backend="github",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -752,6 +771,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "Save and submit for review" in message
         assert "review PR for inline feedback" in message
@@ -769,6 +789,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "If user chooses 'Save and submit for review':" in message
         assert "erk exec marker read --session-id session-123 plan-saved-issue" in message
@@ -790,6 +811,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         # The save-and-review block should use the objective-aware save command
         # Find the save-and-review instruction block and verify it uses the objective flag
@@ -809,6 +831,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -828,6 +851,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "DISPLAY PLAN" in message
         assert str(plan_path) in message
@@ -848,6 +872,7 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
+            plan_backend="github",
         )
         assert "DISPLAY PLAN" not in message
         # Should still have the save prompt

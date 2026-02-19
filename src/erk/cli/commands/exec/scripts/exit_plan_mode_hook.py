@@ -257,7 +257,7 @@ def build_blocking_message(
     pr_number: int | None,
     plan_issue_number: int | None,
     editor: str | None,
-    plan_backend: str = "github",
+    plan_backend: str,
 ) -> str:
     """Build the blocking message with AskUserQuestion instructions.
 
@@ -494,11 +494,12 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     # IMPORTANT: Do NOT delete the marker - keep it so subsequent ExitPlanMode calls
     # continue to block with "session complete" instead of prompting again
     if hook_input.plan_saved_marker_exists:
-        saved_msg = (
-            "✅ Plan PR already created. Session complete - no further action needed."
-            if hook_input.plan_backend == "draft_pr"
-            else "✅ Plan already saved to GitHub. Session complete - no further action needed."
-        )
+        if hook_input.plan_backend == "draft_pr":
+            saved_msg = "✅ Plan PR already created. Session complete - no further action needed."
+        else:
+            saved_msg = (
+                "✅ Plan already saved to GitHub. Session complete - no further action needed."
+            )
         return HookOutput(
             ExitAction.BLOCK,
             saved_msg,
