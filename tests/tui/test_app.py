@@ -981,15 +981,16 @@ class TestExecutePaletteCommandLandPR:
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         # Capture the arguments passed to _land_pr_async
-        captured_args: list[tuple[int, str, Path]] = []
+        captured_args: list[tuple[int, str, Path, int | None]] = []
 
         def mock_land_pr_async(
             self: ErkDashApp,
             pr_num: int,
             branch: str,
             repo_root: Path,
+            objective_issue: int | None,
         ) -> None:
-            captured_args.append((pr_num, branch, repo_root))
+            captured_args.append((pr_num, branch, repo_root, objective_issue))
 
         monkeypatch.setattr(
             ErkDashApp,
@@ -1011,10 +1012,11 @@ class TestExecutePaletteCommandLandPR:
 
             # Verify _land_pr_async was called with correct arguments
             assert len(captured_args) == 1
-            pr_num, branch, repo_root = captured_args[0]
+            pr_num, branch, repo_root, objective_issue = captured_args[0]
             assert pr_num == 456
             assert branch == "test-branch"
             assert repo_root == tmp_path
+            assert objective_issue is None
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_land_pr_with_no_branch(self) -> None:
@@ -1071,7 +1073,7 @@ class TestLandPrAsync:
             await pilot.pause()
             count_before = provider.fetch_count
 
-            app._land_pr_async(456, "test-branch", tmp_path)
+            app._land_pr_async(456, "test-branch", tmp_path, None)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -1098,7 +1100,7 @@ class TestLandPrAsync:
             await pilot.pause()
             count_before = provider.fetch_count
 
-            app._land_pr_async(456, "test-branch", tmp_path)
+            app._land_pr_async(456, "test-branch", tmp_path, None)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -1121,7 +1123,7 @@ class TestLandPrAsync:
         async with app.run_test() as pilot:
             await pilot.pause()
 
-            app._land_pr_async(456, "test-branch", tmp_path)
+            app._land_pr_async(456, "test-branch", tmp_path, None)
             await pilot.pause(0.3)
 
             # App is still running and no refresh was triggered
@@ -1150,7 +1152,7 @@ class TestLandPrAsync:
         async with app.run_test() as pilot:
             await pilot.pause()
 
-            app._land_pr_async(456, "my-branch", tmp_path)
+            app._land_pr_async(456, "my-branch", tmp_path, None)
             await pilot.pause(0.3)
 
             assert len(captured_calls) == 1
