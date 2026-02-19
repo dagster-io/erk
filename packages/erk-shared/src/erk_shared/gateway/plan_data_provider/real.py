@@ -25,9 +25,10 @@ from erk_shared.gateway.github.metadata.core import (
     extract_objective_header_comment_id,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
+    _TERMINAL_STATUSES,
+    build_graph,
     compute_graph_summary,
     find_graph_next_node,
-    graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
@@ -610,10 +611,11 @@ class RealPlanDataProvider(PlanDataProvider):
         objective_total_nodes = 0
         objective_progress_display = "-"
         objective_next_node_display = "-"
+        objective_deps_display = "-"
         if plan.body:
             phases, _errors = parse_roadmap(plan.body)
             if phases:
-                graph = graph_from_phases(phases)
+                graph = build_graph(phases)
                 summary = compute_graph_summary(graph)
                 objective_done_nodes = summary["done"]
                 objective_total_nodes = summary["total_nodes"]
@@ -624,6 +626,11 @@ class RealPlanDataProvider(PlanDataProvider):
                     if len(step_text) > 60:
                         step_text = step_text[:57] + "..."
                     objective_next_node_display = step_text
+                    min_status = graph.min_dep_status(next_node["id"])
+                    if min_status is None or min_status in _TERMINAL_STATUSES:
+                        objective_deps_display = "ready"
+                    else:
+                        objective_deps_display = min_status.replace("_", " ")
 
         # Format updated_at display
         updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
@@ -677,6 +684,7 @@ class RealPlanDataProvider(PlanDataProvider):
             objective_total_nodes=objective_total_nodes,
             objective_progress_display=objective_progress_display,
             objective_next_node_display=objective_next_node_display,
+            objective_deps_display=objective_deps_display,
             updated_at=plan.updated_at,
             updated_display=updated_display,
             created_at=plan.created_at,

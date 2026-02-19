@@ -18,6 +18,15 @@ from erk_shared.gateway.github.metadata.roadmap import (
 
 _TERMINAL_STATUSES: set[RoadmapNodeStatus] = {"done", "skipped"}
 
+_STATUS_ORDER: dict[RoadmapNodeStatus, int] = {
+    "pending": 0,
+    "blocked": 1,
+    "planning": 2,
+    "in_progress": 3,
+    "done": 4,
+    "skipped": 4,
+}
+
 
 @dataclass(frozen=True)
 class ObjectiveNode:
@@ -57,6 +66,22 @@ class DependencyGraph:
     def pending_unblocked_nodes(self) -> list[ObjectiveNode]:
         """All unblocked nodes with pending status, in position order."""
         return [node for node in self.unblocked_nodes() if node.status == "pending"]
+
+    def min_dep_status(self, node_id: str) -> RoadmapNodeStatus | None:
+        """Lowest status among a node's upstream dependencies.
+
+        Returns None when the node has no dependencies or node_id is not found.
+        """
+        node_map = self._node_map()
+        if node_id not in node_map:
+            return None
+        deps = node_map[node_id].depends_on
+        if not deps:
+            return None
+        statuses = [node_map[dep_id].status for dep_id in deps if dep_id in node_map]
+        if not statuses:
+            return None
+        return min(statuses, key=lambda s: _STATUS_ORDER.get(s, 0))
 
     def next_node(self) -> ObjectiveNode | None:
         """First unblocked pending node by position order. None if no pending nodes."""

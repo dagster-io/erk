@@ -151,6 +151,8 @@ class PlanDataTable(DataTable):
             col_index += 1
             self.add_column("next node", key="next_node")
             col_index += 1
+            self.add_column("deps", key="deps")
+            col_index += 1
             self.add_column("updated", key="updated")
             col_index += 1
             self.add_column("author", key="author")
@@ -257,6 +259,7 @@ class PlanDataTable(DataTable):
                 Text(display_title),
                 row.objective_progress_display,
                 Text(row.objective_next_node_display),
+                row.objective_deps_display,
                 row.updated_display,
                 row.author,
             )
