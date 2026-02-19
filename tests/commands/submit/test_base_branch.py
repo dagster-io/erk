@@ -173,7 +173,7 @@ def test_submit_passes_base_branch_in_workflow(tmp_path: Path, plan_backend_type
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
     assert workflow == "plan-implement.yml"
-    assert inputs["issue_number"] == "456"
+    assert inputs["plan_id"] == "456"
     # CRITICAL: base_branch must be passed to workflow for stacked PR support
     assert "base_branch" in inputs
     assert inputs["base_branch"] == "feature-parent"

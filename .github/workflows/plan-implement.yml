@@ -1,11 +1,11 @@
 name: plan-implement
-run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
+run-name: "${{ inputs.plan_id }}:${{ inputs.distinct_id }}"
 
 on:
   workflow_dispatch:
     inputs:
-      issue_number:
-        description: "GitHub issue number to implement"
+      plan_id:
+        description: "Plan identifier to implement"
         required: true
         type: string
       submitted_by:
@@ -39,8 +39,8 @@ on:
         type: string
   workflow_call:
     inputs:
-      issue_number:
-        description: "GitHub issue number to implement"
+      plan_id:
+        description: "Plan identifier to implement"
         required: true
         type: string
       submitted_by:
@@ -75,7 +75,7 @@ on:
         type: string
 
 concurrency:
-  group: implement-issue-${{ inputs.issue_number }}
+  group: implement-plan-${{ inputs.plan_id }}
   cancel-in-progress: true
 
 jobs:
@@ -126,7 +126,7 @@ jobs:
       - name: Checkout implementation branch
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PLAN_ID: ${{ inputs.plan_id }}
           SUBMITTED_BY: ${{ inputs.submitted_by }}
           GH_TOKEN: ${{ github.token }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -135,29 +135,29 @@ jobs:
           git fetch origin "$BRANCH_NAME"
           git checkout "$BRANCH_NAME"
           rm -rf .worker-impl
-          erk exec create-worker-impl-from-issue "$ISSUE_NUMBER"
+          erk exec create-worker-impl-from-issue "$PLAN_ID"
           if [ $? -ne 0 ]; then
-            gh issue comment "$ISSUE_NUMBER" --body "Could not fetch plan content for issue #$ISSUE_NUMBER."
+            gh issue comment "$PLAN_ID" --body "Could not fetch plan content for #$PLAN_ID."
             exit 1
           fi
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
           git add .worker-impl
           if [[ -n $(git status --porcelain) ]]; then
-            git commit -m "Update plan for issue #$ISSUE_NUMBER (rerun)"
+            git commit -m "Update plan for #$PLAN_ID (rerun)"
             git push origin "$BRANCH_NAME"
           fi
           echo "Checked out branch: $BRANCH_NAME"
 
       - name: Post workflow started comment
         env:
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PLAN_ID: ${{ inputs.plan_id }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           PR_NUMBER: ${{ inputs.pr_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
           erk exec post-workflow-started-comment \
-            --issue-number "$ISSUE_NUMBER" \
+            --issue-number "$PLAN_ID" \
             --branch-name "$BRANCH_NAME" \
             --pr-number "$PR_NUMBER" \
             --run-id "${{ github.run_id }}" \
@@ -215,7 +215,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/erk:plan-implement $ISSUE_NUMBER"
+            "/erk:plan-implement $PLAN_ID"
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           if [ $EXIT_CODE -eq 0 ]; then
@@ -229,7 +229,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ inputs.pr_number }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PLAN_ID: ${{ inputs.plan_id }}
 
       - name: Capture session ID
         id: session
@@ -249,7 +249,7 @@ jobs:
         if: always() && steps.session.outputs.session_id
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PLAN_ID: ${{ inputs.plan_id }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           SESSION_FILE: ${{ steps.session.outputs.session_file }}
         run: |
@@ -257,20 +257,20 @@ jobs:
             --session-file "$SESSION_FILE" \
             --session-id "$SESSION_ID" \
             --source remote \
-            --issue-number "$ISSUE_NUMBER"
+            --issue-number "$PLAN_ID"
 
       - name: Update plan header with remote impl info
         if: always() && steps.session.outputs.session_id
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PLAN_ID: ${{ inputs.plan_id }}
           RUN_ID: ${{ github.run_id }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           BRANCH_NAME: ${{ inputs.branch_name }}
         run: |
           erk exec update-plan-remote-session \
-            --issue-number "$ISSUE_NUMBER" \
+            --issue-number "$PLAN_ID" \
             --run-id "$RUN_ID" \
             --session-id "$SESSION_ID" \
             --branch-name "$BRANCH_NAME"
@@ -280,7 +280,7 @@ jobs:
         if: steps.implement.outputs.implementation_success == 'true'
         env:
           BASE_BRANCH: ${{ inputs.base_branch }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PLAN_ID: ${{ inputs.plan_id }}
           ISSUE_TITLE: ${{ inputs.issue_title }}
           PR_NUMBER: ${{ inputs.pr_number }}
           PRE_IMPL_HEAD: ${{ steps.pre_impl.outputs.head }}
@@ -309,7 +309,7 @@ jobs:
             # Call exec command to handle no-changes scenario
             erk exec handle-no-changes \
               --pr-number "$PR_NUMBER" \
-              --issue-number "$ISSUE_NUMBER" \
+              --issue-number "$PLAN_ID" \
               --behind-count "$BEHIND_COUNT" \
               --base-branch "$BASE_BRANCH" \
               --original-title "$ISSUE_TITLE" \
@@ -338,7 +338,7 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PLAN_ID: ${{ inputs.plan_id }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |
@@ -349,7 +349,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/erk:git-pr-push Implement issue #$ISSUE_NUMBER"
+            "/erk:git-pr-push Implement plan #$PLAN_ID"
           echo "impl_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Handle merge conflicts if push failed
@@ -400,7 +400,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           erk exec ci-update-pr-body \
-            --issue-number "${{ inputs.issue_number }}" \
+            --issue-number "${{ inputs.plan_id }}" \
             --run-id "${{ github.run_id }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 

@@ -761,7 +761,7 @@ def _submit_single_issue(
     # Build inputs dict, merging workflow config
     inputs = {
         # Required inputs (always passed)
-        "issue_number": str(issue_number),
+        "plan_id": str(issue_number),
         "submitted_by": submitted_by,
         "issue_title": issue.title,
         "branch_name": branch_name,
