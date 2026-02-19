@@ -1,3 +1,38 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-19T14:28:08.040823+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22196872373'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFKwlktQ
+last_dispatched_at: '2026-02-19T19:30:59.310750+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-add-objectivelistservice-a-02-19-1428
+created_from_session: 97fd1c54-b8af-463b-82ab-95c9c87b9870
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary><code>original-plan</code></summary>
+
 # Add ObjectiveListService Abstraction
 
 ## Context
@@ -146,3 +181,14 @@ Tests for `RealObjectiveListService`:
 - `PlanListData` (`packages/erk-shared/src/erk_shared/core/plan_list_service.py`) — reused as return type
 - `FakePlanListService` (`packages/erk-shared/src/erk_shared/core/fakes.py:258`) — template for `FakeObjectiveListService`
 - `context_for_test()` in `src/erk/core/context.py` — template for adding the new optional param
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7622 --script)" && erk pr sync --dangerous
+```
