@@ -3,6 +3,7 @@
 
 # Planning Documentation
 
+- **[agent-async-patterns.md](agent-async-patterns.md)** — launching async subagents, managing parallel work during implementations, optimizing agent efficiency
 - **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
 - **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — passing data between agents via files or inline output, designing multi-agent workflows with parallel and sequential tiers, orchestrating subagents that produce markdown, XML, or other large outputs
 - **[agent-orchestration.md](agent-orchestration.md)** — designing agent workflows with parallel and sequential tiers, choosing between parallel and sequential agent execution, adding or modifying agents in the learn pipeline, deciding which model tier to assign an agent
@@ -14,6 +15,7 @@
 - **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
 - **[context-preservation-patterns.md](context-preservation-patterns.md)** — writing implementation plans (any workflow), reviewing plan content before saving to GitHub, creating consolidated plans from multiple sources, debugging why an implementing agent had to re-investigate
 - **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
+- **[context-preserved-naming.md](context-preserved-naming.md)** — renaming issue*\* to plan*\* in TUI layer, working with .impl/issue.json format, understanding which fields to rename vs preserve
 - **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
 - **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
@@ -48,6 +50,7 @@
 - **[session-deduplication.md](session-deduplication.md)** — understanding duplicate plan prevention, working with exit-plan-mode hook, debugging duplicate issue creation
 - **[session-preprocessing.md](session-preprocessing.md)** — modifying session preprocessing or compression pipeline, understanding why there are two preprocessing implementations, linking sessions to plans for learn workflow, debugging preprocessing failures or empty session output
 - **[sub-agent-context-limitations.md](sub-agent-context-limitations.md)** — delegating session-dependent commands to Task tool sub-agents, debugging impl-signal or plan-save-to-issue failures with empty session IDs, designing workflows that split work between root agent and sub-agents
+- **[subagent-reconnaissance.md](subagent-reconnaissance.md)** — planning bulk rename operations, launching libcst-refactor for large changes, scoping refactoring tasks
 - **[submit-branch-reuse.md](submit-branch-reuse.md)** — implementing erk plan submit, handling duplicate branches, resubmitting a plan issue
 - **[token-optimization-patterns.md](token-optimization-patterns.md)** — designing multi-agent workflows that process multiple documents, experiencing context bloat from fetching large payloads into parent agent, choosing where to place content fetching in an orchestration pipeline, deciding which model tier to use for delegated work
 - **[tripwire-promotion-workflow.md](tripwire-promotion-workflow.md)** — implementing tripwire candidate extraction, promoting tripwire candidates to frontmatter, understanding the learn-to-tripwire pipeline

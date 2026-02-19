@@ -106,6 +106,8 @@ Rules triggered by matching actions in code.
 
 **including impl-signal or plan-save-to-issue in a Task tool sub-agent prompt** → Read [Sub-Agent Context Limitations](sub-agent-context-limitations.md) first. Sub-agents cannot access ${CLAUDE_SESSION_ID}. Session-dependent commands must run in the root agent context. See sub-agent-context-limitations.md.
 
+**launching a bulk rename without first counting occurrences** → Read [Subagent Reconnaissance Before Bulk Refactors](subagent-reconnaissance.md) first. Launch Explore subagents to understand scope before executing. Upfront reconnaissance prevents under-renaming (missing files) and over-renaming (changing wrong semantic domains).
+
 **launching a dependent agent that reads a file written by a prior agent** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Verify the file exists (ls) before launching. Write tool silently fails if the parent directory is missing, and the dependent agent wastes its entire context discovering the file isn't there.
 
 **launching parallel agents that return results inline instead of writing to files** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Parallel agents must write results via Write tool to .erk/scratch/ files. Inline results can be truncated or lost. The parent agent reads files after completion.
@@ -145,6 +147,8 @@ Rules triggered by matching actions in code.
 **removing .worker-impl/ during implementation (before CI passes)** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes.
 
 **renaming gateway files during a move without checking for non-standard naming** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Source files that don't follow standard naming (e.g., executor.py instead of abc.py) must be renamed to abc.py/real.py/fake.py during the move. The gateway directory convention requires standard file names.
+
+**renaming issue\_\* fields in .impl/issue.json or plan header YAML** → Read [Context-Preserved Naming in Plan Formats](context-preserved-naming.md) first. Preserve issue\_\* in: .impl/issue.json format, plan header YAML issue_number, learn fields (learn_plan_issue, objective_issue). These formats represent the underlying GitHub data model, not the TUI's plan abstraction.
 
 **reusing existing worktrees for remote implementation** → Read [Remote Implementation Idempotency](remote-implementation-idempotency.md) first. Check if worktree already has a branch before creating new one. Reusing worktrees without checking causes PR orphaning.
 

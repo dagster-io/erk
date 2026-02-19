@@ -4,8 +4,10 @@
 # Documentation Documentation
 
 - **[audit-methodology.md](audit-methodology.md)** — auditing documentation for quality or staleness, classifying doc content as duplicative vs high-value, understanding why stale documentation harms agents
+- **[bulk-update-patterns.md](bulk-update-patterns.md)** — updating documentation during renames, planning doc updates for large refactors, learning systematic doc maintenance approach
 - **[canonical-authority-declarations.md](canonical-authority-declarations.md)** — writing a learned doc whose topic overlaps with AGENTS.md or another learned doc, consolidating scattered knowledge about the same topic into one document, resolving conflicts between two docs that describe the same pattern differently
 - **[divio-documentation-system.md](divio-documentation-system.md)** — structuring documentation, deciding what type of doc to write, creating tutorials, how-to guides, or reference material, understanding why docs feel disorganized
+- **[doc-code-sync.md](doc-code-sync.md)** — planning refactors that affect documentation, understanding doc maintenance during code changes, learning the co-evolution pattern
 - **[frontmatter-tripwire-format.md](frontmatter-tripwire-format.md)** — creating new documentation in docs/learned/, adding tripwires to existing docs, understanding frontmatter schema for agent docs, running erk docs sync
 - **[language-scope-auditing.md](language-scope-auditing.md)** — writing documentation that includes non-Python code examples, documenting erkdesk or desktop-dash patterns in docs/learned/, reviewing learned-docs for verbatim code across languages
 - **[markdown-and-prettier.md](markdown-and-prettier.md)** — writing markdown in docs/learned/ and wondering how Prettier will reformat it, choosing between tables, lists, and prose in documentation, using prettier-ignore directives in documentation
@@ -13,6 +15,7 @@
 - **[simplification-patterns.md](simplification-patterns.md)** — auditing or cleaning up documentation, removing duplication from docs, deciding how to simplify an oversized or redundant doc, replacing code blocks with source pointers
 - **[skill-scope.md](skill-scope.md)** — Creating or modifying skills in .claude/skills/, Deciding where to document a pattern, Reviewing skill content for project-specific leakage
 - **[source-pointers.md](source-pointers.md)** — writing or updating documentation with code references, deciding whether to include a code block in docs, addressing verbatim code violations from audit-pr-docs review
+- **[specificity-guidelines.md](specificity-guidelines.md)** — writing learned documentation, deciding detail level for docs, understanding what belongs in docs vs source
 - **[stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md)** — documenting implementation patterns with code examples, deciding whether to include verbatim code in docs, reviewing docs that contain embedded source code, understanding why erk enforces source pointers over code blocks
 - **[two-option-template.md](two-option-template.md)** — documenting a decision point between two valid approaches, writing comparison documentation for agents, choosing between decision table, prose, or template format for trade-off docs
 - **[when-to-switch-pattern.md](when-to-switch-pattern.md)** — deciding whether to plan or start coding directly, realizing mid-task that the scope is larger than expected, choosing between erk wt create and plan mode

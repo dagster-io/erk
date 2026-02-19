@@ -34,6 +34,8 @@ Rules triggered by matching actions in code.
 
 **constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
 
+**copying verbatim predicate code into docs** → Read [Command Availability Documentation Patterns](command-availability-documentation.md) first. Use source pointers instead. Predicate implementations change; copied code drifts silently.
+
 **creating a ModalScreen without CSS for dismiss behavior** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing.
 
 **duplicating command definitions for list and detail contexts** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Commands are defined once in the registry. Use a second Provider subclass with its own \_get_context() to serve the same commands from a new context.
@@ -46,6 +48,10 @@ Rules triggered by matching actions in code.
 
 **generating TUI commands that depend on optional PlanRowData fields** → Read [Adding Commands to TUI](adding-commands.md) first. Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone.
 
+**grouping commands by human intuition rather than actual predicate** → Read [Command Availability Documentation Patterns](command-availability-documentation.md) first. Group commands by their is_available predicate, not by conceptual similarity. Commands with same availability predicate go together.
+
+**listing command counts in prose** → Read [Command Availability Documentation Patterns](command-availability-documentation.md) first. Avoid writing 'Six commands require...' - list them and let the count speak for itself. Counts drift as commands are added.
+
 **modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
 
 **pushing PlanBodyScreen without explicit content_type** → Read [TUI View Switching](view-switching.md) first. Content type must come from view_mode at push time, not derived inside the screen.
@@ -57,6 +63,8 @@ Rules triggered by matching actions in code.
 **registering a new TUI command without a view-mode predicate** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Every command must use \_is_plan_view() or \_is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views.
 
 **reusing same DOM element id across loading/empty/content states** → Read [TUI Architecture Overview](architecture.md) first. query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase.
+
+**using 'issue' terminology in TUI display strings** → Read [Display String Terminology](display-string-terminology.md) first. Use 'plan' terminology (not 'issue') to maintain consistency with backend-agnostic naming. Examples: 'Opened plan #123' (not 'Opened issue #123'), 'by plan#' sort label (not 'by issue#'), info row label 'Plan' (not 'Issue').
 
 **using \_render() as a method name in Textual widgets** → Read [TUI View Switching](view-switching.md) first. Textual's LSP reserves \_render(). Use \_refresh_display() instead (see ViewBar).
 
