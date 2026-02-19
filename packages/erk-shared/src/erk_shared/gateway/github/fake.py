@@ -6,7 +6,7 @@ in its constructor. Construct instances directly with keyword arguments.
 
 import dataclasses
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +28,8 @@ from erk_shared.gateway.github.types import (
     RepoInfo,
     WorkflowRun,
 )
+from erk_shared.gateway.time.abc import Time
+from erk_shared.gateway.time.fake import FakeTime
 
 
 class FakeGitHub(GitHub):
@@ -69,6 +71,7 @@ class FakeGitHub(GitHub):
         artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
         gist_create_error: str | None = None,
         plan_pr_details: tuple[list[PRDetails], dict[int, list[PullRequestInfo]]] | None = None,
+        time: Time | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -147,6 +150,7 @@ class FakeGitHub(GitHub):
         self._workflow_runs_error = workflow_runs_error
         self._artifact_download_callback = artifact_download_callback
         self._gist_create_error = gist_create_error
+        self._time = time if time is not None else FakeTime()
         self._downloaded_artifacts: list[tuple[str, str, Path]] = []
         # (filename, content, description, public)
         self._created_gists: list[tuple[str, str, str, bool]] = []
@@ -311,8 +315,8 @@ class FakeGitHub(GitHub):
             owner=self._repo_info.owner,
             repo=self._repo_info.name,
             labels=(),
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+            created_at=self._time.now().replace(tzinfo=UTC),
+            updated_at=self._time.now().replace(tzinfo=UTC),
             author=self._repo_info.owner,
         )
         self._pr_details[pr_number] = details
