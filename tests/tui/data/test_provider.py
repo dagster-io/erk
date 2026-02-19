@@ -1,5 +1,6 @@
 """Tests for plan data provider."""
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -235,6 +236,120 @@ class TestBuildWorktreeMapping:
         mapping = provider._build_worktree_mapping()
 
         # Non-plan branch should not produce an entry
+        assert len(mapping) == 0
+
+    def test_draft_pr_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
+        """Draft PR branch (plan-*) resolved via .impl/plan-ref.json.
+
+        Branch name 'plan-fix-missing-data-02-19-1416' doesn't contain a
+        numeric issue prefix. The plan ID (PR number) comes from
+        .impl/plan-ref.json inside the worktree directory.
+        """
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        worktree_path = tmp_path / "worktrees" / "erk-slot-05"
+        worktree_path.mkdir(parents=True)
+        branch_name = "plan-fix-missing-data-02-19-1416"
+
+        # Create .impl/plan-ref.json on disk (read_plan_ref does direct I/O)
+        impl_dir = worktree_path / ".impl"
+        impl_dir.mkdir()
+        plan_ref_data = {
+            "provider": "github-draft-pr",
+            "plan_id": "7624",
+            "url": "https://github.com/test/repo/pull/7624",
+            "created_at": "2026-02-19T14:16:00+00:00",
+            "synced_at": "2026-02-19T14:16:00+00:00",
+            "labels": ["erk-plan"],
+            "objective_id": None,
+        }
+        (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                    WorktreeInfo(path=worktree_path, branch=branch_name, is_root=False),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        mapping = provider._build_worktree_mapping()
+
+        # Plan ID 7624 should be extracted from .impl/plan-ref.json
+        assert 7624 in mapping
+        worktree_name, worktree_branch = mapping[7624]
+        assert worktree_name == "erk-slot-05"
+        assert worktree_branch == branch_name
+
+    def test_draft_pr_branch_without_plan_ref_not_in_mapping(self, tmp_path: Path) -> None:
+        """Draft PR branch without .impl/plan-ref.json is not in mapping."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        worktree_path = tmp_path / "worktrees" / "erk-slot-05"
+        worktree_path.mkdir(parents=True)
+        branch_name = "plan-fix-something-02-19-1416"
+
+        # No .impl/plan-ref.json created
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                    WorktreeInfo(path=worktree_path, branch=branch_name, is_root=False),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        mapping = provider._build_worktree_mapping()
+
+        # No plan-ref.json, so plan-* branch should not produce an entry
         assert len(mapping) == 0
 
 

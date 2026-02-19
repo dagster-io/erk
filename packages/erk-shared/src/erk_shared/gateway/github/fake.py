@@ -68,6 +68,7 @@ class FakeGitHub(GitHub):
         workflow_runs_error: str | None = None,
         artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
         gist_create_error: str | None = None,
+        plan_pr_details: tuple[list[PRDetails], dict[int, list[PullRequestInfo]]] | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -108,6 +109,8 @@ class FakeGitHub(GitHub):
                 files in destination to simulate artifact content. Return True for success,
                 False or raise to simulate failure.
             gist_create_error: If set, create_gist() returns GistCreateError with this message.
+        plan_pr_details: Pre-configured data for list_plan_prs_with_details().
+            Tuple of (pr_details_list, pr_linkages). Defaults to empty.
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -172,6 +175,7 @@ class FakeGitHub(GitHub):
         self._operation_log: list[tuple[Any, ...]] = []
         # (repo, sha, state, context, description)
         self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
+        self._plan_pr_details = plan_pr_details or ([], {})
 
     @property
     def issues(self) -> GitHubIssues:
@@ -716,6 +720,18 @@ class FakeGitHub(GitHub):
             result[branch] = pr
 
         return result
+
+    def list_plan_prs_with_details(
+        self,
+        location: GitHubRepoLocation,
+        *,
+        labels: list[str],
+        state: str | None,
+        limit: int | None,
+        author: str | None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Return pre-configured plan PR details and linkages."""
+        return self._plan_pr_details
 
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent

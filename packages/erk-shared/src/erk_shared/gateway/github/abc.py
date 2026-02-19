@@ -428,6 +428,35 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def list_plan_prs_with_details(
+        self,
+        location: GitHubRepoLocation,
+        *,
+        labels: list[str],
+        state: str | None,
+        limit: int | None,
+        author: str | None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """List plan PRs with rich details via GraphQL.
+
+        Returns PRDetails for plan content extraction and PullRequestInfo
+        with checks, review threads, and merge status for display.
+        Filters by labels and state server-side; draft and author filters
+        are applied client-side (GraphQL pullRequests doesn't support them).
+
+        Args:
+            location: GitHub repository location
+            labels: Labels to filter by (e.g., ["erk-plan"])
+            state: Filter by state ("open", "closed", or None for all)
+            limit: Maximum number of results (None for no limit)
+            author: Filter by PR author username (applied client-side)
+
+        Returns:
+            Tuple of (pr_details_list, pr_linkages_by_pr_number)
+        """
+        ...
+
+    @abstractmethod
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
     ) -> None:
