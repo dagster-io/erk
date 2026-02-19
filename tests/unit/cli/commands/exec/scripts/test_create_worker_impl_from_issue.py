@@ -24,7 +24,8 @@ def _make_issue(
     body: str,
 ) -> IssueInfo:
     """Create a test IssueInfo with erk-plan label."""
-    now = datetime.now(UTC)
+    # Use fixed timestamp for deterministic tests
+    now = datetime(2025, 11, 25, 14, 37, 43, tzinfo=UTC)
     return IssueInfo(
         number=number,
         title=title,
