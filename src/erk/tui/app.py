@@ -487,13 +487,14 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _land_pr_async(self, pr_num: int, branch: str, repo_root: Path) -> None:
+    def _land_pr_async(self, pr_num: int, branch: str, repo_root: Path, objective_issue: int | None) -> None:
         """Land PR in background thread with toast notifications.
 
         Args:
             pr_num: The PR number to land
             branch: The PR head branch name
             repo_root: Path to repository root for running commands
+            objective_issue: Optional objective issue number to update after landing
         """
         try:
             result = subprocess.run(
@@ -514,6 +515,34 @@ class ErkDashApp(App):
             )
             if result.returncode == 0:
                 self.call_from_thread(self.notify, f"PR #{pr_num} landed", timeout=5)
+                # Update objective if linked
+                if objective_issue is not None:
+                    self.call_from_thread(self.notify, f"Updating objective #{objective_issue}...")
+                    obj_result = subprocess.run(
+                        [
+                            "erk",
+                            "exec",
+                            "objective-update-after-land",
+                            f"--objective={objective_issue}",
+                            f"--pr={pr_num}",
+                            f"--branch={branch}",
+                        ],
+                        cwd=repo_root,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        stdin=subprocess.DEVNULL,
+                        text=True,
+                        check=False,
+                    )
+                    if obj_result.returncode == 0:
+                        self.call_from_thread(self.notify, f"Objective #{objective_issue} updated", timeout=5)
+                    else:
+                        self.call_from_thread(
+                            self.notify,
+                            f"Objective update failed",
+                            severity="error",
+                            timeout=8,
+                        )
                 self.call_from_thread(self.action_refresh)
             else:
                 self.call_from_thread(
@@ -932,7 +961,7 @@ class ErkDashApp(App):
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
                 self.notify(f"Landing PR #{row.pr_number}...")
-                self._land_pr_async(row.pr_number, row.pr_head_branch, self._provider.repo_root)
+                self._land_pr_async(row.pr_number, row.pr_head_branch, self._provider.repo_root, row.objective_issue)
 
         elif command_id == "copy_replan":
             cmd = f"/erk:replan {row.plan_id}"
