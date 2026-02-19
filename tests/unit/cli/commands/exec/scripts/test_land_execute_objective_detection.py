@@ -1,9 +1,8 @@
-"""Tests that land-execute no longer auto-detects objectives.
+"""Tests for land-execute objective handling.
 
-After hoisting objective update to a standalone exec command, land-execute
-ignores the --objective-number flag and does not auto-detect objectives
-from branch names. All tests verify that no Claude prompt executor calls
-are made.
+land-execute handles objective updates inline when --objective-number is
+provided. Without the flag, no auto-detection occurs and no Claude calls
+are made. With the flag, the objective update runs after successful land.
 """
 
 from datetime import UTC, datetime
@@ -168,11 +167,11 @@ def test_land_execute_no_objective_auto_detection() -> None:
         assert len(executor.executed_commands) == 0
 
 
-def test_land_execute_explicit_objective_is_ignored() -> None:
-    """Test that explicit --objective-number is accepted but ignored.
+def test_land_execute_with_objective_triggers_update() -> None:
+    """Test that explicit --objective-number triggers objective update.
 
-    The flag is kept for backwards compatibility with ephemeral scripts
-    but the value is not used for any Claude calls.
+    When --objective-number is provided, land-execute calls
+    run_objective_update() inline after a successful land.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -262,7 +261,7 @@ def test_land_execute_explicit_objective_is_ignored() -> None:
             prompt_executor=executor,
         )
 
-        # Execute WITH explicit --objective-number=200 (should be ignored)
+        # Execute WITH explicit --objective-number=200
         result = runner.invoke(
             cli,
             [
@@ -281,8 +280,14 @@ def test_land_execute_explicit_objective_is_ignored() -> None:
 
         assert result.exit_code == 0
 
-        # Should NOT show objective info - explicit value is ignored
-        assert "Linked to Objective" not in result.output
+        # Should show objective update info
+        assert "Linked to Objective #200" in result.output
+        assert "Starting objective update..." in result.output
 
-        # Claude executor should NOT have been called
-        assert len(executor.executed_commands) == 0
+        # Claude executor should have been called for the objective update
+        assert len(executor.executed_commands) == 1
+        cmd, _path, dangerous, _verbose, _model = executor.executed_commands[0]
+        assert "/erk:objective-update-with-landed-pr" in cmd
+        assert "--objective 200" in cmd
+        assert "--pr 123" in cmd
+        assert f"--branch {feature_branch}" in cmd

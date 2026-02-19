@@ -1,9 +1,9 @@
 """Tests for objective update behavior in erk land-execute command.
 
-After hoisting objective update to a standalone exec command, land-execute
-no longer triggers Claude for objective updates. These tests verify that
-land-execute does NOT call the prompt executor, even when an objective
-number is provided.
+land-execute handles objective updates inline when --objective-number is
+provided. Tests verify:
+- With --objective-number: Claude is called for the objective update
+- The update is fail-open (exit 0 even on failure)
 """
 
 from datetime import UTC, datetime
@@ -45,12 +45,11 @@ def _create_plan_issue_with_objective(objective_number: int) -> IssueInfo:
     )
 
 
-def test_land_execute_does_not_trigger_objective_update() -> None:
-    """Test that land-execute no longer triggers objective update via Claude.
+def test_land_execute_triggers_objective_update_with_flag() -> None:
+    """Test that land-execute triggers objective update when --objective-number is provided.
 
-    Objective update is now handled by a separate command
-    (erk exec objective-update-after-land) emitted in the land script.
-    land-execute should NOT call the prompt executor.
+    Objective update is handled inline by land-execute after a successful merge.
+    The prompt executor should be called with the correct Claude command.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -155,19 +154,24 @@ def test_land_execute_does_not_trigger_objective_update() -> None:
 
         assert result.exit_code == 0
 
-        # land-execute should NOT call the prompt executor for objective updates
-        assert len(executor.executed_commands) == 0
+        # Should show objective update messages
+        assert "Linked to Objective #100" in result.output
+        assert "Starting objective update..." in result.output
 
-        # Should NOT show objective update messages
-        assert "Linked to Objective" not in result.output
-        assert "Starting objective update..." not in result.output
+        # Claude executor should have been called for the objective update
+        assert len(executor.executed_commands) == 1
+        cmd, _path, dangerous, _verbose, _model = executor.executed_commands[0]
+        assert "/erk:objective-update-with-landed-pr" in cmd
+        assert "--objective 100" in cmd
+        assert "--pr 123" in cmd
+        assert f"--branch {feature_branch}" in cmd
+        assert dangerous is True
 
 
-def test_land_execute_succeeds_even_with_objective_number() -> None:
-    """Test that land-execute still succeeds when --objective-number is passed.
+def test_land_execute_succeeds_without_objective_number() -> None:
+    """Test that land-execute succeeds without --objective-number.
 
-    The option is still accepted for backwards compatibility with ephemeral
-    scripts, but the value is ignored.
+    When no objective number is provided, no Claude calls should be made.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -254,7 +258,7 @@ def test_land_execute_succeeds_even_with_objective_number() -> None:
             prompt_executor=executor,
         )
 
-        # Pass --objective-number (backwards compat) - should be ignored
+        # No --objective-number flag
         result = runner.invoke(
             cli,
             [
@@ -263,7 +267,6 @@ def test_land_execute_succeeds_even_with_objective_number() -> None:
                 "--pr-number=123",
                 f"--branch={feature_branch}",
                 f"--worktree-path={feature_worktree_path}",
-                "--objective-number=100",
                 "--use-graphite",
                 "--script",
             ],

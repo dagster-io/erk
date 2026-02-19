@@ -7,7 +7,8 @@ Usage:
     erk exec land-execute --pr-number=123 --branch=foo [options]
 
 All validation happens during the validation phase (erk land). This command
-executes the pre-validated operations.
+executes the pre-validated operations. When --objective-number is provided,
+objective update runs inline after a successful land (fail-open).
 
 Exit Codes:
     0: Success (PR merged, branch deleted)
@@ -18,8 +19,10 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.exec.scripts.objective_update_after_land import run_objective_update
 from erk.cli.commands.land_cmd import _execute_land
 from erk_shared.context.helpers import require_context
+from erk_shared.output.output import user_output
 
 
 @click.command(name="land-execute")
@@ -139,20 +142,34 @@ def land_execute(
             )
         resolved_target_child = children[0]
 
-    # Objective update is now handled by a separate command
-    # (erk exec objective-update-after-land) emitted in the land script.
-    # --objective-number is still accepted for backwards compatibility with
-    # ephemeral scripts that may already exist, but the value is ignored.
-    _execute_land(
-        erk_ctx,
-        pr_number=pr_number,
-        branch=branch,
-        worktree_path=Path(worktree_path) if worktree_path else None,
-        is_current_branch=is_current_branch,
-        target_child_branch=resolved_target_child,
-        use_graphite=use_graphite,
-        pull_flag=pull_flag,
-        no_delete=no_delete,
-        no_cleanup=no_cleanup,
-        script=script,
-    )
+    # Execute the land operation (merge PR, cleanup branch/worktree).
+    # _execute_land raises SystemExit(0) on success (via cleanup/navigation),
+    # so the objective update must run inside the SystemExit handler.
+    # Previously objective update was a separate `erk exec objective-update-after-land`
+    # command in the generated land script, which could fail if the erk
+    # binary in the worktree didn't have that command registered.
+    try:
+        _execute_land(
+            erk_ctx,
+            pr_number=pr_number,
+            branch=branch,
+            worktree_path=Path(worktree_path) if worktree_path else None,
+            is_current_branch=is_current_branch,
+            target_child_branch=resolved_target_child,
+            use_graphite=use_graphite,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            no_cleanup=no_cleanup,
+            script=script,
+        )
+    except SystemExit as exit_exc:
+        # Only run objective update on success (exit code 0)
+        if exit_exc.code == 0 and objective_number is not None:
+            user_output("")
+            run_objective_update(
+                erk_ctx,
+                objective=objective_number,
+                pr=pr_number,
+                branch=branch,
+            )
+        raise
