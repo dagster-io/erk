@@ -139,7 +139,6 @@ def _save_as_draft_pr(
     current_branch = git.branch.get_current_branch(cwd)
     start_point = current_branch if current_branch is not None else "HEAD"
     git.branch.create_branch(cwd, branch_name, start_point, force=False)
-    git.branch.checkout_branch(cwd, branch_name)
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
     # Build metadata
