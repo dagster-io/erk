@@ -162,9 +162,11 @@ def objective_fetch_context(
         # Fall back to plan backend resolution (may require API call).
         plan_id = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
         if plan_id is None:
-            click.echo(_error_json(
-                f"Branch '{branch_name}' has no extractable plan number and no PR found"
-            ))
+            click.echo(
+                _error_json(
+                    f"Branch '{branch_name}' has no extractable plan number and no PR found"
+                )
+            )
             raise SystemExit(1)
         plan_number = int(plan_id)
 
