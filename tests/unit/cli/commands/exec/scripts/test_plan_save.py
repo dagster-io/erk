@@ -210,8 +210,8 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
     assert "O123" in output["branch_name"]
 
 
-def test_draft_pr_does_not_switch_branches(tmp_path: Path) -> None:
-    """plan-save must NOT checkout the plan branch — stay on original branch."""
+def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
+    """plan-save checks out plan branch for commit, then restores original."""
     fake_git = FakeGit(current_branches={tmp_path: "feature-branch"})
     ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
@@ -219,7 +219,30 @@ def test_draft_pr_does_not_switch_branches(tmp_path: Path) -> None:
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    assert fake_git.checked_out_branches == []
+    # Two checkouts: plan branch, then back to original
+    assert len(fake_git.checked_out_branches) == 2
+    assert fake_git.checked_out_branches[0][1].startswith("plan-")
+    assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")
+
+
+def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
+    """plan-save commits .erk/plan/PLAN.md to the plan branch."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # Verify commit was created with .erk/plan/PLAN.md
+    assert len(fake_git.commits) == 1
+    commit = fake_git.commits[0]
+    assert ".erk/plan/PLAN.md" in commit.staged_files
+    assert "Feature Plan" in commit.message
+    # Verify file was written
+    plan_file = tmp_path / ".erk" / "plan" / "PLAN.md"
+    assert plan_file.exists()
+    assert "Feature Plan" in plan_file.read_text(encoding="utf-8")
 
 
 def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None:
