@@ -187,7 +187,7 @@ def create_draft_pr_store_with_plans(
     for pr_number, labels in pr_labels.items():
         fake_github.set_pr_labels(pr_number, labels)
 
-    return DraftPRPlanBackend(fake_github), fake_github
+    return DraftPRPlanBackend(fake_github, fake_github.issues), fake_github
 
 
 def create_plan_store(

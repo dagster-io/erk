@@ -36,6 +36,7 @@ from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
+    require_issues,
     require_local_config,
     require_repo_root,
     require_time,
@@ -122,6 +123,7 @@ def _save_as_draft_pr(
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     github = require_github(ctx)
+    github_issues = require_issues(ctx)
     config = require_local_config(ctx)
     claude_installation = require_claude_installation(ctx)
 
@@ -174,7 +176,7 @@ def _save_as_draft_pr(
         labels.append("erk-learn")
 
     # Create draft PR via backend
-    backend = DraftPRPlanBackend(github)
+    backend = DraftPRPlanBackend(github, github_issues)
     result = backend.create_plan(
         repo_root=repo_root,
         title=title,

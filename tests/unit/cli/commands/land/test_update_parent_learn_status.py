@@ -102,7 +102,7 @@ def test_update_parent_learn_status_updates_parent(
 
     # Verify success message
     captured = capsys.readouterr()
-    assert f"Updated learn status on parent plan #{parent_number}" in captured.err
+    assert f"Updated learn status on parent plan {parent_number}" in captured.err
 
     # Verify parent issue was updated (updated_bodies is a list of tuples)
     assert len(fake_issues.updated_bodies) == 1

@@ -8,11 +8,11 @@ This exec command orchestrates the full local learn pipeline:
 5. Triggers the learn.yml GitHub Actions workflow with the gist URL
 
 Usage:
-    erk exec trigger-async-learn <issue_number>
+    erk exec trigger-async-learn <plan_id>
 
 Output:
     JSON with success status and workflow information:
-    {"success": true, "issue_number": 123, "workflow_triggered": true,
+    {"success": true, "plan_id": "123", "workflow_triggered": true,
      "run_id": "12345678", "workflow_url": "https://...", "gist_url": "https://..."}
 
     On error:
@@ -20,7 +20,7 @@ Output:
 
 Examples:
     $ erk exec trigger-async-learn 5753
-    {"success": true, "issue_number": 5753, "workflow_triggered": true,
+    {"success": true, "plan_id": "5753", "workflow_triggered": true,
      "run_id": "12345678", "workflow_url": "https://github.com/owner/repo/actions/runs/12345678",
      "gist_url": "https://gist.github.com/user/abc123..."}
 """
@@ -59,11 +59,10 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.github.abc import GistCreateError
 from erk_shared.gateway.github.checks import GitHubChecks
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.non_ideal_state import GitHubAPIFailed
+from erk_shared.plan_store.types import PlanNotFound
 
 LEARN_WORKFLOW = "learn.yml"
 
@@ -73,7 +72,7 @@ class TriggerSuccess:
     """Success response for trigger-async-learn command when workflow is triggered."""
 
     success: bool
-    issue_number: int
+    plan_id: str
     workflow_triggered: bool
     run_id: str
     workflow_url: str
@@ -85,7 +84,7 @@ class PreprocessSuccess:
     """Success response for trigger-async-learn command when --skip-workflow is used."""
 
     success: bool
-    issue_number: int
+    plan_id: str
     workflow_triggered: bool
     gist_url: str
 
@@ -98,11 +97,11 @@ class TriggerError:
     error: str
 
 
-def _output_success(issue_number: int, run_id: str, workflow_url: str, gist_url: str) -> None:
+def _output_success(plan_id: str, run_id: str, workflow_url: str, gist_url: str) -> None:
     """Output success JSON and exit."""
     result = TriggerSuccess(
         success=True,
-        issue_number=issue_number,
+        plan_id=plan_id,
         workflow_triggered=True,
         run_id=run_id,
         workflow_url=workflow_url,
@@ -112,11 +111,11 @@ def _output_success(issue_number: int, run_id: str, workflow_url: str, gist_url:
     raise SystemExit(0)
 
 
-def _output_preprocess_success(issue_number: int, gist_url: str) -> None:
+def _output_preprocess_success(plan_id: str, gist_url: str) -> None:
     """Output preprocess-only success JSON and exit."""
     result = PreprocessSuccess(
         success=True,
-        issue_number=issue_number,
+        plan_id=plan_id,
         workflow_triggered=False,
         gist_url=gist_url,
     )
@@ -270,37 +269,33 @@ def _download_remote_session_for_learn(
 
 def _get_pr_for_plan_direct(
     *,
-    github_issues,
+    plan_backend,
     github,
     git,
     repo_root: Path,
-    issue_number: int,
+    plan_id: str,
 ) -> dict[str, object] | None:
-    """Look up the PR associated with a plan issue using direct gateway calls.
+    """Look up the PR associated with a plan using PlanBackend.
 
     Args:
-        github_issues: GitHub issues gateway
-        github: GitHub gateway
+        plan_backend: PlanBackend for metadata access
+        github: GitHub gateway for PR lookups
         git: Git gateway (for branch inference fallback)
         repo_root: Repository root path
-        issue_number: Plan issue number
+        plan_id: Plan identifier
 
     Returns:
         Dict with pr_number and pr details on success, None on failure
     """
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
+    branch_name_field = plan_backend.get_metadata_field(repo_root, plan_id, "branch_name")
+    if isinstance(branch_name_field, PlanNotFound):
         return None
 
-    block = find_metadata_block(issue.body, "plan-header")
-    if block is None:
-        return None
-
-    branch_name = block.data.get("branch_name")
+    branch_name = branch_name_field
     if branch_name is None:
-        # Fallback: infer from current git branch (matches get_pr_for_plan.py pattern)
+        # Fallback: infer from current git branch
         current_branch = git.branch.get_current_branch(repo_root)
-        if current_branch is not None and current_branch.startswith(f"P{issue_number}-"):
+        if current_branch is not None and current_branch.startswith(f"P{plan_id}-"):
             branch_name = current_branch
     if branch_name is None:
         return None
@@ -324,17 +319,17 @@ def _get_pr_for_plan_direct(
 
 
 @click.command(name="trigger-async-learn")
-@click.argument("issue_number", type=int)
+@click.argument("plan_id", type=str)
 @click.option(
     "--skip-workflow",
     is_flag=True,
     help="Run preprocessing and upload gist, but skip triggering the learn.yml workflow.",
 )
 @click.pass_context
-def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow: bool) -> None:
-    """Trigger async learn workflow for a plan issue.
+def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool) -> None:
+    """Trigger async learn workflow for a plan.
 
-    ISSUE_NUMBER is the GitHub issue number to learn from.
+    PLAN_ID is the plan identifier (e.g., issue number) to learn from.
 
     Orchestrates the full local learn pipeline:
     1. Gets session sources for the plan
@@ -353,12 +348,15 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
         _output_error("Not in a GitHub repository")
         return
 
+    from erk_shared.context.helpers import require_plan_backend
+
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     github = require_github(ctx)
     github_issues = require_issues(ctx)
     claude_installation = require_claude_installation(ctx)
+    plan_backend = require_plan_backend(ctx)
 
     # Step 1: Discover session sources for the plan (direct function call)
     message = click.style("📋 Discovering sessions...", fg="cyan")
@@ -366,11 +364,11 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
 
     current_branch = git.branch.get_current_branch(repo_root)
     sessions = _discover_sessions(
-        github_issues=github_issues,
+        plan_backend=plan_backend,
         claude_installation=claude_installation,
         repo_root=repo_root,
         cwd=cwd,
-        issue_number=issue_number,
+        plan_id=plan_id,
         branch_name=current_branch,
     )
 
@@ -411,7 +409,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
         click.echo(session_line, err=True)
 
     # Step 2: Create learn materials directory
-    learn_dir = repo_root / ".erk" / "scratch" / f"learn-{issue_number}"
+    learn_dir = repo_root / ".erk" / "scratch" / f"learn-{plan_id}"
     learn_dir.mkdir(parents=True, exist_ok=True)
     dirname = learn_dir.name
     message = click.style(f"📂 Created {dirname}", fg="cyan")
@@ -486,11 +484,11 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
     click.echo(message, err=True)
 
     pr_result = _get_pr_for_plan_direct(
-        github_issues=github_issues,
+        plan_backend=plan_backend,
         github=github,
         git=git,
         repo_root=repo_root,
-        issue_number=issue_number,
+        plan_id=plan_id,
     )
 
     if pr_result is None:
@@ -580,9 +578,9 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
     combined_content = combine_learn_material_files(learn_dir)
 
     gist_result = github.create_gist(
-        filename=f"learn-materials-plan-{issue_number}.txt",
+        filename=f"learn-materials-plan-{plan_id}.txt",
         content=combined_content,
-        description=f"Learn materials for plan #{issue_number}",
+        description=f"Learn materials for plan {plan_id}",
         public=False,
     )
 
@@ -600,11 +598,11 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
 
     # Step 6: Trigger the learn workflow with gist_url (unless --skip-workflow)
     if skip_workflow:
-        _output_preprocess_success(issue_number, gist_url)
+        _output_preprocess_success(plan_id, gist_url)
         return
 
     workflow_inputs: dict[str, str] = {
-        "issue_number": str(issue_number),
+        "plan_id": plan_id,
         "gist_url": str(gist_url),
     }
 
@@ -626,4 +624,4 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
         run_id=run_id,
     )
 
-    _output_success(issue_number, run_id, workflow_url, gist_url)
+    _output_success(plan_id, run_id, workflow_url, gist_url)

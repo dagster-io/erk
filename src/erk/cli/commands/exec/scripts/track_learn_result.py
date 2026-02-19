@@ -5,14 +5,14 @@ of a learn workflow. It sets the learn_status field and optionally records
 the learn_plan_issue if a plan was created.
 
 Usage:
-    erk exec track-learn-result --issue 123 --status completed_no_plan
-    erk exec track-learn-result --issue 123 --status completed_with_plan --plan-issue 456
+    erk exec track-learn-result --plan-id 123 --status completed_no_plan
+    erk exec track-learn-result --plan-id 123 --status completed_with_plan --plan-issue 456
 
 Output:
     JSON object with tracking result:
     {
         "success": true,
-        "issue_number": 123,
+        "plan_id": "123",
         "learn_status": "completed_no_plan"
     }
 
@@ -35,7 +35,7 @@ class TrackLearnResultSuccess:
     """Result of successful track-learn-result command."""
 
     success: bool
-    issue_number: int
+    plan_id: str
     learn_status: str
     learn_plan_issue: int | None
     learn_plan_pr: int | None
@@ -60,10 +60,10 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
 
 @click.command(name="track-learn-result")
 @click.option(
-    "--issue",
+    "--plan-id",
     required=True,
-    type=int,
-    help="Parent plan issue number",
+    type=str,
+    help="Plan identifier (e.g., issue number)",
 )
 @click.option(
     "--status",
@@ -85,7 +85,7 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
 def track_learn_result(
     ctx: click.Context,
     *,
-    issue: int,
+    plan_id: str,
     status: str,
     plan_issue: int | None,
     plan_pr: int | None,
@@ -157,7 +157,7 @@ def track_learn_result(
     try:
         backend.update_metadata(
             repo_root,
-            str(issue),
+            plan_id,
             metadata={
                 "learn_status": learn_status,
                 "learn_plan_issue": plan_issue,
@@ -168,14 +168,14 @@ def track_learn_result(
         error = TrackLearnResultError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to update learn status on issue #{issue}: {e}",
+            message=f"Failed to update learn status on plan {plan_id}: {e}",
         )
         click.echo(json.dumps(asdict(error)), err=True)
         raise SystemExit(1) from None
 
     result = TrackLearnResultSuccess(
         success=True,
-        issue_number=issue,
+        plan_id=plan_id,
         learn_status=status,
         learn_plan_issue=plan_issue,
         learn_plan_pr=plan_pr,

@@ -15,14 +15,10 @@ import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_learn_materials_gist_url,
-)
 from erk_shared.output.output import user_confirm, user_output
+from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.sessions.discovery import (
     find_local_sessions_for_project,
-    find_sessions_for_plan,
     get_readable_sessions,
 )
 
@@ -31,7 +27,7 @@ from erk_shared.sessions.discovery import (
 class LearnResult:
     """Result of learn command."""
 
-    issue_number: int
+    plan_id: str
     planning_session_id: str | None
     implementation_session_ids: list[str]
     learn_session_ids: list[str]
@@ -109,19 +105,18 @@ def learn_cmd(
     # Get current branch for local session filtering
     branch_name = ctx.git.branch.get_current_branch(ctx.cwd)
 
-    # Resolve issue number: explicit argument or infer from branch
-    issue_number: int | None = None
+    # Resolve plan_id: explicit argument or infer from branch
+    plan_id: str | None = None
     if issue is not None:
         issue_number = _extract_issue_number(issue)
         if issue_number is None:
             user_output(click.style(f"Error: Invalid issue identifier: {issue}", fg="red"))
             raise SystemExit(1)
+        plan_id = str(issue_number)
     elif branch_name is not None:
-        plan_id_str = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
-        if plan_id_str is not None:
-            issue_number = int(plan_id_str)
+        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
 
-    if issue_number is None:
+    if plan_id is None:
         user_output(
             click.style("Error: ", fg="red")
             + "No issue specified and could not infer from branch name"
@@ -135,10 +130,10 @@ def learn_cmd(
     repo_root = repo.root
 
     # Check for preprocessed learn materials gist URL before session discovery
-    gist_url = _get_learn_materials_gist_url(ctx, repo_root, issue_number)
+    gist_url = _get_learn_materials_gist_url(ctx, repo_root, plan_id)
     if gist_url is not None:
         user_output(
-            click.style(f"Preprocessed learn materials for plan #{issue_number}", bold=True)
+            click.style(f"Preprocessed learn materials for plan {plan_id}", bold=True)
             + f"\n\nGist: {click.style(gist_url, fg='cyan')}"
             + "\n\nSessions have been preprocessed and uploaded."
             + "\nClaude will download and analyze from the gist directly."
@@ -146,7 +141,7 @@ def learn_cmd(
         ctx.prompt_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=dangerous,
-            command=f"/erk:learn {issue_number} gist_url={gist_url}",
+            command=f"/erk:learn {plan_id} gist_url={gist_url}",
             target_subpath=None,
             permission_mode="edits",
         )
@@ -154,10 +149,9 @@ def learn_cmd(
 
     # No gist URL — fall through to session discovery
     # Find sessions for the plan
-    sessions_for_plan = find_sessions_for_plan(
-        ctx.issues,
+    sessions_for_plan = ctx.plan_backend.find_sessions_for_plan(
         repo_root,
-        issue_number,
+        plan_id,
     )
 
     # Get readable sessions (ones that exist on disk) using global lookup
@@ -185,7 +179,7 @@ def learn_cmd(
 
     # Build result
     result = LearnResult(
-        issue_number=issue_number,
+        plan_id=plan_id,
         planning_session_id=sessions_for_plan.planning_session_id,
         implementation_session_ids=sessions_for_plan.implementation_session_ids,
         learn_session_ids=sessions_for_plan.learn_session_ids,
@@ -211,7 +205,7 @@ def learn_cmd(
         confirm_prompt=(
             "Use Claude to learn from these sessions and produce documentation in docs/learned?"
         ),
-        command=f"/erk:learn {issue_number}",
+        command=f"/erk:learn {plan_id}",
     )
 
 
@@ -243,28 +237,29 @@ def _confirm_and_launch(
 def _get_learn_materials_gist_url(
     ctx: ErkContext,
     repo_root: Path,
-    issue_number: int,
+    plan_id: str,
 ) -> str | None:
     """Check plan header for a stored learn_materials_gist_url.
 
     Args:
         ctx: ErkContext
         repo_root: Repository root path
-        issue_number: Plan issue number
+        plan_id: Plan identifier
 
     Returns:
         Gist URL if found on the plan header, None otherwise
     """
-    issue = ctx.issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
+    result = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_materials_gist_url")
+    if isinstance(result, PlanNotFound):
         return None
-
-    return extract_plan_header_learn_materials_gist_url(issue.body)
+    if not isinstance(result, str):
+        return None
+    return result
 
 
 def _display_human_readable(result: LearnResult) -> None:
     """Display result in human-readable format."""
-    user_output(click.style(f"Sessions for plan #{result.issue_number}", bold=True))
+    user_output(click.style(f"Sessions for plan {result.plan_id}", bold=True))
     user_output("")
 
     # Planning session

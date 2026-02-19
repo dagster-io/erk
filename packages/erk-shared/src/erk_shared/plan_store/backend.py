@@ -17,12 +17,18 @@ See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
 for the full gateway vs backend architecture.
 """
 
+from __future__ import annotations
+
 from abc import abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery
+
+if TYPE_CHECKING:
+    from erk_shared.sessions.discovery import SessionsForPlan
 
 # ---------------------------------------------------------------------------
 # Branch → Plan Resolution
@@ -129,6 +135,120 @@ class PlanBackend(PlanStore):
             Returns empty dict if plan exists but has no metadata block.
         """
         ...
+
+    @abstractmethod
+    def get_comments(self, repo_root: Path, plan_id: str) -> list[str]:
+        """Get all comments on a plan.
+
+        Used by session discovery to find implementation and learn session IDs
+        from impl-started/impl-ended/learn-invoked metadata blocks posted as comments.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier
+
+        Returns:
+            List of comment body strings, ordered oldest to newest.
+            Returns empty list if plan has no comments.
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        ...
+
+    # Session discovery (concrete — uses get_plan + get_comments)
+
+    def find_sessions_for_plan(
+        self,
+        repo_root: Path,
+        plan_id: str,
+    ) -> SessionsForPlan:
+        """Find all Claude Code sessions associated with a plan.
+
+        Extracts session IDs from:
+        1. created_from_session in plan-header (planning session)
+        2. last_local_impl_session in plan-header (most recent impl session)
+        3. impl-started/impl-ended comments (all implementation sessions)
+        4. last_learn_session in plan-header (most recent learn session)
+        5. learn-invoked comments (previous learn sessions)
+
+        This is a concrete method that delegates to the abstract ``get_plan``
+        and ``get_comments`` methods, so every backend gets it for free.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier
+
+        Returns:
+            SessionsForPlan with all discovered session IDs
+
+        Raises:
+            RuntimeError: If plan not found
+        """
+        from erk_shared.gateway.github.metadata.plan_header import (
+            extract_plan_header_created_from_session,
+            extract_plan_header_last_learn_session,
+            extract_plan_header_last_session_id,
+            extract_plan_header_last_session_source,
+            extract_plan_header_local_impl_session,
+            extract_plan_header_remote_impl_at,
+            extract_plan_header_remote_impl_run_id,
+            extract_plan_header_remote_impl_session_id,
+            extract_plan_header_session_gist_url,
+        )
+        from erk_shared.learn.impl_events import (
+            extract_implementation_sessions,
+            extract_learn_sessions,
+        )
+        from erk_shared.sessions.discovery import SessionsForPlan as _SessionsForPlan
+
+        plan = self.get_plan(repo_root, plan_id)
+        if isinstance(plan, PlanNotFound):
+            msg = f"Plan {plan_id} not found"
+            raise RuntimeError(msg)
+
+        body = plan.body
+        planning_session_id = extract_plan_header_created_from_session(body)
+        metadata_impl_session = extract_plan_header_local_impl_session(body)
+        metadata_learn_session = extract_plan_header_last_learn_session(body)
+
+        comments = self.get_comments(repo_root, plan_id)
+        comment_impl_sessions = extract_implementation_sessions(comments)
+        comment_learn_sessions = extract_learn_sessions(comments)
+
+        # Combine implementation sessions: metadata first, then from comments
+        implementation_session_ids: list[str] = []
+        impl_seen: set[str] = set()
+        if metadata_impl_session is not None:
+            implementation_session_ids.append(metadata_impl_session)
+            impl_seen.add(metadata_impl_session)
+        for session_id in comment_impl_sessions:
+            if session_id not in impl_seen:
+                implementation_session_ids.append(session_id)
+                impl_seen.add(session_id)
+
+        # Combine learn sessions: metadata first, then from comments
+        learn_session_ids: list[str] = []
+        learn_seen: set[str] = set()
+        if metadata_learn_session is not None:
+            learn_session_ids.append(metadata_learn_session)
+            learn_seen.add(metadata_learn_session)
+        for session_id in comment_learn_sessions:
+            if session_id not in learn_seen:
+                learn_session_ids.append(session_id)
+                learn_seen.add(session_id)
+
+        return _SessionsForPlan(
+            planning_session_id=planning_session_id,
+            implementation_session_ids=implementation_session_ids,
+            learn_session_ids=learn_session_ids,
+            last_remote_impl_at=extract_plan_header_remote_impl_at(body),
+            last_remote_impl_run_id=extract_plan_header_remote_impl_run_id(body),
+            last_remote_impl_session_id=extract_plan_header_remote_impl_session_id(body),
+            last_session_gist_url=extract_plan_header_session_gist_url(body),
+            last_session_id=extract_plan_header_last_session_id(body),
+            last_session_source=extract_plan_header_last_session_source(body),
+        )
 
     # Branch → Plan resolution
 

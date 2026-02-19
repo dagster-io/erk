@@ -31,7 +31,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--issue", "42", "--status", "completed_no_plan"],
+            ["--plan-id", "42", "--status", "completed_no_plan"],
             obj=ErkContext.for_test(
                 github_issues=fake_issues,
                 cwd=cwd,
@@ -42,7 +42,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_id"] == "42"
     assert output["learn_status"] == "completed_no_plan"
     assert output["learn_plan_issue"] is None
 
@@ -64,7 +64,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--issue", "42", "--status", "completed_with_plan", "--plan-issue", "456"],
+            ["--plan-id", "42", "--status", "completed_with_plan", "--plan-issue", "456"],
             obj=ErkContext.for_test(
                 github_issues=fake_issues,
                 cwd=cwd,
@@ -75,7 +75,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_id"] == "42"
     assert output["learn_status"] == "completed_with_plan"
     assert output["learn_plan_issue"] == 456
 
@@ -102,7 +102,7 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--issue", "42", "--status", "completed_with_plan"],
+            ["--plan-id", "42", "--status", "completed_with_plan"],
             obj=ErkContext.for_test(
                 github_issues=fake_issues,
                 cwd=cwd,
@@ -126,7 +126,7 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--issue", "42", "--status", "completed_no_plan", "--plan-issue", "456"],
+            ["--plan-id", "42", "--status", "completed_no_plan", "--plan-issue", "456"],
             obj=ErkContext.for_test(
                 github_issues=fake_issues,
                 cwd=cwd,
@@ -155,7 +155,7 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--issue", "42", "--status", "pending_review", "--plan-pr", "789"],
+            ["--plan-id", "42", "--status", "pending_review", "--plan-pr", "789"],
             obj=ErkContext.for_test(
                 github_issues=fake_issues,
                 cwd=cwd,
@@ -166,7 +166,7 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_id"] == "42"
     assert output["learn_status"] == "pending_review"
     assert output["learn_plan_issue"] is None
     assert output["learn_plan_pr"] == 789
@@ -189,7 +189,7 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--issue", "42", "--status", "pending_review"],
+            ["--plan-id", "42", "--status", "pending_review"],
             obj=ErkContext.for_test(
                 github_issues=fake_issues,
                 cwd=cwd,
@@ -214,7 +214,7 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
         result = runner.invoke(
             track_learn_result,
             [
-                "--issue",
+                "--plan-id",
                 "42",
                 "--status",
                 "pending_review",
@@ -247,7 +247,7 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
         result = runner.invoke(
             track_learn_result,
             [
-                "--issue",
+                "--plan-id",
                 "42",
                 "--status",
                 "completed_with_plan",

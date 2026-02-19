@@ -602,7 +602,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     plan_store: PlanStore
     plan_list_service: PlanListService
     if get_plan_backend() == "draft_pr":
-        plan_store = DraftPRPlanBackend(github)
+        plan_store = DraftPRPlanBackend(github, issues)
         plan_list_service = DraftPRPlanListService(github)
     else:
         plan_store = GitHubPlanStore(issues)

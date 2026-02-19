@@ -13,23 +13,7 @@ from erk_shared.gateway.claude_installation.abc import (
     FoundSession,
 )
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_created_from_session,
-    extract_plan_header_last_learn_session,
-    extract_plan_header_last_session_id,
-    extract_plan_header_last_session_source,
-    extract_plan_header_local_impl_session,
-    extract_plan_header_remote_impl_at,
-    extract_plan_header_remote_impl_run_id,
-    extract_plan_header_remote_impl_session_id,
-    extract_plan_header_session_gist_url,
-)
 from erk_shared.learn.extraction.session_schema import extract_git_branch
-from erk_shared.learn.impl_events import (
-    extract_implementation_sessions,
-    extract_learn_sessions,
-)
 
 
 @dataclass(frozen=True)
@@ -95,12 +79,8 @@ def find_sessions_for_plan(
 ) -> SessionsForPlan:
     """Find all Claude Code sessions associated with a plan issue.
 
-    Extracts session IDs from:
-    1. created_from_session in plan-header (planning session)
-    2. last_local_impl_session in plan-header (most recent impl session)
-    3. impl-started/impl-ended comments (all implementation sessions)
-    4. last_learn_session in plan-header (most recent learn session)
-    5. learn-invoked comments (previous learn sessions)
+    DEPRECATED: Use ``PlanBackend.find_sessions_for_plan()`` instead.
+    This wrapper constructs a temporary GitHubPlanStore to delegate.
 
     Args:
         github: GitHub issues interface
@@ -110,57 +90,10 @@ def find_sessions_for_plan(
     Returns:
         SessionsForPlan with all discovered session IDs
     """
-    # Get issue body for metadata extraction
-    issue = github.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        msg = f"Issue #{issue_number} not found"
-        raise RuntimeError(msg)
-    planning_session_id = extract_plan_header_created_from_session(issue.body)
-    metadata_impl_session = extract_plan_header_local_impl_session(issue.body)
-    metadata_learn_session = extract_plan_header_last_learn_session(issue.body)
-    # Get comments to find implementation and learn sessions
-    comments = github.get_issue_comments(repo_root, issue_number)
+    from erk_shared.plan_store.github import GitHubPlanStore
 
-    comment_impl_sessions = extract_implementation_sessions(comments)
-    comment_learn_sessions = extract_learn_sessions(comments)
-
-    # Combine implementation sessions: metadata first (most recent), then from comments
-    implementation_session_ids: list[str] = []
-    impl_seen: set[str] = set()
-
-    if metadata_impl_session is not None:
-        implementation_session_ids.append(metadata_impl_session)
-        impl_seen.add(metadata_impl_session)
-
-    for session_id in comment_impl_sessions:
-        if session_id not in impl_seen:
-            implementation_session_ids.append(session_id)
-            impl_seen.add(session_id)
-
-    # Combine learn sessions: metadata first (most recent), then from comments
-    learn_session_ids: list[str] = []
-    learn_seen: set[str] = set()
-
-    if metadata_learn_session is not None:
-        learn_session_ids.append(metadata_learn_session)
-        learn_seen.add(metadata_learn_session)
-
-    for session_id in comment_learn_sessions:
-        if session_id not in learn_seen:
-            learn_session_ids.append(session_id)
-            learn_seen.add(session_id)
-
-    return SessionsForPlan(
-        planning_session_id=planning_session_id,
-        implementation_session_ids=implementation_session_ids,
-        learn_session_ids=learn_session_ids,
-        last_remote_impl_at=extract_plan_header_remote_impl_at(issue.body),
-        last_remote_impl_run_id=extract_plan_header_remote_impl_run_id(issue.body),
-        last_remote_impl_session_id=extract_plan_header_remote_impl_session_id(issue.body),
-        last_session_gist_url=extract_plan_header_session_gist_url(issue.body),
-        last_session_id=extract_plan_header_last_session_id(issue.body),
-        last_session_source=extract_plan_header_last_session_source(issue.body),
-    )
+    backend = GitHubPlanStore(github)
+    return backend.find_sessions_for_plan(repo_root, str(issue_number))
 
 
 def get_readable_sessions(

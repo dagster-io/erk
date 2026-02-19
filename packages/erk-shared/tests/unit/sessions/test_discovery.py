@@ -62,6 +62,9 @@ def test_sessions_for_plan_all_session_ids_empty() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
+        last_session_gist_url=None,
+        last_session_id=None,
+        last_session_source=None,
     )
     assert sessions.all_session_ids() == []
 
@@ -75,6 +78,9 @@ def test_sessions_for_plan_all_session_ids_planning_only() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
+        last_session_gist_url=None,
+        last_session_id=None,
+        last_session_source=None,
     )
     assert sessions.all_session_ids() == ["planning-123"]
 
@@ -88,6 +94,9 @@ def test_sessions_for_plan_all_session_ids_deduplicates() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
+        last_session_gist_url=None,
+        last_session_id=None,
+        last_session_source=None,
     )
     # shared-session should only appear once (from planning)
     result = sessions.all_session_ids()
@@ -103,6 +112,9 @@ def test_sessions_for_plan_all_session_ids_order() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
+        last_session_gist_url=None,
+        last_session_id=None,
+        last_session_source=None,
     )
     result = sessions.all_session_ids()
     assert result == ["plan-session", "impl-1", "impl-2", "learn-1"]

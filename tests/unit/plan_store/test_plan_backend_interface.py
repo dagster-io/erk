@@ -40,7 +40,7 @@ def _make_github_plan_store() -> PlanBackend:
 def _make_draft_pr_plan_backend() -> PlanBackend:
     """Create a DraftPRPlanBackend backed by FakeGitHub."""
     fake_github = FakeGitHub()
-    return DraftPRPlanBackend(fake_github)
+    return DraftPRPlanBackend(fake_github, fake_github.issues)
 
 
 def _create_metadata(backend: PlanBackend) -> dict[str, object]:
@@ -70,7 +70,7 @@ def _make_github_backend_with_plan() -> tuple[PlanBackend, str]:
 def _make_draft_pr_backend_with_plan() -> tuple[PlanBackend, str]:
     """Create DraftPRPlanBackend with a pre-existing plan by creating one via API."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues)
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
