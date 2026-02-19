@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 import time
 from collections.abc import Iterator
 from datetime import datetime
@@ -485,6 +486,50 @@ class ErkDashApp(App):
                 timeout=5,
             )
 
+    @work(thread=True)
+    def _land_pr_async(self, pr_num: int, branch: str, repo_root: Path) -> None:
+        """Land PR in background thread with toast notifications.
+
+        Args:
+            pr_num: The PR number to land
+            branch: The PR head branch name
+            repo_root: Path to repository root for running commands
+        """
+        try:
+            result = subprocess.run(
+                [
+                    "erk",
+                    "exec",
+                    "land-execute",
+                    f"--pr-number={pr_num}",
+                    f"--branch={branch}",
+                    "-f",
+                ],
+                cwd=repo_root,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                text=True,
+                check=False,
+            )
+            if result.returncode == 0:
+                self.call_from_thread(self.notify, f"PR #{pr_num} landed", timeout=5)
+                self.call_from_thread(self.action_refresh)
+            else:
+                self.call_from_thread(
+                    self.notify,
+                    f"Landing PR #{pr_num} failed",
+                    severity="error",
+                    timeout=8,
+                )
+        except OSError as e:
+            self.call_from_thread(
+                self.notify,
+                f"Landing PR #{pr_num} failed: {e}",
+                severity="error",
+                timeout=8,
+            )
+
     def _push_streaming_detail(
         self,
         *,
@@ -886,43 +931,8 @@ class ErkDashApp(App):
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
-                pr_num = row.pr_number
-                branch = row.pr_head_branch
-                executor = RealCommandExecutor(
-                    browser_launch=self._provider.browser.launch,
-                    clipboard_copy=self._provider.clipboard.copy,
-                    close_plan_fn=self._provider.close_plan,
-                    notify_fn=self._notify_with_severity,
-                    refresh_fn=self.action_refresh,
-                    submit_to_queue_fn=self._provider.submit_to_queue,
-                )
-                detail_screen = PlanDetailScreen(
-                    row=row,
-                    clipboard=self._provider.clipboard,
-                    browser=self._provider.browser,
-                    executor=executor,
-                    repo_root=self._provider.repo_root,
-                )
-                self.push_screen(detail_screen)
-
-                # Call erk exec land-execute directly instead of erk land --script.
-                # erk land --script only generates a script but doesn't execute it.
-                # We need to actually merge the PR.
-                detail_screen.call_after_refresh(
-                    lambda: detail_screen.run_streaming_command(
-                        [
-                            "erk",
-                            "exec",
-                            "land-execute",
-                            f"--pr-number={pr_num}",
-                            f"--branch={branch}",
-                            "-f",
-                        ],
-                        cwd=self._provider.repo_root,
-                        title=f"Landing PR #{pr_num}",
-                        timeout=600.0,
-                    )
-                )
+                self.notify(f"Landing PR #{row.pr_number}...")
+                self._land_pr_async(row.pr_number, row.pr_head_branch, self._provider.repo_root)
 
         elif command_id == "copy_replan":
             cmd = f"/erk:replan {row.plan_id}"

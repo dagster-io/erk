@@ -688,23 +688,11 @@ class PlanDetailScreen(ModalScreen):
             if row.pr_number and row.pr_head_branch and self._repo_root is not None:
                 pr_num = row.pr_number
                 branch = row.pr_head_branch
-
-                # Call erk exec land-execute directly instead of erk land --script.
-                # erk land --script only generates a script but doesn't execute it.
-                # We need to actually merge the PR.
-                self.run_streaming_command(
-                    [
-                        "erk",
-                        "exec",
-                        "land-execute",
-                        f"--pr-number={pr_num}",
-                        f"--branch={branch}",
-                        "-f",
-                    ],
-                    cwd=self._repo_root,
-                    title=f"Landing PR #{pr_num}",
-                    timeout=600.0,
-                )
+                repo_root = self._repo_root
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Landing PR #{pr_num}...")
+                    self.app._land_pr_async(pr_num, branch, repo_root)
 
         elif command_id == "copy_replan":
             cmd = f"/erk:replan {row.plan_id}"

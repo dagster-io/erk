@@ -1,5 +1,6 @@
 """Tests for ErkDashApp using Textual Pilot."""
 
+import subprocess
 from collections.abc import Callable
 from pathlib import Path
 
@@ -940,10 +941,9 @@ class TestCommandPaletteFromMain:
 class TestExecutePaletteCommandLandPR:
     """Tests for execute_palette_command('land_pr').
 
-    Note: land_pr uses streaming output via subprocess. These tests verify
-    the guard conditions. The guard condition test (no PR) doesn't invoke
-    subprocess, so it can be tested without a real directory. Testing the
-    positive case with actual subprocess execution is done via integration tests.
+    Note: land_pr uses a non-blocking toast + background worker pattern
+    (like close_plan). These tests verify the guard conditions and that
+    _land_pr_async is called with the correct arguments.
     """
 
     @pytest.mark.asyncio
@@ -969,10 +969,10 @@ class TestExecutePaletteCommandLandPR:
             assert len(app.screen_stack) == initial_stack_len
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_land_pr_includes_force_flag(
+    async def test_execute_palette_command_land_pr_calls_async_worker(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """Execute palette command land_pr calls erk exec land-execute with -f flag."""
+        """Execute palette command land_pr calls _land_pr_async with correct args."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
             repo_root=tmp_path,
@@ -980,55 +980,41 @@ class TestExecutePaletteCommandLandPR:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        # Capture the command passed to run_streaming_command
-        captured_command = None
+        # Capture the arguments passed to _land_pr_async
+        captured_args: list[tuple[int, str, Path]] = []
 
-        def mock_run_streaming_command(
-            self: PlanDetailScreen,
-            command: list[str],
-            cwd: Path,
-            title: str,
-            *,
-            timeout: float = 30.0,
-            on_success: Callable[[], None] | None = None,
+        def mock_land_pr_async(
+            self: ErkDashApp,
+            pr_num: int,
+            branch: str,
+            repo_root: Path,
         ) -> None:
-            nonlocal captured_command
-            captured_command = command
+            captured_args.append((pr_num, branch, repo_root))
 
-        # Patch run_streaming_command to capture the command
         monkeypatch.setattr(
-            PlanDetailScreen,
-            "run_streaming_command",
-            mock_run_streaming_command,
+            ErkDashApp,
+            "_land_pr_async",
+            mock_land_pr_async,
         )
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            # Open detail screen
-            await pilot.press("space")
-            await pilot.pause()
-            await pilot.pause()
-
-            detail_screen = app.screen_stack[-1]
-            assert isinstance(detail_screen, PlanDetailScreen)
-
-            # Execute land_pr command
+            # Execute land_pr command - should NOT push a detail screen
+            initial_stack_len = len(app.screen_stack)
             app.execute_palette_command("land_pr")
             await pilot.pause()
 
-            # Verify command calls erk exec land-execute with -f flag
-            assert captured_command is not None
-            assert captured_command == [
-                "erk",
-                "exec",
-                "land-execute",
-                "--pr-number=456",
-                "--branch=test-branch",
-                "-f",
-            ]
-            assert "-f" in captured_command
+            # Should not have pushed a new screen (non-blocking pattern)
+            assert len(app.screen_stack) == initial_stack_len
+
+            # Verify _land_pr_async was called with correct arguments
+            assert len(captured_args) == 1
+            pr_num, branch, repo_root = captured_args[0]
+            assert pr_num == 456
+            assert branch == "test-branch"
+            assert repo_root == tmp_path
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_land_pr_with_no_branch(self) -> None:
@@ -1045,12 +1031,139 @@ class TestExecutePaletteCommandLandPR:
 
             initial_stack_len = len(app.screen_stack)
 
-            # Execute land_pr command - should do nothing since no worktree_branch
+            # Execute land_pr command - should do nothing since no pr_head_branch
             app.execute_palette_command("land_pr")
             await pilot.pause()
 
             # Should not have pushed a new screen
             assert len(app.screen_stack) == initial_stack_len
+
+
+class TestLandPrAsync:
+    """Layer 4 business logic tests for _land_pr_async().
+
+    Tests verify the inner behavior of the background worker:
+    - Success path triggers action_refresh
+    - Non-zero returncode does not trigger refresh
+    - OSError is caught without crashing
+    - subprocess.run is called with the correct arguments
+    """
+
+    @pytest.mark.asyncio
+    async def test_success_triggers_refresh(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Successful landing (returncode 0) calls action_refresh."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *args, **kwargs: subprocess.CompletedProcess(args=[], returncode=0),
+        )
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            count_before = provider.fetch_count
+
+            app._land_pr_async(456, "test-branch", tmp_path)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+    @pytest.mark.asyncio
+    async def test_subprocess_failure_no_refresh(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Non-zero returncode does not trigger action_refresh."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *args, **kwargs: subprocess.CompletedProcess(args=[], returncode=1),
+        )
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            count_before = provider.fetch_count
+
+            app._land_pr_async(456, "test-branch", tmp_path)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count == count_before
+
+    @pytest.mark.asyncio
+    async def test_os_error_no_crash(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        """OSError from subprocess is caught without crashing the app."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def raise_os_error(*args: object, **kwargs: object) -> None:
+            raise OSError("erk not found")
+
+        monkeypatch.setattr(subprocess, "run", raise_os_error)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app._land_pr_async(456, "test-branch", tmp_path)
+            await pilot.pause(0.3)
+
+            # App is still running and no refresh was triggered
+            assert len(app.screen_stack) > 0
+
+    @pytest.mark.asyncio
+    async def test_subprocess_called_with_correct_args(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """subprocess.run is called with the correct erk exec land-execute command."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[tuple[list[str], dict[str, object]]] = []
+
+        def capture_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_calls.append((cmd, kwargs))
+            return subprocess.CompletedProcess(args=cmd, returncode=0)
+
+        monkeypatch.setattr(subprocess, "run", capture_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            app._land_pr_async(456, "my-branch", tmp_path)
+            await pilot.pause(0.3)
+
+            assert len(captured_calls) == 1
+            cmd, kwargs = captured_calls[0]
+            assert cmd == [
+                "erk",
+                "exec",
+                "land-execute",
+                "--pr-number=456",
+                "--branch=my-branch",
+                "-f",
+            ]
+            assert kwargs["cwd"] == tmp_path
 
 
 class TestExecutePaletteCommandFixConflictsRemote:
