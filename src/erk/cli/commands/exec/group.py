@@ -103,6 +103,9 @@ from erk.cli.commands.exec.scripts.objective_update_after_land import (
 from erk.cli.commands.exec.scripts.plan_create_review_branch import (
     plan_create_review_branch,
 )
+from erk.cli.commands.exec.scripts.plan_migrate_to_draft_pr import (
+    plan_migrate_to_draft_pr,
+)
 from erk.cli.commands.exec.scripts.plan_create_review_pr import (
     plan_create_review_pr,
 )
@@ -246,6 +249,7 @@ exec_group.add_command(objective_update_after_land, name="objective-update-after
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
 exec_group.add_command(plan_create_review_branch, name="plan-create-review-branch")
 exec_group.add_command(plan_create_review_pr, name="plan-create-review-pr")
+exec_group.add_command(plan_migrate_to_draft_pr, name="plan-migrate-to-draft-pr")
 exec_group.add_command(plan_review_complete, name="plan-review-complete")
 exec_group.add_command(plan_save, name="plan-save")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
