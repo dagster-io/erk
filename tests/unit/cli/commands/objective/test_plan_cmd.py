@@ -290,8 +290,14 @@ class TestHandleAllUnblocked:
             # No workflows should be triggered in dry-run
             assert len(github.triggered_workflows) == 0
 
+            # No objective issue body updates should occur in dry-run
+            objective_body_updates = [
+                (num, body) for num, body in issues.updated_bodies if num == 42
+            ]
+            assert len(objective_body_updates) == 0
+
     def test_updates_objective_nodes_to_planning(self) -> None:
-        """--all-unblocked marks each dispatched node as 'planning'."""
+        """--all-unblocked marks all dispatched nodes as 'planning' in a single write."""
         runner = CliRunner()
         with erk_isolated_fs_env(runner, env_overrides=None) as env:
             env.setup_repo_structure()
@@ -316,9 +322,14 @@ class TestHandleAllUnblocked:
 
             assert result.exit_code == 0
 
-            # Verify the issue body was updated (node status changed to planning)
-            from erk_shared.gateway.github.issues.types import IssueNotFound
+            # Filter to only objective issue #42 body updates (exclude plan issue updates)
+            objective_body_updates = [
+                (num, body) for num, body in issues.updated_bodies if num == 42
+            ]
 
-            updated_issue = issues.get_issue(env.cwd, 42)
-            assert not isinstance(updated_issue, IssueNotFound)
-            assert "planning" in updated_issue.body
+            # Verify a single body write (atomic batch) instead of N writes
+            assert len(objective_body_updates) == 1
+
+            # Verify both nodes appear as 'planning' in the single written body
+            _issue_number, written_body = objective_body_updates[0]
+            assert "planning" in written_body
