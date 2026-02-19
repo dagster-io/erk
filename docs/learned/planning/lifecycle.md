@@ -1127,8 +1127,31 @@ gh pr view "$PR_NUMBER"
 
 ---
 
+## Draft-PR Plan Lifecycle
+
+Draft-PR-backed plans differ from issue-based plans in their storage model and branch creation timing. Instead of a separate plan issue and implementation PR, draft-PR plans evolve through lifecycle stages within a single PR.
+
+**Key differences from issue-based plans:**
+
+| Aspect               | Issue-Based            | Draft-PR                    |
+| -------------------- | ---------------------- | --------------------------- |
+| Plan storage         | GitHub issue body      | Draft PR body               |
+| Branch creation      | At implementation time | At plan-save time           |
+| Plan/PR relationship | Separate entities      | Same entity                 |
+| `Closes #N` footer   | Links plan issue to PR | Not used (self-referential) |
+
+**Lifecycle stages:** Plan Creation (Stage 1) → Implementation (Stage 2) → Review & Merge (Stage 3)
+
+**Branch sync:** Because the branch is created during plan-save and the user returns to their original branch, implementation must sync with remote before starting work.
+
+See [Draft PR Lifecycle](draft-pr-lifecycle.md) for body format details and [Draft PR Branch Sync](draft-pr-branch-sync.md) for the sync mechanism.
+
+---
+
 ## Related Documentation
 
 - [Planning Workflow](workflow.md) - `.impl/` folder structure and commands
+- [Draft PR Lifecycle](draft-pr-lifecycle.md) - Draft PR body format and stage transitions
+- [Draft PR Branch Sync](draft-pr-branch-sync.md) - Branch sync during draft-PR implementation
 - [Exec Command Patterns](../cli/exec-command-patterns.md) - Available `erk exec` commands
 - [Glossary](../glossary.md) - Erk terminology definitions

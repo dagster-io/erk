@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**adding Closes #N to a draft PR footer** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Draft PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for draft-PR backend.
+
 **adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
 
 **adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
@@ -23,6 +25,8 @@ Rules triggered by matching actions in code.
 **adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
 
 **adding erk-consolidated label to a single-issue replan** → Read [Consolidation Labels](consolidation-labels.md) first. Only multi-plan consolidation gets the erk-consolidated label. Single-issue replans are updates, not consolidations.
+
+**adding footer before PR creation** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. PR footer needs the PR number, which isn't known until after create_pr returns. Add footer AFTER PR creation.
 
 **adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
 
@@ -78,6 +82,8 @@ Rules triggered by matching actions in code.
 
 **creating a learn plan without setting learned_from_issue** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent.
 
+**creating a new branch for a draft-PR plan** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Draft-PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one.
+
 **creating a new plan-generating command without a pre-plan gathering step** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Without explicit context materialization before EnterPlanMode, agents produce sparse plans. Apply the two-phase pattern from this document.
 
 **creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
@@ -89,6 +95,8 @@ Rules triggered by matching actions in code.
 **delegating judgment steps to Haiku subagents** → Read [Command-Agent Delegation](agent-delegation.md) first. Prose reconciliation, design analysis, and architectural comparison need Opus-level reasoning. Delegating to a Haiku subagent loses quality. Also avoid delegating steps that require direct user interaction.
 
 **designing output routing for a multi-agent workflow** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Choose between embedded-prompt routing (in orchestrator Task prompts) and agent-file routing (in agent definitions). See this doc for the decision framework.
+
+**detecting plan backend by checking backend type directly** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect draft-PR plans. This is backend-agnostic and works across all backends.
 
 **editing plan content only in the PR branch without syncing** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan content lives in two places (PR branch + issue comment). Edit the local file, then sync to the issue with `erk exec plan-update-from-feedback`. See plan-file-sync-pattern.md.
 
@@ -105,6 +113,8 @@ Rules triggered by matching actions in code.
 **implementing PR body generation with checkout footers** → Read [Plan Lifecycle](lifecycle.md) first. HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``
 
 **implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
+
+**implementing draft-PR plan without syncing with remote** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Before implementing a draft-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase
 
 **importing functions directly from plan_header.py** → Read [Plan Header Privatization](plan-header-privatization.md) first. plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations.
 
@@ -136,6 +146,8 @@ Rules triggered by matching actions in code.
 
 **moving gateway files without git mv** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Always use git mv to preserve file history. Plain mv + git add loses blame history, making future archaeology harder.
 
+**parsing plan content without backward compatibility** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing.
+
 **passing ${CLAUDE_SESSION_ID} to a sub-agent via the prompt string** → Read [Sub-Agent Context Limitations](sub-agent-context-limitations.md) first. String substitution of ${CLAUDE_SESSION_ID} happens at the root agent level. By the time the sub-agent runs the bash command, the variable is not in its environment. The root agent must resolve the value and pass it as a literal.
 
 **passing session content to an analysis agent** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. Raw JSONL sessions can be 6+ million characters. Always preprocess first. The learn workflow validates preprocessed output exists before spawning agents.
@@ -153,6 +165,8 @@ Rules triggered by matching actions in code.
 **renaming gateway files during a move without checking for non-standard naming** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Source files that don't follow standard naming (e.g., executor.py instead of abc.py) must be renamed to abc.py/real.py/fake.py during the move. The gateway directory convention requires standard file names.
 
 **reusing existing worktrees for remote implementation** → Read [Remote Implementation Idempotency](remote-implementation-idempotency.md) first. Check if worktree already has a branch before creating new one. Reusing worktrees without checking causes PR orphaning.
+
+**rewriting PR body without preserving metadata** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Extract metadata prefix on every lifecycle transition via extract_metadata_prefix() to prevent metadata loss.
 
 **running /erk:learn in CI** → Read [Learn Workflow](learn-workflow.md) first. CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section.
 

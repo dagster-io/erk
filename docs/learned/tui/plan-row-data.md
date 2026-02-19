@@ -93,14 +93,15 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 
 ### Objective Info
 
-| Field                         | Type          | Description                                          | Nullable?             |
-| ----------------------------- | ------------- | ---------------------------------------------------- | --------------------- |
-| `objective_issue`             | `int \| None` | Objective issue number (linking plans to objectives) | Yes                   |
-| `objective_display`           | `str`         | Formatted display string (e.g., "#123" or "-")       | Never (dash possible) |
-| `objective_done_nodes`        | `int`         | Count of done nodes in objective roadmap             | Never (0 if no obj)   |
-| `objective_total_nodes`       | `int`         | Total nodes in objective roadmap                     | Never (0 if no obj)   |
-| `objective_progress_display`  | `str`         | Progress display (e.g., "3/7" or "-")                | Never (dash possible) |
-| `objective_next_node_display` | `str`         | Next pending node (e.g., "1.3 Add tests" or "-")     | Never (dash possible) |
+| Field                         | Type          | Description                                           | Nullable?             |
+| ----------------------------- | ------------- | ----------------------------------------------------- | --------------------- |
+| `objective_issue`             | `int \| None` | Objective issue number (linking plans to objectives)  | Yes                   |
+| `objective_display`           | `str`         | Formatted display string (e.g., "#123" or "-")        | Never (dash possible) |
+| `objective_done_nodes`        | `int`         | Count of done nodes in objective roadmap              | Never (0 if no obj)   |
+| `objective_total_nodes`       | `int`         | Total nodes in objective roadmap                      | Never (0 if no obj)   |
+| `objective_progress_display`  | `str`         | Progress display (e.g., "3/7" or "-")                 | Never (dash possible) |
+| `objective_next_node_display` | `str`         | Next pending node (e.g., "1.3 Add tests" or "-")      | Never (dash possible) |
+| `objective_deps_display`      | `str`         | Dep status of next node ("ready", "in progress", "-") | Never (dash possible) |
 
 ### Metadata
 
@@ -172,6 +173,7 @@ Many pieces of data have both a raw value and a display value:
 | `objective_issue`                              | `objective_display`                  | Objective link          |
 | `objective_done_nodes`/`objective_total_nodes` | `objective_progress_display`         | Objective progress      |
 | (none)                                         | `objective_next_node_display`        | Next objective node     |
+| (none)                                         | `objective_deps_display`             | Next node dep status    |
 | `updated_at`                                   | `updated_display`                    | Last update time        |
 | `created_at`                                   | `created_display`                    | Creation time           |
 | `author`                                       | (used directly in display)           | Issue creator           |

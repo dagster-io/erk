@@ -88,3 +88,5 @@ See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-sha
 - [Gateway vs Backend](gateway-vs-backend.md) - Backend ABC (3-place) vs Gateway ABC (5-place)
 - [Backend Testing Composition](../testing/backend-testing-composition.md) - Testing pattern
 - [`PlanBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference
+- [PR Body Assembly](pr-body-assembly.md) - How `assemble_pr_body()` handles metadata_prefix for dual-backend PR body construction
+- [Draft PR Lifecycle](../planning/draft-pr-lifecycle.md) - Lifecycle stages and body format for draft-PR-backed plans

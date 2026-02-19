@@ -4,6 +4,7 @@
 # Objectives Documentation
 
 - **[dependency-graph.md](dependency-graph.md)** — working with ObjectiveNode or DependencyGraph types, implementing dependency-aware step traversal, converting between roadmap phases and graph representations
+- **[dependency-status-resolution.md](dependency-status-resolution.md)** — implementing dependency status display in TUI, understanding how fan-out dispatch selects nodes, working with pending_unblocked_nodes or min_dep_status
 - **[objective-create-workflow.md](objective-create-workflow.md)** — modifying the objective creation flow, understanding how objective-render-roadmap and objective-save-to-issue work together, debugging objective creation failures
 - **[objective-lifecycle.md](objective-lifecycle.md)** — creating or modifying objective lifecycle code, understanding how objectives are created, mutated, and closed, adding new mutation paths to objective roadmaps, working with objective-fetch-context or auto-discovery, using --next flag on objective implement
 - **[objective-roadmap-check.md](objective-roadmap-check.md)** — validating objective roadmap consistency beyond structure, understanding why check command exists separate from parsing, adding new validation checks to objective check

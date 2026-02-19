@@ -35,6 +35,7 @@
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for a new submit pipeline step, writing \_make_state helpers for pipeline step tests, deciding what to test at the step level vs the runner level
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
+- **[tui-subprocess-testing.md](tui-subprocess-testing.md)** — testing TUI features that use subprocess.Popen, writing tests for background worker methods, creating fake subprocess objects for TUI tests
 - **[vitest-fake-timers-with-promises.md](vitest-fake-timers-with-promises.md)** — testing React components that use setInterval or setTimeout with async operations, debugging Vitest tests that hang when advancing fake timers, choosing between synchronous and async timer advancement in Vitest
 - **[vitest-jsdom-stubs.md](vitest-jsdom-stubs.md)** — writing React component tests with Vitest + jsdom, encountering "X is not a function" errors in jsdom test runs, adding a new browser API stub to the test setup
 - **[window-mock-patterns.md](window-mock-patterns.md)** — testing erkdesk components that use window.erkdesk IPC bridge, encountering mock contamination between tests, tests passing individually but failing in CI, writing beforeEach blocks that configure Vitest mocks
