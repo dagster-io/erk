@@ -14,12 +14,12 @@ https://gist.github.com/schrockn/090c72536a497bf4cd246cb00201ceb6
 
 ## Summary
 
-| Metric                         | Count |
-| ------------------------------ | ----- |
-| Documentation items            | 25    |
-| Contradictions to resolve      | 0     |
-| Tripwire candidates (score>=4) | 7     |
-| Potential tripwires (score 2-3)| 5     |
+| Metric                          | Count |
+| ------------------------------- | ----- |
+| Documentation items             | 25    |
+| Contradictions to resolve       | 0     |
+| Tripwire candidates (score>=4)  | 7     |
+| Potential tripwires (score 2-3) | 5     |
 
 ## Documentation Items
 
@@ -62,7 +62,7 @@ Detection: call `find_metadata_block(plan_body, "plan-header")` once at the top.
 
 **Gotcha**: This branching logic is invisible at the call site. Callers in `PlanBodyScreen` see a single function signature and have no indication that the body may already be final content.
 
-## plan-* Branch Naming and plan-ref.json Fallback
+## plan-\* Branch Naming and plan-ref.json Fallback
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, _build_worktree_mapping -->
 
@@ -271,7 +271,7 @@ Three new fields were added to `PRDetails`:
 
 The epoch sentinel is the FIELD DEFAULT for backward compatibility — existing test files constructing `PRDetails` without these fields continue to work unchanged. In production, `_parse_pr_details_from_rest_api()` always extracts real timestamps, so the sentinel only appears in tests that don't set the field.
 
-### _epoch_sentinel() Named Factory
+### \_epoch_sentinel() Named Factory
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py, _epoch_sentinel -->
 
@@ -351,12 +351,13 @@ When `show_pr_column=False`, `_pr_column_index` is never set, so click events on
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## .get() Chaining is an EAFP Violation
 
 The pattern `data.get("user", {}).get("login", "")` is an EAFP-style anti-pattern. It handles the `None` value case implicitly by relying on the `{}` fallback.
 
 **Correct LBYL pattern:**
+
 ```python
 # WRONG — implicit None handling via .get() chaining
 author = data.get("user", {}).get("login", "")
@@ -366,9 +367,11 @@ author = ""
 if "user" in data and data["user"] and "login" in data["user"]:
     author = data["user"]["login"]
 ```
+````
 
 This specific anti-pattern is a subtle LBYL violation that reviewers miss repeatedly. The `.get()` chaining looks innocuous but silently swallows `None` values from the outer key.
-```
+
+````
 
 ---
 
@@ -394,10 +397,11 @@ def _epoch_sentinel() -> datetime:
     return datetime(2000, 1, 1, tzinfo=UTC)
 
 created_at: datetime = field(default_factory=_epoch_sentinel)
-```
+````
 
 Named factories are greppable, independently testable, and self-documenting. This complements the frozen dataclass rule — frozen dataclasses require `default_factory` for mutable defaults, and named functions are the required form.
-```
+
+````
 
 ---
 
@@ -419,7 +423,7 @@ Fetches draft plan PRs with rich metadata (status checks, review threads, merge 
 **Key limitation**: GitHub's `pullRequests` connection does NOT support `filterBy` for `isDraft` or `creator`. Both filters must be applied client-side after fetching. The `states` array defaults to `["OPEN"]`.
 
 See `_parse_plan_prs_with_details()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py` for the consumer that applies client-side filtering.
-```
+````
 
 ---
 
@@ -567,6 +571,7 @@ This rule is included in item 3 above as "Rule: Mirror RealPlanListService Chang
 Branches containing only `.worker-impl/` or `.erk/branch-data/` files are plan scaffolding artifacts, not code changes — safe to delete without cherry-picking.
 
 Standard two-step assessment:
+
 1. `git log --oneline <base>..<branch>` — check commit subjects
 2. `git diff <base>..<branch> --stat` — if only `.worker-impl/` or `.erk/branch-data/` appear, the branch is pure scaffolding
 ```
@@ -621,6 +626,7 @@ The reliable alternative: use `python3 -c "import json, subprocess; ..."` with `
 ## Resolving Bot Review Items
 
 The `dignified-python-review` bot posts BOTH:
+
 1. A **review thread** (on the specific line) — resolve via `erk exec resolve-review-threads`
 2. A **discussion comment** (summary-level) — resolve via `erk exec reply-to-discussion-comment`
 
