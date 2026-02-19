@@ -394,9 +394,7 @@ def _batch_update_objective_nodes(
         issues.update_issue_body(repo_root, issue_number, BodyText(content=body))
 
     # Phase 2: update v2 comment table atomically
-    objective_comment_id = extract_metadata_value(
-        body, "objective-header", "objective_comment_id"
-    )
+    objective_comment_id = extract_metadata_value(body, "objective-header", "objective_comment_id")
     if objective_comment_id is not None:
         comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
         for node in dispatched:

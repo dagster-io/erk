@@ -318,9 +318,7 @@ class TestHandleAllUnblocked:
 
             # Verify atomicity: single body write for objective issue #42
             # (other issues may be updated by dispatch_one_shot for skeleton plans)
-            objective_updates = [
-                (num, body) for num, body in issues.updated_bodies if num == 42
-            ]
+            objective_updates = [(num, body) for num, body in issues.updated_bodies if num == 42]
             assert len(objective_updates) == 1
 
             # Verify both nodes appear as "planning" in the final body
@@ -358,9 +356,7 @@ class TestHandleAllUnblocked:
 
             # 2 nodes dispatched, but only 1 update_issue_body call for objective #42
             assert len(github.triggered_workflows) == 2
-            objective_updates = [
-                (num, body) for num, body in issues.updated_bodies if num == 42
-            ]
+            objective_updates = [(num, body) for num, body in issues.updated_bodies if num == 42]
             assert len(objective_updates) == 1
 
             # The single write should contain both draft PR references
