@@ -70,12 +70,12 @@ PR is marked ready for review. Standard review/merge flow. No body format change
 
 All in `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py`:
 
-| Function                                             | Purpose                                                                                                     |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: metadata + separator + details-wrapped plan. Footer NOT included (needs PR number).     |
+| Function                                             | Purpose                                                                                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: metadata + separator + details-wrapped plan. Footer NOT included (needs PR number).                  |
 | `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary><code>original-plan</code></summary>` section. Used by both Stage 1 and Stage 2. |
-| `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. |
-| `extract_metadata_prefix(pr_body)`                   | Extract metadata block + content separator for preservation during stage transitions.                       |
+| `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format.              |
+| `extract_metadata_prefix(pr_body)`                   | Extract metadata block + content separator for preservation during stage transitions.                                    |
 
 ## Separator Semantics
 
