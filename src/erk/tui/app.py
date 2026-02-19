@@ -519,9 +519,7 @@ class ErkDashApp(App):
             check=False,
         )
         if result.returncode == 0:
-            self.call_from_thread(
-                self.notify, f"Objective #{objective_issue} updated", timeout=5
-            )
+            self.call_from_thread(self.notify, f"Objective #{objective_issue} updated", timeout=5)
         else:
             self.call_from_thread(
                 self.notify,
