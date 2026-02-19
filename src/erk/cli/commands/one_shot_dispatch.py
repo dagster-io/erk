@@ -14,6 +14,11 @@ import click
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+from erk.core.instruction_enricher import (
+    EnrichmentRequest,
+    InstructionEnricher,
+    fallback_enrichment,
+)
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
@@ -125,15 +130,21 @@ def dispatch_one_shot(
     # Detect trunk branch
     trunk = ctx.git.branch.detect_trunk_branch(repo.root)
 
-    # Build PR title
-    max_title_len = 60
-    suffix = "..." if len(params.instruction) > max_title_len else ""
-    pr_title = f"One-shot: {params.instruction[:max_title_len]}{suffix}"
+    # Enrich instruction to extract clean title/summary from potentially noisy input.
+    # In dry-run mode, use fallback only (no inference call).
+    if dry_run:
+        enriched = fallback_enrichment(params.instruction)
+    else:
+        enricher = InstructionEnricher(ctx.prompt_executor)
+        enriched = enricher.enrich(EnrichmentRequest(raw_instruction=params.instruction))
+
+    # Build PR title from enriched title
+    pr_title = f"One-shot: {enriched.title}"
 
     if dry_run:
         # In dry-run, show preview without creating skeleton issue
         branch_name = generate_branch_name(
-            params.instruction,
+            enriched.title,
             time=ctx.time,
             plan_issue_number=None,
             objective_id=None,
@@ -160,13 +171,13 @@ def dispatch_one_shot(
 
     skeleton_plan_content = (
         f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
-        f"**Instruction:** {params.instruction}"
+        f"**Instruction:** {enriched.summary}"
     )
     skeleton_result = create_plan_issue(
         github_issues=ctx.github.issues,
         repo_root=repo.root,
         plan_content=skeleton_plan_content,
-        title=f"One-shot: {params.instruction[:max_title_len]}{suffix}",
+        title=f"One-shot: {enriched.title}",
         extra_labels=None,
         title_tag=None,
         source_repo=None,
@@ -179,7 +190,7 @@ def dispatch_one_shot(
 
     # Generate branch name (uses P<N>- prefix when plan issue was created)
     branch_name = generate_branch_name(
-        params.instruction,
+        enriched.title,
         time=ctx.time,
         plan_issue_number=plan_issue_number,
         objective_id=objective_id,
@@ -211,7 +222,7 @@ def dispatch_one_shot(
 
         # Stage and commit with instruction file
         ctx.git.commit.stage_files(repo.root, [".worker-impl/task.md"])
-        ctx.git.commit.commit(repo.root, f"One-shot: {params.instruction[:60]}")
+        ctx.git.commit.commit(repo.root, f"One-shot: {enriched.title}")
 
         # Push to remote
         user_output("Pushing to remote...")
