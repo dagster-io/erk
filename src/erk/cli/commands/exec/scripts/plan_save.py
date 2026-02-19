@@ -43,6 +43,7 @@ from erk_shared.context.helpers import (
     require_time,
 )
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.plan_store import get_plan_backend
@@ -139,16 +140,17 @@ def _save_as_draft_pr(
         objective_id=objective_issue,
     )
 
-    # Create branch and commit plan file
+    # Create branch with Graphite tracking (handles both creation and stack metadata)
+    branch_manager = require_branch_manager(ctx)
     current_branch = git.branch.get_current_branch(cwd)
     start_point = current_branch if current_branch is not None else "HEAD"
-    git.branch.create_branch(cwd, branch_name, start_point, force=False)
+    create_result = branch_manager.create_branch(repo_root, branch_name, start_point)
+    if isinstance(create_result, BranchAlreadyExists):
+        click.echo(f"Error: {create_result.message}", err=True)
+        raise SystemExit(1) from None
 
-    # Track branch with Graphite so it can be used as a stack parent
+    # Detect trunk for PR base metadata
     trunk = git.branch.detect_trunk_branch(cwd)
-    if trunk is not None:
-        branch_manager = require_branch_manager(ctx)
-        branch_manager.track_branch(repo_root, branch_name, trunk)
 
     # Temporarily checkout plan branch to commit plan file.
     # Since the plan branch was created from the same commit as the current branch,
@@ -176,7 +178,7 @@ def _save_as_draft_pr(
     finally:
         git.branch.checkout_branch(cwd, start_point)
 
-    # Build metadata (trunk was detected above for Graphite tracking)
+    # Build metadata
     metadata: dict[str, object] = {"branch_name": branch_name, "trunk_branch": trunk}
 
     if config.plans_repo is not None:

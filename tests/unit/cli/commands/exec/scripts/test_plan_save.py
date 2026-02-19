@@ -226,10 +226,13 @@ def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    # Two checkouts: plan branch, then back to original
-    assert len(fake_git.checked_out_branches) == 2
-    assert fake_git.checked_out_branches[0][1].startswith("plan-")
-    assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")
+    # Four checkouts: branch_manager.create_branch() does checkout+restore for gt track,
+    # then plan_save does checkout+restore for committing plan file
+    assert len(fake_git.checked_out_branches) == 4
+    assert fake_git.checked_out_branches[0][1].startswith("plan-")  # for gt track
+    assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # restore
+    assert fake_git.checked_out_branches[2][1].startswith("plan-")  # for plan commit
+    assert fake_git.checked_out_branches[3] == (tmp_path, "feature-branch")  # final restore
 
 
 def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
@@ -291,9 +294,10 @@ def test_draft_pr_tracks_branch_with_graphite(tmp_path: Path) -> None:
     output = json.loads(result.output)
     branch_name = output["branch_name"]
 
-    # Verify track_branch was called with the plan branch and trunk as parent
+    # Verify track_branch was called with the plan branch and current branch as parent
+    # (branch_manager.create_branch uses base_branch as Graphite parent)
     assert len(fake_graphite.track_branch_calls) == 1
     tracked_call = fake_graphite.track_branch_calls[0]
     assert tracked_call[0] == tmp_path  # repo_root
     assert tracked_call[1] == branch_name  # branch_name
-    assert tracked_call[2] == "master"  # parent_branch (trunk)
+    assert tracked_call[2] == "main"  # parent_branch (current branch used as base)
