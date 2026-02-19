@@ -122,6 +122,7 @@ def branch_create(
 
     # Plan setup - fetches plan and derives branch name if --for-plan is used
     setup: IssueBranchSetup | None = None
+    plan_backend = None
 
     if for_plan is not None:
         issue_number = parse_issue_identifier(for_plan)
@@ -130,8 +131,9 @@ def branch_create(
             raise click.ClickException(f"Issue #{issue_number} not found")
         plan = result
 
+        plan_backend = get_plan_backend()
         result = prepare_plan_for_worktree(
-            plan, ctx.time.now(), plan_backend=get_plan_backend(), warn_non_open=True
+            plan, ctx.time.now(), plan_backend=plan_backend, warn_non_open=True
         )
         if isinstance(result, IssueValidationFailed):
             user_output(f"Error: {result.message}")
@@ -147,33 +149,51 @@ def branch_create(
     # Type assertion for the type checker
     assert branch_name is not None
 
-    # Check if branch already exists
-    local_branches = ctx.git.branch.list_local_branches(repo.root)
-    if branch_name in local_branches:
-        user_output(
-            f"Error: Branch '{branch_name}' already exists.\n"
-            "Use `erk br assign` to assign an existing branch to a slot."
-        )
-        raise SystemExit(1) from None
-
-    # Create the new branch, respecting Graphite stacking
+    # Detect trunk branch (needed for both paths)
     trunk = ctx.git.branch.detect_trunk_branch(repo.root)
     if trunk is None:
         user_output("Error: Could not detect trunk branch.")
         raise SystemExit(1) from None
 
-    # Stack on current branch if we're on a non-trunk branch
-    current_branch = ctx.git.branch.get_current_branch(repo.root)
-    if current_branch and current_branch != trunk:
-        parent_branch = current_branch
-    else:
-        parent_branch = trunk
+    # Check if branch already exists
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
+    branch_exists_locally = branch_name in local_branches
 
-    result = ctx.branch_manager.create_branch(repo.root, branch_name, parent_branch)
-    if isinstance(result, BranchAlreadyExists):
-        user_output(f"Error: {result.message}")
-        raise SystemExit(1) from None
-    user_output(f"Created branch: {branch_name}")
+    if setup is not None and plan_backend == "draft_pr":
+        # Draft PR backend: branch was created by plan-save, so it's expected to exist
+        if branch_exists_locally:
+            user_output(f"Using existing branch: {branch_name}")
+        else:
+            # Branch only on remote — fetch and create local tracking branch
+            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+            ctx.branch_manager.create_tracking_branch(
+                repo.root, branch_name, f"origin/{branch_name}"
+            )
+            user_output(f"Created tracking branch: {branch_name}")
+        ctx.branch_manager.track_branch(repo.root, branch_name, trunk)
+    elif setup is None or plan_backend == "github":
+        # Standard path: branch must NOT already exist
+        if branch_exists_locally:
+            user_output(
+                f"Error: Branch '{branch_name}' already exists.\n"
+                "Use `erk br assign` to assign an existing branch to a slot."
+            )
+            raise SystemExit(1) from None
+
+        # Stack on current branch if we're on a non-trunk branch
+        current_branch = ctx.git.branch.get_current_branch(repo.root)
+        if current_branch and current_branch != trunk:
+            parent_branch = current_branch
+        else:
+            parent_branch = trunk
+
+        result = ctx.branch_manager.create_branch(repo.root, branch_name, parent_branch)
+        if isinstance(result, BranchAlreadyExists):
+            user_output(f"Error: {result.message}")
+            raise SystemExit(1) from None
+        user_output(f"Created branch: {branch_name}")
+    else:
+        raise RuntimeError(f"Unexpected plan_backend: {plan_backend!r}")
 
     # If --no-slot is specified, we're done (but warn about .impl if --for-plan was used)
     if no_slot:
