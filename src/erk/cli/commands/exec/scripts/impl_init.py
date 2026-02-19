@@ -29,6 +29,7 @@ from typing import NoReturn
 import click
 
 from erk_shared.impl_folder import read_plan_ref
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 
 
 def _error_json(error_type: str, message: str) -> NoReturn:
@@ -49,7 +50,7 @@ def _validate_impl_folder() -> tuple[Path, str]:
     """
     cwd = Path.cwd()
 
-    # Check .impl/ first, then .worker-impl/
+    # Check .impl/ first, then .worker-impl/, then .erk/impl-context/
     impl_dir = cwd / ".impl"
     impl_type = "impl"
 
@@ -58,9 +59,13 @@ def _validate_impl_folder() -> tuple[Path, str]:
         impl_type = "worker-impl"
 
     if not impl_dir.exists():
+        impl_dir = cwd / IMPL_CONTEXT_DIR
+        impl_type = "impl-context"
+
+    if not impl_dir.exists():
         _error_json(
             "no_impl_folder",
-            "No .impl/ or .worker-impl/ folder found in current directory",
+            "No .impl/, .worker-impl/, or .erk/impl-context/ folder found in current directory",
         )
 
     plan_file = impl_dir / "plan.md"

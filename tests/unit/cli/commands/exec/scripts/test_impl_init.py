@@ -128,6 +128,65 @@ def test_impl_init_detects_worker_impl(tmp_path: Path, monkeypatch: pytest.Monke
     assert data["impl_type"] == "worker-impl"
 
 
+def test_impl_init_detects_impl_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test impl-init detects .erk/impl-context/ folder."""
+    impl_context_dir = tmp_path / ".erk" / "impl-context"
+    impl_context_dir.mkdir(parents=True)
+
+    plan_md = impl_context_dir / "plan.md"
+    plan_md.write_text("# Plan\n\n1. Step one", encoding="utf-8")
+
+    monkeypatch.chdir(tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(impl_init, ["--json"])
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["valid"] is True
+    assert data["impl_type"] == "impl-context"
+    assert data["has_issue_tracking"] is False
+
+
+def test_impl_init_impl_context_with_plan_ref(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test impl-init detects plan-ref.json in .erk/impl-context/."""
+    impl_context_dir = tmp_path / ".erk" / "impl-context"
+    impl_context_dir.mkdir(parents=True)
+
+    plan_md = impl_context_dir / "plan.md"
+    plan_md.write_text("# Plan\n\n1. Step one", encoding="utf-8")
+
+    plan_ref = impl_context_dir / "plan-ref.json"
+    plan_ref.write_text(
+        json.dumps(
+            {
+                "provider": "github-draft-pr",
+                "plan_id": "456",
+                "url": "https://github.com/org/repo/pull/456",
+                "labels": [],
+                "objective_id": None,
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "synced_at": "2026-01-01T00:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(impl_init, ["--json"])
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["valid"] is True
+    assert data["impl_type"] == "impl-context"
+    assert data["has_issue_tracking"] is True
+    assert data["issue_number"] == 456
+
+
 def test_impl_init_errors_missing_impl_folder(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -141,6 +200,7 @@ def test_impl_init_errors_missing_impl_folder(
     data = json.loads(result.output)
     assert data["valid"] is False
     assert data["error_type"] == "no_impl_folder"
+    assert ".erk/impl-context/" in data["message"]
 
 
 def test_impl_init_errors_missing_plan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -17,6 +17,7 @@ activate.sh
 # Local implementation and configuration (not tracked in git)
 .impl/
 .erk/bin/
+.erk/impl-context/plan-ref.json
 .erk/scratch/
 .erk/config.local.toml
 .env

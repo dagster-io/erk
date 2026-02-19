@@ -146,28 +146,49 @@ def _implement_from_issue(
         )
         return
 
-    # Create .impl/ folder in current directory
-    ctx.console.info("Creating .impl/ folder with plan...")
-    create_impl_folder(
-        worktree_path=ctx.cwd,
-        plan_content=plan.body,
-        overwrite=True,
-    )
-    ctx.console.success("✓ Created .impl/ folder")
-
-    # Save plan reference for PR linking
-    ctx.console.info("Saving plan reference for PR linking...")
-    impl_dir = ctx.cwd / ".impl"
+    # Create .impl/ folder or use impl-context depending on backend
     provider_name = ctx.plan_store.get_provider_name()
-    save_plan_ref(
-        impl_dir,
-        provider=provider_name,
-        plan_id=str(issue_number),
-        url=plan.url,
-        labels=(),
-        objective_id=plan.objective_id,
-    )
-    ctx.console.success(f"✓ Saved plan reference: {plan.url}")
+
+    if provider_name == "github-draft-pr":
+        from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+
+        impl_context_dir = ctx.cwd / IMPL_CONTEXT_DIR
+        if impl_context_dir.exists():
+            # Already on the plan branch — just write plan-ref.json
+            ctx.console.info(f"Using existing {IMPL_CONTEXT_DIR}/ for plan context...")
+        else:
+            # Create impl-context directory with plan content
+            ctx.console.info(f"Creating {IMPL_CONTEXT_DIR}/ with plan...")
+            impl_context_dir.mkdir(parents=True)
+            plan_file = impl_context_dir / "plan.md"
+            plan_file.write_text(plan.body, encoding="utf-8")
+        save_plan_ref(
+            impl_context_dir,
+            provider=provider_name,
+            plan_id=str(issue_number),
+            url=plan.url,
+            labels=(),
+            objective_id=plan.objective_id,
+        )
+        ctx.console.success(f"✓ Saved plan reference: {plan.url}")
+    else:
+        ctx.console.info("Creating .impl/ folder with plan...")
+        create_impl_folder(
+            worktree_path=ctx.cwd,
+            plan_content=plan.body,
+            overwrite=True,
+        )
+        ctx.console.success("✓ Created .impl/ folder")
+        impl_dir = ctx.cwd / ".impl"
+        save_plan_ref(
+            impl_dir,
+            provider=provider_name,
+            plan_id=str(issue_number),
+            url=plan.url,
+            labels=(),
+            objective_id=plan.objective_id,
+        )
+        ctx.console.success(f"✓ Saved plan reference: {plan.url}")
 
     # Execute based on mode
     if script:

@@ -37,6 +37,7 @@ from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.naming import generate_issue_branch_name
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -175,29 +176,44 @@ def setup_impl_from_issue(
 
                 branch_manager.checkout_branch(cwd, branch_name)
 
-    # Step 3: Create .impl/ folder with plan content (unless --no-impl)
+    # Step 3: Create .impl/ folder or save plan reference (unless --no-impl)
     impl_path_str: str | None = None
 
     if not no_impl:
-        impl_path = cwd / ".impl"
-        impl_path_str = str(impl_path)
+        is_draft_pr_plan = isinstance(plan_branch, str) and plan_branch
+        if is_draft_pr_plan:
+            # Draft-PR plan: plan.md already lives in impl-context on the branch.
+            # Only write plan-ref.json so impl-init can find the issue reference.
+            impl_context_dir = cwd / IMPL_CONTEXT_DIR
+            impl_path_str = str(impl_context_dir)
+            save_plan_ref(
+                impl_context_dir,
+                provider="github-draft-pr",
+                plan_id=str(issue_number),
+                url=plan.url,
+                labels=(),
+                objective_id=plan.objective_id,
+            )
+        else:
+            # Issue-based plan: create .impl/ with full plan content
+            impl_path = cwd / ".impl"
+            impl_path_str = str(impl_path)
 
-        # Use overwrite=True since we may be re-running after a failed attempt
-        create_impl_folder(
-            worktree_path=cwd,
-            plan_content=plan.body,
-            overwrite=True,
-        )
+            # Use overwrite=True since we may be re-running after a failed attempt
+            create_impl_folder(
+                worktree_path=cwd,
+                plan_content=plan.body,
+                overwrite=True,
+            )
 
-        # Step 4: Save plan reference for PR linking
-        save_plan_ref(
-            impl_path,
-            provider="github",
-            plan_id=str(issue_number),
-            url=plan.url,
-            labels=(),
-            objective_id=plan.objective_id,
-        )
+            save_plan_ref(
+                impl_path,
+                provider="github",
+                plan_id=str(issue_number),
+                url=plan.url,
+                labels=(),
+                objective_id=plan.objective_id,
+            )
 
     # Output structured success result
     output: dict[str, str | int | bool | None] = {

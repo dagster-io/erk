@@ -47,10 +47,13 @@ def test_implement_from_plain_issue_number(plan_backend_type: str) -> None:
         result = runner.invoke(implement, ["123"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
 
-        # Verify .impl/ folder exists with correct plan ID
-        plan_ref_path = env.cwd / ".impl" / "plan-ref.json"
+        # Verify plan-ref.json exists with correct plan ID
+        if plan_backend_type == "draft_pr":
+            plan_ref_path = env.cwd / ".erk" / "impl-context" / "plan-ref.json"
+        else:
+            assert "Created .impl/ folder" in result.output
+            plan_ref_path = env.cwd / ".impl" / "plan-ref.json"
         plan_ref_content = plan_ref_path.read_text(encoding="utf-8")
         assert '"plan_id": "123"' in plan_ref_content
 
@@ -73,13 +76,19 @@ def test_implement_from_issue_number(plan_backend_type: str) -> None:
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
 
-        # Verify .impl/ folder exists
-        impl_path = env.cwd / ".impl"
-        assert impl_path.exists()
-        assert (impl_path / "plan.md").exists()
-        assert (impl_path / "plan-ref.json").exists()
+        # Verify folder structure depends on backend
+        if plan_backend_type == "draft_pr":
+            impl_path = env.cwd / ".erk" / "impl-context"
+            assert impl_path.exists()
+            assert (impl_path / "plan.md").exists()
+            assert (impl_path / "plan-ref.json").exists()
+        else:
+            assert "Created .impl/ folder" in result.output
+            impl_path = env.cwd / ".impl"
+            assert impl_path.exists()
+            assert (impl_path / "plan.md").exists()
+            assert (impl_path / "plan-ref.json").exists()
 
 
 def test_implement_from_issue_url(plan_backend_type: str) -> None:
@@ -101,10 +110,13 @@ def test_implement_from_issue_url(plan_backend_type: str) -> None:
         result = runner.invoke(implement, [url], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
 
         # Verify plan-ref.json contains correct plan ID
-        plan_ref_path = env.cwd / ".impl" / "plan-ref.json"
+        if plan_backend_type == "draft_pr":
+            plan_ref_path = env.cwd / ".erk" / "impl-context" / "plan-ref.json"
+        else:
+            assert "Created .impl/ folder" in result.output
+            plan_ref_path = env.cwd / ".impl" / "plan-ref.json"
         plan_ref_content = plan_ref_path.read_text(encoding="utf-8")
         assert '"plan_id": "123"' in plan_ref_content
 
@@ -127,10 +139,13 @@ def test_implement_creates_impl_folder_in_cwd(plan_backend_type: str) -> None:
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
 
-        # Verify .impl/ was created in current directory
-        impl_dir = env.cwd / ".impl"
+        # Verify plan folder was created in current directory
+        if plan_backend_type == "draft_pr":
+            impl_dir = env.cwd / ".erk" / "impl-context"
+        else:
+            assert "Created .impl/ folder" in result.output
+            impl_dir = env.cwd / ".impl"
         assert impl_dir.exists()
 
 

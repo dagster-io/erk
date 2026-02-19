@@ -39,7 +39,6 @@ def test_implement_with_submit_flag_from_issue(plan_backend_type: str) -> None:
         result = runner.invoke(implement, ["#42", "--script", "--submit"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
 
         # Script should be created
         assert "erk-implement-" in result.output
@@ -91,7 +90,6 @@ def test_implement_without_submit_uses_default_command(plan_backend_type: str) -
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
 
         # Verify script has only implement-plan command (not CI/submit)
         assert "erk-implement-" in result.output
@@ -391,7 +389,6 @@ def test_implement_with_dangerous_shows_in_script_content(plan_backend_type: str
         result = runner.invoke(implement, ["#42", "--dangerous", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
 
         # Verify dangerous flag shown in script file
         assert result.stdout
