@@ -63,6 +63,19 @@ def _find_node_in_phases(
 
 
 @dataclass(frozen=True)
+class DispatchedNode:
+    """A node that was successfully dispatched via one-shot workflow.
+
+    Attributes:
+        node_id: The node ID (e.g., "2.1")
+        pr_number: The draft PR number from one-shot dispatch
+    """
+
+    node_id: str
+    pr_number: int
+
+
+@dataclass(frozen=True)
 class ResolvedNext:
     """Result of resolving the next unblocked pending node for an objective.
 
@@ -236,7 +249,8 @@ def _handle_all_unblocked(
         user_output(f"  {node.id}: {node.description} (Phase: {phase_name})")
     user_output("")
 
-    dispatched_count = 0
+    # Phase 1: dispatch all nodes, collect results
+    dispatched: list[DispatchedNode] = []
     for node, phase_name in resolved.nodes:
         instruction = (
             f"/erk:objective-plan {resolved.issue_number}\n"
@@ -258,15 +272,17 @@ def _handle_all_unblocked(
         dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
 
         if dispatch_result is not None:
-            assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
-            _update_objective_node(
-                ctx.issues,
-                ctx.repo.root,
-                issue_number=resolved.issue_number,
-                node_id=node.id,
-                pr_number=dispatch_result.pr_number,
-            )
-            dispatched_count += 1
+            dispatched.append(DispatchedNode(node_id=node.id, pr_number=dispatch_result.pr_number))
+
+    # Phase 2: single atomic update for all dispatched nodes
+    if dispatched:
+        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        _batch_update_objective_nodes(
+            ctx.issues,
+            ctx.repo.root,
+            issue_number=resolved.issue_number,
+            dispatched=dispatched,
+        )
 
     if dry_run:
         user_output(
@@ -276,7 +292,7 @@ def _handle_all_unblocked(
     else:
         user_output(
             f"\n{click.style('Done!', fg='green', bold=True)} "
-            f"Dispatched {dispatched_count}/{len(resolved.nodes)} node(s)"
+            f"Dispatched {len(dispatched)}/{len(resolved.nodes)} node(s)"
         )
 
 
@@ -332,6 +348,69 @@ def _update_objective_node(
         )
         if updated_comment is not None and updated_comment != comment_body:
             issues.update_comment(repo_root, objective_comment_id, updated_comment)
+
+
+def _batch_update_objective_nodes(
+    issues: GitHubIssues,
+    repo_root: Path,
+    *,
+    issue_number: int,
+    dispatched: list[DispatchedNode],
+) -> None:
+    """Mark multiple nodes as 'planning' with their draft PRs atomically.
+
+    Fetches the issue body once, applies all node updates in memory,
+    then writes back in a single API call. This avoids N read-modify-write
+    cycles for N nodes.
+
+    Args:
+        issues: GitHub issues gateway
+        repo_root: Repository root path
+        issue_number: Objective issue number
+        dispatched: List of dispatched nodes with their PR numbers
+    """
+    if not dispatched:
+        return
+
+    issue = issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return
+
+    # Phase 1: accumulate all node updates on the in-memory body
+    body = issue.body
+    for node in dispatched:
+        updated = _replace_node_refs_in_body(
+            body,
+            node.node_id,
+            new_plan=None,
+            new_pr=f"#{node.pr_number}",
+            explicit_status="planning",
+        )
+        if updated is not None:
+            body = updated
+
+    # Single write for all node changes
+    if body != issue.body:
+        issues.update_issue_body(repo_root, issue_number, BodyText(content=body))
+
+    # Phase 2: update v2 comment table atomically
+    objective_comment_id = extract_metadata_value(
+        body, "objective-header", "objective_comment_id"
+    )
+    if objective_comment_id is not None:
+        comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
+        for node in dispatched:
+            updated_comment = _replace_table_in_text(
+                comment_body,
+                node.node_id,
+                new_plan=None,
+                new_pr=f"#{node.pr_number}",
+                explicit_status="planning",
+            )
+            if updated_comment is not None:
+                comment_body = updated_comment
+        if comment_body != issues.get_comment_by_id(repo_root, objective_comment_id):
+            issues.update_comment(repo_root, objective_comment_id, comment_body)
 
 
 @click.command("plan")

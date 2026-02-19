@@ -291,7 +291,7 @@ class TestHandleAllUnblocked:
             assert len(github.triggered_workflows) == 0
 
     def test_updates_objective_nodes_to_planning(self) -> None:
-        """--all-unblocked marks each dispatched node as 'planning'."""
+        """--all-unblocked marks each dispatched node as 'planning' atomically."""
         runner = CliRunner()
         with erk_isolated_fs_env(runner, env_overrides=None) as env:
             env.setup_repo_structure()
@@ -316,9 +316,55 @@ class TestHandleAllUnblocked:
 
             assert result.exit_code == 0
 
-            # Verify the issue body was updated (node status changed to planning)
+            # Verify atomicity: single body write for objective issue #42
+            # (other issues may be updated by dispatch_one_shot for skeleton plans)
+            objective_updates = [
+                (num, body) for num, body in issues.updated_bodies if num == 42
+            ]
+            assert len(objective_updates) == 1
+
+            # Verify both nodes appear as "planning" in the final body
             from erk_shared.gateway.github.issues.types import IssueNotFound
 
             updated_issue = issues.get_issue(env.cwd, 42)
             assert not isinstance(updated_issue, IssueNotFound)
             assert "planning" in updated_issue.body
+
+    def test_batch_update_atomicity(self) -> None:
+        """Dispatching 2 nodes results in exactly 1 update_issue_body call."""
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner, env_overrides=None) as env:
+            env.setup_repo_structure()
+
+            issue = _make_issue(42, "Objective: Fan-Out", _FAN_OUT_BODY)
+            issues = FakeGitHubIssues(issues={42: issue})
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                trunk_branches={env.cwd: "main"},
+                current_branches={env.cwd: "main"},
+            )
+            github = FakeGitHub(authenticated=True, issues_gateway=issues)
+            ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+            result = runner.invoke(
+                cli,
+                ["objective", "plan", "42", "--all-unblocked"],
+                obj=ctx,
+                catch_exceptions=False,
+            )
+
+            assert result.exit_code == 0
+
+            # 2 nodes dispatched, but only 1 update_issue_body call for objective #42
+            assert len(github.triggered_workflows) == 2
+            objective_updates = [
+                (num, body) for num, body in issues.updated_bodies if num == 42
+            ]
+            assert len(objective_updates) == 1
+
+            # The single write should contain both draft PR references
+            _issue_number, final_body = objective_updates[0]
+            # FakeGitHub assigns PR numbers starting at 999
+            assert "#999" in final_body
+            assert "#1000" in final_body
