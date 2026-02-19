@@ -70,7 +70,8 @@ For each item from the gap analysis (non-SKIP items):
    - Add source attribution: [Plan], [Impl], or [PR #N]
 4. **Use source pointers, not verbatim code**: Draft content MUST NOT include verbatim code blocks copied from source files. Instead:
    - Describe what the code does in prose
-   - Point to the source file: `See ClassName.method() in path/to/file.py` (agents should grep to find the exact location)
+   - Default to file-level pointers: `See path/to/file.py` (agents should grep to find the exact location)
+   - Only name symbols when they are central, stable concepts unlikely to change (e.g., core ABCs, stable public classes). Private `_underscore` methods must never appear in learned docs — their behavior belongs in docstrings
    - Short illustrative snippets (≤5 lines) showing a pattern are acceptable
    - Follow `docs/learned/documentation/source-pointers.md` for format
 

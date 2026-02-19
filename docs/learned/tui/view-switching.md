@@ -94,7 +94,7 @@ Cache is populated in `_load_data()` after each successful fetch and looked up i
 2. Clears all columns and rows with `clear(columns=True)`
 3. Calls `_setup_columns()` to rebuild columns for the new view
 
-Objectives view uses simplified columns (plan, title, created, author only). Plans and Learn views show the full column set including PR, checks, comments, learn status, and worktree columns.
+Objectives view uses enriched columns: plan, title, progress (prog), next node, deps, updated, author (7 columns). Plans and Learn views show the full column set including PR, checks, comments, learn status, and worktree columns.
 
 ## ViewBar
 

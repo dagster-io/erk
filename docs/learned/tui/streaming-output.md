@@ -6,6 +6,13 @@ read_when:
   - "cross-thread UI updates in Textual"
 last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
+tripwires:
+  - action: "accessing _status_bar without null guard"
+    warning: "Guard _status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError."
+  - action: "using subprocess.Popen without bufsize=1 for streaming"
+    warning: "Use bufsize=1 with text=True for line-buffered streaming Popen output. Without it, output may be block-buffered."
+  - action: "displaying subprocess output in plain text widgets without stripping ANSI"
+    warning: "Use click.unstyle() before displaying subprocess output in plain text widgets. Raw ANSI codes render as garbage."
 ---
 
 # TUI Streaming Output Patterns
@@ -62,7 +69,49 @@ Production usage: see `src/erk/tui/screens/plan_detail_screen.py` and `src/erk/t
 
 **For streaming command output, use `RichLog`** — the production `CommandOutputPanel` uses `RichLog` with `highlight=True` and `markup=True`.
 
+## Pattern 3: Status Bar Streaming
+
+For lightweight progress display (not full command output), use `subprocess.Popen` with status bar updates via `call_from_thread()`. See `src/erk/tui/app.py` and `src/erk/tui/screens/plan_detail_screen.py` for production implementations.
+
+### Key Components
+
+1. **Line-buffered subprocess**: `subprocess.Popen` with `bufsize=1`, `text=True` for real-time line output
+2. **Thread-safe status bar updates**: `call_from_thread()` to update the status bar from the background thread
+3. **ANSI code stripping**: `click.unstyle()` removes ANSI escape codes before displaying in plain text widgets
+4. **Output collection**: Lines stored in a list for error context extraction on failure
+5. **Last non-empty line extraction**: On failure, extract the last non-empty line from output for error messages
+
+### Pattern
+
+```python
+@work(thread=True)
+def _run_async(self) -> None:
+    output_lines: list[str] = []
+    proc = subprocess.Popen(
+        ["erk", "exec", "some-command"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        bufsize=1,
+        text=True,
+    )
+    if proc.stdout is not None:
+        for line in proc.stdout:
+            clean = click.unstyle(line.rstrip())
+            output_lines.append(clean)
+            self.call_from_thread(self._set_status, clean)
+    return_code = proc.wait()
+    if return_code != 0:
+        msg = next((ln for ln in reversed(output_lines) if ln), "Unknown error")
+        self.call_from_thread(self.notify, msg, severity="error")
+```
+
+### Production Usage
+
+The streaming detail pattern in `src/erk/tui/app.py` pushes a streaming screen for long-running commands (land PR, submit to queue, etc.) with a success callback for post-completion actions like objective updates. See also `src/erk/tui/screens/plan_detail_screen.py` for screen-level streaming.
+
 ## Related Documentation
 
 - [Textual Async Best Practices](textual-async.md)
 - [Command Execution Strategies](command-execution.md)
+- [TUI Subprocess Testing](../testing/tui-subprocess-testing.md) - Testing patterns for subprocess-based TUI features

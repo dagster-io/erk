@@ -54,6 +54,8 @@ Rules triggered by matching actions in code.
 
 **looking for phase names in RoadmapNode fields** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Nodes are stored flat. Phase membership is derived from node ID prefix. Phase names come from markdown headers via enrich_phase_names().
 
+**looping next_node() for fan-out dispatch** → Read [Dependency Status Resolution](dependency-status-resolution.md) first. Use pending_unblocked_nodes() for fan-out dispatch. next_node() only returns a single node.
+
 **manually parsing objective roadmap markdown** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Use `erk objective check`. It handles structural parsing, status inference, and semantic validation.
 
 **manually writing roadmap YAML or metadata blocks in objective-create** → Read [Objective Create Workflow](objective-create-workflow.md) first. Use erk exec objective-render-roadmap to generate the roadmap block. The skill template must produce valid JSON input for this command.
@@ -79,6 +81,8 @@ Rules triggered by matching actions in code.
 **using find_next_node() for dependency-aware traversal** → Read [Dependency Graph Architecture](dependency-graph.md) first. Use DependencyGraph.next_node() instead. find_next_node() is position-based and ignores dependencies.
 
 **using full-body update for single-cell changes** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions.
+
+**using graph_from_phases() when nodes have explicit depends_on fields** → Read [Dependency Status Resolution](dependency-status-resolution.md) first. Prefer build_graph() over graph_from_phases(). build_graph() detects explicit depends_on and delegates to graph_from_nodes() when appropriate.
 
 **using parse_roadmap() when strict v2 validation is needed** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content.
 
