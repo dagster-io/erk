@@ -113,3 +113,5 @@ Rules triggered by matching actions in code.
 **using vi.useFakeTimers() without restoring in afterEach** → Read [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md) first. Always call vi.useRealTimers() in afterEach(). Fake timers leak across tests and cause unpredictable failures in unrelated test suites.
 
 **writing React component tests with Vitest + jsdom** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. jsdom doesn't implement several browser APIs (scrollIntoView, ResizeObserver). Check erkdesk/src/test/setup.ts for existing stubs before adding new ones.
+
+**writing plan storage tests without considering both backends** → Read [Dual Backend Testing](dual-backend-testing.md) first. Tests should cover both GitHubPlanStore and DraftPRPlanBackend where applicable. See dual-backend-testing.md.

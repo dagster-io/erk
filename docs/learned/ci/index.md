@@ -7,6 +7,7 @@
 - **[ci-iteration.md](ci-iteration.md)** — running CI commands in workflows, delegating pytest, ty, ruff commands, understanding devrun agent restrictions
 - **[claude-code-docker.md](claude-code-docker.md)** — Running Claude Code in GitHub Actions containers, Debugging permission errors in CI Docker containers, Choosing between container and container-less CI approaches
 - **[claude-commands-prettier.md](claude-commands-prettier.md)** — Creating slash commands in .claude/commands/, Modifying existing .claude/ markdown files, Getting Prettier formatting errors in CI
+- **[claude-kill-switch.md](claude-kill-switch.md)** — modifying CI workflows that invoke Claude, understanding how to emergency-disable Claude in CI, working with the CLAUDE_ENABLED variable
 - **[commit-squash-divergence.md](commit-squash-divergence.md)** — encountering 'fetch first' after gt submit, dealing with divergent branches after Graphite operations, understanding expected vs unexpected branch divergence, working with Graphite PR submission workflow
 - **[composite-action-patterns.md](composite-action-patterns.md)** — creating reusable GitHub Actions setup steps, using erk-remote-setup composite action, understanding GitHub Actions composite patterns
 - **[containerless-ci.md](containerless-ci.md)** — Setting up Claude Code in GitHub Actions without containers, Comparing container vs container-less CI approaches, Choosing between container and container-less CI approaches

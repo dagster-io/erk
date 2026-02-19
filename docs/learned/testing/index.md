@@ -10,6 +10,7 @@
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action
 - **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, writing prompts for devrun, understanding the parent-agent fix cycle
+- **[dual-backend-testing.md](dual-backend-testing.md)** — writing tests that involve plan storage, testing plan-related features across both backends, creating test helpers for plan store operations
 - **[env-overrides-pattern.md](env-overrides-pattern.md)** — writing tests that need custom environment variables, testing erk init commands that depend on HOME, using erk_isolated_fs_env fixture with env_overrides
 - **[erk-package-info-pattern.md](erk-package-info-pattern.md)** — working with ErkPackageInfo or bundled paths, understanding is_in_erk_repo detection, writing tests that need ErkPackageInfo
 - **[erkdesk-component-testing.md](erkdesk-component-testing.md)** — writing tests for erkdesk React components, deciding whether to test at component level or App level, adding keyboard navigation tests for erkdesk, creating test data factories for PlanRow

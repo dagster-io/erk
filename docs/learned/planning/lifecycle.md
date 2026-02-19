@@ -907,7 +907,7 @@ status: in_progress # pending, in_progress, complete, failed
 completed_nodes: 3
 total_nodes: 5
 timestamp: 2025-01-15T10:30:00Z
-step_description: "Implementing feature X" # optional
+node_description: "Implementing feature X" # optional
 ```
 
 ### `erk-worktree-creation` Schema

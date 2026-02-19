@@ -32,6 +32,7 @@
 - **[erk-statusline.md](erk-statusline.md)** — modifying the Claude Code status line, adding new status indicators to the statusline, understanding how statusline fetches GitHub data, working with Token/TokenSeq patterns, debugging statusline performance
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
 - **[fail-open-patterns.md](fail-open-patterns.md)** — implementing cleanup operations, designing resilient workflows, handling optional or non-critical operations
+- **[fake-mutation-tracking.md](fake-mutation-tracking.md)** — writing a new fake gateway implementation, adding mutation tracking to test doubles, asserting on gateway method calls in tests
 - **[flatten-subgateway-pattern.md](flatten-subgateway-pattern.md)** — creating or migrating subgateways, exposing subgateway operations through parent gateway, working with gateway hierarchies, implementing property-based subgateway access
 - **[gateway-abc-implementation.md](gateway-abc-implementation.md)** — adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite), implementing new gateway operations, composing one gateway inside another (e.g., GitHub composing GitHubIssues)
 - **[gateway-decomposition-phases.md](gateway-decomposition-phases.md)** — understanding the gateway decomposition initiative, planning new subgateway extractions, reviewing architectural history
@@ -46,6 +47,7 @@
 - **[gist-materials-interchange.md](gist-materials-interchange.md)** — working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
 - **[git-graphite-quirks.md](git-graphite-quirks.md)** — debugging unexpected git/gt behavior, handling rebase/restack edge cases, writing conflict detection logic, troubleshooting detached HEAD states, handling concurrent worktree operations, understanding worktree lock files
 - **[git-operation-patterns.md](git-operation-patterns.md)** — implementing git operations in gateways, checking if git branches or refs exist, deciding between LBYL and EAFP for git commands
+- **[github-admin-gateway.md](github-admin-gateway.md)** — working with GitHub repository secrets or admin operations, adding methods to the GitHubAdmin gateway, understanding the 5-place gateway pattern with security-sensitive operations
 - **[github-api-diagnostics.md](github-api-diagnostics.md)** — debugging GitHub API failures, investigating repository-specific API issues, GitHub CLI commands returning unexpected errors
 - **[github-api-rate-limits.md](github-api-rate-limits.md)** — using gh CLI commands programmatically, encountering GraphQL rate limit errors, choosing between REST and GraphQL API, implementing GitHub API calls in gateways
 - **[github-api-retry-mechanism.md](github-api-retry-mechanism.md)** — implementing GitHub API calls with retry logic, handling transient network errors, using execute_gh_command_with_retry(), injecting Time for testable retry delays
@@ -83,6 +85,7 @@
 - **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
 - **[plan-file-sync-pattern.md](plan-file-sync-pattern.md)** — editing PLAN-REVIEW files locally, syncing local plan changes to GitHub issues, working with plan feedback workflows
 - **[plan-ref-architecture.md](plan-ref-architecture.md)** — working with plan-ref.json, working with PlanRef dataclass, migrating from IssueReference to PlanRef, understanding provider-agnostic plan references
+- **[plan-save-branch-restoration.md](plan-save-branch-restoration.md)** — modifying plan_save.py branch checkout behavior, understanding try/finally patterns for git branch safety, working with temporary branch checkouts in erk
 - **[pr-body-assembly.md](pr-body-assembly.md)** — implementing or modifying PR body construction, working with PR footer, closing references, or issue discovery, adding a new PR command that generates or updates PR descriptions
 - **[pr-body-formatting.md](pr-body-formatting.md)** — adding GitHub-specific enhancements to PR descriptions, understanding separation between git commit messages and PR bodies, implementing badges, metadata, or HTML in PR bodies, debugging why HTML appears in git commit messages
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
