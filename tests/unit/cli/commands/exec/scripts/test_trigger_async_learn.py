@@ -256,7 +256,7 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = _parse_json_output(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 123
+    assert output["plan_id"] == "123"
     assert output["workflow_triggered"] is True
     assert output["run_id"] == "1234567890"
     assert (
@@ -295,7 +295,7 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
     assert len(fake_gh.triggered_workflows) == 1
     workflow, inputs = fake_gh.triggered_workflows[0]
     assert workflow == "learn.yml"
-    assert inputs["issue_number"] == "456"
+    assert inputs["plan_id"] == "456"
     assert "gist_url" in inputs
 
 
@@ -364,7 +364,7 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
 
     # Verify expected keys
     assert "success" in output
-    assert "issue_number" in output
+    assert "plan_id" in output
     assert "workflow_triggered" in output
     assert "run_id" in output
     assert "workflow_url" in output
@@ -372,7 +372,7 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["issue_number"], int)
+    assert isinstance(output["plan_id"], str)
     assert isinstance(output["workflow_triggered"], bool)
     assert isinstance(output["run_id"], str)
     assert isinstance(output["workflow_url"], str)
@@ -594,7 +594,7 @@ def test_trigger_async_learn_pr_lookup_failure_continues(tmp_path: Path) -> None
     assert result.exit_code == 0
     output = _parse_json_output(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 999
+    assert output["plan_id"] == "999"
     assert output["workflow_triggered"] is True
 
     # Verify PR lookup warning
@@ -776,7 +776,7 @@ def test_trigger_async_learn_skip_workflow(tmp_path: Path) -> None:
 
     # Verify preprocessing succeeded but workflow was not triggered
     assert output["success"] is True
-    assert output["issue_number"] == 456
+    assert output["plan_id"] == "456"
     assert output["workflow_triggered"] is False
 
     # Verify no run_id or workflow_url fields in output

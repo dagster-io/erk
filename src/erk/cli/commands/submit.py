@@ -157,7 +157,7 @@ def _prompt_existing_branch_action(
     return None
 
 
-def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_number: int) -> str | None:
+def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, plan_id: str) -> str | None:
     """Get the parent branch for a learn plan.
 
     Learn plans should stack on their parent plan's branch.
@@ -166,14 +166,12 @@ def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_number:
     Args:
         ctx: ErkContext with plan_backend
         repo_root: Repository root path
-        issue_number: The learn plan issue number
+        plan_id: Plan identifier
 
     Returns:
         Parent plan's branch_name if found, None otherwise
     """
-    learned_from = ctx.plan_backend.get_metadata_field(
-        repo_root, str(issue_number), "learned_from_issue"
-    )
+    learned_from = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learned_from_issue")
     if isinstance(learned_from, PlanNotFound) or learned_from is None:
         return None
 
@@ -946,7 +944,7 @@ def submit_cmd(
         issue = ctx.issues.get_issue(repo.root, issue_number)
         # issue_exists check above ensures this won't be IssueNotFound
         if not isinstance(issue, IssueNotFound) and is_issue_learn_plan(issue.labels):
-            parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue_number)
+            parent_branch = get_learn_plan_parent_branch(ctx, repo.root, str(issue_number))
             if parent_branch is not None and ctx.git.branch.branch_exists_on_remote(
                 repo.root, "origin", parent_branch
             ):

@@ -238,6 +238,19 @@ class GitHubPlanStore(PlanBackend):
 
         return plan_body
 
+    def get_comments(self, repo_root: Path, plan_id: str) -> list[str]:
+        """Get all comments on a plan issue.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Issue number as string
+
+        Returns:
+            List of comment body strings, ordered oldest to newest
+        """
+        issue_number = int(plan_id)
+        return self._github_issues.get_issue_comments(repo_root, issue_number)
+
     def get_metadata_field(
         self,
         repo_root: Path,

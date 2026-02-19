@@ -27,7 +27,7 @@ from tests.fakes.prompt_executor import FakePromptExecutor
 def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixture[str]) -> None:
     """Display shows remote implementation message when last_remote_impl_at is set."""
     result = LearnResult(
-        issue_number=123,
+        plan_id="123",
         planning_session_id=None,
         implementation_session_ids=[],
         learn_session_ids=[],
@@ -47,7 +47,7 @@ def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixtur
 def test_display_shows_none_when_no_impl_at_all(capsys: pytest.CaptureFixture[str]) -> None:
     """Display shows (none) when no implementation happened."""
     result = LearnResult(
-        issue_number=123,
+        plan_id="123",
         planning_session_id=None,
         implementation_session_ids=[],
         learn_session_ids=[],
@@ -68,7 +68,7 @@ def test_display_shows_none_when_no_impl_at_all(capsys: pytest.CaptureFixture[st
 def test_display_shows_impl_sessions_when_present(capsys: pytest.CaptureFixture[str]) -> None:
     """Display shows implementation sessions when they exist."""
     result = LearnResult(
-        issue_number=123,
+        plan_id="123",
         planning_session_id=None,
         implementation_session_ids=["impl-session-abc"],
         learn_session_ids=[],
@@ -445,7 +445,7 @@ def test_gist_url_skips_session_discovery_and_display(tmp_path: Path) -> None:
     # Output should contain the preprocessed materials message (user_output writes to stderr)
     captured_output = result.output
     # CliRunner captures stderr in output when mix_stderr=True (default)
-    assert "Preprocessed learn materials for plan #555" in captured_output
+    assert "Preprocessed learn materials for plan 555" in captured_output
     assert "https://gist.github.com/testuser/skip-sessions-test" in captured_output
     assert "Sessions have been preprocessed and uploaded." in captured_output
 

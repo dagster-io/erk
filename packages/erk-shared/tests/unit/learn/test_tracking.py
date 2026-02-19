@@ -1,21 +1,41 @@
 """Tests for learn tracking functions."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.learn.tracking import track_learn_invocation
-from tests.test_utils.github_helpers import create_test_issue
+from erk_shared.plan_store.github import GitHubPlanStore
+
+
+def _create_test_issue(number: int, title: str, body: str) -> IssueInfo:
+    """Create a minimal test issue."""
+    now = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+    return IssueInfo(
+        number=number,
+        title=title,
+        body=body,
+        state="OPEN",
+        url=None,
+        labels=[],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="test-user",
+    )
 
 
 def test_track_learn_invocation_posts_comment() -> None:
     """Track invocation posts comment to issue."""
-    issue = create_test_issue(number=42, title="Plan", body="content")
+    issue = _create_test_issue(number=42, title="Plan", body="content")
     fake_gh = FakeGitHubIssues(issues={42: issue})
+    backend = GitHubPlanStore(fake_gh)
 
     track_learn_invocation(
-        fake_gh,
+        backend,
         Path("/repo"),
-        42,
+        "42",
         session_id="test-session-123",
         readable_count=2,
         total_count=3,
@@ -31,13 +51,14 @@ def test_track_learn_invocation_posts_comment() -> None:
 
 def test_track_learn_invocation_without_session_id() -> None:
     """Track invocation works without session ID."""
-    issue = create_test_issue(number=42, title="Plan", body="content")
+    issue = _create_test_issue(number=42, title="Plan", body="content")
     fake_gh = FakeGitHubIssues(issues={42: issue})
+    backend = GitHubPlanStore(fake_gh)
 
     track_learn_invocation(
-        fake_gh,
+        backend,
         Path("/repo"),
-        42,
+        "42",
         session_id=None,
         readable_count=0,
         total_count=1,
@@ -52,13 +73,14 @@ def test_track_learn_invocation_without_session_id() -> None:
 
 def test_track_learn_invocation_includes_counts() -> None:
     """Track invocation includes session counts in description."""
-    issue = create_test_issue(number=42, title="Plan", body="content")
+    issue = _create_test_issue(number=42, title="Plan", body="content")
     fake_gh = FakeGitHubIssues(issues={42: issue})
+    backend = GitHubPlanStore(fake_gh)
 
     track_learn_invocation(
-        fake_gh,
+        backend,
         Path("/repo"),
-        42,
+        "42",
         session_id="session-abc",
         readable_count=5,
         total_count=8,

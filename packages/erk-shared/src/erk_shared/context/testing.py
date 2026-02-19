@@ -184,7 +184,7 @@ def context_for_test(
     if plan_store is not None:
         resolved_plan_store = plan_store
     elif get_plan_backend() == "draft_pr":
-        resolved_plan_store = DraftPRPlanBackend(resolved_github)
+        resolved_plan_store = DraftPRPlanBackend(resolved_github, resolved_issues, time=FakeTime())
     else:
         resolved_plan_store = GitHubPlanStore(resolved_issues, fake_time)
 

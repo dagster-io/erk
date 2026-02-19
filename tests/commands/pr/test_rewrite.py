@@ -14,6 +14,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
 from tests.fakes.prompt_executor import FakePromptExecutor
@@ -388,7 +389,7 @@ def test_pr_rewrite_draft_pr_backend_preserves_metadata() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
-            plan_store=DraftPRPlanBackend(github),
+            plan_store=DraftPRPlanBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)

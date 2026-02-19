@@ -55,17 +55,9 @@ from erk.core.worktree_pool import (
     load_pool_state,
 )
 from erk_shared.gateway.console.real import InteractiveConsole
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.core import find_metadata_block
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_learned_from_issue,
-    update_plan_header_learn_materials_gist_url,
-    update_plan_header_learn_plan_completed,
-)
-from erk_shared.gateway.github.types import BodyText, PRDetails
+from erk_shared.gateway.github.types import PRDetails
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.plan_store.types import PlanNotFound
-from erk_shared.sessions.discovery import find_sessions_for_plan
 from erk_shared.stack.validation import validate_parent_is_trunk
 
 
@@ -321,7 +313,7 @@ def _check_learn_status_and_prompt(
 
     # Check for existing learn sessions (backward compatibility)
     plan_issue_number = int(plan_id)
-    sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
+    sessions = ctx.plan_backend.find_sessions_for_plan(repo_root, plan_id)
 
     if sessions.learn_session_ids:
         user_output(click.style("✓", fg="green") + f" Learn completed for plan #{plan_id}")
@@ -570,10 +562,10 @@ def _store_learn_materials_gist_url(
     plan_issue_number: int,
     gist_url: str,
 ) -> None:
-    """Store learn materials gist URL on the plan issue's plan-header metadata.
+    """Store learn materials gist URL on the plan's metadata.
 
-    Fetches the plan issue, updates the learn_materials_gist_url field, and
-    writes back the updated body. Errors are logged but do not propagate.
+    Updates the learn_materials_gist_url field on the plan-header.
+    Errors are logged but do not propagate.
 
     Args:
         ctx: ErkContext
@@ -581,23 +573,13 @@ def _store_learn_materials_gist_url(
         plan_issue_number: Issue number of the plan
         gist_url: URL of the preprocessed learn materials gist
     """
-    issue = ctx.issues.get_issue(repo_root, plan_issue_number)
-    if isinstance(issue, IssueNotFound):
+    plan_id = str(plan_issue_number)
+    try:
+        ctx.plan_backend.update_metadata(repo_root, plan_id, {"learn_materials_gist_url": gist_url})
+    except RuntimeError as e:
         user_output(
-            click.style("⚠ ", fg="yellow")
-            + f"Could not store gist URL: issue #{plan_issue_number} not found"
+            click.style("⚠ ", fg="yellow") + f"Could not store gist URL on plan {plan_id}: {e}"
         )
-        return
-
-    if find_metadata_block(issue.body, "plan-header") is None:
-        user_output(
-            click.style("⚠ ", fg="yellow")
-            + "Could not store gist URL: plan-header block not found in issue body"
-        )
-        return
-
-    updated_body = update_plan_header_learn_materials_gist_url(issue.body, gist_url)
-    ctx.issues.update_issue_body(repo_root, plan_issue_number, BodyText(content=updated_body))
 
 
 def _preprocess_and_prepare_manual_learn(
@@ -666,33 +648,32 @@ def _update_parent_learn_status_if_learn_plan(
         plan_issue_number: Issue number of the plan being landed
         pr_number: PR number that merged this plan
     """
-    # Check if plan issue exists before fetching
-    if not ctx.issues.issue_exists(repo_root, plan_issue_number):
+    plan_id = str(plan_issue_number)
+    learned_from_field = ctx.plan_backend.get_metadata_field(
+        repo_root, plan_id, "learned_from_issue"
+    )
+    if isinstance(learned_from_field, PlanNotFound):
         return
 
-    issue = ctx.issues.get_issue(repo_root, plan_issue_number)
-    if isinstance(issue, IssueNotFound):
-        return
-    learned_from = extract_plan_header_learned_from_issue(issue.body)
-
-    if learned_from is None:
+    if learned_from_field is None:
         # Not a learn plan - nothing to update
         return
 
-    # Check if parent issue exists before fetching
-    if not ctx.issues.issue_exists(repo_root, learned_from):
+    parent_plan_id = str(learned_from_field)
+    parent_plan = ctx.plan_backend.get_plan(repo_root, parent_plan_id)
+    if isinstance(parent_plan, PlanNotFound):
+        user_output(f"Warning: Could not find parent plan {parent_plan_id} to update learn status")
         return
 
-    parent_issue = ctx.issues.get_issue(repo_root, learned_from)
-    if isinstance(parent_issue, IssueNotFound):
-        user_output(f"Warning: Could not find parent issue #{learned_from} to update learn status")
-        return
-    updated_body = update_plan_header_learn_plan_completed(
-        issue_body=parent_issue.body,
-        learn_plan_pr=pr_number,
-    )
-    ctx.issues.update_issue_body(repo_root, learned_from, BodyText(content=updated_body))
-    user_output(f"Updated learn status on parent plan #{learned_from}")
+    try:
+        ctx.plan_backend.update_metadata(
+            repo_root,
+            parent_plan_id,
+            {"learn_status": "plan_completed", "learn_plan_pr": pr_number},
+        )
+        user_output(f"Updated learn status on parent plan {parent_plan_id}")
+    except RuntimeError:
+        pass
 
 
 def _ensure_branch_not_checked_out(

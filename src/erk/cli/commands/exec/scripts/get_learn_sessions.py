@@ -12,7 +12,7 @@ Output:
     JSON object with session information:
     {
         "success": true,
-        "issue_number": 123,
+        "plan_id": "123",
         "planning_session_id": "abc-123" | null,
         "implementation_session_ids": [...],
         "learn_session_ids": [...],
@@ -38,7 +38,7 @@ from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
     require_git,
-    require_issues,
+    require_plan_backend,
     require_repo_root,
 )
 from erk_shared.learn.extraction.get_learn_sessions_result import (
@@ -53,7 +53,6 @@ from erk_shared.learn.extraction.session_source import (
 from erk_shared.sessions.discovery import (
     SessionsForPlan,
     find_local_sessions_for_project,
-    find_sessions_for_plan,
     get_readable_sessions,
 )
 
@@ -82,7 +81,7 @@ def _extract_issue_number(identifier: str) -> int | None:
 
 def _build_result(
     *,
-    issue_number: int,
+    plan_id: str,
     sessions_for_plan: SessionsForPlan,
     readable_session_ids: list[str],
     session_paths: list[str],
@@ -92,7 +91,7 @@ def _build_result(
     """Build the result dict from session data."""
     return GetLearnSessionsResultDict(
         success=True,
-        issue_number=issue_number,
+        plan_id=plan_id,
         planning_session_id=sessions_for_plan.planning_session_id,
         implementation_session_ids=sessions_for_plan.implementation_session_ids,
         learn_session_ids=sessions_for_plan.learn_session_ids,
@@ -111,31 +110,30 @@ def _build_result(
 
 def _discover_sessions(
     *,
-    github_issues,
+    plan_backend,
     claude_installation,
     repo_root: Path,
     cwd: Path,
-    issue_number: int,
+    plan_id: str,
     branch_name: str | None,
 ) -> GetLearnSessionsResultDict:
-    """Discover all sessions for a plan issue.
+    """Discover all sessions for a plan.
 
     Args:
-        github_issues: GitHub issues interface
+        plan_backend: PlanBackend for session discovery
         claude_installation: Claude installation for session lookups
         repo_root: Repository root path
         cwd: Current working directory
-        issue_number: Plan issue number
+        plan_id: Plan identifier
         branch_name: Current branch name for local session filtering
 
     Returns:
         GetLearnSessionsResultDict with all session data
     """
-    # Find sessions for the plan from GitHub metadata
-    sessions_for_plan = find_sessions_for_plan(
-        github_issues,
+    # Find sessions for the plan via PlanBackend
+    sessions_for_plan = plan_backend.find_sessions_for_plan(
         repo_root,
-        issue_number,
+        plan_id,
     )
 
     # Get readable sessions (ones that exist on disk)
@@ -195,7 +193,7 @@ def _discover_sessions(
         session_sources.append(remote_source)
 
     return _build_result(
-        issue_number=issue_number,
+        plan_id=plan_id,
         sessions_for_plan=sessions_for_plan,
         readable_session_ids=readable_session_ids,
         session_paths=session_paths,
@@ -216,17 +214,17 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     Returns JSON with session IDs and paths for use by /erk:learn skill.
     """
     # Get dependencies from context
-    github_issues = require_issues(ctx)
     git = require_git(ctx)
     claude_installation = require_claude_installation(ctx)
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)
+    plan_backend = require_plan_backend(ctx)
 
     # Get current branch for local session filtering
     branch_name = git.branch.get_current_branch(cwd)
 
-    # Resolve issue number: explicit argument or infer from branch
-    issue_number: int | None = None
+    # Resolve plan_id: explicit argument or infer from branch
+    plan_id: str | None = None
     if issue is not None:
         issue_number = _extract_issue_number(issue)
         if issue_number is None:
@@ -236,15 +234,11 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
             )
             click.echo(json.dumps(error))
             raise SystemExit(1)
+        plan_id = str(issue_number)
     elif branch_name is not None:
-        from erk_shared.context.helpers import require_plan_backend
+        plan_id = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
 
-        plan_backend = require_plan_backend(ctx)
-        plan_id_str = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
-        if plan_id_str is not None:
-            issue_number = int(plan_id_str)
-
-    if issue_number is None:
+    if plan_id is None:
         error = GetLearnSessionsErrorDict(
             success=False,
             error="No issue specified and could not infer from branch name",
@@ -254,11 +248,11 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
 
     # Discover sessions
     result = _discover_sessions(
-        github_issues=github_issues,
+        plan_backend=plan_backend,
         claude_installation=claude_installation,
         repo_root=repo_root,
         cwd=cwd,
-        issue_number=issue_number,
+        plan_id=plan_id,
         branch_name=branch_name,
     )
 

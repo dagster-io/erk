@@ -440,7 +440,7 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
             self.args = cmd
             self.returncode = 0
             self._stdout = (
-                '{"success": true, "issue_number": 123, '
+                '{"success": true, "plan_id": "123", '
                 '"workflow_triggered": true, "run_id": "test-run-id"}'
             )
 
@@ -619,7 +619,7 @@ def test_trigger_async_learn_stores_gist_url_on_plan_header(
             self._stdout = json.dumps(
                 {
                     "success": True,
-                    "issue_number": 123,
+                    "plan_id": "123",
                     "workflow_triggered": True,
                     "run_id": "test-run-id",
                     "workflow_url": "https://github.com/owner/repo/actions/runs/test-run-id",

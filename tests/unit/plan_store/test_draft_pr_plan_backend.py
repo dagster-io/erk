@@ -9,7 +9,9 @@ from pathlib import Path
 import pytest
 
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import (
     DETAILS_OPEN,
@@ -25,7 +27,7 @@ from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 
 def test_provider_name() -> None:
     """DraftPRPlanBackend identifies itself correctly."""
-    backend = DraftPRPlanBackend(FakeGitHub())
+    backend = DraftPRPlanBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime())
     assert backend.get_provider_name() == "github-draft-pr"
 
 
@@ -36,7 +38,7 @@ def test_provider_name() -> None:
 
 def test_create_plan_requires_branch_name() -> None:
     """create_plan raises RuntimeError when branch_name is missing from metadata."""
-    backend = DraftPRPlanBackend(FakeGitHub())
+    backend = DraftPRPlanBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime())
 
     with pytest.raises(RuntimeError, match="branch_name is required"):
         backend.create_plan(
@@ -51,7 +53,7 @@ def test_create_plan_requires_branch_name() -> None:
 def test_create_plan_creates_draft_pr() -> None:
     """create_plan creates a draft PR, not a regular PR."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
@@ -70,7 +72,7 @@ def test_create_plan_creates_draft_pr() -> None:
 def test_create_plan_uses_trunk_branch_as_pr_base() -> None:
     """create_plan uses trunk_branch from metadata as the PR base branch."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     backend.create_plan(
         repo_root=Path("/repo"),
@@ -86,7 +88,7 @@ def test_create_plan_uses_trunk_branch_as_pr_base() -> None:
 def test_create_plan_falls_back_to_master_when_trunk_branch_missing() -> None:
     """create_plan falls back to 'master' as PR base when trunk_branch is absent."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     backend.create_plan(
         repo_root=Path("/repo"),
@@ -102,7 +104,7 @@ def test_create_plan_falls_back_to_master_when_trunk_branch_missing() -> None:
 def test_create_plan_falls_back_to_master_when_trunk_branch_not_string() -> None:
     """create_plan falls back to 'master' when trunk_branch is a non-string value."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     backend.create_plan(
         repo_root=Path("/repo"),
@@ -118,7 +120,7 @@ def test_create_plan_falls_back_to_master_when_trunk_branch_not_string() -> None
 def test_create_plan_adds_erk_plan_label() -> None:
     """create_plan adds the erk-plan label to the PR."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
@@ -135,7 +137,7 @@ def test_create_plan_adds_erk_plan_label() -> None:
 def test_create_plan_adds_extra_labels() -> None:
     """create_plan adds extra labels beyond erk-plan."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
@@ -153,7 +155,7 @@ def test_create_plan_adds_extra_labels() -> None:
 def test_create_plan_embeds_plan_content_in_pr_body() -> None:
     """create_plan puts plan content in the PR body after metadata."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
@@ -177,7 +179,7 @@ def test_create_plan_embeds_plan_content_in_pr_body() -> None:
 def test_resolve_plan_id_for_branch_finds_created_pr() -> None:
     """resolve_plan_id_for_branch finds a PR created via create_plan."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
@@ -193,7 +195,7 @@ def test_resolve_plan_id_for_branch_finds_created_pr() -> None:
 
 def test_resolve_plan_id_for_branch_returns_none_for_unknown() -> None:
     """resolve_plan_id_for_branch returns None for non-existent branch."""
-    backend = DraftPRPlanBackend(FakeGitHub())
+    backend = DraftPRPlanBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime())
     assert backend.resolve_plan_id_for_branch(Path("/repo"), "nonexistent") is None
 
 
@@ -205,7 +207,7 @@ def test_resolve_plan_id_for_branch_returns_none_for_unknown() -> None:
 def test_get_plan_for_branch_roundtrip() -> None:
     """get_plan_for_branch returns plan created via create_plan."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     backend.create_plan(
         repo_root=Path("/repo"),
@@ -222,7 +224,7 @@ def test_get_plan_for_branch_roundtrip() -> None:
 
 def test_get_plan_for_branch_returns_plan_not_found() -> None:
     """get_plan_for_branch returns PlanNotFound for non-existent branch."""
-    backend = DraftPRPlanBackend(FakeGitHub())
+    backend = DraftPRPlanBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime())
     result = backend.get_plan_for_branch(Path("/repo"), "nonexistent")
     assert isinstance(result, PlanNotFound)
 
@@ -235,7 +237,7 @@ def test_get_plan_for_branch_returns_plan_not_found() -> None:
 def test_update_plan_content_roundtrip() -> None:
     """update_plan_content updates the plan body returned by get_plan."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
@@ -260,7 +262,7 @@ def test_update_plan_content_roundtrip() -> None:
 def test_list_plans_includes_only_draft_prs_with_erk_plan_label() -> None:
     """list_plans only returns draft PRs that have the erk-plan label."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     # Create a plan (draft with erk-plan label)
     backend.create_plan(
@@ -310,7 +312,7 @@ def test_extract_plan_content_backward_compat_flat_format() -> None:
 def test_create_plan_includes_checkout_footer() -> None:
     """create_plan appends a checkout footer to the PR body."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github)
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),

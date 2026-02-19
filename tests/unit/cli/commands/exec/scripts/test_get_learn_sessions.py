@@ -57,7 +57,7 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 123
+    assert output["plan_id"] == "123"
 
 
 def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
@@ -89,7 +89,7 @@ def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 456
+    assert output["plan_id"] == "456"
 
 
 def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
@@ -117,7 +117,7 @@ def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 789
+    assert output["plan_id"] == "789"
 
 
 # ============================================================================
@@ -214,7 +214,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
 
     # Verify all expected fields exist
     assert "success" in output
-    assert "issue_number" in output
+    assert "plan_id" in output
     assert "planning_session_id" in output
     assert "implementation_session_ids" in output
     assert "learn_session_ids" in output
@@ -226,7 +226,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["issue_number"], int)
+    assert isinstance(output["plan_id"], str)
     assert isinstance(output["implementation_session_ids"], list)
     assert isinstance(output["session_paths"], list)
     assert isinstance(output["session_sources"], list)

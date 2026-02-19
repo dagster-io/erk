@@ -4,34 +4,39 @@ This module provides functions to record when learn is invoked
 on a plan issue, creating a trail of extraction sessions.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     render_erk_issue_event,
 )
 
+if TYPE_CHECKING:
+    from erk_shared.plan_store.backend import PlanBackend
+
 
 def track_learn_invocation(
-    github: GitHubIssues,
+    plan_backend: PlanBackend,
     repo_root: Path,
-    issue_number: int,
+    plan_id: str,
     *,
     session_id: str | None,
     readable_count: int,
     total_count: int,
 ) -> None:
-    """Record a learn invocation on the plan issue.
+    """Record a learn invocation on a plan.
 
     Posts a comment with a learn-invoked metadata block
     to track when learn was run and from which session.
 
     Args:
-        github: GitHub issues interface
+        plan_backend: PlanBackend for posting the comment
         repo_root: Repository root path
-        issue_number: Plan issue number
+        plan_id: Plan identifier (e.g., issue number as string)
         session_id: Session ID invoking learn (passed via --session-id CLI flag)
         readable_count: Number of readable sessions found
         total_count: Total sessions discovered for the plan
@@ -39,7 +44,7 @@ def track_learn_invocation(
     timestamp = datetime.now(UTC).isoformat()
 
     # Build metadata
-    data = {
+    data: dict[str, object] = {
         "timestamp": timestamp,
         "readable_sessions": readable_count,
         "total_sessions": total_count,
@@ -65,4 +70,4 @@ def track_learn_invocation(
         description=description,
     )
 
-    github.add_comment(repo_root, issue_number, comment_body)
+    plan_backend.add_comment(repo_root, plan_id, comment_body)

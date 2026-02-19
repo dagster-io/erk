@@ -36,11 +36,13 @@ from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
+    require_issues,
     require_local_config,
     require_repo_root,
     require_time,
 )
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
@@ -122,6 +124,7 @@ def _save_as_draft_pr(
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     github = require_github(ctx)
+    github_issues = require_issues(ctx)
     config = require_local_config(ctx)
     claude_installation = require_claude_installation(ctx)
 
@@ -174,7 +177,7 @@ def _save_as_draft_pr(
         labels.append("erk-learn")
 
     # Create draft PR via backend
-    backend = DraftPRPlanBackend(github)
+    backend = DraftPRPlanBackend(github, github_issues, time=RealTime())
     result = backend.create_plan(
         repo_root=repo_root,
         title=title,

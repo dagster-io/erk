@@ -30,7 +30,6 @@ import click
 from erk_shared.context.helpers import (
     require_cwd,
     require_git,
-    require_issues,
     require_plan_backend,
     require_repo_root,
     require_time,
@@ -81,7 +80,6 @@ def _extract_issue_number(identifier: str) -> int | None:
 
 def _do_track(
     *,
-    github_issues,
     backend,
     repo_root: Path,
     issue_number: int,
@@ -91,8 +89,7 @@ def _do_track(
     """Post tracking comment and update plan-header on the plan issue.
 
     Args:
-        github_issues: GitHub issues interface
-        backend: PlanBackend interface for metadata updates
+        backend: PlanBackend interface for metadata updates and comments
         repo_root: Repository root path
         issue_number: Plan issue number
         session_id: Session ID invoking learn (optional)
@@ -102,9 +99,9 @@ def _do_track(
     # is called after session discovery - the tracking comment is just a marker
     # that learn evaluation happened, not detailed session counts.
     track_learn_invocation(
-        github_issues,
+        backend,
         repo_root,
-        issue_number,
+        str(issue_number),
         session_id=session_id,
         readable_count=0,
         total_count=0,
@@ -148,7 +145,6 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     Posts a tracking comment to record that learn was invoked.
     """
     # Get dependencies from context
-    github_issues = require_issues(ctx)
     backend = require_plan_backend(ctx)
     git = require_git(ctx)
     cwd = require_cwd(ctx)
@@ -186,7 +182,6 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
 
     # Post tracking comment and update metadata
     _do_track(
-        github_issues=github_issues,
         backend=backend,
         repo_root=repo_root,
         issue_number=issue_number,

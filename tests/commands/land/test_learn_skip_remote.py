@@ -11,7 +11,6 @@ import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.commands import land_cmd
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -127,17 +126,17 @@ def test_land_skips_learn_prompt_for_remote_pr(
         )
 
         # Track if find_sessions_for_plan was called (it should NOT be called)
-        find_sessions_called: list[int] = []
+        find_sessions_called: list[str] = []
 
-        def mock_find_sessions(github_issues, repo_root, plan_issue_number):
-            find_sessions_called.append(plan_issue_number)
+        def mock_find_sessions(repo_root, plan_id):
+            find_sessions_called.append(plan_id)
             raise AssertionError(
                 f"find_sessions_for_plan should NOT be called for remote PRs "
-                f"(no local worktree), but was called with plan_issue_number={plan_issue_number}"
+                f"(no local worktree), but was called with plan_id={plan_id}"
             )
 
-        # Patch the function in the land_cmd module
-        monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
+        # Patch the method on the plan_backend instance
+        monkeypatch.setattr(test_ctx.plan_backend, "find_sessions_for_plan", mock_find_sessions)
 
         # Execute mode: test PR merge with no local worktree
         # Note: worktree_path is None because there's no local checkout
@@ -164,8 +163,8 @@ def test_land_skips_learn_prompt_for_remote_pr(
         # CRITICAL: Verify find_sessions_for_plan was NOT called
         # because there's no local worktree to learn from
         assert len(find_sessions_called) == 0, (
-            "find_sessions_for_plan should not be called for remote PRs "
-            "(no local worktree to learn from)"
+            f"find_sessions_for_plan should not be called for remote PRs "
+            f"(no local worktree to learn from), but was called {len(find_sessions_called)} times"
         )
 
 
@@ -289,12 +288,12 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
         )
 
         # Track if find_sessions_for_plan was called (it SHOULD be called)
-        find_sessions_called: list[int] = []
+        find_sessions_called: list[str] = []
 
-        def mock_find_sessions(github_issues, repo_root, plan_issue_number):
+        def mock_find_sessions(repo_root, plan_id):
             from erk_shared.sessions.discovery import SessionsForPlan
 
-            find_sessions_called.append(plan_issue_number)
+            find_sessions_called.append(plan_id)
             # Return "already learned" so the command proceeds without prompting
             return SessionsForPlan(
                 planning_session_id="plan-session-1",
@@ -308,8 +307,8 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
                 last_session_source=None,
             )
 
-        # Patch the function in the land_cmd module
-        monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
+        # Patch the method on the plan_backend instance
+        monkeypatch.setattr(test_ctx.plan_backend, "find_sessions_for_plan", mock_find_sessions)
 
         # Validation phase: test learn status check for local plan branch
         # Don't use --force because that skips the learn check!
@@ -329,8 +328,8 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
             "find_sessions_for_plan should be called for local plan branches "
             f"(worktree exists), but was called {len(find_sessions_called)} times"
         )
-        assert find_sessions_called[0] == 4867, (
-            f"Expected plan_issue_number=4867, got {find_sessions_called[0]}"
+        assert find_sessions_called[0] == "4867", (
+            f"Expected plan_id='4867', got {find_sessions_called[0]}"
         )
 
         # Verify output shows learn check passed

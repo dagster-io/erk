@@ -10,6 +10,7 @@ from datetime import UTC
 from pathlib import Path
 
 from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
     render_metadata_block,
@@ -28,7 +29,6 @@ from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
-from erk_shared.gateway.time.real import RealTime
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import pr_details_to_plan
 from erk_shared.plan_store.draft_pr_lifecycle import (
@@ -87,15 +87,19 @@ class DraftPRPlanBackend(PlanBackend):
         Plan content here...
     """
 
-    def __init__(self, github: GitHub, time: Time | None = None) -> None:
-        """Initialize DraftPRPlanBackend with GitHub gateway.
+    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
+        """Initialize DraftPRPlanBackend with GitHub and issues gateways.
 
         Args:
             github: GitHub gateway implementation (real or fake)
-            time: Time abstraction for deterministic timestamps. Defaults to RealTime().
+            github_issues: GitHubIssues gateway for comment access. On GitHub,
+                PR discussion comments share the same API as issue comments.
+            time: Time abstraction for deterministic timestamps. Use RealTime() in
+                production, FakeTime() in tests that assert on timestamps.
         """
         self._github = github
-        self._time = time if time is not None else RealTime()
+        self._github_issues = github_issues
+        self._time = time
 
     def get_provider_name(self) -> str:
         """Get the provider name.
@@ -155,6 +159,22 @@ class DraftPRPlanBackend(PlanBackend):
         if isinstance(result, PRNotFound):
             return PlanNotFound(plan_id=plan_id)
         return self._convert_to_plan(result)
+
+    def get_comments(self, repo_root: Path, plan_id: str) -> list[str]:
+        """Get all comments on a plan's draft PR.
+
+        On GitHub, PR discussion comments share the same API as issue comments,
+        so we delegate to GitHubIssues.get_issue_comments() with the PR number.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: PR number as string
+
+        Returns:
+            List of comment body strings, ordered oldest to newest
+        """
+        pr_number = int(plan_id)
+        return self._github_issues.get_issue_comments(repo_root, pr_number)
 
     def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans from draft PRs.
