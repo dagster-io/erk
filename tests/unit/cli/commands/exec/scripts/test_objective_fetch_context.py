@@ -154,7 +154,7 @@ class TestObjectiveFetchContext:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["objective"]["number"] == 6423
-        assert data["plan"]["number"] == 6513
+        assert data["plan"]["number"] == "6513"
         assert data["pr"]["number"] == 6517
 
     def test_roadmap_context_included(self, tmp_path: Path) -> None:
@@ -394,7 +394,7 @@ class TestDiscoveryMode:
         assert result.exit_code == 0, result.output
         data = json.loads(result.output)
         assert data["success"] is True
-        assert data["plan"]["number"] == 6513
+        assert data["plan"]["number"] == "6513"
 
     def test_discover_objective_from_plan_metadata(self, tmp_path: Path) -> None:
         """Auto-discovers objective when --objective is omitted."""
@@ -485,7 +485,7 @@ class TestDiscoveryMode:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["objective"]["number"] == 6423
-        assert data["plan"]["number"] == 6513
+        assert data["plan"]["number"] == "6513"
         assert data["pr"]["number"] == 6517
         assert data["roadmap"]["matched_steps"] == ["1.1", "1.2"]
 
@@ -603,7 +603,7 @@ class TestDraftPRBackend:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["objective"]["number"] == 7419
-        assert data["plan"]["number"] == 8001
+        assert data["plan"]["number"] == "8001"
         assert data["plan"]["title"] == "Draft PR Plan"
         assert data["pr"]["number"] == 8002
 

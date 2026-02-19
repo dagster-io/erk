@@ -191,7 +191,7 @@ def objective_fetch_context(
         "url": objective.url,
     }
     plan_info: PlanInfoDict = {
-        "number": int(plan_id),
+        "number": plan_id,
         "title": plan_result.title,
         "body": plan_result.body,
     }
