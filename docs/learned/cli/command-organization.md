@@ -145,9 +145,22 @@ When adding a new command, use this flowchart to determine placement:
     └─────┬─────┘
           │
     ┌─────▼──────────────────────────────────────┐
-    │ Place at TOP LEVEL                          │
-    │ Examples: implement, prepare, dash          │
-    └─────────────────────────────────────────────┘
+    │ Is this a high-frequency entry point?       │
+    │ (implement, prepare, dash)                  │
+    └─────────┬──────────────────────────────────┘
+              │
+        ┌─────▼─────┐     ┌──────────────────────────────┐
+        │    YES    │────▶│ Place at TOP LEVEL            │
+        └─────┬─────┘     │ Examples: implement, prepare  │
+              │            └──────────────────────────────┘
+        ┌─────▼─────┐
+        │    NO     │
+        └─────┬─────┘
+              │
+        ┌─────▼──────────────────────────────────┐
+        │ Group under `erk plan <verb>`           │
+        │ Examples: plan create, plan view        │
+        └─────────────────────────────────────────┘
 
           │ NO
     ┌─────▼─────────────────────────────────┐
@@ -198,7 +211,7 @@ When adding a new command, use this flowchart to determine placement:
                 ┌─────▼──────────────────────────┐
                 │ Place at TOP LEVEL              │
                 │ (default for misc operations)   │
-                │ Examples: init, config, status  │
+                │ Examples: init, config          │
                 └─────────────────────────────────┘
 ```
 
@@ -371,13 +384,13 @@ wt_group.add_command(create_wt)  # Grouped under wt
 
 ### Code Locations
 
-| Component         | Location                                                                   |
-| ----------------- | -------------------------------------------------------------------------- |
-| CLI entry point   | `src/erk/cli/cli.py`                                                       |
-| Plan commands     | `src/erk/cli/commands/plan/`                                               |
-| Worktree commands | `src/erk/cli/commands/wt/`                                                 |
-| Stack commands    | `src/erk/cli/commands/stack/`                                              |
-| Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `up.py`, `down.py`          |
+| Component         | Location                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| CLI entry point   | `src/erk/cli/cli.py`                                                                                        |
+| Plan commands     | `src/erk/cli/commands/plan/`                                                                                |
+| Worktree commands | `src/erk/cli/commands/wt/`                                                                                  |
+| Stack commands    | `src/erk/cli/commands/stack/`                                                                               |
+| Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `src/erk/cli/commands/up.py`, `src/erk/cli/commands/down.py` |
 | Setup             | `src/erk/cli/commands/init/` (directory), `src/erk/cli/commands/config.py` |
 
 ## Related Documentation
