@@ -273,9 +273,8 @@ class TestExecuteCommandSubmitToQueue:
 class TestExecuteCommandLandPR:
     """Tests for land_pr command.
 
-    Note: land_pr uses streaming output via subprocess when repo_root is provided
-    and pr_number exists. These tests verify the guard conditions but actual
-    streaming behavior is tested via integration tests.
+    Note: land_pr dismisses the detail screen and delegates to the app's
+    non-blocking _land_pr_async worker. These tests verify the guard conditions.
     """
 
     def test_land_pr_does_nothing_without_repo_root(self) -> None:
