@@ -11,9 +11,10 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
 
 # Fixed timestamp for test Plan objects - deterministic test data
 TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
@@ -376,7 +377,18 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"123": plan})
+        backend = get_plan_backend()
+        plan_store, _ = create_plan_store({"123": plan}, backend=backend)
+
+        # draft_pr backend reuses an existing branch; pre-configure FakeGit with it
+        if backend == "draft_pr":
+            git_ops = FakeGit(
+                worktrees=env.build_worktrees("main"),
+                current_branches={env.cwd: "main"},
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                local_branches={env.cwd: ["main", "plan-123"]},
+            )
 
         test_ctx = env.build_context(
             git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
@@ -387,9 +399,12 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         )
 
         assert result.exit_code == 0
-        # Branch name is derived from issue number and title
-        assert "Created branch:" in result.output
-        assert "P123" in result.output  # Branch should contain P123
+        if backend == "draft_pr":
+            assert "plan-123" in result.output
+        else:
+            # Branch name is derived from issue number and title
+            assert "Created branch:" in result.output
+            assert "P123" in result.output  # Branch should contain P123
         assert "Assigned" in result.output
         assert "erk-slot-01" in result.output
         assert "Created .impl/ folder from issue #123" in result.output
@@ -446,7 +461,17 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"456": plan})
+        backend = get_plan_backend()
+        plan_store, _ = create_plan_store({"456": plan}, backend=backend)
+
+        if backend == "draft_pr":
+            git_ops = FakeGit(
+                worktrees=env.build_worktrees("main"),
+                current_branches={env.cwd: "main"},
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                local_branches={env.cwd: ["main", "plan-456"]},
+            )
 
         test_ctx = env.build_context(
             git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
@@ -460,7 +485,10 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
         )
 
         assert result.exit_code == 0
-        assert "P456" in result.output
+        if backend == "draft_pr":
+            assert "plan-456" in result.output
+        else:
+            assert "P456" in result.output
         assert "Created .impl/ folder from issue #456" in result.output
 
 
@@ -551,7 +579,17 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"100": plan})
+        backend = get_plan_backend()
+        plan_store, _ = create_plan_store({"100": plan}, backend=backend)
+
+        if backend == "draft_pr":
+            git_ops = FakeGit(
+                worktrees=env.build_worktrees("main"),
+                current_branches={env.cwd: "main"},
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                local_branches={env.cwd: ["main", "plan-100"]},
+            )
 
         test_ctx = env.build_context(
             git=git_ops, graphite=graphite_ops, repo=repo, plan_store=plan_store
@@ -565,8 +603,11 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
         )
 
         assert result.exit_code == 0
-        assert "Created branch:" in result.output
-        assert "P100" in result.output
+        if backend == "draft_pr":
+            assert "plan-100" in result.output
+        else:
+            assert "Created branch:" in result.output
+            assert "P100" in result.output
         # Should NOT have slot assignment or .impl folder messages
         assert "Assigned" not in result.output
         assert ".impl folder not created" in result.output or "Note:" in result.output
@@ -717,7 +758,17 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"200": plan})
+        backend = get_plan_backend()
+        plan_store, _ = create_plan_store({"200": plan}, backend=backend)
+
+        if backend == "draft_pr":
+            git_ops = FakeGit(
+                worktrees=env.build_worktrees("main"),
+                current_branches={env.cwd: "feature-parent"},
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                local_branches={env.cwd: ["main", "feature-parent", "plan-200"]},
+            )
 
         test_ctx = env.build_context(
             git=git_ops, graphite=graphite_ops, repo=repo, plan_store=plan_store
@@ -728,13 +779,16 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
         )
 
         assert result.exit_code == 0
-        assert "P200" in result.output
+        if backend == "draft_pr":
+            assert "plan-200" in result.output
+        else:
+            assert "P200" in result.output
 
-        # Verify Graphite tracking was called with feature-parent as parent
-        assert len(graphite_ops.track_branch_calls) == 1
-        cwd, branch, parent = graphite_ops.track_branch_calls[0]
-        assert "P200" in branch
-        assert parent == "feature-parent"
+            # Verify Graphite tracking was called with feature-parent as parent
+            assert len(graphite_ops.track_branch_calls) == 1
+            cwd, branch, parent = graphite_ops.track_branch_calls[0]
+            assert "P200" in branch
+            assert parent == "feature-parent"
 
 
 def test_branch_create_uses_trunk_when_on_trunk() -> None:
