@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**accessing \_status_bar without null guard** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Guard \_status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError.
+
 **adding a DataTable column with add_column(key=...)** → Read [TUI Architecture Overview](architecture.md) first. Column key is a data binding contract — must match data field name. Silent failure when mismatched.
 
 **adding a column to PlanDataTable without updating make_plan_row** → Read [Column Addition Pattern](column-addition-pattern.md) first. Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist.
@@ -38,6 +40,8 @@ Rules triggered by matching actions in code.
 
 **creating a ModalScreen without CSS for dismiss behavior** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing.
 
+**displaying subprocess output in plain text widgets without stripping ANSI** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Use click.unstyle() before displaying subprocess output in plain text widgets. Raw ANSI codes render as garbage.
+
 **duplicating command definitions for list and detail contexts** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Commands are defined once in the registry. Use a second Provider subclass with its own \_get_context() to serve the same commands from a new context.
 
 **duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below.
@@ -60,8 +64,12 @@ Rules triggered by matching actions in code.
 
 **reusing same DOM element id across loading/empty/content states** → Read [TUI Architecture Overview](architecture.md) first. query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase.
 
+**showing toast from a modal screen** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Call self.dismiss() before app-level toasts. Modal blocks the correct z-layer, so toasts must render at app level after modal dismissal.
+
 **using \_render() as a method name in Textual widgets** → Read [TUI View Switching](view-switching.md) first. Textual's LSP reserves \_render(). Use \_refresh_display() instead (see ViewBar).
 
 **using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL** → Read [Command Execution Strategies](command-execution.md) first. Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls.
+
+**using subprocess.Popen without bufsize=1 for streaming** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Use bufsize=1 with text=True for line-buffered streaming Popen output. Without it, output may be block-buffered.
 
 **using title-stripping functions** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Distinguish `_strip_plan_prefixes` (PR creation) vs `_strip_plan_markers` (plan creation) vs `strip_plan_from_filename` (filename handling).

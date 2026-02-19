@@ -9,6 +9,8 @@ tripwires:
     warning: "Commands are defined once in the registry. Use a second Provider subclass with its own _get_context() to serve the same commands from a new context."
   - action: "duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen"
     warning: "This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below."
+  - action: "showing toast from a modal screen"
+    warning: "Call self.dismiss() before app-level toasts. Modal blocks the correct z-layer, so toasts must render at app level after modal dismissal."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -68,6 +70,34 @@ The dual provider pattern works for operations on "the selected plan." It does n
 - **View-specific commands**: Sort, filter, and navigation bindings are screen-level `BINDINGS`, not palette commands
 - **Commands that need app-level orchestration**: Some ACTION commands dispatched from the main list create a `PlanDetailScreen` and push it _then_ invoke a streaming command — this two-step push-then-execute sequence only makes sense at the app level
 - **Commands with different semantics per context**: `close_plan` from the detail modal dismisses the modal first, then delegates to the app. From the main list, it runs directly. The command_id is the same but the orchestration differs.
+
+## Dismiss-Then-Delegate Pattern
+
+When a command originates from a modal (PlanDetailScreen), the modal must dismiss itself before the app can show toasts or run background operations. The pattern:
+
+1. **Modal calls `self.dismiss()`** — Returns control to the app
+2. **App shows toast** — Toasts render at app level; the modal would block the correct z-layer
+3. **App delegates to `@work(thread=True)` method** — Background operation runs after dismiss
+
+Production example in `plan_detail_screen.py:685-698` (land_pr handler):
+
+```python
+# In PlanDetailScreen:
+self.dismiss()  # Step 1: dismiss modal first
+
+# In ErkDashApp (via callback):
+self.notify("Landing PR...")  # Step 2: toast at app level
+self._land_pr_async(row)      # Step 3: background work
+```
+
+### Chained Async Operations
+
+Some commands chain multiple background operations. Land PR demonstrates this:
+
+1. **Land PR** — `subprocess.Popen` with streaming output to status bar
+2. **Conditional objective update** — If the plan has a linked objective, fire `subprocess.run` for `objective-update-after-land` as a fire-and-forget operation
+
+Both operations run inside the same `@work(thread=True)` method (`_land_pr_async`), with the objective update conditional on landing success and objective linkage.
 
 ## Related Documentation
 
