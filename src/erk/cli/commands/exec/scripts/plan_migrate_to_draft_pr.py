@@ -159,7 +159,7 @@ def plan_migrate_to_draft_pr(
 
     # Save current branch so we can restore after checkout dance
     current_branch = git.branch.get_current_branch(cwd)
-    restore_branch = current_branch if current_branch is not None else "HEAD"
+    restore_branch = current_branch or "HEAD"
 
     # Create branch from trunk, commit plan file, push
     git.branch.create_branch(cwd, branch_name, trunk, force=False)
@@ -176,15 +176,17 @@ def plan_migrate_to_draft_pr(
         git.branch.checkout_branch(cwd, restore_branch)
 
     # Build metadata for draft PR, preserving key fields from original issue
-    metadata: dict[str, object] = {
-        "branch_name": branch_name,
-        "trunk_branch": trunk,
-    }
-    if plan.objective_id is not None:
-        metadata["objective_issue"] = plan.objective_id
     created_from_session = plan.header_fields.get("created_from_session")
-    if created_from_session is not None:
-        metadata["created_from_session"] = created_from_session
+    metadata: dict[str, object] = {
+        k: v
+        for k, v in {
+            "branch_name": branch_name,
+            "trunk_branch": trunk,
+            "objective_issue": plan.objective_id,
+            "created_from_session": created_from_session,
+        }.items()
+        if v is not None
+    }
 
     # Create draft PR via DraftPRPlanBackend
     draft_backend = DraftPRPlanBackend(github, issues, time=require_time(ctx))

@@ -43,7 +43,7 @@ def _make_issue(
         body=body,
         state=state,
         url=f"https://github.com/org/repo/issues/{number}",
-        labels=labels if labels is not None else ["erk-plan"],
+        labels=labels or ["erk-plan"],
         assignees=[],
         created_at=_NOW,
         updated_at=_NOW,
@@ -59,9 +59,7 @@ def _make_context(
     comments: dict[int, list[str]] | None = None,
 ) -> object:
     """Build test context with a pre-seeded issue."""
-    issues_dict: dict[int, IssueInfo] = {}
-    if issue is not None:
-        issues_dict[issue.number] = issue
+    issues_dict: dict[int, IssueInfo] = {issue.number: issue} if issue is not None else {}
 
     fake_issues = FakeGitHubIssues(
         issues=issues_dict,
