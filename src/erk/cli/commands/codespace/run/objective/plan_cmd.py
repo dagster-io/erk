@@ -17,8 +17,21 @@ from erk.core.context import ErkContext
     default=False,
     help="Allow dangerous permissions by passing --allow-dangerously-skip-permissions to Claude",
 )
+@click.option(
+    "--all-unblocked",
+    "all_unblocked",
+    is_flag=True,
+    default=False,
+    help="Dispatch all unblocked pending nodes via one-shot (one workflow per node)",
+)
 @click.pass_obj
-def run_plan(ctx: ErkContext, issue_ref: str, name: str | None, dangerous: bool) -> None:
+def run_plan(
+    ctx: ErkContext,
+    issue_ref: str,
+    name: str | None,
+    dangerous: bool,
+    all_unblocked: bool,
+) -> None:
     """Run objective plan remotely on a codespace.
 
     ISSUE_REF is an objective issue number or GitHub URL.
@@ -31,10 +44,12 @@ def run_plan(ctx: ErkContext, issue_ref: str, name: str | None, dangerous: bool)
     click.echo(f"Starting codespace '{codespace.name}'...", err=True)
     ctx.codespace.start_codespace(codespace.gh_name)
 
+    flags = ""
     if dangerous:
-        remote_erk_cmd = f"erk objective plan -d {issue_ref}"
-    else:
-        remote_erk_cmd = f"erk objective plan {issue_ref}"
+        flags += " -d"
+    if all_unblocked:
+        flags += " --all-unblocked"
+    remote_erk_cmd = f"erk objective plan{flags} {issue_ref}"
     remote_cmd = build_codespace_ssh_command(remote_erk_cmd)
     click.echo(
         f"Running '{remote_erk_cmd}' on '{codespace.name}'...",

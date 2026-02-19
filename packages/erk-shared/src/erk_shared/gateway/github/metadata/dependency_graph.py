@@ -54,11 +54,15 @@ class DependencyGraph:
                 result.append(node)
         return result
 
+    def pending_unblocked_nodes(self) -> list[ObjectiveNode]:
+        """All unblocked nodes with pending status, in position order."""
+        return [node for node in self.unblocked_nodes() if node.status == "pending"]
+
     def next_node(self) -> ObjectiveNode | None:
         """First unblocked pending node by position order. None if no pending nodes."""
-        for node in self.unblocked_nodes():
-            if node.status == "pending":
-                return node
+        nodes = self.pending_unblocked_nodes()
+        if nodes:
+            return nodes[0]
         return None
 
     def is_complete(self) -> bool:

@@ -140,3 +140,29 @@ def test_run_plan_without_dangerous_flag() -> None:
     call = fake_codespace.ssh_calls[0]
     assert "erk objective plan 42" in call.remote_command
     assert "-d" not in call.remote_command
+
+
+def test_run_plan_with_all_unblocked_flag() -> None:
+    """run objective plan --all-unblocked includes flag in remote command."""
+    runner = CliRunner()
+
+    cs = _make_codespace("mybox")
+    fake_codespace = FakeCodespace()
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
+
+    result = runner.invoke(
+        cli,
+        ["codespace", "run", "objective", "plan", "--all-unblocked", "42"],
+        obj=ctx,
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert "--all-unblocked" in result.output
+
+    # Verify the remote command includes --all-unblocked flag
+    assert len(fake_codespace.ssh_calls) == 1
+    call = fake_codespace.ssh_calls[0]
+    assert "--all-unblocked" in call.remote_command
+    assert "erk objective plan" in call.remote_command
