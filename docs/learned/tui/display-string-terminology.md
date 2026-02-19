@@ -24,12 +24,9 @@ TUI display strings use backend-agnostic plan terminology.
 
 ## Display Name Generators
 
-Display name generators in the command registry reference plan data using backend-agnostic field names:
+Display name generators in the command registry reference plan data using backend-agnostic field names.
 
-```python
-def _display_name_generator(ctx: CommandContext) -> str:
-    return f"Open plan #{ctx.row.plan_id}"  # Not issue_number
-```
+See `get_display_name()` in `src/erk/tui/commands/registry.py` for the canonical implementation.
 
 ## Field References
 
@@ -37,5 +34,3 @@ Use these field names in display generators:
 
 - `ctx.row.plan_id` (not `ctx.row.issue_number`)
 - `ctx.row.plan_url` (not `ctx.row.issue_url`)
-
-See display name generators in `src/erk/tui/commands/registry.py`.

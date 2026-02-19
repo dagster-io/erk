@@ -27,7 +27,7 @@ PR #7473 review revealed 5 documentation drift instances related to command avai
 
 When updating command availability documentation:
 
-1. **Extract from source:** Grep `registry.py` for all command registrations. See `CommandDef` class in `src/erk/tui/commands/registry.py`
+1. **Extract from source:** Grep `registry.py` for all command registrations. See `CommandDefinition` class in `src/erk/tui/commands/types.py`
 2. **Group by predicate type:** Commands with same availability predicate go together
 3. **Verify counts:** Don't write "Six commands" - list them and let the count speak for itself
 4. **Use source pointers:** For complex predicates, point to `registry.py` instead of copying code
