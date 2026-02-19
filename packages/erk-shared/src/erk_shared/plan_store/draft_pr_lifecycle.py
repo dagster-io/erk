@@ -7,8 +7,8 @@ lifecycle stages within a single PR.
 
 Branch Files
 ------------
-Draft PR branches contain ``.erk/branch-data/plan.md`` and
-``.erk/branch-data/ref.json``, committed before PR creation to avoid
+Draft PR branches contain ``.erk/impl-context/plan.md`` and
+``.erk/impl-context/ref.json``, committed before PR creation to avoid
 GitHub's "empty branch" rejection. ``plan.md`` enables inline review
 comments on the plan via the PR's "Files Changed" tab and gets replaced
 when implementation begins. ``ref.json`` carries plan reference metadata

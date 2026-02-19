@@ -28,6 +28,7 @@ Examples:
 
 import getpass
 import json
+import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -342,6 +343,14 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     except RuntimeError as e:
         _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
         return
+
+    # Clean up .erk/impl-context/ now that implementation is complete.
+    # This directory was committed to the plan branch during plan-save;
+    # removing it from the working tree means the next commit (via pr submit)
+    # will include the deletion.
+    impl_context_dir = repo_root / ".erk" / "impl-context"
+    if impl_context_dir.is_dir():
+        shutil.rmtree(impl_context_dir)
 
     result = SignalSuccess(
         success=True,

@@ -148,9 +148,9 @@ def _save_as_draft_pr(
     # checkout won't conflict with uncommitted work.
     git.branch.checkout_branch(cwd, branch_name)
     try:
-        branch_data_dir = repo_root / ".erk" / "branch-data"
-        branch_data_dir.mkdir(parents=True, exist_ok=True)
-        plan_file_path = branch_data_dir / "plan.md"
+        impl_context_dir = repo_root / ".erk" / "impl-context"
+        impl_context_dir.mkdir(parents=True, exist_ok=True)
+        plan_file_path = impl_context_dir / "plan.md"
         plan_file_path.write_text(plan_content, encoding="utf-8")
 
         # Write ref.json with plan reference metadata
@@ -160,10 +160,12 @@ def _save_as_draft_pr(
         }
         if objective_issue is not None:
             ref_data["objective_id"] = objective_issue
-        ref_file_path = branch_data_dir / "ref.json"
+        ref_file_path = impl_context_dir / "ref.json"
         ref_file_path.write_text(json.dumps(ref_data, indent=2), encoding="utf-8")
 
-        git.commit.stage_files(repo_root, [".erk/branch-data/plan.md", ".erk/branch-data/ref.json"])
+        git.commit.stage_files(
+            repo_root, [".erk/impl-context/plan.md", ".erk/impl-context/ref.json"]
+        )
         git.commit.commit(repo_root, f"Add plan: {title}")
         git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
     finally:
