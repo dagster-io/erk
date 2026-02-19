@@ -31,6 +31,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -165,11 +166,11 @@ def plan_migrate_to_draft_pr(
     git.branch.create_branch(cwd, branch_name, trunk, force=False)
     git.branch.checkout_branch(cwd, branch_name)
     try:
-        impl_context_dir = repo_root / ".erk" / "impl-context"
+        impl_context_dir = repo_root / IMPL_CONTEXT_DIR
         impl_context_dir.mkdir(parents=True, exist_ok=True)
         plan_file = impl_context_dir / "plan.md"
         plan_file.write_text(plan.body, encoding="utf-8")
-        git.commit.stage_files(repo_root, [".erk/impl-context/plan.md"])
+        git.commit.stage_files(repo_root, [f"{IMPL_CONTEXT_DIR}/plan.md"])
         git.commit.commit(repo_root, f"Add plan: {plan.title}")
         git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
     finally:

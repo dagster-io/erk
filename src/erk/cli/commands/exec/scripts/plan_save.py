@@ -48,6 +48,7 @@ from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
@@ -157,7 +158,7 @@ def _save_as_draft_pr(
     # checkout won't conflict with uncommitted work.
     git.branch.checkout_branch(cwd, branch_name)
     try:
-        impl_context_dir = repo_root / ".erk" / "impl-context"
+        impl_context_dir = repo_root / IMPL_CONTEXT_DIR
         impl_context_dir.mkdir(parents=True, exist_ok=True)
         plan_file_path = impl_context_dir / "plan.md"
         plan_file_path.write_text(plan_content, encoding="utf-8")
@@ -174,7 +175,7 @@ def _save_as_draft_pr(
 
         git.commit.stage_files(
             repo_root,
-            [".erk/impl-context/plan.md", ".erk/impl-context/ref.json"],
+            [f"{IMPL_CONTEXT_DIR}/plan.md", f"{IMPL_CONTEXT_DIR}/ref.json"],
         )
         git.commit.commit(repo_root, f"Add plan: {title}")
         git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)

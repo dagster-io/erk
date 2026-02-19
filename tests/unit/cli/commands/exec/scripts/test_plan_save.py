@@ -14,6 +14,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
@@ -211,7 +212,7 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
     # Branch name should include objective ID
     assert "O123" in output["branch_name"]
     # ref.json should include objective_id
-    ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
+    ref_file = tmp_path / IMPL_CONTEXT_DIR / "ref.json"
     assert ref_file.exists()
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert ref_data["objective_id"] == 123
@@ -236,7 +237,7 @@ def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
 
 
 def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
-    """plan-save commits .erk/impl-context/plan.md to the plan branch."""
+    """plan-save commits plan.md to the plan branch in IMPL_CONTEXT_DIR."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
     ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
@@ -244,18 +245,18 @@ def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    # Verify commit was created with .erk/impl-context/ files
+    # Verify commit was created with impl-context files
     assert len(fake_git.commits) == 1
     commit = fake_git.commits[0]
-    assert ".erk/impl-context/plan.md" in commit.staged_files
-    assert ".erk/impl-context/ref.json" in commit.staged_files
+    assert f"{IMPL_CONTEXT_DIR}/plan.md" in commit.staged_files
+    assert f"{IMPL_CONTEXT_DIR}/ref.json" in commit.staged_files
     assert "Feature Plan" in commit.message
     # Verify plan file was written
-    plan_file = tmp_path / ".erk" / "impl-context" / "plan.md"
+    plan_file = tmp_path / IMPL_CONTEXT_DIR / "plan.md"
     assert plan_file.exists()
     assert "Feature Plan" in plan_file.read_text(encoding="utf-8")
     # Verify ref.json was written
-    ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
+    ref_file = tmp_path / IMPL_CONTEXT_DIR / "ref.json"
     assert ref_file.exists()
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert ref_data["provider"] == "github-draft-pr"
