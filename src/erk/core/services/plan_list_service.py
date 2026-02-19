@@ -57,15 +57,16 @@ class DraftPRPlanListService(PlanListService):
         """Fetch plan list data from draft PRs.
 
         Lists draft PRs with erk-plan label and converts to PlanListData.
-        PR linkages and workflow runs are empty since draft PRs are the plans
-        themselves (not linked issues).
+        PR linkages are populated from each PR's own number. Workflow runs
+        are fetched via batch GraphQL lookup when last_dispatched_node_id is
+        present in the PR body's plan-header metadata.
 
         Args:
             location: GitHub repository location
             labels: Labels to filter by
             state: Filter by state
             limit: Maximum number of results
-            skip_workflow_runs: Ignored (no workflow runs for draft PRs)
+            skip_workflow_runs: If True, skip fetching workflow runs
             creator: Filter by PR author username
 
         Returns:
@@ -88,6 +89,7 @@ class DraftPRPlanListService(PlanListService):
 
         plans = []
         pr_linkages: dict[int, list[PullRequestInfo]] = {}
+        node_id_to_plan: dict[str, int] = {}
         for _branch, pr_info in prs.items():
             pr_details = self._github.get_pr(location.root, pr_info.number)
             if isinstance(pr_details, PRNotFound):
@@ -98,13 +100,30 @@ class DraftPRPlanListService(PlanListService):
             plans.append(plan)
             pr_linkages[pr_info.number] = [pr_info]
 
+            # Capture dispatch node_id for workflow run batch fetch
+            _, node_id, _ = extract_plan_header_dispatch_info(pr_details.body)
+            if node_id is not None:
+                node_id_to_plan[node_id] = pr_info.number
+
             if limit is not None and len(plans) >= limit:
                 break
+
+        workflow_runs: dict[int, WorkflowRun | None] = {}
+        if not skip_workflow_runs and node_id_to_plan:
+            try:
+                runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
+                    location.root,
+                    list(node_id_to_plan.keys()),
+                )
+                for node_id, run in runs_by_node_id.items():
+                    workflow_runs[node_id_to_plan[node_id]] = run
+            except Exception as e:
+                logging.warning("Failed to fetch workflow runs: %s", e)
 
         return PlanListData(
             plans=plans,
             pr_linkages=pr_linkages,
-            workflow_runs={},
+            workflow_runs=workflow_runs,
         )
 
 
