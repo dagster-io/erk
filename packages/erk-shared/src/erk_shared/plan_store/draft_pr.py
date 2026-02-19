@@ -25,6 +25,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     PlanHeaderSchema,
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -322,8 +323,6 @@ class DraftPRPlanBackend(PlanBackend):
         # Append checkout footer now that we have the PR number.
         # No issue_number or plans_repo — draft PR IS the plan, so
         # "Closes #N" would be self-referential.
-        from erk_shared.gateway.github.pr_footer import build_pr_body_footer
-
         footer = build_pr_body_footer(pr_number, issue_number=None, plans_repo=None)
         self._github.update_pr_body(repo_root, pr_number, pr_body + footer)
 

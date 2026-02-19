@@ -245,7 +245,7 @@ def assemble_pr_body(
     issue_number: int | None,
     plans_repo: str | None,
     header: str,
-    metadata_prefix: str = "",
+    metadata_prefix: str,
 ) -> str:
     """Assemble final PR body with plan details and footer.
 

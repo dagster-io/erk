@@ -5,6 +5,13 @@ Draft PRs serve as the backing store for plans when the plan backend is
 implementation PR are separate), draft-PR-backed plans evolve through
 lifecycle stages within a single PR.
 
+Branch Files
+------------
+Draft PR branches contain ``.erk/plan/PLAN.md``, committed before PR
+creation to avoid GitHub's "empty branch" rejection. This file enables
+inline review comments on the plan via the PR's "Files Changed" tab.
+It gets replaced when implementation begins.
+
 Stages
 ------
 

@@ -19,6 +19,8 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
@@ -393,3 +395,38 @@ def test_embeds_plan_context() -> None:
         _, updated_body = github.updated_pr_bodies[0]
         assert "Implementation Plan" in updated_body
         assert "Issue #123" in updated_body
+
+
+def test_update_pr_description_draft_pr_backend_preserves_metadata() -> None:
+    """Test that update-pr-description preserves metadata prefix for draft PR backend."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        metadata_body = format_plan_header_body_for_test()
+        plan_content = "# My Plan\n\nImplement the thing."
+        pr_body = build_plan_stage_body(metadata_body, plan_content)
+
+        git, graphite, github, executor = _make_standard_fakes(
+            env,
+            branch_name="feature",
+            pr_body=pr_body,
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=github,
+            prompt_executor=executor,
+            plan_store=DraftPRPlanBackend(github),
+        )
+
+        result = runner.invoke(update_pr_description, [], obj=ctx)
+
+        assert result.exit_code == 0, result.output
+
+        # Verify the PR body preserves metadata prefix
+        assert len(github.updated_pr_bodies) == 1
+        _, updated_body = github.updated_pr_bodies[0]
+        assert "plan-header" in updated_body
+        # No self-closing reference for draft PR backend
+        assert "Closes #" not in updated_body
