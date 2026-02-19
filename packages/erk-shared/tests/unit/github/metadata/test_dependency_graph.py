@@ -149,6 +149,53 @@ class TestDependencyGraphBasics:
         assert result is not None
         assert result.id == "1.4"
 
+    def test_pending_unblocked_nodes_fan_out(self) -> None:
+        """pending_unblocked_nodes returns multiple pending nodes when fan-out allows it."""
+        graph = DependencyGraph(
+            nodes=(
+                _node(id="1.1", status="done", depends_on=()),
+                _node(id="2.1", status="pending", depends_on=("1.1",)),
+                _node(id="2.2", status="pending", depends_on=("1.1",)),
+            )
+        )
+        result = graph.pending_unblocked_nodes()
+        assert [n.id for n in result] == ["2.1", "2.2"]
+
+    def test_pending_unblocked_nodes_excludes_non_pending(self) -> None:
+        """pending_unblocked_nodes excludes done/in_progress/skipped nodes."""
+        graph = DependencyGraph(
+            nodes=(
+                _node(id="1.1", status="done", depends_on=()),
+                _node(id="1.2", status="in_progress", depends_on=()),
+                _node(id="1.3", status="skipped", depends_on=()),
+                _node(id="1.4", status="pending", depends_on=()),
+            )
+        )
+        result = graph.pending_unblocked_nodes()
+        assert [n.id for n in result] == ["1.4"]
+
+    def test_pending_unblocked_nodes_all_done(self) -> None:
+        """pending_unblocked_nodes returns empty list when all nodes are done."""
+        graph = DependencyGraph(
+            nodes=(
+                _node(id="1.1", status="done", depends_on=()),
+                _node(id="1.2", status="done", depends_on=("1.1",)),
+            )
+        )
+        assert graph.pending_unblocked_nodes() == []
+
+    def test_pending_unblocked_nodes_blocked(self) -> None:
+        """pending_unblocked_nodes returns empty list when pending nodes are blocked."""
+        graph = DependencyGraph(
+            nodes=(
+                _node(id="1.1", status="pending", depends_on=()),
+                _node(id="1.2", status="pending", depends_on=("1.1",)),
+            )
+        )
+        # 1.1 is unblocked+pending, 1.2 is blocked by 1.1
+        result = graph.pending_unblocked_nodes()
+        assert [n.id for n in result] == ["1.1"]
+
     def test_is_complete_all_done(self) -> None:
         graph = DependencyGraph(
             nodes=(

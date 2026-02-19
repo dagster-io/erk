@@ -139,6 +139,147 @@ def _resolve_next(
     )
 
 
+@dataclass(frozen=True)
+class ResolvedAllUnblocked:
+    """Result of resolving all unblocked pending nodes for an objective.
+
+    Attributes:
+        issue_number: The objective issue number
+        nodes: List of (node, phase_name) pairs for each pending unblocked node
+    """
+
+    issue_number: int
+    nodes: list[tuple[ObjectiveNode, str]]
+
+
+def _resolve_all_unblocked(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+) -> ResolvedAllUnblocked:
+    """Resolve all unblocked pending nodes for an objective.
+
+    If issue_ref is provided, uses it directly. Otherwise infers the objective
+    from the current branch via plan store metadata.
+
+    Args:
+        ctx: ErkContext with git, issues, and plan_store
+        issue_ref: Optional issue reference (number or URL)
+
+    Raises:
+        click.ClickException: If objective cannot be resolved or has no pending unblocked nodes
+    """
+    if isinstance(ctx.repo, NoRepoSentinel):
+        raise click.ClickException("Not in a git repository")
+    assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+    repo: RepoContext = ctx.repo
+
+    if issue_ref is not None:
+        issue_number = parse_issue_identifier(issue_ref)
+    else:
+        branch = ctx.git.branch.get_current_branch(repo.root)
+        if branch is None:
+            raise click.ClickException("Not on a branch")
+        objective_id = get_objective_for_branch(ctx, repo.root, branch)
+        if objective_id is None:
+            raise click.ClickException(
+                f"Branch '{branch}' is not linked to an objective. Provide ISSUE_REF explicitly."
+            )
+        issue_number = objective_id
+
+    result = validate_objective(ctx.issues, repo.root, issue_number)
+    if isinstance(result, ObjectiveValidationError):
+        raise click.ClickException(result.error)
+    assert isinstance(result, ObjectiveValidationSuccess)  # type narrowing
+
+    if not result.graph.nodes:
+        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+
+    pending_nodes = result.graph.pending_unblocked_nodes()
+    if not pending_nodes:
+        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+
+    phases = phases_from_graph(result.graph)
+    phases = enrich_phase_names(result.issue_body, phases)
+
+    node_phase_pairs: list[tuple[ObjectiveNode, str]] = []
+    for node in pending_nodes:
+        found = _find_node_in_phases(phases, node.id)
+        if found is None:
+            raise click.ClickException(f"Internal error: node '{node.id}' not found in phases")
+        node_phase_pairs.append(found)
+
+    return ResolvedAllUnblocked(
+        issue_number=issue_number,
+        nodes=node_phase_pairs,
+    )
+
+
+def _handle_all_unblocked(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    model: str | None,
+    dry_run: bool,
+) -> None:
+    """Dispatch one-shot workflows for all unblocked pending nodes."""
+    resolved = _resolve_all_unblocked(ctx, issue_ref=issue_ref)
+
+    # Normalize model name
+    model = normalize_model_name(model)
+
+    user_output(
+        f"Found {click.style(len(resolved.nodes), bold=True)} "
+        f"unblocked pending node(s) in objective #{resolved.issue_number}:"
+    )
+    for node, phase_name in resolved.nodes:
+        user_output(f"  {node.id}: {node.description} (Phase: {phase_name})")
+    user_output("")
+
+    dispatched_count = 0
+    for node, phase_name in resolved.nodes:
+        instruction = (
+            f"/erk:objective-plan {resolved.issue_number}\n"
+            f"Implement step {node.id} of objective #{resolved.issue_number}: "
+            f"{node.description} (Phase: {phase_name})"
+        )
+
+        user_output(f"Dispatching node {click.style(node.id, bold=True)}: {node.description}")
+
+        params = OneShotDispatchParams(
+            instruction=instruction,
+            model=model,
+            extra_workflow_inputs={
+                "objective_issue": str(resolved.issue_number),
+                "node_id": node.id,
+            },
+        )
+
+        dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
+
+        if dispatch_result is not None:
+            assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+            _update_objective_node(
+                ctx.issues,
+                ctx.repo.root,
+                issue_number=resolved.issue_number,
+                node_id=node.id,
+                pr_number=dispatch_result.pr_number,
+            )
+            dispatched_count += 1
+
+    if dry_run:
+        user_output(
+            f"\n{click.style('Dry-run complete:', fg='cyan', bold=True)} "
+            f"Would dispatch {len(resolved.nodes)} node(s)"
+        )
+    else:
+        user_output(
+            f"\n{click.style('Done!', fg='green', bold=True)} "
+            f"Dispatched {dispatched_count}/{len(resolved.nodes)} node(s)"
+        )
+
+
 def _update_objective_node(
     issues: GitHubIssues,
     repo_root: Path,
@@ -236,9 +377,17 @@ def _update_objective_node(
     default=False,
     help="Auto-select next unblocked pending node (infers objective from branch if omitted)",
 )
+@click.option(
+    "--all-unblocked",
+    "all_unblocked",
+    is_flag=True,
+    default=False,
+    help="Dispatch all unblocked pending nodes via one-shot (one workflow per node)",
+)
 @click.pass_obj
 def plan_objective(
     ctx: ErkContext,
+    *,
     issue_ref: str | None,
     dangerous: bool,
     one_shot_mode: bool,
@@ -246,6 +395,7 @@ def plan_objective(
     dry_run: bool,
     node_id: str | None,
     use_next: bool,
+    all_unblocked: bool,
 ) -> None:
     """Create a plan from an objective node.
 
@@ -260,6 +410,9 @@ def plan_objective(
     With --next, auto-selects the next unblocked pending node.
     If ISSUE_REF is omitted with --next, infers the objective from the current branch.
 
+    With --all-unblocked, dispatches one-shot workflows for all unblocked
+    pending nodes simultaneously.
+
     \b
     Examples:
       erk objective plan 42
@@ -270,13 +423,23 @@ def plan_objective(
       erk objective plan 42 --next
       erk objective plan --next
       erk objective plan --next --one-shot
+      erk objective plan 42 --all-unblocked
+      erk objective plan 42 --all-unblocked --dry-run
     """
     # Validate flag combinations
+    if all_unblocked and node_id is not None:
+        raise click.ClickException("--all-unblocked and --node are mutually exclusive")
+    if all_unblocked and use_next:
+        raise click.ClickException("--all-unblocked and --next are mutually exclusive")
     if use_next and node_id is not None:
         raise click.ClickException("--next and --node are mutually exclusive")
 
-    if issue_ref is None and not use_next:
-        raise click.ClickException("ISSUE_REF is required unless --next is used")
+    if issue_ref is None and not use_next and not all_unblocked:
+        raise click.ClickException("ISSUE_REF is required unless --next or --all-unblocked is used")
+
+    # --all-unblocked implies --one-shot
+    if all_unblocked:
+        one_shot_mode = True
 
     # Validate flag dependencies: --model, --dry-run require --one-shot
     if not one_shot_mode:
@@ -285,7 +448,14 @@ def plan_objective(
         if dry_run:
             raise click.ClickException("--dry-run requires --one-shot")
 
-    if one_shot_mode:
+    if all_unblocked:
+        _handle_all_unblocked(
+            ctx,
+            issue_ref=issue_ref,
+            model=model,
+            dry_run=dry_run,
+        )
+    elif one_shot_mode:
         _handle_one_shot(
             ctx,
             issue_ref=issue_ref,
