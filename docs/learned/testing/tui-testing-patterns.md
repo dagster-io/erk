@@ -12,25 +12,13 @@ read_when:
 
 The `make_plan_row()` factory function creates `PlanRowData` instances for testing.
 
-**Current parameter names:**
+Uses backend-agnostic `plan_*` parameter names (not `issue_*`).
 
-- `plan_id: int` (not `issue_number`)
-- `plan_url: str | None` (not `issue_url`)
-- `plan_body: str` (not `issue_body`)
-
-See `make_plan_row()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`.
+See `make_plan_row()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` for current parameters and defaults.
 
 ## Usage Pattern
 
-```python
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
-
-row = make_plan_row(
-    plan_id=123,
-    plan_url="https://github.com/owner/repo/issues/123",
-    plan_body="# Implementation Plan\n...",
-)
-```
+See `make_plan_row()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` for usage examples. The factory accepts `plan_id` as positional, with remaining parameters as keyword-only.
 
 ## When Updating Test Infrastructure
 

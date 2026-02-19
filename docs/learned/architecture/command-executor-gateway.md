@@ -17,8 +17,8 @@ The `CommandExecutor` gateway provides methods for executing plan-related operat
 
 The following methods use backend-agnostic plan terminology:
 
-- `close_plan(*, plan_id: int, plan_url: str) -> CloseResult`
-- `submit_to_queue(*, plan_id: int, plan_url: str) -> SubmitResult`
+- `close_plan(plan_id: int, plan_url: str) -> list[int]`
+- `submit_to_queue(plan_id: int, plan_url: str) -> None`
 
 See `CommandExecutor` ABC in `packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py` for full interface.
 
