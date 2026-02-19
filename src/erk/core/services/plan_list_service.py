@@ -19,6 +19,7 @@ from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
     PRListState,
     PRNotFound,
+    PullRequestInfo,
     WorkflowRun,
 )
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
@@ -86,20 +87,23 @@ class DraftPRPlanListService(PlanListService):
         )
 
         plans = []
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
         for _branch, pr_info in prs.items():
             pr_details = self._github.get_pr(location.root, pr_info.number)
             if isinstance(pr_details, PRNotFound):
                 continue
 
             plan_body = extract_plan_content(pr_details.body)
-            plans.append(pr_details_to_plan(pr_details, plan_body=plan_body))
+            plan = pr_details_to_plan(pr_details, plan_body=plan_body)
+            plans.append(plan)
+            pr_linkages[pr_info.number] = [pr_info]
 
             if limit is not None and len(plans) >= limit:
                 break
 
         return PlanListData(
             plans=plans,
-            pr_linkages={},
+            pr_linkages=pr_linkages,
             workflow_runs={},
         )
 

@@ -1450,6 +1450,23 @@ query {{
         # Extract labels
         labels = tuple(lbl.get("name", "") for lbl in data.get("labels", []))
 
+        # Parse timestamps
+        created_at_str = data.get("created_at", "")
+        updated_at_str = data.get("updated_at", "")
+        created_at = (
+            datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            if created_at_str
+            else datetime(2000, 1, 1, tzinfo=UTC)
+        )
+        updated_at = (
+            datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+            if updated_at_str
+            else datetime(2000, 1, 1, tzinfo=UTC)
+        )
+
+        # Extract author login
+        author = data.get("user", {}).get("login", "") if data.get("user") else ""
+
         # Check if head repo exists (can be None for deleted forks)
         head_repo = data["head"].get("repo")
         is_cross_repository = head_repo["fork"] if head_repo else False
@@ -1469,6 +1486,9 @@ query {{
             owner=repo_info.owner,
             repo=repo_info.name,
             labels=labels,
+            created_at=created_at,
+            updated_at=updated_at,
+            author=author,
         )
 
     def list_prs(

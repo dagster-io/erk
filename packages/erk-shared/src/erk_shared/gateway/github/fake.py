@@ -6,6 +6,7 @@ in its constructor. Construct instances directly with keyword arguments.
 
 import dataclasses
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -305,6 +306,10 @@ class FakeGitHub(GitHub):
             merge_state_status="UNKNOWN",
             owner=self._repo_info.owner,
             repo=self._repo_info.name,
+            labels=(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            author=self._repo_info.owner,
         )
         self._pr_details[pr_number] = details
         self._prs_by_branch[branch] = details

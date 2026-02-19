@@ -5,12 +5,14 @@
 In draft PR mode, a plan and its PR are one and the same entity — it starts as a draft PR (planning state) and transitions to a real PR (implemented state). There is no separate "issue" and "linked PR"; they're the same GitHub PR at different lifecycle stages.
 
 The erk dash Plans TUI shows incorrect/missing data for plans using the `draft_pr` backend:
+
 - `created` column shows "26y ago" (epoch 2000-01-01 used as sentinel)
 - `author` column shows "-" (not extracted from PR data)
 - `pr` column shows "-" (pr_linkages always empty — code doesn't know the plan's own PR is its PR)
 - `chks`/`comments` show "-" (same root cause as `pr`)
 
 Root causes:
+
 1. `PRDetails` is missing `created_at`, `updated_at`, `author` fields — even though the GitHub REST API returns them in `created_at`, `updated_at`, and `user.login`.
 2. `_parse_pr_details_from_rest_api()` doesn't extract these available fields.
 3. `pr_details_to_plan()` uses `datetime(2000, 1, 1, tzinfo=UTC)` as a fallback and omits `author` from metadata.
@@ -101,11 +103,13 @@ Need to add `PullRequestInfo` to the import in `plan_list_service.py`.
 The `plan` column already shows the PR number. Showing it again in `pr` is redundant. The existing `show_prs` flag in `PlanFilters` controls `pr` + `chks` + `comments` together — we want to hide only `pr` while keeping `chks` and `comments`. Add a separate flag:
 
 **`src/erk/tui/data/types.py`** — add to `PlanFilters`:
+
 ```python
 show_pr_column: bool = True  # False in draft_pr mode (plan IS the PR)
 ```
 
 **`src/erk/tui/widgets/plan_table.py`** — in `_setup_columns()`, split the `pr` column out:
+
 ```python
 if self._plan_filters.show_prs:
     if self._plan_filters.show_pr_column:
@@ -119,6 +123,7 @@ if self._plan_filters.show_prs:
 And in `_row_to_values()`, skip the `pr` cell value when `show_pr_column=False`.
 
 **`src/erk/cli/commands/plan/list_cmd.py`** — detect draft PR mode and set the flag:
+
 ```python
 from erk_shared.plan_store import get_plan_backend
 
@@ -154,17 +159,17 @@ Also add a test verifying that `created_at` and `author` are populated correctly
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `packages/erk-shared/src/erk_shared/gateway/github/types.py` | Add `created_at`, `updated_at`, `author` to `PRDetails` with defaults |
-| `packages/erk-shared/src/erk_shared/gateway/github/real.py` | Extract new fields in `_parse_pr_details_from_rest_api()` |
+| File                                                          | Change                                                                      |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `packages/erk-shared/src/erk_shared/gateway/github/types.py`  | Add `created_at`, `updated_at`, `author` to `PRDetails` with defaults       |
+| `packages/erk-shared/src/erk_shared/gateway/github/real.py`   | Extract new fields in `_parse_pr_details_from_rest_api()`                   |
 | `packages/erk-shared/src/erk_shared/plan_store/conversion.py` | Use `pr.created_at`, `pr.updated_at`, `pr.author` in `pr_details_to_plan()` |
-| `src/erk/core/services/plan_list_service.py` | Populate `pr_linkages` in `DraftPRPlanListService` |
-| `packages/erk-shared/src/erk_shared/gateway/github/fake.py` | Set new fields in `create_pr()` |
-| `src/erk/tui/data/types.py` | Add `show_pr_column: bool = True` to `PlanFilters` |
-| `src/erk/tui/widgets/plan_table.py` | Split `pr` column rendering from `chks`/`comments` using `show_pr_column` |
-| `src/erk/cli/commands/plan/list_cmd.py` | Set `show_pr_column=get_plan_backend() != "draft_pr"` |
-| `tests/unit/services/test_plan_list_service.py` | Update `test_always_returns_empty_pr_linkages_and_workflow_runs` |
+| `src/erk/core/services/plan_list_service.py`                  | Populate `pr_linkages` in `DraftPRPlanListService`                          |
+| `packages/erk-shared/src/erk_shared/gateway/github/fake.py`   | Set new fields in `create_pr()`                                             |
+| `src/erk/tui/data/types.py`                                   | Add `show_pr_column: bool = True` to `PlanFilters`                          |
+| `src/erk/tui/widgets/plan_table.py`                           | Split `pr` column rendering from `chks`/`comments` using `show_pr_column`   |
+| `src/erk/cli/commands/plan/list_cmd.py`                       | Set `show_pr_column=get_plan_backend() != "draft_pr"`                       |
+| `tests/unit/services/test_plan_list_service.py`               | Update `test_always_returns_empty_pr_linkages_and_workflow_runs`            |
 
 ## Verification
 

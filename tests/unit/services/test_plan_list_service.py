@@ -690,8 +690,8 @@ class TestDraftPRPlanListService:
         assert result.pr_linkages == {}
         assert result.workflow_runs == {}
 
-    def test_always_returns_empty_pr_linkages_and_workflow_runs(self) -> None:
-        """pr_linkages and workflow_runs are always empty for draft PRs."""
+    def test_populates_pr_linkages_from_plan_pr(self) -> None:
+        """pr_linkages maps the plan's PR number to its PullRequestInfo."""
         fake_github = FakeGitHub(
             prs={"plan": _make_pr_info(number=70)},
             pr_details={70: _make_draft_pr_details(number=70, title="Plan", body="body")},
@@ -700,8 +700,48 @@ class TestDraftPRPlanListService:
         result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
 
         assert len(result.plans) == 1
-        assert result.pr_linkages == {}
+        assert 70 in result.pr_linkages
+        assert len(result.pr_linkages[70]) == 1
+        assert result.pr_linkages[70][0].number == 70
         assert result.workflow_runs == {}
+
+    def test_created_at_and_author_populated_from_pr_details(self) -> None:
+        """Plan created_at and author come from PRDetails, not epoch sentinel."""
+        from datetime import UTC, datetime
+
+        pr_created_at = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
+        pr_details = PRDetails(
+            number=90,
+            url="https://github.com/owner/repo/pull/90",
+            title="Dated Plan",
+            body="body",
+            state="OPEN",
+            is_draft=True,
+            base_ref_name="main",
+            head_ref_name="dated-branch",
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner="owner",
+            repo="repo",
+            labels=("erk-plan",),
+            created_at=pr_created_at,
+            updated_at=pr_created_at,
+            author="plan-author",
+        )
+        fake_github = FakeGitHub(
+            prs={"dated-branch": _make_pr_info(number=90, branch="dated-branch")},
+            pr_details={90: pr_details},
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert len(result.plans) == 1
+        plan = result.plans[0]
+        # created_at should be the PR's real date, not the epoch sentinel
+        assert plan.created_at == pr_created_at
+        # author should be populated from PR details
+        assert plan.metadata.get("author") == "plan-author"
 
     def test_extracts_plan_content_from_body(self) -> None:
         """PR body with metadata separator extracts only plan content."""
