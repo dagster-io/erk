@@ -37,6 +37,7 @@ Then restructure the branch logic (lines 108-148):
 - Else (no plan_branch): fall through to existing `P{issue}-...` logic unchanged
 
 **Key existing functions to reuse:**
+
 - `git.remote.fetch_branch(repo_root, "origin", branch_name)` — fetches remote branch
 - `git.remote.pull_rebase(cwd, "origin", branch_name)` — syncs local with remote, returns `PullRebaseResult | PullRebaseError`
 - `git.branch.list_local_branches(repo_root)` — checks if branch exists locally
@@ -65,11 +66,11 @@ Tests use `FakeGitHub` with a draft PR whose body includes a `plan-header` metad
 
 ## Files to modify
 
-| File | Change |
-|------|--------|
-| `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py` | Add draft-PR branch detection + remote sync |
-| `.claude/commands/erk/plan-implement.md` | Always call setup-impl-from-issue for sync when issue tracking exists |
-| `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py` | Add 4 new tests |
+| File                                                                 | Change                                                                |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`         | Add draft-PR branch detection + remote sync                           |
+| `.claude/commands/erk/plan-implement.md`                             | Always call setup-impl-from-issue for sync when issue tracking exists |
+| `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py` | Add 4 new tests                                                       |
 
 ## Verification
 
