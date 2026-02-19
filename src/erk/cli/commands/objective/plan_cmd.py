@@ -237,6 +237,8 @@ def _handle_all_unblocked(
     user_output("")
 
     dispatched_count = 0
+    successful_dispatches: list[tuple[str, int]] = []
+
     for node, phase_name in resolved.nodes:
         instruction = (
             f"/erk:objective-plan {resolved.issue_number}\n"
@@ -258,15 +260,18 @@ def _handle_all_unblocked(
         dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
 
         if dispatch_result is not None:
-            assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
-            _update_objective_node(
-                ctx.issues,
-                ctx.repo.root,
-                issue_number=resolved.issue_number,
-                node_id=node.id,
-                pr_number=dispatch_result.pr_number,
-            )
+            successful_dispatches.append((node.id, dispatch_result.pr_number))
             dispatched_count += 1
+
+    # Single atomic update after all dispatches complete
+    if successful_dispatches:
+        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        _batch_update_objective_nodes(
+            ctx.issues,
+            ctx.repo.root,
+            issue_number=resolved.issue_number,
+            node_updates=successful_dispatches,
+        )
 
     if dry_run:
         user_output(
@@ -331,6 +336,71 @@ def _update_objective_node(
             explicit_status="planning",
         )
         if updated_comment is not None and updated_comment != comment_body:
+            issues.update_comment(repo_root, objective_comment_id, updated_comment)
+
+
+def _batch_update_objective_nodes(
+    issues: GitHubIssues,
+    repo_root: Path,
+    *,
+    issue_number: int,
+    node_updates: list[tuple[str, int]],
+) -> None:
+    """Mark multiple nodes as 'planning' with draft PRs in a single API write.
+
+    Fetches the issue body once, applies all node updates in memory, then writes
+    back once. Same for the v2 comment if present.
+
+    Args:
+        issues: GitHub issues gateway
+        repo_root: Repository root path
+        issue_number: Objective issue number
+        node_updates: List of (node_id, pr_number) pairs to update
+    """
+    if not node_updates:
+        return
+
+    issue = issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return
+
+    # Accumulate all body changes in memory
+    updated_body = issue.body
+    body_changed = False
+    for node_id, pr_number in node_updates:
+        new_body = _replace_node_refs_in_body(
+            updated_body,
+            node_id,
+            new_plan=None,
+            new_pr=f"#{pr_number}",
+            explicit_status="planning",
+        )
+        if new_body is not None:
+            updated_body = new_body
+            body_changed = True
+
+    # Single write for all body changes
+    if body_changed:
+        issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+
+    # v2 format: accumulate all comment changes, then write once
+    objective_comment_id = extract_metadata_value(
+        updated_body, "objective-header", "objective_comment_id"
+    )
+    if objective_comment_id is not None:
+        comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
+        updated_comment = comment_body
+        for node_id, pr_number in node_updates:
+            new_comment = _replace_table_in_text(
+                updated_comment,
+                node_id,
+                new_plan=None,
+                new_pr=f"#{pr_number}",
+                explicit_status="planning",
+            )
+            if new_comment is not None:
+                updated_comment = new_comment
+        if updated_comment != comment_body:
             issues.update_comment(repo_root, objective_comment_id, updated_comment)
 
 
