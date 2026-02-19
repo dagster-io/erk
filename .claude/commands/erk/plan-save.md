@@ -24,7 +24,7 @@ The plan is saved using the configured backend:
 - **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
 - **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
 
-The JSON output contract is the same for both backends (`issue_number`, `issue_url`, `title`, `branch_name`).
+The JSON output contract is the same for both backends (`issue_number`, `issue_url`, `title`, `branch_name`, `plan_backend`).
 
 ## Agent Instructions
 
@@ -89,7 +89,7 @@ Expected objective: #<expected>
 Actual: <actual-or-null>
 
 The plan was saved but without the correct objective link.
-Fix: Close issue #<issue_number> and re-run:
+Fix: Close <"draft PR" if plan_backend=="draft_pr", else "issue"> #<issue_number> and re-run:
   /erk:plan-save --objective-issue=<expected>
 ```
 
@@ -125,12 +125,34 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan 
 
 ### Step 4: Display Results
 
-On success, display:
+On success, display based on `plan_backend` from JSON output:
+
+**Header (both backends):**
 
 ```
-Plan "<title>" saved as issue #<issue_number>
+Plan "<title>" saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #<issue_number>
 URL: <issue_url>
+```
 
+**If `plan_backend` is `"draft_pr"`:**
+
+```
+Next steps:
+
+View PR: gh pr view <issue_number> --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk prepare <issue_number>
+  Prepare+Implement: source "$(erk prepare <issue_number> --script)" && erk implement --dangerous
+  Submit to Queue: erk plan submit <issue_number>
+```
+
+**If `plan_backend` is `"github"` (or absent):**
+
+```
 Next steps:
 
 View Issue: gh issue view <issue_number> --web

@@ -67,6 +67,7 @@ def test_draft_pr_success_json(tmp_path: Path) -> None:
     assert "issue_number" in output
     assert "branch_name" in output
     assert output["branch_name"].startswith("plan-")
+    assert output["plan_backend"] == "draft_pr"
 
 
 def test_draft_pr_success_display(tmp_path: Path) -> None:

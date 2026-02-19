@@ -217,6 +217,7 @@ def _save_as_draft_pr(
             "issue_url": result.url,
             "title": title,
             "branch_name": branch_name,
+            "plan_backend": "draft_pr",
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
