@@ -229,7 +229,7 @@ def _handle_all_unblocked(
     model = normalize_model_name(model)
 
     user_output(
-        f"Found {click.style(str(len(resolved.nodes)), bold=True)} "
+        f"Found {click.style(len(resolved.nodes), bold=True)} "
         f"unblocked pending node(s) in objective #{resolved.issue_number}:"
     )
     for node, phase_name in resolved.nodes:
@@ -387,6 +387,7 @@ def _update_objective_node(
 @click.pass_obj
 def plan_objective(
     ctx: ErkContext,
+    *,
     issue_ref: str | None,
     dangerous: bool,
     one_shot_mode: bool,

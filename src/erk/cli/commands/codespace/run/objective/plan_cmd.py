@@ -44,12 +44,13 @@ def run_plan(
     click.echo(f"Starting codespace '{codespace.name}'...", err=True)
     ctx.codespace.start_codespace(codespace.gh_name)
 
-    flags = ""
+    flags = []
     if dangerous:
-        flags += " -d"
+        flags.append("-d")
     if all_unblocked:
-        flags += " --all-unblocked"
-    remote_erk_cmd = f"erk objective plan{flags} {issue_ref}"
+        flags.append("--all-unblocked")
+    flag_str = (" " + " ".join(flags)) if flags else ""
+    remote_erk_cmd = f"erk objective plan{flag_str} {issue_ref}"
     remote_cmd = build_codespace_ssh_command(remote_erk_cmd)
     click.echo(
         f"Running '{remote_erk_cmd}' on '{codespace.name}'...",
