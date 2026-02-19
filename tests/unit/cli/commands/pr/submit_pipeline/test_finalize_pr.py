@@ -71,6 +71,7 @@ def _pr_details(
     number: int = 42,
     branch: str = "feature",
     body: str = "",
+    is_draft: bool = False,
 ) -> PRDetails:
     return PRDetails(
         number=number,
@@ -82,7 +83,7 @@ def _pr_details(
         head_ref_name=branch,
         mergeable="MERGEABLE",
         merge_state_status="CLEAN",
-        is_draft=False,
+        is_draft=is_draft,
         is_cross_repository=False,
         owner="owner",
         repo="repo",
@@ -428,3 +429,43 @@ def test_finalize_pr_non_draft_pr_backend_uses_issue_fallback(tmp_path: Path) ->
     assert isinstance(result, SubmitState)
     # Issue number should be extracted from existing PR body footer
     assert result.issue_number == 77
+
+
+def test_publishes_draft_pr(tmp_path: Path) -> None:
+    """Draft PR is published (marked ready) during finalize."""
+    pr = _pr_details(number=42, is_draft=True)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
+    state = _make_state(cwd=tmp_path)
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert 42 in fake_github.marked_pr_ready
+
+
+def test_does_not_publish_non_draft_pr(tmp_path: Path) -> None:
+    """Non-draft PR is NOT marked ready during finalize."""
+    pr = _pr_details(number=42, is_draft=False)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
+    state = _make_state(cwd=tmp_path)
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert fake_github.marked_pr_ready == []
