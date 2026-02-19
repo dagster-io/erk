@@ -692,12 +692,7 @@ class PlanDetailScreen(ModalScreen):
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
                     self.app.notify(f"Landing PR #{pr_num}...")
-                    self.app._land_pr_async(pr_num, branch, repo_root)
-
-        elif command_id == "copy_replan":
-            cmd = f"/erk:replan {row.plan_id}"
-            executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}", severity=None)
+                    self.app._land_pr_async(pr_num, branch, repo_root, row.objective_issue)
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
@@ -766,6 +761,24 @@ class PlanDetailScreen(ModalScreen):
                     )
                 else:
                     yield Label(self._row.learn_display, classes="info-value", markup=False)
+
+            # Objective info (if linked)
+            if self._row.objective_issue is not None:
+                with Container(classes="info-row"):
+                    yield Label("Objective", classes="info-label")
+                    display_text = (
+                        f"{self._row.objective_display} ({self._row.objective_progress_display})"
+                        if self._row.objective_progress_display != "-"
+                        else self._row.objective_display
+                    )
+                    if self._row.plan_url:
+                        objective_url = (
+                            self._row.plan_url.rsplit("/issues/", 1)[0]
+                            + f"/issues/{self._row.objective_issue}"
+                        )
+                        yield ClickableLink(display_text, objective_url, classes="info-value")
+                    else:
+                        yield Label(display_text, classes="info-value", markup=False)
 
             # REMOTE RUN INFO SECTION (separate from worktree/local info)
             if self._row.run_id:
