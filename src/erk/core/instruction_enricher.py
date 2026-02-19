@@ -118,9 +118,9 @@ class InstructionEnricher:
         for line in output.strip().splitlines():
             stripped = line.strip()
             if stripped.upper().startswith("TITLE:"):
-                title = stripped[len("TITLE:"):].strip()
+                title = stripped[len("TITLE:") :].strip()
             elif stripped.upper().startswith("SUMMARY:"):
-                summary = stripped[len("SUMMARY:"):].strip()
+                summary = stripped[len("SUMMARY:") :].strip()
 
         if title is None or summary is None:
             return None
