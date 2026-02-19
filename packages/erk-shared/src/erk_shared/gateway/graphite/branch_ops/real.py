@@ -33,8 +33,17 @@ class RealGraphiteBranchOps(GraphiteBranchOps):
             branch_name: Name of the branch to track
             parent_branch: Name of the parent branch in the stack
         """
+        cmd = [
+            "gt",
+            "track",
+            "--branch",
+            branch_name,
+            "--parent",
+            parent_branch,
+            "--no-interactive",
+        ]
         run_subprocess_with_context(
-            cmd=["gt", "track", "--branch", branch_name, "--parent", parent_branch],
+            cmd=cmd,
             operation_context=f"track branch '{branch_name}' with Graphite",
             cwd=cwd,
         )
@@ -42,7 +51,7 @@ class RealGraphiteBranchOps(GraphiteBranchOps):
     def delete_branch(self, repo_root: Path, branch: str) -> None:
         """Delete a branch using Graphite's gt delete command."""
         run_subprocess_with_context(
-            cmd=["gt", "delete", "-f", branch],
+            cmd=["gt", "delete", "-f", branch, "--no-interactive"],
             operation_context=f"delete branch '{branch}' with Graphite",
             cwd=repo_root,
         )
@@ -91,7 +100,7 @@ class RealGraphiteBranchOps(GraphiteBranchOps):
             branch_name: Name of the branch being re-tracked (for logging)
         """
         run_subprocess_with_context(
-            cmd=["gt", "track"],
+            cmd=["gt", "track", "--no-interactive"],
             operation_context=f"re-track branch '{branch_name}' with Graphite",
             cwd=cwd,
         )

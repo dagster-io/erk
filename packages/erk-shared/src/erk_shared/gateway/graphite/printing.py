@@ -64,11 +64,10 @@ class PrintingGraphite(PrintingBase, Graphite):
         self._emit(self._format_command(cmd))
         self._wrapped.sync(repo_root, force=force, quiet=quiet)
 
-    def restack(self, repo_root: Path, *, no_interactive: bool, quiet: bool) -> None:
+    def restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Restack with printed output."""
-        cmd = "gt restack --no-interactive" if no_interactive else "gt restack"
-        self._emit(self._format_command(cmd))
-        self._wrapped.restack(repo_root, no_interactive=no_interactive, quiet=quiet)
+        self._emit(self._format_command("gt restack --no-interactive"))
+        self._wrapped.restack(repo_root, quiet=quiet)
 
     def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
         """Squash branch with printed output."""

@@ -30,7 +30,16 @@ def test_track_branch_calls_gt_track_correctly(
         ops.track_branch(tmp_path, "feature-branch", "main")
 
     assert len(called_with) == 1
-    assert called_with[0] == ["gt", "track", "--branch", "feature-branch", "--parent", "main"]
+    expected = [
+        "gt",
+        "track",
+        "--branch",
+        "feature-branch",
+        "--parent",
+        "main",
+        "--no-interactive",
+    ]
+    assert called_with[0] == expected
 
 
 def test_delete_branch_calls_gt_delete_with_force(
@@ -49,7 +58,7 @@ def test_delete_branch_calls_gt_delete_with_force(
         ops.delete_branch(tmp_path, "feature-branch")
 
     assert len(called_with) == 1
-    assert called_with[0] == ["gt", "delete", "-f", "feature-branch"]
+    assert called_with[0] == ["gt", "delete", "-f", "feature-branch", "--no-interactive"]
 
 
 def test_submit_branch_calls_gt_submit_correctly(

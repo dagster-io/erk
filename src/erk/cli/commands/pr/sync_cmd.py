@@ -233,9 +233,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
         # Restack to incorporate parent branch changes
         user_output("Restacking branch...")
-        restack_result = ctx.graphite.restack_idempotent(
-            repo.root, no_interactive=True, quiet=False
-        )
+        restack_result = ctx.graphite.restack_idempotent(repo.root, quiet=False)
         if isinstance(restack_result, RestackError):
             if restack_result.error_type == "restack-conflict":
                 user_output(click.style("\nRestack paused due to merge conflicts.", fg="yellow"))
@@ -301,7 +299,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     # Step 7: Restack with Graphite (manual conflict resolution if needed)
     user_output("Restacking branch...")
-    restack_result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True, quiet=False)
+    restack_result = ctx.graphite.restack_idempotent(repo.root, quiet=False)
     if isinstance(restack_result, RestackError):
         if restack_result.error_type == "restack-conflict":
             user_output(click.style("\nRestack paused due to merge conflicts.", fg="yellow"))

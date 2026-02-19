@@ -55,7 +55,7 @@ class DryRunGraphite(Graphite):
         # Do nothing - prevents actual gt sync execution
         pass
 
-    def restack(self, repo_root: Path, *, no_interactive: bool, quiet: bool) -> None:
+    def restack(self, repo_root: Path, *, quiet: bool) -> None:
         """No-op for gt restack in dry-run mode."""
         # Do nothing - prevents actual gt restack execution
         pass
