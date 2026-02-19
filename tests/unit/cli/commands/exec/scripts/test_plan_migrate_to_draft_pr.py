@@ -287,6 +287,68 @@ def test_migrate_closes_original_issue(tmp_path: Path) -> None:
     assert 42 in fake_issues._closed_issues
 
 
+def test_migrate_preserves_operational_metadata(tmp_path: Path) -> None:
+    """Operational metadata (dispatch, impl, session) carries over to draft PR."""
+    header_body = format_plan_header_body(
+        created_at="2025-01-15T00:00:00Z",
+        created_by="testuser",
+        worktree_name="erk",
+        branch_name="P42-fix-auth-01-15-0000",
+        plan_comment_id=None,
+        last_dispatched_run_id="22119449865",
+        last_dispatched_node_id="WFR_kwLOPxC3hc8AAAAFJmwFCQ",
+        last_dispatched_at="2025-01-15T10:00:00",
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at="2025-01-15T12:00:00+00:00",
+        last_remote_impl_run_id="22117566993",
+        last_remote_impl_session_id="42215c6c-6b4c-4482-a711-bf2f09b754d5",
+        source_repo=None,
+        objective_issue=99,
+        created_from_session="original-session-id",
+        created_from_workflow_run_url=None,
+        last_learn_session=None,
+        last_learn_at=None,
+        learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
+    )
+    plan_comment = format_plan_content_comment(PLAN_CONTENT)
+    issue = _make_issue(body=header_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue}, comments={42: [plan_comment]})
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = context_for_test(
+        github_issues=fake_issues,
+        github=fake_github,
+        git=fake_git,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_migrate_to_draft_pr,
+        ["42", "--format", "json"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    pr_number = output["pr_number"]
+
+    # Check the final PR body has the operational metadata
+    final_body = fake_github._pr_details[pr_number].body
+    assert "22119449865" in final_body  # last_dispatched_run_id
+    assert "WFR_kwLOPxC3hc8AAAAFJmwFCQ" in final_body  # last_dispatched_node_id
+    assert "22117566993" in final_body  # last_remote_impl_run_id
+    assert "42215c6c-6b4c-4482-a711-bf2f09b754d5" in final_body  # last_remote_impl_session_id
+    assert "erk" in final_body  # worktree_name
+
+
 def test_migrate_posts_migration_comment(tmp_path: Path) -> None:
     """Migration notice comment is posted to original issue."""
     issue = _make_issue()

@@ -200,6 +200,27 @@ def plan_migrate_to_draft_pr(
     pr_number = int(result.plan_id)
     pr_url = result.url
 
+    # Carry over operational metadata from the source issue's plan-header.
+    # create_plan sets these to None; update_metadata restores historical data.
+    _FIELDS_HANDLED_BY_CREATE = {
+        "schema_version",
+        "created_at",
+        "created_by",
+        "branch_name",
+        "plan_comment_id",
+        "source_repo",
+        "objective_issue",
+        "created_from_session",
+        "created_from_workflow_run_url",
+    }
+    operational_fields: dict[str, object] = {
+        k: v
+        for k, v in plan.header_fields.items()
+        if k not in _FIELDS_HANDLED_BY_CREATE and v is not None
+    }
+    if operational_fields:
+        draft_backend.update_metadata(repo_root, str(pr_number), operational_fields)
+
     # Comment on original issue with migration notice, then close it
     migration_comment = (
         f"Migrated to draft PR #{pr_number}: {pr_url}\n\n"
