@@ -10,10 +10,11 @@ import pytest
 
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.plan_store.draft_pr import (
-    DraftPRPlanBackend,
-    _build_pr_body,
-    _extract_plan_content_from_body,
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import (
+    DETAILS_OPEN,
+    build_plan_stage_body,
+    extract_plan_content,
 )
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 
@@ -276,25 +277,49 @@ def test_list_plans_includes_only_draft_prs_with_erk_plan_label() -> None:
 
 
 # =============================================================================
-# Body parsing helpers
+# Body parsing (via lifecycle module)
 # =============================================================================
 
 
-def test_build_pr_body_combines_metadata_and_content() -> None:
-    """_build_pr_body creates a body with metadata block and plan content."""
-    result = _build_pr_body("metadata block", "plan content")
+def test_build_plan_stage_body_combines_metadata_and_content() -> None:
+    """build_plan_stage_body creates a body with metadata, separator, and details-wrapped plan."""
+    result = build_plan_stage_body("metadata block", "plan content")
     assert "metadata block" in result
     assert "plan content" in result
     assert "\n\n---\n\n" in result
+    assert DETAILS_OPEN in result
 
 
-def test_extract_plan_content_from_body_extracts_after_separator() -> None:
-    """_extract_plan_content_from_body extracts content after the separator."""
+def test_extract_plan_content_extracts_from_details() -> None:
+    """extract_plan_content extracts content from details-wrapped body."""
+    body = build_plan_stage_body("metadata block", "plan content here")
+    assert extract_plan_content(body) == "plan content here"
+
+
+def test_extract_plan_content_backward_compat_flat_format() -> None:
+    """extract_plan_content falls back to flat format for old-style bodies."""
     body = "metadata block\n\n---\n\nplan content here"
-    assert _extract_plan_content_from_body(body) == "plan content here"
+    assert extract_plan_content(body) == "plan content here"
 
 
-def test_extract_plan_content_from_body_returns_full_body_if_no_separator() -> None:
-    """_extract_plan_content_from_body returns full body if no separator found."""
-    body = "just plain text"
-    assert _extract_plan_content_from_body(body) == "just plain text"
+# =============================================================================
+# create_plan footer
+# =============================================================================
+
+
+def test_create_plan_includes_checkout_footer() -> None:
+    """create_plan appends a checkout footer to the PR body."""
+    fake_github = FakeGitHub()
+    backend = DraftPRPlanBackend(fake_github)
+
+    result = backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan content",
+        labels=("erk-plan",),
+        metadata={"branch_name": "test-branch"},
+    )
+
+    pr = fake_github.get_pr(Path("/repo"), int(result.plan_id))
+    assert not isinstance(pr, PRNotFound)
+    assert "erk pr checkout" in pr.body

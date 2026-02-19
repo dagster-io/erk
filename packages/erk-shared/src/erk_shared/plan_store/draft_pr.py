@@ -25,11 +25,18 @@ from erk_shared.gateway.github.metadata.schemas import (
     PlanHeaderSchema,
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import pr_details_to_plan
+from erk_shared.plan_store.draft_pr_lifecycle import (
+    PLAN_CONTENT_SEPARATOR,
+    build_plan_stage_body,
+    extract_metadata_prefix,
+    extract_plan_content,
+)
 from erk_shared.plan_store.types import (
     CreatePlanResult,
     Plan,
@@ -40,38 +47,6 @@ from erk_shared.plan_store.types import (
 )
 
 _PLAN_LABEL = "erk-plan"
-_PLAN_CONTENT_SEPARATOR = "\n\n---\n\n"
-
-
-def _build_pr_body(metadata_body: str, plan_content: str) -> str:
-    """Combine metadata block and plan content into a single PR body.
-
-    Args:
-        metadata_body: Rendered plan-header metadata block
-        plan_content: Plan markdown content
-
-    Returns:
-        Combined PR body with metadata block, separator, and plan content
-    """
-    return metadata_body + _PLAN_CONTENT_SEPARATOR + plan_content
-
-
-def _extract_plan_content_from_body(pr_body: str) -> str:
-    """Extract plan content from a PR body that contains metadata + content.
-
-    The PR body format is: metadata block + separator + plan content.
-    If no separator is found, returns the full body.
-
-    Args:
-        pr_body: Full PR body string
-
-    Returns:
-        Plan content portion of the body
-    """
-    separator_index = pr_body.find(_PLAN_CONTENT_SEPARATOR)
-    if separator_index == -1:
-        return pr_body
-    return pr_body[separator_index + len(_PLAN_CONTENT_SEPARATOR) :]
 
 
 def _parse_objective_id(value: object) -> int | None:
@@ -331,7 +306,7 @@ class DraftPRPlanBackend(PlanBackend):
             learned_from_issue=None,
         )
 
-        pr_body = _build_pr_body(metadata_body, content)
+        pr_body = build_plan_stage_body(metadata_body, content)
 
         trunk_branch_raw = metadata.get("trunk_branch")
         base = trunk_branch_raw if isinstance(trunk_branch_raw, str) else "master"
@@ -344,6 +319,12 @@ class DraftPRPlanBackend(PlanBackend):
             base=base,
             draft=True,
         )
+
+        # Append checkout footer now that we have the PR number.
+        # No issue_number or plans_repo — draft PR IS the plan, so
+        # "Closes #N" would be self-referential.
+        footer = build_pr_body_footer(pr_number, issue_number=None, plans_repo=None)
+        self._github.update_pr_body(repo_root, pr_number, pr_body + footer)
 
         # Add erk-plan label
         self._github.add_label_to_pr(repo_root, pr_number, _PLAN_LABEL)
@@ -486,11 +467,12 @@ class DraftPRPlanBackend(PlanBackend):
             msg = f"PR #{pr_number} not found"
             raise RuntimeError(msg)
 
-        # Find the separator and replace everything after it
-        separator_index = result.body.find(_PLAN_CONTENT_SEPARATOR)
-        if separator_index != -1:
-            metadata_part = result.body[:separator_index]
-            updated_body = _build_pr_body(metadata_part, content)
+        # Preserve metadata prefix and replace plan content
+        metadata_prefix = extract_metadata_prefix(result.body)
+        if metadata_prefix:
+            updated_body = build_plan_stage_body(
+                metadata_prefix[: -len(PLAN_CONTENT_SEPARATOR)], content
+            )
         else:
             # No separator found - just set the content
             updated_body = content
@@ -557,7 +539,7 @@ class DraftPRPlanBackend(PlanBackend):
         Returns:
             Plan with plan content extracted from body
         """
-        plan_body = _extract_plan_content_from_body(pr.body)
+        plan_body = extract_plan_content(pr.body)
         plan = pr_details_to_plan(pr, plan_body=plan_body)
 
         # If labels weren't in PRDetails, check via has_pr_label

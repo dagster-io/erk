@@ -22,7 +22,7 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
-from erk_shared.plan_store.draft_pr import _extract_plan_content_from_body
+from erk_shared.plan_store.draft_pr_lifecycle import extract_plan_content
 
 _PLAN_LABEL = "erk-plan"
 
@@ -91,7 +91,7 @@ class DraftPRPlanListService(PlanListService):
             if isinstance(pr_details, PRNotFound):
                 continue
 
-            plan_body = _extract_plan_content_from_body(pr_details.body)
+            plan_body = extract_plan_content(pr_details.body)
             plans.append(pr_details_to_plan(pr_details, plan_body=plan_body))
 
             if limit is not None and len(plans) >= limit:

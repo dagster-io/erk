@@ -14,6 +14,9 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_state(
@@ -325,3 +328,60 @@ def test_retracks_graphite_after_amend(tmp_path: Path) -> None:
     assert ctx.graphite_branch_ops is not None
     assert len(ctx.graphite_branch_ops.retrack_branch_calls) == 1
     assert ctx.graphite_branch_ops.retrack_branch_calls[0] == (tmp_path, "feature")
+
+
+def test_finalize_pr_draft_pr_backend_extracts_metadata(tmp_path: Path) -> None:
+    """Draft PR backend: metadata prefix extracted, no self-close."""
+    metadata_body = format_plan_header_body_for_test()
+    plan_content = "# My Plan\n\nImplement the thing."
+    pr_body = build_plan_stage_body(metadata_body, plan_content)
+
+    pr = _pr_details(number=42, body=pr_body)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        plan_store=DraftPRPlanBackend(fake_github),
+        cwd=tmp_path,
+    )
+    state = _make_state(cwd=tmp_path, title="Implement feature", body="Summary of work")
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    # Draft PR backend sets issue_number to None (no self-close)
+    assert result.issue_number is None
+    # PR body should contain metadata prefix
+    updated_body = fake_github.updated_pr_bodies[0][1]
+    assert "plan-header" in updated_body
+    assert "Closes #" not in updated_body
+
+
+def test_finalize_pr_non_draft_pr_backend_uses_issue_fallback(tmp_path: Path) -> None:
+    """Non-draft-PR backend: closing reference extracted from existing PR footer."""
+    existing_body = "PR body\n\n---\n\nCloses #77\n\n```\nerk pr checkout 42\n```"
+    pr = _pr_details(number=42, body=existing_body)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    # Default plan_store is GitHubPlanStore (non-draft-PR backend)
+    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
+    state = _make_state(cwd=tmp_path, issue_number=None)
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    # Issue number should be extracted from existing PR body footer
+    assert result.issue_number == 77

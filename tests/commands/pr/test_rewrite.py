@@ -14,9 +14,12 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_pr_details(
@@ -363,3 +366,38 @@ def test_pr_rewrite_preserves_closing_ref_from_existing_footer() -> None:
         assert len(github.updated_pr_bodies) == 1
         updated_body = github.updated_pr_bodies[0][1]
         assert "Closes #123" in updated_body
+
+
+def test_pr_rewrite_draft_pr_backend_preserves_metadata() -> None:
+    """Test that rewrite preserves metadata prefix and omits Closes # for draft PR backend."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        metadata_body = format_plan_header_body_for_test()
+        plan_content = "# My Plan\n\nImplement the thing."
+        pr_body = build_plan_stage_body(metadata_body, plan_content)
+
+        git, graphite, github, executor = _make_rewrite_fakes(
+            env,
+            branch_name="feature",
+            pr_body=pr_body,
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+            plan_store=DraftPRPlanBackend(github),
+        )
+
+        result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
+
+        assert result.exit_code == 0, result.output
+
+        # Verify the PR body preserves metadata prefix
+        assert len(github.updated_pr_bodies) == 1
+        updated_body = github.updated_pr_bodies[0][1]
+        assert "plan-header" in updated_body
+        # No self-closing reference for draft PR backend
+        assert "Closes #" not in updated_body
