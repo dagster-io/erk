@@ -1,6 +1,7 @@
 """Tests for draft PR lifecycle build/parse functions."""
 
 from erk_shared.plan_store.draft_pr_lifecycle import (
+    _LEGACY_DETAILS_OPEN,
     DETAILS_CLOSE,
     DETAILS_OPEN,
     PLAN_CONTENT_SEPARATOR,
@@ -63,6 +64,18 @@ def test_extract_plan_content_from_implementation_stage() -> None:
         + DETAILS_CLOSE
     )
     assert extract_plan_content(body) == plan
+
+
+def test_extract_plan_content_from_legacy_details_format() -> None:
+    """Extracts plan content from old format without <code> tags in summary."""
+    body = (
+        "metadata block"
+        + PLAN_CONTENT_SEPARATOR
+        + _LEGACY_DETAILS_OPEN
+        + "legacy plan content"
+        + DETAILS_CLOSE
+    )
+    assert extract_plan_content(body) == "legacy plan content"
 
 
 def test_extract_plan_content_backward_compat() -> None:

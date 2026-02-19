@@ -36,7 +36,7 @@ Stages
        [metadata block]
        \\n\\n---\\n\\n
        <details>
-       <summary>original-plan</summary>
+       <summary><code>original-plan</code></summary>
 
        [plan content]
 
@@ -56,7 +56,7 @@ Stages
        [AI-generated summary]
 
        <details>
-       <summary>original-plan</summary>
+       <summary><code>original-plan</code></summary>
 
        [plan content]
 
@@ -84,7 +84,8 @@ the last (footer).
 """
 
 PLAN_CONTENT_SEPARATOR = "\n\n---\n\n"
-DETAILS_OPEN = "<details>\n<summary>original-plan</summary>\n\n"
+DETAILS_OPEN = "<details>\n<summary><code>original-plan</code></summary>\n\n"
+_LEGACY_DETAILS_OPEN = "<details>\n<summary>original-plan</summary>\n\n"
 DETAILS_CLOSE = "\n\n</details>"
 
 
@@ -132,12 +133,14 @@ def extract_plan_content(pr_body: str) -> str:
     Returns:
         Plan content portion of the body
     """
-    open_idx = pr_body.find(DETAILS_OPEN)
-    if open_idx != -1:
-        content_start = open_idx + len(DETAILS_OPEN)
-        close_idx = pr_body.find(DETAILS_CLOSE, content_start)
-        if close_idx != -1:
-            return pr_body[content_start:close_idx]
+    # Try new <code>-tagged format first, then legacy plain-text format
+    for details_open in (DETAILS_OPEN, _LEGACY_DETAILS_OPEN):
+        open_idx = pr_body.find(details_open)
+        if open_idx != -1:
+            content_start = open_idx + len(details_open)
+            close_idx = pr_body.find(DETAILS_CLOSE, content_start)
+            if close_idx != -1:
+                return pr_body[content_start:close_idx]
 
     # Backward compat: old flat format (metadata + separator + plan content)
     separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
