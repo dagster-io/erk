@@ -47,13 +47,13 @@ The key insight is within ACTION: some actions (close, submit) are fast in-proce
 
 Commands fall into four availability tiers:
 
-| Tier               | Predicate                | Commands                                                                       | Rationale                                               |
-| ------------------ | ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| Always available   | `lambda _: True`         | close_plan, copy_prepare, copy_prepare_activate, copy_submit                   | Only need `plan_id`, which is always present            |
-| Needs plan URL     | `plan_url is not None`   | submit_to_queue, copy_replan, open_issue                                       | Requires the plan to exist on GitHub (not just locally) |
-| Needs local branch | `worktree_branch is not None` | copy_checkout                                                             | Local worktree branch must exist to generate checkout command |
-| Needs PR           | `pr_number is not None`  | fix_conflicts_remote, address_remote, open_pr, copy_pr_checkout                | PR must be linked to the plan                           |
-| Compound condition | Multiple fields non-null | land_pr (needs PR + OPEN state + run URL)                                      | Landing requires all CI infrastructure to be present    |
+| Tier               | Predicate                     | Commands                                                        | Rationale                                                     |
+| ------------------ | ----------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------- |
+| Always available   | `lambda _: True`              | close_plan, copy_prepare, copy_prepare_activate, copy_submit    | Only need `plan_id`, which is always present                  |
+| Needs plan URL     | `plan_url is not None`        | submit_to_queue, copy_replan, open_issue                        | Requires the plan to exist on GitHub (not just locally)       |
+| Needs local branch | `worktree_branch is not None` | copy_checkout                                                   | Local worktree branch must exist to generate checkout command |
+| Needs PR           | `pr_number is not None`       | fix_conflicts_remote, address_remote, open_pr, copy_pr_checkout | PR must be linked to the plan                                 |
+| Compound condition | Multiple fields non-null      | land_pr (needs PR + OPEN state + run URL)                       | Landing requires all CI infrastructure to be present          |
 
 **Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
 
@@ -63,15 +63,15 @@ Commands fall into four availability tiers:
 
 Seven commands are registered for the Objectives view, spanning all three categories:
 
-| ID                    | Name               | Category | Shortcut | Availability              |
-| --------------------- | ------------------ | -------- | -------- | ------------------------- |
-| `one_shot_plan`       | Plan (One-Shot)    | ACTION   | `s`      | Objectives view           |
-| `check_objective`     | Check Objective    | ACTION   | `5`      | Objectives view           |
-| `close_objective`     | Close Objective    | ACTION   | —        | Objectives view           |
-| `open_objective`      | Objective          | OPEN     | `i`      | Objectives view + has URL |
-| `copy_plan`           | erk objective plan | COPY     | `1`      | Objectives view           |
-| `copy_view`           | erk objective view | COPY     | `3`      | Objectives view           |
-| `codespace_run_plan`  | Codespace Run Plan | COPY     | —        | Objectives view           |
+| ID                   | Name               | Category | Shortcut | Availability              |
+| -------------------- | ------------------ | -------- | -------- | ------------------------- |
+| `one_shot_plan`      | Plan (One-Shot)    | ACTION   | `s`      | Objectives view           |
+| `check_objective`    | Check Objective    | ACTION   | `5`      | Objectives view           |
+| `close_objective`    | Close Objective    | ACTION   | —        | Objectives view           |
+| `open_objective`     | Objective          | OPEN     | `i`      | Objectives view + has URL |
+| `copy_plan`          | erk objective plan | COPY     | `1`      | Objectives view           |
+| `copy_view`          | erk objective view | COPY     | `3`      | Objectives view           |
+| `codespace_run_plan` | Codespace Run Plan | COPY     | —        | Objectives view           |
 
 Objective commands use `_is_objectives_view(ctx)` as their view predicate, ensuring they only appear when the Objectives tab is active. Shortcuts are safely reused from plan commands because the view predicates guarantee mutual exclusivity. See [View-Aware Command Filtering](view-aware-commands.md) for the full filtering mechanism.
 
