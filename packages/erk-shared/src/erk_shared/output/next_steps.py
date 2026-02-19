@@ -1,4 +1,4 @@
-"""Issue next steps formatting - single source of truth."""
+"""Issue and draft PR next steps formatting - single source of truth."""
 
 from dataclasses import dataclass
 
@@ -26,6 +26,25 @@ class IssueNextSteps:
         return f'source "$(erk prepare {self.issue_number} --script)" && erk implement --dangerous'
 
 
+@dataclass(frozen=True)
+class DraftPRNextSteps:
+    """Canonical commands for draft PR operations."""
+
+    pr_number: int
+
+    @property
+    def view(self) -> str:
+        return f"gh pr view {self.pr_number} --web"
+
+    @property
+    def submit(self) -> str:
+        return f"erk plan submit {self.pr_number}"
+
+    @property
+    def checkout_and_implement(self) -> str:
+        return f"erk br co {self.pr_number} && erk implement --dangerous"
+
+
 # Slash commands (static, don't need issue number)
 SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
 PREPARE_SLASH_COMMAND = "/erk:prepare"
@@ -46,6 +65,21 @@ OR exit Claude Code first, then run one of:
   Local: {s.prepare}
   Prepare+Implement: {s.prepare_and_implement}
   Submit to Queue: {s.submit}"""
+
+
+def format_draft_pr_next_steps_plain(pr_number: int) -> str:
+    """Format for CLI output (plain text) for draft PR plans."""
+    s = DraftPRNextSteps(pr_number)
+    return f"""Next steps:
+
+View PR: {s.view}
+
+In Claude Code:
+  Submit to queue: {SUBMIT_SLASH_COMMAND}
+
+Outside Claude Code:
+  Local: {s.checkout_and_implement}
+  Submit to queue: {s.submit}"""
 
 
 def format_next_steps_markdown(issue_number: int) -> str:

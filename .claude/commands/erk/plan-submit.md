@@ -18,8 +18,10 @@ Find the most recent GitHub issue created in this conversation and submit it for
 
 Search the conversation from bottom to top for these patterns (in priority order):
 
-1. **plan-save/save-raw-plan output**: Look for `**Issue:** https://github.com/.../issues/<number>`
-2. **Issue URL**: `https://github.com/<owner>/<repo>/issues/<number>`
+1. **Draft PR reference**: `saved as draft PR #<number>` or `draft PR #<number>`
+2. **Pull request URL**: `https://github.com/<owner>/<repo>/pull/<number>`
+3. **plan-save/save-raw-plan output**: Look for `**Issue:** https://github.com/.../issues/<number>`
+4. **Issue URL**: `https://github.com/<owner>/<repo>/issues/<number>`
 
 Extract the issue number from the most recent match.
 
