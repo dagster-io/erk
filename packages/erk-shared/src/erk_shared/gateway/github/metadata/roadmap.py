@@ -477,6 +477,16 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
     return ([], [_LEGACY_FORMAT_ERROR])
 
 
+def _format_depends_on(depends_on: tuple[str, ...] | None) -> str:
+    """Format depends_on for table display.
+
+    None or empty tuple renders as ``-``, non-empty tuple as comma-separated IDs.
+    """
+    if depends_on is None or len(depends_on) == 0:
+        return "-"
+    return ", ".join(depends_on)
+
+
 def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
     """Render phases as markdown tables matching the objective-body display format.
 
@@ -486,9 +496,15 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
         |------|-------------|--------|------|----|
         | {id} | {desc}      | {status} | {plan} | {pr} |
 
+    When any node across all phases has ``depends_on`` specified, a "Depends On"
+    column is inserted between Description and Status.
+
     Status display: underscores are replaced with hyphens (in_progress → in-progress).
     Null values render as ``-``.
     """
+    any_has_depends_on = any(
+        step.depends_on is not None for phase in phases for step in phase.nodes
+    )
     sections: list[str] = []
 
     for phase in phases:
@@ -496,18 +512,28 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
         header = f"### Phase {phase.number}{phase.suffix}: {phase.name} ({pr_count} PR)"
 
         rows: list[str] = []
-        rows.append("| Node | Description | Status | Plan | PR |")
-        rows.append("|------|-------------|--------|------|----|")
+        if any_has_depends_on:
+            rows.append("| Node | Description | Depends On | Status | Plan | PR |")
+            rows.append("|------|-------------|------------|--------|------|----|")
+        else:
+            rows.append("| Node | Description | Status | Plan | PR |")
+            rows.append("|------|-------------|--------|------|----|")
 
         for step in phase.nodes:
             status_display = step.status.replace("_", "-")
             cells = [
                 step.id,
                 step.description,
-                status_display,
-                step.plan if step.plan is not None else "-",
-                step.pr if step.pr is not None else "-",
             ]
+            if any_has_depends_on:
+                cells.append(_format_depends_on(step.depends_on))
+            cells.extend(
+                [
+                    status_display,
+                    step.plan if step.plan is not None else "-",
+                    step.pr if step.pr is not None else "-",
+                ]
+            )
             rows.append("| " + " | ".join(cells) + " |")
 
         sections.append(header + "\n" + "\n".join(rows))

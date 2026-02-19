@@ -927,3 +927,104 @@ class TestRenderRoadmapTables:
         result = render_roadmap_tables(phases)
 
         assert "| 1.1 | Done | done | #100 | #200 |" in result
+
+    def test_depends_on_column_when_present(self) -> None:
+        """6-column table rendered when any node has depends_on."""
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Foundation",
+                nodes=[
+                    RoadmapNode(
+                        id="1.1",
+                        description="Base",
+                        status="done",
+                        plan=None,
+                        pr="#10",
+                        depends_on=None,
+                    ),
+                    RoadmapNode(
+                        id="1.2",
+                        description="Wire",
+                        status="pending",
+                        plan=None,
+                        pr=None,
+                        depends_on=("1.1",),
+                    ),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+
+        assert "| Node | Description | Depends On | Status | Plan | PR |" in result
+        assert "| 1.1 | Base | - | done | - | #10 |" in result
+        assert "| 1.2 | Wire | 1.1 | pending | - | - |" in result
+
+    def test_no_depends_on_column_when_all_none(self) -> None:
+        """5-column table unchanged when no node has depends_on."""
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Test",
+                nodes=[
+                    RoadmapNode(
+                        id="1.1",
+                        description="Step",
+                        status="pending",
+                        plan=None,
+                        pr=None,
+                        depends_on=None,
+                    ),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+
+        assert "| Node | Description | Status | Plan | PR |" in result
+        assert "Depends On" not in result
+
+    def test_depends_on_formatting(self) -> None:
+        """Verify depends_on display formatting for various values."""
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Test",
+                nodes=[
+                    RoadmapNode(
+                        id="1.1",
+                        description="No deps",
+                        status="pending",
+                        plan=None,
+                        pr=None,
+                        depends_on=(),
+                    ),
+                    RoadmapNode(
+                        id="1.2",
+                        description="One dep",
+                        status="pending",
+                        plan=None,
+                        pr=None,
+                        depends_on=("1.1",),
+                    ),
+                    RoadmapNode(
+                        id="1.3",
+                        description="Two deps",
+                        status="pending",
+                        plan=None,
+                        pr=None,
+                        depends_on=("1.1", "1.2"),
+                    ),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+
+        # () renders as "-"
+        assert "| 1.1 | No deps | - | pending | - | - |" in result
+        # ("1.1",) renders as "1.1"
+        assert "| 1.2 | One dep | 1.1 | pending | - | - |" in result
+        # ("1.1", "1.2") renders as "1.1, 1.2"
+        assert "| 1.3 | Two deps | 1.1, 1.2 | pending | - | - |" in result

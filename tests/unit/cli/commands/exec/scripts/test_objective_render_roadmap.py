@@ -306,3 +306,130 @@ def test_cli_invalid_structure() -> None:
     output = json.loads(result.output)
     assert output["success"] is False
     assert "must be a list" in output["error"]
+
+
+# --- depends_on validation tests ---
+
+
+def test_validate_input_step_with_depends_on() -> None:
+    """Validate accepts step with valid depends_on list."""
+    data = {
+        "phases": [
+            {
+                "name": "Phase",
+                "steps": [
+                    {"id": "1.1", "description": "Step", "depends_on": ["1.0"]},
+                ],
+            },
+        ],
+    }
+    phases, error = _validate_input(data)
+    assert error is None
+    assert len(phases) == 1
+
+
+def test_validate_input_step_depends_on_not_list() -> None:
+    """Validate rejects non-list depends_on."""
+    data = {
+        "phases": [
+            {
+                "name": "Phase",
+                "steps": [
+                    {"id": "1.1", "description": "Step", "depends_on": "1.0"},
+                ],
+            },
+        ],
+    }
+    _, error = _validate_input(data)
+    assert error is not None
+    assert "depends_on" in error
+    assert "must be a list" in error
+
+
+def test_validate_input_step_depends_on_non_string_items() -> None:
+    """Validate rejects non-string items in depends_on."""
+    data = {
+        "phases": [
+            {
+                "name": "Phase",
+                "steps": [
+                    {"id": "1.1", "description": "Step", "depends_on": [123]},
+                ],
+            },
+        ],
+    }
+    _, error = _validate_input(data)
+    assert error is not None
+    assert "depends_on" in error
+    assert "must be a string" in error
+
+
+# --- depends_on render tests ---
+
+
+def test_render_roadmap_with_depends_on() -> None:
+    """Render produces 6-column table when depends_on is present."""
+    phases: list[dict[str, object]] = [
+        {
+            "name": "Foundation",
+            "steps": [
+                {"id": "1.1", "description": "Base setup"},
+                {"id": "1.2", "description": "Wire up", "depends_on": ["1.1"]},
+            ],
+        },
+    ]
+
+    result = _render_roadmap(phases)
+
+    assert "| Node | Description | Depends On | Status | Plan | PR |" in result
+    assert "| 1.1 | Base setup | - | pending | - | - |" in result
+    assert "| 1.2 | Wire up | 1.1 | pending | - | - |" in result
+
+
+def test_render_roadmap_without_depends_on_unchanged() -> None:
+    """Render produces 5-column table when no depends_on is present."""
+    phases: list[dict[str, object]] = [
+        {
+            "name": "Phase",
+            "steps": [
+                {"id": "1.1", "description": "Do thing"},
+            ],
+        },
+    ]
+
+    result = _render_roadmap(phases)
+
+    assert "| Node | Description | Status | Plan | PR |" in result
+    assert "Depends On" not in result
+    assert "| 1.1 | Do thing | pending | - | - |" in result
+
+
+def test_render_roadmap_depends_on_metadata_roundtrip() -> None:
+    """Metadata block with depends_on parses correctly."""
+    phases: list[dict[str, object]] = [
+        {
+            "name": "Foundation",
+            "steps": [
+                {"id": "1.1", "description": "Base"},
+                {"id": "1.2", "description": "Wire", "depends_on": ["1.1"]},
+                {"id": "1.3", "description": "Polish", "depends_on": ["1.1", "1.2"]},
+            ],
+        },
+    ]
+
+    result = _render_roadmap(phases)
+
+    # Extract and parse the metadata block
+    start_marker = "<!-- erk:metadata-block:objective-roadmap -->"
+    end_marker = "<!-- /erk:metadata-block:objective-roadmap -->"
+    start_idx = result.index(start_marker) + len(start_marker) + 1
+    end_idx = result.index(end_marker)
+    block_content = result[start_idx:end_idx].strip()
+
+    steps = parse_roadmap_frontmatter(block_content)
+    assert steps is not None
+    assert len(steps) == 3
+    # Node without depends_on in input is serialized as [] when any node has depends_on
+    assert steps[0].depends_on == ()
+    assert steps[1].depends_on == ("1.1",)
+    assert steps[2].depends_on == ("1.1", "1.2")
