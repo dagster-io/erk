@@ -8,9 +8,11 @@
 - **[architecture.md](architecture.md)** — understanding TUI structure, implementing TUI components, working with TUI data providers
 - **[async-state-snapshot.md](async-state-snapshot.md)** — adding async data fetching to the TUI, reading self.\_view_mode during async operations, debugging stale data appearing in the wrong tab
 - **[column-addition-pattern.md](column-addition-pattern.md)** — adding a column to the plan table, adding a field to PlanRowData, modifying plan_table.py column layout
+- **[command-availability-documentation.md](command-availability-documentation.md)** — documenting TUI command availability, updating action-inventory.md, adding new commands to command registry
 - **[command-execution.md](command-execution.md)** — executing commands in TUI, choosing between sync and streaming execution, implementing command runners
 - **[command-palette.md](command-palette.md)** — implementing command palette in Textual TUI, hiding system commands from command palette, get_system_commands method, removing Keys Quit Screenshot Theme from palette, adding emoji prefixes to command palette entries, using CommandCategory for command categorization
 - **[data-contract.md](data-contract.md)** — building an alternate frontend consuming plan data, adding fields to PlanRowData or PlanDataProvider, understanding the display-vs-raw field duality, serializing plan data to JSON for external consumers
+- **[display-string-terminology.md](display-string-terminology.md)** — adding new TUI status messages or display strings, writing user-facing text in TUI widgets, creating command display name generators
 - **[dual-handler-pattern.md](dual-handler-pattern.md)** — implementing a TUI command that works from both list and detail views, understanding how MainListCommandProvider and PlanCommandProvider share commands, adding command palette support to a new screen
 - **[modal-screen-pattern.md](modal-screen-pattern.md)** — adding a new modal screen to the TUI, implementing a ModalScreen subclass, displaying detail views or confirmation dialogs
 - **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable

@@ -26,6 +26,8 @@ Rules triggered by matching actions in code.
 
 **adding a new field to agent-produced JSON without updating normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Add the field to CANONICAL_FIELDS and any aliases to FIELD_ALIASES in the normalization script. Without this, the field may be stripped during normalization.
 
+**adding a new method to CommandExecutor ABC** → Read [CommandExecutor Gateway](command-executor-gateway.md) first. Must implement in all places: abc.py, fake.py, real.py. Accept plan_id and plan_url parameters (not issue_number/issue_url). The underlying implementation may translate to GitHub API calls using issue numbers, but the interface remains backend-agnostic.
+
 **adding a new method to Git ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
 **adding a new method to GitHub ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
@@ -161,6 +163,8 @@ Rules triggered by matching actions in code.
 **importing time module or calling time.sleep() or datetime.now()** [pattern: `\bimport time\b|time\.sleep\(|datetime\.now\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic.
 
 **injecting Time dependency into gateway real.py for lock-waiting or retry logic** → Read [Erk Architecture Patterns](erk-architecture.md) first. Accept optional Time in **init** with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern.
+
+**listing exact method counts in ABC documentation** → Read [ABC Interface Documentation Patterns](abc-documentation-patterns.md) first. Avoid 'N abstract methods' in docs — counts drift as interfaces evolve. Use source pointers instead: 'See PlanDataProvider abstract methods in abc.py'.
 
 **migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
 

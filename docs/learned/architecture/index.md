@@ -4,6 +4,7 @@
 # Architecture Documentation
 
 - **[abc-convenience-methods.md](abc-convenience-methods.md)** — adding non-abstract methods to gateway ABCs, composing primitive gateway operations into higher-level methods, handling exception type differences between real and fake implementations
+- **[abc-documentation-patterns.md](abc-documentation-patterns.md)** — documenting ABC interfaces, writing gateway documentation, avoiding method count drift
 - **[agent-schema-enforcement.md](agent-schema-enforcement.md)** — processing JSON output from AI agents, normalizing agent-produced data before validation, designing schemas for agent-to-tool communication, debugging tripwire candidate JSON drift
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
 - **[bash-python-integration.md](bash-python-integration.md)** — generating bash commands with heredocs in Claude Code commands or skills, debugging escaping issues where bash mangles content passed to git, gh, or Python, writing Claude Code commands that produce multi-line text via bash
@@ -21,6 +22,7 @@
 - **[cli-to-pipeline-boundary.md](cli-to-pipeline-boundary.md)** — refactoring complex CLI commands, separating business logic from Click layer, deciding when to extract pipeline from CLI command
 - **[click-context-di-pattern.md](click-context-di-pattern.md)** — adding dependency injection to a Click command, using @click.pass*context with require*\*() helpers, testing Click commands with ErkContext
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
+- **[command-executor-gateway.md](command-executor-gateway.md)** — working with CommandExecutor gateway, implementing command execution in TUI, adding plan-related commands
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
 - **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
 - **[context-efficiency.md](context-efficiency.md)** — orchestrating multi-agent workflows, parent agent reading large agent output via TaskOutput, designing agent output routing to minimize context usage

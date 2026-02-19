@@ -10,6 +10,7 @@
 - **[large-diff-recovery.md](large-diff-recovery.md)** — debugging PR submission failures with large diffs, modifying diff extraction for PR descriptions, understanding why local git diff is used instead of GitHub API
 - **[plan-embedding-in-pr.md](plan-embedding-in-pr.md)** — embedding plan content in a PR body, debugging missing or malformed plan sections in pull requests, modifying how plan context flows through PR submission
 - **[pr-creation-patterns.md](pr-creation-patterns.md)** — creating a PR programmatically in any workflow, deciding whether to create vs update an existing PR, implementing a new exec script or pipeline step that touches PRs
+- **[pr-edit-fallback.md](pr-edit-fallback.md)** — creating PRs from multi-session implementations, handling gh pr create failures, working with existing PRs
 - **[pr-submission-workflow.md](pr-submission-workflow.md)** — understanding why two separate git-only PR paths exist, working on the git-pr-push command or the core submit flow, debugging PR creation in environments without Graphite, deciding whether to use the command-level or pipeline-level git path
 - **[pr-submit-phases.md](pr-submit-phases.md)** — understanding the erk pr submit workflow, debugging PR submission issues, working with AI-generated PR descriptions, understanding plan context integration in PRs
 - **[pr-validation-rules.md](pr-validation-rules.md)** — debugging 'erk pr check' failures, building or modifying PR submission pipelines, generating PR bodies with checkout footers or closing references
