@@ -9,11 +9,13 @@ from erk_shared.gateway.github.metadata.schemas import (
     OBJECTIVE_ISSUE,
     WORKTREE_NAME,
 )
+from erk_shared.gateway.github.types import PRDetails
 from erk_shared.plan_store.conversion import (
     header_datetime,
     header_int,
     header_str,
     issue_info_to_plan,
+    pr_details_to_plan,
 )
 from erk_shared.plan_store.types import PlanState
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -182,3 +184,74 @@ class TestHeaderDatetime:
         """Non-datetime, non-string values return None."""
         fields: dict[str, object] = {LAST_LOCAL_IMPL_AT: 12345}
         assert header_datetime(fields, LAST_LOCAL_IMPL_AT) is None
+
+
+def _make_pr_details(
+    *,
+    number: int = 42,
+    title: str = "Test plan",
+    body: str = "",
+    state: str = "OPEN",
+    created_at: datetime | None = None,
+    updated_at: datetime | None = None,
+    author: str = "test-user",
+) -> PRDetails:
+    """Create a PRDetails for testing."""
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/test/repo/pull/{number}",
+        title=title,
+        body=body,
+        state=state,
+        is_draft=True,
+        base_ref_name="master",
+        head_ref_name="plan-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test",
+        repo="repo",
+        labels=("erk-plan",),
+        created_at=created_at or datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+        updated_at=updated_at or datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
+        author=author,
+    )
+
+
+class TestPrDetailsToPlan:
+    """Tests for pr_details_to_plan conversion."""
+
+    def test_pr_timestamps_mapped_to_plan(self) -> None:
+        """Real PR timestamps are preserved, not replaced with epoch sentinel."""
+        created = datetime(2025, 6, 10, 9, 0, tzinfo=UTC)
+        updated = datetime(2025, 6, 11, 14, 30, tzinfo=UTC)
+        pr = _make_pr_details(created_at=created, updated_at=updated)
+
+        plan = pr_details_to_plan(pr, plan_body=None)
+
+        assert plan.created_at == created
+        assert plan.updated_at == updated
+
+    def test_pr_author_mapped_to_metadata(self) -> None:
+        """Author from PRDetails is stored in plan metadata."""
+        pr = _make_pr_details(author="schrockn")
+
+        plan = pr_details_to_plan(pr, plan_body=None)
+
+        assert plan.metadata["author"] == "schrockn"
+
+    def test_plan_body_overrides_pr_body_when_provided(self) -> None:
+        """Extracted plan_body is used as the plan body, not the raw PR body."""
+        pr = _make_pr_details(body="<!-- metadata -->\n\n---\n\n# Plan content")
+
+        plan = pr_details_to_plan(pr, plan_body="# Plan content")
+
+        assert plan.body == "# Plan content"
+
+    def test_pr_body_used_when_plan_body_is_none(self) -> None:
+        """PR body is used directly when plan_body is None."""
+        pr = _make_pr_details(body="raw pr body")
+
+        plan = pr_details_to_plan(pr, plan_body=None)
+
+        assert plan.body == "raw pr body"
