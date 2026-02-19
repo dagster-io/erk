@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-import subprocess
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import datetime
 from pathlib import Path
 
-import click
 from textual import on, work
 from textual.app import App, ComposeResult, SystemCommand
 from textual.binding import Binding
@@ -38,14 +36,6 @@ from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
 from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
-
-
-def _last_meaningful_line(lines: list[str]) -> str | None:
-    """Return last non-empty line from output list, or None."""
-    for line in reversed(lines):
-        if line.strip():
-            return line.strip()
-    return None
 
 
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
@@ -495,148 +485,33 @@ class ErkDashApp(App):
                 timeout=5,
             )
 
-    def _set_land_status(self, pr_num: int, message: str) -> None:
-        """Update status bar with a landing progress message.
-
-        Args:
-            pr_num: PR number for context
-            message: Progress message to display
-        """
-        if self._status_bar is not None:
-            self._status_bar.set_message(f"Landing #{pr_num}: {message}")
-
     @work(thread=True)
-    def _land_pr_async(
+    def _update_objective_async(
         self,
         *,
+        objective_issue: int,
         pr_num: int,
         branch: str,
-        repo_root: Path,
-        objective_issue: int | None,
     ) -> None:
-        """Land PR in background thread with toast notifications.
+        """Update objective after landing a PR in background thread.
 
         Args:
-            pr_num: The PR number to land
+            objective_issue: The objective issue number to update
+            pr_num: The PR number that was landed
             branch: The PR head branch name
-            repo_root: Path to repository root for running commands
-            objective_issue: Optional objective issue number to update after landing
         """
+        self.call_from_thread(self.notify, f"Updating objective #{objective_issue}...")
         try:
-            self.call_from_thread(self._set_land_status, pr_num, "starting...")
-            output_lines: list[str] = []
-            process = subprocess.Popen(
-                [
-                    "erk",
-                    "exec",
-                    "land-execute",
-                    f"--pr-number={pr_num}",
-                    f"--branch={branch}",
-                    "-f",
-                ],
-                cwd=repo_root,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                stdin=subprocess.DEVNULL,
-                text=True,
-                bufsize=1,
+            self._provider.update_objective_after_land(
+                objective_issue=objective_issue,
+                pr_num=pr_num,
+                branch=branch,
             )
-            if process.stdout is not None:
-                for line in process.stdout:
-                    stripped = click.unstyle(line.rstrip())
-                    if stripped:
-                        output_lines.append(stripped)
-                        self.call_from_thread(self._set_land_status, pr_num, stripped)
-            return_code = process.wait()
-
-            if return_code == 0:
-                # Clear status bar and show success toast
-                if self._status_bar is not None:
-                    self.call_from_thread(self._status_bar.set_message, None)
-                self.call_from_thread(self.notify, f"PR #{pr_num} landed", timeout=5)
-                # Update objective if linked
-                if objective_issue is not None:
-                    self.call_from_thread(self.notify, f"Updating objective #{objective_issue}...")
-                    if (
-                        subprocess.run(
-                            [
-                                "erk",
-                                "exec",
-                                "objective-update-after-land",
-                                f"--objective={objective_issue}",
-                                f"--pr={pr_num}",
-                                f"--branch={branch}",
-                            ],
-                            cwd=repo_root,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            stdin=subprocess.DEVNULL,
-                            text=True,
-                            check=False,
-                        ).returncode
-                        == 0
-                    ):
-                        self.call_from_thread(
-                            self.notify, f"Objective #{objective_issue} updated", timeout=5
-                        )
-                    else:
-                        self.call_from_thread(
-                            self.notify,
-                            "Objective update failed",
-                            severity="error",
-                            timeout=8,
-                        )
-                self.call_from_thread(self.action_refresh)
-            else:
-                last_line = _last_meaningful_line(output_lines)
-                error_msg = f"Landing PR #{pr_num} failed"
-                if last_line is not None:
-                    error_msg = f"{error_msg}: {last_line}"
-                self.call_from_thread(
-                    self.notify,
-                    error_msg,
-                    severity="error",
-                    timeout=8,
-                )
-        except OSError as e:
+            self.call_from_thread(self.notify, f"Objective #{objective_issue} updated", timeout=5)
+        except Exception:
             self.call_from_thread(
                 self.notify,
-                f"Landing PR #{pr_num} failed: {e}",
-                severity="error",
-                timeout=8,
-            )
-
-    @work(thread=True)
-    def _submit_to_queue_async(self, plan_id: int, repo_root: Path) -> None:
-        """Submit plan to queue in background thread with toast notifications.
-
-        Args:
-            plan_id: The plan identifier
-            repo_root: Path to repository root for running commands
-        """
-        try:
-            subprocess.run(
-                ["erk", "plan", "submit", str(plan_id), "-f"],
-                cwd=repo_root,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                stdin=subprocess.DEVNULL,
-                text=True,
-                check=True,
-            )
-            self.call_from_thread(self.notify, f"Plan #{plan_id} submitted", timeout=5)
-            self.call_from_thread(self.action_refresh)
-        except subprocess.CalledProcessError:
-            self.call_from_thread(
-                self.notify,
-                f"Submitting plan #{plan_id} failed",
-                severity="error",
-                timeout=8,
-            )
-        except OSError as e:
-            self.call_from_thread(
-                self.notify,
-                f"Submitting plan #{plan_id} failed: {e}",
+                "Objective update failed",
                 severity="error",
                 timeout=8,
             )
@@ -648,6 +523,7 @@ class ErkDashApp(App):
         command: list[str],
         title: str,
         timeout: float,
+        on_success: Callable[[], None] | None,
     ) -> None:
         """Push a detail screen and run a streaming command after refresh."""
         executor = RealCommandExecutor(
@@ -657,6 +533,11 @@ class ErkDashApp(App):
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             submit_to_queue_fn=self._provider.submit_to_queue,
+            update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+                objective_issue=oi,
+                pr_num=pn,
+                branch=br,
+            ),
         )
         detail_screen = PlanDetailScreen(
             row=row,
@@ -672,6 +553,7 @@ class ErkDashApp(App):
                 cwd=self._provider.repo_root,
                 title=title,
                 timeout=timeout,
+                on_success=on_success,
             )
         )
 
@@ -689,6 +571,11 @@ class ErkDashApp(App):
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             submit_to_queue_fn=self._provider.submit_to_queue,
+            update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+                objective_issue=oi,
+                pr_num=pn,
+                branch=br,
+            ),
         )
 
         self.push_screen(
@@ -957,6 +844,11 @@ class ErkDashApp(App):
                     notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
+                    update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+                        objective_issue=oi,
+                        pr_num=pn,
+                        branch=br,
+                    ),
                 )
                 detail_screen = PlanDetailScreen(
                     row=row,
@@ -989,6 +881,11 @@ class ErkDashApp(App):
                     notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
+                    update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+                        objective_issue=oi,
+                        pr_num=pn,
+                        branch=br,
+                    ),
                 )
                 detail_screen = PlanDetailScreen(
                     row=row,
@@ -1014,17 +911,42 @@ class ErkDashApp(App):
 
         elif command_id == "submit_to_queue":
             if row.plan_url:
-                self.notify(f"Submitting plan #{row.plan_id}...")
-                self._submit_to_queue_async(row.plan_id, self._provider.repo_root)
+                self._push_streaming_detail(
+                    row=row,
+                    command=["erk", "plan", "submit", str(row.plan_id), "-f"],
+                    title=f"Submit Plan #{row.plan_id}",
+                    timeout=30.0,
+                    on_success=self.action_refresh,
+                )
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
-                self.notify(f"Landing PR #{row.pr_number}...")
-                self._land_pr_async(
-                    pr_num=row.pr_number,
-                    branch=row.pr_head_branch,
-                    repo_root=self._provider.repo_root,
-                    objective_issue=row.objective_issue,
+                pr_num = row.pr_number
+                branch = row.pr_head_branch
+                objective_issue = row.objective_issue
+
+                def _on_land_success() -> None:
+                    self.action_refresh()
+                    if objective_issue is not None:
+                        self._update_objective_async(
+                            objective_issue=objective_issue,
+                            pr_num=pr_num,
+                            branch=branch,
+                        )
+
+                self._push_streaming_detail(
+                    row=row,
+                    command=[
+                        "erk",
+                        "exec",
+                        "land-execute",
+                        f"--pr-number={pr_num}",
+                        f"--branch={branch}",
+                        "-f",
+                    ],
+                    title=f"Land PR #{pr_num}",
+                    timeout=600.0,
+                    on_success=_on_land_success,
                 )
 
         elif command_id == "copy_replan":
@@ -1060,6 +982,7 @@ class ErkDashApp(App):
                 ],
                 title=f"Implement (One-Shot) #{row.plan_id}",
                 timeout=600.0,
+                on_success=None,
             )
 
         elif command_id == "check_objective":
@@ -1068,6 +991,7 @@ class ErkDashApp(App):
                 command=["erk", "objective", "check", str(row.plan_id)],
                 title=f"Check Objective #{row.plan_id}",
                 timeout=30.0,
+                on_success=None,
             )
 
         elif command_id == "close_objective":
@@ -1076,6 +1000,7 @@ class ErkDashApp(App):
                 command=["erk", "objective", "close", str(row.plan_id), "--force"],
                 title=f"Close Objective #{row.plan_id}",
                 timeout=30.0,
+                on_success=None,
             )
 
         elif command_id == "codespace_run_plan":

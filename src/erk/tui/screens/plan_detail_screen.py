@@ -675,27 +675,44 @@ class PlanDetailScreen(ModalScreen):
 
         elif command_id == "submit_to_queue":
             if row.plan_url and self._repo_root is not None:
-                plan_id = row.plan_id
-                repo_root = self._repo_root
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Submitting plan #{plan_id}...")
-                    self.app._submit_to_queue_async(plan_id, repo_root)
+                self.run_streaming_command(
+                    ["erk", "plan", "submit", str(row.plan_id), "-f"],
+                    cwd=self._repo_root,
+                    title=f"Submit Plan #{row.plan_id}",
+                    timeout=30.0,
+                    on_success=self._executor.refresh_data if self._executor else None,
+                )
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch and self._repo_root is not None:
                 pr_num = row.pr_number
                 branch = row.pr_head_branch
-                repo_root = self._repo_root
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Landing PR #{pr_num}...")
-                    self.app._land_pr_async(
-                        pr_num=pr_num,
-                        branch=branch,
-                        repo_root=repo_root,
-                        objective_issue=row.objective_issue,
-                    )
+                objective_issue = row.objective_issue
+
+                def _on_land_success() -> None:
+                    if self._executor is not None:
+                        self._executor.refresh_data()
+                    if objective_issue is not None and self._executor is not None:
+                        self._executor.update_objective_after_land(
+                            objective_issue=objective_issue,
+                            pr_num=pr_num,
+                            branch=branch,
+                        )
+
+                self.run_streaming_command(
+                    [
+                        "erk",
+                        "exec",
+                        "land-execute",
+                        f"--pr-number={pr_num}",
+                        f"--branch={branch}",
+                        "-f",
+                    ],
+                    cwd=self._repo_root,
+                    title=f"Land PR #{pr_num}",
+                    timeout=600.0,
+                    on_success=_on_land_success,
+                )
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""

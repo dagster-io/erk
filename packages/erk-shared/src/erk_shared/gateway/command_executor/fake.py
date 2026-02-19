@@ -18,6 +18,7 @@ class FakeCommandExecutor(CommandExecutor):
         self._refresh_count: int = 0
         self._close_plan_return: list[int] = []
         self._submitted_to_queue: list[tuple[int, str]] = []
+        self._updated_objectives: list[tuple[int, int, str]] = []
 
     @property
     def opened_urls(self) -> list[str]:
@@ -77,6 +78,21 @@ class FakeCommandExecutor(CommandExecutor):
     def refresh_data(self) -> None:
         """Track refresh."""
         self._refresh_count += 1
+
+    @property
+    def updated_objectives(self) -> list[tuple[int, int, str]]:
+        """Objectives that were updated (objective_issue, pr_num, branch)."""
+        return list(self._updated_objectives)
+
+    def update_objective_after_land(
+        self,
+        *,
+        objective_issue: int,
+        pr_num: int,
+        branch: str,
+    ) -> None:
+        """Track objective update."""
+        self._updated_objectives.append((objective_issue, pr_num, branch))
 
     def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Track queue submission."""
