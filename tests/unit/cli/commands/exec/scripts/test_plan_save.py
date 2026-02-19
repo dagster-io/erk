@@ -210,6 +210,18 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
     assert "O123" in output["branch_name"]
 
 
+def test_draft_pr_does_not_switch_branches(tmp_path: Path) -> None:
+    """plan-save must NOT checkout the plan branch — stay on original branch."""
+    fake_git = FakeGit(current_branches={tmp_path: "feature-branch"})
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert fake_git.checked_out_branches == []
+
+
 def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None:
     """trunk_branch detected by detect_trunk_branch flows through metadata to PR base."""
     fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
