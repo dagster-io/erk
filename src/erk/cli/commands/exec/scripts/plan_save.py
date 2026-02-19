@@ -111,6 +111,8 @@ def _save_as_draft_pr(
     plan_type: str | None,
     output_format: str,
     plan_file: Path | None,
+    learned_from_issue: int | None,
+    created_from_workflow_run_url: str | None,
 ) -> None:
     """Save plan as a draft PR.
 
@@ -124,6 +126,8 @@ def _save_as_draft_pr(
         plan_type: Plan type (standard or learn)
         output_format: Output format (json or display)
         plan_file: Original plan file path (for snapshot)
+        learned_from_issue: Parent plan issue number (for learn plans)
+        created_from_workflow_run_url: GitHub Actions workflow run URL
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -196,6 +200,12 @@ def _save_as_draft_pr(
     if session_id is not None:
         metadata["created_from_session"] = session_id
 
+    if learned_from_issue is not None:
+        metadata["learned_from_issue"] = learned_from_issue
+
+    if created_from_workflow_run_url is not None:
+        metadata["created_from_workflow_run_url"] = created_from_workflow_run_url
+
     # Build labels
     labels = ["erk-plan"]
     if plan_type == "learn":
@@ -266,6 +276,8 @@ def _save_plan_via_draft_pr(
     session_id: str | None,
     objective_issue: int | None,
     plan_type: str | None,
+    learned_from_issue: int | None,
+    created_from_workflow_run_url: str | None,
 ) -> None:
     """Handle draft-PR backend: dedup check, plan extraction, validation, and save.
 
@@ -276,6 +288,8 @@ def _save_plan_via_draft_pr(
         session_id: Session ID for dedup and markers
         objective_issue: Optional objective issue number
         plan_type: Plan type (standard or learn)
+        learned_from_issue: Parent plan issue number (for learn plans)
+        created_from_workflow_run_url: GitHub Actions workflow run URL
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -346,6 +360,8 @@ def _save_plan_via_draft_pr(
         plan_type=plan_type,
         output_format=output_format,
         plan_file=plan_file,
+        learned_from_issue=learned_from_issue,
+        created_from_workflow_run_url=created_from_workflow_run_url,
     )
 
 
@@ -430,4 +446,6 @@ def plan_save(
         session_id=session_id,
         objective_issue=objective_issue,
         plan_type=plan_type,
+        learned_from_issue=learned_from_issue,
+        created_from_workflow_run_url=created_from_workflow_run_url,
     )
