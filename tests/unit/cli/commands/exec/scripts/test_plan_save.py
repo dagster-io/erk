@@ -194,7 +194,7 @@ def test_draft_pr_plan_file_priority(tmp_path: Path) -> None:
 
 
 def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
-    """--objective-issue 123 includes in branch name and metadata."""
+    """--objective-issue 123 includes in branch name, metadata, and ref.json."""
     ctx = _draft_pr_context(tmp_path=tmp_path)
     runner = CliRunner()
 
@@ -209,6 +209,11 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
     assert output["success"] is True
     # Branch name should include objective ID
     assert "O123" in output["branch_name"]
+    # ref.json should include objective_id
+    ref_file = tmp_path / ".erk" / "branch-data" / "ref.json"
+    assert ref_file.exists()
+    ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
+    assert ref_data["objective_id"] == 123
 
 
 def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
@@ -227,7 +232,7 @@ def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
 
 
 def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
-    """plan-save commits .erk/plan/PLAN.md to the plan branch."""
+    """plan-save commits .erk/branch-data/plan.md to the plan branch."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
     ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
@@ -235,15 +240,21 @@ def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    # Verify commit was created with .erk/plan/PLAN.md
+    # Verify commit was created with .erk/branch-data/ files
     assert len(fake_git.commits) == 1
     commit = fake_git.commits[0]
-    assert ".erk/plan/PLAN.md" in commit.staged_files
+    assert ".erk/branch-data/plan.md" in commit.staged_files
+    assert ".erk/branch-data/ref.json" in commit.staged_files
     assert "Feature Plan" in commit.message
-    # Verify file was written
-    plan_file = tmp_path / ".erk" / "plan" / "PLAN.md"
+    # Verify plan file was written
+    plan_file = tmp_path / ".erk" / "branch-data" / "plan.md"
     assert plan_file.exists()
     assert "Feature Plan" in plan_file.read_text(encoding="utf-8")
+    # Verify ref.json was written
+    ref_file = tmp_path / ".erk" / "branch-data" / "ref.json"
+    assert ref_file.exists()
+    ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
+    assert ref_data["provider"] == "github-draft-pr"
 
 
 def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None:
