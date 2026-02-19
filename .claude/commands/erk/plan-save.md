@@ -142,12 +142,11 @@ Next steps:
 View PR: gh pr view <issue_number> --web
 
 In Claude Code:
-  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Submit to queue: /erk:plan-submit — Submit for remote agent implementation
 
-OR exit Claude Code first, then run one of:
-  Local: erk prepare <issue_number>
-  Prepare+Implement: source "$(erk prepare <issue_number> --script)" && erk implement --dangerous
-  Submit to Queue: erk plan submit <issue_number>
+Outside Claude Code:
+  Local: erk br co <issue_number> && erk implement --dangerous
+  Submit to queue: erk plan submit <issue_number>
 ```
 
 **If `plan_backend` is `"github"` (or absent):**
