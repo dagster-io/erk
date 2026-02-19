@@ -25,6 +25,7 @@ from erk_shared.issue_workflow import (
     prepare_plan_for_worktree,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -129,7 +130,9 @@ def branch_create(
             raise click.ClickException(f"Issue #{issue_number} not found")
         plan = result
 
-        result = prepare_plan_for_worktree(plan, ctx.time.now())
+        result = prepare_plan_for_worktree(
+            plan, ctx.time.now(), plan_backend=get_plan_backend(), warn_non_open=True
+        )
         if isinstance(result, IssueValidationFailed):
             user_output(f"Error: {result.message}")
             raise SystemExit(1) from None

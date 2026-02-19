@@ -40,7 +40,7 @@ def _make_plan(
     )
 
 
-# Tests for prepare_plan_for_worktree
+# Tests for prepare_plan_for_worktree — github (issue) backend
 
 
 def test_prepare_plan_valid_returns_setup() -> None:
@@ -48,7 +48,7 @@ def test_prepare_plan_valid_returns_setup() -> None:
     plan = _make_plan(labels=["erk-plan", "enhancement"])
     timestamp = datetime(2024, 1, 15, 14, 30)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueBranchSetup)
     assert result.warnings == ()
@@ -59,7 +59,7 @@ def test_prepare_plan_missing_label_returns_failure() -> None:
     plan = _make_plan(labels=["bug", "enhancement"])
     timestamp = datetime(2024, 1, 15, 14, 30)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueValidationFailed)
     assert "must have 'erk-plan' label" in result.message
@@ -70,7 +70,7 @@ def test_prepare_plan_non_open_generates_warning() -> None:
     plan = _make_plan(state=PlanState.CLOSED, labels=["erk-plan"])
     timestamp = datetime(2024, 1, 15, 14, 30)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueBranchSetup)
     assert len(result.warnings) == 1
@@ -83,7 +83,7 @@ def test_prepare_plan_generates_branch_name() -> None:
     plan = _make_plan(plan_identifier="456", title="Add New Feature")
     timestamp = datetime(2024, 3, 10, 9, 15)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueBranchSetup)
     assert result.branch_name == "P456-add-new-feature-03-10-0915"
@@ -96,7 +96,7 @@ def test_prepare_plan_converts_identifier_to_int() -> None:
     plan = _make_plan(plan_identifier="789")
     timestamp = datetime(2024, 1, 1, 0, 0)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueBranchSetup)
     assert result.issue_number == 789
@@ -108,7 +108,7 @@ def test_prepare_plan_invalid_identifier_returns_failure() -> None:
     plan = _make_plan(plan_identifier="not-a-number")
     timestamp = datetime(2024, 1, 1, 0, 0)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueValidationFailed)
     assert "not a valid issue number" in result.message
@@ -132,7 +132,7 @@ def test_prepare_plan_with_objective_id_populates_objective_issue() -> None:
     )
     timestamp = datetime(2024, 1, 15, 14, 30)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueBranchSetup)
     assert result.objective_issue == 456
@@ -143,14 +143,17 @@ def test_prepare_plan_without_objective_id_has_none() -> None:
     plan = _make_plan()
     timestamp = datetime(2024, 1, 15, 14, 30)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
 
     assert isinstance(result, IssueBranchSetup)
     assert result.objective_issue is None
 
 
-def test_prepare_plan_with_draft_pr_branch_reuses_existing_branch() -> None:
-    """Plan with branch_name in header_fields uses it instead of generating a new one."""
+# Tests for prepare_plan_for_worktree — draft_pr backend
+
+
+def test_draft_pr_backend_uses_existing_branch() -> None:
+    """Draft PR plan with branch_name in header_fields uses it directly."""
     plan = _make_plan(
         plan_identifier="456",
         title="Add New Feature",
@@ -158,8 +161,49 @@ def test_prepare_plan_with_draft_pr_branch_reuses_existing_branch() -> None:
     )
     timestamp = datetime(2024, 3, 10, 9, 15)
 
-    result = prepare_plan_for_worktree(plan, timestamp)
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="draft_pr", warn_non_open=True)
 
     assert isinstance(result, IssueBranchSetup)
     assert result.branch_name == "plan-add-new-feature-01-15-1430"
     assert result.issue_number == 456
+
+
+def test_draft_pr_backend_missing_branch_returns_failure() -> None:
+    """Draft PR plan without branch_name in header_fields returns failure."""
+    plan = _make_plan(plan_identifier="456", title="Add New Feature")
+    timestamp = datetime(2024, 3, 10, 9, 15)
+
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="draft_pr", warn_non_open=True)
+
+    assert isinstance(result, IssueValidationFailed)
+    assert "missing required branch_name" in result.message
+
+
+def test_draft_pr_backend_empty_branch_returns_failure() -> None:
+    """Draft PR plan with empty branch_name in header_fields returns failure."""
+    plan = _make_plan(
+        plan_identifier="456",
+        title="Add New Feature",
+        header_fields={"branch_name": ""},
+    )
+    timestamp = datetime(2024, 3, 10, 9, 15)
+
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="draft_pr", warn_non_open=True)
+
+    assert isinstance(result, IssueValidationFailed)
+    assert "missing required branch_name" in result.message
+
+
+def test_github_backend_ignores_header_branch_name() -> None:
+    """Github backend always generates a new branch, even if header has branch_name."""
+    plan = _make_plan(
+        plan_identifier="456",
+        title="Add New Feature",
+        header_fields={"branch_name": "plan-should-be-ignored"},
+    )
+    timestamp = datetime(2024, 3, 10, 9, 15)
+
+    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="github", warn_non_open=True)
+
+    assert isinstance(result, IssueBranchSetup)
+    assert result.branch_name == "P456-add-new-feature-03-10-0915"

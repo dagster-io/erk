@@ -57,7 +57,8 @@ def prepare_plan_for_worktree(
     plan: Plan,
     timestamp: datetime,
     *,
-    warn_non_open: bool = True,
+    plan_backend: str,
+    warn_non_open: bool,
 ) -> PrepareIssueResult:
     """Prepare and validate plan data for worktree creation.
 
@@ -96,10 +97,16 @@ def prepare_plan_for_worktree(
         )
 
     # Two code paths based on backend:
-    # - Draft PR plans always have branch_name in header_fields (set by plan_save)
-    # - Issue plans don't have it yet (set later by erk plan submit)
-    existing_branch = plan.header_fields.get(BRANCH_NAME)
-    if isinstance(existing_branch, str) and len(existing_branch) > 0:
+    # - Draft PR backend: branch always exists in plan-header (set by plan_save)
+    # - Issue backend: branch is always generated fresh
+    if plan_backend == "draft_pr":
+        existing_branch = plan.header_fields.get(BRANCH_NAME)
+        if not isinstance(existing_branch, str) or len(existing_branch) == 0:
+            return IssueValidationFailed(
+                f"Draft PR plan #{plan.plan_identifier} is missing required "
+                f"branch_name in plan-header metadata. "
+                f"This indicates the plan was not saved correctly."
+            )
         branch_name = existing_branch
     else:
         branch_name = generate_issue_branch_name(
