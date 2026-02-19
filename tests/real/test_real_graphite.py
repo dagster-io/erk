@@ -18,7 +18,7 @@ def test_real_graphite_ops_sync() -> None:
 
         mock_run.assert_called_once()
         call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "sync"]
+        assert call_args[0][0] == ["gt", "sync", "--no-interactive"]
         assert call_args[1]["cwd"] == Path("/test")
         assert call_args[1]["check"] is True
 
@@ -31,7 +31,7 @@ def test_real_graphite_ops_sync_with_force() -> None:
 
         mock_run.assert_called_once()
         call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "sync", "-f"]
+        assert call_args[0][0] == ["gt", "sync", "--no-interactive", "-f"]
 
 
 def test_real_graphite_ops_sync_with_quiet() -> None:
@@ -42,7 +42,7 @@ def test_real_graphite_ops_sync_with_quiet() -> None:
 
         mock_run.assert_called_once()
         call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "sync", "--quiet"]
+        assert call_args[0][0] == ["gt", "sync", "--no-interactive", "--quiet"]
 
 
 def test_real_graphite_ops_sync_with_force_and_quiet() -> None:
@@ -53,7 +53,7 @@ def test_real_graphite_ops_sync_with_force_and_quiet() -> None:
 
         mock_run.assert_called_once()
         call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "sync", "-f", "--quiet"]
+        assert call_args[0][0] == ["gt", "sync", "--no-interactive", "-f", "--quiet"]
 
 
 def test_real_graphite_is_branch_tracked_returns_true_for_tracked() -> None:
@@ -68,7 +68,8 @@ def test_real_graphite_is_branch_tracked_returns_true_for_tracked() -> None:
         assert result is True
         mock_run.assert_called_once()
         call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "branch", "info", "feature-branch", "--quiet"]
+        expected = ["gt", "branch", "info", "feature-branch", "--quiet", "--no-interactive"]
+        assert call_args[0][0] == expected
         assert call_args[1]["cwd"] == Path("/test")
         assert call_args[1]["check"] is False
 
@@ -95,7 +96,7 @@ def test_real_graphite_is_branch_tracked_constructs_correct_command() -> None:
         ops.is_branch_tracked(Path("/repo/root"), "my-feature")
 
         mock_run.assert_called_once_with(
-            ["gt", "branch", "info", "my-feature", "--quiet"],
+            ["gt", "branch", "info", "my-feature", "--quiet", "--no-interactive"],
             cwd=Path("/repo/root"),
             capture_output=True,
             text=True,
@@ -140,7 +141,7 @@ def test_restack_invalidates_branches_cache() -> None:
         ops = RealGraphite()
         ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
 
-        ops.restack(Path("/test"), no_interactive=True, quiet=False)
+        ops.restack(Path("/test"), quiet=False)
 
         assert ops._branches_cache is None
 

@@ -60,7 +60,7 @@ class RealGraphite(Graphite):
             force: If True, pass --force flag to gt sync
             quiet: If True, pass --quiet flag to gt sync for minimal output
         """
-        cmd = ["gt", "sync"]
+        cmd = ["gt", "sync", "--no-interactive"]
         if force:
             cmd.append("-f")
         if quiet:
@@ -81,11 +81,12 @@ class RealGraphite(Graphite):
         # Invalidate branches cache - gt sync modifies Graphite metadata
         self._branches_cache = None
 
-    def restack(self, repo_root: Path, *, no_interactive: bool, quiet: bool) -> None:
+    def restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Run gt restack to rebase the current stack.
 
         More surgical than sync - only affects the current stack, not all branches
-        in the repository. Safe to use with --no-interactive in automated workflows.
+        in the repository. Always runs with --no-interactive to prevent prompts
+        in automated workflows.
 
         Error output (stderr) is always captured to ensure RuntimeError
         includes complete error messages for debugging. In verbose mode (!quiet),
@@ -93,12 +94,9 @@ class RealGraphite(Graphite):
 
         Args:
             repo_root: Repository root directory
-            no_interactive: If True, pass --no-interactive flag to prevent prompts
             quiet: If True, pass --quiet flag to gt restack for minimal output
         """
-        cmd = ["gt", "restack"]
-        if no_interactive:
-            cmd.append("--no-interactive")
+        cmd = ["gt", "restack", "--no-interactive"]
         if quiet:
             cmd.append("--quiet")
 
@@ -239,7 +237,7 @@ class RealGraphite(Graphite):
             Tuple of (is_authenticated, username, repo_info)
         """
         result = subprocess.run(
-            ["gt", "auth"],
+            ["gt", "auth", "--no-interactive"],
             capture_output=True,
             text=True,
             check=False,
@@ -339,7 +337,7 @@ class RealGraphite(Graphite):
         means the branch is tracked, non-zero means untracked or error.
         """
         result = subprocess.run(
-            ["gt", "branch", "info", branch, "--quiet"],
+            ["gt", "branch", "info", branch, "--quiet", "--no-interactive"],
             cwd=repo_root,
             capture_output=True,
             text=True,
@@ -349,7 +347,7 @@ class RealGraphite(Graphite):
 
     def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Run gt continue to continue an in-progress restack."""
-        cmd = ["gt", "continue"]
+        cmd = ["gt", "continue", "--no-interactive"]
 
         result = run_subprocess_with_context(
             cmd=cmd,

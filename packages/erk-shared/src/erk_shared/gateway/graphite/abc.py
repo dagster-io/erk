@@ -45,16 +45,15 @@ class Graphite(ABC):
         ...
 
     @abstractmethod
-    def restack(self, repo_root: Path, *, no_interactive: bool, quiet: bool) -> None:
+    def restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Run gt restack to rebase the current stack.
 
         This is more surgical than sync - it only affects the current stack,
-        not all branches in the repository. Safe to use in non-interactive
-        mode during automated workflows.
+        not all branches in the repository. Always runs with --no-interactive
+        to prevent prompts in automated workflows.
 
         Args:
             repo_root: Repository root directory
-            no_interactive: If True, pass --no-interactive flag to prevent prompts
             quiet: If True, pass --quiet flag to gt restack for minimal output
         """
         ...
@@ -410,9 +409,7 @@ class Graphite(ABC):
                 message=f"Failed to squash: {e}",
             )
 
-    def restack_idempotent(
-        self, repo_root: Path, *, no_interactive: bool, quiet: bool
-    ) -> RestackSuccess | RestackError:
+    def restack_idempotent(self, repo_root: Path, *, quiet: bool) -> RestackSuccess | RestackError:
         """Restack with structured result handling.
 
         This method wraps restack() and handles exceptions to return a typed
@@ -428,7 +425,6 @@ class Graphite(ABC):
 
         Args:
             repo_root: Repository root directory
-            no_interactive: If True, pass --no-interactive flag to prevent prompts
             quiet: If True, pass --quiet flag to gt restack for minimal output
 
         Returns:
@@ -436,7 +432,7 @@ class Graphite(ABC):
             RestackError if restack failed (with error_type distinguishing conflicts)
 
         Example:
-            >>> result = graphite.restack_idempotent(repo_root, no_interactive=True, quiet=False)
+            >>> result = graphite.restack_idempotent(repo_root, quiet=False)
             >>> if isinstance(result, RestackSuccess):
             ...     print(result.message)
             >>> elif result.error_type == "restack-conflict":
@@ -446,7 +442,7 @@ class Graphite(ABC):
         from erk_shared.gateway.gt.types import RestackError, RestackSuccess
 
         try:
-            self.restack(repo_root, no_interactive=no_interactive, quiet=quiet)
+            self.restack(repo_root, quiet=quiet)
             return RestackSuccess(
                 success=True,
                 message="Branch restacked.",

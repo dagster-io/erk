@@ -27,7 +27,7 @@ def detect_base_branch(explicit_base: str | None) -> str:
         return "HEAD~1"
 
     parent = subprocess.run(
-        ["gt", "parent"],
+        ["gt", "parent", "--no-interactive"],
         capture_output=True,
         text=True,
         check=False,

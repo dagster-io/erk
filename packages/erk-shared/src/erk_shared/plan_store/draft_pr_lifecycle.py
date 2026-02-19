@@ -124,6 +124,21 @@ def build_original_plan_section(plan_content: str) -> str:
     return "\n\n" + DETAILS_OPEN + plan_content + DETAILS_CLOSE
 
 
+def has_original_plan_section(pr_body: str) -> bool:
+    """Check if a PR body contains the original-plan details section.
+
+    Used to distinguish Stage 1/2 bodies (which have the collapsible plan section)
+    from rewritten bodies (which have AI-generated summaries without the section).
+
+    Args:
+        pr_body: Full PR body string
+
+    Returns:
+        True if the body contains a ``<details>`` block with ``original-plan``
+    """
+    return DETAILS_OPEN in pr_body or _LEGACY_DETAILS_OPEN in pr_body
+
+
 def extract_plan_content(pr_body: str) -> str:
     """Extract plan content from a PR body at any lifecycle stage.
 
