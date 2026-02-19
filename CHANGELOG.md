@@ -7,14 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- as-of: 8442713b3 -->
+<!-- as-of: f24b02de7 -->
 
 ### Major Changes
 
+- Add draft PR plan backend: plans can now be stored as GitHub draft PRs instead of issues, with all workflows (plan-save, plan-implement, learn, CI) supporting both backends via environment-driven configuration (3351bd7, 2cba6a73, 8559caff, a76cab09, 60787e1f, 2d1a14ec, 7a5fde04, 0b41c581, 2db84a17, 24e699cf, f2654e91, 909d81ca, ca311d22, be00080c, b796427, fe30038, c814624, d9fdb99, b37158fd, 68410fd)
+- Add objective dependency graph with `depends_on` support: roadmaps support explicit cross-phase dependencies, with a new "deps" column in Objectives dashboard and `--all-unblocked` dispatch for parallel node implementation (97e480be, aa36c19d, f9dde530, 1030f07f, 8ece7717)
 - Overhaul objective vocabulary and structure toward graph-based model: rename 'step' to 'node' with schema v3, merge `objective inspect` into `objective view` with dependency graph display, rename `objective-implement` to `objective-plan`, and fix node status validation (ff55ce0, e45e1c6, 861c7a0, 7fa81768, 04bb893, 5210dcf, 97bec22)
 
 ### Added
 
+- Add objective tracking to TUI land flow and plan detail screen (3634d19b)
+- Add "codespace run objective plan" to objectives command palette in TUI (a0e73050)
 - Add `erk admin gh-actions-api-key` command for managing GitHub Actions API key secrets (374ea93)
 - Add Claude inference kill switch via `CLAUDE_ENABLED` repository variable (2effff7)
 - Add `--up` option to `erk stack consolidate` for upstack-only consolidation (09cca66)
@@ -22,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Convert "Submit to Queue" and "Land PR" from modal dialogs to non-blocking toast pattern (5d185bcb, 873dc04b)
+- Show real-time progress in TUI status bar during "Land PR" operation with diagnostic error messages (2cffffcb)
+- Batch objective node updates into single atomic write for reliability (f24b02de)
 - Refresh workspace packages automatically on activation to keep CLI current across worktree switches (0393f9f)
 - Rename `objective-implement` command to `objective-plan` to reflect planning-focused purpose (04bb893)
 - Canonicalize branch naming to encode objective IDs consistently across submit and one-shot codepaths (c524572)
@@ -29,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix submit pipeline error handling and add network timeout protection (406cb1ec)
+- Fix misleading "PR rewritten" success message in `erk pr rewrite` (d13c56fa)
+- Fix `erk prepare` to handle pre-existing branches with draft PR plan backend (ca311d22)
 - Fix plan reference loss when updating objective roadmap steps with PR numbers (456902a)
 - Fix `learned-docs` capability installation check to require all three directories and preserve user documentation on uninstall (5dc1e52)
 - Fix local session fallback in `/erk:learn` to filter by branch name, preventing unrelated sessions from other branches (97bb0ad)
