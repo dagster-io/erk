@@ -36,7 +36,6 @@ class IssueBranchSetup:
     issue_url: str
     issue_title: str
     objective_issue: int | None
-    branch_must_preexist: bool
     warnings: tuple[str, ...] = ()
 
 
@@ -127,6 +126,5 @@ def prepare_plan_for_worktree(
         issue_url=plan.url,
         issue_title=plan.title,
         objective_issue=plan.objective_id,
-        branch_must_preexist=(plan_backend == "draft_pr"),
         warnings=tuple(warnings),
     )
