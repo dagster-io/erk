@@ -17,12 +17,14 @@ Two files reference the `.erk/plan/` path:
 ### `src/erk/cli/commands/exec/scripts/plan_save.py` (lines 148-152)
 
 In `_save_as_draft_pr()`:
+
 - Line 148: `repo_root / ".erk" / "plan"` → `repo_root / ".erk" / "pr-files"`
 - Line 152: `[".erk/plan/PLAN.md"]` → `[".erk/pr-files/PLAN.md"]`
 
 ### `tests/unit/cli/commands/exec/scripts/test_plan_save.py` (lines 230, 241, 244)
 
 In `test_draft_pr_commits_plan_file()`:
+
 - Line 230: docstring `.erk/plan/PLAN.md` → `.erk/pr-files/PLAN.md`
 - Line 241: assertion `".erk/plan/PLAN.md"` → `".erk/pr-files/PLAN.md"`
 - Line 244: path `".erk" / "plan"` → `".erk" / "pr-files"`
@@ -55,6 +57,7 @@ else:
 The `branch_name` is already parsed in `_get_pr_for_plan_direct()` at line 299. Propagate it to the outer scope (either return it in the result dict or store in a variable before Step 5).
 
 **Update dataclasses** (lines 72-90):
+
 - `TriggerSuccess.gist_url` → `gist_url: str | None`, add `materials_branch: str | None`
 - `PreprocessSuccess.gist_url` → same pattern
 - Update `_output_success()` and `_output_preprocess_success()` signatures
@@ -64,6 +67,7 @@ The `branch_name` is already parsed in `_get_pr_for_plan_direct()` at line 299. 
 ### `tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py`
 
 Add tests:
+
 - `test_draft_pr_backend_commits_to_branch` — verify files committed to `.erk/pr-files/learn-materials/`, no gist created, workflow triggered with `materials_branch`
 - `test_github_backend_uses_gist` — verify existing gist flow for default backend
 
@@ -105,6 +109,7 @@ Update the learn invocation to pass `materials_branch` when available (instead o
 In Step 2 ("Check for Preprocessed Materials"), add a new path:
 
 **When `materials_branch` is provided:**
+
 1. Materials are already on filesystem at `.erk/pr-files/learn-materials/` (checked out by workflow)
 2. Copy files to session learn directory: `cp .erk/pr-files/learn-materials/* .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`
 3. Skip to Step 4 (same as gist_url path — analysis agents)
@@ -187,6 +192,7 @@ def _validation_pipeline() -> tuple[LandStep, ...]:
 ### Tests
 
 Add to `tests/unit/cli/commands/land/`:
+
 - Test `validate_pr_files_cleaned` returns `LandError` when `.erk/pr-files/` exists
 - Test it passes when directory absent
 - Test it skips for non-draft_pr backends
