@@ -10,7 +10,6 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     _get_current_branch,
-    _is_trunk_branch,
     setup_impl_from_issue,
 )
 from erk_shared.context.context import ErkContext
@@ -40,29 +39,6 @@ class TestGetCurrentBranch:
         with pytest.raises(click.ClickException) as exc_info:
             _get_current_branch(git, tmp_path)
         assert "detached HEAD" in str(exc_info.value)
-
-
-class TestIsTrunkBranch:
-    """Tests for the _is_trunk_branch helper function."""
-
-    def test_main_is_trunk(self) -> None:
-        """main is recognized as a trunk branch."""
-        assert _is_trunk_branch("main") is True
-
-    def test_master_is_trunk(self) -> None:
-        """master is recognized as a trunk branch."""
-        assert _is_trunk_branch("master") is True
-
-    def test_feature_branch_is_not_trunk(self) -> None:
-        """Feature branches are not trunk branches."""
-        assert _is_trunk_branch("feature-branch") is False
-        assert _is_trunk_branch("P123-my-feature") is False
-        assert _is_trunk_branch("fix/bug-123") is False
-
-    def test_development_is_not_trunk(self) -> None:
-        """Common development branches are not trunk."""
-        assert _is_trunk_branch("develop") is False
-        assert _is_trunk_branch("development") is False
 
 
 class TestSetupImplFromIssueValidation:

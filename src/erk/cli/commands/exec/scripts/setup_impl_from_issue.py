@@ -49,11 +49,6 @@ def _get_current_branch(git: Git, cwd: Path) -> str:
     return branch
 
 
-def _is_trunk_branch(branch: str) -> bool:
-    """Check if branch is a trunk branch (main/master)."""
-    return branch in ("main", "master")
-
-
 @click.command(name="setup-impl-from-issue")
 @click.argument("issue_number", type=int)
 @click.option(
@@ -112,7 +107,7 @@ def setup_impl_from_issue(
 
     branch_manager = require_branch_manager(ctx)
 
-    # PLAN_BACKEND_SPLIT: draft-PR plans have a branch_name in header_fields; issue-based plans do not
+    # PLAN_BACKEND_SPLIT: draft-PR plans have branch_name in header_fields; issue-based plans do not
     if isinstance(plan_branch, str) and plan_branch:
         # Draft-PR plan: reuse the plan's existing branch and sync with remote
         branch_name = plan_branch
@@ -169,12 +164,7 @@ def setup_impl_from_issue(
                 click.echo(f"Branch '{branch_name}' already exists, checking out...", err=True)
                 branch_manager.checkout_branch(cwd, branch_name)
             else:
-                # Determine base branch: stack on feature branch, or use trunk
-                if _is_trunk_branch(current_branch):
-                    base_branch = current_branch
-                else:
-                    # Stack on current feature branch
-                    base_branch = current_branch
+                base_branch = current_branch
 
                 # Create branch using BranchManager (handles Graphite tracking automatically)
                 create_result = branch_manager.create_branch(repo_root, branch_name, base_branch)
