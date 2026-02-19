@@ -12,8 +12,10 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from tests.test_utils.context_builders import build_workspace_test_context
-from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
 def test_submit_exits_cleanly_when_parent_branch_untracked() -> None:
@@ -286,5 +288,113 @@ def test_submit_updates_pr_body_with_workflow_run_link() -> None:
         pr_num, updated_body = workflow_link_updates[0]
         assert pr_num == 42
         assert "https://github.com/test-owner/test-repo/actions/runs/1234567890" in updated_body
+
+        assert "Traceback" not in result.output
+
+
+def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
+    """Test that submitting a draft-PR plan triggers workflow with plan_backend=draft_pr.
+
+    Draft-PR plans already have a branch and PR. Submit should:
+    - Validate the PR has the erk-plan label and is OPEN
+    - Fetch and checkout the existing branch
+    - Create .worker-impl/ with provider="github-draft-pr"
+    - Trigger workflow with plan_backend="draft_pr" in inputs
+    - NOT create a new branch or PR
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "draft-pr-plan-branch"
+
+        # PR body with plan content in the expected format
+        pr_body = (
+            "<!-- plan-header: {} -->\n\n"
+            "---\n\n"
+            "# Plan: Test Draft PR Plan\n\n"
+            "- Step 1: Do something\n"
+            "- Step 2: Do something else"
+        )
+
+        pr_42 = PRDetails(
+            number=42,
+            url="https://github.com/test-owner/test-repo/pull/42",
+            title="[erk-plan] Test Draft PR Plan",
+            body=pr_body,
+            state="OPEN",
+            is_draft=True,
+            base_ref_name="main",
+            head_ref_name=plan_branch,
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner="test-owner",
+            repo="test-repo",
+            labels=("erk-plan",),
+        )
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+
+        # DraftPRPlanBackend makes get_provider_name() return "github-draft-pr"
+        draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=[],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=draft_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
+
+        # Verify: workflow was triggered with plan_backend="draft_pr"
+        assert len(fake_gh.triggered_workflows) >= 1, (
+            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+            f"Output: {result.output}"
+        )
+        _workflow_name, inputs = fake_gh.triggered_workflows[0]
+        assert inputs["plan_backend"] == "draft_pr"
+        assert inputs["plan_id"] == "42"
+        assert inputs["branch_name"] == plan_branch
+
+        # Verify: no new PR was created (draft-PR already exists)
+        assert len(fake_gh.created_prs) == 0
+
+        # Verify: expected output messages
+        assert "Checking out existing plan branch" in result.output
+        assert "Creating .worker-impl/ folder" in result.output
+        assert "Workflow triggered" in result.output
 
         assert "Traceback" not in result.output

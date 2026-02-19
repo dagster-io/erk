@@ -29,6 +29,7 @@ def create_worker_impl_folder(
     url: str,
     repo_root: Path,
     *,
+    provider: str,
     objective_id: int | None,
 ) -> Path:
     """Create .worker-impl/ folder with all required files.
@@ -38,6 +39,7 @@ def create_worker_impl_folder(
         plan_id: Provider-specific plan ID as string (e.g., "42")
         url: Full plan URL
         repo_root: Repository root directory path
+        provider: Plan provider name (e.g., "github", "github-draft-pr")
         objective_id: Optional linked objective issue number
 
     Returns:
@@ -70,7 +72,7 @@ def create_worker_impl_folder(
     # Write plan-ref.json using canonical function from impl_folder
     save_plan_ref(
         worker_impl_folder,
-        provider="github",
+        provider=provider,
         plan_id=plan_id,
         url=url,
         labels=(),

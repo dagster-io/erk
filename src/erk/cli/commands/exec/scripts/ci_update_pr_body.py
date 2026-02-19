@@ -57,6 +57,12 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
+from erk_shared.impl_folder import read_plan_ref
+from erk_shared.plan_store.draft_pr_lifecycle import (
+    build_original_plan_section,
+    extract_metadata_prefix,
+    extract_plan_content,
+)
 
 
 @dataclass(frozen=True)
@@ -115,7 +121,7 @@ def _build_pr_body(
     *,
     summary: str,
     pr_number: int,
-    issue_number: int,
+    issue_number: int | None,
     run_id: str | None,
     run_url: str | None,
     plans_repo: str | None,
@@ -125,7 +131,7 @@ def _build_pr_body(
     Args:
         summary: AI-generated PR summary
         pr_number: PR number for checkout instructions
-        issue_number: Issue number to close on merge
+        issue_number: Issue number to close on merge, or None for draft-PR plans
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
         plans_repo: Target repo in "owner/repo" format for cross-repo plans
@@ -157,6 +163,7 @@ def _update_pr_body_impl(
     run_id: str | None,
     run_url: str | None,
     plans_repo: str | None,
+    is_draft_pr: bool,
 ) -> UpdateSuccess | UpdateError:
     """Implementation of PR body update.
 
@@ -169,6 +176,7 @@ def _update_pr_body_impl(
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
         plans_repo: Target repo in "owner/repo" format for cross-repo plans
+        is_draft_pr: True if this is a draft-PR plan (no Closes #N)
 
     Returns:
         UpdateSuccess on success, UpdateError on failure
@@ -247,14 +255,30 @@ def _update_pr_body_impl(
         )
 
     # Build full PR body
-    pr_body = _build_pr_body(
-        summary=result.output,
-        pr_number=pr_number,
-        issue_number=issue_number,
-        run_id=run_id,
-        run_url=run_url,
-        plans_repo=plans_repo,
-    )
+    if is_draft_pr:
+        # For draft-PR plans: preserve metadata prefix, include original plan section
+        metadata_prefix = extract_metadata_prefix(pr_result.body)
+        plan_content = extract_plan_content(pr_result.body)
+        original_plan_section = build_original_plan_section(plan_content)
+
+        summary_body = _build_pr_body(
+            summary=result.output,
+            pr_number=pr_number,
+            issue_number=None,
+            run_id=run_id,
+            run_url=run_url,
+            plans_repo=plans_repo,
+        )
+        pr_body = metadata_prefix + summary_body + original_plan_section
+    else:
+        pr_body = _build_pr_body(
+            summary=result.output,
+            pr_number=pr_number,
+            issue_number=issue_number,
+            run_id=run_id,
+            run_url=run_url,
+            plans_repo=plans_repo,
+        )
 
     # Update PR body
     try:
@@ -296,6 +320,11 @@ def ci_update_pr_body(
     config = load_config(repo_root)
     plans_repo = config.plans_repo
 
+    # Detect draft-PR plan from .impl/plan-ref.json
+    impl_dir = repo_root / ".impl"
+    plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
+    is_draft_pr = plan_ref is not None and plan_ref.provider == "github-draft-pr"
+
     result = _update_pr_body_impl(
         git=git,
         github=github,
@@ -305,6 +334,7 @@ def ci_update_pr_body(
         run_id=run_id,
         run_url=run_url,
         plans_repo=plans_repo,
+        is_draft_pr=is_draft_pr,
     )
 
     # Output JSON result

@@ -21,6 +21,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.impl_folder import save_plan_ref
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 
@@ -344,6 +345,28 @@ class TestSetupImplFromIssueBranchManager:
 # =============================================================================
 
 
+def _make_draft_pr_backend(
+    tmp_path: Path,
+    plan_branch: str,
+) -> tuple[DraftPRPlanBackend, int]:
+    """Create a DraftPRPlanBackend with one plan, returning (backend, pr_number).
+
+    Unlike _make_draft_pr_context, this does not create a full ErkContext,
+    allowing the caller to build their own context (e.g., without github).
+    """
+    fake_github = FakeGitHub()
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_plan(
+        repo_root=tmp_path,
+        title="My Plan",
+        content="# Plan\n\nImplement something.",
+        labels=("erk-plan",),
+        metadata={"branch_name": plan_branch},
+    )
+    pr_number = int(plan_result.plan_id)
+    return backend, pr_number
+
+
 def _make_draft_pr_context(
     tmp_path: Path,
     plan_branch: str,
@@ -447,6 +470,68 @@ def test_draft_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
     assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
 
     assert f"Already on plan branch '{plan_branch}'" in result.output
+
+
+def test_draft_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None:
+    """When .impl/ already has a matching plan_id, skip branch switching.
+
+    In CI, the workflow checks out an implementation branch and pre-populates
+    .impl/ with plan-ref.json. setup-impl-from-issue should detect this and
+    stay on the current branch instead of switching to the plan branch.
+    """
+    plan_branch = "plan-my-feature-02-19"
+    ci_branch = "P100-my-feature-impl-02-19-1430"
+    backend, pr_number = _make_draft_pr_backend(tmp_path, plan_branch)
+
+    fake_git = FakeGit(
+        current_branches={tmp_path: ci_branch},
+        local_branches={tmp_path: [ci_branch]},
+    )
+    fake_graphite = FakeGraphite()
+
+    # Pre-create .impl/ with matching plan_id (simulating CI setup)
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_plan_ref(
+        impl_dir,
+        provider="github",
+        plan_id=str(pr_number),
+        url=f"https://github.com/test-owner/test-repo/pull/{pr_number}",
+        labels=("erk-plan",),
+        objective_id=None,
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+        plan_store=backend,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        setup_impl_from_issue,
+        [str(pr_number)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    # No fetch or checkout should have happened — we skipped branch setup entirely
+    assert len(fake_git.fetched_branches) == 0
+    assert len(fake_git.checked_out_branches) == 0
+    assert len(fake_git.pull_rebase_calls) == 0
+
+    # Output should indicate we skipped branch setup
+    assert f"Found existing .impl/ for plan #{pr_number}, skipping branch setup" in result.output
+
+    # JSON output should have the CI branch, not the plan branch
+    output_lines = result.output.strip().split("\n")
+    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+    output = json.loads(json_line)
+    assert output["success"] is True
+    assert output["branch"] == ci_branch  # Stayed on CI branch, not plan branch
 
 
 def test_draft_pr_plan_sync_failure_reports_error(tmp_path: Path) -> None:

@@ -40,7 +40,7 @@ from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.impl_folder import create_impl_folder, save_plan_ref
+from erk_shared.impl_folder import create_impl_folder, read_plan_ref, save_plan_ref
 from erk_shared.naming import generate_issue_branch_name
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR, extract_plan_content
 from erk_shared.plan_store.types import PlanNotFound
@@ -128,8 +128,32 @@ def _setup_draft_pr_plan(
         Success output dict
     """
     cwd = require_cwd(ctx)
-    repo_root = require_repo_root(ctx)
     git = require_git(ctx)
+
+    # Early exit: if .impl/ is already set up for this issue (e.g., CI pre-populated it),
+    # skip branch switching. Switching to the plan branch would abandon the implementation
+    # branch, causing work to land on the wrong branch.
+    impl_dir = cwd / ".impl"
+    if impl_dir.exists():
+        existing_ref = read_plan_ref(impl_dir)
+        if existing_ref is not None and existing_ref.plan_id == str(issue_number):
+            click.echo(
+                f"Found existing .impl/ for plan #{issue_number}, skipping branch setup",
+                err=True,
+            )
+            current_branch = _get_current_branch(git, cwd)
+            impl_path_str = str(impl_dir) if not no_impl else None
+            return {
+                "success": True,
+                "impl_path": impl_path_str,
+                "issue_number": issue_number,
+                "issue_url": existing_ref.url,
+                "branch": current_branch,
+                "plan_title": "",
+                "no_impl": no_impl,
+            }
+
+    repo_root = require_repo_root(ctx)
     github = require_github(ctx)
     branch_manager = require_branch_manager(ctx)
 

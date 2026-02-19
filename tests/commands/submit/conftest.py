@@ -3,8 +3,6 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-import pytest
-
 from erk.cli.commands.submit import ERK_PLAN_LABEL
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
@@ -12,11 +10,6 @@ from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.plan_helpers import create_plan_store
-
-
-@pytest.fixture(params=["github", "draft_pr"])
-def plan_backend_type(request: pytest.FixtureRequest) -> str:
-    return request.param
 
 
 def make_plan_body(content: str = "Implementation details...") -> str:
