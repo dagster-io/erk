@@ -35,6 +35,7 @@ def test_success_case_returns_completed_process() -> None:
         mock_run.assert_called_once_with(
             ["git", "status"],
             cwd=Path("/repo"),
+            timeout=None,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -373,3 +374,78 @@ def test_failure_with_both_stdout_and_stderr_includes_both() -> None:
         assert "Exit code: 1" in error_message
         assert "stdout: Output message" in error_message
         assert "stderr: Error message" in error_message
+
+
+def test_timeout_expired_raises_runtime_error() -> None:
+    """Test that TimeoutExpired is converted to RuntimeError with timeout message."""
+    with patch("erk_shared.subprocess_utils.subprocess.run") as mock_run:
+        mock_run.side_effect = subprocess.TimeoutExpired(
+            cmd=["git", "push", "origin", "main"],
+            timeout=120,
+        )
+
+        with pytest.raises(RuntimeError) as exc_info:
+            run_subprocess_with_context(
+                cmd=["git", "push", "origin", "main"],
+                operation_context="push branch 'main' to remote 'origin'",
+                cwd=Path("/repo"),
+                timeout=120,
+            )
+
+        error_message = str(exc_info.value)
+        assert "Timed out after 120s" in error_message
+        assert "push branch 'main' to remote 'origin'" in error_message
+        assert "Command: git push origin main" in error_message
+
+
+def test_timeout_expired_preserves_exception_chain() -> None:
+    """Test that TimeoutExpired is preserved as __cause__ on the RuntimeError."""
+    with patch("erk_shared.subprocess_utils.subprocess.run") as mock_run:
+        original_error = subprocess.TimeoutExpired(
+            cmd=["git", "fetch", "origin"],
+            timeout=60,
+        )
+        mock_run.side_effect = original_error
+
+        with pytest.raises(RuntimeError) as exc_info:
+            run_subprocess_with_context(
+                cmd=["git", "fetch", "origin"],
+                operation_context="fetch from origin",
+                timeout=60,
+            )
+
+        assert exc_info.value.__cause__ is original_error
+        assert isinstance(exc_info.value.__cause__, subprocess.TimeoutExpired)
+
+
+def test_timeout_parameter_forwarded_to_subprocess_run() -> None:
+    """Test that timeout is forwarded as an explicit parameter to subprocess.run."""
+    with patch("erk_shared.subprocess_utils.subprocess.run") as mock_run:
+        mock_result = Mock(spec=subprocess.CompletedProcess)
+        mock_result.returncode = 0
+        mock_run.return_value = mock_result
+
+        run_subprocess_with_context(
+            cmd=["git", "status"],
+            operation_context="check status",
+            timeout=45.5,
+        )
+
+        call_kwargs = mock_run.call_args.kwargs
+        assert call_kwargs["timeout"] == 45.5
+
+
+def test_timeout_none_by_default() -> None:
+    """Test that timeout defaults to None when not specified."""
+    with patch("erk_shared.subprocess_utils.subprocess.run") as mock_run:
+        mock_result = Mock(spec=subprocess.CompletedProcess)
+        mock_result.returncode = 0
+        mock_run.return_value = mock_result
+
+        run_subprocess_with_context(
+            cmd=["git", "status"],
+            operation_context="check status",
+        )
+
+        call_kwargs = mock_run.call_args.kwargs
+        assert call_kwargs["timeout"] is None

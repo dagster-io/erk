@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from erk.cli.commands.pr.submit_pipeline import (
+    SubmitError,
     SubmitState,
     enhance_with_graphite,
 )
@@ -128,8 +129,8 @@ def test_skips_when_branch_not_tracked(tmp_path: Path) -> None:
     assert len(fake_graphite.submit_stack_calls) == 0
 
 
-def test_handles_submit_error_gracefully(tmp_path: Path) -> None:
-    """RuntimeError from submit_stack => warning, not SubmitError."""
+def test_returns_submit_error_for_non_benign_runtime_error(tmp_path: Path) -> None:
+    """Non-benign RuntimeError from submit_stack => SubmitError."""
     fake_graphite = FakeGraphite(
         branches={
             "feature": BranchMetadata(
@@ -140,7 +141,7 @@ def test_handles_submit_error_gracefully(tmp_path: Path) -> None:
                 commit_sha="abc123",
             )
         },
-        submit_stack_raises=RuntimeError("unexpected error"),
+        submit_stack_raises=RuntimeError("network timeout"),
     )
     fake_git = FakeGit(repository_roots={tmp_path: tmp_path})
     ctx = context_for_test(
@@ -153,9 +154,9 @@ def test_handles_submit_error_gracefully(tmp_path: Path) -> None:
 
     result = enhance_with_graphite(ctx, state)
 
-    # Should NOT be a SubmitError - errors are handled gracefully
-    assert isinstance(result, SubmitState)
-    assert result.graphite_url is None
+    assert isinstance(result, SubmitError)
+    assert result.error_type == "graphite_enhance_failed"
+    assert "network timeout" in result.message
 
 
 def test_success_sets_graphite_url(tmp_path: Path) -> None:
@@ -189,3 +190,32 @@ def test_success_sets_graphite_url(tmp_path: Path) -> None:
     assert result.graphite_url is not None
     assert "graphite" in result.graphite_url
     assert len(fake_graphite.submit_stack_calls) == 1
+
+
+def test_benign_nothing_to_submit_returns_state(tmp_path: Path) -> None:
+    """'Nothing to submit' RuntimeError is benign — returns SubmitState, not SubmitError."""
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature": BranchMetadata(
+                name="feature",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha="abc123",
+            )
+        },
+        submit_stack_raises=RuntimeError("nothing to submit"),
+    )
+    fake_git = FakeGit(repository_roots={tmp_path: tmp_path})
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=tmp_path,
+        global_config=_graphite_config(),
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = enhance_with_graphite(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert result.graphite_url is None

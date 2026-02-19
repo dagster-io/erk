@@ -1,6 +1,15 @@
 """Tests for subprocess_utils module."""
 
-from erk_shared.subprocess_utils import _build_timing_description
+from pathlib import Path
+from subprocess import CompletedProcess
+from unittest.mock import Mock, patch
+
+from erk_shared.subprocess_utils import (
+    _GH_COMMAND_TIMEOUT,
+    _build_timing_description,
+    build_git_subprocess_env,
+    execute_gh_command,
+)
 
 
 def test_build_timing_description_regular_command() -> None:
@@ -45,3 +54,27 @@ def test_build_timing_description_graphql_multiline_query() -> None:
     assert "fragment" not in result
     # Character count should appear
     assert f"query=<{len(query)} chars>" in result
+
+
+def test_build_git_subprocess_env_sets_git_terminal_prompt() -> None:
+    """build_git_subprocess_env sets GIT_TERMINAL_PROMPT=0."""
+    env = build_git_subprocess_env()
+    assert env["GIT_TERMINAL_PROMPT"] == "0"
+
+
+def test_build_git_subprocess_env_preserves_existing_env() -> None:
+    """build_git_subprocess_env preserves existing environment variables."""
+    env = build_git_subprocess_env()
+    # PATH should always be present in the environment
+    assert "PATH" in env
+
+
+def test_execute_gh_command_forwards_timeout() -> None:
+    """execute_gh_command passes _GH_COMMAND_TIMEOUT to run_subprocess_with_context."""
+    with patch("erk_shared.subprocess_utils.run_subprocess_with_context") as mock_run:
+        mock_run.return_value = Mock(spec=CompletedProcess, stdout="output")
+
+        execute_gh_command(["gh", "pr", "list"], Path("/repo"))
+
+        call_kwargs = mock_run.call_args.kwargs
+        assert call_kwargs["timeout"] == _GH_COMMAND_TIMEOUT
