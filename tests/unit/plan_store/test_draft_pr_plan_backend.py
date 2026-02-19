@@ -66,6 +66,54 @@ def test_create_plan_creates_draft_pr() -> None:
     assert pr.is_draft is True
 
 
+def test_create_plan_uses_trunk_branch_as_pr_base() -> None:
+    """create_plan uses trunk_branch from metadata as the PR base branch."""
+    fake_github = FakeGitHub()
+    backend = DraftPRPlanBackend(fake_github)
+
+    backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan content",
+        labels=("erk-plan",),
+        metadata={"branch_name": "test-branch", "trunk_branch": "main"},
+    )
+
+    assert fake_github.created_prs[0][3] == "main"
+
+
+def test_create_plan_falls_back_to_master_when_trunk_branch_missing() -> None:
+    """create_plan falls back to 'master' as PR base when trunk_branch is absent."""
+    fake_github = FakeGitHub()
+    backend = DraftPRPlanBackend(fake_github)
+
+    backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan content",
+        labels=("erk-plan",),
+        metadata={"branch_name": "test-branch"},
+    )
+
+    assert fake_github.created_prs[0][3] == "master"
+
+
+def test_create_plan_falls_back_to_master_when_trunk_branch_not_string() -> None:
+    """create_plan falls back to 'master' when trunk_branch is a non-string value."""
+    fake_github = FakeGitHub()
+    backend = DraftPRPlanBackend(fake_github)
+
+    backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan content",
+        labels=("erk-plan",),
+        metadata={"branch_name": "test-branch", "trunk_branch": 42},
+    )
+
+    assert fake_github.created_prs[0][3] == "master"
+
+
 def test_create_plan_adds_erk_plan_label() -> None:
     """create_plan adds the erk-plan label to the PR."""
     fake_github = FakeGitHub()

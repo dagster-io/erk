@@ -333,11 +333,15 @@ class DraftPRPlanBackend(PlanBackend):
 
         pr_body = _build_pr_body(metadata_body, content)
 
+        trunk_branch_raw = metadata.get("trunk_branch")
+        base = trunk_branch_raw if isinstance(trunk_branch_raw, str) else "master"
+
         pr_number = self._github.create_pr(
             repo_root,
-            branch_name,
-            title,
-            pr_body,
+            branch=branch_name,
+            title=title,
+            body=pr_body,
+            base=base,
             draft=True,
         )
 

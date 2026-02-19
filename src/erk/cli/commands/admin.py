@@ -282,15 +282,18 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
         issue_number = result.number
         user_output(click.style("✓", fg="green") + f" Created test issue #{issue_number}")
 
+    # Detect trunk branch for PR base
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+
     # Step 3: Create test branch for implementation
     timestamp = int(ctx.time.now().timestamp())
     distinct_id = _base36_encode(timestamp)
     test_branch = f"test-workflow-{distinct_id}"
 
     user_output(f"Creating test branch '{test_branch}'...")
-    # Push master to the test branch using refspec syntax
+    # Push trunk to the test branch using refspec syntax
     push_result = ctx.git.remote.push_to_remote(
-        repo.root, "origin", f"master:{test_branch}", set_upstream=False, force=False
+        repo.root, "origin", f"{trunk}:{test_branch}", set_upstream=False, force=False
     )
     if isinstance(push_result, PushError):
         raise UserFacingCliError(push_result.message)
@@ -316,7 +319,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
         branch=test_branch,
         title="Test workflow run",
         body="This PR was created to test the plan-implement workflow. Safe to close.",
-        base="master",
+        base=trunk,
         draft=True,
     )
     user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
@@ -339,7 +342,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
             "issue_title": "Test workflow run",
             "branch_name": test_branch,
             "pr_number": str(pr_number),
-            "base_branch": "master",
+            "base_branch": trunk,
         },
     )
 

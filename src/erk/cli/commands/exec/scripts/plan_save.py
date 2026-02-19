@@ -143,7 +143,8 @@ def _save_as_draft_pr(
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
     # Build metadata
-    metadata: dict[str, object] = {"branch_name": branch_name}
+    trunk = git.branch.detect_trunk_branch(cwd)
+    metadata: dict[str, object] = {"branch_name": branch_name, "trunk_branch": trunk}
 
     if config.plans_repo is not None:
         metadata["source_repo"] = get_repo_identifier(ctx)

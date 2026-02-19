@@ -32,7 +32,7 @@ def test_happy_path_with_existing_issue() -> None:
         assert len(fake_github.created_prs) == 1
         branch, title, _body, base, draft = fake_github.created_prs[0]
         assert branch.startswith("test-workflow-")
-        assert base == "master"
+        assert base == "main"
         assert draft is True
         # Verify workflow was triggered
         assert len(fake_github.triggered_workflows) == 1
@@ -69,6 +69,39 @@ def test_happy_path_creating_new_issue() -> None:
         assert len(fake_github.triggered_workflows) == 1
         _, inputs = fake_github.triggered_workflows[0]
         assert inputs["issue_number"] == "1"
+
+
+def test_happy_path_uses_detected_trunk_branch() -> None:
+    """Command uses detected trunk branch (non-main) as PR base and workflow base_branch."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        fake_github = FakeGitHub()
+        fake_issues = FakeGitHubIssues()
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "my-feature"},
+            existing_paths={env.cwd, env.git_dir},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+            trunk_branches={env.cwd: "master"},
+        )
+        ctx = env.build_context(
+            current_branch="my-feature",
+            git=git,
+            github=fake_github,
+            issues=fake_issues,
+        )
+
+        result = runner.invoke(
+            cli, ["admin", "test-plan-implement-gh-workflow", "--issue", "42"], obj=ctx
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert len(fake_github.created_prs) == 1
+        _branch, _title, _body, base, _draft = fake_github.created_prs[0]
+        assert base == "master"
+        assert len(fake_github.triggered_workflows) == 1
+        _workflow, inputs = fake_github.triggered_workflows[0]
+        assert inputs["base_branch"] == "master"
 
 
 def test_error_no_github_remote() -> None:
