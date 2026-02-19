@@ -331,7 +331,7 @@ def test_display_name_copy_prepare_shows_issue() -> None:
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_prepare")
-    assert get_display_name(cmd, ctx) == "erk prepare 5831"
+    assert get_display_name(cmd, ctx) == "erk br create --for-plan 5831"
 
 
 def test_display_name_copy_prepare_activate_shows_full_command() -> None:
@@ -339,7 +339,7 @@ def test_display_name_copy_prepare_activate_shows_full_command() -> None:
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_prepare_activate")
-    expected = 'source "$(erk prepare 5831 --script)" && erk implement --dangerous'
+    expected = 'source "$(erk br create --for-plan 5831 --script)" && erk implement --dangerous'
     assert get_display_name(cmd, ctx) == expected
 
 

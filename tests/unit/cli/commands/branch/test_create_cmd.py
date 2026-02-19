@@ -831,3 +831,251 @@ def test_branch_create_uses_trunk_when_on_trunk() -> None:
         cwd, branch, parent = graphite_ops.track_branch_calls[0]
         assert branch == "new-feature"
         assert parent == "main"
+
+
+def test_branch_create_stacks_in_place_from_assigned_slot() -> None:
+    """Test that branch create from an assigned slot updates the tip, not allocates a new slot."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "existing-branch"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-branch"]},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pre-create pool state with cwd assigned to a slot
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="existing-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(repo.pool_json_path, existing_state)
+
+        test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["br", "create", "new-stacked-branch"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Created branch: new-stacked-branch" in result.output
+        assert "Stacked new-stacked-branch in erk-slot-01 (in place)" in result.output
+
+        # Verify assignment tip was updated (not a new slot allocated)
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+        assert state.assignments[0].branch_name == "new-stacked-branch"
+        assert state.assignments[0].slot_name == "erk-slot-01"
+        assert state.assignments[0].worktree_path == env.cwd
+
+        # Verify no worktree was added (stack in place, no new worktree)
+        assert len(git_ops.added_worktrees) == 0
+
+
+def test_branch_create_normal_allocation_from_root() -> None:
+    """Test that branch create from root (no slot assignment) allocates a new slot."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
+
+        result = runner.invoke(
+            cli, ["br", "create", "new-feature"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Assigned new-feature to erk-slot-01" in result.output
+        # Should NOT say "Stacked" or "in place"
+        assert "Stacked" not in result.output
+        assert "in place" not in result.output
+
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+        assert state.assignments[0].branch_name == "new-feature"
+
+
+def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
+    """Test that --for-plan from assigned slot stacks in place AND creates .impl/."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "existing-branch"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-branch"]},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pre-create pool state with cwd assigned to a slot
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="existing-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(repo.pool_json_path, existing_state)
+
+        now = TEST_PLAN_TIMESTAMP
+        plan = Plan(
+            plan_identifier="300",
+            title="Stacked plan",
+            body="# Plan\nStacked implementation",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/300",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+            objective_id=None,
+        )
+        backend = get_plan_backend()
+        plan_store, _ = create_plan_store({"300": plan}, backend=backend)
+
+        if backend == "draft_pr":
+            git_ops = FakeGit(
+                worktrees=env.build_worktrees("main"),
+                current_branches={env.cwd: "existing-branch"},
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                local_branches={env.cwd: ["main", "existing-branch", "plan-300"]},
+            )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Stacked" in result.output
+        assert "in place" in result.output
+        assert "Created .impl/ folder from issue #300" in result.output
+
+        # Verify assignment tip was updated
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+        if backend == "draft_pr":
+            assert "plan-300" in state.assignments[0].branch_name
+        else:
+            assert "P300" in state.assignments[0].branch_name
+
+        # Verify .impl/ was created at cwd (the slot worktree)
+        impl_folder = env.cwd / ".impl"
+        assert impl_folder.exists()
+        assert (impl_folder / "plan.md").exists()
+
+
+def test_branch_create_no_slot_from_assigned_slot_skips_assignment() -> None:
+    """Test that --no-slot from assigned slot creates branch without touching assignment."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "existing-branch"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-branch"]},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pre-create pool state with cwd assigned to a slot
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="existing-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(repo.pool_json_path, existing_state)
+
+        test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, repo=repo)
+
+        result = runner.invoke(
+            cli,
+            ["br", "create", "--no-slot", "untracked-branch"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Created branch: untracked-branch" in result.output
+        # Should NOT have slot assignment or "Stacked" message
+        assert "Assigned" not in result.output
+        assert "Stacked" not in result.output
+
+        # Verify original assignment is unchanged
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+        assert state.assignments[0].branch_name == "existing-branch"

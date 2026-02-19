@@ -15,7 +15,7 @@ class IssueNextSteps:
 
     @property
     def prepare(self) -> str:
-        return f"erk prepare {self.issue_number}"
+        return f"erk br create --for-plan {self.issue_number}"
 
     @property
     def submit(self) -> str:
@@ -23,7 +23,10 @@ class IssueNextSteps:
 
     @property
     def prepare_and_implement(self) -> str:
-        return f'source "$(erk prepare {self.issue_number} --script)" && erk implement --dangerous'
+        return (
+            f'source "$(erk br create --for-plan {self.issue_number} --script)"'
+            " && erk implement --dangerous"
+        )
 
 
 @dataclass(frozen=True)
@@ -97,7 +100,7 @@ def format_next_steps_markdown(issue_number: int) -> str:
 
 ### Local Execution
 
-**Prepare worktree:**
+**Create branch from plan:**
 ```bash
 {s.prepare}
 ```"""

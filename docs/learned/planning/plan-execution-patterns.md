@@ -24,7 +24,7 @@ Plan branches follow the pattern `P<issue-number>-<slug>`:
 
 Each plan implementation runs in an isolated worktree:
 
-1. `erk prepare <issue-number>` creates a new worktree from the plan issue
+1. `erk br create --for-plan <issue-number>` creates a new worktree from the plan issue
 2. The worktree gets its own `.impl/` folder with the plan content
 3. Implementation happens entirely within the worktree
 4. After PR lands, the worktree is cleaned up
@@ -46,7 +46,7 @@ After implementation:
 ## .impl/ Folder Lifecycle
 
 1. **Created**: by `erk exec setup-impl-from-issue` or manually
-2. **Contains**: `plan.md` (immutable) and `issue.json` (tracking)
+2. **Contains**: `plan.md` (immutable) and `plan-ref.json` (tracking)
 3. **Preserved**: through implementation — never deleted by agents
 4. **Committed**: as part of the PR for reviewer context
 5. **Cleaned up**: after PR lands (during branch deletion)

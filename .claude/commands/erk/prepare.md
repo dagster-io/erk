@@ -6,13 +6,13 @@ description: Prepare a worktree from a saved plan issue
 
 ## Goal
 
-Find the most recent GitHub plan issue created in this conversation and prepare a worktree for implementation via `erk prepare`.
+Find the most recent GitHub plan issue created in this conversation and prepare a worktree for implementation via `erk br create --for-plan`.
 
 ## What This Command Does
 
 1. Search conversation for the last GitHub issue reference
 2. Extract the issue number
-3. Run `erk prepare <issue_number>` to create a worktree
+3. Run `erk br create --for-plan <issue_number>` to create a worktree
 
 ## Finding the Issue
 
@@ -28,10 +28,10 @@ Extract the issue number from the most recent match.
 Once you have the issue number, run:
 
 ```bash
-erk prepare <issue_number>
+erk br create --for-plan <issue_number>
 ```
 
-Display the command output to the user. The `erk prepare` command handles worktree creation and slot allocation.
+Display the command output to the user. The `erk br create --for-plan` command handles worktree creation and slot allocation.
 
 The output will include activation instructions like:
 
@@ -45,4 +45,4 @@ Share these activation instructions with the user so they can switch to the new 
 ## Error Cases
 
 - **No issue found in conversation**: Report "No GitHub plan issue found in conversation. Run /erk:plan-save first to create an issue."
-- **erk prepare fails**: Display the error output from the command
+- **erk br create --for-plan fails**: Display the error output from the command

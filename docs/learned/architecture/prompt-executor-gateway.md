@@ -24,12 +24,12 @@ The `PromptExecutor` abstraction enables executing Claude CLI commands from Pyth
 
 The abstraction supports fundamentally different integration patterns:
 
-| Mode                           | Returns                   | Output                           | Use Case                                                                |
-| ------------------------------ | ------------------------- | -------------------------------- | ----------------------------------------------------------------------- |
-| `execute_command_streaming()`  | `Iterator[ExecutorEvent]` | Yields typed events in real-time | Real-time progress displays, extracting PR metadata during execution    |
-| `execute_prompt()`             | `PromptResult`            | Captures output string           | Simple prompt-and-response, commit message generation, title extraction |
-| `execute_prompt_passthrough()` | `int` (exit code)         | Streams to terminal              | Code review, user-facing output where Claude's formatting matters       |
-| `execute_interactive()`        | Never returns             | Replaces process                 | Launching Claude for interactive sessions (erk prepare, erk edit)       |
+| Mode                           | Returns                   | Output                           | Use Case                                                                           |
+| ------------------------------ | ------------------------- | -------------------------------- | ---------------------------------------------------------------------------------- |
+| `execute_command_streaming()`  | `Iterator[ExecutorEvent]` | Yields typed events in real-time | Real-time progress displays, extracting PR metadata during execution               |
+| `execute_prompt()`             | `PromptResult`            | Captures output string           | Simple prompt-and-response, commit message generation, title extraction            |
+| `execute_prompt_passthrough()` | `int` (exit code)         | Streams to terminal              | Code review, user-facing output where Claude's formatting matters                  |
+| `execute_interactive()`        | Never returns             | Replaces process                 | Launching Claude for interactive sessions (erk implement --interactive, erk learn) |
 
 **Design rationale**: Single abstraction with mode selection beats four separate abstractions. Callers choose the mode that matches their integration needs. The fake implements all modes, so tests can verify mode selection without subprocess overhead.
 

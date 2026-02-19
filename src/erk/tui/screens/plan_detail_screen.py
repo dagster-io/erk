@@ -338,12 +338,15 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_prepare(self) -> None:
         """Copy basic prepare command to clipboard."""
-        cmd = f"erk prepare {self._row.plan_id}"
+        cmd = f"erk br create --for-plan {self._row.plan_id}"
         self._copy_and_notify(cmd)
 
     def action_copy_prepare_activate(self) -> None:
         """Copy one-liner to prepare worktree and start implementation."""
-        cmd = f'source "$(erk prepare {self._row.plan_id} --script)" && erk implement --dangerous'
+        cmd = (
+            f'source "$(erk br create --for-plan {self._row.plan_id} --script)"'
+            " && erk implement --dangerous"
+        )
         self._copy_and_notify(cmd)
 
     def action_copy_submit(self) -> None:
@@ -629,12 +632,15 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_prepare":
-            cmd = f"erk prepare {row.plan_id}"
+            cmd = f"erk br create --for-plan {row.plan_id}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_prepare_activate":
-            cmd = f'source "$(erk prepare {row.plan_id} --script)" && erk implement --dangerous'
+            cmd = (
+                f'source "$(erk br create --for-plan {row.plan_id} --script)"'
+                " && erk implement --dangerous"
+            )
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
 
@@ -832,7 +838,7 @@ class PlanDetailScreen(ModalScreen):
                     yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
 
             # Prepare commands
-            prepare_cmd = f"erk prepare {self._row.plan_id}"
+            prepare_cmd = f"erk br create --for-plan {self._row.plan_id}"
             with Container(classes="command-row"):
                 yield Label("[1]", classes="command-key")
                 yield CopyableLabel(prepare_cmd, prepare_cmd)

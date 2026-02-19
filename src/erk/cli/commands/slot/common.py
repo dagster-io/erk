@@ -434,6 +434,57 @@ def cleanup_worktree_artifacts(worktree_path: Path) -> None:
         shutil.rmtree(scratch_folder)
 
 
+def update_slot_assignment_tip(
+    pool_json_path: Path,
+    state: PoolState,
+    current_assignment: SlotAssignment,
+    *,
+    branch_name: str,
+    now: str,
+) -> SlotAllocationResult:
+    """Update an existing slot assignment to point to a new branch tip.
+
+    Used for stack-in-place: when creating a new branch from within an assigned
+    slot, update the assignment to track the new branch without consuming a new slot.
+
+    Args:
+        pool_json_path: Path to pool.json for saving updated state
+        state: Current pool state
+        current_assignment: The assignment to update
+        branch_name: New branch name to assign
+        now: ISO timestamp for the assignment
+
+    Returns:
+        SlotAllocationResult with already_assigned=True (reusing existing slot)
+    """
+    new_assignment = SlotAssignment(
+        slot_name=current_assignment.slot_name,
+        branch_name=branch_name,
+        assigned_at=now,
+        worktree_path=current_assignment.worktree_path,
+    )
+
+    new_assignments = tuple(
+        new_assignment if a.slot_name == current_assignment.slot_name else a
+        for a in state.assignments
+    )
+
+    new_state = PoolState(
+        version=state.version,
+        pool_size=state.pool_size,
+        slots=state.slots,
+        assignments=new_assignments,
+    )
+
+    save_pool_state(pool_json_path, new_state)
+
+    return SlotAllocationResult(
+        slot_name=current_assignment.slot_name,
+        worktree_path=current_assignment.worktree_path,
+        already_assigned=True,
+    )
+
+
 def allocate_slot_for_branch(
     ctx: ErkContext,
     repo: RepoContext,

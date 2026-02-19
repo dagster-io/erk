@@ -8,10 +8,10 @@ read_when:
 tripwires:
   - action: "putting Closes keyword in PR title or commit message"
     warning: "GitHub only processes closing keywords in the PR body. Title and commit message references are ignored."
-  - action: "using issue number from .impl/issue.json for a checkout footer"
+  - action: "using issue number from .impl/plan-ref.json for a checkout footer"
     warning: "The checkout footer requires the PR number, not the issue number. These are different values — the issue is the plan, the PR is the implementation."
   - action: "resolving issue number from a single source without checking for mismatches"
-    warning: "Both .impl/issue.json and branch name may contain issue numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong issue."
+    warning: "Both .impl/plan-ref.json and branch name may contain issue numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong issue."
 ---
 
 # Issue-PR Closing Integration
@@ -24,21 +24,21 @@ This document covers the cross-cutting pattern of how erk ensures that closing r
 
 The submit pipeline resolves issue numbers from three sources with a strict priority hierarchy. The cross-cutting concern is that these sources live in different systems (filesystem, git, GitHub API) and must be validated against each other.
 
-| Source                    | When used                  | Why it exists                                                         |
-| ------------------------- | -------------------------- | --------------------------------------------------------------------- |
-| `.impl/issue.json`        | Authoritative when present | Created by `erk prepare` or `erk plan submit` — explicit plan linkage |
-| Branch name (`P{N}-slug`) | Fallback when no `.impl/`  | Supports manually-created worktrees from plan branches                |
-| Existing PR footer        | Last resort on re-submit   | Preserves references after worktree recreation                        |
+| Source                    | When used                  | Why it exists                                                                      |
+| ------------------------- | -------------------------- | ---------------------------------------------------------------------------------- |
+| `.impl/plan-ref.json`     | Authoritative when present | Created by `erk br create --for-plan` or `erk plan submit` — explicit plan linkage |
+| Branch name (`P{N}-slug`) | Fallback when no `.impl/`  | Supports manually-created worktrees from plan branches                             |
+| Existing PR footer        | Last resort on re-submit   | Preserves references after worktree recreation                                     |
 
-<!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, validate_issue_linkage -->
+<!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, validate_plan_linkage -->
 
-**The mismatch guard is the key design decision.** When both `.impl/issue.json` and the branch name contain issue numbers, they must agree — a mismatch raises `ValueError` and halts the pipeline. This prevents the most dangerous failure mode: silently closing the wrong issue because stale metadata disagrees with the branch. See `validate_issue_linkage()` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
+**The mismatch guard is the key design decision.** When both `.impl/plan-ref.json` and the branch name contain issue numbers, they must agree — a mismatch raises `ValueError` and halts the pipeline. This prevents the most dangerous failure mode: silently closing the wrong issue because stale metadata disagrees with the branch. See `validate_plan_linkage()` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
 
 ### Auto-Repair: Bridging Manual Worktree Creation
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state -->
 
-When `.impl/` exists but lacks `issue.json`, and the branch name contains a valid issue number, `prepare_state()` auto-creates the missing `issue.json`. This bridges the gap when a worktree is created manually from a plan branch (e.g., `git worktree add`) without going through `erk prepare`, which would normally create the file. See `prepare_state()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
+When `.impl/` exists but lacks `plan-ref.json`, and the branch name contains a valid issue number, `prepare_state()` auto-creates the missing `plan-ref.json`. This bridges the gap when a worktree is created manually from a plan branch (e.g., `git worktree add`) without going through `erk br create --for-plan`, which would normally create the file. See `prepare_state()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
 
 ### Closing Reference Preservation on Re-Submit
 
@@ -91,6 +91,6 @@ The most common failure: the keyword is absent from the body because the PR was 
 ## Related Documentation
 
 - [PR Footer Format Validation](../architecture/pr-footer-validation.md) — Footer format contract and migration strategy
-- [Issue-PR Linkage Storage Model](../erk/issue-pr-linkage-storage.md) — `.impl/issue.json` structure and `willCloseTarget` timing
+- [Issue-PR Linkage Storage Model](../erk/issue-pr-linkage-storage.md) — `.impl/plan-ref.json` structure and `willCloseTarget` timing
 - [PR Submission Decision Framework](../cli/pr-submission.md) — Choosing between git-pr-push and pr-submit workflows
 - [PR Validation Rules](../pr-operations/pr-validation-rules.md) — `erk pr check` validates closing references and checkout footers
