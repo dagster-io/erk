@@ -55,6 +55,7 @@ from erk_shared.context.helpers import (
     require_git,
     require_github,
     require_issues,
+    require_plan_backend,
     require_repo_root,
 )
 from erk_shared.gateway.github.abc import GistCreateError
@@ -347,8 +348,6 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
     if repo_info is None:
         _output_error("Not in a GitHub repository")
         return
-
-    from erk_shared.context.helpers import require_plan_backend
 
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)

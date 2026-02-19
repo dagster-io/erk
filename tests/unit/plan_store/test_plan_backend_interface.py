@@ -498,6 +498,99 @@ def test_post_event_not_found_raises(plan_backend: PlanBackend) -> None:
 # =============================================================================
 
 
+# =============================================================================
+# get_comments tests
+# =============================================================================
+
+
+def test_get_comments_returns_empty_list_for_no_comments(
+    backend_with_plan: tuple[PlanBackend, str],
+) -> None:
+    """Backend returns empty list when plan has no comments."""
+    backend, plan_id = backend_with_plan
+
+    comments = backend.get_comments(Path("/repo"), plan_id)
+    assert isinstance(comments, list)
+
+
+def test_get_comments_returns_preconfigured_comments_github() -> None:
+    """GitHubPlanStore returns pre-configured comments from FakeGitHubIssues."""
+    issue = create_test_issue(
+        number=42,
+        title="Plan",
+        body="content",
+        labels=["erk-plan"],
+        created_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=UTC),
+    )
+    fake_issues = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: ["First comment", "Second comment"]},
+    )
+    backend = GitHubPlanStore(fake_issues)
+
+    comments = backend.get_comments(Path("/repo"), "42")
+    assert len(comments) == 2
+    assert "First comment" in comments
+    assert "Second comment" in comments
+
+
+def test_get_comments_returns_preconfigured_comments_draft_pr() -> None:
+    """DraftPRPlanBackend returns pre-configured comments from FakeGitHubIssues."""
+    fake_github = FakeGitHub()
+    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
+
+    # Create a plan so the PR exists
+    result = backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan",
+        labels=("erk-plan",),
+        metadata={"branch_name": "test-branch-comments"},
+    )
+
+    # Pre-configure comments on the underlying fake issues gateway
+    pr_number = int(result.plan_id)
+    fake_github.issues._comments[pr_number] = ["First comment", "Second comment"]
+
+    comments = backend.get_comments(Path("/repo"), result.plan_id)
+    assert len(comments) == 2
+    assert "First comment" in comments
+    assert "Second comment" in comments
+
+
+# =============================================================================
+# find_sessions_for_plan tests
+# =============================================================================
+
+
+def test_find_sessions_for_plan_returns_sessions_for_plan(
+    backend_with_plan: tuple[PlanBackend, str],
+) -> None:
+    """Backend returns SessionsForPlan with expected structure."""
+    backend, plan_id = backend_with_plan
+
+    result = backend.find_sessions_for_plan(Path("/repo"), plan_id)
+    assert hasattr(result, "planning_session_id")
+    assert hasattr(result, "implementation_session_ids")
+    assert hasattr(result, "learn_session_ids")
+    assert isinstance(result.implementation_session_ids, list)
+    assert isinstance(result.learn_session_ids, list)
+
+
+def test_find_sessions_for_plan_raises_for_nonexistent_plan(
+    plan_backend: PlanBackend,
+) -> None:
+    """Backend raises RuntimeError when plan not found."""
+    with pytest.raises(RuntimeError):
+        plan_backend.find_sessions_for_plan(Path("/repo"), "99999999")
+
+
+# =============================================================================
+# Whitelist removal test (GitHub-specific)
+# =============================================================================
+
+
 def test_update_metadata_accepts_previously_blocked_fields() -> None:
     """GitHub backend now accepts fields that were previously blocked by whitelist."""
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-plan"})

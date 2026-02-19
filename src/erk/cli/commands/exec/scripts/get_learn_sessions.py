@@ -38,6 +38,7 @@ from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
     require_git,
+    require_plan_backend,
     require_repo_root,
 )
 from erk_shared.learn.extraction.get_learn_sessions_result import (
@@ -213,8 +214,6 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     Returns JSON with session IDs and paths for use by /erk:learn skill.
     """
     # Get dependencies from context
-    from erk_shared.context.helpers import require_plan_backend
-
     git = require_git(ctx)
     claude_installation = require_claude_installation(ctx)
     cwd = require_cwd(ctx)
