@@ -80,7 +80,7 @@ def test_draft_pr_success_display(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert "Plan saved as draft PR" in result.output
-    assert "Title: Feature Plan" in result.output
+    assert "Title: [erk-plan] Feature Plan" in result.output
     assert "Branch: plan-" in result.output
 
 

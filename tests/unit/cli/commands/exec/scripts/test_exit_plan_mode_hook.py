@@ -24,6 +24,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.plan_store import get_plan_backend
 
 # ============================================================================
 # Pure Logic Tests for determine_exit_action() - NO MOCKING REQUIRED
@@ -1023,7 +1024,10 @@ class TestHookIntegration:
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2  # Block
-        assert "Plan already saved to GitHub" in result.output
+        if get_plan_backend() == "draft_pr":
+            assert "Plan PR already created" in result.output
+        else:
+            assert "Plan already saved to GitHub" in result.output
         assert plan_saved_marker.exists()  # Marker preserved for subsequent calls
 
     def test_incremental_plan_marker_flow(self, tmp_path: Path) -> None:
@@ -1126,7 +1130,10 @@ class TestHookIntegration:
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2  # Block
-        assert "Plan already saved to GitHub" in result.output
+        if get_plan_backend() == "draft_pr":
+            assert "Plan PR already created" in result.output
+        else:
+            assert "Plan already saved to GitHub" in result.output
         assert plan_saved_marker.exists()  # Marker preserved
         assert not objective_context_marker.exists()  # But objective marker deleted
 

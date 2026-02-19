@@ -412,8 +412,13 @@ def test_view_plan_without_header_info(plan_backend_type: str) -> None:
         # Assert
         assert result.exit_code == 0
         assert "Plan without Header" in result.output
-        # Should NOT show header info section when no metadata
-        assert "─── Header ───" not in result.output
+        # For github backend: plain body has no metadata → no header section
+        # For draft_pr backend: _plan_to_pr_details() synthesizes a plan-header
+        # (with branch_name, created_at, created_by) so header section IS present
+        if plan_backend_type == "draft_pr":
+            assert "─── Header ───" in result.output
+        else:
+            assert "─── Header ───" not in result.output
 
 
 def test_view_plan_learn_section_no_evaluation(plan_backend_type: str) -> None:
