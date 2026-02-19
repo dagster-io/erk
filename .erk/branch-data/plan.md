@@ -11,6 +11,7 @@ Erk supports multiple agent backends (Claude, Codex) configured in `~/.erk/confi
 After `create_context()`, use `dataclasses.replace()` to bake the backend override into `GlobalConfig.interactive_agent.backend` before storing on `ctx.obj`. This means all downstream consumers (`resolve_backend()`, `with_overrides()`, `launch_interactive()`) see the override automatically with zero changes.
 
 **Why this approach over alternatives:**
+
 - Adding `backend_override` to `with_overrides()` only covers interactive launch commands, not capability commands — two parallel code paths
 - Storing as a separate `ErkContext` field splits the source of truth, requiring every consumer to check two places
 
@@ -19,6 +20,7 @@ After `create_context()`, use `dataclasses.replace()` to bake the backend overri
 ### 1. `src/erk/cli/cli.py` — Add `--backend` global flag
 
 Add `--backend` Click option to the `cli()` group (alongside existing `--debug`):
+
 ```python
 @click.option(
     "--backend",
@@ -29,6 +31,7 @@ Add `--backend` Click option to the `cli()` group (alongside existing `--debug`)
 ```
 
 After `create_context()`, apply the override:
+
 ```python
 # Apply backend override: CLI flag > env var > config file
 effective_backend = backend or os.environ.get("ERK_BACKEND")
@@ -43,6 +46,7 @@ Also support `ERK_BACKEND` env var (validated to `"claude"` or `"codex"`).
 ### 2. `tests/unit/cli/test_backend_override.py` — New test file
 
 Tests for `_apply_backend_override`:
+
 - Override works when `global_config` exists (normal case) — backend changed, other fields preserved
 - Override works when `global_config` is None (pre-init case)
 - `with_overrides()` preserves an already-overridden backend (codex config stays codex through override chain)
@@ -53,19 +57,19 @@ Add test confirming `with_overrides()` preserves `backend="codex"` through overr
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
-| `src/erk/cli/cli.py` | Add `--backend` option, `_apply_backend_override()`, env var support |
-| `tests/unit/cli/test_backend_override.py` | New: unit tests for override function |
-| `tests/unit/core/test_interactive_claude_config.py` | Add backend preservation test |
+| File                                                | Change                                                               |
+| --------------------------------------------------- | -------------------------------------------------------------------- |
+| `src/erk/cli/cli.py`                                | Add `--backend` option, `_apply_backend_override()`, env var support |
+| `tests/unit/cli/test_backend_override.py`           | New: unit tests for override function                                |
+| `tests/unit/core/test_interactive_claude_config.py` | Add backend preservation test                                        |
 
 ## Files NOT Modified (by design)
 
-| File | Reason |
-|------|--------|
-| `packages/erk-shared/src/erk_shared/context/types.py` | No changes needed — override baked in before consumption |
-| `src/erk/cli/commands/init/capability/backend_utils.py` | `resolve_backend()` reads from config which is already overridden |
-| `packages/erk-shared/src/erk_shared/gateway/agent_launcher/real.py` | Backend validation already handles codex (raises helpful error) |
+| File                                                                | Reason                                                            |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `packages/erk-shared/src/erk_shared/context/types.py`               | No changes needed — override baked in before consumption          |
+| `src/erk/cli/commands/init/capability/backend_utils.py`             | `resolve_backend()` reads from config which is already overridden |
+| `packages/erk-shared/src/erk_shared/gateway/agent_launcher/real.py` | Backend validation already handles codex (raises helpful error)   |
 
 ## Key Patterns to Follow
 
