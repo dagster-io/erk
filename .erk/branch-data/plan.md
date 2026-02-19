@@ -13,7 +13,9 @@
 ```
 <!-- as-of: 8442713b3 -->
 ```
+
 →
+
 ```
 <!-- as-of: f24b02de7 -->
 ```
@@ -45,6 +47,7 @@
 ### 3. Commits intentionally omitted (internal/refactoring)
 
 These are not user-facing and don't warrant changelog entries:
+
 - b1a6bd13 Move inline imports to top-level (code cleanup)
 - e80ddc0e Add regeneration instructions to reference.md (internal docs)
 - 524c5f9a Remove plan title update method, refactor exec scripts (internal refactoring)
