@@ -17,12 +17,16 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import (
+    DETAILS_CLOSE,
+    DETAILS_OPEN,
+    PLAN_CONTENT_SEPARATOR,
+)
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
 _PLAN_HEADER_END_MARKER = "<!-- /erk:metadata-block:plan-header -->"
-_PLAN_CONTENT_SEPARATOR = "\n\n---\n\n"
 
 
 def _plan_to_issue_info(plan: Plan) -> IssueInfo:
@@ -102,13 +106,15 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
     branch_name = f"plan-{plan.plan_identifier}"
 
     # Build PR body: if the plan body has a metadata block, reformat it with separator
+    # and wrap plan content in <details> tags (new lifecycle format)
     body = plan.body
     end_marker_idx = body.find(_PLAN_HEADER_END_MARKER)
     if end_marker_idx != -1:
         # Body contains a plan-header block - split into metadata and content parts
         metadata_part = body[: end_marker_idx + len(_PLAN_HEADER_END_MARKER)]
         content_part = body[end_marker_idx + len(_PLAN_HEADER_END_MARKER) :].strip()
-        pr_body = metadata_part + _PLAN_CONTENT_SEPARATOR + content_part
+        details_section = DETAILS_OPEN + content_part + DETAILS_CLOSE
+        pr_body = metadata_part + PLAN_CONTENT_SEPARATOR + details_section
     else:
         pr_body = body
 

@@ -42,6 +42,7 @@ from erk_shared.impl_folder import (
     save_plan_ref,
     validate_plan_linkage,
 )
+from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
 from erk_shared.scratch.scratch import write_scratch_file
 
 # ---------------------------------------------------------------------------
@@ -612,16 +613,25 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     pr_title = state.title or "Update"
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
-    # Determine issue_number and plans_repo for footer
+    # Detect draft-PR backend and extract metadata prefix
+    metadata_prefix = ""
     issue_number = state.issue_number
     effective_plans_repo = plans_repo
 
-    # Fallback: preserve existing closing reference from PR body
-    if issue_number is None:
-        closing_ref = _extract_closing_ref_from_pr(ctx, state.cwd, state.pr_number)
-        if closing_ref is not None:
-            issue_number = closing_ref.issue_number
-            effective_plans_repo = closing_ref.plans_repo
+    if ctx.plan_backend.get_provider_name() == "github-draft-pr" and state.pr_number is not None:
+        existing_pr = ctx.github.get_pr(state.repo_root, state.pr_number)
+        if not isinstance(existing_pr, PRNotFound):
+            metadata_prefix = extract_metadata_prefix(existing_pr.body)
+        # Don't self-close: draft PR IS the plan
+        issue_number = None
+        effective_plans_repo = None
+    else:
+        # Fallback: preserve existing closing reference from PR body
+        if issue_number is None:
+            closing_ref = _extract_closing_ref_from_pr(ctx, state.cwd, state.pr_number)
+            if closing_ref is not None:
+                issue_number = closing_ref.issue_number
+                effective_plans_repo = closing_ref.plans_repo
 
     # Check learn plan label
     impl_dir = state.cwd / ".impl"
@@ -635,6 +645,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
         issue_number=issue_number,
         plans_repo=effective_plans_repo,
         header="",
+        metadata_prefix=metadata_prefix,
     )
 
     # Update PR metadata

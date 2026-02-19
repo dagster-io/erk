@@ -27,6 +27,7 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.naming import extract_leading_issue_number
+from erk_shared.plan_store.draft_pr_lifecycle import build_original_plan_section
 
 # ---------------------------------------------------------------------------
 # Branch Discovery
@@ -244,6 +245,7 @@ def assemble_pr_body(
     issue_number: int | None,
     plans_repo: str | None,
     header: str,
+    metadata_prefix: str = "",
 ) -> str:
     """Assemble final PR body with plan details and footer.
 
@@ -254,20 +256,28 @@ def assemble_pr_body(
         issue_number: Optional issue number for "Closes #N"
         plans_repo: Optional plans repo for cross-repo references
         header: Existing PR header to preserve (may be empty)
+        metadata_prefix: Draft PR metadata block + separator to preserve.
+            When non-empty, uses original-plan details format instead of
+            issue-based plan details format.
 
     Returns:
         Complete PR body ready for GitHub API
     """
     pr_body_content = body
     if plan_context is not None:
-        pr_body_content = body + build_plan_details_section(plan_context)
+        if metadata_prefix:
+            # Draft PR: use original-plan format (from lifecycle module)
+            pr_body_content = body + build_original_plan_section(plan_context.plan_content)
+        else:
+            # Issue-based: use existing format
+            pr_body_content = body + build_plan_details_section(plan_context)
 
-    metadata_section = build_pr_body_footer(
+    footer = build_pr_body_footer(
         pr_number,
         issue_number=issue_number,
         plans_repo=plans_repo,
     )
-    return header + pr_body_content + metadata_section
+    return metadata_prefix + header + pr_body_content + footer
 
 
 def render_progress(event: ProgressEvent) -> None:

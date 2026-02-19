@@ -33,6 +33,7 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import SquashError
+from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
 
 
 @click.command("rewrite")
@@ -160,22 +161,37 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     impl_dir = cwd / ".impl"
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
-    issue_discovery = discover_issue_for_footer(
-        impl_dir=impl_dir,
-        branch_name=discovery.current_branch,
-        existing_pr_body=pr_info.body,
-        plans_repo=plans_repo,
-    )
-    if isinstance(issue_discovery, IssueLinkageMismatch):
-        raise click.ClickException(issue_discovery.message)
+    # Detect draft-PR backend and extract metadata prefix
+    metadata_prefix = ""
+    if ctx.plan_backend.get_provider_name() == "github-draft-pr":
+        metadata_prefix = extract_metadata_prefix(pr_info.body)
+
+    if metadata_prefix:
+        # Draft PR IS the plan — no self-closing reference
+        issue_number: int | None = None
+        effective_plans_repo: str | None = None
+        header = ""
+    else:
+        issue_discovery = discover_issue_for_footer(
+            impl_dir=impl_dir,
+            branch_name=discovery.current_branch,
+            existing_pr_body=pr_info.body,
+            plans_repo=plans_repo,
+        )
+        if isinstance(issue_discovery, IssueLinkageMismatch):
+            raise click.ClickException(issue_discovery.message)
+        issue_number = issue_discovery.issue_number
+        effective_plans_repo = issue_discovery.plans_repo
+        header = extract_header_from_body(pr_info.body)
 
     final_body = assemble_pr_body(
         body=body,
         plan_context=plan_context,
         pr_number=pr_number,
-        issue_number=issue_discovery.issue_number,
-        plans_repo=issue_discovery.plans_repo,
-        header=extract_header_from_body(pr_info.body),
+        issue_number=issue_number,
+        plans_repo=effective_plans_repo,
+        header=header,
+        metadata_prefix=metadata_prefix,
     )
 
     ctx.github.update_pr_title_and_body(
