@@ -26,11 +26,11 @@ from erk_shared.context.helpers import (
     require_git,
     require_github,
     require_issues,
+    require_plan_backend,
     require_repo_root,
 )
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
-    extract_metadata_value,
     extract_raw_metadata_blocks,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
@@ -52,6 +52,7 @@ from erk_shared.objective_fetch_context_result import (
     PRInfoDict,
     RoadmapContextDict,
 )
+from erk_shared.plan_store.types import PlanNotFound
 
 
 def _parse_plan_number_from_branch(branch: str) -> int | None:
@@ -143,6 +144,7 @@ def objective_fetch_context(
     issues = require_issues(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
+    plan_backend = require_plan_backend(ctx)
 
     # Discovery: auto-fill branch from git state
     if branch_name is None:
@@ -153,37 +155,33 @@ def objective_fetch_context(
             click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
             raise SystemExit(1)
 
-    # Parse plan number from branch
+    # Parse plan number from branch (fast path: P<number>-... pattern)
     plan_number = _parse_plan_number_from_branch(branch_name)
     if plan_number is None:
-        click.echo(_error_json(f"Branch '{branch_name}' does not match P<number>-... pattern"))
-        raise SystemExit(1)
-
-    # Discovery: auto-fill objective from plan issue metadata
-    if objective_number is None:
-        plan_for_discovery = issues.get_issue(repo_root, plan_number)
-        if isinstance(plan_for_discovery, IssueNotFound):
-            msg = f"Plan issue #{plan_number} not found (needed to discover objective)"
-            click.echo(_error_json(msg))
-            raise SystemExit(1)
-        discovered_objective = extract_metadata_value(
-            plan_for_discovery.body, "plan-header", "objective_issue"
-        )
-        if discovered_objective is None:
-            msg = f"Plan issue #{plan_number} has no objective_issue in plan-header metadata"
-            click.echo(_error_json(msg))
-            raise SystemExit(1)
-        if isinstance(discovered_objective, int):
-            objective_number = discovered_objective
-        elif isinstance(discovered_objective, str) and discovered_objective.isdigit():
-            objective_number = int(discovered_objective)
-        else:
-            msg = (
-                f"Plan issue #{plan_number} has invalid objective_issue value:"
-                f" {discovered_objective}"
+        # Draft-PR branches don't encode plan number in name.
+        # Fall back to plan backend resolution (may require API call).
+        plan_id = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
+        if plan_id is None:
+            click.echo(
+                _error_json(
+                    f"Branch '{branch_name}' has no extractable plan number and no PR found"
+                )
             )
+            raise SystemExit(1)
+        plan_number = int(plan_id)
+
+    # Discovery: auto-fill objective from plan metadata via plan backend
+    if objective_number is None:
+        plan_result = plan_backend.get_plan(repo_root, str(plan_number))
+        if isinstance(plan_result, PlanNotFound):
+            msg = f"Plan #{plan_number} not found (needed to discover objective)"
             click.echo(_error_json(msg))
             raise SystemExit(1)
+        if plan_result.objective_id is None:
+            msg = f"Plan #{plan_number} has no linked objective"
+            click.echo(_error_json(msg))
+            raise SystemExit(1)
+        objective_number = plan_result.objective_id
 
     # Discovery: auto-fill PR from branch
     if pr_number is None:
@@ -199,10 +197,10 @@ def objective_fetch_context(
         click.echo(_error_json(f"Objective issue #{objective_number} not found"))
         raise SystemExit(1)
 
-    # Fetch plan issue
-    plan = issues.get_issue(repo_root, plan_number)
-    if isinstance(plan, IssueNotFound):
-        click.echo(_error_json(f"Plan issue #{plan_number} not found"))
+    # Fetch plan via plan backend (works for both issue-based and draft-PR plans)
+    plan = plan_backend.get_plan(repo_root, str(plan_number))
+    if isinstance(plan, PlanNotFound):
+        click.echo(_error_json(f"Plan #{plan_number} not found"))
         raise SystemExit(1)
 
     # Fetch PR details
@@ -222,7 +220,7 @@ def objective_fetch_context(
         "url": objective.url,
     }
     plan_info: PlanInfoDict = {
-        "number": plan.number,
+        "number": int(plan.plan_identifier),
         "title": plan.title,
         "body": plan.body,
     }
