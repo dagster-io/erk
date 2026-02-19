@@ -20,9 +20,9 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
+    build_graph,
     compute_graph_summary,
     find_graph_next_node,
-    graph_from_phases,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
@@ -202,7 +202,7 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
     phases, _validation_errors = v2_result
 
     # Build graph and compute summary statistics
-    graph = graph_from_phases(phases)
+    graph = build_graph(phases)
     summary = compute_graph_summary(graph)
 
     # JSON output mode

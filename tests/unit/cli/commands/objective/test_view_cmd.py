@@ -501,3 +501,108 @@ def test_view_objective_json_includes_depends_on() -> None:
         assert nodes["1.2"]["depends_on"] == ["1.1"]
         # 2A.1 depends on 1.3 (last step of previous phase)
         assert nodes["2A.1"]["depends_on"] == ["1.3"]
+
+
+# ---------------------------------------------------------------------------
+# Fan-out/fan-in tests (schema v3 with explicit depends_on)
+# ---------------------------------------------------------------------------
+
+OBJECTIVE_WITH_FAN_OUT_FAN_IN = """\
+# Objective: Fan-Out Test
+
+## Roadmap
+
+### Phase 1: Root
+
+### Phase 2: Parallel
+
+### Phase 3: Merge
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '3'
+nodes:
+- id: '1.1'
+  description: Root step
+  status: done
+  plan: null
+  pr: '#100'
+  depends_on: []
+- id: '2.1'
+  description: Branch A
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '1.1'
+- id: '2.2'
+  description: Branch B
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '1.1'
+- id: '3.1'
+  description: Merge step
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '2.1'
+  - '2.2'
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+def test_view_fan_out_json_shows_multiple_unblocked() -> None:
+    """JSON output has 2.1 and 2.2 in unblocked array."""
+    issue = _make_issue(1600, "Objective: Fan-Out", OBJECTIVE_WITH_FAN_OUT_FAN_IN)
+    fake_gh = FakeGitHubIssues(issues={1600: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1600", "--json-output"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        data = json.loads(result.output)
+        unblocked = data["graph"]["unblocked"]
+        # 1.1 is done (unblocked but terminal), 2.1 and 2.2 are pending+unblocked
+        assert "2.1" in unblocked
+        assert "2.2" in unblocked
+        # 3.1 depends on both 2.1 and 2.2 (both pending), so it should NOT be unblocked
+        assert "3.1" not in unblocked
+
+
+def test_view_fan_out_human_shows_unblocked_status() -> None:
+    """Human output shows 'pending (unblocked)' for both 2.1 and 2.2."""
+    issue = _make_issue(1700, "Objective: Fan-Out Human", OBJECTIVE_WITH_FAN_OUT_FAN_IN)
+    fake_gh = FakeGitHubIssues(issues={1700: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1700"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = strip_ansi(result.output)
+        # Count occurrences of "pending (unblocked)" — should be exactly 2 (for 2.1 and 2.2)
+        unblocked_count = output.count("pending (unblocked)")
+        assert unblocked_count == 2, (
+            f"Expected 2 unblocked, got {unblocked_count}. Output:\n{output}"
+        )

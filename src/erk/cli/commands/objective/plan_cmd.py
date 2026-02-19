@@ -28,7 +28,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import extract_metadata_value
 from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
-    graph_from_phases,
+    build_graph,
     phases_from_graph,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -51,7 +51,7 @@ def _find_node_in_phases(
     Returns:
         Tuple of (ObjectiveNode, phase_name) if found, None otherwise
     """
-    graph = graph_from_phases(phases)
+    graph = build_graph(phases)
     node_by_id = {node.id: node for node in graph.nodes}
     node = node_by_id.get(node_id)
     if node is None:

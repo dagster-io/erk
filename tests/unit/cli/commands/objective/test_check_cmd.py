@@ -735,3 +735,97 @@ def test_valid_hash_prefix_refs_pass() -> None:
 
     assert result.exit_code == 0
     assert "Plan/PR references use '#' prefix" in result.output
+
+
+# --- fan-out/fan-in tests (schema v3 with explicit depends_on) ---
+
+FAN_OUT_FAN_IN_BODY = """\
+# Objective: Fan-Out Test
+
+## Roadmap
+
+### Phase 1: Root
+
+### Phase 2: Parallel
+
+### Phase 3: Merge
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '3'
+nodes:
+- id: '1.1'
+  description: Root step
+  status: done
+  plan: null
+  pr: '#100'
+  depends_on: []
+- id: '2.1'
+  description: Branch A
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '1.1'
+- id: '2.2'
+  description: Branch B
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '1.1'
+- id: '3.1'
+  description: Merge step
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '2.1'
+  - '2.2'
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+def test_fan_out_fan_in_passes_validation() -> None:
+    """Objective with explicit deps validates successfully."""
+    issue = _make_issue(2100, "Objective: Fan-Out", FAN_OUT_FAN_IN_BODY)
+    fake_gh = FakeGitHubIssues(issues={2100: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["2100"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "[FAIL]" not in result.output
+
+
+def test_fan_out_fan_in_json_output() -> None:
+    """JSON has correct next_node and summary."""
+    issue = _make_issue(2200, "Objective: Fan-Out JSON", FAN_OUT_FAN_IN_BODY)
+    fake_gh = FakeGitHubIssues(issues={2200: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["2200", "--json-output"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["summary"]["total_nodes"] == 4
+    assert output["summary"]["done"] == 1
+    assert output["summary"]["pending"] == 3
+    # next_node should be one of the fan-out branches (2.1 by position order)
+    assert output["next_node"]["id"] == "2.1"
+    assert output["all_complete"] is False
