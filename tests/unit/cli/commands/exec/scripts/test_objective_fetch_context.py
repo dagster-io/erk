@@ -8,7 +8,6 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.objective_fetch_context import objective_fetch_context
-from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -142,7 +141,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -170,7 +169,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -228,7 +227,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "200", "--objective", "6423", "--branch", "P100-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -254,7 +253,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -280,7 +279,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "9999", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -305,7 +304,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "9999", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -327,7 +326,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "feature-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -353,7 +352,7 @@ class TestObjectiveFetchContext:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -382,7 +381,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 git=fake_git,
@@ -409,7 +408,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -440,7 +439,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -472,7 +471,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             [],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 git=fake_git,
@@ -499,7 +498,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 git=fake_git,
@@ -524,7 +523,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
@@ -548,7 +547,7 @@ class TestDiscoveryMode:
         result = runner.invoke(
             objective_fetch_context,
             ["--objective", "6423", "--branch", "P6513-some-branch"],
-            obj=ErkContext.for_test(
+            obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
