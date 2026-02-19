@@ -77,8 +77,8 @@ def create_plan_from_context(ctx: click.Context) -> None:
         raise SystemExit(1) from e
 
     # Create issue (ABC interface with EAFP pattern)
-    # Add [erk-plan] suffix to title for visibility
-    issue_title = f"{title} [erk-plan]"
+    # Add [erk-plan] prefix to title for visibility
+    issue_title = f"[erk-plan] {title}"
     try:
         result = github.create_issue(
             repo_root=repo_root, title=issue_title, body=initial_body, labels=["erk-plan"]

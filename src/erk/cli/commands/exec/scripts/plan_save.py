@@ -49,6 +49,7 @@ from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
+from erk_shared.plan_utils import get_title_tag_from_labels
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
     create_plan_saved_issue_marker,
@@ -195,11 +196,15 @@ def _save_as_draft_pr(
     if plan_type == "learn":
         labels.append("erk-learn")
 
+    # Prefix title with [erk-plan] or [erk-learn] for GitHub visibility
+    title_tag = get_title_tag_from_labels(labels)
+    prefixed_title = f"{title_tag} {title}"
+
     # Create draft PR via backend
     backend = DraftPRPlanBackend(github, github_issues, time=RealTime())
     result = backend.create_plan(
         repo_root=repo_root,
-        title=title,
+        title=prefixed_title,
         content=plan_content,
         labels=tuple(labels),
         metadata=metadata,
@@ -227,7 +232,7 @@ def _save_as_draft_pr(
     # Output
     if output_format == "display":
         click.echo(f"Plan saved as draft PR #{plan_number}")
-        click.echo(f"Title: {title}")
+        click.echo(f"Title: {prefixed_title}")
         click.echo(f"URL: {result.url}")
         click.echo(f"Branch: {branch_name}")
         if snapshot_result is not None:
@@ -237,7 +242,7 @@ def _save_as_draft_pr(
             "success": True,
             "issue_number": plan_number,
             "issue_url": result.url,
-            "title": title,
+            "title": prefixed_title,
             "branch_name": branch_name,
             "plan_backend": "draft_pr",
         }
