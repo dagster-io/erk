@@ -42,6 +42,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.naming import generate_draft_pr_branch_name
+from erk_shared.output.next_steps import format_next_steps_draft_pr
 from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
@@ -217,6 +218,9 @@ def _save_as_draft_pr(
             "issue_url": result.url,
             "title": title,
             "branch_name": branch_name,
+            "saved_as_label": "draft PR",
+            "view_command": f"gh pr view {plan_number} --web",
+            "next_steps": format_next_steps_draft_pr(plan_number),
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)

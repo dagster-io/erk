@@ -48,6 +48,22 @@ OR exit Claude Code first, then run one of:
   Submit to Queue: {s.submit}"""
 
 
+def format_next_steps_draft_pr(plan_number: int) -> str:
+    """Format next steps for draft PR backend (plain text)."""
+    s = IssueNextSteps(plan_number)
+    return f"""Next steps:
+
+View PR: gh pr view {plan_number} --web
+
+In Claude Code:
+  Submit to queue: {SUBMIT_SLASH_COMMAND} — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Local: {s.prepare}
+  Prepare+Implement: {s.prepare_and_implement}
+  Submit to Queue: {s.submit}"""
+
+
 def format_next_steps_markdown(issue_number: int) -> str:
     """Format for issue body (markdown)."""
     s = IssueNextSteps(issue_number)

@@ -308,6 +308,9 @@ def plan_save_to_issue(
             "issue_number": result.issue_number,
             "issue_url": result.issue_url,
             "title": result.title,
+            "saved_as_label": "issue",
+            "view_command": f"gh issue view {result.issue_number} --web",
+            "next_steps": format_next_steps_plain(result.issue_number),
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
