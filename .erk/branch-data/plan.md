@@ -3,10 +3,12 @@
 ## Context
 
 When `ERK_PLAN_BACKEND=draft_pr`, the plan-save dispatch in `plan_save.py` drops two parameters that are only passed to the issues backend:
+
 - `learned_from_issue` — links learn plans to their parent plan (used for branch auto-detection and parent status updates on land)
 - `created_from_workflow_run_url` — backlinks to the CI workflow run that created the plan
 
 This means learn plans saved as draft PRs lose their parent link, breaking:
+
 1. Auto-detection of parent branch for stacking (`submit.py:get_learn_plan_parent_branch`)
 2. Parent plan status updates when a learn plan lands (`land_pipeline.py:update_learn_plan`)
 3. CI workflow backlinks
@@ -18,12 +20,14 @@ The metadata infrastructure already supports both fields — `format_plan_header
 ### 1. `src/erk/cli/commands/exec/scripts/plan_save.py`
 
 **`_save_plan_via_draft_pr()`** (line 257): Add two parameters to signature:
+
 - `learned_from_issue: int | None`
 - `created_from_workflow_run_url: str | None`
 
 **`_save_as_draft_pr()`** (line 104): Add same two parameters to signature.
 
 **Metadata dict** (line 184): Add entries:
+
 ```python
 if learned_from_issue is not None:
     metadata["learned_from_issue"] = learned_from_issue
@@ -33,6 +37,7 @@ if created_from_workflow_run_url is not None:
 ```
 
 **Dispatch call** (line 422): Pass the two missing params:
+
 ```python
 _save_plan_via_draft_pr(
     ctx,
@@ -68,6 +73,7 @@ created_from_workflow_run_url_val: str | None = (
 ```
 
 Then replace the two hardcoded `None` values in the `format_plan_header_body()` call:
+
 - `created_from_workflow_run_url=None` → `created_from_workflow_run_url=created_from_workflow_run_url_val`
 - `learned_from_issue=None` → `learned_from_issue=learned_from_issue_val`
 
@@ -75,9 +81,9 @@ Then replace the two hardcoded `None` values in the `format_plan_header_body()` 
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
-| `src/erk/cli/commands/exec/scripts/plan_save.py` | Thread params through dispatch + both inner functions + metadata dict |
+| File                                                        | Change                                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `src/erk/cli/commands/exec/scripts/plan_save.py`            | Thread params through dispatch + both inner functions + metadata dict          |
 | `packages/erk-shared/src/erk_shared/plan_store/draft_pr.py` | Extract fields from metadata, pass to `format_plan_header_body()`, add imports |
 
 ## Verification
