@@ -13,6 +13,7 @@ from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.graphite.fake import FakeGraphite
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
@@ -225,10 +226,13 @@ def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    # Two checkouts: plan branch, then back to original
-    assert len(fake_git.checked_out_branches) == 2
-    assert fake_git.checked_out_branches[0][1].startswith("plan-")
-    assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")
+    # Four checkouts: branch_manager.create_branch() does checkout+restore for gt track,
+    # then plan_save does checkout+restore for committing plan file
+    assert len(fake_git.checked_out_branches) == 4
+    assert fake_git.checked_out_branches[0][1].startswith("plan-")  # for gt track
+    assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # restore
+    assert fake_git.checked_out_branches[2][1].startswith("plan-")  # for plan commit
+    assert fake_git.checked_out_branches[3] == (tmp_path, "feature-branch")  # final restore
 
 
 def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
@@ -269,3 +273,31 @@ def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert len(fake_github.created_prs) == 1
     assert fake_github.created_prs[0][3] == "master"
+
+
+def test_draft_pr_tracks_branch_with_graphite(tmp_path: Path) -> None:
+    """Plan branch is tracked with Graphite so it can be used as a stack parent."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
+    fake_graphite = FakeGraphite()
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    branch_name = output["branch_name"]
+
+    # Verify track_branch was called with the plan branch and current branch as parent
+    # (branch_manager.create_branch uses base_branch as Graphite parent)
+    assert len(fake_graphite.track_branch_calls) == 1
+    tracked_call = fake_graphite.track_branch_calls[0]
+    assert tracked_call[0] == tmp_path  # repo_root
+    assert tracked_call[1] == branch_name  # branch_name
+    assert tracked_call[2] == "main"  # parent_branch (current branch used as base)
