@@ -388,6 +388,7 @@ def plan_save(
     When ERK_PLAN_BACKEND is "draft_pr", creates a draft PR.
     Otherwise delegates to plan-save-to-issue.
     """
+    # PLAN_BACKEND_SPLIT: dispatches to issue-based save or draft-PR save based on ERK_PLAN_BACKEND
     # Default backend: delegate to issue-based save
     if get_plan_backend() != "draft_pr":
         ctx.invoke(

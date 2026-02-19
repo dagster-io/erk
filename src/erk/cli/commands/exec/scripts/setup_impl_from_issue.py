@@ -33,6 +33,8 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.naming import generate_issue_branch_name
 from erk_shared.plan_store.types import PlanNotFound
@@ -45,11 +47,6 @@ def _get_current_branch(git: Git, cwd: Path) -> str:
         msg = "Cannot set up implementation from detached HEAD state"
         raise click.ClickException(msg)
     return branch
-
-
-def _is_trunk_branch(branch: str) -> bool:
-    """Check if branch is a trunk branch (main/master)."""
-    return branch in ("main", "master")
 
 
 @click.command(name="setup-impl-from-issue")
@@ -103,49 +100,80 @@ def setup_impl_from_issue(
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)
     plan = result
+    plan_branch = plan.header_fields.get(BRANCH_NAME)
 
-    # Step 2: Determine base branch and create feature branch
+    # Step 2: Determine base branch and create/checkout feature branch
     current_branch = _get_current_branch(git, cwd)
 
     branch_manager = require_branch_manager(ctx)
 
-    # Check if already on a branch for this issue - reuse it
-    expected_prefix = f"P{issue_number}-"
-    if current_branch.startswith(expected_prefix):
-        # Already on correct branch (e.g., remote workflow re-running with issue arg)
-        click.echo(f"Already on branch for issue #{issue_number}: {current_branch}", err=True)
-        branch_name = current_branch
-        # Skip branch creation - just ensure .impl/ exists (handled below)
-    else:
-        # Generate branch name from issue
-        timestamp = time.now()
-        branch_name = generate_issue_branch_name(
-            issue_number, plan.title, timestamp, objective_id=plan.objective_id
-        )
-
-        # Check if branch already exists
+    # PLAN_BACKEND_SPLIT: draft-PR plans have branch_name in header_fields; issue-based plans do not
+    if isinstance(plan_branch, str) and plan_branch:
+        # Draft-PR plan: reuse the plan's existing branch and sync with remote
+        branch_name = plan_branch
+        git.remote.fetch_branch(repo_root, "origin", branch_name)
         local_branches = git.branch.list_local_branches(repo_root)
+        needs_sync = True
 
-        if branch_name in local_branches:
-            # Branch exists - just check it out
-            click.echo(f"Branch '{branch_name}' already exists, checking out...", err=True)
+        if current_branch == branch_name:
+            click.echo(f"Already on plan branch '{branch_name}', syncing with remote...", err=True)
+        elif branch_name in local_branches:
+            click.echo(f"Checking out plan branch '{branch_name}'...", err=True)
             branch_manager.checkout_branch(cwd, branch_name)
         else:
-            # Determine base branch: stack on feature branch, or use trunk
-            if _is_trunk_branch(current_branch):
-                base_branch = current_branch
-            else:
-                # Stack on current feature branch
-                base_branch = current_branch
-
-            # Create branch using BranchManager (handles Graphite tracking automatically)
-            create_result = branch_manager.create_branch(repo_root, branch_name, base_branch)
-            if isinstance(create_result, BranchAlreadyExists):
-                click.echo(f"Error: {create_result.message}", err=True)
-                raise SystemExit(1) from None
-            click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
-
+            click.echo(
+                f"Creating local tracking branch for '{branch_name}' from remote...", err=True
+            )
+            branch_manager.create_tracking_branch(repo_root, branch_name, f"origin/{branch_name}")
             branch_manager.checkout_branch(cwd, branch_name)
+            needs_sync = False
+
+        if needs_sync:
+            pull_result = git.remote.pull_rebase(cwd, "origin", branch_name)
+            if isinstance(pull_result, PullRebaseError):
+                error_output = {
+                    "success": False,
+                    "error": "pull_rebase_failed",
+                    "message": (
+                        f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+                    ),
+                }
+                click.echo(json.dumps(error_output), err=True)
+                raise SystemExit(1)
+    else:
+        # Issue-based plan: generate P{issue}-... branch name
+        # Check if already on a branch for this issue - reuse it
+        expected_prefix = f"P{issue_number}-"
+        if current_branch.startswith(expected_prefix):
+            # Already on correct branch (e.g., remote workflow re-running with issue arg)
+            click.echo(f"Already on branch for issue #{issue_number}: {current_branch}", err=True)
+            branch_name = current_branch
+            # Skip branch creation - just ensure .impl/ exists (handled below)
+        else:
+            # Generate branch name from issue
+            timestamp = time.now()
+            branch_name = generate_issue_branch_name(
+                issue_number, plan.title, timestamp, objective_id=plan.objective_id
+            )
+
+            # Check if branch already exists
+            local_branches = git.branch.list_local_branches(repo_root)
+
+            if branch_name in local_branches:
+                # Branch exists - just check it out
+                click.echo(f"Branch '{branch_name}' already exists, checking out...", err=True)
+                branch_manager.checkout_branch(cwd, branch_name)
+            else:
+                base_branch = current_branch
+
+                # Create branch using BranchManager (handles Graphite tracking automatically)
+                create_result = branch_manager.create_branch(repo_root, branch_name, base_branch)
+                if isinstance(create_result, BranchAlreadyExists):
+                    click.echo(f"Error: {create_result.message}", err=True)
+                    raise SystemExit(1) from None
+                click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
+
+                branch_manager.checkout_branch(cwd, branch_name)
 
     # Step 3: Create .impl/ folder with plan content (unless --no-impl)
     impl_path_str: str | None = None

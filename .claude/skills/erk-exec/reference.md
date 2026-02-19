@@ -24,10 +24,10 @@ Quick reference for all `erk exec` subcommands.
 | `check-impl`                      | Check .impl/ folder structure and validate prerequisites.                   |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                        |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                                |
-| `close-issue-with-comment`        | Close a GitHub issue with a comment using REST API.                         |
+| `close-issue-with-comment`        | Close a plan with a comment.                                                |
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                   |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                  |
-| `create-worker-impl-from-issue`   | Create .worker-impl/ folder from GitHub issue with plan content.            |
+| `create-worker-impl-from-issue`   | Create .worker-impl/ folder from plan content.                              |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                            |
@@ -193,7 +193,7 @@ Run full CI verification after autofix push.
 
 ### close-issue-with-comment
 
-Close a GitHub issue with a comment using REST API.
+Close a plan with a comment.
 
 **Usage:** `erk exec close-issue-with-comment` <issue_number>
 
@@ -229,7 +229,7 @@ Create GitHub issue from plan content with erk-plan label.
 
 ### create-worker-impl-from-issue
 
-Create .worker-impl/ folder from GitHub issue with plan content.
+Create .worker-impl/ folder from plan content.
 
 **Usage:** `erk exec create-worker-impl-from-issue` <issue_number>
 
@@ -238,12 +238,6 @@ Create .worker-impl/ folder from GitHub issue with plan content.
 | Name           | Required | Description |
 | -------------- | -------- | ----------- |
 | `ISSUE_NUMBER` | Yes      | -           |
-
-**Options:**
-
-| Flag          | Type      | Required | Default | Description                                               |
-| ------------- | --------- | -------- | ------- | --------------------------------------------------------- |
-| `--repo-root` | DIRECTORY | No       | -       | Repository root directory (defaults to current directory) |
 
 ### dash-data
 
