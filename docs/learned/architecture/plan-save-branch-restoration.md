@@ -25,7 +25,7 @@ Key properties:
 
 - Saves current branch name before checkout
 - Creates plan branch from the same commit (no conflict with uncommitted work)
-- Commits plan to `.erk/branch-data/plan.md`
+- Commits plan to `.erk/impl-context/plan.md`
 - Pushes to origin with upstream tracking
 - **Always** restores to `start_point` in the finally block, even if push fails
 

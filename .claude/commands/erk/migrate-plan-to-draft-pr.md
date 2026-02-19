@@ -11,7 +11,7 @@ Migrate an existing GitHub issue-based erk-plan to the draft PR backend.
 
 1. Reads the plan content and metadata from the specified issue
 2. Creates a `plan-{slug}-{timestamp}` branch from trunk
-3. Commits `.erk/branch-data/plan.md` to the branch and pushes it
+3. Commits `.erk/impl-context/plan.md` to the branch and pushes it
 4. Creates a draft PR with the same title, content, labels, and metadata
 5. Comments on the original issue with a migration notice and closes it
 
