@@ -86,6 +86,28 @@ git diff --staged
 
 Load the `erk-diff-analysis` skill for commit message generation guidance.
 
+### Step 3.5: Add Planned Prefix (if from plan)
+
+If this worktree was created from a plan (`.impl/` directory exists), prepend `planned/` to the PR title:
+
+```bash
+if [ -d ".impl" ]; then
+    # Extract the title before creating the commit
+    # (we'll apply the prefix when creating the commit message below)
+    has_impl_dir=true
+else
+    has_impl_dir=false
+fi
+```
+
+When generating the commit message in Step 4, if `has_impl_dir` is true, prepend `planned/` to the title:
+
+```bash
+if [ "$has_impl_dir" = true ]; then
+    pr_title="planned/${pr_title}"
+fi
+```
+
 ### Step 4: Create Commit
 
 Create the commit with your AI-generated message using heredoc:

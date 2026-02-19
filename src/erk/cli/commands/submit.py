@@ -19,6 +19,7 @@ from erk.cli.constants import (
     ERK_PLAN_LABEL,
     ERK_PLAN_TITLE_PREFIX,
     PLAN_HEADING_PREFIX,
+    PLANNED_PR_TITLE_PREFIX,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
@@ -271,6 +272,20 @@ def _strip_plan_markers(title: str) -> str:
     return result
 
 
+def _add_planned_prefix(title: str) -> str:
+    """Prepend 'planned/' prefix to PR title (idempotent).
+
+    Args:
+        title: The PR title to prefix
+
+    Returns:
+        The title with 'planned/' prefix, skipping if already prefixed
+    """
+    if title.startswith(PLANNED_PR_TITLE_PREFIX):
+        return title
+    return f"{PLANNED_PR_TITLE_PREFIX}{title}"
+
+
 def _build_pr_url(issue_url: str, pr_number: int) -> str:
     """Construct GitHub PR URL from issue URL and PR number.
 
@@ -490,7 +505,7 @@ def _create_branch_and_pr(
         f"---\n\n"
         f"Closes {issue_ref}"
     )
-    pr_title = _strip_plan_markers(issue.title)
+    pr_title = _add_planned_prefix(_strip_plan_markers(issue.title))
     pr_number = ctx.github.create_pr(
         repo_root=repo.root,
         branch=branch_name,
@@ -624,7 +639,7 @@ def _submit_single_issue(
                 f"---\n\n"
                 f"Closes {issue_ref}"
             )
-            pr_title = _strip_plan_markers(issue.title)
+            pr_title = _add_planned_prefix(_strip_plan_markers(issue.title))
             pr_number = ctx.github.create_pr(
                 repo_root=repo.root,
                 branch=branch_name,

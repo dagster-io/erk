@@ -20,6 +20,7 @@ from erk.cli.commands.pr.shared import (
     echo_plan_context_status,
     run_commit_message_generation,
 )
+from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
 from erk.cli.ensure import UserFacingCliError
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
@@ -44,6 +45,25 @@ from erk_shared.impl_folder import (
 )
 from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
 from erk_shared.scratch.scratch import write_scratch_file
+
+# ---------------------------------------------------------------------------
+# Utilities
+# ---------------------------------------------------------------------------
+
+
+def _add_planned_prefix(title: str) -> str:
+    """Prepend 'planned/' prefix to PR title (idempotent).
+
+    Args:
+        title: The PR title to prefix
+
+    Returns:
+        The title with 'planned/' prefix, skipping if already prefixed
+    """
+    if title.startswith(PLANNED_PR_TITLE_PREFIX):
+        return title
+    return f"{PLANNED_PR_TITLE_PREFIX}{title}"
+
 
 # ---------------------------------------------------------------------------
 # Data Types
@@ -636,6 +656,10 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
             if closing_ref is not None:
                 issue_number = closing_ref.issue_number
                 effective_plans_repo = closing_ref.plans_repo
+
+    # Add planned/ prefix for plan-linked PRs
+    if issue_number is not None:
+        pr_title = _add_planned_prefix(pr_title)
 
     # Check learn plan label
     impl_dir = state.cwd / ".impl"
