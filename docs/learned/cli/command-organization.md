@@ -55,17 +55,17 @@ Only the highest-frequency workflow entry points are at the top level:
 
 All other plan management operations are under the `erk plan` group (table reflects `erk plan --help` output):
 
-| Subcommand | Description                             |
-| ---------- | --------------------------------------- |
-| `create`   | Create a new plan issue                 |
-| `view`     | View a plan                             |
-| `list`     | List open plans                         |
-| `close`    | Close a plan                            |
-| `submit`   | Submit a plan for remote execution      |
-| `log`      | View plan execution logs                |
-| `replan`   | Replan an existing plan issue           |
-| `checkout` | Check out a plan's branch (alias: `co`) |
-| `check`    | Check plan status                       |
+| Subcommand | Description                        |
+| ---------- | ---------------------------------- |
+| `create`   | Create a new plan issue            |
+| `view`     | View a plan                        |
+| `list`     | List open plans                    |
+| `close`    | Close a plan                       |
+| `submit`   | Submit a plan for remote execution |
+| `log`      | View plan execution logs           |
+| `replan`   | Replan an existing plan issue      |
+| `co`       | Check out a plan's branch          |
+| `check`    | Check plan status                  |
 
 ### Grouped Commands
 
@@ -79,7 +79,7 @@ Worktree manipulation is a supporting operation, not the primary workflow:
 erk wt create <name>        # Create a new worktree
 erk wt delete <name>        # Delete a worktree
 erk wt list                 # List worktrees
-erk wt prune                # Clean up stale worktrees
+erk wt checkout <branch>    # Switch to worktree for branch
 ```
 
 **Why grouped?**
@@ -318,7 +318,7 @@ erk wt list               # List worktrees
 
 # Clean up
 erk wt delete my-feature
-erk wt prune              # Remove stale worktrees
+erk wt checkout my-branch # Switch to worktree for branch
 ```
 
 ### Navigation
@@ -347,12 +347,12 @@ erk down                  # Move to child branch
 
 **Step 3: Register in `src/erk/cli/cli.py`**
 
-For plan commands (top-level):
+For plan subcommands:
 
 ```python
 from erk.cli.commands.plan.create_cmd import create_plan
 
-cli.add_command(create_plan, name="create")  # Plan command
+plan_group.add_command(create_plan, name="create")  # Plan subcommand
 ```
 
 For grouped commands:
