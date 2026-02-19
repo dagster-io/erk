@@ -32,6 +32,7 @@ from erk.cli.commands.exec.scripts.plan_save_to_issue import (
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
 from erk_shared.context.helpers import (
     get_repo_identifier,
+    require_branch_manager,
     require_claude_installation,
     require_cwd,
     require_git,
@@ -143,6 +144,12 @@ def _save_as_draft_pr(
     start_point = current_branch if current_branch is not None else "HEAD"
     git.branch.create_branch(cwd, branch_name, start_point, force=False)
 
+    # Track branch with Graphite so it can be used as a stack parent
+    trunk = git.branch.detect_trunk_branch(cwd)
+    if trunk is not None:
+        branch_manager = require_branch_manager(ctx)
+        branch_manager.track_branch(repo_root, branch_name, trunk)
+
     # Temporarily checkout plan branch to commit plan file.
     # Since the plan branch was created from the same commit as the current branch,
     # checkout won't conflict with uncommitted work.
@@ -169,8 +176,7 @@ def _save_as_draft_pr(
     finally:
         git.branch.checkout_branch(cwd, start_point)
 
-    # Build metadata
-    trunk = git.branch.detect_trunk_branch(cwd)
+    # Build metadata (trunk was detected above for Graphite tracking)
     metadata: dict[str, object] = {"branch_name": branch_name, "trunk_branch": trunk}
 
     if config.plans_repo is not None:

@@ -13,6 +13,7 @@ from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.graphite.fake import FakeGraphite
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
@@ -269,3 +270,30 @@ def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert len(fake_github.created_prs) == 1
     assert fake_github.created_prs[0][3] == "master"
+
+
+def test_draft_pr_tracks_branch_with_graphite(tmp_path: Path) -> None:
+    """Plan branch is tracked with Graphite so it can be used as a stack parent."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
+    fake_graphite = FakeGraphite()
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    branch_name = output["branch_name"]
+
+    # Verify track_branch was called with the plan branch and trunk as parent
+    assert len(fake_graphite.track_branch_calls) == 1
+    tracked_call = fake_graphite.track_branch_calls[0]
+    assert tracked_call[0] == tmp_path  # repo_root
+    assert tracked_call[1] == branch_name  # branch_name
+    assert tracked_call[2] == "master"  # parent_branch (trunk)
