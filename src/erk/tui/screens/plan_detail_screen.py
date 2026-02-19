@@ -690,13 +690,10 @@ class PlanDetailScreen(ModalScreen):
                 objective_issue = row.objective_issue
 
                 def _on_land_success() -> None:
-                    # Import here to avoid circular import at module level
-                    from erk.tui.app import ErkDashApp
-
                     if self._executor is not None:
                         self._executor.refresh_data()
-                    if objective_issue is not None and isinstance(self.app, ErkDashApp):
-                        self.app._update_objective_async(
+                    if objective_issue is not None and self._executor is not None:
+                        self._executor.update_objective_after_land(
                             objective_issue=objective_issue,
                             pr_num=pr_num,
                             branch=branch,

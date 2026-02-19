@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import subprocess
 import time
 from collections.abc import Callable, Iterator
 from datetime import datetime
@@ -502,25 +501,14 @@ class ErkDashApp(App):
             branch: The PR head branch name
         """
         self.call_from_thread(self.notify, f"Updating objective #{objective_issue}...")
-        result = subprocess.run(
-            [
-                "erk",
-                "exec",
-                "objective-update-after-land",
-                f"--objective={objective_issue}",
-                f"--pr={pr_num}",
-                f"--branch={branch}",
-            ],
-            cwd=self._provider.repo_root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            stdin=subprocess.DEVNULL,
-            text=True,
-            check=False,
-        )
-        if result.returncode == 0:
+        try:
+            self._provider.update_objective_after_land(
+                objective_issue=objective_issue,
+                pr_num=pr_num,
+                branch=branch,
+            )
             self.call_from_thread(self.notify, f"Objective #{objective_issue} updated", timeout=5)
-        else:
+        except Exception:
             self.call_from_thread(
                 self.notify,
                 "Objective update failed",
@@ -535,7 +523,7 @@ class ErkDashApp(App):
         command: list[str],
         title: str,
         timeout: float,
-        on_success: Callable[[], None] | None = None,
+        on_success: Callable[[], None] | None,
     ) -> None:
         """Push a detail screen and run a streaming command after refresh."""
         executor = RealCommandExecutor(
@@ -545,6 +533,11 @@ class ErkDashApp(App):
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             submit_to_queue_fn=self._provider.submit_to_queue,
+            update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+                objective_issue=oi,
+                pr_num=pn,
+                branch=br,
+            ),
         )
         detail_screen = PlanDetailScreen(
             row=row,
@@ -578,6 +571,11 @@ class ErkDashApp(App):
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             submit_to_queue_fn=self._provider.submit_to_queue,
+            update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+                objective_issue=oi,
+                pr_num=pn,
+                branch=br,
+            ),
         )
 
         self.push_screen(
@@ -846,6 +844,11 @@ class ErkDashApp(App):
                     notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
+                    update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+                        objective_issue=oi,
+                        pr_num=pn,
+                        branch=br,
+                    ),
                 )
                 detail_screen = PlanDetailScreen(
                     row=row,
@@ -878,6 +881,11 @@ class ErkDashApp(App):
                     notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
+                    update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+                        objective_issue=oi,
+                        pr_num=pn,
+                        branch=br,
+                    ),
                 )
                 detail_screen = PlanDetailScreen(
                     row=row,
@@ -974,6 +982,7 @@ class ErkDashApp(App):
                 ],
                 title=f"Implement (One-Shot) #{row.plan_id}",
                 timeout=600.0,
+                on_success=None,
             )
 
         elif command_id == "check_objective":
@@ -982,6 +991,7 @@ class ErkDashApp(App):
                 command=["erk", "objective", "check", str(row.plan_id)],
                 title=f"Check Objective #{row.plan_id}",
                 timeout=30.0,
+                on_success=None,
             )
 
         elif command_id == "close_objective":
@@ -990,6 +1000,7 @@ class ErkDashApp(App):
                 command=["erk", "objective", "close", str(row.plan_id), "--force"],
                 title=f"Close Objective #{row.plan_id}",
                 timeout=30.0,
+                on_success=None,
             )
 
         elif command_id == "codespace_run_plan":

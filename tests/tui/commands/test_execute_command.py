@@ -1,12 +1,33 @@
 """Tests for PlanDetailScreen.execute_command."""
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.tui.app import PlanDetailScreen
 from erk.tui.data.types import PlanRowData
+from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk_shared.gateway.command_executor.fake import FakeCommandExecutor
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+
+
+class _CapturingPlanDetailScreen(PlanDetailScreen):
+    """Subclass that captures on_success callback instead of running a subprocess."""
+
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)  # type: ignore[arg-type]
+        self.captured_on_success: Callable[[], None] | None = None
+
+    def run_streaming_command(
+        self,
+        command: list[str],
+        cwd: Path,
+        title: str,
+        *,
+        timeout: float = 30.0,
+        on_success: Callable[[], None] | None = None,
+    ) -> None:
+        """Capture on_success instead of spawning a subprocess."""
+        self.captured_on_success = on_success
 
 
 class TestExecuteCommandBrowserCommands:
@@ -296,6 +317,66 @@ class TestExecuteCommandLandPR:
         screen = PlanDetailScreen(row=row, executor=executor, repo_root=Path("/some/path"))
         screen.execute_command("land_pr")
         assert executor.refresh_count == 0
+
+    def test_land_pr_on_success_calls_refresh(self) -> None:
+        """_on_land_success calls executor.refresh_data()."""
+        row = make_plan_row(
+            123,
+            "Test",
+            pr_number=456,
+            pr_head_branch="P123-test-branch",
+        )
+        executor = FakeCommandExecutor()
+        screen = _CapturingPlanDetailScreen(
+            row=row,
+            executor=executor,
+            repo_root=Path("/some/path"),
+        )
+        screen.execute_command("land_pr")
+        assert screen.captured_on_success is not None
+        screen.captured_on_success()
+        assert executor.refresh_count == 1
+
+    def test_land_pr_on_success_calls_update_objective(self) -> None:
+        """_on_land_success calls executor.update_objective_after_land when objective exists."""
+        row = make_plan_row(
+            123,
+            "Test",
+            pr_number=456,
+            pr_head_branch="P123-test-branch",
+            objective_issue=789,
+        )
+        executor = FakeCommandExecutor()
+        screen = _CapturingPlanDetailScreen(
+            row=row,
+            executor=executor,
+            repo_root=Path("/some/path"),
+        )
+        screen.execute_command("land_pr")
+        assert screen.captured_on_success is not None
+        screen.captured_on_success()
+        assert executor.refresh_count == 1
+        assert executor.updated_objectives == [(789, 456, "P123-test-branch")]
+
+    def test_land_pr_on_success_skips_update_without_objective(self) -> None:
+        """_on_land_success does NOT call update_objective_after_land without objective."""
+        row = make_plan_row(
+            123,
+            "Test",
+            pr_number=456,
+            pr_head_branch="P123-test-branch",
+        )
+        executor = FakeCommandExecutor()
+        screen = _CapturingPlanDetailScreen(
+            row=row,
+            executor=executor,
+            repo_root=Path("/some/path"),
+        )
+        screen.execute_command("land_pr")
+        assert screen.captured_on_success is not None
+        screen.captured_on_success()
+        assert executor.refresh_count == 1
+        assert executor.updated_objectives == []
 
 
 class TestExecuteCommandFixConflictsRemote:

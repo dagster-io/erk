@@ -27,6 +27,7 @@ class RealCommandExecutor(CommandExecutor):
         notify_fn: NotifyFn,
         refresh_fn: Callable[[], None],
         submit_to_queue_fn: Callable[[int, str], None],
+        update_objective_fn: Callable[[int, int, str], None],
     ) -> None:
         """Initialize with dependency functions.
 
@@ -37,6 +38,7 @@ class RealCommandExecutor(CommandExecutor):
             notify_fn: Function to show notification
             refresh_fn: Function to trigger data refresh
             submit_to_queue_fn: Function to submit plan to implementation queue
+            update_objective_fn: Function to update objective after landing a PR
         """
         self._browser_launch = browser_launch
         self._clipboard_copy = clipboard_copy
@@ -44,6 +46,7 @@ class RealCommandExecutor(CommandExecutor):
         self._notify_fn = notify_fn
         self._refresh_fn = refresh_fn
         self._submit_to_queue_fn = submit_to_queue_fn
+        self._update_objective_fn = update_objective_fn
 
     def open_url(self, url: str) -> None:
         """Open URL in browser."""
@@ -64,6 +67,16 @@ class RealCommandExecutor(CommandExecutor):
     def refresh_data(self) -> None:
         """Trigger data refresh."""
         self._refresh_fn()
+
+    def update_objective_after_land(
+        self,
+        *,
+        objective_issue: int,
+        pr_num: int,
+        branch: str,
+    ) -> None:
+        """Update objective after landing a PR."""
+        self._update_objective_fn(objective_issue, pr_num, branch)
 
     def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Submit plan to implementation queue."""

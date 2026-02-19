@@ -291,6 +291,41 @@ class RealPlanDataProvider(PlanDataProvider):
 
         return closed_prs
 
+    def update_objective_after_land(
+        self,
+        *,
+        objective_issue: int,
+        pr_num: int,
+        branch: str,
+    ) -> None:
+        """Update an objective after landing a PR.
+
+        Runs 'erk exec objective-update-after-land' as a subprocess.
+
+        Args:
+            objective_issue: The objective issue number to update
+            pr_num: The PR number that was landed
+            branch: The PR head branch name
+        """
+        result = subprocess.run(
+            [
+                "erk",
+                "exec",
+                "objective-update-after-land",
+                f"--objective={objective_issue}",
+                f"--pr={pr_num}",
+                f"--branch={branch}",
+            ],
+            cwd=self._location.root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"objective-update-after-land failed: {result.stdout}")
+
     def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Submit a plan to the implementation queue.
 
