@@ -3,6 +3,7 @@
 ## Context
 
 When the remote implementation CI runs, it:
+
 1. Checks out an implementation branch (e.g. `P7622-add-something-02-19-1430`)
 2. Runs `erk exec create-worker-impl-from-issue $PLAN_ID` → creates `.worker-impl/plan-ref.json` with `plan_id="7622"`
 3. Copies `.worker-impl/` to `.impl/` (so `.impl/plan-ref.json` exists with correct `plan_id`)
