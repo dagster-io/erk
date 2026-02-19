@@ -49,6 +49,7 @@ from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
 from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
 from erk_shared.plan_utils import get_title_tag_from_labels
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
@@ -159,9 +160,9 @@ def _save_as_draft_pr(
     # checkout won't conflict with uncommitted work.
     git.branch.checkout_branch(cwd, branch_name)
     try:
-        branch_data_dir = repo_root / ".erk" / "branch-data"
-        branch_data_dir.mkdir(parents=True, exist_ok=True)
-        plan_file_path = branch_data_dir / "plan.md"
+        impl_context_dir = repo_root / IMPL_CONTEXT_DIR
+        impl_context_dir.mkdir(parents=True, exist_ok=True)
+        plan_file_path = impl_context_dir / "plan.md"
         plan_file_path.write_text(plan_content, encoding="utf-8")
 
         # Write ref.json with plan reference metadata
@@ -171,10 +172,13 @@ def _save_as_draft_pr(
         }
         if objective_issue is not None:
             ref_data["objective_id"] = objective_issue
-        ref_file_path = branch_data_dir / "ref.json"
+        ref_file_path = impl_context_dir / "ref.json"
         ref_file_path.write_text(json.dumps(ref_data, indent=2), encoding="utf-8")
 
-        git.commit.stage_files(repo_root, [".erk/branch-data/plan.md", ".erk/branch-data/ref.json"])
+        git.commit.stage_files(
+            repo_root,
+            [f"{IMPL_CONTEXT_DIR}/plan.md", f"{IMPL_CONTEXT_DIR}/ref.json"],
+        )
         git.commit.commit(repo_root, f"Add plan: {title}")
         git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
     finally:
