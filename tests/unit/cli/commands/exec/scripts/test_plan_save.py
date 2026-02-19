@@ -208,3 +208,17 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
     assert output["success"] is True
     # Branch name should include objective ID
     assert "O123" in output["branch_name"]
+
+
+def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None:
+    """trunk_branch detected by detect_trunk_branch flows through metadata to PR base."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
+    fake_github = FakeGitHub()
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, fake_github=fake_github)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert len(fake_github.created_prs) == 1
+    assert fake_github.created_prs[0][3] == "master"
