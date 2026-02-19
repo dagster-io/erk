@@ -410,3 +410,72 @@ class TestObjectivesViewRowConversion:
         assert _text_to_str(values[3]) == "1.3 Add tests"  # next step
         assert values[4] == "-"  # deps
         assert values[5] == "2h ago"  # updated
+
+
+class TestShowPrColumnFalse:
+    """Tests for show_pr_column=False behavior."""
+
+    def test_row_to_values_with_show_pr_column_false_excludes_pr_value(self) -> None:
+        """When show_pr_column=False, pr_display is omitted from row values.
+
+        With show_prs=True, show_pr_column=True:
+          plan, title, created, author, pr, chks, comments, obj, lrn, local-wt, local-impl = 11
+
+        With show_prs=True, show_pr_column=False:
+          plan, title, created, author, chks, comments, obj, lrn, local-wt, local-impl = 10
+        """
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state=None,
+            run_state=None,
+            limit=None,
+            show_prs=True,
+            show_runs=False,
+            show_pr_column=False,
+        )
+        table = PlanDataTable(filters)
+        row = make_plan_row(123, "Test Plan", pr_number=456)
+
+        values = table._row_to_values(row)
+
+        # One fewer value than with show_pr_column=True (which produces 11)
+        assert len(values) == 10
+
+    def test_row_to_values_with_show_pr_column_false_pr_display_not_in_values(self) -> None:
+        """When show_pr_column=False, the pr_display string is absent from values."""
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state=None,
+            run_state=None,
+            limit=None,
+            show_prs=True,
+            show_runs=False,
+            show_pr_column=False,
+        )
+        table = PlanDataTable(filters)
+        row = make_plan_row(123, "Test Plan", pr_number=456)
+
+        values = table._row_to_values(row)
+
+        # No value should contain "#456" (the pr_display)
+        plain_values = [_text_to_str(v) for v in values]
+        assert "#456" not in plain_values
+
+    def test_row_to_values_with_show_pr_column_true_includes_pr_value(self) -> None:
+        """When show_pr_column=True (default), pr_display is included at index 4."""
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state=None,
+            run_state=None,
+            limit=None,
+            show_prs=True,
+            show_runs=False,
+            show_pr_column=True,
+        )
+        table = PlanDataTable(filters)
+        row = make_plan_row(123, "Test Plan", pr_number=456)
+
+        values = table._row_to_values(row)
+
+        assert len(values) == 11
+        assert _text_to_str(values[4]) == "#456"  # pr at index 4
