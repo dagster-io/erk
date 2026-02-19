@@ -14,11 +14,17 @@ fake implementation. Test by injecting fake gateways into real backends.
 """
 
 import os
+from typing import Literal
+
+PlanBackendType = Literal["draft_pr", "github"]
 
 
-def get_plan_backend() -> str:
+def get_plan_backend() -> PlanBackendType:
     """Read plan backend from ERK_PLAN_BACKEND env var.
 
     Valid values: "github" (default), "draft_pr".
     """
-    return os.environ.get("ERK_PLAN_BACKEND", "github")
+    value = os.environ.get("ERK_PLAN_BACKEND", "github")
+    if value not in ("draft_pr", "github"):
+        return "github"
+    return value  # type: ignore[return-value]

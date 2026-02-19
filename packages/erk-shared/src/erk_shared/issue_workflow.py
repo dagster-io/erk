@@ -7,6 +7,7 @@ including validation, branch naming, and metadata extraction. Used by both
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
 
 from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
 from erk_shared.naming import generate_issue_branch_name, sanitize_worktree_name
@@ -57,7 +58,7 @@ def prepare_plan_for_worktree(
     plan: Plan,
     timestamp: datetime,
     *,
-    plan_backend: str,
+    plan_backend: Literal["draft_pr", "github"],
     warn_non_open: bool,
 ) -> PrepareIssueResult:
     """Prepare and validate plan data for worktree creation.
