@@ -148,11 +148,22 @@ def _save_as_draft_pr(
     # checkout won't conflict with uncommitted work.
     git.branch.checkout_branch(cwd, branch_name)
     try:
-        plan_dir = repo_root / ".erk" / "plan"
-        plan_dir.mkdir(parents=True, exist_ok=True)
-        plan_file_path = plan_dir / "PLAN.md"
+        branch_data_dir = repo_root / ".erk" / "branch-data"
+        branch_data_dir.mkdir(parents=True, exist_ok=True)
+        plan_file_path = branch_data_dir / "plan.md"
         plan_file_path.write_text(plan_content, encoding="utf-8")
-        git.commit.stage_files(repo_root, [".erk/plan/PLAN.md"])
+
+        # Write ref.json with plan reference metadata
+        ref_data: dict[str, str | int | None] = {
+            "provider": "github-draft-pr",
+            "url": None,  # Not yet known; populated after PR creation
+        }
+        if objective_issue is not None:
+            ref_data["objective_id"] = objective_issue
+        ref_file_path = branch_data_dir / "ref.json"
+        ref_file_path.write_text(json.dumps(ref_data, indent=2), encoding="utf-8")
+
+        git.commit.stage_files(repo_root, [".erk/branch-data/plan.md", ".erk/branch-data/ref.json"])
         git.commit.commit(repo_root, f"Add plan: {title}")
         git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
     finally:
