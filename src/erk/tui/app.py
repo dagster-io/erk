@@ -9,6 +9,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 
+import click
 from textual import on, work
 from textual.app import App, ComposeResult, SystemCommand
 from textual.binding import Binding
@@ -37,6 +38,14 @@ from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
 from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+
+
+def _last_meaningful_line(lines: list[str]) -> str | None:
+    """Return last non-empty line from output list, or None."""
+    for line in reversed(lines):
+        if line.strip():
+            return line.strip()
+    return None
 
 
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
@@ -486,9 +495,24 @@ class ErkDashApp(App):
                 timeout=5,
             )
 
+    def _set_land_status(self, pr_num: int, message: str) -> None:
+        """Update status bar with a landing progress message.
+
+        Args:
+            pr_num: PR number for context
+            message: Progress message to display
+        """
+        if self._status_bar is not None:
+            self._status_bar.set_message(f"Landing #{pr_num}: {message}")
+
     @work(thread=True)
     def _land_pr_async(
-        self, pr_num: int, branch: str, repo_root: Path, objective_issue: int | None
+        self,
+        *,
+        pr_num: int,
+        branch: str,
+        repo_root: Path,
+        objective_issue: int | None,
     ) -> None:
         """Land PR in background thread with toast notifications.
 
@@ -499,7 +523,9 @@ class ErkDashApp(App):
             objective_issue: Optional objective issue number to update after landing
         """
         try:
-            result = subprocess.run(
+            self.call_from_thread(self._set_land_status, pr_num, "starting...")
+            output_lines: list[str] = []
+            process = subprocess.Popen(
                 [
                     "erk",
                     "exec",
@@ -513,9 +539,20 @@ class ErkDashApp(App):
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.DEVNULL,
                 text=True,
-                check=False,
+                bufsize=1,
             )
-            if result.returncode == 0:
+            if process.stdout is not None:
+                for line in process.stdout:
+                    stripped = click.unstyle(line.rstrip())
+                    if stripped:
+                        output_lines.append(stripped)
+                        self.call_from_thread(self._set_land_status, pr_num, stripped)
+            return_code = process.wait()
+
+            if return_code == 0:
+                # Clear status bar and show success toast
+                if self._status_bar is not None:
+                    self.call_from_thread(self._status_bar.set_message, None)
                 self.call_from_thread(self.notify, f"PR #{pr_num} landed", timeout=5)
                 # Update objective if linked
                 if objective_issue is not None:
@@ -551,9 +588,13 @@ class ErkDashApp(App):
                         )
                 self.call_from_thread(self.action_refresh)
             else:
+                last_line = _last_meaningful_line(output_lines)
+                error_msg = f"Landing PR #{pr_num} failed"
+                if last_line is not None:
+                    error_msg = f"{error_msg}: {last_line}"
                 self.call_from_thread(
                     self.notify,
-                    f"Landing PR #{pr_num} failed",
+                    error_msg,
                     severity="error",
                     timeout=8,
                 )
@@ -968,7 +1009,10 @@ class ErkDashApp(App):
             if row.pr_number and row.pr_head_branch:
                 self.notify(f"Landing PR #{row.pr_number}...")
                 self._land_pr_async(
-                    row.pr_number, row.pr_head_branch, self._provider.repo_root, row.objective_issue
+                    pr_num=row.pr_number,
+                    branch=row.pr_head_branch,
+                    repo_root=self._provider.repo_root,
+                    objective_issue=row.objective_issue,
                 )
 
         elif command_id == "copy_replan":

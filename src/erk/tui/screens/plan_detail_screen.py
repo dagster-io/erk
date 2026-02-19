@@ -692,7 +692,12 @@ class PlanDetailScreen(ModalScreen):
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
                     self.app.notify(f"Landing PR #{pr_num}...")
-                    self.app._land_pr_async(pr_num, branch, repo_root, row.objective_issue)
+                    self.app._land_pr_async(
+                        pr_num=pr_num,
+                        branch=branch,
+                        repo_root=repo_root,
+                        objective_issue=row.objective_issue,
+                    )
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
