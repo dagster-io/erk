@@ -1104,9 +1104,7 @@ class TestLandPrAsync:
             assert provider.fetch_count == count_before
 
     @pytest.mark.asyncio
-    async def test_os_error_no_crash(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
+    async def test_os_error_no_crash(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """OSError from subprocess is caught without crashing the app."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -1143,9 +1141,7 @@ class TestLandPrAsync:
 
         captured_calls: list[tuple[list[str], dict[str, object]]] = []
 
-        def capture_run(
-            cmd: list[str], **kwargs: object
-        ) -> subprocess.CompletedProcess[str]:
+        def capture_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
             captured_calls.append((cmd, kwargs))
             return subprocess.CompletedProcess(args=cmd, returncode=0)
 
