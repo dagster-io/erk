@@ -45,27 +45,27 @@ erk plan log      # View plan execution logs
 
 Only the highest-frequency workflow entry points are at the top level:
 
-| Command     | Description                              | Frequency |
-| ----------- | ---------------------------------------- | --------- |
-| `dash`      | Display plan dashboard                   | Very High |
-| `implement` | Implement a plan in current directory    | Very High |
-| `prepare`   | Create a worktree from a plan issue      | High      |
+| Command     | Description                           | Frequency |
+| ----------- | ------------------------------------- | --------- |
+| `dash`      | Display plan dashboard                | Very High |
+| `implement` | Implement a plan in current directory | Very High |
+| `prepare`   | Create a worktree from a plan issue   | High      |
 
 ### `erk plan` Subcommands
 
 All other plan management operations are under the `erk plan` group (table reflects `erk plan --help` output):
 
-| Subcommand   | Description                              |
-| ------------ | ---------------------------------------- |
-| `create`     | Create a new plan issue                  |
-| `view`       | View a plan                              |
-| `list`       | List open plans                          |
-| `close`      | Close a plan                             |
-| `submit`     | Submit a plan for remote execution       |
-| `log`        | View plan execution logs                 |
-| `replan`     | Replan an existing plan issue            |
-| `checkout`   | Check out a plan's branch (alias: `co`)  |
-| `check`      | Check plan status                        |
+| Subcommand | Description                             |
+| ---------- | --------------------------------------- |
+| `create`   | Create a new plan issue                 |
+| `view`     | View a plan                             |
+| `list`     | List open plans                         |
+| `close`    | Close a plan                            |
+| `submit`   | Submit a plan for remote execution      |
+| `log`      | View plan execution logs                |
+| `replan`   | Replan an existing plan issue           |
+| `checkout` | Check out a plan's branch (alias: `co`) |
+| `check`    | Check plan status                       |
 
 ### Grouped Commands
 
@@ -371,13 +371,13 @@ wt_group.add_command(create_wt)  # Grouped under wt
 
 ### Code Locations
 
-| Component         | Location                                     |
-| ----------------- | -------------------------------------------- |
-| CLI entry point   | `src/erk/cli/cli.py`                         |
-| Plan commands     | `src/erk/cli/commands/plan/`                 |
-| Worktree commands | `src/erk/cli/commands/wt/`                   |
-| Stack commands    | `src/erk/cli/commands/stack/`                |
-| Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `up.py`, `down.py` |
+| Component         | Location                                                                   |
+| ----------------- | -------------------------------------------------------------------------- |
+| CLI entry point   | `src/erk/cli/cli.py`                                                       |
+| Plan commands     | `src/erk/cli/commands/plan/`                                               |
+| Worktree commands | `src/erk/cli/commands/wt/`                                                 |
+| Stack commands    | `src/erk/cli/commands/stack/`                                              |
+| Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `up.py`, `down.py`          |
 | Setup             | `src/erk/cli/commands/init/` (directory), `src/erk/cli/commands/config.py` |
 
 ## Related Documentation
