@@ -32,7 +32,7 @@ Body format:
 [metadata block]
 \n\n---\n\n
 <details>
-<summary>original-plan</summary>
+<summary><code>original-plan</code></summary>
 
 [plan content]
 
@@ -53,7 +53,7 @@ Body format:
 [AI-generated summary]
 
 <details>
-<summary>original-plan</summary>
+<summary><code>original-plan</code></summary>
 
 [plan content]
 
@@ -73,7 +73,7 @@ All in `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py`:
 | Function                                             | Purpose                                                                                                     |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: metadata + separator + details-wrapped plan. Footer NOT included (needs PR number).     |
-| `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2. |
+| `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary><code>original-plan</code></summary>` section. Used by both Stage 1 and Stage 2. |
 | `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. |
 | `extract_metadata_prefix(pr_body)`                   | Extract metadata block + content separator for preservation during stage transitions.                       |
 
@@ -102,7 +102,7 @@ The PR footer (with checkout command) must be added AFTER `create_pr` returns, b
 
 `extract_plan_content()` handles both:
 
-- **New format**: Content wrapped in `<details><summary>original-plan</summary>` tags
+- **New format**: Content wrapped in `<details><summary><code>original-plan</code></summary>` tags
 - **Old flat format**: Content after `PLAN_CONTENT_SEPARATOR` without details tags
 
 ## Branch Data Files

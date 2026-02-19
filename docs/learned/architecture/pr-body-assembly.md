@@ -79,7 +79,7 @@ Draft PR IS the plan. Using `Closes #N` in the footer (where N is the PR's own n
 | -------------------------------- | -------------------------------------------------------------------------------- |
 | `erk pr rewrite`                 | `assemble_pr_body`, `discover_issue_for_footer`, `run_commit_message_generation` |
 | `erk pr submit`                  | `assemble_pr_body`, `run_commit_message_generation`                              |
-| `erk exec update-pr-description` | `assemble_pr_body`                                                               |
+| `erk exec update-pr-description` | `assemble_pr_body`, `discover_issue_for_footer`, `run_commit_message_generation` |
 
 ## Related Topics
 

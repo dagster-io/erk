@@ -108,8 +108,7 @@ def _run_async(self) -> None:
 
 ### Production Usage
 
-- `_land_pr_async()` in `src/erk/tui/app.py:508-607` — Streams `erk exec land-execute` output to status bar
-- `_last_meaningful_line()` helper in `src/erk/tui/app.py:43-48` — Extracts last non-empty line for error display
+- `_push_streaming_detail()` in `src/erk/tui/app.py` — Pushes a streaming detail screen for long-running commands (land PR, submit to queue, etc.). Used with an `on_success` callback (e.g., `_on_land_success`) for post-completion actions like objective updates.
 
 ## Related Documentation
 

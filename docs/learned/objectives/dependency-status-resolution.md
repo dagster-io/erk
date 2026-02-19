@@ -17,16 +17,9 @@ How objective node dependency statuses are resolved and displayed.
 
 ## Status Priority
 
-The `_STATUS_ORDER` dict in `dependency_graph.py` defines priority ordering:
+The `_STATUS_ORDER` dict in `dependency_graph.py` defines priority ordering. See source for current values:
 
-| Status        | Priority | Terminal? |
-| ------------- | -------- | --------- |
-| `pending`     | 0        | No        |
-| `blocked`     | 1        | No        |
-| `planning`    | 2        | No        |
-| `in_progress` | 3        | No        |
-| `done`        | 4        | Yes       |
-| `skipped`     | 4        | Yes       |
+> `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py:21-28`
 
 `min_dep_status(node_id)` returns the **lowest** status among a node's upstream dependencies (the most blocking one).
 

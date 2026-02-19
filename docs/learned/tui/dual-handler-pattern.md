@@ -97,7 +97,7 @@ Some commands chain multiple background operations. Land PR demonstrates this:
 1. **Land PR** — `subprocess.Popen` with streaming output to status bar
 2. **Conditional objective update** — If the plan has a linked objective, fire `subprocess.run` for `objective-update-after-land` as a fire-and-forget operation
 
-Both operations run inside the same `@work(thread=True)` method (`_land_pr_async`), with the objective update conditional on landing success and objective linkage.
+Both operations are coordinated via a locally-defined `_on_land_success()` callback passed to `_push_streaming_detail()`. The objective update fires inside the callback, conditional on landing success and objective linkage.
 
 ## Related Documentation
 
