@@ -165,9 +165,10 @@ class PlanDataTable(DataTable):
         col_index += 1
 
         if self._plan_filters.show_prs:
-            self.add_column("pr", key="pr")
-            self._pr_column_index = col_index
-            col_index += 1
+            if self._plan_filters.show_pr_column:
+                self._pr_column_index = col_index
+                self.add_column("pr", key="pr")
+                col_index += 1
             self.add_column("chks", key="chks")
             col_index += 1
             self.add_column("comments", key="comments")
@@ -289,15 +290,18 @@ class PlanDataTable(DataTable):
         # (e.g., "[erk-learn]" prefix would otherwise be treated as a markup tag)
         values: list[str | Text] = [plan_cell, Text(row.title), row.created_display, row.author]
         if self._plan_filters.show_prs:
-            # Strip Rich markup and colorize if clickable
-            pr_display = _strip_rich_markup(row.pr_display)
-            if row.pr_url:
-                pr_display = Text(pr_display, style="cyan underline")
             checks_display = _strip_rich_markup(row.checks_display)
             comments_display = _strip_rich_markup(row.comments_display)
-            values.extend(
-                [pr_display, checks_display, comments_display, objective_cell, learn_cell]
-            )
+            if self._plan_filters.show_pr_column:
+                # Strip Rich markup and colorize if clickable
+                pr_display = _strip_rich_markup(row.pr_display)
+                if row.pr_url:
+                    pr_display = Text(pr_display, style="cyan underline")
+                values.extend(
+                    [pr_display, checks_display, comments_display, objective_cell, learn_cell]
+                )
+            else:
+                values.extend([checks_display, comments_display, objective_cell, learn_cell])
         else:
             values.extend([objective_cell, learn_cell])
         values.extend([wt_cell, row.local_impl_display])

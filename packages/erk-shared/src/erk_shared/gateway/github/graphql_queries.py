@@ -157,3 +157,54 @@ GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
     }
   }
 }"""
+
+# Query for draft plan PRs with rich details (checks, review threads, mergeability)
+# Used by DraftPRPlanListService for single-call data fetching.
+# Note: pullRequests connection does not support filterBy for creator or draft status,
+# so those filters must be applied client-side.
+GET_PLAN_PRS_WITH_DETAILS_QUERY = """query(
+  $owner: String!
+  $repo: String!
+  $labels: [String!]!
+  $states: [PullRequestState!]!
+  $first: Int!
+) {
+  repository(owner: $owner, name: $repo) {
+    pullRequests(
+      labels: $labels
+      states: $states
+      first: $first
+      orderBy: {field: UPDATED_AT, direction: DESC}
+    ) {
+      nodes {
+        number
+        title
+        body
+        state
+        url
+        isDraft
+        author { login }
+        labels(first: 100) { nodes { name } }
+        createdAt
+        updatedAt
+        headRefName
+        baseRefName
+        isCrossRepository
+        mergeable
+        mergeStateStatus
+        statusCheckRollup {
+          state
+          contexts(last: 1) {
+            totalCount
+            checkRunCountsByState { state count }
+            statusContextCountsByState { state count }
+          }
+        }
+        reviewThreads(first: 100) {
+          totalCount
+          nodes { isResolved }
+        }
+      }
+    }
+  }
+}"""

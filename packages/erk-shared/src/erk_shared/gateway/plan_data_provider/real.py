@@ -23,6 +23,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
     extract_objective_header_comment_id,
+    find_metadata_block,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     _TERMINAL_STATUSES,
@@ -30,10 +31,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     compute_graph_summary,
     find_graph_next_node,
 )
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_from_comment,
-    extract_plan_header_comment_id,
-)
+from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
 )
@@ -45,6 +43,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     LEARN_RUN_ID,
     LEARN_STATUS,
     OBJECTIVE_ISSUE,
+    PLAN_COMMENT_ID,
     REVIEW_PR,
     WORKTREE_NAME,
 )
@@ -57,6 +56,7 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.impl_folder import read_plan_ref
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.conversion import (
     header_datetime,
@@ -386,21 +386,32 @@ class RealPlanDataProvider(PlanDataProvider):
         return result
 
     def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Fetch plan content from the first comment of an issue.
+        """Fetch plan content from the first comment of an issue, or return body directly.
 
-        Uses the plan_comment_id from the issue body metadata to fetch
-        the specific comment containing the plan content.
+        For issue-based plans: uses plan_comment_id from the issue body metadata to
+        fetch the specific comment containing the plan content.
+
+        For draft PR plans: plan_body IS the plan content (already extracted from the
+        PR body by DraftPRPlanListService). No metadata block is present, so return
+        plan_body directly.
 
         Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (to extract plan_comment_id from metadata)
+            plan_id: The GitHub issue/PR number
+            plan_body: The body text — either an issue body (with plan-header metadata
+                and plan_comment_id) or already-extracted plan content (draft PR case)
 
         Returns:
             The extracted plan content, or None if not found
         """
-        # Extract plan_comment_id from issue body metadata
-        comment_id = extract_plan_header_comment_id(plan_body)
-        if comment_id is None:
+        # Check for plan-header metadata block to distinguish plan types:
+        # - Draft PR plans: no metadata block; plan_body IS the extracted content
+        # - Issue-based plans: metadata block with plan_comment_id pointing to the comment
+        block = find_metadata_block(plan_body, "plan-header")
+        if block is None:
+            return plan_body if plan_body.strip() else None
+
+        comment_id = block.data.get(PLAN_COMMENT_ID)
+        if not isinstance(comment_id, int):
             return None
 
         # Fetch the comment via HTTP client
@@ -459,6 +470,10 @@ class RealPlanDataProvider(PlanDataProvider):
         Uses PXXXX prefix matching on branch names to associate worktrees
         with issues. Branch names follow pattern: P{plan_id}-{slug}-{timestamp}
 
+        For draft-PR plan branches (plan-{slug}-{timestamp}), falls back to
+        reading .impl/plan-ref.json from the worktree to get the plan ID,
+        since the PR number is not encoded in the branch name.
+
         Returns:
             Mapping of plan ID to tuple of (worktree_name, branch_name)
         """
@@ -469,6 +484,14 @@ class RealPlanDataProvider(PlanDataProvider):
             issue_number = (
                 extract_leading_issue_number(worktree.branch) if worktree.branch else None
             )
+
+            # Fallback for draft-PR branches: read .impl/plan-ref.json
+            if issue_number is None and worktree.branch and worktree.branch.startswith("plan-"):
+                impl_dir = worktree.path / ".impl"
+                plan_ref = read_plan_ref(impl_dir)
+                if plan_ref is not None and plan_ref.plan_id.isdigit():
+                    issue_number = int(plan_ref.plan_id)
+
             if issue_number is not None:
                 if issue_number not in worktree_by_plan_id:
                     worktree_by_plan_id[issue_number] = (

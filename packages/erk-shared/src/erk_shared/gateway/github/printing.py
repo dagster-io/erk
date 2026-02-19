@@ -210,6 +210,20 @@ class PrintingGitHub(PrintingBase, GitHub):
             repo_root, state=state, labels=labels, author=author, draft=draft
         )
 
+    def list_plan_prs_with_details(
+        self,
+        location: GitHubRepoLocation,
+        *,
+        labels: list[str],
+        state: str | None,
+        limit: int | None,
+        author: str | None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """List plan PRs with rich details (read-only, no printing)."""
+        return self._wrapped.list_plan_prs_with_details(
+            location, labels=labels, state=state, limit=limit, author=author
+        )
+
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
     ) -> None:

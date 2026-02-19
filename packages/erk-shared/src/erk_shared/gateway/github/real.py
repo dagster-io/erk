@@ -22,6 +22,7 @@ from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
 from erk_shared.gateway.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    GET_PLAN_PRS_WITH_DETAILS_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
     GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
     ISSUE_PR_LINKAGE_FRAGMENT,
@@ -1450,6 +1451,25 @@ query {{
         # Extract labels
         labels = tuple(lbl.get("name", "") for lbl in data.get("labels", []))
 
+        # Parse timestamps
+        created_at_str = data.get("created_at", "")
+        updated_at_str = data.get("updated_at", "")
+        created_at = (
+            datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            if created_at_str
+            else datetime(2000, 1, 1, tzinfo=UTC)
+        )
+        updated_at = (
+            datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+            if updated_at_str
+            else datetime(2000, 1, 1, tzinfo=UTC)
+        )
+
+        # Extract author login
+        author = ""
+        if "user" in data and data["user"] and "login" in data["user"]:
+            author = data["user"]["login"]
+
         # Check if head repo exists (can be None for deleted forks)
         head_repo = data["head"].get("repo")
         is_cross_repository = head_repo["fork"] if head_repo else False
@@ -1469,6 +1489,9 @@ query {{
             owner=repo_info.owner,
             repo=repo_info.name,
             labels=labels,
+            created_at=created_at,
+            updated_at=updated_at,
+            author=author,
         )
 
     def list_prs(
@@ -1559,6 +1582,146 @@ query {{
             )
 
         return result
+
+    def list_plan_prs_with_details(
+        self,
+        location: GitHubRepoLocation,
+        *,
+        labels: list[str],
+        state: str | None,
+        limit: int | None,
+        author: str | None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """List plan PRs with rich details via single GraphQL query.
+
+        Returns PRDetails for plan content extraction and PullRequestInfo
+        with checks, review threads, and merge status for display.
+        """
+        repo_id = location.repo_id
+
+        # Build states array - default to OPEN
+        states = [state.upper()] if state else ["OPEN"]
+        effective_limit = limit if limit is not None else 30
+
+        # GH-API-AUDIT: GraphQL - pullRequests with rich details
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={GET_PLAN_PRS_WITH_DETAILS_QUERY}",
+            "-f",
+            f"owner={repo_id.owner}",
+            "-f",
+            f"repo={repo_id.repo}",
+            "-F",
+            f"first={effective_limit}",
+        ]
+
+        for label in labels:
+            cmd.extend(["-f", f"labels[]={label}"])
+
+        for state_val in states:
+            cmd.extend(["-f", f"states[]={state_val}"])
+
+        try:
+            stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
+        except RuntimeError:
+            return ([], {})
+
+        response = json.loads(stdout)
+        return self._parse_plan_prs_with_details(response, repo_id, author=author)
+
+    def _parse_plan_prs_with_details(
+        self,
+        response: dict[str, Any],
+        repo_id: GitHubRepoId,
+        *,
+        author: str | None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Parse GraphQL response for plan PRs into PRDetails and PullRequestInfo."""
+        pr_details_list: list[PRDetails] = []
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+
+        repo_data = response.get("data", {}).get("repository")
+        if repo_data is None:
+            return ([], {})
+
+        nodes = repo_data.get("pullRequests", {}).get("nodes", [])
+        for node in nodes:
+            if node is None:
+                continue
+
+            pr_number = node.get("number")
+            if pr_number is None:
+                continue
+
+            # Client-side draft filter: only include drafts
+            if not node.get("isDraft", False):
+                continue
+
+            # Client-side author filter
+            author_data = node.get("author")
+            pr_author = author_data.get("login", "") if author_data else ""
+            if author is not None and pr_author != author:
+                continue
+
+            # Parse timestamps
+            created_at_str = node.get("createdAt", "")
+            updated_at_str = node.get("updatedAt", "")
+            created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+
+            # Parse labels
+            labels_data = node.get("labels", {}).get("nodes", [])
+            label_names = tuple(label.get("name", "") for label in labels_data if label)
+
+            # Build PRDetails
+            pr_state = node.get("state", "OPEN")
+            mergeable_raw = node.get("mergeable", "UNKNOWN")
+            pr_details = PRDetails(
+                number=pr_number,
+                url=node.get("url", ""),
+                title=node.get("title", ""),
+                body=node.get("body", ""),
+                state=pr_state,
+                is_draft=True,
+                base_ref_name=node.get("baseRefName", ""),
+                head_ref_name=node.get("headRefName", ""),
+                is_cross_repository=node.get("isCrossRepository", False),
+                mergeable=mergeable_raw,
+                merge_state_status=node.get("mergeStateStatus", "UNKNOWN"),
+                owner=repo_id.owner,
+                repo=repo_id.repo,
+                labels=label_names,
+                created_at=created_at,
+                updated_at=updated_at,
+                author=pr_author,
+            )
+            pr_details_list.append(pr_details)
+
+            # Build PullRequestInfo with rich data
+            checks_passing, checks_counts = self._parse_status_rollup(node.get("statusCheckRollup"))
+            has_conflicts = self._parse_mergeable_status(node.get("mergeable"))
+            review_thread_counts = self._parse_review_thread_counts(node.get("reviewThreads"))
+
+            pr_info = PullRequestInfo(
+                number=pr_number,
+                state=pr_state,
+                url=node.get("url", ""),
+                is_draft=True,
+                title=node.get("title"),
+                checks_passing=checks_passing,
+                owner=repo_id.owner,
+                repo=repo_id.repo,
+                has_conflicts=has_conflicts,
+                checks_counts=checks_counts,
+                review_thread_counts=review_thread_counts,
+                head_branch=node.get("headRefName"),
+            )
+            pr_linkages[pr_number] = [pr_info]
+
+        return (pr_details_list, pr_linkages)
 
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent

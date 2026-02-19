@@ -41,6 +41,7 @@ from erk_shared.gateway.live_display.abc import LiveDisplay
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
+from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.conversion import header_int, header_str
 from erk_shared.plan_store.types import Plan
 
@@ -672,6 +673,7 @@ def _run_interactive_mode(
         show_prs=prs,
         show_runs=runs,
         creator=creator,
+        show_pr_column=get_plan_backend() != "draft_pr",
     )
 
     # Convert sort string to SortState

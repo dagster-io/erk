@@ -1,11 +1,16 @@
 """Type definitions for GitHub operations."""
 
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
+
+
+def _epoch_sentinel() -> datetime:
+    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    return datetime(2000, 1, 1, tzinfo=UTC)
 
 
 @dataclass(frozen=True)
@@ -132,6 +137,9 @@ class PRDetails:
     owner: str
     repo: str
     labels: tuple[str, ...] = ()
+    created_at: datetime = field(default_factory=_epoch_sentinel)
+    updated_at: datetime = field(default_factory=_epoch_sentinel)
+    author: str = ""
 
 
 @dataclass(frozen=True)
