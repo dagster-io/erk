@@ -145,7 +145,7 @@ In Claude Code:
   Submit to queue: /erk:plan-submit — Submit for remote agent implementation
 
 Outside Claude Code:
-  Local: erk br co <issue_number> && erk implement --dangerous
+  Local: erk br co <branch_name> && erk implement --dangerous
   Submit to queue: erk plan submit <issue_number>
 ```
 

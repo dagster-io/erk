@@ -83,6 +83,8 @@ def test_draft_pr_success_display(tmp_path: Path) -> None:
     assert "Plan saved as draft PR" in result.output
     assert "Title: [erk-plan] Feature Plan" in result.output
     assert "Branch: plan-" in result.output
+    assert "erk br co" in result.output
+    assert "plan-" in result.output  # branch name appears in checkout command
 
 
 def test_delegates_to_issue_when_not_draft_pr(

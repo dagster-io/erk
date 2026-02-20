@@ -31,6 +31,7 @@ class DraftPRNextSteps:
     """Canonical commands for draft PR operations."""
 
     pr_number: int
+    branch_name: str
 
     @property
     def view(self) -> str:
@@ -42,7 +43,7 @@ class DraftPRNextSteps:
 
     @property
     def checkout_and_implement(self) -> str:
-        return f"erk br co {self.pr_number} && erk implement --dangerous"
+        return f"erk br co {self.branch_name} && erk implement --dangerous"
 
 
 # Slash commands (static, don't need issue number)
@@ -67,9 +68,9 @@ OR exit Claude Code first, then run one of:
   Submit to Queue: {s.submit}"""
 
 
-def format_draft_pr_next_steps_plain(pr_number: int) -> str:
+def format_draft_pr_next_steps_plain(pr_number: int, *, branch_name: str) -> str:
     """Format for CLI output (plain text) for draft PR plans."""
-    s = DraftPRNextSteps(pr_number)
+    s = DraftPRNextSteps(pr_number=pr_number, branch_name=branch_name)
     return f"""Next steps:
 
 View PR: {s.view}
