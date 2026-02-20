@@ -9,37 +9,42 @@ PR #7618 has `mergeable: "CONFLICTING"` on GitHub, but the dashboard shows no in
 ## What Was Dropped
 
 ### 1. Merge conflict indicator (CRITICAL)
+
 - **Old**: `pr` column showed `#123 👀💥` — the 💥 emoji indicated `CONFLICTING` status
 - **Now**: Hidden. The data IS fetched (`mergeable` in GraphQL, `has_conflicts` on `PullRequestInfo`), `get_pr_status_emoji()` computes the emoji, but `show_pr_column=False` means it's never rendered
 - **Impact**: Can't tell if a PR needs rebase before merge
 
 ### 2. PR state emoji (MODERATE)
+
 - **Old**: `pr` column showed 🚧 (draft), 👀 (open/published), 🎉 (merged), ⛔ (closed)
 - **Now**: Replaced by `stage` column text ("planned", "review", "merged", "closed") — functionally equivalent but less scannable. Note: `stage` is based on lifecycle metadata, not actual GitHub PR state, so they can diverge.
 
 ## What Was Never Available But Could Be Useful
 
 ### 3. Review decision (VALUABLE)
+
 - `reviewDecision` is NOT in the GraphQL query at all
 - Values: `APPROVED`, `CHANGES_REQUESTED`, `REVIEW_REQUIRED`, or null
 - During `review` stage, this is critical — you want to know at a glance if your PR has been approved or has changes requested
 - Currently the only proxy is the `comments` column (resolved/total threads)
 
 ### 4. merge_state_status (LOW VALUE)
+
 - `mergeStateStatus` (CLEAN/DIRTY/BLOCKED/UNSTABLE) is fetched in `PRDetails` but not propagated to `PullRequestInfo` or displayed
 - Overlaps with `has_conflicts` + `checks_passing` — low incremental value
 
 ### 5. PR size / additions+deletions (NICE-TO-HAVE)
+
 - Not fetched. Would help reviewer triage but adds column bloat.
 
 ## What Each Lifecycle Stage Needs
 
-| Stage | Conflicts | Review Decision | Checks | Comments |
-|---|---|---|---|---|
-| planned | - | - | - | - |
-| implementing | matters | - | - | - |
-| review | **critical** | **critical** | matters | matters |
-| merged | - | - | - | - |
+| Stage        | Conflicts    | Review Decision | Checks  | Comments |
+| ------------ | ------------ | --------------- | ------- | -------- |
+| planned      | -            | -               | -       | -        |
+| implementing | matters      | -               | -       | -        |
+| review       | **critical** | **critical**    | matters | matters  |
+| merged       | -            | -               | -       | -        |
 
 ## Proposed Changes
 
@@ -48,6 +53,7 @@ PR #7618 has `mergeable: "CONFLICTING"` on GitHub, but the dashboard shows no in
 Append emoji indicators to the `stage` text when they're relevant. This keeps column count unchanged and puts status where the eye already goes for "what's happening with this PR?"
 
 Examples:
+
 - `review` — no issues
 - `review 💥` — has merge conflicts
 - `review ✔` — approved
@@ -86,6 +92,7 @@ Examples:
    - Verify TUI renders enriched stage text correctly
 
 ### Key Files
+
 - `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py` — add `reviewDecision`
 - `packages/erk-shared/src/erk_shared/gateway/github/types.py` — add field to `PullRequestInfo`
 - `packages/erk-shared/src/erk_shared/gateway/github/real.py` — parse new field
@@ -94,6 +101,7 @@ Examples:
 - `src/erk/tui/data/types.py` — add fields to `PlanRowData`
 
 ## Verification
+
 1. Run `erk dash -i` in draft_pr mode
 2. Verify PR #7618 (or any PR with merge conflicts) shows `review 💥` in stage column
 3. Verify approved PRs show `review ✔`
