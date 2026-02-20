@@ -151,7 +151,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),
-        objective_list_service=FakeObjectiveListService(),
+        objective_list_service=FakeObjectiveListService(data=None),
         cwd=resolved_cwd,
         repo=repo,
         repo_info=repo_info,

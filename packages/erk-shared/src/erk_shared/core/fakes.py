@@ -284,7 +284,7 @@ class FakeObjectiveListService(ObjectiveListService):
     Returns pre-configured data.
     """
 
-    def __init__(self, data: PlanListData | None = None) -> None:
+    def __init__(self, *, data: PlanListData | None) -> None:
         self._data = data or PlanListData(plans=[], pr_linkages={}, workflow_runs={})
 
     def get_objective_list_data(

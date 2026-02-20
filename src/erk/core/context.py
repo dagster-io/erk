@@ -175,7 +175,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         erk_installation=FakeErkInstallation(),
         script_writer=FakeScriptWriter(),
         plan_list_service=FakePlanListService(),
-        objective_list_service=FakeObjectiveListService(),
+        objective_list_service=FakeObjectiveListService(data=None),
         codespace_registry=FakeCodespaceRegistry(),
         claude_installation=FakeClaudeInstallation.for_test(),
         prompt_executor=FakePromptExecutor(),
