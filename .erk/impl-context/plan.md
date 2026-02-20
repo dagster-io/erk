@@ -18,10 +18,10 @@ class DraftPRNextSteps:
     pr_number: int
     branch_name: str
 
-    # checkout_and_implement uses branch_name:
+    # checkout_and_implement uses branch_name with --script flag (source for shell activation):
     @property
     def checkout_and_implement(self) -> str:
-        return f"erk br co {self.branch_name} && erk implement --dangerous"
+        return f'source "$(erk br co {self.branch_name} --script)" && erk implement --dangerous'
 ```
 
 **Update `format_draft_pr_next_steps_plain` signature:**
@@ -45,7 +45,7 @@ click.echo(format_draft_pr_next_steps_plain(plan_number, branch_name=branch_name
 Update the example output template:
 
 ```
-  Local: erk br co <branch_name> && erk implement --dangerous
+  Local: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
 ```
 
 ## Verification
