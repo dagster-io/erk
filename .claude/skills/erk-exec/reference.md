@@ -18,6 +18,7 @@ Quick reference for all `erk exec` subcommands.
 
 | Command                           | Description                                                                 |
 | --------------------------------- | --------------------------------------------------------------------------- |
+| `add-plan-label`                  | Add a label to a plan via the appropriate backend.                          |
 | `add-reaction-to-comment`         | Add a reaction to a PR/issue comment.                                       |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                              |
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                          |
@@ -43,6 +44,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).          |
 | `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                       |
 | `get-learn-sessions`              | Get session information for a plan issue.                                   |
+| `get-plan-info`                   | Retrieve plan info from the appropriate backend.                            |
 | `get-plan-metadata`               | Extract a metadata field from a plan issue's plan-header block.             |
 | `get-plans-for-objective`         | Fetch erk-plan issues linked to an objective.                               |
 | `get-pr-body-footer`              | Generate PR body footer with checkout command.                              |
@@ -112,6 +114,24 @@ Quick reference for all `erk exec` subcommands.
 | `wrap-plan-in-metadata-block`     | Return plan content for issue body.                                         |
 
 ## Commands
+
+### add-plan-label
+
+Add a label to a plan via the appropriate backend.
+
+**Usage:** `erk exec add-plan-label` <plan_number>
+
+**Arguments:**
+
+| Name          | Required | Description |
+| ------------- | -------- | ----------- |
+| `PLAN_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag      | Type | Required | Default        | Description              |
+| --------- | ---- | -------- | -------------- | ------------------------ |
+| `--label` | TEXT | Yes      | Sentinel.UNSET | Label to add to the plan |
 
 ### add-reaction-to-comment
 
@@ -421,6 +441,24 @@ Get session information for a plan issue.
 | Name    | Required | Description |
 | ------- | -------- | ----------- |
 | `ISSUE` | No       | -           |
+
+### get-plan-info
+
+Retrieve plan info from the appropriate backend.
+
+**Usage:** `erk exec get-plan-info` <plan_number>
+
+**Arguments:**
+
+| Name          | Required | Description |
+| ------------- | -------- | ----------- |
+| `PLAN_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag             | Type | Required | Default | Description                                   |
+| ---------------- | ---- | -------- | ------- | --------------------------------------------- |
+| `--include-body` | FLAG | No       | -       | Include the plan body content in the response |
 
 ### get-plan-metadata
 

@@ -7,6 +7,7 @@ statically registered.
 import click
 
 # Import and register all scripts
+from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
 from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
     add_reaction_to_comment,
 )
@@ -54,6 +55,7 @@ from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
     get_issue_timeline_prs,
 )
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
+from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
 from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
 from erk.cli.commands.exec.scripts.get_plans_for_objective import (
     get_plans_for_objective,
@@ -201,6 +203,7 @@ def exec_group() -> None:
 
 
 # Register all commands
+exec_group.add_command(add_plan_label, name="add-plan-label")
 exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(capture_session_info, name="capture-session-info")
@@ -219,6 +222,7 @@ exec_group.add_command(find_project_dir, name="find-project-dir")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
 exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
 exec_group.add_command(get_closing_text, name="get-closing-text")
+exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
 exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
 exec_group.add_command(get_pr_for_plan, name="get-pr-for-plan")
