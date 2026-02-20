@@ -1186,15 +1186,6 @@ This command validates that the plan exists and that the stage value is one of t
 
 The fallback inference handles two additional terminal states not in the `LifecycleStageValue` type: `merged` (green) and `closed` (dim red). These are derived from PR state, not stored in plan-header.
 
-### Backend Support
-
-Both plan backends set `lifecycle_stage` on plan creation:
-
-- **`GitHubPlanBackend`**: Sets `lifecycle_stage="planned"` in `create_plan()`
-- **`DraftPRPlanBackend`**: Sets `lifecycle_stage="planned"` in `create_plan()`
-
-Both backends support `update_metadata()` for subsequent stage transitions.
-
 ---
 
 ## Draft-PR Plan Lifecycle
