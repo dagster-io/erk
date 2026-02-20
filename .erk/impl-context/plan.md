@@ -52,6 +52,7 @@ def enrich_lifecycle_with_status(
 ```
 
 Logic:
+
 - Only enrich for stages `implementing` and `review` (check if stage text is present in the display string)
 - Build suffix from indicators:
   - `has_conflicts is True` → ` 💥`
@@ -66,6 +67,7 @@ Logic:
 **File:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`
 
 After line 713 (`lifecycle_display = _compute_lifecycle_display(plan)`):
+
 - Track `has_conflicts` and `review_decision` from `selected_pr` (if available, from the PR extraction block at lines 608-635)
 - Call `enrich_lifecycle_with_status()` to modify `lifecycle_display`
 
@@ -76,6 +78,7 @@ Approach: Initialize `pr_has_conflicts: bool | None = None` and `pr_review_decis
 **File:** `tests/unit/plan_store/test_lifecycle_display.py`
 
 Add tests for `enrich_lifecycle_with_status()`:
+
 - `review` stage with conflicts → `[cyan]review 💥[/cyan]`
 - `review` stage with approved → `[cyan]review ✔[/cyan]`
 - `review` stage with changes requested → `[cyan]review ❌[/cyan]`
@@ -92,14 +95,14 @@ Add tests for `enrich_lifecycle_with_status()`:
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
-| `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py` | Add `reviewDecision` to 2 queries |
-| `packages/erk-shared/src/erk_shared/gateway/github/types.py` | Add `review_decision` field to `PullRequestInfo` |
-| `packages/erk-shared/src/erk_shared/gateway/github/real.py` | Parse `reviewDecision` in 2 parser functions |
-| `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` | Add `enrich_lifecycle_with_status()` |
-| `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` | Wire up enrichment in `_build_row_data()` |
-| `tests/unit/plan_store/test_lifecycle_display.py` | Add tests for enrichment function |
+| File                                                                         | Change                                           |
+| ---------------------------------------------------------------------------- | ------------------------------------------------ |
+| `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py`       | Add `reviewDecision` to 2 queries                |
+| `packages/erk-shared/src/erk_shared/gateway/github/types.py`                 | Add `review_decision` field to `PullRequestInfo` |
+| `packages/erk-shared/src/erk_shared/gateway/github/real.py`                  | Parse `reviewDecision` in 2 parser functions     |
+| `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` | Add `enrich_lifecycle_with_status()`             |
+| `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`      | Wire up enrichment in `_build_row_data()`        |
+| `tests/unit/plan_store/test_lifecycle_display.py`                            | Add tests for enrichment function                |
 
 ## Verification
 
