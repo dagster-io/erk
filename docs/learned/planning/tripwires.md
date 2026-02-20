@@ -166,6 +166,8 @@ Rules triggered by matching actions in code.
 
 **reusing existing worktrees for remote implementation** → Read [Remote Implementation Idempotency](remote-implementation-idempotency.md) first. Check if worktree already has a branch before creating new one. Reusing worktrees without checking causes PR orphaning.
 
+**reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'
+
 **rewriting PR body without preserving metadata** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Extract metadata prefix on every lifecycle transition via extract_metadata_prefix() to prevent metadata loss.
 
 **running /erk:learn in CI** → Read [Learn Workflow](learn-workflow.md) first. CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section.
