@@ -19,7 +19,6 @@ Examples:
 """
 
 import json
-import shutil
 from pathlib import Path
 
 import click
@@ -200,8 +199,7 @@ def _setup_draft_pr_plan(
             raw_title = ref_data.get("title")
             if isinstance(raw_title, str):
                 plan_title = raw_title
-        # Clean up - this directory shouldn't persist into implementation
-        shutil.rmtree(impl_context_dir)
+        # Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push
     else:
         # Fallback: extract from PR body (legacy branch or already cleaned up)
         plan_content = extract_plan_content(pr_result.body)
