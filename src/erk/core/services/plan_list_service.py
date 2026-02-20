@@ -91,7 +91,8 @@ class DraftPRPlanListService(PlanListService):
             # includes the footer (Closes + checkout). Strip it by removing
             # everything after the last \n---\n footer delimiter.
             if not has_original_plan_section(pr_details.body):
-                plan_body = plan_body.rsplit("\n---\n", 1)[0]
+                if "\n---\n" in plan_body:
+                    plan_body = plan_body.rsplit("\n---\n", 1)[0]
             plan = pr_details_to_plan(pr_details, plan_body=plan_body)
             plans.append(plan)
 
