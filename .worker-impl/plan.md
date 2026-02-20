@@ -1,3 +1,40 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary>plan-header</summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-20T11:42:29.228540+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22232708786'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFLSw2sg
+last_dispatched_at: '2026-02-20T16:45:17.062565+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-restore-missing-pr-status-02-20-1142
+created_from_session: 9522a511-1a9e-47dc-8f0e-92f64141a4b0
+lifecycle_stage: planned
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+
+---
+
+<details>
+<summary>original-plan</summary>
+
 # Restore Missing PR Status Information in Draft PR Dashboard
 
 ## Context
@@ -99,3 +136,14 @@ Examples:
 3. Verify approved PRs show `review ✔`
 4. Verify clean PRs still show just `review`
 5. Run tests: `make fast-ci`
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7662 --script)" && erk pr sync --dangerous
+```
