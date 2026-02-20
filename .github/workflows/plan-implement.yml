@@ -188,18 +188,26 @@ jobs:
           EOF
           echo "Created .impl/run-info.json"
 
-      - name: Remove .worker-impl/ from git tracking
+      - name: Remove plan staging dirs from git tracking
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |
+          NEEDS_CLEANUP=false
+          git config user.name "$SUBMITTED_BY"
+          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
           if [ -d .worker-impl/ ]; then
-            git config user.name "$SUBMITTED_BY"
-            git config user.email "$SUBMITTED_BY@users.noreply.github.com"
             git rm -rf .worker-impl/
-            git commit -m "Remove .worker-impl/ before implementation"
+            NEEDS_CLEANUP=true
+          fi
+          if [ -d .erk/impl-context/ ]; then
+            git rm -rf .erk/impl-context/
+            NEEDS_CLEANUP=true
+          fi
+          if [ "$NEEDS_CLEANUP" = true ]; then
+            git commit -m "Remove plan staging dirs before implementation"
             git push origin "$BRANCH_NAME"
-            echo "Removed .worker-impl/ from git tracking (content preserved in .impl/)"
+            echo "Removed plan staging dirs from git tracking (content preserved in .impl/)"
           fi
 
       - name: Save pre-implementation HEAD
@@ -374,7 +382,7 @@ jobs:
           gh pr ready "$BRANCH_NAME"
           echo "PR marked ready for review"
 
-      - name: Clean up .worker-impl/ after implementation
+      - name: Clean up plan staging dirs after implementation
         if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
@@ -382,13 +390,21 @@ jobs:
         run: |
           git fetch origin "$BRANCH_NAME"
           git reset --hard "origin/$BRANCH_NAME"
+          NEEDS_CLEANUP=false
+          git config user.name "$SUBMITTED_BY"
+          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
           if [ -d .worker-impl/ ]; then
-            git config user.name "$SUBMITTED_BY"
-            git config user.email "$SUBMITTED_BY@users.noreply.github.com"
             git rm -rf .worker-impl/
-            git commit -m "Remove .worker-impl/ after implementation"
+            NEEDS_CLEANUP=true
+          fi
+          if [ -d .erk/impl-context/ ]; then
+            git rm -rf .erk/impl-context/
+            NEEDS_CLEANUP=true
+          fi
+          if [ "$NEEDS_CLEANUP" = true ]; then
+            git commit -m "Remove plan staging dirs after implementation"
             git push origin "$BRANCH_NAME"
-            echo "Cleaned up .worker-impl/"
+            echo "Cleaned up plan staging dirs"
           fi
 
       - name: Update PR body with implementation summary

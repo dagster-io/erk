@@ -168,7 +168,7 @@ def _save_as_draft_pr(
         # Write ref.json with plan reference metadata
         ref_data: dict[str, str | int | None] = {
             "provider": "github-draft-pr",
-            "url": None,  # Not yet known; populated after PR creation
+            "title": title,
         }
         if objective_issue is not None:
             ref_data["objective_id"] = objective_issue
