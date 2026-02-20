@@ -1,3 +1,40 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary>plan-header</summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-20T13:00:43.834597+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22236894225'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFLWwUEQ
+last_dispatched_at: '2026-02-20T18:51:11.707402+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-fix-learn-pipeline-for-dra-02-20-1300
+created_from_session: 6e7f3404-2ce4-4fd2-9208-973a048c86e3
+lifecycle_stage: planned
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+
+---
+
+<details>
+<summary>original-plan</summary>
+
 # Fix Learn Pipeline for Draft-PR Plans
 
 ## Context
@@ -227,3 +264,14 @@ Use `context_for_test(plan_store=draft_backend, github=fake_gh, ...)` from `erk.
    - `uv run pytest tests/unit/cli/commands/land/test_learn_status.py -v`
    - `uv run pytest tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py -v`
 2. Run fast-ci to verify no regressions
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7670 --script)" && erk pr sync --dangerous
+```
