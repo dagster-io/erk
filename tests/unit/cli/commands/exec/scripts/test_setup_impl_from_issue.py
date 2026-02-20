@@ -543,7 +543,9 @@ def test_draft_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None:
     # Create .erk/impl-context/ with plan content (simulates committed files on branch)
     impl_context_dir = tmp_path / IMPL_CONTEXT_DIR
     impl_context_dir.mkdir(parents=True)
-    (impl_context_dir / "plan.md").write_text("# Local Plan\n\nFrom impl-context.", encoding="utf-8")
+    (impl_context_dir / "plan.md").write_text(
+        "# Local Plan\n\nFrom impl-context.", encoding="utf-8"
+    )
     (impl_context_dir / "ref.json").write_text(
         json.dumps({"provider": "github-draft-pr", "title": "Local Plan", "objective_id": 42}),
         encoding="utf-8",
@@ -631,7 +633,8 @@ def test_draft_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -> 
     # .impl/ folder was created with plan content extracted from PR body
     impl_plan = tmp_path / ".impl" / "plan.md"
     assert impl_plan.exists()
-    # The PR body was created via _make_draft_pr_context with content "# Plan\n\nImplement something."
+    # The PR body was created via _make_draft_pr_context with content
+    # "# Plan\n\nImplement something."
     assert "Plan" in impl_plan.read_text(encoding="utf-8")
     assert "Implement something" in impl_plan.read_text(encoding="utf-8")
 

@@ -89,9 +89,7 @@ def _checkout_plan_branch(
         click.echo(f"Checking out plan branch '{branch_name}'...", err=True)
         branch_manager.checkout_branch(cwd, branch_name)
     else:
-        click.echo(
-            f"Creating local tracking branch for '{branch_name}' from remote...", err=True
-        )
+        click.echo(f"Creating local tracking branch for '{branch_name}' from remote...", err=True)
         branch_manager.create_tracking_branch(repo_root, branch_name, f"origin/{branch_name}")
         branch_manager.checkout_branch(cwd, branch_name)
         needs_sync = False
