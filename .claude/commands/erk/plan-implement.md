@@ -172,6 +172,20 @@ erk exec impl-init --json
 
 Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
 
+### Step 2d: Clean Up Plan Staging Directory
+
+If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains the plan content committed during plan-save. After `setup-impl-from-issue` reads it into `.impl/`, the local copy is deleted, but the git-tracked version may still exist.
+
 ### Step 3: Read Plan and Load Context
 
 Read `.impl/plan.md` to understand:
@@ -270,7 +284,7 @@ If this fails, you have violated instructions. The .impl/ folder must be preserv
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
 
-**Note:** `.worker-impl/` cleanup is handled by the workflow before implementation begins. No agent action needed.
+**Note:** `.worker-impl/` and `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
 
 **CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
 

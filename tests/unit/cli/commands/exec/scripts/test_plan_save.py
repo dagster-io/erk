@@ -255,11 +255,13 @@ def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
     plan_file = tmp_path / IMPL_CONTEXT_DIR / "plan.md"
     assert plan_file.exists()
     assert "Feature Plan" in plan_file.read_text(encoding="utf-8")
-    # Verify ref.json was written
+    # Verify ref.json was written with provider and title (no url)
     ref_file = tmp_path / IMPL_CONTEXT_DIR / "ref.json"
     assert ref_file.exists()
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert ref_data["provider"] == "github-draft-pr"
+    assert ref_data["title"] == "Feature Plan"
+    assert "url" not in ref_data
 
 
 def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None:
