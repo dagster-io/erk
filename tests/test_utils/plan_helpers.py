@@ -246,6 +246,7 @@ def format_plan_header_body_for_test(
     learn_plan_issue: int | None = None,
     learn_plan_pr: int | None = None,
     learned_from_issue: int | None = None,
+    lifecycle_stage: str | None = None,
 ) -> str:
     """Create plan header body for testing with sensible defaults."""
     return format_plan_header_body(
@@ -274,4 +275,5 @@ def format_plan_header_body_for_test(
         learn_plan_issue=learn_plan_issue,
         learn_plan_pr=learn_plan_pr,
         learned_from_issue=learned_from_issue,
+        lifecycle_stage=lifecycle_stage,
     )

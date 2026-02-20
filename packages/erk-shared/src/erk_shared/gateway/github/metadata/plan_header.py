@@ -52,6 +52,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     LEARN_RUN_ID,
     LEARN_STATUS,
     LEARNED_FROM_ISSUE,
+    LIFECYCLE_STAGE,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
     REVIEW_PR,
@@ -92,6 +93,7 @@ def create_plan_header_block(
     learn_plan_issue: int | None,
     learn_plan_pr: int | None,
     learned_from_issue: int | None,
+    lifecycle_stage: str | None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -121,6 +123,7 @@ def create_plan_header_block(
         learn_plan_issue: Optional issue number of generated learn plan
         learn_plan_pr: Optional PR number that implemented the learn plan
         learned_from_issue: Optional parent plan issue number (for learn plans)
+        lifecycle_stage: Optional lifecycle stage for the plan
 
     Returns:
         MetadataBlock with plan-header schema
@@ -191,6 +194,10 @@ def create_plan_header_block(
     if learned_from_issue is not None:
         data[LEARNED_FROM_ISSUE] = learned_from_issue
 
+    # Include lifecycle_stage if provided
+    if lifecycle_stage is not None:
+        data[LIFECYCLE_STAGE] = lifecycle_stage
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -225,6 +232,7 @@ def format_plan_header_body(
     learn_plan_issue: int | None,
     learn_plan_pr: int | None,
     learned_from_issue: int | None,
+    lifecycle_stage: str | None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -257,6 +265,7 @@ def format_plan_header_body(
         learn_plan_issue: Optional issue number of generated learn plan
         learn_plan_pr: Optional PR number that implemented the learn plan
         learned_from_issue: Optional parent plan issue number (for learn plans)
+        lifecycle_stage: Optional lifecycle stage for the plan
 
     Returns:
         Issue body string with metadata block only
@@ -287,6 +296,7 @@ def format_plan_header_body(
         learn_plan_issue=learn_plan_issue,
         learn_plan_pr=learn_plan_pr,
         learned_from_issue=learned_from_issue,
+        lifecycle_stage=lifecycle_stage,
     )
 
     return render_metadata_block(block)

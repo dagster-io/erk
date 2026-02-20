@@ -179,6 +179,7 @@ def test_create_plan_header_block_minimal() -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
 
     assert block.key == "plan-header"
@@ -215,6 +216,7 @@ def test_create_plan_header_block_with_optional_fields() -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
 
     assert block.key == "plan-header"
@@ -253,6 +255,7 @@ def test_create_plan_header_block_omits_none_values() -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
 
     assert block.key == "plan-header"
@@ -363,6 +366,7 @@ def test_render_and_extract_round_trip() -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
 
     rendered = render_metadata_block(block)
@@ -453,6 +457,7 @@ def test_create_plan_header_block_with_learn_fields() -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
 
     assert block.key == "plan-header"
@@ -1012,6 +1017,7 @@ def test_create_plan_header_block_with_remote_impl_fields() -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
 
     assert block.key == "plan-header"

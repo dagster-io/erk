@@ -1656,10 +1656,6 @@ query {{
             if pr_number is None:
                 continue
 
-            # Client-side draft filter: only include drafts
-            if not node.get("isDraft", False):
-                continue
-
             # Client-side author filter
             author_data = node.get("author")
             pr_author = author_data.get("login", "") if author_data else ""
@@ -1685,7 +1681,7 @@ query {{
                 title=node.get("title", ""),
                 body=node.get("body", ""),
                 state=pr_state,
-                is_draft=True,
+                is_draft=node.get("isDraft", False),
                 base_ref_name=node.get("baseRefName", ""),
                 head_ref_name=node.get("headRefName", ""),
                 is_cross_repository=node.get("isCrossRepository", False),
@@ -1709,7 +1705,7 @@ query {{
                 number=pr_number,
                 state=pr_state,
                 url=node.get("url", ""),
-                is_draft=True,
+                is_draft=node.get("isDraft", False),
                 title=node.get("title"),
                 checks_passing=checks_passing,
                 owner=repo_id.owner,

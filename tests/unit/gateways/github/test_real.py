@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from erk_shared.gateway.github.real import RealGitHub
-from erk_shared.gateway.github.types import RepoInfo
+from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 
 
 def _make_pr_data(
@@ -87,3 +87,128 @@ def test_author_empty_when_user_is_none() -> None:
     pr = github._parse_pr_details_from_rest_api(data, repo_info)
 
     assert pr.author == ""
+
+
+# --- Tests for _parse_plan_prs_with_details (GraphQL response parsing) ---
+
+
+def _make_graphql_pr_node(
+    *,
+    number: int = 100,
+    title: str = "Test PR",
+    body: str = "",
+    state: str = "OPEN",
+    is_draft: bool = False,
+    author_login: str = "test-user",
+    head_ref: str = "feature-branch",
+    base_ref: str = "master",
+    created_at: str = "2024-03-15T10:00:00Z",
+    updated_at: str = "2024-03-16T12:00:00Z",
+) -> dict:
+    """Create a PR node matching GitHub GraphQL pullRequests response shape."""
+    return {
+        "number": number,
+        "url": f"https://github.com/owner/repo/pull/{number}",
+        "title": title,
+        "body": body,
+        "state": state,
+        "isDraft": is_draft,
+        "baseRefName": base_ref,
+        "headRefName": head_ref,
+        "isCrossRepository": False,
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "createdAt": created_at,
+        "updatedAt": updated_at,
+        "author": {"login": author_login},
+        "labels": {"nodes": []},
+        "statusCheckRollup": None,
+        "reviewThreads": {"nodes": []},
+    }
+
+
+def _wrap_graphql_response(nodes: list[dict]) -> dict:
+    """Wrap PR nodes in the expected GraphQL response structure."""
+    return {
+        "data": {
+            "repository": {
+                "pullRequests": {
+                    "nodes": nodes,
+                }
+            }
+        }
+    }
+
+
+def test_parse_plan_prs_returns_both_draft_and_non_draft() -> None:
+    """Both draft and non-draft PRs are returned (no draft filtering)."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="owner", repo="repo")
+
+    response = _wrap_graphql_response(
+        [
+            _make_graphql_pr_node(number=1, is_draft=True, title="Draft PR"),
+            _make_graphql_pr_node(number=2, is_draft=False, title="Ready PR"),
+        ]
+    )
+
+    pr_details, pr_linkages = github._parse_plan_prs_with_details(response, repo_id, author=None)
+
+    assert len(pr_details) == 2
+    numbers = {pr.number for pr in pr_details}
+    assert numbers == {1, 2}
+
+
+def test_parse_plan_prs_preserves_is_draft_state() -> None:
+    """is_draft field is correctly set on both PRDetails and PullRequestInfo."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="owner", repo="repo")
+
+    response = _wrap_graphql_response(
+        [
+            _make_graphql_pr_node(number=1, is_draft=True),
+            _make_graphql_pr_node(number=2, is_draft=False),
+        ]
+    )
+
+    pr_details, pr_linkages = github._parse_plan_prs_with_details(response, repo_id, author=None)
+
+    draft_pr = next(pr for pr in pr_details if pr.number == 1)
+    ready_pr = next(pr for pr in pr_details if pr.number == 2)
+    assert draft_pr.is_draft is True
+    assert ready_pr.is_draft is False
+
+    # PullRequestInfo also carries is_draft
+    assert pr_linkages[1][0].is_draft is True
+    assert pr_linkages[2][0].is_draft is False
+
+
+def test_parse_plan_prs_filters_by_author() -> None:
+    """Author filter excludes PRs from other authors."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="owner", repo="repo")
+
+    response = _wrap_graphql_response(
+        [
+            _make_graphql_pr_node(number=1, author_login="alice"),
+            _make_graphql_pr_node(number=2, author_login="bob"),
+        ]
+    )
+
+    pr_details, _ = github._parse_plan_prs_with_details(response, repo_id, author="alice")
+
+    assert len(pr_details) == 1
+    assert pr_details[0].number == 1
+
+
+def test_parse_plan_prs_empty_response() -> None:
+    """Empty repository data returns empty results."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="owner", repo="repo")
+
+    response = {"data": {"repository": None}}
+
+    pr_details, pr_linkages = github._parse_plan_prs_with_details(response, repo_id, author=None)
+
+    assert pr_details == []
+    assert pr_linkages == {}

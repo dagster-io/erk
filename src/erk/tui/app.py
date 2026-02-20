@@ -36,6 +36,7 @@ from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
 from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.plan_store import PlanBackendType
 
 
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
@@ -107,6 +108,7 @@ class ErkDashApp(App):
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
+        plan_backend: PlanBackendType = "github",
     ) -> None:
         """Initialize the dashboard app.
 
@@ -115,11 +117,13 @@ class ErkDashApp(App):
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
             initial_sort: Initial sort state (defaults to by issue number)
+            plan_backend: Plan backend type ("github" or "draft_pr")
         """
         super().__init__()
         self._provider = provider
         self._plan_filters = filters
         self._refresh_interval = refresh_interval
+        self._plan_backend = plan_backend
         self._table: PlanDataTable | None = None
         self._status_bar: StatusBar | None = None
         self._filter_input: Input | None = None
@@ -135,13 +139,35 @@ class ErkDashApp(App):
         self._view_bar: ViewBar | None = None
         self._data_cache: dict[tuple[str, ...], list[PlanRowData]] = {}
 
+    def _display_name_for_view(self, mode: ViewMode) -> str:
+        """Get the display name for a view mode.
+
+        For Plans view in draft_pr mode, returns "Planned PRs".
+        Otherwise returns the default view config display name.
+
+        Args:
+            mode: The view mode to get a display name for
+
+        Returns:
+            Display name string
+        """
+        if mode == ViewMode.PLANS and self._plan_backend == "draft_pr":
+            return "Planned PRs"
+        return get_view_config(mode).display_name
+
     def compose(self) -> ComposeResult:
         """Create the application layout."""
         yield Header(show_clock=True)
-        yield ViewBar(active_view=self._view_mode)
+        yield ViewBar(
+            active_view=self._view_mode,
+            plans_display_name=self._display_name_for_view(ViewMode.PLANS),
+        )
         with Container(id="main-container"):
-            yield Label("Loading plans...", id="loading-message")
-            yield PlanDataTable(self._plan_filters)
+            yield Label(
+                f"Loading {self._display_name_for_view(ViewMode.PLANS).lower()}...",
+                id="loading-message",
+            )
+            yield PlanDataTable(self._plan_filters, plan_backend=self._plan_backend)
         yield Input(id="filter-input", placeholder="Filter...", disabled=True)
         yield StatusBar()
 
@@ -248,8 +274,7 @@ class ErkDashApp(App):
             self._table.populate(self._rows)
 
         if self._status_bar is not None:
-            current_config = get_view_config(self._view_mode)
-            noun = current_config.display_name.lower()
+            noun = self._display_name_for_view(self._view_mode).lower()
             self._status_bar.set_plan_count(len(self._rows), noun=noun)
             self._status_bar.set_sort_mode(self._sort_state.display_label)
             if update_time is not None:
@@ -381,6 +406,7 @@ class ErkDashApp(App):
             self._table.reconfigure(
                 plan_filters=self._plan_filters,
                 view_mode=mode,
+                plan_backend=self._plan_backend,
             )
 
         # Check cache for the new view's labels
@@ -392,7 +418,7 @@ class ErkDashApp(App):
             if self._table is not None:
                 self._table.populate(self._rows)
             if self._status_bar is not None:
-                noun = view_config.display_name.lower()
+                noun = self._display_name_for_view(mode).lower()
                 self._status_bar.set_plan_count(len(self._rows), noun=noun)
         else:
             # No cached data - fetch fresh
@@ -656,8 +682,9 @@ class ErkDashApp(App):
             self._table.populate(self._rows)
 
         if self._status_bar is not None:
-            view_config = get_view_config(self._view_mode)
-            self._status_bar.set_plan_count(len(self._rows), noun=view_config.display_name.lower())
+            self._status_bar.set_plan_count(
+                len(self._rows), noun=self._display_name_for_view(self._view_mode).lower()
+            )
 
     def _exit_filter_mode(self) -> None:
         """Exit filter mode, restore all rows, and focus table."""
@@ -674,8 +701,9 @@ class ErkDashApp(App):
             self._table.focus()
 
         if self._status_bar is not None:
-            view_config = get_view_config(self._view_mode)
-            self._status_bar.set_plan_count(len(self._rows), noun=view_config.display_name.lower())
+            self._status_bar.set_plan_count(
+                len(self._rows), noun=self._display_name_for_view(self._view_mode).lower()
+            )
 
     def action_open_row(self) -> None:
         """Open selected row - PR if available, otherwise issue."""

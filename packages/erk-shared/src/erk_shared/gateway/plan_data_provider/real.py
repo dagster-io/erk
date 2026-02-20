@@ -709,6 +709,9 @@ class RealPlanDataProvider(PlanDataProvider):
         # Determine if this is a learn plan
         is_learn_plan = "erk-learn" in plan.labels
 
+        # Compute lifecycle display from header or infer from metadata
+        lifecycle_display = _compute_lifecycle_display(plan)
+
         return PlanRowData(
             plan_id=plan_id,
             plan_url=plan.url,
@@ -759,6 +762,7 @@ class RealPlanDataProvider(PlanDataProvider):
             created_display=created_display,
             author=str(plan.metadata.get("author", "")),
             is_learn_plan=is_learn_plan,
+            lifecycle_display=lifecycle_display,
         )
 
 
@@ -846,6 +850,17 @@ def _format_learn_display_icon(
         return f"✓ #{learn_plan_pr}"
     # Fallback for unknown status
     return "-"
+
+
+def _compute_lifecycle_display(plan: Plan) -> str:
+    """Compute lifecycle stage display string for a plan.
+
+    Delegates to lifecycle.compute_lifecycle_display. This wrapper preserves
+    the module-private name used by callers within this file.
+    """
+    from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
+
+    return compute_lifecycle_display(plan)
 
 
 def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -> None:

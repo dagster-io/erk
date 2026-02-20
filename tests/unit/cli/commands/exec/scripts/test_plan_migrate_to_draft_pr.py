@@ -213,6 +213,7 @@ def test_migrate_preserves_objective_id(tmp_path: Path) -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
     plan_comment = format_plan_content_comment(PLAN_CONTENT)
     issue = _make_issue(body=header_body)
@@ -315,6 +316,7 @@ def test_migrate_preserves_operational_metadata(tmp_path: Path) -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
     plan_comment = format_plan_content_comment(PLAN_CONTENT)
     issue = _make_issue(body=header_body)

@@ -153,6 +153,7 @@ def _make_plan_body(
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
 
 
@@ -310,6 +311,7 @@ def _make_plan_body_with_remote_impl(
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
 
 

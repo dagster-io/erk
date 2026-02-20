@@ -11,6 +11,7 @@ from textual.widgets import DataTable
 
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.views.types import ViewMode
+from erk_shared.plan_store import PlanBackendType
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp
@@ -70,14 +71,16 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
-    def __init__(self, plan_filters: PlanFilters) -> None:
+    def __init__(self, plan_filters: PlanFilters, *, plan_backend: PlanBackendType) -> None:
         """Initialize table with column configuration based on filters.
 
         Args:
             plan_filters: Filter options that determine which columns to show
+            plan_backend: Plan backend type ("github" or "draft_pr")
         """
         super().__init__(cursor_type="row")
         self._plan_filters = plan_filters
+        self._plan_backend = plan_backend
         self._view_mode: ViewMode = ViewMode.PLANS
         self._rows: list[PlanRowData] = []
         self._plan_column_index: int = 0  # Always first column
@@ -86,6 +89,7 @@ class PlanDataTable(DataTable):
         self._learn_column_index: int | None = None
         self._local_wt_column_index: int | None = None
         self._run_id_column_index: int | None = None
+        self._stage_column_index: int | None = None
 
     @property
     def local_wt_column_index(self) -> int | None:
@@ -107,7 +111,9 @@ class PlanDataTable(DataTable):
         """Delegate right arrow to app's next_view action."""
         cast("ErkDashApp", self.app).action_next_view()
 
-    def reconfigure(self, *, plan_filters: PlanFilters, view_mode: ViewMode) -> None:
+    def reconfigure(
+        self, *, plan_filters: PlanFilters, view_mode: ViewMode, plan_backend: PlanBackendType
+    ) -> None:
         """Reconfigure the table for a new view mode.
 
         Clears existing columns and rows, then sets up new columns
@@ -116,9 +122,11 @@ class PlanDataTable(DataTable):
         Args:
             plan_filters: New filter options for column configuration
             view_mode: The new view mode
+            plan_backend: Plan backend type ("github" or "draft_pr")
         """
         self._plan_filters = plan_filters
         self._view_mode = view_mode
+        self._plan_backend = plan_backend
         # Reset column indices before _setup_columns rebuilds them
         self._plan_column_index = 0
         self._objective_column_index = None
@@ -126,6 +134,7 @@ class PlanDataTable(DataTable):
         self._learn_column_index = None
         self._local_wt_column_index = None
         self._run_id_column_index = None
+        self._stage_column_index = None
         self.clear(columns=True)
         self._setup_columns()
 
@@ -140,7 +149,9 @@ class PlanDataTable(DataTable):
         Objectives view uses enriched columns (plan, title, progress, next, updated, author).
         """
         col_index = 0
-        self.add_column("plan", key="plan")
+        # In draft_pr mode, first column shows PR number not issue number
+        plan_col_header = "pr" if self._plan_backend == "draft_pr" else "plan"
+        self.add_column(plan_col_header, key="plan")
         col_index += 1
         self.add_column("title", key="title")
         col_index += 1
@@ -163,6 +174,12 @@ class PlanDataTable(DataTable):
         col_index += 1
         self.add_column("author", key="author")
         col_index += 1
+
+        # Draft PR mode: add lifecycle stage column
+        if self._plan_backend == "draft_pr":
+            self._stage_column_index = col_index
+            self.add_column("stage", key="stage")
+            col_index += 1
 
         if self._plan_filters.show_prs:
             if self._plan_filters.show_pr_column:
@@ -289,6 +306,12 @@ class PlanDataTable(DataTable):
         # Wrap title in Text to prevent Rich markup interpretation
         # (e.g., "[erk-learn]" prefix would otherwise be treated as a markup tag)
         values: list[str | Text] = [plan_cell, Text(row.title), row.created_display, row.author]
+
+        # Draft PR mode: add lifecycle stage column (strip markup for plain display)
+        if self._plan_backend == "draft_pr":
+            stage_display = _strip_rich_markup(row.lifecycle_display)
+            values.append(stage_display)
+
         if self._plan_filters.show_prs:
             checks_display = _strip_rich_markup(row.checks_display)
             comments_display = _strip_rich_markup(row.comments_display)

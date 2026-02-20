@@ -346,6 +346,7 @@ PlanHeaderFieldName = Literal[
     "learn_materials_gist_url",
     "review_pr",
     "last_review_pr",
+    "lifecycle_stage",
 ]
 """Union type of all valid plan-header field names."""
 
@@ -397,6 +398,27 @@ LEARN_MATERIALS_GIST_URL: Literal["learn_materials_gist_url"] = "learn_materials
 # Review PR tracking fields
 REVIEW_PR: Literal["review_pr"] = "review_pr"
 LAST_REVIEW_PR: Literal["last_review_pr"] = "last_review_pr"
+
+# Lifecycle stage field
+LIFECYCLE_STAGE: Literal["lifecycle_stage"] = "lifecycle_stage"
+
+# Valid values for lifecycle_stage field
+LifecycleStageValue = Literal[
+    "pre-plan",
+    "planning",
+    "planned",
+    "implementing",
+    "review",
+]
+"""Valid values for the lifecycle_stage plan header field.
+
+Stage progression:
+- pre-plan: Plan issue created, planning not yet started
+- planning: Plan is being written by an agent
+- planned: Plan written, ready for implementation (draft PR created)
+- implementing: Implementation in progress
+- review: Implementation complete, PR under review
+"""
 
 # Valid values for learn_status field
 LearnStatusValue = Literal[
@@ -461,6 +483,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         learn_materials_gist_url: URL of gist with preprocessed learn materials (nullable)
         review_pr: PR number for plan review (nullable)
         last_review_pr: PR number of the last completed review (nullable)
+        lifecycle_stage: Current stage in the plan lifecycle (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -503,6 +526,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LEARN_MATERIALS_GIST_URL,
             REVIEW_PR,
             LAST_REVIEW_PR,
+            LIFECYCLE_STAGE,
         }
 
         # Check required fields exist
@@ -756,6 +780,18 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("last_review_pr must be an integer or null")
             if data[LAST_REVIEW_PR] <= 0:
                 raise ValueError("last_review_pr must be positive when provided")
+
+        # Validate optional lifecycle_stage field
+        if LIFECYCLE_STAGE in data and data[LIFECYCLE_STAGE] is not None:
+            if not isinstance(data[LIFECYCLE_STAGE], str):
+                raise ValueError("lifecycle_stage must be a string or null")
+            valid_stages = {"pre-plan", "planning", "planned", "implementing", "review"}
+            if data[LIFECYCLE_STAGE] not in valid_stages:
+                stage_value = data[LIFECYCLE_STAGE]
+                valid_list = ", ".join(sorted(valid_stages))
+                raise ValueError(
+                    f"lifecycle_stage must be one of: {valid_list}. Got '{stage_value}'"
+                )
 
         # Check for unexpected fields
         known_fields = required_fields | optional_fields

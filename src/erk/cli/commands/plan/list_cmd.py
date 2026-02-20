@@ -681,7 +681,11 @@ def _run_interactive_mode(
 
     # Run the TUI app
     app = ErkDashApp(
-        provider=provider, filters=filters, refresh_interval=interval, initial_sort=initial_sort
+        provider=provider,
+        filters=filters,
+        refresh_interval=interval,
+        initial_sort=initial_sort,
+        plan_backend=get_plan_backend(),
     )
     app.run()
 
