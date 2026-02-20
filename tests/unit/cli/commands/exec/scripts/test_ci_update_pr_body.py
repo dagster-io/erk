@@ -709,7 +709,11 @@ def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) 
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
     # Build a PR body with metadata prefix and plan content (draft-PR format)
-    metadata_prefix = "<!-- plan-header metadata -->\n\n---\n\n"
+    metadata_prefix = (
+        "<!-- erk:metadata-block:plan-header -->\n"
+        "plan-header metadata\n"
+        "<!-- /erk:metadata-block -->\n\n---\n\n"
+    )
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
     pr_body = metadata_prefix + plan_content
 

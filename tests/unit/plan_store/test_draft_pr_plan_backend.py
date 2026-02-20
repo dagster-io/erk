@@ -300,7 +300,12 @@ def test_extract_plan_content_extracts_from_details() -> None:
 
 def test_extract_plan_content_backward_compat_flat_format() -> None:
     """extract_plan_content falls back to flat format for old-style bodies."""
-    body = "metadata block\n\n---\n\nplan content here"
+    body = (
+        "<!-- erk:metadata-block:plan-header -->\n"
+        "metadata\n"
+        "<!-- /erk:metadata-block -->\n\n---\n\n"
+        "plan content here"
+    )
     assert extract_plan_content(body) == "plan content here"
 
 
