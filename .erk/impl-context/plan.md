@@ -10,7 +10,7 @@ ERROR: Branch X has been updated remotely. Use gt get or gt sync...
 
 This surfaces as a generic "Graphite submit failed" message with no actionable guidance. Meanwhile, the core submit flow (`_core_submit_flow`) already has clean divergence detection at lines 296-339 of `submit_pipeline.py` with fetch, auto-rebase, and helpful error messages.
 
-**Goal**: Detect remote divergence *before* calling `gt submit` in the Graphite-first flow and return a clean `SubmitError` with actionable instructions.
+**Goal**: Detect remote divergence _before_ calling `gt submit` in the Graphite-first flow and return a clean `SubmitError` with actionable instructions.
 
 ## Implementation
 
@@ -52,6 +52,7 @@ if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branc
 ```
 
 Key design decisions:
+
 - **Guard on `branch_exists_on_remote`**: New branches have no remote tracking — skip the check
 - **Fetch first**: Local remote refs can be stale; `fetch_branch` gets current state
 - **Check `behind > 0`** not just `is_diverged`: A branch only behind (ahead=0) still needs sync
@@ -70,6 +71,7 @@ Add test functions using the existing patterns in the file:
 3. **`test_pr_submit_graphite_flow_skips_check_for_new_branch`** — No `remote_branches` configured (branch doesn't exist remotely). Assert submission proceeds past divergence check.
 
 FakeGit configuration for divergence test:
+
 ```python
 git = FakeGit(
     remote_branches={env.cwd: ["origin/feature"]},  # Branch exists on remote
@@ -84,10 +86,10 @@ git = FakeGit(
 
 ## Files to modify
 
-| File | Change |
-|------|--------|
+| File                                         | Change                                             |
+| -------------------------------------------- | -------------------------------------------------- |
 | `src/erk/cli/commands/pr/submit_pipeline.py` | Add divergence pre-check in `_graphite_first_flow` |
-| `tests/commands/pr/test_submit.py` | Add 3 test functions |
+| `tests/commands/pr/test_submit.py`           | Add 3 test functions                               |
 
 ## Existing utilities reused
 
