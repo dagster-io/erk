@@ -43,12 +43,14 @@ Replace `plan_backend.get_plan()` with a two-phase approach:
 **Fallback**: If `.erk/impl-context/` doesn't exist after checkout (legacy branch, already cleaned up), extract plan content from `pr.body` using `extract_plan_content()` — same as the current `_convert_to_plan()` does.
 
 New imports needed:
+
 - `require_github` from `erk_shared.context.helpers`
 - `PRNotFound` from `erk_shared.gateway.github.types`
 - `IMPL_CONTEXT_DIR` from `erk_shared.plan_store.draft_pr_lifecycle`
 - `extract_plan_content` from `erk_shared.plan_store.draft_pr_lifecycle` (for fallback)
 
 Rough structure of the draft-PR branch:
+
 ```python
 github = require_github(ctx)
 plan_backend = require_plan_backend(ctx)
@@ -126,19 +128,19 @@ Also extend the post-implementation cleanup step (lines 377-392) with the same p
 
 Add Step 2d after Step 2c to clean up `.erk/impl-context/` from git tracking if it wasn't already removed by `setup-impl-from-issue` (e.g., for the `shutil.rmtree` case where the directory was deleted locally but not from git):
 
-```markdown
+````markdown
 ### Step 2d: Clean Up Plan Staging Directory
 
 If `.erk/impl-context/` exists in git tracking, remove it:
 
 \```bash
 if [ -d .erk/impl-context/ ]; then
-  git rm -rf .erk/impl-context/
-  git commit -m "Remove .erk/impl-context/ before implementation"
-  git push origin "$(git branch --show-current)"
+git rm -rf .erk/impl-context/
+git commit -m "Remove .erk/impl-context/ before implementation"
+git push origin "$(git branch --show-current)"
 fi
 \```
-```
+````
 
 Update the note at line 273 (Step 12) to mention `.erk/impl-context/` cleanup.
 
@@ -152,14 +154,14 @@ Update the note at line 273 (Step 12) to mention `.erk/impl-context/` cleanup.
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
-| `src/erk/cli/commands/exec/scripts/plan_save.py` | Add `title` to `ref.json`, remove unused `url: None` |
-| `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py` | Use `github.get_pr()` + `.erk/impl-context/` for draft-PR plans |
-| `.github/workflows/plan-implement.yml` | Add `.erk/impl-context/` to both cleanup steps |
-| `.claude/commands/erk/plan-implement.md` | Add Step 2d + update Step 12 note |
-| `tests/unit/cli/commands/exec/scripts/test_plan_save.py` | Verify `title` in ref.json |
-| `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py` | Test `.erk/impl-context/` read + fallback |
+| File                                                                 | Change                                                          |
+| -------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `src/erk/cli/commands/exec/scripts/plan_save.py`                     | Add `title` to `ref.json`, remove unused `url: None`            |
+| `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`         | Use `github.get_pr()` + `.erk/impl-context/` for draft-PR plans |
+| `.github/workflows/plan-implement.yml`                               | Add `.erk/impl-context/` to both cleanup steps                  |
+| `.claude/commands/erk/plan-implement.md`                             | Add Step 2d + update Step 12 note                               |
+| `tests/unit/cli/commands/exec/scripts/test_plan_save.py`             | Verify `title` in ref.json                                      |
+| `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py` | Test `.erk/impl-context/` read + fallback                       |
 
 ## Verification
 
