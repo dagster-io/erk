@@ -46,6 +46,7 @@ Thread `plan_backend` from `list_cmd.py` → `ErkDashApp` → child widgets.
 ### 2a. `packages/erk-shared/src/erk_shared/gateway/github/real.py` (~line 1659)
 
 Remove the client-side draft filter in `_parse_plan_prs_with_details()`:
+
 ```python
 # REMOVE these lines:
 # Client-side draft filter: only include drafts
@@ -54,6 +55,7 @@ if not node.get("isDraft", False):
 ```
 
 Read actual `isDraft` value from node instead of hardcoding `True`:
+
 - Line 1688: `is_draft=node.get("isDraft", False)` (was `is_draft=True`)
 - Line 1712: `is_draft=node.get("isDraft", False)` (was `is_draft=True`)
 
@@ -62,6 +64,7 @@ Read actual `isDraft` value from node instead of hardcoding `True`:
 ### 3a. Add `LIFECYCLE_STAGE` to plan-header schema
 
 In `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`:
+
 - Add `"lifecycle_stage"` to `PlanHeaderFieldName` literal type
 - Add `LIFECYCLE_STAGE` constant: `"lifecycle_stage"`
 - Add to `PLAN_HEADER_OPTIONAL_FIELDS`
@@ -69,6 +72,7 @@ In `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`:
 - Terminal states (`merged`, `closed`) derived from PR state — not stored in header
 
 Valid values and transitions:
+
 ```
 pre-plan → planning → planned → implementing → review
                                      ↓
@@ -77,25 +81,27 @@ pre-plan → planning → planned → implementing → review
 
 ### 3b. Write `lifecycle_stage` at transition points
 
-| Transition | Where | Value |
-|-----------|-------|-------|
-| Plan saved (regular) | `DraftPRPlanBackend.create_plan()` in `packages/erk-shared/src/erk_shared/plan_store/draft_pr.py` | `"planned"` |
-| One-shot PR created | `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py` | `"pre-plan"` |
-| Planning job starts | One-shot workflow (write plan-header to PR body) | `"planning"` |
-| Planning completes | `register-one-shot-plan` in `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` | `"planned"` |
-| Implementation starts | Where `LAST_LOCAL_IMPL_AT` or `LAST_REMOTE_IMPL_AT` is written | `"implementing"` |
-| PR marked ready | Where `mark_pr_ready()` is called | `"review"` |
+| Transition            | Where                                                                                             | Value            |
+| --------------------- | ------------------------------------------------------------------------------------------------- | ---------------- |
+| Plan saved (regular)  | `DraftPRPlanBackend.create_plan()` in `packages/erk-shared/src/erk_shared/plan_store/draft_pr.py` | `"planned"`      |
+| One-shot PR created   | `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`                              | `"pre-plan"`     |
+| Planning job starts   | One-shot workflow (write plan-header to PR body)                                                  | `"planning"`     |
+| Planning completes    | `register-one-shot-plan` in `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py`         | `"planned"`      |
+| Implementation starts | Where `LAST_LOCAL_IMPL_AT` or `LAST_REMOTE_IMPL_AT` is written                                    | `"implementing"` |
+| PR marked ready       | Where `mark_pr_ready()` is called                                                                 | `"review"`       |
 
 **Scope note**: For this PR, implement the writes for `plan-save` → `"planned"` and TUI reads with inference fallback. The one-shot dispatch writes (`pre-plan`, `planning`) and implementation/review writes are follow-up — they touch different code paths and can be added incrementally.
 
 ### 3c. Preserve `is_draft` and `pr_state` in Plan metadata
 
 In `packages/erk-shared/src/erk_shared/plan_store/conversion.py`, update `pr_details_to_plan()`:
+
 - Add `"is_draft": pr.is_draft` and `"pr_state": pr.state` to the metadata dict
 
 ### 3d. Add `lifecycle_display` field to `PlanRowData`
 
 In `src/erk/tui/data/types.py`, add:
+
 - `lifecycle_display: str` — display value for the stage column
 
 ### 3e. Compute lifecycle state in `_build_row_data()`
@@ -120,15 +126,18 @@ Import `LIFECYCLE_STAGE`, `CREATED_FROM_WORKFLOW_RUN_URL`, `LAST_DISPATCHED_RUN_
 ### 3f. Add "stage" column to plan table
 
 In `src/erk/tui/widgets/plan_table.py`, `_setup_columns()`:
+
 - Only in draft_pr mode: add `self.add_column("stage", key="stage")` after the "pr" column
 
 In `_row_to_values()`:
+
 - Only in draft_pr mode: include styled `row.lifecycle_display` in the values tuple
 - Colors: `pre-plan` magenta, `planning` magenta, `planned` dim, `implementing` yellow, `review` cyan, `merged` green, `closed` dim red
 
 ## Part 4: Update fake provider for tests
 
 In `tests/fakes/plan_data_provider.py`:
+
 - Add `lifecycle_display: str = "-"` to `make_plan_row()` helper
 
 ## Files modified
