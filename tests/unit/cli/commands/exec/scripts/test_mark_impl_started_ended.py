@@ -131,6 +131,8 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
     assert block.data["last_local_impl_user"] is not None
     # Remote impl fields should remain null
     assert block.data["last_remote_impl_at"] is None
+    # Lifecycle stage should be set to implementing
+    assert block.data["lifecycle_stage"] == "implementing"
 
     # Verify .impl/local-run-state.json written
     local_state_file = impl_dir / "local-run-state.json"
@@ -191,6 +193,8 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
     # Local impl fields should remain null in remote mode
     assert block.data["last_local_impl_event"] is None
     assert block.data["last_local_impl_session"] is None
+    # Lifecycle stage should be set to implementing
+    assert block.data["lifecycle_stage"] == "implementing"
 
 
 def test_mark_impl_started_no_plan_ref(tmp_path: Path) -> None:

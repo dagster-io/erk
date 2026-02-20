@@ -33,7 +33,7 @@ def compute_lifecycle_display(plan: Plan) -> str:
             if is_draft and pr_state == "OPEN":
                 stage = "planned"
             elif not is_draft and pr_state == "OPEN":
-                stage = "review"
+                stage = "implemented"
             elif not is_draft and pr_state == "MERGED":
                 stage = "merged"
             elif not is_draft and pr_state == "CLOSED":
@@ -43,13 +43,13 @@ def compute_lifecycle_display(plan: Plan) -> str:
         return "-"
 
     # Color-code by stage
-    if stage in ("pre-plan", "planning"):
+    if stage in ("prompted", "planning"):
         return f"[magenta]{stage}[/magenta]"
     if stage == "planned":
         return f"[dim]{stage}[/dim]"
     if stage == "implementing":
         return f"[yellow]{stage}[/yellow]"
-    if stage == "review":
+    if stage == "implemented":
         return f"[cyan]{stage}[/cyan]"
     if stage == "merged":
         return f"[green]{stage}[/green]"

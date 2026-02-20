@@ -430,6 +430,7 @@ class GitHubPlanStore(PlanBackend):
             created_from_session=created_from_session_str,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage="planned",
         )
 
         if not result.success:

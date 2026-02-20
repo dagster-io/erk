@@ -24,6 +24,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 
 
 def _create_github_with_issue(issue_number: int) -> tuple[FakeGitHub, FakeGitHubIssues]:
@@ -33,12 +34,40 @@ def _create_github_with_issue(issue_number: int) -> tuple[FakeGitHub, FakeGitHub
         Tuple of (FakeGitHub, FakeGitHubIssues) for passing both to ErkContext.
     """
     test_time = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="test-user",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        created_from_workflow_run_url=None,
+        last_learn_session=None,
+        last_learn_at=None,
+        learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
+        lifecycle_stage=None,
+    )
     issues_gateway = FakeGitHubIssues(
         issues={
             issue_number: IssueInfo(
                 number=issue_number,
                 title="Test Plan",
-                body="Test plan content",
+                body=body,
                 state="open",
                 url=f"https://github.com/test-owner/test-repo/issues/{issue_number}",
                 labels=["erk-plan"],

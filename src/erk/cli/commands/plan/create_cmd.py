@@ -94,6 +94,7 @@ def create_plan(
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
+        lifecycle_stage="planned",
     )
 
     if not result.success:

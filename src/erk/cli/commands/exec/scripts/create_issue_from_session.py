@@ -77,6 +77,7 @@ def create_issue_from_session(ctx: click.Context, session_id: str | None) -> Non
         created_from_session=session_id,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
+        lifecycle_stage="planned",
     )
 
     if not result.success:
