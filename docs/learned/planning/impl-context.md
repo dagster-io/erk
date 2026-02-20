@@ -14,11 +14,6 @@ tripwires:
 
 `.erk/impl-context/` is a temporary staging directory used during draft-PR plan saving. It exists on the plan branch between plan creation and the start of implementation, then gets cleaned up.
 
-## What It Contains
-
-- **`plan.md`** — The plan content (identical to what appears in the PR body's `<details>` block)
-- **`ref.json`** — Plan reference metadata (`provider`, `title`, and optionally `objective_id`)
-
 ## Lifecycle
 
 ### Creation
@@ -26,7 +21,7 @@ tripwires:
 During `plan_save.py`, after creating the plan branch, the script:
 
 1. Checks out the plan branch
-2. Creates `.erk/impl-context/` and writes `plan.md` + `ref.json`
+2. Creates `.erk/impl-context/` and writes `plan.md` (plan content) and `ref.json` (plan reference metadata)
 3. Stages and commits both files
 4. Pushes to remote
 5. Checks out the original branch
@@ -48,16 +43,6 @@ The directory is removed before implementation begins. Three cleanup paths exist
 ### Why It Can Leak
 
 If any cleanup path fails silently — for example, `setup_impl_from_issue` removes the local directory but doesn't commit the removal, or the CI cleanup step is skipped — the files persist on the branch and appear in the final PR diff.
-
-## The Constant
-
-The directory path is defined as `IMPL_CONTEXT_DIR` in `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py:86`:
-
-```python
-IMPL_CONTEXT_DIR = ".erk/impl-context"
-```
-
-All code references this constant rather than hardcoding the path.
 
 ## Related Documentation
 
