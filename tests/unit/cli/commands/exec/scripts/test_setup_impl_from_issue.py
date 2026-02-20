@@ -651,8 +651,9 @@ def test_draft_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None:
     assert "Local Plan" in impl_plan.read_text(encoding="utf-8")
     assert "From impl-context" in impl_plan.read_text(encoding="utf-8")
 
-    # .erk/impl-context/ was cleaned up
-    assert not impl_context_dir.exists()
+    # .erk/impl-context/ is NOT deleted here — Step 2d in plan-implement.md
+    # handles git rm + commit + push after setup_impl_from_issue completes
+    assert impl_context_dir.exists()
 
     # Output JSON has correct metadata
     output_lines = result.output.strip().split("\n")
