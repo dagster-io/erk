@@ -70,7 +70,7 @@ OR exit Claude Code first, then run one of:
 
 def format_draft_pr_next_steps_plain(pr_number: int, *, branch_name: str) -> str:
     """Format for CLI output (plain text) for draft PR plans."""
-    s = DraftPRNextSteps(pr_number, branch_name)
+    s = DraftPRNextSteps(pr_number=pr_number, branch_name=branch_name)
     return f"""Next steps:
 
 View PR: {s.view}
