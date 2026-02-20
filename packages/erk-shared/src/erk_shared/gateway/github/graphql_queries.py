@@ -72,6 +72,7 @@ ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedE
         }
       }
       mergeable
+      reviewDecision
     }
   }
 }"""
@@ -144,6 +145,7 @@ GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
                     }
                   }
                   mergeable
+                  reviewDecision
                   reviewThreads(first: 100) {
                     totalCount
                     nodes { isResolved }
@@ -200,6 +202,7 @@ GET_PLAN_PRS_WITH_DETAILS_QUERY = """query(
             statusContextCountsByState { state count }
           }
         }
+        reviewDecision
         reviewThreads(first: 100) {
           totalCount
           nodes { isResolved }

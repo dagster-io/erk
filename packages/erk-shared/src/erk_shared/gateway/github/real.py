@@ -1248,6 +1248,7 @@ query {{
         will_close_target = event.get("willCloseTarget", False)
         review_thread_counts = self._parse_review_thread_counts(source.get("reviewThreads"))
         head_ref_name = source.get("headRefName")
+        review_decision = source.get("reviewDecision")
 
         pr_info = PullRequestInfo(
             number=pr_number,
@@ -1263,6 +1264,7 @@ query {{
             will_close_target=will_close_target,
             review_thread_counts=review_thread_counts,
             head_branch=head_ref_name,
+            review_decision=review_decision,
         )
         return (pr_info, created_at_pr)
 
@@ -1700,6 +1702,7 @@ query {{
             checks_passing, checks_counts = self._parse_status_rollup(node.get("statusCheckRollup"))
             has_conflicts = self._parse_mergeable_status(node.get("mergeable"))
             review_thread_counts = self._parse_review_thread_counts(node.get("reviewThreads"))
+            review_decision = node.get("reviewDecision")
 
             pr_info = PullRequestInfo(
                 number=pr_number,
@@ -1714,6 +1717,7 @@ query {{
                 checks_counts=checks_counts,
                 review_thread_counts=review_thread_counts,
                 head_branch=node.get("headRefName"),
+                review_decision=review_decision,
             )
             pr_linkages[pr_number] = [pr_info]
 

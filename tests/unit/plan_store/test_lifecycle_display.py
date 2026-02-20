@@ -1,9 +1,12 @@
-"""Tests for _compute_lifecycle_display function."""
+"""Tests for lifecycle display functions."""
 
 from datetime import UTC, datetime
 
 from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
-from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
+from erk_shared.gateway.plan_data_provider.lifecycle import (
+    compute_lifecycle_display,
+    format_lifecycle_with_status,
+)
 from erk_shared.plan_store.types import Plan, PlanState
 
 
@@ -135,3 +138,126 @@ def test_header_field_takes_precedence_over_metadata() -> None:
         metadata={"is_draft": False, "pr_state": "MERGED"},
     )
     assert compute_lifecycle_display(plan) == "[yellow]implementing[/yellow]"
+
+
+# --- format_lifecycle_with_status tests ---
+
+
+def test_no_indicators_returns_original() -> None:
+    """No conflicts or review decision returns original display string."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        has_conflicts=None,
+        review_decision=None,
+    )
+    assert result == "[cyan]review[/cyan]"
+
+
+def test_no_indicators_when_false_conflicts() -> None:
+    """has_conflicts=False does not add indicator."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        has_conflicts=False,
+        review_decision=None,
+    )
+    assert result == "[cyan]review[/cyan]"
+
+
+def test_conflicts_indicator_with_rich_markup() -> None:
+    """Conflicts indicator inserted inside Rich markup closing tag."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        has_conflicts=True,
+        review_decision=None,
+    )
+    assert result == "[cyan]review 💥[/cyan]"
+
+
+def test_approved_indicator_with_rich_markup() -> None:
+    """Approved indicator inserted inside Rich markup closing tag."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        has_conflicts=None,
+        review_decision="APPROVED",
+    )
+    assert result == "[cyan]review ✔[/cyan]"
+
+
+def test_changes_requested_indicator() -> None:
+    """Changes requested indicator inserted inside Rich markup closing tag."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        has_conflicts=None,
+        review_decision="CHANGES_REQUESTED",
+    )
+    assert result == "[cyan]review ❌[/cyan]"
+
+
+def test_conflicts_and_changes_requested() -> None:
+    """Both conflicts and changes requested shown together."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        has_conflicts=True,
+        review_decision="CHANGES_REQUESTED",
+    )
+    assert result == "[cyan]review 💥 ❌[/cyan]"
+
+
+def test_conflicts_and_approved() -> None:
+    """Both conflicts and approved shown together."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        has_conflicts=True,
+        review_decision="APPROVED",
+    )
+    assert result == "[cyan]review 💥 ✔[/cyan]"
+
+
+def test_implementing_with_conflicts() -> None:
+    """Implementing stage with conflicts shows indicator."""
+    result = format_lifecycle_with_status(
+        "[yellow]implementing[/yellow]",
+        has_conflicts=True,
+        review_decision=None,
+    )
+    assert result == "[yellow]implementing 💥[/yellow]"
+
+
+def test_plain_text_without_markup() -> None:
+    """Plain text without Rich markup appends indicators."""
+    result = format_lifecycle_with_status(
+        "custom-stage",
+        has_conflicts=True,
+        review_decision=None,
+    )
+    assert result == "custom-stage 💥"
+
+
+def test_dash_with_no_indicators() -> None:
+    """Dash display with no indicators unchanged."""
+    result = format_lifecycle_with_status(
+        "-",
+        has_conflicts=None,
+        review_decision=None,
+    )
+    assert result == "-"
+
+
+def test_review_required_not_shown() -> None:
+    """REVIEW_REQUIRED does not add an indicator (not actionable)."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        has_conflicts=None,
+        review_decision="REVIEW_REQUIRED",
+    )
+    assert result == "[cyan]review[/cyan]"
+
+
+def test_dim_red_markup_with_conflicts() -> None:
+    """Indicators work with dim red markup (nested tags)."""
+    result = format_lifecycle_with_status(
+        "[dim red]closed[/dim red]",
+        has_conflicts=True,
+        review_decision=None,
+    )
+    assert result == "[dim red]closed 💥[/dim red]"

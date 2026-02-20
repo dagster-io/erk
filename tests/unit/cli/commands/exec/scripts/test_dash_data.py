@@ -220,6 +220,8 @@ def test_serialize_plan_row_all_fields_present() -> None:
         "author",
         "is_learn_plan",
         "lifecycle_display",
+        "has_conflicts",
+        "review_decision",
     }
     assert set(result.keys()) == expected_fields
 

@@ -62,7 +62,11 @@ class PlanRowData:
         created_at: Creation datetime of the issue
         created_display: Formatted relative time string (e.g., "2d ago")
         author: GitHub login of the issue creator
-        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-")
+        lifecycle_display: Formatted lifecycle stage with status indicators
+            (e.g., "review", "review 💥", "review ✔", "review ❌")
+        has_conflicts: True if PR has merge conflicts, False if not, None if unknown
+        review_decision: PR review decision ("APPROVED", "CHANGES_REQUESTED",
+            "REVIEW_REQUIRED", or None)
     """
 
     plan_id: int
@@ -115,6 +119,8 @@ class PlanRowData:
     author: str
     is_learn_plan: bool
     lifecycle_display: str
+    has_conflicts: bool | None = None
+    review_decision: str | None = None
 
 
 @dataclass(frozen=True)

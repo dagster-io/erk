@@ -56,3 +56,55 @@ def compute_lifecycle_display(plan: Plan) -> str:
     if stage == "closed":
         return f"[dim red]{stage}[/dim red]"
     return stage
+
+
+def format_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+) -> str:
+    """Enrich lifecycle display string with PR status indicators.
+
+    Appends emoji indicators to the lifecycle stage text when relevant:
+    - 💥 for merge conflicts (implementing, review stages)
+    - ✔ for approved (review stage)
+    - ❌ for changes requested (review stage)
+
+    Indicators are inserted inside Rich markup tags so they inherit color.
+
+    Args:
+        lifecycle_display: Pre-computed lifecycle display string from
+            compute_lifecycle_display() (may contain Rich markup)
+        has_conflicts: True if PR has merge conflicts
+        review_decision: PR review decision ("APPROVED", "CHANGES_REQUESTED",
+            "REVIEW_REQUIRED", or None)
+
+    Returns:
+        Enriched display string with status indicators appended
+    """
+    # Build the suffix from relevant indicators
+    indicators: list[str] = []
+
+    if has_conflicts is True:
+        indicators.append("💥")
+
+    if review_decision == "APPROVED":
+        indicators.append("✔")
+    elif review_decision == "CHANGES_REQUESTED":
+        indicators.append("❌")
+
+    if not indicators:
+        return lifecycle_display
+
+    suffix = " " + " ".join(indicators)
+
+    # Insert suffix inside Rich markup closing tag if present
+    # Rich markup format: [color]text[/color]
+    # We want: [color]text 💥[/color]
+    close_tag_start = lifecycle_display.rfind("[/")
+    if close_tag_start != -1:
+        return lifecycle_display[:close_tag_start] + suffix + lifecycle_display[close_tag_start:]
+
+    # No Rich markup — just append
+    return lifecycle_display + suffix

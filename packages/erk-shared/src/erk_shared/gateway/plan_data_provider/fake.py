@@ -271,6 +271,8 @@ def make_plan_row(
     author: str = "test-user",
     is_learn_plan: bool = False,
     lifecycle_display: str = "-",
+    has_conflicts: bool | None = None,
+    review_decision: str | None = None,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -306,6 +308,8 @@ def make_plan_row(
         updated_at: Last update datetime (defaults to same as created_at)
         updated_display: Formatted relative time for last update
         created_at: Creation datetime (defaults to 2025-01-01T00:00:00Z)
+        has_conflicts: True if PR has merge conflicts
+        review_decision: PR review decision ("APPROVED", "CHANGES_REQUESTED", etc.)
 
     Returns:
         PlanRowData populated with test data
@@ -416,4 +420,6 @@ def make_plan_row(
         author=author,
         is_learn_plan=is_learn_plan,
         lifecycle_display=lifecycle_display,
+        has_conflicts=has_conflicts,
+        review_decision=review_decision,
     )

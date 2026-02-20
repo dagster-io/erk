@@ -599,6 +599,8 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_head_branch: str | None = None
         pr_display = "-"
         checks_display = "-"
+        has_conflicts: bool | None = None
+        review_decision: str | None = None
 
         # Comment counts - "-" when no PR
         resolved_comment_count = 0
@@ -617,6 +619,8 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_title = selected_pr.title
                 pr_state = selected_pr.state
                 pr_head_branch = selected_pr.head_branch
+                has_conflicts = selected_pr.has_conflicts
+                review_decision = selected_pr.review_decision
                 graphite_url = self._ctx.graphite.get_graphite_url(
                     GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
                 )
@@ -709,8 +713,14 @@ class RealPlanDataProvider(PlanDataProvider):
         # Determine if this is a learn plan
         is_learn_plan = "erk-learn" in plan.labels
 
-        # Compute lifecycle display from header or infer from metadata
+        # Compute lifecycle display from header or infer from metadata,
+        # then enrich with PR status indicators (conflicts, review decision)
         lifecycle_display = _compute_lifecycle_display(plan)
+        lifecycle_display = _format_lifecycle_with_status(
+            lifecycle_display,
+            has_conflicts=has_conflicts,
+            review_decision=review_decision,
+        )
 
         return PlanRowData(
             plan_id=plan_id,
@@ -763,6 +773,8 @@ class RealPlanDataProvider(PlanDataProvider):
             author=str(plan.metadata.get("author", "")),
             is_learn_plan=is_learn_plan,
             lifecycle_display=lifecycle_display,
+            has_conflicts=has_conflicts,
+            review_decision=review_decision,
         )
 
 
@@ -861,6 +873,25 @@ def _compute_lifecycle_display(plan: Plan) -> str:
     from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
 
     return compute_lifecycle_display(plan)
+
+
+def _format_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+) -> str:
+    """Enrich lifecycle display with PR status indicators.
+
+    Delegates to lifecycle.format_lifecycle_with_status.
+    """
+    from erk_shared.gateway.plan_data_provider.lifecycle import format_lifecycle_with_status
+
+    return format_lifecycle_with_status(
+        lifecycle_display,
+        has_conflicts=has_conflicts,
+        review_decision=review_decision,
+    )
 
 
 def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -> None:
