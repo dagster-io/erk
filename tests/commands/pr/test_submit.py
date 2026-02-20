@@ -10,6 +10,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
@@ -1586,3 +1587,265 @@ def test_pr_submit_shows_no_plan_message() -> None:
         # Verify Phase 3 shows no linked plan
         assert "Phase 3: Fetching plan context" in result.output
         assert "No linked plan found" in result.output
+
+
+def test_pr_submit_graphite_flow_detects_remote_divergence() -> None:
+    """Test that Graphite-first flow detects remote divergence before gt submit.
+
+    When the remote branch has been updated (e.g., by CI or another session),
+    the command should return a clean error with actionable fix suggestions
+    instead of letting gt submit fail with a raw error.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+            remote_branches={env.git_dir: ["origin/feature"]},
+            branch_divergence={
+                (env.cwd, "feature", "origin"): BranchDivergence(
+                    is_diverged=True, ahead=1, behind=2
+                )
+            },
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        github = FakeGitHub(authenticated=True)
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "behind remote by 2 commit(s)" in result.output
+        assert "ahead by 1 commit(s)" in result.output
+        assert "erk pr sync-divergence" in result.output
+        assert "erk pr submit -f" in result.output
+        # gt submit should never have been called
+        assert len(graphite.submit_stack_calls) == 0
+
+
+def test_pr_submit_graphite_flow_force_bypasses_divergence() -> None:
+    """Test that --force bypasses divergence check in Graphite-first flow."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+            remote_branches={env.git_dir: ["origin/feature"]},
+            branch_divergence={
+                (env.cwd, "feature", "origin"): BranchDivergence(
+                    is_diverged=True, ahead=1, behind=2
+                )
+            },
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+            pr_info={"feature": pr_info},
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_bases={123: "main"},
+        )
+
+        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit", "--force"], obj=ctx)
+
+        assert result.exit_code == 0
+        # gt submit should have been called (divergence bypassed)
+        assert len(graphite.submit_stack_calls) == 1
+
+
+def test_pr_submit_graphite_flow_skips_check_for_new_branch() -> None:
+    """Test that divergence check is skipped when branch doesn't exist on remote.
+
+    New branches have no remote tracking branch, so branch_exists_on_remote
+    returns False and the divergence check is skipped entirely.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+            # No remote_branches configured - branch doesn't exist on remote
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+            pr_info={"feature": pr_info},
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_bases={123: "main"},
+        )
+
+        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code == 0
+        # gt submit should have been called (no remote branch to check)
+        assert len(graphite.submit_stack_calls) == 1
