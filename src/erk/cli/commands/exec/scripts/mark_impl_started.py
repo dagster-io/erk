@@ -137,7 +137,10 @@ def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
             backend.update_metadata(
                 repo_root,
                 plan_ref.plan_id,
-                metadata={"last_remote_impl_at": timestamp},
+                metadata={
+                    "last_remote_impl_at": timestamp,
+                    "lifecycle_stage": "implementing",
+                },
             )
         else:
             backend.update_metadata(
@@ -148,6 +151,7 @@ def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
                     "last_local_impl_event": "started",
                     "last_local_impl_session": session_id,
                     "last_local_impl_user": user,
+                    "lifecycle_stage": "implementing",
                 },
             )
     except RuntimeError as e:

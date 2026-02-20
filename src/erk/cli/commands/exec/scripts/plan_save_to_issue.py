@@ -208,6 +208,7 @@ def plan_save_to_issue(
         created_from_session=effective_session_id,
         created_from_workflow_run_url=created_from_workflow_run_url,
         learned_from_issue=learned_from_issue,
+        lifecycle_stage="planned",
     )
 
     if not result.success:

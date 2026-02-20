@@ -33,6 +33,7 @@ class TestCreatePlanIssueSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -71,6 +72,7 @@ class TestCreatePlanIssueSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -102,6 +104,7 @@ class TestCreatePlanIssueSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -126,6 +129,7 @@ class TestCreatePlanIssueSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -149,6 +153,7 @@ class TestCreatePlanIssueSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -172,6 +177,7 @@ class TestCreatePlanIssueSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -199,6 +205,7 @@ class TestCreatePlanIssueSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -229,6 +236,7 @@ class TestCreatePlanIssueTitleExtraction:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.title == "Feature: Add Auth"
@@ -250,6 +258,7 @@ class TestCreatePlanIssueTitleExtraction:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.title == "Add Feature X"
@@ -271,6 +280,7 @@ class TestCreatePlanIssueTitleExtraction:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.title == "Refactor Y"
@@ -296,6 +306,7 @@ class TestCreatePlanIssueErrors:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is False
@@ -328,6 +339,7 @@ class TestCreatePlanIssueErrors:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is False
@@ -357,6 +369,7 @@ class TestCreatePlanIssueErrors:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is False
@@ -391,6 +404,7 @@ class TestCreatePlanIssuePartialSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         # Partial success: issue created but comment failed
@@ -422,6 +436,7 @@ class TestCreatePlanIssuePartialSuccess:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is False
@@ -448,6 +463,7 @@ class TestCreatePlanIssueLabelManagement:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -475,6 +491,7 @@ class TestCreatePlanIssueLabelManagement:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -501,6 +518,7 @@ class TestCreatePlanIssueLabelManagement:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -524,6 +542,7 @@ class TestCreatePlanIssueLabelManagement:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -788,6 +807,7 @@ class TestCreatePlanIssueCommandsSection:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -820,6 +840,7 @@ class TestCreatePlanIssueCommandsSection:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True
@@ -851,6 +872,7 @@ class TestCreatePlanIssueCommandsSection:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            lifecycle_stage=None,
         )
 
         assert result.success is True

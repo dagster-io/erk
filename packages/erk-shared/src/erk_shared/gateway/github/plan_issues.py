@@ -88,6 +88,7 @@ def create_plan_issue(
     created_from_session: str | None,
     created_from_workflow_run_url: str | None,
     learned_from_issue: int | None,
+    lifecycle_stage: str | None,
 ) -> CreatePlanIssueResult:
     """Create Schema v2/v3 plan issue with proper structure.
 
@@ -111,6 +112,7 @@ def create_plan_issue(
         created_from_workflow_run_url: Optional workflow run URL that created this plan
         learned_from_issue: Optional parent plan issue number (for learn plans, enables
             auto-update when learn plan lands)
+        lifecycle_stage: Optional initial lifecycle stage (e.g., "pre-plan", "planned")
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -196,7 +198,7 @@ def create_plan_issue(
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=learned_from_issue,
-        lifecycle_stage=None,
+        lifecycle_stage=lifecycle_stage,
     )
 
     # Create issue

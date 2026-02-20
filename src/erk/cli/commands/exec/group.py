@@ -173,6 +173,9 @@ from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
 )
 from erk.cli.commands.exec.scripts.update_dispatch_info import update_dispatch_info
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
+from erk.cli.commands.exec.scripts.update_lifecycle_stage import (
+    update_lifecycle_stage,
+)
 from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
 from erk.cli.commands.exec.scripts.update_plan_remote_session import (
     update_plan_remote_session,
@@ -282,6 +285,7 @@ exec_group.add_command(trigger_async_learn, name="trigger-async-learn")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
 exec_group.add_command(update_issue_body, name="update-issue-body")
+exec_group.add_command(update_lifecycle_stage, name="update-lifecycle-stage")
 exec_group.add_command(update_objective_node, name="update-objective-node")
 exec_group.add_command(update_plan_remote_session, name="update-plan-remote-session")
 exec_group.add_command(update_pr_description, name="update-pr-description")

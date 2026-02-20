@@ -225,7 +225,23 @@ def handle_no_changes(
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
 
-    # 3. Mark PR ready for review
+    # 3. Set lifecycle stage to review
+    try:
+        backend.update_metadata(
+            repo_root,
+            str(plan_id),
+            metadata={"lifecycle_stage": "review"},
+        )
+    except RuntimeError as e:
+        result = HandleNoChangesError(
+            success=False,
+            error="github-api-failed",
+            message=f"Failed to update lifecycle stage: {e}",
+        )
+        click.echo(json.dumps(asdict(result), indent=2))
+        raise SystemExit(1) from None
+
+    # 4. Mark PR ready for review
     try:
         github.mark_pr_ready(repo_root, pr_number)
     except RuntimeError as e:
@@ -237,7 +253,7 @@ def handle_no_changes(
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
 
-    # 4. Add comment to plan via PlanBackend
+    # 5. Add comment to plan via PlanBackend
     try:
         comment = _build_issue_comment(pr_number=pr_number)
         backend.add_comment(repo_root, str(plan_id), comment)

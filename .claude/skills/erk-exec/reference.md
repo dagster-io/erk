@@ -103,6 +103,7 @@ Quick reference for all `erk exec` subcommands.
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                        |
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                  |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
+| `update-lifecycle-stage`          | Update the lifecycle_stage metadata field on a plan.                        |
 | `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                  |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.          |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
@@ -1282,6 +1283,19 @@ Update an issue's body using REST API (avoids GraphQL rate limits).
 | ------------- | ---- | -------- | -------------- | ------------------- |
 | `--body`      | TEXT | No       | Sentinel.UNSET | New body content    |
 | `--body-file` | PATH | No       | Sentinel.UNSET | Read body from file |
+
+### update-lifecycle-stage
+
+Update the lifecycle_stage metadata field on a plan.
+
+**Usage:** `erk exec update-lifecycle-stage`
+
+**Options:**
+
+| Flag        | Type   | Required | Default        | Description                                 |
+| ----------- | ------ | -------- | -------------- | ------------------------------------------- |
+| `--plan-id` | TEXT   | Yes      | Sentinel.UNSET | Plan identifier (issue number or PR number) |
+| `--stage`   | CHOICE | Yes      | Sentinel.UNSET | Lifecycle stage to set                      |
 
 ### update-objective-node
 

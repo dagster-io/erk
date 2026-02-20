@@ -98,6 +98,17 @@ def register_one_shot_plan(
     except Exception as exc:
         results["pr_closing_ref"] = {"success": False, "error": str(exc)}
 
+    # Op 4: update lifecycle stage to "planned"
+    try:
+        plan_backend.update_metadata(
+            repo_root,
+            str(issue_number),
+            metadata={"lifecycle_stage": "planned"},
+        )
+        results["lifecycle_stage"] = {"success": True}
+    except Exception as exc:
+        results["lifecycle_stage"] = {"success": False, "error": str(exc)}
+
     click.echo(json.dumps(results, indent=2))
     if not any(v["success"] for v in results.values()):  # type: ignore[union-attr]
         raise SystemExit(1)
