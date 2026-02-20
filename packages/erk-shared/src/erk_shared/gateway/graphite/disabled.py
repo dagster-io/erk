@@ -65,7 +65,7 @@ class GraphiteDisabled(Graphite):
         """Raise error - sync is a mutating operation."""
         raise GraphiteDisabledError(self.reason)
 
-    def restack(self, repo_root: Path, *, no_interactive: bool, quiet: bool) -> None:
+    def restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Raise error - restack is a mutating operation."""
         raise GraphiteDisabledError(self.reason)
 

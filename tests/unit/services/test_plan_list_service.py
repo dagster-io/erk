@@ -750,6 +750,84 @@ last_dispatched_node_id: 'WFR_draft456'
         assert len(result.plans) == 1
         assert result.workflow_runs == {}
 
+    def test_rewritten_pr_body_shows_ai_summary_not_footer(self) -> None:
+        """Rewritten PR bodies without original-plan section display AI summary content.
+
+        After remote implementation, erk pr rewrite replaces the body with an AI-generated
+        summary. These bodies lack the <details>original-plan</details> section, so
+        extract_plan_content's fallback returns footer text. The service must detect this
+        and use extract_main_content instead.
+        """
+        # Simulates a rewritten PR body: metadata + separator + AI summary + footer
+        pr_body = (
+            "<!-- erk:metadata-block:plan-header -->\n"
+            "<details>\n<summary><code>plan-header</code></summary>\n\n"
+            "```yaml\nschema_version: '2'\n```\n\n"
+            "</details>\n"
+            "<!-- /erk:metadata-block:plan-header -->\n\n"
+            "---\n\n"
+            "## Summary\n\n"
+            "This PR implements the frobnication feature.\n\n"
+            "## Files Changed\n\n"
+            "- `src/frob.py`: Added frobnication logic\n\n"
+            "## Key Changes\n\n"
+            "Rewired the widget to support frobnication"
+            "\n---\n"
+            "\nCloses #7626\n"
+            "\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"
+            "```\n"
+            'source "$(erk pr checkout 200 --script)" && erk pr sync --dangerous\n'
+            "```\n"
+        )
+        details = _make_draft_pr_details(number=200, title="Frobnication", body=pr_body)
+        fake_github = FakeGitHub(
+            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert len(result.plans) == 1
+        plan_body = result.plans[0].body
+        # AI summary content should be present
+        assert "frobnication feature" in plan_body
+        assert "Files Changed" in plan_body
+        assert "Key Changes" in plan_body
+        # Footer content should NOT be present
+        assert "Closes #7626" not in plan_body
+        assert "erk pr checkout" not in plan_body
+
+    def test_stage1_pr_body_extracts_original_plan(self) -> None:
+        """Stage 1 PR bodies with original-plan section extract plan content correctly.
+
+        Ensures the fix for rewritten bodies doesn't break Stage 1/2 extraction.
+        """
+        pr_body = (
+            "<!-- erk:metadata-block:plan-header -->\n"
+            "<details>\n<summary><code>plan-header</code></summary>\n\n"
+            "```yaml\nschema_version: '2'\n```\n\n"
+            "</details>\n"
+            "<!-- /erk:metadata-block:plan-header -->\n\n"
+            "---\n\n"
+            "<details>\n<summary><code>original-plan</code></summary>\n\n"
+            "# My Original Plan\n\nDetailed plan content here"
+            "\n\n</details>"
+            "\n---\n"
+            "\nTo checkout this PR:\n```\nerk pr checkout 201\n```\n"
+        )
+        details = _make_draft_pr_details(number=201, title="Stage 1 Plan", body=pr_body)
+        fake_github = FakeGitHub(
+            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
+        )
+        service = DraftPRPlanListService(fake_github)
+        result = service.get_plan_list_data(location=TEST_LOCATION, labels=[])
+
+        assert len(result.plans) == 1
+        plan_body = result.plans[0].body
+        assert "My Original Plan" in plan_body
+        assert "Detailed plan content here" in plan_body
+        # Footer should not leak in
+        assert "erk pr checkout 201" not in plan_body
+
     def test_workflow_run_api_failure_returns_empty_runs(self) -> None:
         """API failure during workflow run fetch still returns plans with empty runs."""
         pr_body = """<!-- erk:metadata-block:plan-header -->

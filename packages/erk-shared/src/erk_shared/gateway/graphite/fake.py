@@ -73,7 +73,7 @@ class FakeGraphite(Graphite):
         self._continue_restack_raises = continue_restack_raises
         self._delete_branch_raises = delete_branch_raises
         self._sync_calls: list[tuple[Path, bool, bool]] = []
-        self._restack_calls: list[tuple[Path, bool, bool]] = []
+        self._restack_calls: list[tuple[Path, bool]] = []
         self._submit_branch_calls: list[tuple[Path, str, bool]] = []
         self._track_branch_calls: list[tuple[Path, str, str]] = []
         self._retrack_branch_calls: list[tuple[Path, str]] = []
@@ -105,12 +105,12 @@ class FakeGraphite(Graphite):
         if self._sync_raises is not None:
             raise self._sync_raises
 
-    def restack(self, repo_root: Path, *, no_interactive: bool, quiet: bool) -> None:
+    def restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Fake restack operation.
 
         Tracks calls for verification and raises configured exception if set.
         """
-        self._restack_calls.append((repo_root, no_interactive, quiet))
+        self._restack_calls.append((repo_root, quiet))
 
         if self._restack_raises is not None:
             raise self._restack_raises
@@ -211,10 +211,10 @@ class FakeGraphite(Graphite):
         return self._sync_calls
 
     @property
-    def restack_calls(self) -> list[tuple[Path, bool, bool]]:
+    def restack_calls(self) -> list[tuple[Path, bool]]:
         """Get the list of restack() calls that were made.
 
-        Returns list of (repo_root, no_interactive, quiet) tuples.
+        Returns list of (repo_root, quiet) tuples.
 
         This property is for test assertions only.
         """

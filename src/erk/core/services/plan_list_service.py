@@ -20,7 +20,10 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
-from erk_shared.plan_store.draft_pr_lifecycle import extract_plan_content
+from erk_shared.plan_store.draft_pr_lifecycle import (
+    extract_plan_content,
+    has_original_plan_section,
+)
 
 _PLAN_LABEL = "erk-plan"
 
@@ -83,6 +86,13 @@ class DraftPRPlanListService(PlanListService):
         node_id_to_plan: dict[str, int] = {}
         for pr_details in pr_details_list:
             plan_body = extract_plan_content(pr_details.body)
+            # extract_plan_content falls back to content-after-separator for bodies
+            # without <details>original-plan</details>. For rewritten PRs this
+            # includes the footer (Closes + checkout). Strip it by removing
+            # everything after the last \n---\n footer delimiter.
+            if not has_original_plan_section(pr_details.body):
+                if "\n---\n" in plan_body:
+                    plan_body = plan_body.rsplit("\n---\n", 1)[0]
             plan = pr_details_to_plan(pr_details, plan_body=plan_body)
             plans.append(plan)
 

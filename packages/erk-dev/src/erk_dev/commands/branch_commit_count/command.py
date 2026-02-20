@@ -12,7 +12,7 @@ def branch_commit_count_command() -> None:
     """Count commits on current branch since Graphite parent."""
     # Get parent branch using gt parent
     result = subprocess.run(
-        ["gt", "parent"],
+        ["gt", "parent", "--no-interactive"],
         capture_output=True,
         text=True,
         check=False,

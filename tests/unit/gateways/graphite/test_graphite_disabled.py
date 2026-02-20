@@ -154,7 +154,7 @@ def test_restack_raises_error(tmp_path: Path) -> None:
     sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
 
     with pytest.raises(GraphiteDisabledError):
-        sentinel.restack(tmp_path, no_interactive=True, quiet=False)
+        sentinel.restack(tmp_path, quiet=False)
 
 
 def test_squash_branch_raises_error(tmp_path: Path) -> None:
