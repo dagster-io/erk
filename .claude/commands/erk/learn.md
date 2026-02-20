@@ -1,6 +1,6 @@
 ---
 description: Extract insights from plan-associated sessions
-argument-hint: "[issue-number]"
+argument-hint: "[plan-number]"
 ---
 
 # /erk:learn
@@ -10,8 +10,8 @@ Create a documentation plan from Claude Code sessions associated with a plan imp
 ## Usage
 
 ```
-/erk:learn                              # Infers issue from current branch (P{issue}-...)
-/erk:learn 4655                          # Explicit issue number
+/erk:learn                              # Infers plan from current branch (P{plan}-...)
+/erk:learn 4655                          # Explicit plan number
 /erk:learn 4655 gist_url=https://...    # With preprocessed materials gist
 ```
 
@@ -28,7 +28,7 @@ Tell the user (choose the appropriate pipeline display based on whether `gist_ur
 **When `gist_url` is provided:**
 
 ```
-Learn pipeline for plan #<issue-number> (using preprocessed materials):
+Learn pipeline for plan #<plan-number> (using preprocessed materials):
   1. Download preprocessed materials from gist
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
@@ -38,7 +38,7 @@ Learn pipeline for plan #<issue-number> (using preprocessed materials):
 **When no `gist_url`:**
 
 ```
-Learn pipeline for plan #<issue-number>:
+Learn pipeline for plan #<plan-number>:
   1. Discover and preprocess session logs, upload to gist
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
@@ -50,13 +50,13 @@ Learn pipeline for plan #<issue-number>:
 First, check if the issue is a learn plan. **Learn plans cannot generate additional learn plans** - this would create documentation cycles.
 
 ```bash
-erk exec get-issue-body <issue-number>
+erk exec get-issue-body <plan-number>
 ```
 
 Parse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:
 
 ```
-Error: Issue #<issue-number> is a learn plan (has erk-learn label).
+Error: Plan #<plan-number> is a learn plan (has erk-learn label).
 Cannot learn from a learn plan - this would create documentation cycles.
 ```
 
@@ -110,7 +110,7 @@ Proceed to Step 3 for standard session discovery and preprocessing.
 Run the exec script to get session details:
 
 ```bash
-erk exec get-learn-sessions <issue-number>
+erk exec get-learn-sessions <plan-number>
 ```
 
 Parse the JSON output to get:
@@ -135,7 +135,7 @@ If no sessions are found, inform the user and stop.
 Tell the user:
 
 ```
-Found N session(s) for plan #<issue-number>:
+Found N session(s) for plan #<plan-number>:
   - N local session(s) from ~/.claude/projects/
   - N remote session(s) from GitHub Actions
 ```
@@ -145,7 +145,7 @@ Found N session(s) for plan #<issue-number>:
 Before gathering sessions, get the PR information for this plan (needed by analysis agents):
 
 ```bash
-erk exec get-pr-for-plan <issue-number>
+erk exec get-pr-for-plan <plan-number>
 ```
 
 This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.

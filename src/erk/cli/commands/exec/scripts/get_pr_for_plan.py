@@ -17,6 +17,7 @@ import click
 
 from erk_shared.context.helpers import (
     require_git,
+    require_plan_backend,
     require_repo_root,
 )
 from erk_shared.context.helpers import (
@@ -66,10 +67,32 @@ def get_pr_for_plan(
     Fetches the issue, extracts the branch_name from plan-header metadata,
     and returns PR details for that branch.
     """
-    github_issues = require_github_issues(ctx)
+    plan_backend = require_plan_backend(ctx)
     github = require_github_gateway(ctx)
     git = require_git(ctx)
     repo_root = require_repo_root(ctx)
+
+    # Draft-PR shortcut: plan_id IS the PR number — look up directly
+    if plan_backend.get_provider_name() == "github-draft-pr":
+        pr_result = github.get_pr(repo_root, issue_number)
+        if isinstance(pr_result, PRNotFound):
+            return _exit_with_error(
+                error="no-pr-for-branch",
+                message=f"No draft PR found for plan #{issue_number}",
+            )
+        pr_data = {
+            "number": pr_result.number,
+            "title": pr_result.title,
+            "state": pr_result.state,
+            "url": pr_result.url,
+            "head_ref_name": pr_result.head_ref_name,
+            "base_ref_name": pr_result.base_ref_name,
+        }
+        success_result = GetPrForPlanSuccess(success=True, pr=pr_data)
+        click.echo(json.dumps(asdict(success_result)))
+        return
+
+    github_issues = require_github_issues(ctx)
 
     # Fetch current issue
     issue = github_issues.get_issue(repo_root, issue_number)

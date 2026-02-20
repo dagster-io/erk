@@ -28,6 +28,7 @@ import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root
 from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+from erk_shared.plan_store.types import PlanHeaderNotFoundError
 
 
 @dataclass(frozen=True)
@@ -164,6 +165,14 @@ def track_learn_result(
                 "learn_plan_pr": plan_pr,
             },
         )
+    except PlanHeaderNotFoundError:
+        # Draft-PR plans may lack a plan-header block. Fall back to posting a comment.
+        parts = [f"Learn result: {learn_status}"]
+        if plan_issue is not None:
+            parts.append(f"learn_plan_issue: #{plan_issue}")
+        if plan_pr is not None:
+            parts.append(f"learn_plan_pr: #{plan_pr}")
+        backend.add_comment(repo_root, plan_id, "\n".join(parts))
     except RuntimeError as e:
         error = TrackLearnResultError(
             success=False,

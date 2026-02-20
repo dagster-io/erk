@@ -12,11 +12,14 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk_shared.context.context import ErkContext
+from erk_shared.context.testing import context_for_test as shared_context_for_test
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 
 
 def make_plan_header_body(
@@ -357,3 +360,62 @@ def test_get_pr_for_plan_branch_inference_fails_wrong_pattern(tmp_path: Path) ->
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "no-branch-in-plan"
+
+
+# ============================================================================
+# Draft-PR Backend Tests (Fix 3: direct PR lookup shortcut)
+# ============================================================================
+
+
+def test_get_pr_for_plan_draft_pr_backend_success() -> None:
+    """Test that get_pr_for_plan uses direct PR lookup for draft-PR backend.
+
+    When the plan backend is DraftPRPlanBackend, the plan_id IS the PR number,
+    so the script skips branch-name resolution and fetches the PR directly.
+    """
+    pr_number = 42
+    pr = make_pr_details(number=pr_number, head_ref_name="plan-branch-42")
+    fake_issues = FakeGitHubIssues()
+    fake_gh = FakeGitHub(
+        issues_gateway=fake_issues,
+        pr_details={pr_number: pr},
+    )
+    draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+    runner = CliRunner()
+
+    ctx = shared_context_for_test(
+        github=fake_gh,
+        github_issues=fake_issues,
+        plan_store=draft_pr_backend,
+    )
+
+    result = runner.invoke(get_pr_for_plan, ["42"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr"]["number"] == pr_number
+    assert output["pr"]["title"] == f"PR #{pr_number}"
+    assert output["pr"]["head_ref_name"] == "plan-branch-42"
+    assert output["pr"]["base_ref_name"] == "master"
+
+
+def test_get_pr_for_plan_draft_pr_backend_not_found() -> None:
+    """Test that get_pr_for_plan returns error for missing draft PR."""
+    fake_issues = FakeGitHubIssues()
+    fake_gh = FakeGitHub(issues_gateway=fake_issues)
+    draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+    runner = CliRunner()
+
+    ctx = shared_context_for_test(
+        github=fake_gh,
+        github_issues=fake_issues,
+        plan_store=draft_pr_backend,
+    )
+
+    result = runner.invoke(get_pr_for_plan, ["999"], obj=ctx)
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error"] == "no-pr-for-branch"

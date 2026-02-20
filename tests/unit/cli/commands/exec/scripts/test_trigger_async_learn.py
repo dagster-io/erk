@@ -12,6 +12,9 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.trigger_async_learn import (
+    _get_pr_for_plan_direct,
+)
+from erk.cli.commands.exec.scripts.trigger_async_learn import (
     trigger_async_learn as trigger_async_learn_command,
 )
 from erk_shared.context.context import ErkContext
@@ -25,6 +28,8 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo, RepoInfo
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 
 
 def _parse_json_output(output: str) -> dict[str, object]:
@@ -967,3 +972,60 @@ def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> 
     stderr_lines = _get_stderr_lines(result.output)
     warning_lines = [line for line in stderr_lines if "Failed to download" in line]
     assert len(warning_lines) == 1
+
+
+# ============================================================================
+# Draft-PR Backend Tests (Fix 1: _get_pr_for_plan_direct shortcut)
+# ============================================================================
+
+
+def test_get_pr_for_plan_direct_draft_pr_shortcut(tmp_path: Path) -> None:
+    """Test that _get_pr_for_plan_direct returns PR details directly for draft-PR backend.
+
+    When the plan backend is DraftPRPlanBackend, the plan_id IS the PR number,
+    so we skip branch-name metadata lookup and fetch the PR directly.
+    """
+    pr_number = 42
+    pr = _make_pr_details(number=pr_number, head_ref_name="plan-branch")
+    fake_issues = FakeGitHubIssues()
+    fake_gh = FakeGitHub(
+        issues_gateway=fake_issues,
+        pr_details={pr_number: pr},
+    )
+    draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+    fake_git = FakeGit()
+
+    result = _get_pr_for_plan_direct(
+        plan_backend=draft_pr_backend,
+        github=fake_gh,
+        git=fake_git,
+        repo_root=tmp_path,
+        plan_id=str(pr_number),
+    )
+
+    assert result is not None
+    assert result["success"] is True
+    assert result["pr_number"] == pr_number
+    assert result["pr"]["number"] == pr_number
+    assert result["pr"]["title"] == f"PR #{pr_number}"
+    assert result["pr"]["state"] == "OPEN"
+    assert result["pr"]["head_ref_name"] == "plan-branch"
+    assert result["pr"]["base_ref_name"] == "master"
+
+
+def test_get_pr_for_plan_direct_draft_pr_not_found(tmp_path: Path) -> None:
+    """Test that _get_pr_for_plan_direct returns None when draft PR doesn't exist."""
+    fake_issues = FakeGitHubIssues()
+    fake_gh = FakeGitHub(issues_gateway=fake_issues)
+    draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+    fake_git = FakeGit()
+
+    result = _get_pr_for_plan_direct(
+        plan_backend=draft_pr_backend,
+        github=fake_gh,
+        git=fake_git,
+        repo_root=tmp_path,
+        plan_id="999",
+    )
+
+    assert result is None

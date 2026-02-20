@@ -36,6 +36,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.time.abc import Time
 from erk_shared.learn.tracking import track_learn_invocation
+from erk_shared.plan_store.types import PlanHeaderNotFoundError
 
 
 @dataclass(frozen=True)
@@ -118,6 +119,10 @@ def _do_track(
                 "last_learn_session": session_id,
             },
         )
+    except PlanHeaderNotFoundError:
+        # Draft-PR plans may lack a plan-header block. The comment posted
+        # by track_learn_invocation above already records the event.
+        pass
     except RuntimeError as e:
         error = TrackLearnError(
             success=False,

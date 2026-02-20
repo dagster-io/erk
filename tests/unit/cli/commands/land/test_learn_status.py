@@ -16,7 +16,11 @@ from erk.cli.commands.land_cmd import (
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -702,3 +706,74 @@ def test_option4_calls_preprocess_and_continues_landing(
     # Verify _preprocess_and_prepare_manual_learn was called with correct args
     assert len(preprocess_calls) == 1
     assert preprocess_calls[0] == (repo_root, issue_number)
+
+
+# ============================================================================
+# Tests for _store_learn_materials_gist_url PlanHeaderNotFoundError fallback
+# ============================================================================
+
+
+def _make_draft_pr_body_without_plan_header() -> str:
+    """Create a draft PR body that has NO plan-header metadata block.
+
+    This simulates a scenario where the PR body was edited and the
+    plan-header block was removed.
+    """
+    return "# Plan\n\nSome plan content without metadata block."
+
+
+def test_store_learn_materials_gist_url_falls_back_to_comment_on_plan_header_not_found(
+    tmp_path: Path,
+) -> None:
+    """Test that _store_learn_materials_gist_url posts a comment when plan-header is missing.
+
+    When update_metadata raises PlanHeaderNotFoundError (e.g., draft-PR body
+    was edited and plan-header removed), the function falls back to posting
+    a comment with the gist URL.
+    """
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    pr_number = 42
+    gist_url = "https://gist.github.com/test/abc123"
+
+    # Create a draft PR without plan-header metadata block
+    pr_body = _make_draft_pr_body_without_plan_header()
+    pr_details = PRDetails(
+        number=pr_number,
+        url=f"https://github.com/test-owner/test-repo/pull/{pr_number}",
+        title="PR #42",
+        body=pr_body,
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="master",
+        head_ref_name="plan-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    fake_issues = FakeGitHubIssues()
+    fake_gh = FakeGitHub(
+        issues_gateway=fake_issues,
+        pr_details={pr_number: pr_details},
+    )
+    draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+
+    ctx = context_for_test(cwd=repo_root, plan_store=draft_pr_backend)
+
+    _store_learn_materials_gist_url(
+        ctx,
+        repo_root=repo_root,
+        plan_issue_number=pr_number,
+        gist_url=gist_url,
+    )
+
+    # Verify a comment was posted as fallback (not a metadata update)
+    assert len(fake_gh.pr_comments) == 1
+    comment_pr_number, comment_body = fake_gh.pr_comments[0]
+    assert comment_pr_number == pr_number
+    assert gist_url in comment_body
+    assert "Learn materials gist" in comment_body
