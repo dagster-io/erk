@@ -23,6 +23,7 @@ def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
         plan_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
+        provider="github",
         objective_id=None,
     )
 
@@ -69,6 +70,7 @@ def test_create_worker_impl_folder_already_exists(tmp_path: Path) -> None:
             plan_id="123",
             url="https://github.com/owner/repo/issues/123",
             repo_root=tmp_path,
+            provider="github",
             objective_id=None,
         )
 
@@ -85,6 +87,7 @@ def test_create_worker_impl_folder_repo_root_not_exists(tmp_path: Path) -> None:
             plan_id="123",
             url="https://github.com/owner/repo/issues/123",
             repo_root=nonexistent_path,
+            provider="github",
             objective_id=None,
         )
 
@@ -103,6 +106,7 @@ def test_create_worker_impl_folder_repo_root_not_directory(tmp_path: Path) -> No
             plan_id="123",
             url="https://github.com/owner/repo/issues/123",
             repo_root=file_path,
+            provider="github",
             objective_id=None,
         )
 
@@ -117,6 +121,7 @@ def test_remove_worker_impl_folder_success(tmp_path: Path) -> None:
         plan_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
+        provider="github",
         objective_id=None,
     )
 
@@ -158,6 +163,7 @@ def test_worker_impl_folder_exists_true(tmp_path: Path) -> None:
         plan_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
+        provider="github",
         objective_id=None,
     )
 
@@ -207,6 +213,7 @@ def example():
         plan_id="456",
         url="https://github.com/owner/repo/issues/456",
         repo_root=tmp_path,
+        provider="github",
         objective_id=None,
     )
 
@@ -226,6 +233,7 @@ def test_create_worker_impl_folder_with_objective_id(tmp_path: Path) -> None:
         plan_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
+        provider="github",
         objective_id=456,
     )
 
@@ -234,3 +242,24 @@ def test_create_worker_impl_folder_with_objective_id(tmp_path: Path) -> None:
 
     assert plan_ref_data["plan_id"] == "123"
     assert plan_ref_data["objective_id"] == 456
+
+
+def test_create_worker_impl_folder_with_draft_pr_provider(tmp_path: Path) -> None:
+    """Test creating .worker-impl/ folder with github-draft-pr provider."""
+    from erk_shared.worker_impl_folder import create_worker_impl_folder
+
+    create_worker_impl_folder(
+        plan_content="# Test Plan\n",
+        plan_id="789",
+        url="https://github.com/owner/repo/pull/789",
+        repo_root=tmp_path,
+        provider="github-draft-pr",
+        objective_id=None,
+    )
+
+    plan_ref_file = tmp_path / ".worker-impl" / "plan-ref.json"
+    plan_ref_data = json.loads(plan_ref_file.read_text(encoding="utf-8"))
+
+    assert plan_ref_data["provider"] == "github-draft-pr"
+    assert plan_ref_data["plan_id"] == "789"
+    assert plan_ref_data["url"] == "https://github.com/owner/repo/pull/789"

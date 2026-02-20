@@ -43,8 +43,7 @@ from datetime import UTC, datetime
 
 import click
 
-from erk_shared.context.helpers import require_issues as require_github_issues
-from erk_shared.context.helpers import require_repo_root
+from erk_shared.context.helpers import require_plan_backend, require_repo_root
 
 
 @dataclass(frozen=True)
@@ -142,7 +141,7 @@ def post_workflow_started_comment(
     Posts a structured comment with YAML metadata block indicating that a
     GitHub Actions workflow has started processing the plan.
     """
-    github = require_github_issues(ctx)
+    backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     # Build comment body
@@ -155,9 +154,9 @@ def post_workflow_started_comment(
         repository=repository,
     )
 
-    # Post comment
+    # Post comment via PlanBackend (handles both issue and draft-PR plans)
     try:
-        github.add_comment(repo_root, plan_id, comment_body)
+        backend.add_comment(repo_root, str(plan_id), comment_body)
         result = PostSuccess(success=True, plan_id=plan_id)
         click.echo(json.dumps(asdict(result), indent=2))
     except RuntimeError as e:

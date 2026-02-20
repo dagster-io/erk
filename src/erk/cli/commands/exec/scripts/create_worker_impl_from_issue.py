@@ -50,6 +50,7 @@ def create_worker_impl_from_issue(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
     plan_id_str = str(plan_id)
+    provider = backend.get_provider_name()
 
     # Fetch plan via PlanBackend
     result = backend.get_plan(repo_root, plan_id_str)
@@ -71,6 +72,7 @@ def create_worker_impl_from_issue(
         plan_id=plan_id_str,
         url=plan.url,
         repo_root=repo_root,
+        provider=provider,
         objective_id=plan.objective_id,
     )
 

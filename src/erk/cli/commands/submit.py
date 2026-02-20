@@ -326,6 +326,242 @@ def _close_orphaned_draft_prs(
     return closed_prs
 
 
+@dataclass(frozen=True)
+class ValidatedDraftPR:
+    """Draft PR that passed all validation checks."""
+
+    number: int
+    title: str
+    url: str
+    branch_name: str
+
+
+def _validate_draft_pr_for_submit(
+    ctx: ErkContext,
+    repo: RepoContext,
+    plan_number: int,
+) -> ValidatedDraftPR:
+    """Validate a draft PR plan for submission.
+
+    Fetches the PR, validates it has the erk-plan label and is OPEN.
+
+    Args:
+        ctx: ErkContext with git operations
+        repo: Repository context
+        plan_number: PR number to validate
+
+    Raises:
+        SystemExit: If PR doesn't exist, missing label, or not OPEN.
+    """
+    pr_result = ctx.github.get_pr(repo.root, plan_number)
+    if isinstance(pr_result, PRNotFound):
+        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+        raise SystemExit(1)
+
+    # Validate: must have erk-plan label
+    if ERK_PLAN_LABEL not in pr_result.labels:
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"PR #{plan_number} does not have {ERK_PLAN_LABEL} label\n\n"
+            "Cannot submit non-plan PRs for automated implementation."
+        )
+        raise SystemExit(1)
+
+    # Validate: must be OPEN
+    if pr_result.state != "OPEN":
+        user_output(
+            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+            "Cannot submit closed PRs for automated implementation."
+        )
+        raise SystemExit(1)
+
+    return ValidatedDraftPR(
+        number=plan_number,
+        title=pr_result.title,
+        url=pr_result.url,
+        branch_name=pr_result.head_ref_name,
+    )
+
+
+def _submit_draft_pr_plan(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    validated: ValidatedDraftPR,
+    submitted_by: str,
+    original_branch: str,
+    base_branch: str,
+) -> SubmitResult:
+    """Submit a validated draft-PR plan for implementation.
+
+    For draft-PR plans, the branch and PR already exist. This function:
+    - Fetches and checks out the existing plan branch
+    - Creates .worker-impl/ with provider="github-draft-pr"
+    - Commits and pushes .worker-impl/ to existing branch
+    - Triggers the workflow with plan_backend="draft_pr"
+
+    Args:
+        ctx: ErkContext with git operations
+        repo: Repository context
+        validated: Validated draft PR information
+        submitted_by: GitHub username of submitter
+        original_branch: Original branch name (to restore after)
+        base_branch: Base branch for PR
+
+    Returns:
+        SubmitResult with URLs and identifiers.
+    """
+    plan_number = validated.number
+    branch_name = validated.branch_name
+
+    # Fetch plan content via PlanBackend
+    user_output("Fetching plan content...")
+    result = ctx.plan_store.get_plan(repo.root, str(plan_number))
+    if isinstance(result, PlanNotFound):
+        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+        raise SystemExit(1)
+    plan = result
+
+    # Fetch and checkout the existing plan branch
+    user_output(f"Checking out existing plan branch: {click.style(branch_name, fg='cyan')}")
+    ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
+    if branch_name not in local_branches:
+        remote_ref = f"origin/{branch_name}"
+        ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
+
+    ctx.branch_manager.checkout_branch(repo.root, branch_name)
+
+    # Create .worker-impl/ with draft-PR provider
+    user_output("Creating .worker-impl/ folder...")
+    create_worker_impl_folder(
+        plan_content=plan.body,
+        plan_id=str(plan_number),
+        url=validated.url,
+        repo_root=repo.root,
+        provider="github-draft-pr",
+        objective_id=plan.objective_id,
+    )
+
+    # Stage, commit, and push
+    ctx.git.commit.stage_files(repo.root, [".worker-impl"])
+    ctx.git.commit.commit(repo.root, f"Add plan for PR #{plan_number}")
+    push_result = ctx.git.remote.push_to_remote(
+        repo.root, "origin", branch_name, set_upstream=False, force=False
+    )
+    if isinstance(push_result, PushError):
+        raise UserFacingCliError(push_result.message)
+    user_output(click.style("✓", fg="green") + " Branch pushed to remote")
+
+    # Switch back to original branch
+    ctx.branch_manager.checkout_branch(repo.root, original_branch)
+
+    # Gather submission metadata
+    queued_at = datetime.now(UTC).isoformat()
+
+    # Load workflow-specific config
+    workflow_config = load_workflow_config(repo.root, DISPATCH_WORKFLOW_NAME)
+
+    # Build inputs dict with plan_backend="draft_pr"
+    user_output("")
+    user_output(f"Triggering workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
+
+    inputs = {
+        "plan_id": str(plan_number),
+        "submitted_by": submitted_by,
+        "plan_title": validated.title,
+        "branch_name": branch_name,
+        "pr_number": str(plan_number),
+        "base_branch": base_branch,
+        "plan_backend": "draft_pr",
+        **workflow_config,
+    }
+
+    run_id = ctx.github.trigger_workflow(
+        repo_root=repo.root,
+        workflow=DISPATCH_WORKFLOW_NAME,
+        inputs=inputs,
+    )
+    user_output(click.style("✓", fg="green") + " Workflow triggered.")
+
+    # Compute workflow URL
+    workflow_url = _build_workflow_run_url(validated.url, run_id)
+
+    # Update PR body with workflow run link (best-effort)
+    try:
+        pr_details = ctx.github.get_pr(repo.root, plan_number)
+        if not isinstance(pr_details, PRNotFound):
+            updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
+            ctx.github.update_pr_body(repo.root, plan_number, updated_body)
+    except Exception as e:
+        logger.warning("Failed to update PR body with workflow run link: %s", e)
+
+    # Write dispatch metadata
+    try:
+        write_dispatch_metadata(
+            plan_backend=ctx.plan_backend,
+            github=ctx.github,
+            repo_root=repo.root,
+            issue_number=plan_number,
+            run_id=run_id,
+            dispatched_at=queued_at,
+        )
+        user_output(click.style("✓", fg="green") + " Dispatch metadata written")
+    except Exception as e:
+        user_output(
+            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+        )
+
+    # Post queued event comment via PlanBackend
+    try:
+        validation_results = {
+            "pr_is_open": True,
+            "has_erk_plan_label": True,
+        }
+
+        metadata_block = create_submission_queued_block(
+            queued_at=queued_at,
+            submitted_by=submitted_by,
+            issue_number=plan_number,
+            validation_results=validation_results,
+            expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
+        )
+
+        comment_body = render_erk_issue_event(
+            title="🔄 Plan Queued for Implementation",
+            metadata=metadata_block,
+            description=(
+                f"Plan submitted by **{submitted_by}** at {queued_at}.\n\n"
+                f"The `{DISPATCH_WORKFLOW_METADATA_NAME}` workflow has been "
+                f"triggered via direct dispatch.\n\n"
+                f"**Workflow run:** {workflow_url}"
+            ),
+        )
+
+        user_output("Posting queued event comment...")
+        ctx.plan_backend.add_comment(repo.root, str(plan_number), comment_body)
+        user_output(click.style("✓", fg="green") + " Queued event comment posted")
+    except Exception as e:
+        user_output(
+            click.style("Warning: ", fg="yellow")
+            + f"Failed to post queued comment: {e}\n"
+            + "Workflow is already running."
+        )
+
+    pr_url = _build_pr_url(validated.url, plan_number)
+
+    return SubmitResult(
+        issue_number=plan_number,
+        issue_title=validated.title,
+        issue_url=validated.url,
+        pr_number=plan_number,
+        pr_url=pr_url,
+        workflow_run_id=run_id,
+        workflow_url=workflow_url,
+    )
+
+
 def _validate_issue_for_submit(
     ctx: ErkContext,
     repo: RepoContext,
@@ -471,6 +707,7 @@ def _create_branch_and_pr(
         plan_id=str(issue_number),
         url=issue.url,
         repo_root=repo.root,
+        provider="github",
         objective_id=plan.objective_id,
     )
 
@@ -978,45 +1215,93 @@ def submit_cmd(
     _, username, _ = ctx.github.check_auth_status()
     submitted_by = username or "unknown"
 
-    # Phase 1: Validate ALL issues upfront (atomic - fail fast before any side effects)
-    user_output(f"Validating {len(issue_numbers)} issue(s)...")
-    user_output("")
+    # Detect draft-PR backend
+    is_draft_pr = ctx.plan_backend.get_provider_name() == "github-draft-pr"
 
-    validated: list[ValidatedIssue] = []
-    for issue_number in issue_numbers:
-        user_output(f"Validating issue #{issue_number}...")
-        validated_issue = _validate_issue_for_submit(
-            ctx, repo, issue_number, target_branch, force=force
-        )
-        validated.append(validated_issue)
-
-    user_output("")
-    user_output(click.style("✓", fg="green") + f" All {len(validated)} issue(s) validated")
-    user_output("")
-
-    # Display validated issues
-    for v in validated:
-        user_output(f"  #{v.number}: {click.style(v.issue.title, fg='yellow')}")
-    user_output("")
-
-    # Phase 2: Submit all validated issues
-    results: list[SubmitResult] = []
-    for i, v in enumerate(validated):
-        if len(validated) > 1:
-            user_output(f"--- Submitting issue {i + 1}/{len(validated)}: #{v.number} ---")
-        else:
-            user_output(f"Submitting issue #{v.number}...")
+    if is_draft_pr:
+        # Draft-PR path: branch and PR already exist, just validate and trigger workflow
+        user_output(f"Validating {len(issue_numbers)} draft-PR plan(s)...")
         user_output("")
-        result = _submit_single_issue(
-            ctx,
-            repo=repo,
-            validated=v,
-            submitted_by=submitted_by,
-            original_branch=original_branch,
-            base_branch=target_branch,
-        )
-        results.append(result)
+
+        validated_draft_prs: list[ValidatedDraftPR] = []
+        for issue_number in issue_numbers:
+            user_output(f"Validating PR #{issue_number}...")
+            validated_pr = _validate_draft_pr_for_submit(ctx, repo, issue_number)
+            validated_draft_prs.append(validated_pr)
+
         user_output("")
+        user_output(
+            click.style("✓", fg="green") + f" All {len(validated_draft_prs)} plan(s) validated"
+        )
+        user_output("")
+
+        for v in validated_draft_prs:
+            user_output(f"  #{v.number}: {click.style(v.title, fg='yellow')}")
+        user_output("")
+
+        results: list[SubmitResult] = []
+        for i, v in enumerate(validated_draft_prs):
+            if len(validated_draft_prs) > 1:
+                count = len(validated_draft_prs)
+                user_output(f"--- Submitting PR {i + 1}/{count}: #{v.number} ---")
+            else:
+                user_output(f"Submitting PR #{v.number}...")
+            user_output("")
+            result = _submit_draft_pr_plan(
+                ctx,
+                repo=repo,
+                validated=v,
+                submitted_by=submitted_by,
+                original_branch=original_branch,
+                base_branch=target_branch,
+            )
+            results.append(result)
+            user_output("")
+    else:
+        # Issue-based path: existing flow
+        # Phase 1: Validate ALL issues upfront (atomic - fail fast before any side effects)
+        user_output(f"Validating {len(issue_numbers)} issue(s)...")
+        user_output("")
+
+        validated_issues: list[ValidatedIssue] = []
+        for issue_number in issue_numbers:
+            user_output(f"Validating issue #{issue_number}...")
+            validated_issue = _validate_issue_for_submit(
+                ctx, repo, issue_number, target_branch, force=force
+            )
+            validated_issues.append(validated_issue)
+
+        user_output("")
+        user_output(
+            click.style("✓", fg="green") + f" All {len(validated_issues)} issue(s) validated"
+        )
+        user_output("")
+
+        # Display validated issues
+        for v in validated_issues:
+            user_output(f"  #{v.number}: {click.style(v.issue.title, fg='yellow')}")
+        user_output("")
+
+        # Phase 2: Submit all validated issues
+        results = []
+        for i, v in enumerate(validated_issues):
+            if len(validated_issues) > 1:
+                user_output(
+                    f"--- Submitting issue {i + 1}/{len(validated_issues)}: #{v.number} ---"
+                )
+            else:
+                user_output(f"Submitting issue #{v.number}...")
+            user_output("")
+            result = _submit_single_issue(
+                ctx,
+                repo=repo,
+                validated=v,
+                submitted_by=submitted_by,
+                original_branch=original_branch,
+                base_branch=target_branch,
+            )
+            results.append(result)
+            user_output("")
 
     # Success output
     user_output("")
