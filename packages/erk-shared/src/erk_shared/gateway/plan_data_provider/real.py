@@ -607,6 +607,7 @@ class RealPlanDataProvider(PlanDataProvider):
         comments_display = "-"
 
         # PR status fields for lifecycle enrichment
+        pr_is_draft: bool | None = None
         pr_has_conflicts: bool | None = None
         pr_review_decision: str | None = None
 
@@ -633,6 +634,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 checks_display = format_checks_cell(selected_pr)
 
                 # Extract status fields for lifecycle enrichment
+                pr_is_draft = selected_pr.is_draft
                 pr_has_conflicts = selected_pr.has_conflicts
                 pr_review_decision = selected_pr.review_decision
 
@@ -724,6 +726,7 @@ class RealPlanDataProvider(PlanDataProvider):
         # Enrich lifecycle display with PR status indicators
         lifecycle_display = format_lifecycle_with_status(
             lifecycle_display,
+            is_draft=pr_is_draft,
             has_conflicts=pr_has_conflicts,
             review_decision=pr_review_decision,
         )

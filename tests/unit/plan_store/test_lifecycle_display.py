@@ -147,6 +147,7 @@ def test_review_no_indicators() -> None:
     """Review stage with no issues returns unchanged."""
     result = format_lifecycle_with_status(
         "[cyan]review[/cyan]",
+        is_draft=None,
         has_conflicts=False,
         review_decision=None,
     )
@@ -157,6 +158,7 @@ def test_review_with_conflicts() -> None:
     """Review stage with conflicts shows explosion emoji."""
     result = format_lifecycle_with_status(
         "[cyan]review[/cyan]",
+        is_draft=None,
         has_conflicts=True,
         review_decision=None,
     )
@@ -167,6 +169,7 @@ def test_review_approved() -> None:
     """Review stage with approval shows checkmark."""
     result = format_lifecycle_with_status(
         "[cyan]review[/cyan]",
+        is_draft=None,
         has_conflicts=False,
         review_decision="APPROVED",
     )
@@ -177,6 +180,7 @@ def test_review_changes_requested() -> None:
     """Review stage with changes requested shows X."""
     result = format_lifecycle_with_status(
         "[cyan]review[/cyan]",
+        is_draft=None,
         has_conflicts=False,
         review_decision="CHANGES_REQUESTED",
     )
@@ -187,6 +191,7 @@ def test_review_conflicts_and_changes_requested() -> None:
     """Review stage with both conflicts and changes requested shows both."""
     result = format_lifecycle_with_status(
         "[cyan]review[/cyan]",
+        is_draft=None,
         has_conflicts=True,
         review_decision="CHANGES_REQUESTED",
     )
@@ -197,6 +202,7 @@ def test_review_conflicts_and_approved() -> None:
     """Review stage with conflicts and approval shows both."""
     result = format_lifecycle_with_status(
         "[cyan]review[/cyan]",
+        is_draft=None,
         has_conflicts=True,
         review_decision="APPROVED",
     )
@@ -207,6 +213,7 @@ def test_implementing_with_conflicts() -> None:
     """Implementing stage with conflicts shows explosion emoji."""
     result = format_lifecycle_with_status(
         "[yellow]implementing[/yellow]",
+        is_draft=None,
         has_conflicts=True,
         review_decision=None,
     )
@@ -217,6 +224,7 @@ def test_implementing_no_conflicts() -> None:
     """Implementing stage without conflicts returns unchanged."""
     result = format_lifecycle_with_status(
         "[yellow]implementing[/yellow]",
+        is_draft=None,
         has_conflicts=False,
         review_decision=None,
     )
@@ -227,6 +235,7 @@ def test_implementing_ignores_review_decision() -> None:
     """Implementing stage does not show review decision indicators."""
     result = format_lifecycle_with_status(
         "[yellow]implementing[/yellow]",
+        is_draft=None,
         has_conflicts=False,
         review_decision="APPROVED",
     )
@@ -237,6 +246,7 @@ def test_planned_stage_no_indicators() -> None:
     """Planned stage never shows indicators regardless of status."""
     result = format_lifecycle_with_status(
         "[dim]planned[/dim]",
+        is_draft=None,
         has_conflicts=True,
         review_decision="CHANGES_REQUESTED",
     )
@@ -247,6 +257,7 @@ def test_merged_stage_no_indicators() -> None:
     """Merged stage never shows indicators."""
     result = format_lifecycle_with_status(
         "[green]merged[/green]",
+        is_draft=None,
         has_conflicts=True,
         review_decision="APPROVED",
     )
@@ -257,6 +268,7 @@ def test_dash_stage_no_indicators() -> None:
     """Dash (no stage) never shows indicators."""
     result = format_lifecycle_with_status(
         "-",
+        is_draft=None,
         has_conflicts=True,
         review_decision="APPROVED",
     )
@@ -267,6 +279,7 @@ def test_review_with_none_conflicts() -> None:
     """Review stage with None conflicts (unknown) shows no conflict indicator."""
     result = format_lifecycle_with_status(
         "[cyan]review[/cyan]",
+        is_draft=None,
         has_conflicts=None,
         review_decision="APPROVED",
     )
@@ -277,6 +290,7 @@ def test_review_required_shows_no_indicator() -> None:
     """REVIEW_REQUIRED does not show any indicator (not actionable)."""
     result = format_lifecycle_with_status(
         "[cyan]review[/cyan]",
+        is_draft=None,
         has_conflicts=False,
         review_decision="REVIEW_REQUIRED",
     )
@@ -287,7 +301,132 @@ def test_plain_text_stage_appends_suffix() -> None:
     """Plain text stage (no Rich markup) appends suffix directly."""
     result = format_lifecycle_with_status(
         "review",
+        is_draft=None,
         has_conflicts=True,
         review_decision="APPROVED",
     )
     assert result == "review 💥 ✔"
+
+
+# --- is_draft prefix tests ---
+
+
+def test_planned_draft_shows_construction_emoji() -> None:
+    """Planned stage with draft PR shows construction emoji prefix."""
+    result = format_lifecycle_with_status(
+        "[dim]planned[/dim]",
+        is_draft=True,
+        has_conflicts=None,
+        review_decision=None,
+    )
+    assert result == "[dim]🚧 planned[/dim]"
+
+
+def test_planned_published_shows_eyes_emoji() -> None:
+    """Planned stage with published PR shows eyes emoji prefix."""
+    result = format_lifecycle_with_status(
+        "[dim]planned[/dim]",
+        is_draft=False,
+        has_conflicts=None,
+        review_decision=None,
+    )
+    assert result == "[dim]👀 planned[/dim]"
+
+
+def test_implementing_draft_shows_construction_emoji() -> None:
+    """Implementing stage with draft PR shows construction emoji prefix."""
+    result = format_lifecycle_with_status(
+        "[yellow]implementing[/yellow]",
+        is_draft=True,
+        has_conflicts=None,
+        review_decision=None,
+    )
+    assert result == "[yellow]🚧 implementing[/yellow]"
+
+
+def test_implementing_published_shows_eyes_emoji() -> None:
+    """Implementing stage with published PR shows eyes emoji prefix."""
+    result = format_lifecycle_with_status(
+        "[yellow]implementing[/yellow]",
+        is_draft=False,
+        has_conflicts=None,
+        review_decision=None,
+    )
+    assert result == "[yellow]👀 implementing[/yellow]"
+
+
+def test_review_published_shows_eyes_emoji() -> None:
+    """Review stage with published PR shows eyes emoji prefix."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        is_draft=False,
+        has_conflicts=False,
+        review_decision=None,
+    )
+    assert result == "[cyan]👀 review[/cyan]"
+
+
+def test_review_published_with_conflicts_shows_both() -> None:
+    """Review stage with published PR and conflicts shows prefix and suffix."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        is_draft=False,
+        has_conflicts=True,
+        review_decision=None,
+    )
+    assert result == "[cyan]👀 review 💥[/cyan]"
+
+
+def test_review_published_with_approved_shows_both() -> None:
+    """Review stage with published PR and approval shows prefix and suffix."""
+    result = format_lifecycle_with_status(
+        "[cyan]review[/cyan]",
+        is_draft=False,
+        has_conflicts=False,
+        review_decision="APPROVED",
+    )
+    assert result == "[cyan]👀 review ✔[/cyan]"
+
+
+def test_merged_draft_false_no_prefix() -> None:
+    """Merged stage does not show draft/published prefix."""
+    result = format_lifecycle_with_status(
+        "[green]merged[/green]",
+        is_draft=False,
+        has_conflicts=None,
+        review_decision=None,
+    )
+    assert result == "[green]merged[/green]"
+
+
+def test_closed_draft_false_no_prefix() -> None:
+    """Closed stage does not show draft/published prefix."""
+    result = format_lifecycle_with_status(
+        "[dim red]closed[/dim red]",
+        is_draft=False,
+        has_conflicts=None,
+        review_decision=None,
+    )
+    assert result == "[dim red]closed[/dim red]"
+
+
+def test_plain_text_stage_with_draft_prefix() -> None:
+    """Plain text stage (no Rich markup) prepends draft prefix."""
+    result = format_lifecycle_with_status(
+        "review",
+        is_draft=False,
+        has_conflicts=False,
+        review_decision=None,
+    )
+    assert result == "👀 review"
+
+
+def test_implementing_draft_with_conflicts_shows_both() -> None:
+    """Implementing draft with conflicts shows prefix and suffix."""
+    result = format_lifecycle_with_status(
+        "[yellow]implementing[/yellow]",
+        is_draft=True,
+        has_conflicts=True,
+        review_decision=None,
+    )
+    assert result == "[yellow]🚧 implementing 💥[/yellow]"
