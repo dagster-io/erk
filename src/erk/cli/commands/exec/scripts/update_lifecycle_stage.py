@@ -13,6 +13,7 @@ Exit Codes:
 
 import json
 from dataclasses import asdict, dataclass
+from typing import cast
 
 import click
 
@@ -85,7 +86,7 @@ def update_lifecycle_stage(
     # Update lifecycle stage
     try:
         # Cast is safe because Click validates against _VALID_STAGES
-        _stage: LifecycleStageValue = stage  # type: ignore[assignment]
+        _stage = cast(LifecycleStageValue, stage)
         backend.update_metadata(
             repo_root,
             plan_id,

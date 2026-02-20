@@ -71,23 +71,26 @@ def pr_check(ctx: ErkContext) -> None:
     plan_ref = read_plan_ref(impl_dir)
 
     if plan_ref is not None:
-        expected_issue_number = int(plan_ref.plan_id)
-        plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-        if has_issue_closing_reference(pr_body, expected_issue_number, plans_repo):
-            # Format expected reference for display
-            if plans_repo is None:
-                ref_display = f"#{expected_issue_number}"
-            else:
-                ref_display = f"{plans_repo}#{expected_issue_number}"
-            msg = f"PR body contains issue closing reference (Closes {ref_display})"
-            checks.append((True, msg))
+        if plan_ref.provider == "github-draft-pr":
+            checks.append((True, "Draft PR plan — no closing reference needed"))
         else:
-            if plans_repo is None:
-                expected = f"Closes #{expected_issue_number}"
+            expected_issue_number = int(plan_ref.plan_id)
+            plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+            if has_issue_closing_reference(pr_body, expected_issue_number, plans_repo):
+                # Format expected reference for display
+                if plans_repo is None:
+                    ref_display = f"#{expected_issue_number}"
+                else:
+                    ref_display = f"{plans_repo}#{expected_issue_number}"
+                msg = f"PR body contains issue closing reference (Closes {ref_display})"
+                checks.append((True, msg))
             else:
-                expected = f"Closes {plans_repo}#{expected_issue_number}"
-            msg = f"PR body missing issue closing reference (expected: {expected})"
-            checks.append((False, msg))
+                if plans_repo is None:
+                    expected = f"Closes #{expected_issue_number}"
+                else:
+                    expected = f"Closes {plans_repo}#{expected_issue_number}"
+                msg = f"PR body missing issue closing reference (expected: {expected})"
+                checks.append((False, msg))
 
     # Check 2: Checkout footer
     if has_checkout_footer_for_pr(pr_body, pr_number):

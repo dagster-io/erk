@@ -240,7 +240,7 @@ def handle_no_changes(
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
 
-    # 3. Set lifecycle stage to review
+    # 3. Set lifecycle stage to implemented
     try:
         backend.update_metadata(
             repo_root,

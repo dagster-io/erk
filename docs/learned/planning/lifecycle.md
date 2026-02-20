@@ -1194,7 +1194,6 @@ Both plan backends set `lifecycle_stage` on plan creation:
 - **`DraftPRPlanBackend`**: Sets `lifecycle_stage="planned"` in `create_plan()`
 
 Both backends support `update_metadata()` for subsequent stage transitions.
-
 ---
 
 ## Draft-PR Plan Lifecycle

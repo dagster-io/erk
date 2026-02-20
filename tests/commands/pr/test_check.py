@@ -710,3 +710,86 @@ erk pr checkout 123
         assert "[PASS] PR body contains issue closing reference (Closes #456)" in result.output
         assert "[PASS] PR body contains checkout footer" in result.output
         assert "All checks passed" in result.output
+
+
+def test_pr_check_passes_for_draft_pr_plan(tmp_path: Path) -> None:
+    """Test PR check passes for draft-PR plans without closing reference."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # Create .impl/plan-ref.json with draft-PR provider
+        impl_dir = env.cwd / ".impl"
+        impl_dir.mkdir()
+        plan_ref_json = impl_dir / "plan-ref.json"
+        plan_ref_json.write_text(
+            json.dumps(
+                {
+                    "provider": "github-draft-pr",
+                    "plan_id": "7656",
+                    "url": "https://github.com/owner/repo/pull/7656",
+                    "created_at": "2025-01-15T14:30:00Z",
+                    "synced_at": "2025-01-15T14:30:00Z",
+                    "labels": [],
+                }
+            )
+        )
+
+        # PR body with checkout footer but NO closing reference
+        pr_body = """## Summary
+This PR fixes an auth bug.
+
+---
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+erk pr checkout 123
+```
+"""
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Fix auth bug",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="plan-fix-auth-bug-01-15-1430",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        github = FakeGitHub(
+            prs={
+                "plan-fix-auth-bug-01-15-1430": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Fix auth bug",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                )
+            },
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "plan-fix-auth-bug-01-15-1430"},
+            existing_paths={env.cwd, impl_dir},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["check"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "[PASS] Draft PR plan" in result.output
+        assert "no closing reference needed" in result.output
+        assert "All checks passed" in result.output
