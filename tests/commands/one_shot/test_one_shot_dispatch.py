@@ -12,6 +12,7 @@ from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -364,3 +365,66 @@ def test_dispatch_long_instruction_truncates_workflow_input() -> None:
 
         # Verify the file was staged
         assert git.commits[0].staged_files == (".worker-impl/task.md",)
+
+
+def test_dispatch_uses_enriched_title_for_pr_and_branch() -> None:
+    """Test enriched title used for PR/branch/commit; raw preserved in task.md."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FakeGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        # Configure FakePromptExecutor to return enriched TITLE/SUMMARY
+        prompt_executor = FakePromptExecutor(
+            simulated_prompt_output=(
+                "TITLE: Fix tripwire validation\n"
+                "SUMMARY: Update the tripwire validation step to handle missing docs."
+            ),
+        )
+
+        ctx = build_workspace_test_context(
+            env, git=git, github=github, issues=issues, prompt_executor=prompt_executor
+        )
+
+        messy_instruction = (
+            "fix this:\n\ngithub-actions\ngithub-actions\n2m ago\n\n"
+            "Tripwires validation is broken when docs are missing"
+        )
+
+        params = OneShotDispatchParams(
+            instruction=messy_instruction,
+            model=None,
+            extra_workflow_inputs={},
+        )
+
+        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+
+        assert result is not None
+
+        # PR title should use enriched title
+        _branch, pr_title, _body, _base, _draft = github.created_prs[0]
+        assert pr_title == "One-shot: Fix tripwire validation"
+
+        # Commit message should use enriched title
+        assert git.commits[0].message == "One-shot: Fix tripwire validation"
+
+        # Skeleton issue title should use enriched title
+        issue_title, _body, _labels = issues.created_issues[0]
+        assert "Fix tripwire validation" in issue_title
+
+        # task.md should contain the raw instruction (not enriched)
+        task_file = env.cwd / ".worker-impl" / "task.md"
+        assert task_file.exists()
+        assert task_file.read_text(encoding="utf-8") == messy_instruction + "\n"
+
+        # Workflow inputs should use raw instruction
+        _workflow, inputs = github.triggered_workflows[0]
+        assert "github-actions" in inputs["instruction"]
