@@ -633,6 +633,7 @@ def test_draft_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -> 
     # .impl/ folder was created with plan content extracted from PR body
     impl_plan = tmp_path / ".impl" / "plan.md"
     assert impl_plan.exists()
+<<<<<<< HEAD
     # The PR body was created via _make_draft_pr_context with content
     # "# Plan\n\nImplement something."
     assert "Plan" in impl_plan.read_text(encoding="utf-8")
