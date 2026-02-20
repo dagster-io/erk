@@ -125,16 +125,26 @@ class RealPlanDataProvider(PlanDataProvider):
         # Determine if we need workflow runs
         needs_workflow_runs = filters.show_runs or filters.run_state is not None
 
-        # Fetch data via PlanListService
-        # Note: PR linkages are always fetched via unified GraphQL query (no performance penalty)
-        plan_data = self._ctx.plan_list_service.get_plan_list_data(
-            location=self._location,
-            labels=list(filters.labels),
-            state=filters.state,
-            limit=filters.limit,
-            skip_workflow_runs=not needs_workflow_runs,
-            creator=filters.creator,
-        )
+        # Route to the appropriate service based on the view's labels
+        if "erk-plan" in filters.labels:
+            plan_data = self._ctx.plan_list_service.get_plan_list_data(
+                location=self._location,
+                labels=list(filters.labels),
+                state=filters.state,
+                limit=filters.limit,
+                skip_workflow_runs=not needs_workflow_runs,
+                creator=filters.creator,
+            )
+        else:
+            # Objectives use a dedicated service that always fetches via issues,
+            # regardless of the configured plan backend (draft PR vs issue)
+            plan_data = self._ctx.objective_list_service.get_objective_list_data(
+                location=self._location,
+                state=filters.state,
+                limit=filters.limit,
+                skip_workflow_runs=not needs_workflow_runs,
+                creator=filters.creator,
+            )
 
         # Build local worktree mapping
         worktree_by_plan_id = self._build_worktree_mapping()

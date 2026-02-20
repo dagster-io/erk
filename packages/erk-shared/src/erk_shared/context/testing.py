@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
 from erk_shared.core.fakes import (
     FakeCodespaceRegistry,
+    FakeObjectiveListService,
     FakePlanListService,
     FakePromptExecutor,
     FakeScriptWriter,
@@ -213,6 +214,7 @@ def context_for_test(
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),
+        objective_list_service=FakeObjectiveListService(),
         cwd=resolved_cwd,
         repo=repo,
         repo_info=repo_info,

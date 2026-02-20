@@ -23,6 +23,7 @@ from erk_shared.context.types import (
 
 if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
+from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
@@ -96,6 +97,7 @@ class ErkContext:
     script_writer: ScriptWriter
     codespace_registry: CodespaceRegistry
     plan_list_service: PlanListService
+    objective_list_service: ObjectiveListService
 
     # Paths
     cwd: Path  # Current working directory at CLI invocation

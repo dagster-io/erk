@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from erk_shared.context.types import PermissionMode
+from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.prompt_executor import (
     ExecutorEvent,
@@ -269,6 +270,27 @@ class FakePlanListService(PlanListService):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+        skip_workflow_runs: bool = False,
+        creator: str | None = None,
+    ) -> PlanListData:
+        return self._data
+
+
+class FakeObjectiveListService(ObjectiveListService):
+    """Fake ObjectiveListService for testing.
+
+    Returns pre-configured data.
+    """
+
+    def __init__(self, data: PlanListData | None = None) -> None:
+        self._data = data or PlanListData(plans=[], pr_linkages={}, workflow_runs={})
+
+    def get_objective_list_data(
+        self,
+        *,
+        location: GitHubRepoLocation,
         state: str | None = None,
         limit: int | None = None,
         skip_workflow_runs: bool = False,
