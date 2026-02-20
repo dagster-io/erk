@@ -4,7 +4,7 @@ name: code-reviews
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, ready_for_review]
 
 jobs:
   discover:
