@@ -395,6 +395,25 @@ class PlanBackend(PlanStore):
         ...
 
     @abstractmethod
+    def add_label(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        label: str,
+    ) -> None:
+        """Add a label to a plan.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier
+            label: Label to add
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        ...
+
+    @abstractmethod
     def post_event(
         self,
         repo_root: Path,

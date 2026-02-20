@@ -532,6 +532,29 @@ class DraftPRPlanBackend(PlanBackend):
             body=BodyText(content=result.body),
         )
 
+    def add_label(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        label: str,
+    ) -> None:
+        """Add a label to the plan's draft PR.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: PR number as string
+            label: Label to add
+
+        Raises:
+            RuntimeError: If PR not found
+        """
+        pr_number = int(plan_id)
+        result = self._github.get_pr(repo_root, pr_number)
+        if isinstance(result, PRNotFound):
+            msg = f"PR #{pr_number} not found"
+            raise RuntimeError(msg)
+        self._github.add_label_to_pr(repo_root, pr_number, label)
+
     def add_comment(
         self,
         repo_root: Path,

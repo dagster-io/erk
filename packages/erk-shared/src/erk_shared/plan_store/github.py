@@ -570,6 +570,25 @@ class GitHubPlanStore(PlanBackend):
         issue_number = self._parse_identifier(plan_id)
         self._github_issues.update_issue_title(repo_root, issue_number, title)
 
+    def add_label(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        label: str,
+    ) -> None:
+        """Add a label to a plan issue.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Issue number as string
+            label: Label to add
+
+        Raises:
+            RuntimeError: If issue not found
+        """
+        issue_number = int(plan_id)
+        self._github_issues.ensure_label_on_issue(repo_root, issue_number, label)
+
     def add_comment(
         self,
         repo_root: Path,

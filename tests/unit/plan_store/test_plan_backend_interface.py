@@ -616,6 +616,35 @@ def test_find_sessions_for_plan_raises_for_nonexistent_plan(
 # =============================================================================
 
 
+# =============================================================================
+# add_label tests
+# =============================================================================
+
+
+def test_add_label_adds_label(
+    backend_with_plan: tuple[PlanBackend, str],
+) -> None:
+    """Backend can add a label to a plan."""
+    backend, plan_id = backend_with_plan
+
+    backend.add_label(Path("/repo"), plan_id, "erk-consolidated")
+
+    plan = backend.get_plan(Path("/repo"), plan_id)
+    assert not isinstance(plan, PlanNotFound)
+    assert "erk-consolidated" in plan.labels
+
+
+def test_add_label_not_found_raises_runtime_error(plan_backend: PlanBackend) -> None:
+    """Backend raises RuntimeError when plan not found for add_label."""
+    with pytest.raises(RuntimeError):
+        plan_backend.add_label(Path("/repo"), "99999999", "some-label")
+
+
+# =============================================================================
+# Whitelist removal test (GitHub-specific)
+# =============================================================================
+
+
 def test_update_metadata_accepts_previously_blocked_fields() -> None:
     """GitHub backend now accepts fields that were previously blocked by whitelist."""
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-plan"})

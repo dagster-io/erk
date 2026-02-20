@@ -34,7 +34,7 @@ If no argument provided, ask the user for the issue number.
 
 ### Step 2: Validate Plans and Extract Metadata (Delegated)
 
-Delegate all validation and metadata extraction to a single `general-purpose` haiku Task agent. This keeps the 2N bash calls (N × `get-issue-body` + N × `get-plan-metadata`) out of the main conversation context.
+Delegate all validation and metadata extraction to a single `general-purpose` haiku Task agent. This keeps the 2N bash calls (N × `get-plan-info` + N × `get-plan-metadata`) out of the main conversation context.
 
 Launch a Task agent with:
 
@@ -43,10 +43,10 @@ Launch a Task agent with:
 
 **Agent prompt** (adapt issue numbers from Step 1):
 
-> For each of the following issue numbers: [list issue numbers]
+> For each of the following plan numbers: [list plan numbers]
 >
-> 1. Run `erk exec get-issue-body <number>` for each issue
-> 2. Run `erk exec get-plan-metadata <number> objective_issue` for each issue
+> 1. Run `erk exec get-plan-info <number>` for each plan
+> 2. Run `erk exec get-plan-metadata <number> objective_issue` for each plan
 >
 > Then return a structured summary in EXACTLY this format:
 >
@@ -131,26 +131,22 @@ Launch parallel Explore agents (one per plan, using `run_in_background: true`), 
 
 #### 4a: Fetch Plan Content (Agent's First Action)
 
-Each Explore agent MUST fetch its issue's plan content as its first action. This keeps the raw plan content inside the agent's context instead of the main conversation.
+Each Explore agent MUST fetch its plan's content as its first action. This keeps the raw plan content inside the agent's context instead of the main conversation.
 
 **Fetch command:**
 
 ```bash
-gh issue view <number> --comments --json comments --jq '.comments[0].body'
+erk exec get-plan-info <number> --include-body
 ```
 
-**Parse the plan content:**
+**Parse the response:** The JSON response includes a `body` field containing the full plan content. Extract `body` from the JSON output.
 
-1. Look for the `<!-- erk:metadata-block:plan-body -->` metadata block in the first comment
-2. Extract the plan content from within the `<details>` block
-3. If no `plan-body` metadata block is found in the first comment, check the issue body directly (handles cases like #6431 where content is in the body)
-
-**If no plan content found:**
+**If the command fails (exit code 1):**
 
 Return an error to the main agent:
 
 ```
-Error: No plan content found in issue #<number>. Expected plan-body metadata block in first comment or issue body.
+Error: Plan #<number> not found.
 ```
 
 The agent should fail early if it cannot fetch the plan content, rather than proceeding with incomplete information.
@@ -400,23 +396,23 @@ After the user approves the plan in Plan Mode:
    If the objective link is missing, warn the user that the plan may not be linked to its objective.
 4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
    ```bash
-   gh issue edit <new_issue_number> --add-label "erk-consolidated"
+   erk exec add-plan-label <new_plan_number> --label "erk-consolidated"
    ```
    This prevents the consolidated plan from being re-consolidated by `/local:replan-learn-plans`.
-5. Close original issue(s) with comment linking to the new one:
+5. Close original plan(s) with comment linking to the new one:
 
 **Single plan:**
 
 ```bash
-gh issue close <original_number> --comment "Superseded by #<new_number> - see updated plan that accounts for codebase changes."
+erk exec close-issue-with-comment <original_number> --comment "Superseded by #<new_number> - see updated plan that accounts for codebase changes."
 ```
 
 **Consolidated plans:**
 
 ```bash
-gh issue close 123 --comment "Consolidated into #<new_number> with #456, #789"
-gh issue close 456 --comment "Consolidated into #<new_number> with #123, #789"
-gh issue close 789 --comment "Consolidated into #<new_number> with #123, #456"
+erk exec close-issue-with-comment 123 --comment "Consolidated into #<new_number> with #456, #789"
+erk exec close-issue-with-comment 456 --comment "Consolidated into #<new_number> with #123, #789"
+erk exec close-issue-with-comment 789 --comment "Consolidated into #<new_number> with #123, #456"
 ```
 
 Display final summary:
