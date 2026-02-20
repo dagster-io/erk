@@ -1,5 +1,6 @@
 """Unit tests for finalize_pr pipeline step."""
 
+import dataclasses
 import json
 from pathlib import Path
 
@@ -363,6 +364,47 @@ def test_finalize_pr_draft_pr_backend_extracts_metadata(tmp_path: Path) -> None:
     updated_body = fake_github.updated_pr_bodies[0][1]
     assert "plan-header" in updated_body
     assert "Closes #" not in updated_body
+
+
+def test_marks_draft_pr_as_ready(tmp_path: Path) -> None:
+    """Draft PR is marked ready for review during finalize."""
+    pr = _pr_details(number=42)
+    pr = dataclasses.replace(pr, is_draft=True)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
+    state = _make_state(cwd=tmp_path)
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert fake_github.marked_ready_prs == [42]
+
+
+def test_does_not_mark_non_draft_pr_as_ready(tmp_path: Path) -> None:
+    """Non-draft PR is not marked ready (mark_pr_ready not called)."""
+    pr = _pr_details(number=42)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
+    state = _make_state(cwd=tmp_path)
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert fake_github.marked_ready_prs == []
 
 
 def test_finalize_pr_non_draft_pr_backend_uses_issue_fallback(tmp_path: Path) -> None:

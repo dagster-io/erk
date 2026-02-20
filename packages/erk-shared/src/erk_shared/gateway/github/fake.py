@@ -175,6 +175,7 @@ class FakeGitHub(GitHub):
         self._pr_comment_updates: list[tuple[int, str]] = []
         self._next_comment_id = 1000000
         self._deleted_remote_branches: list[str] = []
+        self._marked_ready_prs: list[int] = []
         # Ordered log of all mutation operations for testing operation ordering
         self._operation_log: list[tuple[Any, ...]] = []
         # (repo, sha, state, context, description)
@@ -768,8 +769,19 @@ class FakeGitHub(GitHub):
                 self._prs_by_branch[old.head_ref_name] = updated
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
-        """Mark a draft PR as ready for review (fake is a no-op)."""
-        pass
+        """Mark a draft PR as ready for review."""
+        self._marked_ready_prs.append(pr_number)
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, is_draft=False)
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
+
+    @property
+    def marked_ready_prs(self) -> list[int]:
+        """Read-only access to tracked mark-ready calls for test assertions."""
+        return list(self._marked_ready_prs)
 
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get the diff for a PR from configured state or return default.
