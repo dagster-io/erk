@@ -18,6 +18,7 @@ The TUI command palette (Cmd+K) shows the same commands regardless of whether th
 **File:** `src/erk/tui/commands/registry.py`
 
 Add helper:
+
 ```python
 def _is_github_backend(ctx: CommandContext) -> bool:
     return ctx.plan_backend == "github"
@@ -25,12 +26,13 @@ def _is_github_backend(ctx: CommandContext) -> bool:
 
 Update `is_available` for these 2 commands by adding `and _is_github_backend(ctx)`:
 
-| Command ID | Description | Why hide |
-|---|---|---|
-| `copy_prepare` | Copy: `erk prepare <id>` | Issue-based worktree setup; draft PRs already have branches |
-| `copy_prepare_activate` | Copy: prepare && implement | Same — issue-based workflow |
+| Command ID              | Description                | Why hide                                                    |
+| ----------------------- | -------------------------- | ----------------------------------------------------------- |
+| `copy_prepare`          | Copy: `erk prepare <id>`   | Issue-based worktree setup; draft PRs already have branches |
+| `copy_prepare_activate` | Copy: prepare && implement | Same — issue-based workflow                                 |
 
 Commands that STAY available in both modes:
+
 - `close_plan`, `submit_to_queue`, `fix_conflicts_remote`, `address_remote`, `land_pr`
 - `open_issue` (plan_url = PR URL in draft_pr), `open_pr` (Graphite URL), `open_run`
 - `copy_checkout`, `copy_pr_checkout`, `copy_submit`, `copy_replan`
