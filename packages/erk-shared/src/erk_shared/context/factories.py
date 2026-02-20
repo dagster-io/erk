@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 from erk_shared.core.fakes import (
     FakeCodespaceRegistry,
+    FakeObjectiveListService,
     FakePlanListService,
     FakePromptExecutor,
     FakeScriptWriter,
@@ -150,6 +151,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),
+        objective_list_service=FakeObjectiveListService(data=None),
         cwd=resolved_cwd,
         repo=repo,
         repo_info=repo_info,

@@ -21,6 +21,7 @@ from erk.core.completion import RealCompletion
 from erk.core.prompt_executor import ClaudePromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
+from erk.core.services.objective_list_service import RealObjectiveListService
 from erk.core.services.plan_list_service import DraftPRPlanListService, RealPlanListService
 from erk.core.shell import RealShell
 
@@ -33,7 +34,8 @@ from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
 
 # Import ABCs and fakes from erk_shared.core
-from erk_shared.core.fakes import FakePlanListService
+from erk_shared.core.fakes import FakeObjectiveListService, FakePlanListService
+from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
@@ -173,6 +175,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         erk_installation=FakeErkInstallation(),
         script_writer=FakeScriptWriter(),
         plan_list_service=FakePlanListService(),
+        objective_list_service=FakeObjectiveListService(data=None),
         codespace_registry=FakeCodespaceRegistry(),
         claude_installation=FakeClaudeInstallation.for_test(),
         prompt_executor=FakePromptExecutor(),
@@ -204,6 +207,7 @@ def context_for_test(
     erk_installation: ErkInstallation | None = None,
     script_writer: ScriptWriter | None = None,
     plan_list_service: PlanListService | None = None,
+    objective_list_service: ObjectiveListService | None = None,
     codespace_registry: CodespaceRegistry | None = None,
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
@@ -357,6 +361,9 @@ def context_for_test(
         # so that tests get realistic behavior when testing plan list functionality
         plan_list_service = RealPlanListService(github, issues)
 
+    if objective_list_service is None:
+        objective_list_service = RealObjectiveListService(github, issues)
+
     if codespace_registry is None:
         codespace_registry = FakeCodespaceRegistry()
 
@@ -409,6 +416,7 @@ def context_for_test(
         erk_installation=erk_installation,
         script_writer=script_writer,
         plan_list_service=plan_list_service,
+        objective_list_service=objective_list_service,
         codespace_registry=codespace_registry,
         claude_installation=claude_installation,
         prompt_executor=prompt_executor,
@@ -608,6 +616,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         plan_store = GitHubPlanStore(issues)
         plan_list_service = RealPlanListService(github, issues)
 
+    # Objectives are always issue-based regardless of plan backend
+    objective_list_service: ObjectiveListService = RealObjectiveListService(github, issues)
+
     # 9. Apply dry-run wrappers if needed
     # Note: DryRunGitHub composes DryRunGitHubIssues internally,
     # but we still wrap issues separately for ctx.issues backward compatibility
@@ -657,6 +668,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         erk_installation=erk_installation,
         script_writer=RealScriptWriter(),
         plan_list_service=plan_list_service,
+        objective_list_service=objective_list_service,
         codespace_registry=RealCodespaceRegistry.from_config_path(
             erk_installation.get_codespaces_config_path()
         ),
