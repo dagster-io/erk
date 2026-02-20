@@ -71,7 +71,7 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
-    def __init__(self, plan_filters: PlanFilters, plan_backend: PlanBackendType = "github") -> None:
+    def __init__(self, plan_filters: PlanFilters, *, plan_backend: PlanBackendType) -> None:
         """Initialize table with column configuration based on filters.
 
         Args:

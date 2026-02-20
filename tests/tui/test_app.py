@@ -2165,3 +2165,38 @@ class TestActionViewComments:
 
             assert len(app.screen_stack) > 1
             assert isinstance(app.screen_stack[-1], UnresolvedCommentsScreen)
+
+
+# --- Tests for _display_name_for_view ---
+
+
+def test_display_name_draft_pr_plans_view() -> None:
+    """draft_pr backend + PLANS view returns 'Planned PRs'."""
+    provider = FakePlanDataProvider()
+    filters = PlanFilters.default()
+    app = ErkDashApp(
+        provider=provider, filters=filters, refresh_interval=0, plan_backend="draft_pr"
+    )
+    assert app._display_name_for_view(ViewMode.PLANS) == "Planned PRs"
+
+
+def test_display_name_github_plans_view() -> None:
+    """github backend + PLANS view returns default display name."""
+    provider = FakePlanDataProvider()
+    filters = PlanFilters.default()
+    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0, plan_backend="github")
+    expected = get_view_config(ViewMode.PLANS).display_name
+    assert app._display_name_for_view(ViewMode.PLANS) == expected
+
+
+def test_display_name_draft_pr_non_plans_view() -> None:
+    """draft_pr backend + non-PLANS mode returns default display name."""
+    provider = FakePlanDataProvider()
+    filters = PlanFilters.default()
+    app = ErkDashApp(
+        provider=provider, filters=filters, refresh_interval=0, plan_backend="draft_pr"
+    )
+    expected_learn = get_view_config(ViewMode.LEARN).display_name
+    assert app._display_name_for_view(ViewMode.LEARN) == expected_learn
+    expected_obj = get_view_config(ViewMode.OBJECTIVES).display_name
+    assert app._display_name_for_view(ViewMode.OBJECTIVES) == expected_obj

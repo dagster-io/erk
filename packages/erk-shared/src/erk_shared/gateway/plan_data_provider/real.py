@@ -42,7 +42,6 @@ from erk_shared.gateway.github.metadata.schemas import (
     LEARN_PLAN_PR,
     LEARN_RUN_ID,
     LEARN_STATUS,
-    LIFECYCLE_STAGE,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
     REVIEW_PR,
@@ -846,50 +845,12 @@ def _format_learn_display_icon(
 def _compute_lifecycle_display(plan: Plan) -> str:
     """Compute lifecycle stage display string for a plan.
 
-    Reads lifecycle_stage from plan header fields if present, otherwise
-    infers from is_draft and pr_state in plan metadata. Returns a
-    color-coded Rich markup string for table display.
-
-    Args:
-        plan: Plan with header_fields and metadata populated
-
-    Returns:
-        Display string (may contain Rich markup for color)
+    Delegates to lifecycle.compute_lifecycle_display. This wrapper preserves
+    the module-private name used by callers within this file.
     """
-    # Read from header fields first
-    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+    from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
 
-    # Fall back to inferring from PR metadata
-    if stage is None and plan.metadata:
-        is_draft = plan.metadata.get("is_draft")
-        pr_state = plan.metadata.get("pr_state")
-        if isinstance(is_draft, bool) and isinstance(pr_state, str):
-            if is_draft and pr_state == "OPEN":
-                stage = "planned"
-            elif not is_draft and pr_state == "OPEN":
-                stage = "review"
-            elif not is_draft and pr_state == "MERGED":
-                stage = "merged"
-            elif not is_draft and pr_state == "CLOSED":
-                stage = "closed"
-
-    if stage is None:
-        return "-"
-
-    # Color-code by stage
-    if stage in ("pre-plan", "planning"):
-        return f"[magenta]{stage}[/magenta]"
-    if stage == "planned":
-        return f"[dim]{stage}[/dim]"
-    if stage == "implementing":
-        return f"[yellow]{stage}[/yellow]"
-    if stage == "review":
-        return f"[cyan]{stage}[/cyan]"
-    if stage == "merged":
-        return f"[green]{stage}[/green]"
-    if stage == "closed":
-        return f"[dim red]{stage}[/dim red]"
-    return stage
+    return compute_lifecycle_display(plan)
 
 
 def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -> None:

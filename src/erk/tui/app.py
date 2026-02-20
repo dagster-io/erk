@@ -167,7 +167,7 @@ class ErkDashApp(App):
                 f"Loading {self._display_name_for_view(ViewMode.PLANS).lower()}...",
                 id="loading-message",
             )
-            yield PlanDataTable(self._plan_filters, self._plan_backend)
+            yield PlanDataTable(self._plan_filters, plan_backend=self._plan_backend)
         yield Input(id="filter-input", placeholder="Filter...", disabled=True)
         yield StatusBar()
 

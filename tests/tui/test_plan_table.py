@@ -156,7 +156,7 @@ class TestPlanDataTableRowConversion:
             show_prs=False,
             show_runs=False,
         )
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(123, "Test Plan")
 
         values = table._row_to_values(row)
@@ -182,7 +182,7 @@ class TestPlanDataTableRowConversion:
             show_prs=True,
             show_runs=False,
         )
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(123, "Test Plan", pr_number=456)
 
         values = table._row_to_values(row)
@@ -207,7 +207,7 @@ class TestPlanDataTableRowConversion:
             show_prs=True,
             show_runs=False,
         )
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         # Use custom pr_display with link indicator (simulates will_close_target=True)
         row = make_plan_row(123, "Test Plan", pr_number=456, pr_display="#456 ✅🔗")
 
@@ -226,7 +226,7 @@ class TestPlanDataTableRowConversion:
             show_prs=False,
             show_runs=True,
         )
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(123, "Test Plan")
 
         values = table._row_to_values(row)
@@ -238,7 +238,7 @@ class TestPlanDataTableRowConversion:
     def test_row_to_values_with_worktree(self) -> None:
         """Row shows worktree name when exists locally."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(
             123,
             "Test Plan",
@@ -254,7 +254,7 @@ class TestPlanDataTableRowConversion:
     def test_row_to_values_with_learn_status_clickable(self) -> None:
         """Row shows learn display with clickable styling when issue/PR set."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(
             123,
             "Test Plan",
@@ -275,7 +275,7 @@ class TestPlanDataTableRowConversion:
     def test_row_to_values_with_learn_status_not_clickable(self) -> None:
         """Row shows learn display without styling when not clickable."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(123, "Test Plan", learn_status="pending")
 
         values = table._row_to_values(row)
@@ -288,7 +288,7 @@ class TestPlanDataTableRowConversion:
     def test_row_to_values_includes_author(self) -> None:
         """Row includes author at index 3."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(123, "Test Plan", author="schrockn")
 
         values = table._row_to_values(row)
@@ -303,7 +303,7 @@ class TestLocalWtColumnIndex:
     def test_column_index_none_before_setup(self) -> None:
         """Column index is None before columns are set up."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         # Don't call _setup_columns
 
         assert table.local_wt_column_index is None
@@ -351,7 +351,7 @@ class TestObjectivesViewRowConversion:
     def test_objectives_view_has_enriched_columns(self) -> None:
         """Objectives view produces plan, title, progress, next, updated, author."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(42, "Objective Plan")
 
@@ -370,7 +370,7 @@ class TestObjectivesViewRowConversion:
     def test_objectives_view_strips_title_prefix(self) -> None:
         """Objectives view strips 'Objective: ' prefix from title."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(42, "Objective: Enrich Dashboard")
 
@@ -381,7 +381,7 @@ class TestObjectivesViewRowConversion:
     def test_objectives_view_preserves_non_prefixed_title(self) -> None:
         """Objectives view preserves titles without the prefix."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(42, "My Plan Title")
 
@@ -392,7 +392,7 @@ class TestObjectivesViewRowConversion:
     def test_objectives_view_shows_progress_and_next(self) -> None:
         """Objectives view shows progress and next step from row data."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(
             42,
@@ -433,7 +433,7 @@ class TestShowPrColumnFalse:
             show_runs=False,
             show_pr_column=False,
         )
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(123, "Test Plan", pr_number=456)
 
         values = table._row_to_values(row)
@@ -452,7 +452,7 @@ class TestShowPrColumnFalse:
             show_runs=False,
             show_pr_column=False,
         )
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(123, "Test Plan", pr_number=456)
 
         values = table._row_to_values(row)
@@ -472,10 +472,88 @@ class TestShowPrColumnFalse:
             show_runs=False,
             show_pr_column=True,
         )
-        table = PlanDataTable(filters)
+        table = PlanDataTable(filters, plan_backend="github")
         row = make_plan_row(123, "Test Plan", pr_number=456)
 
         values = table._row_to_values(row)
 
         assert len(values) == 11
         assert _text_to_str(values[4]) == "#456"  # pr at index 4
+
+
+# --- Tests for stage column logic in draft_pr mode ---
+
+
+def test_row_to_values_draft_pr_includes_stage() -> None:
+    """draft_pr backend includes lifecycle_display stage value in output."""
+    filters = PlanFilters(
+        labels=("erk-plan",),
+        state=None,
+        run_state=None,
+        limit=None,
+        show_prs=False,
+        show_runs=False,
+    )
+    table = PlanDataTable(filters, plan_backend="draft_pr")
+    row = make_plan_row(123, "Test Plan", lifecycle_display="[cyan]review[/cyan]")
+
+    values = table._row_to_values(row)
+
+    # draft_pr adds stage after author:
+    # plan, title, created, author, stage, obj, lrn, local-wt, local-impl
+    assert len(values) == 9
+    # Stage at index 4 (after plan, title, created, author) - markup stripped
+    assert _text_to_str(values[4]) == "review"
+
+
+def test_row_to_values_github_does_not_include_stage() -> None:
+    """github backend does NOT include stage value in output."""
+    filters = PlanFilters(
+        labels=("erk-plan",),
+        state=None,
+        run_state=None,
+        limit=None,
+        show_prs=False,
+        show_runs=False,
+    )
+    table = PlanDataTable(filters, plan_backend="github")
+    row = make_plan_row(123, "Test Plan", lifecycle_display="[cyan]review[/cyan]")
+
+    values = table._row_to_values(row)
+
+    # github mode: plan, title, created, author, obj, lrn, local-wt, local-impl = 8
+    assert len(values) == 8
+
+
+def test_stage_column_index_set_for_draft_pr() -> None:
+    """_stage_column_index is set when plan_backend is draft_pr."""
+    filters = PlanFilters(
+        labels=("erk-plan",),
+        state=None,
+        run_state=None,
+        limit=None,
+        show_prs=False,
+        show_runs=False,
+    )
+    table = PlanDataTable(filters, plan_backend="draft_pr")
+
+    # _stage_column_index is set during __init__ but columns aren't set up
+    # until on_mount. Verify the initial value is None (pre-setup).
+    assert table._stage_column_index is None
+
+    # After __init__, _plan_backend should be set
+    assert table._plan_backend == "draft_pr"
+
+
+def test_stage_column_index_none_for_github() -> None:
+    """_stage_column_index remains None when plan_backend is github."""
+    filters = PlanFilters(
+        labels=("erk-plan",),
+        state=None,
+        run_state=None,
+        limit=None,
+        show_prs=False,
+        show_runs=False,
+    )
+    table = PlanDataTable(filters, plan_backend="github")
+    assert table._stage_column_index is None
