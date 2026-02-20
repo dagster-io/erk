@@ -1,9 +1,12 @@
-"""Tests for _compute_lifecycle_display function."""
+"""Tests for lifecycle display computation and enrichment functions."""
 
 from datetime import UTC, datetime
 
 from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
-from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
+from erk_shared.gateway.plan_data_provider.lifecycle import (
+    compute_lifecycle_display,
+    enrich_lifecycle_with_status,
+)
 from erk_shared.plan_store.types import Plan, PlanState
 
 
@@ -135,3 +138,98 @@ def test_header_field_takes_precedence_over_metadata() -> None:
         metadata={"is_draft": False, "pr_state": "MERGED"},
     )
     assert compute_lifecycle_display(plan) == "[yellow]implementing[/yellow]"
+
+
+# --- enrich_lifecycle_with_status tests ---
+
+
+def test_enrich_review_with_conflicts() -> None:
+    """Review stage with conflicts shows 💥."""
+    result = enrich_lifecycle_with_status(
+        "[cyan]review[/cyan]", has_conflicts=True, review_decision=None
+    )
+    assert result == "[cyan]review \U0001f4a5[/cyan]"
+
+
+def test_enrich_review_with_approved() -> None:
+    """Review stage with approved shows ✔."""
+    result = enrich_lifecycle_with_status(
+        "[cyan]review[/cyan]", has_conflicts=False, review_decision="APPROVED"
+    )
+    assert result == "[cyan]review \u2714[/cyan]"
+
+
+def test_enrich_review_with_changes_requested() -> None:
+    """Review stage with changes requested shows ❌."""
+    result = enrich_lifecycle_with_status(
+        "[cyan]review[/cyan]", has_conflicts=False, review_decision="CHANGES_REQUESTED"
+    )
+    assert result == "[cyan]review \u274c[/cyan]"
+
+
+def test_enrich_review_with_conflicts_and_changes_requested() -> None:
+    """Review stage with conflicts AND changes requested shows both."""
+    result = enrich_lifecycle_with_status(
+        "[cyan]review[/cyan]", has_conflicts=True, review_decision="CHANGES_REQUESTED"
+    )
+    assert result == "[cyan]review \U0001f4a5 \u274c[/cyan]"
+
+
+def test_enrich_implementing_with_conflicts() -> None:
+    """Implementing stage with conflicts shows 💥."""
+    result = enrich_lifecycle_with_status(
+        "[yellow]implementing[/yellow]", has_conflicts=True, review_decision=None
+    )
+    assert result == "[yellow]implementing \U0001f4a5[/yellow]"
+
+
+def test_enrich_planned_stage_unchanged() -> None:
+    """Planned stage is not enriched even with conflicts."""
+    result = enrich_lifecycle_with_status(
+        "[dim]planned[/dim]", has_conflicts=True, review_decision=None
+    )
+    assert result == "[dim]planned[/dim]"
+
+
+def test_enrich_merged_stage_unchanged() -> None:
+    """Merged stage is not enriched."""
+    result = enrich_lifecycle_with_status(
+        "[green]merged[/green]", has_conflicts=False, review_decision="APPROVED"
+    )
+    assert result == "[green]merged[/green]"
+
+
+def test_enrich_no_indicators_unchanged() -> None:
+    """No indicators returns unchanged display."""
+    result = enrich_lifecycle_with_status(
+        "[cyan]review[/cyan]", has_conflicts=False, review_decision=None
+    )
+    assert result == "[cyan]review[/cyan]"
+
+
+def test_enrich_bare_string_review() -> None:
+    """Bare string (no markup) review stage appends directly."""
+    result = enrich_lifecycle_with_status("review", has_conflicts=True, review_decision=None)
+    assert result == "review \U0001f4a5"
+
+
+def test_enrich_bare_string_non_enrichable_unchanged() -> None:
+    """Bare string of non-enrichable stage is unchanged."""
+    result = enrich_lifecycle_with_status("planned", has_conflicts=True, review_decision=None)
+    assert result == "planned"
+
+
+def test_enrich_has_conflicts_none_no_change() -> None:
+    """has_conflicts=None does not add indicator."""
+    result = enrich_lifecycle_with_status(
+        "[cyan]review[/cyan]", has_conflicts=None, review_decision=None
+    )
+    assert result == "[cyan]review[/cyan]"
+
+
+def test_enrich_review_required_no_indicator() -> None:
+    """REVIEW_REQUIRED does not add an indicator."""
+    result = enrich_lifecycle_with_status(
+        "[cyan]review[/cyan]", has_conflicts=False, review_decision="REVIEW_REQUIRED"
+    )
+    assert result == "[cyan]review[/cyan]"

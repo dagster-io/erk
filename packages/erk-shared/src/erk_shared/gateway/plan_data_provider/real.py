@@ -599,6 +599,8 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_head_branch: str | None = None
         pr_display = "-"
         checks_display = "-"
+        pr_has_conflicts: bool | None = None
+        pr_review_decision: str | None = None
 
         # Comment counts - "-" when no PR
         resolved_comment_count = 0
@@ -617,6 +619,8 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_title = selected_pr.title
                 pr_state = selected_pr.state
                 pr_head_branch = selected_pr.head_branch
+                pr_has_conflicts = selected_pr.has_conflicts
+                pr_review_decision = selected_pr.review_decision
                 graphite_url = self._ctx.graphite.get_graphite_url(
                     GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
                 )
@@ -711,6 +715,13 @@ class RealPlanDataProvider(PlanDataProvider):
 
         # Compute lifecycle display from header or infer from metadata
         lifecycle_display = _compute_lifecycle_display(plan)
+
+        # Enrich lifecycle display with conflict/review indicators from PR
+        lifecycle_display = _enrich_lifecycle(
+            lifecycle_display,
+            has_conflicts=pr_has_conflicts,
+            review_decision=pr_review_decision,
+        )
 
         return PlanRowData(
             plan_id=plan_id,
@@ -861,6 +872,26 @@ def _compute_lifecycle_display(plan: Plan) -> str:
     from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
 
     return compute_lifecycle_display(plan)
+
+
+def _enrich_lifecycle(
+    lifecycle_display: str,
+    *,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+) -> str:
+    """Enrich lifecycle display with PR status indicators.
+
+    Delegates to lifecycle.enrich_lifecycle_with_status. This wrapper preserves
+    the module-private name used by callers within this file.
+    """
+    from erk_shared.gateway.plan_data_provider.lifecycle import enrich_lifecycle_with_status
+
+    return enrich_lifecycle_with_status(
+        lifecycle_display,
+        has_conflicts=has_conflicts,
+        review_decision=review_decision,
+    )
 
 
 def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -> None:

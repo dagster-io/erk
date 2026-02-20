@@ -72,6 +72,7 @@ ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedE
         }
       }
       mergeable
+      reviewDecision
     }
   }
 }"""
@@ -192,6 +193,7 @@ GET_PLAN_PRS_WITH_DETAILS_QUERY = """query(
         isCrossRepository
         mergeable
         mergeStateStatus
+        reviewDecision
         statusCheckRollup {
           state
           contexts(last: 1) {

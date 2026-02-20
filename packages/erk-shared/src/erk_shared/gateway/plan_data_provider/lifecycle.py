@@ -4,6 +4,8 @@ Extracted to a standalone module to avoid circular imports when testing.
 The main consumer is RealPlanDataProvider in real.py.
 """
 
+import re
+
 from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
 from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.types import Plan
@@ -56,3 +58,55 @@ def compute_lifecycle_display(plan: Plan) -> str:
     if stage == "closed":
         return f"[dim red]{stage}[/dim red]"
     return stage
+
+
+# Pattern to match Rich markup: [tag]text[/tag]
+_RICH_MARKUP_PATTERN = re.compile(r"^(\[.*?\])(.+?)(\[/.*?\])$")
+
+
+def enrich_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+) -> str:
+    """Enrich lifecycle display string with conflict and review indicators.
+
+    Only enriches 'implementing' and 'review' stages. Other stages are
+    returned unchanged.
+
+    Args:
+        lifecycle_display: The base lifecycle display string (may contain Rich markup)
+        has_conflicts: True if PR has merge conflicts, False if clean, None if unknown
+        review_decision: GitHub review decision ("APPROVED", "CHANGES_REQUESTED", etc.)
+
+    Returns:
+        Enriched display string with emoji indicators appended
+    """
+    # Build suffix from indicators
+    suffix_parts: list[str] = []
+    if has_conflicts is True:
+        suffix_parts.append("\U0001f4a5")  # 💥
+    if review_decision == "APPROVED":
+        suffix_parts.append("\u2714")  # ✔
+    elif review_decision == "CHANGES_REQUESTED":
+        suffix_parts.append("\u274c")  # ❌
+
+    if not suffix_parts:
+        return lifecycle_display
+
+    suffix = " " + " ".join(suffix_parts)
+
+    # Check if it's Rich markup
+    match = _RICH_MARKUP_PATTERN.match(lifecycle_display)
+    if match:
+        open_tag, text, close_tag = match.groups()
+        # Only enrich implementing and review stages
+        if text not in ("implementing", "review"):
+            return lifecycle_display
+        return f"{open_tag}{text}{suffix}{close_tag}"
+
+    # Bare string: only enrich implementing and review
+    if lifecycle_display not in ("implementing", "review"):
+        return lifecycle_display
+    return f"{lifecycle_display}{suffix}"
