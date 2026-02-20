@@ -16,7 +16,11 @@ from erk.cli.commands.land_cmd import (
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -702,3 +706,60 @@ def test_option4_calls_preprocess_and_continues_landing(
     # Verify _preprocess_and_prepare_manual_learn was called with correct args
     assert len(preprocess_calls) == 1
     assert preprocess_calls[0] == (repo_root, issue_number)
+
+
+# Tests for _store_learn_materials_gist_url with draft-PR backend (Fix 2)
+
+
+def test_store_learn_materials_gist_url_comment_fallback_on_missing_metadata(
+    tmp_path: Path,
+) -> None:
+    """Test that _store_learn_materials_gist_url falls back to comment when no metadata block."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    issue_number = 7618
+
+    # Create PR with no plan-header metadata block (just plain text body)
+    fake_issues = FakeGitHubIssues()
+    pr_details = PRDetails(
+        number=issue_number,
+        url=f"https://github.com/test-owner/test-repo/pull/{issue_number}",
+        title="PR without metadata",
+        body="# Plan\n\nNo metadata block here.",
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="master",
+        head_ref_name="plan-fix-something",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+    fake_gh = FakeGitHub(
+        issues_gateway=fake_issues,
+        pr_details={issue_number: pr_details},
+    )
+    draft_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+
+    ctx = context_for_test(
+        cwd=repo_root,
+        github=fake_gh,
+        issues=fake_issues,
+        plan_store=draft_backend,
+    )
+
+    _store_learn_materials_gist_url(
+        ctx,
+        repo_root=repo_root,
+        plan_issue_number=issue_number,
+        gist_url="https://gist.github.com/test/abc123",
+    )
+
+    # Verify a PR comment was added (fallback path) instead of metadata update
+    # DraftPRPlanBackend.add_comment delegates to github.create_pr_comment
+    assert len(fake_gh.pr_comments) == 1
+    comment_pr, comment_body = fake_gh.pr_comments[0]
+    assert comment_pr == issue_number
+    assert "https://gist.github.com/test/abc123" in comment_body

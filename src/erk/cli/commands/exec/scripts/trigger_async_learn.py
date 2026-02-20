@@ -288,6 +288,24 @@ def _get_pr_for_plan_direct(
     Returns:
         Dict with pr_number and pr details on success, None on failure
     """
+    # Draft-PR: plan_id IS the PR number — look up directly
+    if plan_backend.get_provider_name() == "github-draft-pr":
+        pr_result = github.get_pr(repo_root, int(plan_id))
+        if isinstance(pr_result, PRNotFound):
+            return None
+        return {
+            "success": True,
+            "pr_number": pr_result.number,
+            "pr": {
+                "number": pr_result.number,
+                "title": pr_result.title,
+                "state": pr_result.state,
+                "url": pr_result.url,
+                "head_ref_name": pr_result.head_ref_name,
+                "base_ref_name": pr_result.base_ref_name,
+            },
+        }
+
     branch_name_field = plan_backend.get_metadata_field(repo_root, plan_id, "branch_name")
     if isinstance(branch_name_field, PlanNotFound):
         return None

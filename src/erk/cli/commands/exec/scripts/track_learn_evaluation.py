@@ -36,6 +36,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.time.abc import Time
 from erk_shared.learn.tracking import track_learn_invocation
+from erk_shared.plan_store.types import PlanHeaderNotFoundError
 
 
 @dataclass(frozen=True)
@@ -118,6 +119,17 @@ def _do_track(
                 "last_learn_session": session_id,
             },
         )
+    except PlanHeaderNotFoundError:
+        error = TrackLearnError(
+            success=False,
+            error="no-metadata-block",
+            message=(
+                f"Plan {issue_number} has no plan-header metadata block"
+                " — cannot update learn evaluation"
+            ),
+        )
+        click.echo(json.dumps(asdict(error)), err=True)
+        raise SystemExit(1) from None
     except RuntimeError as e:
         error = TrackLearnError(
             success=False,
