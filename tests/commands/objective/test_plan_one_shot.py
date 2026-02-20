@@ -162,7 +162,7 @@ def test_plan_one_shot_happy_path() -> None:
         assert workflow == "one-shot.yml"
         assert inputs["objective_issue"] == "42"
         assert inputs["node_id"] == "1.1"
-        assert inputs["instruction"] == (
+        assert inputs["prompt"] == (
             "/erk:objective-plan 42\n"
             "Implement step 1.1 of objective #42: Setup infra (Phase: Foundation)"
         )
@@ -281,7 +281,7 @@ steps:
         assert isinstance(github, FakeGitHub)
         _workflow, inputs = github.triggered_workflows[0]
         assert inputs["node_id"] == "1.2"
-        assert "Add tests" in inputs["instruction"]
+        assert "Add tests" in inputs["prompt"]
 
 
 def test_plan_one_shot_node_override() -> None:
@@ -308,7 +308,7 @@ def test_plan_one_shot_node_override() -> None:
         assert isinstance(github, FakeGitHub)
         _workflow, inputs = github.triggered_workflows[0]
         assert inputs["node_id"] == "2.1"
-        assert "Build feature" in inputs["instruction"]
+        assert "Build feature" in inputs["prompt"]
 
 
 def test_plan_one_shot_no_pending_nodes() -> None:

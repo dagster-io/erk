@@ -34,7 +34,7 @@ def test_dispatch_happy_path() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
-            instruction="fix the import in config.py",
+            prompt="fix the import in config.py",
             model=None,
             extra_workflow_inputs={},
         )
@@ -78,7 +78,7 @@ def test_dispatch_happy_path() -> None:
         assert len(github.triggered_workflows) == 1
         workflow, inputs = github.triggered_workflows[0]
         assert workflow == "one-shot.yml"
-        assert inputs["instruction"] == "fix the import in config.py"
+        assert inputs["prompt"] == "fix the import in config.py"
         assert inputs["plan_issue_number"] == "1"
 
         # Verify PR body was updated with workflow run link and closing reference
@@ -117,7 +117,7 @@ def test_dispatch_with_extra_inputs() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
-            instruction="implement step 1.1",
+            prompt="implement step 1.1",
             model=None,
             extra_workflow_inputs={
                 "objective_issue": "42",
@@ -135,7 +135,7 @@ def test_dispatch_with_extra_inputs() -> None:
         _workflow, inputs = github.triggered_workflows[0]
         assert inputs["objective_issue"] == "42"
         assert inputs["node_id"] == "1.1"
-        assert inputs["instruction"] == "implement step 1.1"
+        assert inputs["prompt"] == "implement step 1.1"
         assert inputs["plan_issue_number"] == "1"
 
 
@@ -222,7 +222,7 @@ def test_dispatch_creates_skeleton_plan_issue() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
-            instruction="add user authentication",
+            prompt="add user authentication",
             model=None,
             extra_workflow_inputs={},
         )
@@ -251,7 +251,7 @@ def test_dispatch_creates_skeleton_plan_issue() -> None:
 
 
 def test_dispatch_posts_queued_event_comment() -> None:
-    """Test dispatch posts a queued event comment with workflow run URL and instruction."""
+    """Test dispatch posts a queued event comment with workflow run URL and prompt."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -268,7 +268,7 @@ def test_dispatch_posts_queued_event_comment() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
-            instruction="refactor the auth module",
+            prompt="refactor the auth module",
             model=None,
             extra_workflow_inputs={},
         )
@@ -305,7 +305,7 @@ def test_dispatch_writes_metadata_to_plan_issue() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         params = OneShotDispatchParams(
-            instruction="add logging to api routes",
+            prompt="add logging to api routes",
             model=None,
             extra_workflow_inputs={},
         )
@@ -320,8 +320,8 @@ def test_dispatch_writes_metadata_to_plan_issue() -> None:
         assert "last_dispatched_at:" in issue_info.body
 
 
-def test_dispatch_long_instruction_truncates_workflow_input() -> None:
-    """Test that long instructions are truncated in workflow input but committed in full."""
+def test_dispatch_long_prompt_truncates_workflow_input() -> None:
+    """Test that long prompts are truncated in workflow input but committed in full."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -337,10 +337,10 @@ def test_dispatch_long_instruction_truncates_workflow_input() -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
-        long_instruction = "x" * 1000
+        long_prompt = "x" * 1000
 
         params = OneShotDispatchParams(
-            instruction=long_instruction,
+            prompt=long_prompt,
             model=None,
             extra_workflow_inputs={},
         )
@@ -351,16 +351,14 @@ def test_dispatch_long_instruction_truncates_workflow_input() -> None:
 
         # Verify workflow input was truncated
         _workflow, inputs = github.triggered_workflows[0]
-        assert len(inputs["instruction"]) < len(long_instruction)
-        assert inputs["instruction"].endswith(
-            "... (full instruction committed to .worker-impl/task.md)"
-        )
+        assert len(inputs["prompt"]) < len(long_prompt)
+        assert inputs["prompt"].endswith("... (full prompt committed to .worker-impl/task.md)")
 
-        # Verify full instruction was committed to .worker-impl/task.md
+        # Verify full prompt was committed to .worker-impl/task.md
         task_file = env.cwd / ".worker-impl" / "task.md"
         assert task_file.exists()
         content = task_file.read_text(encoding="utf-8")
-        assert content == long_instruction + "\n"
+        assert content == long_prompt + "\n"
 
         # Verify the file was staged
         assert git.commits[0].staged_files == (".worker-impl/task.md",)

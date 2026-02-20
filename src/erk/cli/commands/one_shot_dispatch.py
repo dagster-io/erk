@@ -38,7 +38,7 @@ ONE_SHOT_WORKFLOW = "one-shot.yml"
 class OneShotDispatchParams:
     """Parameters for dispatching a one-shot workflow."""
 
-    instruction: str
+    prompt: str
     model: str | None
     extra_workflow_inputs: dict[str, str]
 
@@ -53,19 +53,19 @@ class OneShotDispatchResult:
 
 
 def generate_branch_name(
-    instruction: str,
+    prompt: str,
     *,
     time: Time,
     plan_issue_number: int | None,
     objective_id: int | None,
 ) -> str:
-    """Generate a branch name from the instruction.
+    """Generate a branch name from the prompt.
 
     Format: P{N}-{slug}-{MM-DD-HHMM} (with optional O{M} objective encoding)
     when plan_issue_number is provided, otherwise oneshot-{slug}-{MM-DD-HHMM}.
 
     Args:
-        instruction: The task description
+        prompt: The task description
         time: Time gateway for deterministic timestamps
         plan_issue_number: If provided, delegate to generate_issue_branch_name
         objective_id: If provided with plan_issue_number, encode O{N} in branch name
@@ -75,9 +75,9 @@ def generate_branch_name(
     """
     if plan_issue_number is not None:
         return generate_issue_branch_name(
-            plan_issue_number, instruction, time.now(), objective_id=objective_id
+            plan_issue_number, prompt, time.now(), objective_id=objective_id
         )
-    slug = sanitize_worktree_name(instruction)
+    slug = sanitize_worktree_name(prompt)
     prefix = "oneshot-"
     max_slug_len = 31 - len(prefix)
     if len(slug) > max_slug_len:
@@ -127,13 +127,13 @@ def dispatch_one_shot(
 
     # Build PR title
     max_title_len = 60
-    suffix = "..." if len(params.instruction) > max_title_len else ""
-    pr_title = f"One-shot: {params.instruction[:max_title_len]}{suffix}"
+    suffix = "..." if len(params.prompt) > max_title_len else ""
+    pr_title = f"One-shot: {params.prompt[:max_title_len]}{suffix}"
 
     if dry_run:
         # In dry-run, show preview without creating skeleton issue
         branch_name = generate_branch_name(
-            params.instruction,
+            params.prompt,
             time=ctx.time,
             plan_issue_number=None,
             objective_id=None,
@@ -141,7 +141,7 @@ def dispatch_one_shot(
         user_output(
             click.style("Dry-run mode:", fg="cyan", bold=True) + " No changes will be made\n"
         )
-        user_output(f"Instruction: {params.instruction}")
+        user_output(f"Prompt: {params.prompt}")
         user_output(f"Branch: {branch_name}")
         user_output(f"PR title: {pr_title}")
         user_output(f"Base branch: {trunk}")
@@ -160,13 +160,13 @@ def dispatch_one_shot(
 
     skeleton_plan_content = (
         f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
-        f"**Instruction:** {params.instruction}"
+        f"**Prompt:** {params.prompt}"
     )
     skeleton_result = create_plan_issue(
         github_issues=ctx.github.issues,
         repo_root=repo.root,
         plan_content=skeleton_plan_content,
-        title=f"One-shot: {params.instruction[:max_title_len]}{suffix}",
+        title=f"One-shot: {params.prompt[:max_title_len]}{suffix}",
         extra_labels=None,
         title_tag=None,
         source_repo=None,
@@ -179,7 +179,7 @@ def dispatch_one_shot(
 
     # Generate branch name (uses P<N>- prefix when plan issue was created)
     branch_name = generate_branch_name(
-        params.instruction,
+        params.prompt,
         time=ctx.time,
         plan_issue_number=plan_issue_number,
         objective_id=objective_id,
@@ -201,17 +201,17 @@ def dispatch_one_shot(
     try:
         ctx.branch_manager.checkout_branch(repo.root, branch_name)
 
-        # Write instruction to .worker-impl/task.md so it's committed to the branch
+        # Write prompt to .worker-impl/task.md so it's committed to the branch
         # (.impl/ is in .gitignore; .worker-impl/ is the committable counterpart
         # that the remote workflow copies into .impl/)
         worker_impl_dir = repo.root / ".worker-impl"
         worker_impl_dir.mkdir(parents=True, exist_ok=True)
         task_file = worker_impl_dir / "task.md"
-        task_file.write_text(params.instruction + "\n", encoding="utf-8")
+        task_file.write_text(params.prompt + "\n", encoding="utf-8")
 
-        # Stage and commit with instruction file
+        # Stage and commit with prompt file
         ctx.git.commit.stage_files(repo.root, [".worker-impl/task.md"])
-        ctx.git.commit.commit(repo.root, f"One-shot: {params.instruction[:60]}")
+        ctx.git.commit.commit(repo.root, f"One-shot: {params.prompt[:60]}")
 
         # Push to remote
         user_output("Pushing to remote...")
@@ -238,21 +238,21 @@ def dispatch_one_shot(
             repo.root,
             branch_name,
             pr_title,
-            f"Autonomous one-shot execution.\n\n**Instruction:** {params.instruction}{closing_ref}",
+            f"Autonomous one-shot execution.\n\n**Prompt:** {params.prompt}{closing_ref}",
             trunk,
             draft=True,
         )
         user_output(f"Created draft PR #{pr_number}")
 
         # Build workflow inputs
-        # Truncate instruction for workflow input (full text is in .worker-impl/task.md)
+        # Truncate prompt for workflow input (full text is in .worker-impl/task.md)
         max_input_len = 500
-        truncated_instruction = params.instruction[:max_input_len]
-        if len(params.instruction) > max_input_len:
-            truncated_instruction += "... (full instruction committed to .worker-impl/task.md)"
+        truncated_prompt = params.prompt[:max_input_len]
+        if len(params.prompt) > max_input_len:
+            truncated_prompt += "... (full prompt committed to .worker-impl/task.md)"
 
         inputs: dict[str, str] = {
-            "instruction": truncated_instruction,
+            "prompt": truncated_prompt,
             "branch_name": branch_name,
             "pr_number": str(pr_number),
             "submitted_by": submitted_by,
@@ -284,7 +284,7 @@ def dispatch_one_shot(
             try:
                 pr_body = (
                     f"Autonomous one-shot execution.\n\n"
-                    f"**Instruction:** {params.instruction}\n\n"
+                    f"**Prompt:** {params.prompt}\n\n"
                     f"**Workflow run:** {run_url}{closing_ref}"
                 )
                 ctx.github.update_pr_body(repo.root, pr_number, pr_body)
@@ -327,7 +327,7 @@ def dispatch_one_shot(
                     description=(
                         f"One-shot submitted by **{submitted_by}** at {queued_at}.\n\n"
                         f"**Workflow run:** {run_url or 'N/A'}\n\n"
-                        f"**Instruction:** {params.instruction}"
+                        f"**Prompt:** {params.prompt}"
                     ),
                 )
                 ctx.issues.add_comment(repo.root, plan_issue_number, comment_body)

@@ -5,7 +5,7 @@ implements it, and creates a PR.
 
 Usage:
     erk one-shot "fix the import in config.py"
-    erk one-shot --file instructions.md
+    erk one-shot --file prompt.md
     erk one-shot "add type hints to utils.py" --model opus
     erk one-shot "fix the typo in README.md" --dry-run
 """
@@ -24,14 +24,14 @@ from erk.core.context import ErkContext
 
 
 @click.command("one-shot", hidden=True)
-@click.argument("instruction", required=False, default=None)
+@click.argument("prompt", required=False, default=None)
 @click.option(
     "-f",
     "--file",
     "file_path",
     type=click.Path(exists=True, dir_okay=False),
     default=None,
-    help="Read instruction from a file instead of a CLI argument",
+    help="Read prompt from a file instead of a CLI argument",
 )
 @click.option(
     "-m",
@@ -49,7 +49,7 @@ from erk.core.context import ErkContext
 def one_shot(
     ctx: ErkContext,
     *,
-    instruction: str | None,
+    prompt: str | None,
     file_path: str | None,
     model: str | None,
     dry_run: bool,
@@ -59,38 +59,38 @@ def one_shot(
     Creates a branch, draft PR, and dispatches a GitHub Actions workflow
     where Claude autonomously explores, plans, implements, and submits.
 
-    Provide instruction as an argument or via --file (not both).
+    Provide prompt as an argument or via --file (not both).
 
     Examples:
 
     \b
       erk one-shot "fix the import in config.py"
-      erk one-shot --file instructions.md
+      erk one-shot --file prompt.md
       erk one-shot "add type hints to utils.py" --model opus
       erk one-shot "fix the typo in README.md" --dry-run
     """
-    # Resolve instruction from argument or file
-    if file_path is not None and instruction is not None:
-        Ensure.invariant(False, "Provide instruction as argument or --file, not both")
+    # Resolve prompt from argument or file
+    if file_path is not None and prompt is not None:
+        Ensure.invariant(False, "Provide prompt as argument or --file, not both")
 
     if file_path is not None:
-        instruction = Path(file_path).read_text(encoding="utf-8")
-    elif instruction is None:
-        Ensure.invariant(False, "Provide an instruction argument or --file")
+        prompt = Path(file_path).read_text(encoding="utf-8")
+    elif prompt is None:
+        Ensure.invariant(False, "Provide a prompt argument or --file")
 
-    assert instruction is not None  # type narrowing after guard
+    assert prompt is not None  # type narrowing after guard
 
-    # Validate instruction is non-empty
+    # Validate prompt is non-empty
     Ensure.invariant(
-        len(instruction.strip()) > 0,
-        "Instruction must not be empty",
+        len(prompt.strip()) > 0,
+        "Prompt must not be empty",
     )
 
     # Normalize model name
     model = normalize_model_name(model)
 
     params = OneShotDispatchParams(
-        instruction=instruction,
+        prompt=prompt,
         model=model,
         extra_workflow_inputs={},
     )
