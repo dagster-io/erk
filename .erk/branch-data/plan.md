@@ -14,6 +14,7 @@ Read `ERK_PLAN_BACKEND` env var (via `get_plan_backend()` from `erk_shared.plan_
 - `draft_pr` backend → displays as `(be:draft-pr)`
 
 **Placement in statusline:**
+
 ```
 ➜  (git:erk) (wt:root) (br:master) | (gh:#123 ...) (be:issue) │ (O)
                                                     ^^^^^^^^^^
