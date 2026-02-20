@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Use branch name instead of PR number in `erk br co` next steps"
-}
