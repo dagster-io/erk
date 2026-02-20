@@ -73,14 +73,16 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 ### Which Phase Am I In?
 
-| Observable State                        | Current Phase                |
-| --------------------------------------- | ---------------------------- |
-| Issue has `erk-plan` label, no comments | Phase 1: Created             |
-| Issue has `submission-queued` comment   | Phase 2: Submitted           |
-| Issue has `workflow-started` comment    | Phase 3: Dispatched          |
-| PR is draft, workflow running           | Phase 4: Implementing        |
-| PR is ready for review                  | Phase 5: Complete            |
-| Issue is CLOSED                         | Merged (PR closed the issue) |
+| Observable State                        | Current Phase                | `lifecycle_stage` |
+| --------------------------------------- | ---------------------------- | ----------------- |
+| Issue has `erk-plan` label, no comments | Phase 1: Created             | `planned`         |
+| Issue has `submission-queued` comment   | Phase 2: Submitted           | `planned`         |
+| Issue has `workflow-started` comment    | Phase 3: Dispatched          | `implementing`    |
+| PR is draft, workflow running           | Phase 4: Implementing        | `implementing`    |
+| PR is ready for review                  | Phase 5: Complete            | `review`          |
+| Issue is CLOSED                         | Merged (PR closed the issue) | —                 |
+
+**Note:** The `lifecycle_stage` field in plan-header metadata provides a machine-readable equivalent of these observable states. See [Lifecycle Stage Tracking](#lifecycle-stage-tracking) for details.
 
 ### Plan Relevance Assessment
 
@@ -226,6 +228,7 @@ created_by: username
 last_dispatched_at: null
 last_dispatched_run_id: null
 last_local_impl_at: null
+lifecycle_stage: planned
 ```
 ````
 
@@ -873,6 +876,7 @@ created_by: username
 last_dispatched_at: 2025-01-15T11:00:00Z # null if never dispatched
 last_dispatched_run_id: "1234567890" # null if never dispatched
 last_local_impl_at: 2025-01-15T12:00:00Z # null if never implemented locally
+lifecycle_stage: planned # null if not yet tracked (see Lifecycle Stage Tracking)
 ```
 
 ### `submission-queued` Schema
@@ -1018,16 +1022,17 @@ fi
 
 Different plan fields are populated at different lifecycle stages:
 
-| Field                    | Planning | Submitted | Implementing | Landed |
-| ------------------------ | -------- | --------- | ------------ | ------ |
-| `issue_number`           | ✓        | ✓         | ✓            | ✓      |
-| `title`                  | ✓        | ✓         | ✓            | ✓      |
-| `created_at`             | ✓        | ✓         | ✓            | ✓      |
-| `created_by`             | ✓        | ✓         | ✓            | ✓      |
-| `branch_name`            | ✗        | ✓         | ✓            | ✓      |
-| `pr_number`              | ✗        | ✓         | ✓            | ✓      |
-| `last_dispatched_at`     | ✗        | ✗         | ✓            | ✓      |
-| `last_dispatched_run_id` | ✗        | ✗         | ✓            | ✓      |
+| Field                    | Planning   | Submitted  | Implementing   | Landed |
+| ------------------------ | ---------- | ---------- | -------------- | ------ |
+| `issue_number`           | ✓          | ✓          | ✓              | ✓      |
+| `title`                  | ✓          | ✓          | ✓              | ✓      |
+| `created_at`             | ✓          | ✓          | ✓              | ✓      |
+| `created_by`             | ✓          | ✓          | ✓              | ✓      |
+| `lifecycle_stage`        | `planned`  | `planned`  | `implementing` | —      |
+| `branch_name`            | ✗          | ✓          | ✓              | ✓      |
+| `pr_number`              | ✗          | ✓          | ✓              | ✓      |
+| `last_dispatched_at`     | ✗          | ✗          | ✓              | ✓      |
+| `last_dispatched_run_id` | ✗          | ✗          | ✓              | ✓      |
 
 ### Why `branch_name` is null During Planning
 
@@ -1124,6 +1129,71 @@ fi
 
 gh pr view "$PR_NUMBER"
 ```
+
+---
+
+## Lifecycle Stage Tracking
+
+The `lifecycle_stage` field in the plan-header metadata block provides machine-readable tracking of a plan's current position in the lifecycle. This field is set automatically by various commands as a plan progresses.
+
+### Stage Values
+
+| Stage          | Meaning                                      | Color (TUI) |
+| -------------- | -------------------------------------------- | ----------- |
+| `pre-plan`     | Plan issue created, planning not yet started | magenta     |
+| `planning`     | Plan is being written by an agent            | magenta     |
+| `planned`      | Plan written, ready for implementation       | dim         |
+| `implementing` | Implementation in progress                   | yellow      |
+| `review`       | Implementation complete, PR under review     | cyan        |
+
+The field is nullable — plans created before this feature have `lifecycle_stage: null`, and the TUI falls back to inferring stage from PR metadata (draft state, open/merged/closed).
+
+### Write Points
+
+Each stage is set by specific commands at well-defined moments:
+
+| Stage          | Set By                                                  | When                                       |
+| -------------- | ------------------------------------------------------- | ------------------------------------------ |
+| `pre-plan`     | `one_shot_dispatch`                                     | One-shot plan issue created                |
+| `planning`     | `one-shot.yml` workflow                                 | Agent begins writing plan                  |
+| `planned`      | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `DraftPRPlanBackend.create_plan` | Plan saved to GitHub |
+| `implementing` | `mark-impl-started`                                     | Implementation begins (local or remote)    |
+| `review`       | `handle-no-changes`                                     | Implementation complete, PR ready          |
+
+### Explicit Updates via Exec Command
+
+The `update-lifecycle-stage` exec command allows explicit stage transitions:
+
+```bash
+erk exec update-lifecycle-stage --plan-id 123 --stage implementing
+```
+
+Returns JSON on success:
+
+```json
+{"success": true, "plan_id": "123", "stage": "implementing"}
+```
+
+This command validates that the plan exists and that the stage value is one of the allowed values.
+
+### Display Computation
+
+`compute_lifecycle_display()` in `erk_shared.gateway.plan_data_provider.lifecycle` computes the display string for TUI tables:
+
+1. Reads `lifecycle_stage` from plan-header fields (preferred)
+2. Falls back to inferring from PR metadata (`is_draft` + `pr_state`) for plans without the field
+3. Returns Rich color-coded markup
+
+The fallback inference handles two additional terminal states not in the `LifecycleStageValue` type: `merged` (green) and `closed` (dim red). These are derived from PR state, not stored in plan-header.
+
+### Backend Support
+
+Both plan backends set `lifecycle_stage` on plan creation:
+
+- **`GitHubPlanBackend`**: Sets `lifecycle_stage="planned"` in `create_plan()`
+- **`DraftPRPlanBackend`**: Sets `lifecycle_stage="planned"` in `create_plan()`
+
+Both backends support `update_metadata()` for subsequent stage transitions.
 
 ---
 

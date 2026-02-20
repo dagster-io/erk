@@ -24,7 +24,7 @@ Draft PRs serve as the backing store for plans when the plan backend is `github-
 
 ### Stage 1: Plan Creation
 
-`plan_save` / `DraftPRPlanBackend.create_plan()` creates a draft PR. The body contains the plan-header metadata block, the plan content collapsed in a `<details>` tag, and a checkout footer.
+`plan_save` / `DraftPRPlanBackend.create_plan()` creates a draft PR with `lifecycle_stage: planned` in the plan-header metadata. The body contains the plan-header metadata block, the plan content collapsed in a `<details>` tag, and a checkout footer.
 
 Body format:
 
@@ -108,6 +108,12 @@ The PR footer (with checkout command) must be added AFTER `create_pr` returns, b
 ## Branch Data Files
 
 Draft PR branches contain `.erk/branch-data/plan.md` and `.erk/branch-data/ref.json`, committed before PR creation to avoid GitHub's "empty branch" rejection. `plan.md` enables inline review comments on the plan via the PR's "Files Changed" tab.
+
+## Lifecycle Stage Tracking
+
+Draft-PR plans participate in the same `lifecycle_stage` tracking as issue-based plans. The stage progresses through the same values (`planned` → `implementing` → `review`) and is stored in the plan-header metadata block within the PR body.
+
+See [Lifecycle Stage Tracking](lifecycle.md#lifecycle-stage-tracking) for the complete stage definitions and write points.
 
 ## Related Topics
 
