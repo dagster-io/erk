@@ -34,7 +34,7 @@ def create_metadata_block(
     Create a metadata block with optional schema validation.
 
     Args:
-        key: The metadata block key (appears in <code> tag)
+        key: The metadata block key (appears in summary)
         data: The structured data (will be rendered as YAML)
         schema: Optional schema to validate data against
 
@@ -58,7 +58,7 @@ def render_metadata_block(block: MetadataBlock) -> str:
     <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
     <!-- erk:metadata-block:{key} -->
     <details>
-    <summary><code>{key}</code></summary>
+    <summary>{key}</summary>
     ```yaml
     {yaml_content}
     ```
@@ -78,7 +78,7 @@ def render_metadata_block(block: MetadataBlock) -> str:
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:{block.key} -->
 <details>
-<summary><code>{block.key}</code></summary>
+<summary>{block.key}</summary>
 
 ```yaml
 
@@ -510,11 +510,13 @@ def parse_metadata_block_body(body: str) -> dict[str, Any]:
 
     Expects body format:
     <details>
-    <summary><code>key</code></summary>
+    <summary>key</summary>
     ```yaml
     content
     ```
     </details>
+
+    Also accepts legacy format with <code> tags in summary.
 
     Args:
         body: Raw body content from a metadata block
@@ -528,7 +530,7 @@ def parse_metadata_block_body(body: str) -> dict[str, Any]:
     # Phase 2 pattern: Extract YAML content from details structure
     # Accept both <details> and <details open>
     pattern = (
-        r"<details(?:\s+open)?>\s*<summary><code>[^<]+</code></summary>\s*"
+        r"<details(?:\s+open)?>\s*<summary>(?:<code>)?[^<]+(?:</code>)?</summary>\s*"
         r"```yaml\s*(.*?)\s*```\s*</details>"
     )
 

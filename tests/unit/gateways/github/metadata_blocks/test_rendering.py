@@ -22,7 +22,7 @@ def test_render_basic_block() -> None:
 
     # Verify details structure
     assert "<details>" in rendered
-    assert "<summary><code>test-key</code></summary>" in rendered
+    assert "<summary>test-key</summary>" in rendered
     assert "```yaml" in rendered
     assert "</details>" in rendered
 
