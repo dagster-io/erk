@@ -28,6 +28,11 @@ def _is_objectives_view(ctx: CommandContext) -> bool:
     return ctx.view_mode == ViewMode.OBJECTIVES
 
 
+def _is_github_backend(ctx: CommandContext) -> bool:
+    """True when the plan backend is github (not draft_pr)."""
+    return ctx.plan_backend == "github"
+
+
 # === Display Name Generators (Plan Commands) ===
 
 
@@ -311,7 +316,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="prepare",
             category=CommandCategory.COPY,
             shortcut="1",
-            is_available=lambda ctx: _is_plan_view(ctx),
+            is_available=lambda ctx: _is_plan_view(ctx) and _is_github_backend(ctx),
             get_display_name=_display_copy_prepare,
         ),
         CommandDefinition(
@@ -320,7 +325,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="implement",
             category=CommandCategory.COPY,
             shortcut="4",
-            is_available=lambda ctx: _is_plan_view(ctx),
+            is_available=lambda ctx: _is_plan_view(ctx) and _is_github_backend(ctx),
             get_display_name=_display_copy_prepare_activate,
         ),
         CommandDefinition(

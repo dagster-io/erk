@@ -27,7 +27,7 @@ def test_all_commands_have_required_fields() -> None:
 def test_open_issue_available_when_issue_url_exists() -> None:
     """open_issue should be available when issue URL exists."""
     row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "open_issue" in cmd_ids
@@ -36,7 +36,7 @@ def test_open_issue_available_when_issue_url_exists() -> None:
 def test_open_pr_available_when_pr_url_exists() -> None:
     """open_pr should be available when PR URL exists."""
     row = make_plan_row(123, "Test", pr_url="https://github.com/test/repo/pull/456")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "open_pr" in cmd_ids
@@ -45,7 +45,7 @@ def test_open_pr_available_when_pr_url_exists() -> None:
 def test_open_pr_not_available_when_no_pr() -> None:
     """open_pr should not be available when no PR URL."""
     row = make_plan_row(123, "Test")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "open_pr" not in cmd_ids
@@ -54,7 +54,7 @@ def test_open_pr_not_available_when_no_pr() -> None:
 def test_open_run_available_when_run_url_exists() -> None:
     """open_run should be available when run URL exists."""
     row = make_plan_row(123, "Test", run_url="https://github.com/test/repo/actions/runs/789")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "open_run" in cmd_ids
@@ -63,7 +63,7 @@ def test_open_run_available_when_run_url_exists() -> None:
 def test_open_run_not_available_when_no_run() -> None:
     """open_run should not be available when no run URL."""
     row = make_plan_row(123, "Test")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "open_run" not in cmd_ids
@@ -72,7 +72,7 @@ def test_open_run_not_available_when_no_run() -> None:
 def test_copy_checkout_available_when_worktree_branch_exists() -> None:
     """copy_checkout should be available when worktree_branch exists."""
     row = make_plan_row(123, "Test", worktree_branch="feature-123")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_checkout" in cmd_ids
@@ -81,7 +81,7 @@ def test_copy_checkout_available_when_worktree_branch_exists() -> None:
 def test_copy_checkout_not_available_when_worktree_branch_none() -> None:
     """copy_checkout should not be available when worktree_branch is None."""
     row = make_plan_row(123, "Test")  # worktree_branch defaults to None
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_checkout" not in cmd_ids
@@ -90,7 +90,7 @@ def test_copy_checkout_not_available_when_worktree_branch_none() -> None:
 def test_copy_pr_checkout_available_when_pr_exists() -> None:
     """copy_pr_checkout should be available when PR number exists."""
     row = make_plan_row(123, "Test", pr_number=456)
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_pr_checkout" in cmd_ids
@@ -99,16 +99,16 @@ def test_copy_pr_checkout_available_when_pr_exists() -> None:
 def test_copy_pr_checkout_not_available_when_no_pr() -> None:
     """copy_pr_checkout should not be available when no PR number."""
     row = make_plan_row(123, "Test")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_pr_checkout" not in cmd_ids
 
 
-def test_prepare_commands_always_available() -> None:
-    """Prepare commands should always be available in plans view."""
+def test_prepare_commands_available_in_github_mode() -> None:
+    """Prepare commands should be available in plans view with github backend."""
     row = make_plan_row(123, "Test")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_prepare" in cmd_ids
@@ -118,7 +118,7 @@ def test_prepare_commands_always_available() -> None:
 def test_close_plan_always_available() -> None:
     """close_plan should always be available in plans view."""
     row = make_plan_row(123, "Test")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "close_plan" in cmd_ids
@@ -141,7 +141,7 @@ def test_land_pr_available_when_all_conditions_met() -> None:
         exists_locally=True,
         run_url="https://github.com/test/repo/actions/runs/789",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "land_pr" in cmd_ids
@@ -150,7 +150,7 @@ def test_land_pr_available_when_all_conditions_met() -> None:
 def test_land_pr_not_available_when_no_pr() -> None:
     """land_pr should not be available when no PR."""
     row = make_plan_row(123, "Test", run_url="https://github.com/test/repo/actions/runs/789")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "land_pr" not in cmd_ids
@@ -166,7 +166,7 @@ def test_land_pr_not_available_when_pr_merged() -> None:
         exists_locally=False,
         run_url="https://github.com/test/repo/actions/runs/789",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "land_pr" not in cmd_ids
@@ -182,7 +182,7 @@ def test_land_pr_available_when_exists_locally() -> None:
         exists_locally=True,
         run_url="https://github.com/test/repo/actions/runs/789",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "land_pr" in cmd_ids
@@ -197,7 +197,7 @@ def test_land_pr_not_available_when_no_run() -> None:
         pr_state="OPEN",
         exists_locally=False,
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "land_pr" not in cmd_ids
@@ -206,7 +206,7 @@ def test_land_pr_not_available_when_no_run() -> None:
 def test_fix_conflicts_remote_available_when_pr_exists() -> None:
     """fix_conflicts_remote should be available when PR number exists."""
     row = make_plan_row(123, "Test", pr_number=456)
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "fix_conflicts_remote" in cmd_ids
@@ -215,7 +215,7 @@ def test_fix_conflicts_remote_available_when_pr_exists() -> None:
 def test_fix_conflicts_remote_not_available_when_no_pr() -> None:
     """fix_conflicts_remote should not be available when no PR number."""
     row = make_plan_row(123, "Test")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "fix_conflicts_remote" not in cmd_ids
@@ -224,7 +224,7 @@ def test_fix_conflicts_remote_not_available_when_no_pr() -> None:
 def test_copy_replan_available_when_issue_url_exists() -> None:
     """copy_replan should be available when issue URL exists."""
     row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_replan" in cmd_ids
@@ -236,7 +236,7 @@ def test_copy_replan_available_when_issue_url_exists() -> None:
 def test_display_name_close_plan_shows_cli_command() -> None:
     """close_plan should show the CLI command with issue number."""
     row = make_plan_row(5831, "Test Plan")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "close_plan")
     assert get_display_name(cmd, ctx) == "erk plan close 5831"
 
@@ -244,7 +244,7 @@ def test_display_name_close_plan_shows_cli_command() -> None:
 def test_display_name_submit_to_queue_shows_cli_command() -> None:
     """submit_to_queue should show the CLI command with issue number."""
     row = make_plan_row(5831, "Test Plan")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "submit_to_queue")
     assert get_display_name(cmd, ctx) == "erk plan submit 5831"
 
@@ -252,7 +252,7 @@ def test_display_name_submit_to_queue_shows_cli_command() -> None:
 def test_display_name_land_pr_shows_cli_command() -> None:
     """land_pr should show the CLI command with PR number."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "land_pr")
     assert get_display_name(cmd, ctx) == "erk land 456"
 
@@ -260,7 +260,7 @@ def test_display_name_land_pr_shows_cli_command() -> None:
 def test_display_name_fix_conflicts_remote_shows_cli_command() -> None:
     """fix_conflicts_remote should show the launch command with PR number."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "fix_conflicts_remote")
     assert get_display_name(cmd, ctx) == "erk launch pr-fix-conflicts --pr 456"
 
@@ -272,7 +272,7 @@ def test_display_name_open_issue_shows_bare_url() -> None:
         "Test Plan",
         plan_url="https://github.com/test/repo/issues/5831",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "open_issue")
     assert get_display_name(cmd, ctx) == "https://github.com/test/repo/issues/5831"
 
@@ -284,7 +284,7 @@ def test_display_name_open_pr_shows_bare_url() -> None:
         "Test Plan",
         pr_url="https://github.com/test/repo/pull/456",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "open_pr")
     assert get_display_name(cmd, ctx) == "https://github.com/test/repo/pull/456"
 
@@ -296,7 +296,7 @@ def test_display_name_open_run_shows_bare_url() -> None:
         "Test Plan",
         run_url="https://github.com/test/repo/actions/runs/789",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "open_run")
     assert get_display_name(cmd, ctx) == "https://github.com/test/repo/actions/runs/789"
 
@@ -304,7 +304,7 @@ def test_display_name_open_run_shows_bare_url() -> None:
 def test_display_name_copy_checkout_shows_branch() -> None:
     """copy_checkout should show the worktree branch."""
     row = make_plan_row(5831, "Test Plan", worktree_branch="feature-5831")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_checkout")
     assert get_display_name(cmd, ctx) == "erk br co feature-5831"
 
@@ -312,7 +312,7 @@ def test_display_name_copy_checkout_shows_branch() -> None:
 def test_display_name_copy_checkout_falls_back_to_pr() -> None:
     """copy_checkout should fall back to PR number if no worktree branch."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_checkout")
     assert get_display_name(cmd, ctx) == "erk pr co 456"
 
@@ -320,7 +320,7 @@ def test_display_name_copy_checkout_falls_back_to_pr() -> None:
 def test_display_name_copy_pr_checkout_shows_pr() -> None:
     """copy_pr_checkout should show the PR number in the full command."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout")
     expected = 'source "$(erk pr checkout 456 --script)" && erk pr sync --dangerous'
     assert get_display_name(cmd, ctx) == expected
@@ -329,7 +329,7 @@ def test_display_name_copy_pr_checkout_shows_pr() -> None:
 def test_display_name_copy_prepare_shows_issue() -> None:
     """copy_prepare should show the issue number."""
     row = make_plan_row(5831, "Test Plan")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_prepare")
     assert get_display_name(cmd, ctx) == "erk prepare 5831"
 
@@ -337,7 +337,7 @@ def test_display_name_copy_prepare_shows_issue() -> None:
 def test_display_name_copy_prepare_activate_shows_full_command() -> None:
     """copy_prepare_activate should show the full source && implement command."""
     row = make_plan_row(5831, "Test Plan")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_prepare_activate")
     expected = 'source "$(erk prepare 5831 --script)" && erk implement --dangerous'
     assert get_display_name(cmd, ctx) == expected
@@ -346,7 +346,7 @@ def test_display_name_copy_prepare_activate_shows_full_command() -> None:
 def test_display_name_copy_submit_shows_issue() -> None:
     """copy_submit should show the issue number."""
     row = make_plan_row(5831, "Test Plan")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_submit")
     assert get_display_name(cmd, ctx) == "erk plan submit 5831"
 
@@ -354,7 +354,7 @@ def test_display_name_copy_submit_shows_issue() -> None:
 def test_display_name_copy_replan_shows_issue() -> None:
     """copy_replan should show the issue number."""
     row = make_plan_row(5831, "Test Plan")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_replan")
     assert get_display_name(cmd, ctx) == "erk plan replan 5831"
 
@@ -426,7 +426,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         worktree_branch="feature-123",
         run_url="https://github.com/test/repo/actions/runs/789",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
 
@@ -454,7 +454,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
 def test_objective_commands_hidden_in_plans_view() -> None:
     """Objective commands should not appear in Plans view."""
     row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
 
@@ -474,7 +474,7 @@ def test_objective_commands_hidden_in_plans_view() -> None:
 def test_objective_commands_appear_in_objectives_view() -> None:
     """All 7 objective commands should appear in Objectives view."""
     row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
 
@@ -494,7 +494,7 @@ def test_objective_commands_appear_in_objectives_view() -> None:
 def test_plan_commands_available_in_learn_view() -> None:
     """Plan commands should still appear in Learn view (not objectives)."""
     row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
-    ctx = CommandContext(row=row, view_mode=ViewMode.LEARN)
+    ctx = CommandContext(row=row, view_mode=ViewMode.LEARN, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "close_plan" in cmd_ids
@@ -507,7 +507,7 @@ def test_plan_commands_available_in_learn_view() -> None:
 def test_display_name_one_shot_plan() -> None:
     """one_shot_plan should show the objective command with --one-shot."""
     row = make_plan_row(7100, "Test Objective")
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "one_shot_plan")
     assert get_display_name(cmd, ctx) == "erk objective plan 7100 --one-shot"
 
@@ -515,7 +515,7 @@ def test_display_name_one_shot_plan() -> None:
 def test_display_name_check_objective() -> None:
     """check_objective should show the check command."""
     row = make_plan_row(7100, "Test Objective")
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "check_objective")
     assert get_display_name(cmd, ctx) == "erk objective check 7100"
 
@@ -523,7 +523,7 @@ def test_display_name_check_objective() -> None:
 def test_display_name_close_objective() -> None:
     """close_objective should show the close command with --force."""
     row = make_plan_row(7100, "Test Objective")
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "close_objective")
     assert get_display_name(cmd, ctx) == "erk objective close 7100 --force"
 
@@ -535,7 +535,7 @@ def test_display_name_open_objective() -> None:
         "Test Objective",
         plan_url="https://github.com/test/repo/issues/7100",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "open_objective")
     assert get_display_name(cmd, ctx) == "https://github.com/test/repo/issues/7100"
 
@@ -543,7 +543,7 @@ def test_display_name_open_objective() -> None:
 def test_display_name_copy_plan() -> None:
     """copy_plan should show the plan command."""
     row = make_plan_row(7100, "Test Objective")
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_plan")
     assert get_display_name(cmd, ctx) == "erk objective plan 7100"
 
@@ -551,7 +551,7 @@ def test_display_name_copy_plan() -> None:
 def test_display_name_codespace_run_plan() -> None:
     """codespace_run_plan should show the codespace run command."""
     row = make_plan_row(7100, "Test Objective")
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "codespace_run_plan")
     assert get_display_name(cmd, ctx) == "erk codespace run objective plan 7100"
 
@@ -559,7 +559,7 @@ def test_display_name_codespace_run_plan() -> None:
 def test_codespace_run_plan_available_in_objectives_view() -> None:
     """codespace_run_plan should be available in Objectives view."""
     row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "codespace_run_plan" in cmd_ids
@@ -568,7 +568,7 @@ def test_codespace_run_plan_available_in_objectives_view() -> None:
 def test_codespace_run_plan_not_available_in_plans_view() -> None:
     """codespace_run_plan should not be available in Plans view."""
     row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "codespace_run_plan" not in cmd_ids
@@ -577,7 +577,7 @@ def test_codespace_run_plan_not_available_in_plans_view() -> None:
 def test_display_name_copy_view() -> None:
     """copy_view should show the view command."""
     row = make_plan_row(7100, "Test Objective")
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_view")
     assert get_display_name(cmd, ctx) == "erk objective view 7100"
 
@@ -590,7 +590,7 @@ def test_shortcuts_no_conflicts_within_view() -> None:
 
     Plan commands and objective commands can reuse shortcuts (e.g., "i", "s", "1")
     because they are mutually exclusive (filtered by view mode). But within a single
-    view, shortcuts must be unique.
+    view, shortcuts must be unique. Check both github and draft_pr backends.
     """
     row = make_plan_row(
         123,
@@ -603,10 +603,60 @@ def test_shortcuts_no_conflicts_within_view() -> None:
         run_url="https://github.com/test/repo/actions/runs/789",
     )
 
-    for view_mode in (ViewMode.PLANS, ViewMode.OBJECTIVES):
-        ctx = CommandContext(row=row, view_mode=view_mode)
-        commands = get_available_commands(ctx)
-        shortcuts = [cmd.shortcut for cmd in commands if cmd.shortcut is not None]
-        assert len(shortcuts) == len(set(shortcuts)), (
-            f"Duplicate shortcuts in {view_mode.name} view: {shortcuts}"
-        )
+    for plan_backend in ("github", "draft_pr"):
+        for view_mode in (ViewMode.PLANS, ViewMode.OBJECTIVES):
+            ctx = CommandContext(row=row, view_mode=view_mode, plan_backend=plan_backend)
+            commands = get_available_commands(ctx)
+            shortcuts = [cmd.shortcut for cmd in commands if cmd.shortcut is not None]
+            assert len(shortcuts) == len(set(shortcuts)), (
+                f"Duplicate shortcuts in {view_mode.name} view"
+                f" (backend={plan_backend}): {shortcuts}"
+            )
+
+
+# === Draft PR Backend Tests ===
+
+
+def test_prepare_commands_hidden_in_draft_pr_mode() -> None:
+    """Prepare commands should be hidden when plan backend is draft_pr."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="draft_pr")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_prepare" not in cmd_ids
+    assert "copy_prepare_activate" not in cmd_ids
+
+
+def test_commands_available_in_draft_pr_mode() -> None:
+    """Non-prepare plan commands should remain available in draft_pr mode."""
+    row = make_plan_row(
+        123,
+        "Test",
+        plan_url="https://github.com/test/repo/pull/123",
+        pr_number=456,
+        pr_url="https://github.com/test/repo/pull/456",
+        pr_state="OPEN",
+        worktree_branch="feature-123",
+        run_url="https://github.com/test/repo/actions/runs/789",
+    )
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="draft_pr")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+
+    # These should all still be available
+    expected_available = [
+        "close_plan",
+        "submit_to_queue",
+        "fix_conflicts_remote",
+        "address_remote",
+        "land_pr",
+        "open_issue",
+        "open_pr",
+        "open_run",
+        "copy_checkout",
+        "copy_pr_checkout",
+        "copy_submit",
+        "copy_replan",
+    ]
+    for cmd_id in expected_available:
+        assert cmd_id in cmd_ids, f"Command {cmd_id} should be available in draft_pr mode"

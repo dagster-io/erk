@@ -91,7 +91,11 @@ class MainListCommandProvider(Provider):
         row = self._app._get_selected_row()
         if row is None:
             return None
-        return CommandContext(row=row, view_mode=self._app._view_mode)
+        return CommandContext(
+            row=row,
+            view_mode=self._app._view_mode,
+            plan_backend=self._app._plan_backend,
+        )
 
     async def discover(self) -> Hits:
         """Show available commands when palette opens.
@@ -154,6 +158,24 @@ class PlanCommandProvider(Provider):
     """
 
     @property
+    def _app(self) -> ErkDashApp:
+        """Get the ErkDashApp instance.
+
+        Returns:
+            The ErkDashApp instance
+
+        Raises:
+            AssertionError: If app is not ErkDashApp
+        """
+        from erk.tui.app import ErkDashApp
+
+        app = self.app
+        if not isinstance(app, ErkDashApp):
+            msg = f"PlanCommandProvider expected ErkDashApp, got {type(app)}"
+            raise AssertionError(msg)
+        return app
+
+    @property
     def _detail_screen(self) -> PlanDetailScreen:
         """Get the PlanDetailScreen from current screen context.
 
@@ -178,7 +200,11 @@ class PlanCommandProvider(Provider):
             CommandContext with the selected plan's row data.
             Always uses PLANS view mode since detail modal is plan context.
         """
-        return CommandContext(row=self._detail_screen._row, view_mode=ViewMode.PLANS)
+        return CommandContext(
+            row=self._detail_screen._row,
+            view_mode=ViewMode.PLANS,
+            plan_backend=self._app._plan_backend,
+        )
 
     async def discover(self) -> Hits:
         """Show available commands when palette opens.
