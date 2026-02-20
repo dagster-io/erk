@@ -89,7 +89,6 @@ def test_infer_review_from_non_draft_open_pr() -> None:
     assert compute_lifecycle_display(plan) == "[cyan]implemented[/cyan]"
 
 
-
 def test_infer_merged_from_merged_pr() -> None:
     """Non-draft + MERGED PR infers merged stage."""
     plan = _make_plan(metadata={"is_draft": False, "pr_state": "MERGED"})

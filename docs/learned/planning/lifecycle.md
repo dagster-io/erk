@@ -1022,17 +1022,17 @@ fi
 
 Different plan fields are populated at different lifecycle stages:
 
-| Field                    | Planning   | Submitted  | Implementing   | Landed |
-| ------------------------ | ---------- | ---------- | -------------- | ------ |
-| `issue_number`           | ✓          | ✓          | ✓              | ✓      |
-| `title`                  | ✓          | ✓          | ✓              | ✓      |
-| `created_at`             | ✓          | ✓          | ✓              | ✓      |
-| `created_by`             | ✓          | ✓          | ✓              | ✓      |
-| `lifecycle_stage`        | `planned`  | `planned`  | `implementing` | —      |
-| `branch_name`            | ✗          | ✓          | ✓              | ✓      |
-| `pr_number`              | ✗          | ✓          | ✓              | ✓      |
-| `last_dispatched_at`     | ✗          | ✗          | ✓              | ✓      |
-| `last_dispatched_run_id` | ✗          | ✗          | ✓              | ✓      |
+| Field                    | Planning  | Submitted | Implementing   | Landed |
+| ------------------------ | --------- | --------- | -------------- | ------ |
+| `issue_number`           | ✓         | ✓         | ✓              | ✓      |
+| `title`                  | ✓         | ✓         | ✓              | ✓      |
+| `created_at`             | ✓         | ✓         | ✓              | ✓      |
+| `created_by`             | ✓         | ✓         | ✓              | ✓      |
+| `lifecycle_stage`        | `planned` | `planned` | `implementing` | —      |
+| `branch_name`            | ✗         | ✓         | ✓              | ✓      |
+| `pr_number`              | ✗         | ✓         | ✓              | ✓      |
+| `last_dispatched_at`     | ✗         | ✗         | ✓              | ✓      |
+| `last_dispatched_run_id` | ✗         | ✗         | ✓              | ✓      |
 
 ### Why `branch_name` is null During Planning
 
@@ -1138,13 +1138,13 @@ The `lifecycle_stage` field in the plan-header metadata block provides machine-r
 
 ### Stage Values
 
-| Stage           | Meaning                                                    | Color (TUI) |
-| --------------- | ---------------------------------------------------------- | ----------- |
-| `prompted`      | Plan issue created, planning not yet started               | magenta     |
-| `planning`      | Plan is being written by an agent                          | magenta     |
-| `planned`       | Plan written, ready for implementation                     | dim         |
-| `implementing`  | Implementation in progress                                 | yellow      |
-| `implemented`   | Implementation complete, PR ready for review               | cyan        |
+| Stage          | Meaning                                      | Color (TUI) |
+| -------------- | -------------------------------------------- | ----------- |
+| `prompted`     | Plan issue created, planning not yet started | magenta     |
+| `planning`     | Plan is being written by an agent            | magenta     |
+| `planned`      | Plan written, ready for implementation       | dim         |
+| `implementing` | Implementation in progress                   | yellow      |
+| `implemented`  | Implementation complete, PR ready for review | cyan        |
 
 The field is nullable — plans created before this feature have `lifecycle_stage: null`, and the TUI falls back to inferring stage from PR metadata (draft state, open/merged/closed), displaying `implemented` (cyan) for non-draft open PRs.
 
@@ -1152,13 +1152,13 @@ The field is nullable — plans created before this feature have `lifecycle_stag
 
 Each stage is set by specific commands at well-defined moments:
 
-| Stage           | Set By                                                  | When                                       |
-| --------------- | ------------------------------------------------------- | ------------------------------------------ |
-| `prompted`      | `one_shot_dispatch`                                     | One-shot plan issue created                |
-| `planning`      | `one-shot.yml` workflow                                 | Agent begins writing plan                  |
-| `planned`       | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `DraftPRPlanBackend.create_plan` | Plan saved to GitHub |
-| `implementing`  | `mark-impl-started`                                     | Implementation begins (local or remote)    |
-| `implemented`   | `handle-no-changes`                                     | Implementation complete, PR ready          |
+| Stage          | Set By                                                                                                                           | When                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `prompted`     | `one_shot_dispatch`                                                                                                              | One-shot plan issue created             |
+| `planning`     | `one-shot.yml` workflow                                                                                                          | Agent begins writing plan               |
+| `planned`      | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `DraftPRPlanBackend.create_plan` | Plan saved to GitHub                    |
+| `implementing` | `mark-impl-started`                                                                                                              | Implementation begins (local or remote) |
+| `implemented`  | `handle-no-changes`                                                                                                              | Implementation complete, PR ready       |
 
 ### Explicit Updates via Exec Command
 
@@ -1171,7 +1171,7 @@ erk exec update-lifecycle-stage --plan-id 123 --stage implementing
 Returns JSON on success:
 
 ```json
-{"success": true, "plan_id": "123", "stage": "implementing"}
+{ "success": true, "plan_id": "123", "stage": "implementing" }
 ```
 
 This command validates that the plan exists and that the stage value is one of the allowed values.
