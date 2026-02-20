@@ -14,12 +14,14 @@ The fix is to remove the premature `shutil.rmtree` so Step 2d can find the direc
 **File**: `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`
 
 Remove lines 203-204:
+
 ```python
 # Clean up - this directory shouldn't persist into implementation
 shutil.rmtree(impl_context_dir)
 ```
 
 Replace with a comment:
+
 ```python
 # Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push
 ```
