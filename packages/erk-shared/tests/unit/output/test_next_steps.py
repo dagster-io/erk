@@ -1,4 +1,5 @@
 """Tests for next_steps formatting."""
+
 from erk_shared.output.next_steps import DraftPRNextSteps, format_draft_pr_next_steps_plain
 
 

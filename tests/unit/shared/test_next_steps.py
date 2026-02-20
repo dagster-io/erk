@@ -29,19 +29,13 @@ class TestDraftPRNextSteps:
 
 class TestFormatDraftPRNextStepsPlain:
     def test_contains_branch_name_in_checkout_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(
-            42, branch_name="plan-my-feature-02-20"
-        )
+        output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
         assert "erk br co plan-my-feature-02-20" in output
 
     def test_contains_pr_number_in_view_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(
-            42, branch_name="plan-my-feature-02-20"
-        )
+        output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
         assert "gh pr view 42 --web" in output
 
     def test_does_not_contain_pr_number_in_checkout_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(
-            42, branch_name="plan-my-feature-02-20"
-        )
+        output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
         assert "erk br co 42" not in output
