@@ -196,6 +196,7 @@ def create_plan_issue(
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=learned_from_issue,
+        lifecycle_stage=None,
     )
 
     # Create issue

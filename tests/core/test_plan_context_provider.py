@@ -120,6 +120,7 @@ def test_get_plan_context_falls_back_to_body_for_missing_comment(tmp_path: Path)
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
     issue = _make_issue_info(number=123, title="Plan: Fix bug", body=body)
     provider = _make_provider(FakeGitHubIssues(issues={123: issue}))
@@ -172,6 +173,7 @@ Fix the session token expiration logic."""
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
     issue = _make_issue_info(number=123, title="Plan: Fix Authentication Bug", body=body)
 
@@ -231,6 +233,7 @@ def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
     plan_issue = _make_issue_info(number=123, title="Plan: Implement Feature", body=plan_body)
 
@@ -294,6 +297,7 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
     plan_issue = _make_issue_info(number=123, title="Plan: Implement Feature", body=plan_body)
 
@@ -351,6 +355,7 @@ def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
         learn_plan_issue=None,
         learn_plan_pr=None,
         learned_from_issue=None,
+        lifecycle_stage=None,
     )
     issue = _make_issue_info(number=456, title="Plan: Fix Bug", body=plan_body)
     comment = IssueComment(

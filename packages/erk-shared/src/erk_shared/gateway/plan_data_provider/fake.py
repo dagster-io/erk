@@ -270,6 +270,7 @@ def make_plan_row(
     created_at: datetime | None = None,
     author: str = "test-user",
     is_learn_plan: bool = False,
+    lifecycle_display: str = "-",
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -414,4 +415,5 @@ def make_plan_row(
         created_display=created_display,
         author=author,
         is_learn_plan=is_learn_plan,
+        lifecycle_display=lifecycle_display,
     )

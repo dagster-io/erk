@@ -62,6 +62,7 @@ class PlanRowData:
         created_at: Creation datetime of the issue
         created_display: Formatted relative time string (e.g., "2d ago")
         author: GitHub login of the issue creator
+        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-")
     """
 
     plan_id: int
@@ -113,6 +114,7 @@ class PlanRowData:
     created_display: str
     author: str
     is_learn_plan: bool
+    lifecycle_display: str
 
 
 @dataclass(frozen=True)

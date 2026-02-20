@@ -324,6 +324,7 @@ class DraftPRPlanBackend(PlanBackend):
             learn_plan_issue=None,
             learn_plan_pr=None,
             learned_from_issue=None,
+            lifecycle_stage="planned",
         )
 
         pr_body = build_plan_stage_body(metadata_body, content)

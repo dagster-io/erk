@@ -42,6 +42,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     LEARN_PLAN_PR,
     LEARN_RUN_ID,
     LEARN_STATUS,
+    LIFECYCLE_STAGE,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
     REVIEW_PR,
@@ -699,6 +700,9 @@ class RealPlanDataProvider(PlanDataProvider):
         # Determine if this is a learn plan
         is_learn_plan = "erk-learn" in plan.labels
 
+        # Compute lifecycle display from header or infer from metadata
+        lifecycle_display = _compute_lifecycle_display(plan)
+
         return PlanRowData(
             plan_id=plan_id,
             plan_url=plan.url,
@@ -749,6 +753,7 @@ class RealPlanDataProvider(PlanDataProvider):
             created_display=created_display,
             author=str(plan.metadata.get("author", "")),
             is_learn_plan=is_learn_plan,
+            lifecycle_display=lifecycle_display,
         )
 
 
@@ -836,6 +841,55 @@ def _format_learn_display_icon(
         return f"✓ #{learn_plan_pr}"
     # Fallback for unknown status
     return "-"
+
+
+def _compute_lifecycle_display(plan: Plan) -> str:
+    """Compute lifecycle stage display string for a plan.
+
+    Reads lifecycle_stage from plan header fields if present, otherwise
+    infers from is_draft and pr_state in plan metadata. Returns a
+    color-coded Rich markup string for table display.
+
+    Args:
+        plan: Plan with header_fields and metadata populated
+
+    Returns:
+        Display string (may contain Rich markup for color)
+    """
+    # Read from header fields first
+    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+    # Fall back to inferring from PR metadata
+    if stage is None and plan.metadata:
+        is_draft = plan.metadata.get("is_draft")
+        pr_state = plan.metadata.get("pr_state")
+        if isinstance(is_draft, bool) and isinstance(pr_state, str):
+            if is_draft and pr_state == "OPEN":
+                stage = "planned"
+            elif not is_draft and pr_state == "OPEN":
+                stage = "review"
+            elif not is_draft and pr_state == "MERGED":
+                stage = "merged"
+            elif not is_draft and pr_state == "CLOSED":
+                stage = "closed"
+
+    if stage is None:
+        return "-"
+
+    # Color-code by stage
+    if stage in ("pre-plan", "planning"):
+        return f"[magenta]{stage}[/magenta]"
+    if stage == "planned":
+        return f"[dim]{stage}[/dim]"
+    if stage == "implementing":
+        return f"[yellow]{stage}[/yellow]"
+    if stage == "review":
+        return f"[cyan]{stage}[/cyan]"
+    if stage == "merged":
+        return f"[green]{stage}[/green]"
+    if stage == "closed":
+        return f"[dim red]{stage}[/dim red]"
+    return stage
 
 
 def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -> None:

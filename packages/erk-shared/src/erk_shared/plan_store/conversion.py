@@ -98,7 +98,14 @@ def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
         assignees=[],
         created_at=pr.created_at,
         updated_at=pr.updated_at,
-        metadata={"number": pr.number, "owner": pr.owner, "repo": pr.repo, "author": pr.author},
+        metadata={
+            "number": pr.number,
+            "owner": pr.owner,
+            "repo": pr.repo,
+            "author": pr.author,
+            "is_draft": pr.is_draft,
+            "pr_state": pr.state,
+        },
         objective_id=objective_id,
         header_fields=header_fields,
     )

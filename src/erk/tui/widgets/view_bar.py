@@ -25,14 +25,16 @@ class ViewBar(Static):
     }
     """
 
-    def __init__(self, *, active_view: ViewMode) -> None:
+    def __init__(self, *, active_view: ViewMode, plans_display_name: str) -> None:
         """Initialize the view bar.
 
         Args:
             active_view: The currently active view mode
+            plans_display_name: Display label for the Plans view (e.g., "Plans" or "Planned PRs")
         """
         super().__init__()
         self._active_view = active_view
+        self._plans_display_name = plans_display_name
 
     def on_mount(self) -> None:
         """Render the view bar on mount."""
@@ -53,7 +55,11 @@ class ViewBar(Static):
         for i, config in enumerate(VIEW_CONFIGS):
             if i > 0:
                 text.append("  ")
-            label = f"{config.key_hint}:{config.display_name}"
+            if config.mode == ViewMode.PLANS:
+                display_name = self._plans_display_name
+            else:
+                display_name = config.display_name
+            label = f"{config.key_hint}:{display_name}"
             if config.mode == self._active_view:
                 text.append(label, style="bold white")
             else:
