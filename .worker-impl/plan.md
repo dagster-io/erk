@@ -1,3 +1,40 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary>plan-header</summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-20T11:28:53.238049+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22232275996'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFLSWcHA
+last_dispatched_at: '2026-02-20T16:32:33.136025+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-rename-instruction-to-prom-02-20-1128
+created_from_session: f9a306c6-050b-453e-8c81-68086b65fd4a
+lifecycle_stage: planned
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+
+---
+
+<details>
+<summary>original-plan</summary>
+
 # Rename "instruction" to "prompt" throughout one-shot feature
 
 ## Context
@@ -90,3 +127,14 @@ Order: Python source first (to establish the new API), then workflow, then skill
 1. `make fast-ci` — all unit tests pass (test assertions updated to match new strings)
 2. `ruff check` / `ty` — no lint or type errors from the rename
 3. Grep for any remaining "instruction" in one-shot context files to confirm completeness
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7659 --script)" && erk pr sync --dangerous
+```
