@@ -1,3 +1,38 @@
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-20T05:32:02.126448+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: '22220842439'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFLHclxw
+last_dispatched_at: '2026-02-20T10:39:01.003810+00:00'
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plan-plan-support-draft-pr-mode-02-20-0531
+created_from_session: 4d94fd6e-e691-409e-bae1-3771fd697459
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+---
+
+<details>
+<summary><code>original-plan</code></summary>
+
 # Plan: Support Draft PR Mode in Replan
 
 ## Context
@@ -133,3 +168,14 @@ Update terminology: "issue" -> "plan" where referring to the generic concept (ke
    ```
    make fast-ci
    ```
+
+
+</details>
+---
+
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+source "$(erk pr checkout 7648 --script)" && erk pr sync --dangerous
+```
