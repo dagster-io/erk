@@ -660,6 +660,12 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
         body=BodyText(content=final_body),
     )
 
+    # Mark draft PR as ready for review
+    current_pr = ctx.github.get_pr(state.repo_root, state.pr_number)
+    if not isinstance(current_pr, PRNotFound) and current_pr.is_draft:
+        ctx.github.mark_pr_ready(state.repo_root, state.pr_number)
+        click.echo(f"Marked PR #{state.pr_number} as ready for review.")
+
     # Add learn skip label if applicable
     if is_learn_origin:
         ctx.github.add_label_to_pr(state.repo_root, state.pr_number, ERK_SKIP_LEARN_LABEL)
