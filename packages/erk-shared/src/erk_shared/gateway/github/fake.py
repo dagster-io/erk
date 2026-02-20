@@ -785,12 +785,12 @@ class FakeGitHub(GitHub):
     @property
     def marked_pr_ready(self) -> list[int]:
         """Read-only access to tracked PR ready transitions for test assertions."""
-        return self._marked_pr_ready
+        return list(self._marked_pr_ready)
 
     @property
     def marked_ready_prs(self) -> list[int]:
         """Alias for marked_pr_ready (backwards compatibility with existing tests)."""
-        return self._marked_pr_ready
+        return list(self._marked_pr_ready)
 
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get the diff for a PR from configured state or return default.
