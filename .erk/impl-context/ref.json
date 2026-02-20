@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix .erk/impl-context/ not being cleaned from git during local implementation"
-}
