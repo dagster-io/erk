@@ -22,6 +22,8 @@ Rules triggered by matching actions in code.
 
 **adding a field to PlanRowData without updating make_plan_row** → Read [TUI Data Contract](data-contract.md) first. The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break.
 
+**adding a new TUI command that should only show in certain plan backends** → Read [Backend-Aware TUI Commands](backend-aware-commands.md) first. Commands have THREE filter dimensions: view mode, data availability, AND plan backend. If the command is backend-specific, add \_is_github_backend() or a similar predicate to is_available. See backend-aware-commands.md.
+
 **adding a new TUI command without updating all 3 places** → Read [TUI Command Registration](tui-command-registration.md) first. TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md.
 
 **adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.

@@ -72,6 +72,16 @@ Remote commands dispatch GitHub Actions workflows instead of executing locally. 
 | Output        | Command output         | Dispatch confirmation + workflow URL |
 | State changes | May modify local files | No local modifications               |
 
+## Provider Context: `plan_backend` Field
+
+`CommandContext` has three fields: `row`, `view_mode`, and `plan_backend`. The `plan_backend` field enables backend-specific command filtering.
+
+**Wiring in `MainListCommandProvider`**: Reads the active backend type from the app context and passes it to `CommandContext`. Commands filtered by `_is_github_backend(ctx)` use this field.
+
+**Wiring in `PlanCommandProvider`**: Also passes `plan_backend` through. Since the detail modal can be opened from either backend, backend-aware commands need the field here too.
+
+For backend-specific command filtering, see [Backend-Aware Commands](backend-aware-commands.md).
+
 ## Key Files
 
 | File                                        | Purpose                                                  |

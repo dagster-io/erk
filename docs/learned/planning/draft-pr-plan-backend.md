@@ -72,6 +72,26 @@ See `close_review_pr()` in `src/erk/cli/commands/land_pipeline.py` — skips cle
 
 The backend uses explicit `isinstance()` checks and conditional type conversion for metadata fields, following LBYL discipline rather than `cast()`.
 
+## Title Prefixing Behavior
+
+Draft PR titles (and issue-based plan titles) are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`:
+
+```python
+def get_title_tag_from_labels(labels: list[str]) -> str:
+    return "[erk-learn]" if "erk-learn" in labels else "[erk-plan]"
+```
+
+The prefix is prepended to the plan title during PR creation (e.g., `[erk-plan] My Feature`). For erk-learn plans, the prefix becomes `[erk-learn]` to distinguish documentation/learning plans from implementation plans in the PR list.
+
+## GraphQL Refactor: `list_plan_prs_with_details()`
+
+The plan data provider fetches PRs via a single GraphQL query (`list_plan_prs_with_details()`) instead of N+1 REST calls. This function lives in `packages/erk-shared/src/erk_shared/gateway/github/real.py:1588` and returns:
+
+- `list[PRDetails]` — for plan content extraction
+- `dict[int, list[PullRequestInfo]]` — for display metadata (checks, review threads, merge status)
+
+The single query uses `GET_PLAN_PRS_WITH_DETAILS_QUERY` from `graphql_queries.py` and fetches review decision, conflict status, and CI checks in one round-trip, replacing the previous approach of fetching each PR individually.
+
 ## Related Topics
 
 - [Branch Plan Resolution](branch-plan-resolution.md) - How branches resolve to plans

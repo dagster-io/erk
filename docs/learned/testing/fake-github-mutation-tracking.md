@@ -37,6 +37,7 @@ Every tracking list uses a typed tuple with a specific field order. The conventi
 | `_pr_comments`             | `(pr_number, body)`                               | `(42, "comment")`                                |
 | `_pr_comment_updates`      | `(comment_id, body)`                              | `(100, "updated")`                               |
 | `_created_commit_statuses` | `(repo, sha, state, context, description)`        | `("org/repo", "abc", "success", "ci", "passed")` |
+| `_marked_pr_ready`         | `int` (pr_number)                                 | `42`                                             |
 | `_operation_log`           | `(Any, ...)`                                      | Ordered log for testing operation sequences      |
 
 ## FakeGitHubIssues Tracking Lists
@@ -53,6 +54,32 @@ Every tracking list uses a typed tuple with a specific field order. The conventi
 | `_updated_bodies`   | `(issue_number, body)`             | `(42, "new body")`                |
 | `_updated_titles`   | `(issue_number, title)`            | `(42, "new title")`               |
 | `_updated_comments` | `(comment_id, body)`               | `(100, "updated")`                |
+
+## Three-Component Pattern for Tracking Lists
+
+Each mutation tracking list follows a three-component pattern. Example: `mark_pr_ready` in `FakeGitHub` (`fake.py:164-793`):
+
+1. **Private list** (initialized in `__init__`):
+
+   ```python
+   self._marked_pr_ready: list[int] = []
+   ```
+
+2. **Recording method** (appends to private list on call):
+
+   ```python
+   def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
+       self._marked_pr_ready.append(pr_number)
+   ```
+
+3. **Read-only property with defensive copy** (prevents test mutations from affecting fake state):
+   ```python
+   @property
+   def marked_ready_prs(self) -> list[int]:
+       return list(self._marked_pr_ready)
+   ```
+
+The defensive `list()` copy ensures tests that do `fake.marked_ready_prs.pop()` don't corrupt the fake's internal state.
 
 ## Test Assertion Pattern
 

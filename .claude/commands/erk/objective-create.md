@@ -314,7 +314,7 @@ Once approved:
 | ---------------- | ------------------- | ------------------------------- |
 | Label            | `erk-plan`          | `erk-objective` only            |
 | Purpose          | Implementation plan | Roadmap or perpetual focus area |
-| Title suffix     | `[erk-plan]`        | None                            |
+| Title prefix     | `[erk-plan]`        | None                            |
 | Metadata block   | Yes                 | No                              |
 | Commands section | Yes                 | No                              |
 | Body content     | Metadata only       | Objective directly              |

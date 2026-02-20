@@ -8,6 +8,9 @@ read_when:
 tripwires:
   - action: "reviewing a PR that contains .erk/impl-context/ files"
     warning: "Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'"
+  - action: "removing git-tracked temporary directories in setup scripts"
+    warning: "Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_issue.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d."
+    score: 8
 ---
 
 # Impl-Context Staging Directory
@@ -32,17 +35,17 @@ See: `src/erk/cli/commands/exec/scripts/plan_save.py:163-182`
 
 ### Cleanup
 
-The directory is removed before implementation begins. Three cleanup paths exist:
+The directory is cleaned up before implementation begins via a two-phase deferred cleanup pattern. Three cleanup paths exist:
 
-1. **`setup_impl_from_issue.py`** (primary) — Reads `plan.md` and `ref.json`, copies content into `.impl/`, then calls `shutil.rmtree()` on the directory. See: `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:186-204`
+1. **`setup_impl_from_issue.py`** (Phase 1, read-only) — Reads `plan.md` and `ref.json`, copies content into `.impl/`, but deliberately does NOT delete the directory. See comment at `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:202`: "Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push"
 
-2. **`plan-implement.md` Step 2d** (manual fallback) — If `.erk/impl-context/` still exists in git tracking after setup, removes it with `git rm -rf` and commits.
+2. **`plan-implement.md` Step 2d** (Phase 2, git cleanup) — Performs the actual deletion with `git rm -rf .erk/impl-context/ && git commit && git push`. This deferred approach ensures removal is committed, not just deleted from the local filesystem.
 
 3. **`plan-implement.yml` CI workflow** — Cleans up before the implementation agent runs, as a safety net for remote execution.
 
 ### Why It Can Leak
 
-If any cleanup path fails silently — for example, `setup_impl_from_issue` removes the local directory but doesn't commit the removal, or the CI cleanup step is skipped — the files persist on the branch and appear in the final PR diff.
+If Phase 2 is skipped — for example, `plan-implement.md` Step 2d is not executed, or only the local filesystem was cleaned without a git commit — the files persist on the branch and appear in the final PR diff. The key failure mode is confusing "delete from disk" (shutil.rmtree) with "remove from git tracking" (git rm + commit + push).
 
 ## Related Documentation
 

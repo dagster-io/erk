@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**adding <code> inside <summary> elements in PR bodies** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>.
+
 **adding Closes #N to a draft PR footer** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Draft PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for draft-PR backend.
 
 **adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
@@ -161,6 +163,8 @@ Rules triggered by matching actions in code.
 **relying on agent instructions as the sole enforcement for a critical operation** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net.
 
 **removing .worker-impl/ during implementation (before CI passes)** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes.
+
+**removing git-tracked temporary directories in setup scripts** → Read [Impl-Context Staging Directory](impl-context.md) first. Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_issue.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d.
 
 **renaming gateway files during a move without checking for non-standard naming** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Source files that don't follow standard naming (e.g., executor.py instead of abc.py) must be renamed to abc.py/real.py/fake.py during the move. The gateway directory convention requires standard file names.
 

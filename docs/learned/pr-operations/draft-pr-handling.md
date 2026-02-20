@@ -58,6 +58,25 @@ After creating a new draft PR for a plan issue, `_close_orphaned_draft_prs()` fi
 
 This cleanup runs in both the direct-submit and dispatch-submit code paths.
 
+## Auto-Publishing in `finalize_pr()`
+
+After code submission, `finalize_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py:687-691` automatically publishes draft PRs:
+
+```python
+pr_draft_check = ctx.github.get_pr(state.repo_root, state.pr_number)
+if not isinstance(pr_draft_check, PRNotFound) and pr_draft_check.is_draft:
+    click.echo(click.style("   Publishing draft PR...", dim=True))
+    ctx.github.mark_pr_ready(state.repo_root, state.pr_number)
+```
+
+This runs as part of the `erk pr submit` pipeline. The check:
+
+1. Fetches the current PR state to verify it's still a draft
+2. If draft, calls `mark_pr_ready()` via the gateway (REST API)
+3. Echoes a "Publishing draft PR..." feedback message to the user
+
+This is the mechanism by which draft-PR-backed plans get published for review after `erk pr submit` finishes. The draft status is used during planning/implementation to suppress CI, then auto-removed on submit.
+
 ## Draft PRs in Stacked Workflows (Graphite)
 
 When using Graphite for stacked PRs, draft status does **not** cascade:
