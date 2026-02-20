@@ -18,6 +18,7 @@ New doc with:
 - **Tripwire**: If `.erk/impl-context/` appears in a PR diff, leave a review comment telling the user to remove it — this is an erk tooling error (cleanup should have happened automatically)
 
 Key tripwire in frontmatter:
+
 ```yaml
 tripwires:
   - action: "reviewing a PR that contains .erk/impl-context/ files"
