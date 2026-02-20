@@ -161,6 +161,7 @@ class FakeGitHub(GitHub):
         self._updated_pr_titles: list[tuple[int, str]] = []
         self._merged_prs: list[int] = []
         self._closed_prs: list[int] = []
+        self._marked_pr_ready: list[int] = []
         self._triggered_workflows: list[tuple[str, dict[str, str]]] = []
         self._poll_attempts: list[tuple[str, str, int, int]] = []
         self._check_auth_status_calls: list[None] = []
@@ -175,7 +176,6 @@ class FakeGitHub(GitHub):
         self._pr_comment_updates: list[tuple[int, str]] = []
         self._next_comment_id = 1000000
         self._deleted_remote_branches: list[str] = []
-        self._marked_ready_prs: list[int] = []
         # Ordered log of all mutation operations for testing operation ordering
         self._operation_log: list[tuple[Any, ...]] = []
         # (repo, sha, state, context, description)
@@ -769,8 +769,12 @@ class FakeGitHub(GitHub):
                 self._prs_by_branch[old.head_ref_name] = updated
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
-        """Mark a draft PR as ready for review."""
-        self._marked_ready_prs.append(pr_number)
+        """Record PR ready-for-review transition in mutation tracking list.
+
+        Updates the in-memory PRDetails entry to is_draft=False so subsequent
+        get_pr() calls reflect the change.
+        """
+        self._marked_pr_ready.append(pr_number)
         if pr_number in self._pr_details:
             old = self._pr_details[pr_number]
             updated = dataclasses.replace(old, is_draft=False)
@@ -779,9 +783,14 @@ class FakeGitHub(GitHub):
                 self._prs_by_branch[old.head_ref_name] = updated
 
     @property
+    def marked_pr_ready(self) -> list[int]:
+        """Read-only access to tracked PR ready transitions for test assertions."""
+        return list(self._marked_pr_ready)
+
+    @property
     def marked_ready_prs(self) -> list[int]:
-        """Read-only access to tracked mark-ready calls for test assertions."""
-        return list(self._marked_ready_prs)
+        """Alias for marked_pr_ready (backwards compatibility with existing tests)."""
+        return list(self._marked_pr_ready)
 
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get the diff for a PR from configured state or return default.
