@@ -36,7 +36,7 @@ Stages
        [metadata block]
        \\n\\n---\\n\\n
        <details>
-       <summary><code>original-plan</code></summary>
+       <summary>original-plan</summary>
 
        [plan content]
 
@@ -56,7 +56,7 @@ Stages
        [AI-generated summary]
 
        <details>
-       <summary><code>original-plan</code></summary>
+       <summary>original-plan</summary>
 
        [plan content]
 
@@ -86,8 +86,8 @@ the last (footer).
 IMPL_CONTEXT_DIR = ".erk/impl-context"
 
 PLAN_CONTENT_SEPARATOR = "\n\n---\n\n"
-DETAILS_OPEN = "<details>\n<summary><code>original-plan</code></summary>\n\n"
-_LEGACY_DETAILS_OPEN = "<details>\n<summary>original-plan</summary>\n\n"
+DETAILS_OPEN = "<details>\n<summary>original-plan</summary>\n\n"
+_LEGACY_DETAILS_OPEN = "<details>\n<summary><code>original-plan</code></summary>\n\n"
 DETAILS_CLOSE = "\n\n</details>"
 
 
@@ -104,7 +104,9 @@ def build_plan_stage_body(metadata_body: str, plan_content: str) -> str:
     Returns:
         Combined PR body ready for ``create_pr`` (without footer)
     """
-    return metadata_body + PLAN_CONTENT_SEPARATOR + DETAILS_OPEN + plan_content + DETAILS_CLOSE
+    return (
+        metadata_body + "\n" + PLAN_CONTENT_SEPARATOR + DETAILS_OPEN + plan_content + DETAILS_CLOSE
+    )
 
 
 def build_original_plan_section(plan_content: str) -> str:
