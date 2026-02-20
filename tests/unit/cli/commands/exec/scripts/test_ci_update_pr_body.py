@@ -152,6 +152,7 @@ def test_impl_success(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
+        is_draft_pr=False,
     )
 
     assert isinstance(result, UpdateSuccess)
@@ -175,6 +176,7 @@ def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
+        is_draft_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -230,6 +232,7 @@ def test_impl_empty_diff(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
+        is_draft_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -287,6 +290,7 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
+        is_draft_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -348,6 +352,7 @@ def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
+        is_draft_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -408,6 +413,7 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
+        is_draft_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -674,3 +680,103 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
     assert isinstance(output["message"], str)
     # stderr can be str or None
     assert output["stderr"] is None or isinstance(output["stderr"], str)
+
+
+# ============================================================================
+# 4. Draft-PR Mode Tests
+# ============================================================================
+
+
+def test_build_pr_body_draft_pr_no_closes_reference() -> None:
+    """Test that _build_pr_body omits Closes #N when issue_number is None."""
+    body = _build_pr_body(
+        summary="This is the summary",
+        pr_number=123,
+        issue_number=None,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
+    )
+
+    assert "## Summary" in body
+    assert "This is the summary" in body
+    assert "Closes #" not in body
+    assert "erk pr checkout 123" in body
+
+
+def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) -> None:
+    """Test that draft-PR mode preserves metadata prefix and adds original plan section."""
+    git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
+
+    # Build a PR body with metadata prefix and plan content (draft-PR format)
+    metadata_prefix = "<!-- plan-header metadata -->\n\n---\n\n"
+    plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
+    pr_body = metadata_prefix + plan_content
+
+    pr_details = PRDetails(
+        number=42,
+        url="https://github.com/owner/repo/pull/42",
+        title="[erk-plan] Test Plan",
+        body=pr_body,
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="master",
+        head_ref_name="plan-test-01-01",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=("erk-plan",),
+    )
+
+    github = FakeGitHub(
+        prs={
+            "plan-test-01-01": PullRequestInfo(
+                number=42,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/42",
+                is_draft=True,
+                title="[erk-plan] Test Plan",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={42: pr_details},
+        pr_diffs={42: "+added line"},
+    )
+
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+    )
+
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        issue_number=42,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
+        is_draft_pr=True,
+    )
+
+    assert isinstance(result, UpdateSuccess)
+    assert result.pr_number == 42
+
+    # Verify the updated body
+    updated_bodies = github.updated_pr_bodies
+    assert len(updated_bodies) == 1
+    _pr_num, updated_body = updated_bodies[0]
+
+    # Should have metadata prefix preserved
+    assert updated_body.startswith(metadata_prefix)
+    # Should have summary
+    assert "Generated summary" in updated_body
+    # Should NOT have Closes #N
+    assert "Closes #42" not in updated_body
+    # Should have original plan section
+    assert "original-plan" in updated_body
+    assert "My Plan" in updated_body

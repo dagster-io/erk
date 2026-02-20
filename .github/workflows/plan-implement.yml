@@ -37,6 +37,11 @@ on:
         description: "Base branch for the implementation PR (may be stacked, not always trunk)"
         required: true
         type: string
+      plan_backend:
+        description: "Plan backend type (github or draft_pr)"
+        required: false
+        type: string
+        default: "github"
   workflow_call:
     inputs:
       plan_id:
@@ -73,6 +78,11 @@ on:
         description: "Base branch for the implementation PR (may be stacked, not always trunk)"
         required: true
         type: string
+      plan_backend:
+        description: "Plan backend type (github or draft_pr)"
+        required: false
+        type: string
+        default: "github"
 
 concurrency:
   group: implement-plan-${{ inputs.plan_id }}
@@ -87,6 +97,8 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+    env:
+      ERK_PLAN_BACKEND: ${{ inputs.plan_backend }}
     steps:
       - name: Validate required secrets
         env:
@@ -137,7 +149,11 @@ jobs:
           rm -rf .worker-impl
           erk exec create-worker-impl-from-issue "$PLAN_ID"
           if [ $? -ne 0 ]; then
-            gh issue comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
+            if [ "$ERK_PLAN_BACKEND" = "draft_pr" ]; then
+              gh pr comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
+            else
+              gh issue comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
+            fi
             exit 1
           fi
           git config user.name "$SUBMITTED_BY"

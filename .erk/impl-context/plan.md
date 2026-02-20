@@ -23,6 +23,7 @@ This plan makes the full pipeline work end-to-end for draft-PR plans.
 - Pass it through to `save_plan_ref()` call on line 73 instead of hardcoded `"github"`
 
 **Test:** `tests/packages/erk_shared/test_worker_impl_folder.py`
+
 - Update all existing calls to pass `provider="github"`
 - Add test: pass `provider="github-draft-pr"`, verify plan-ref.json has correct provider
 
@@ -34,6 +35,7 @@ This plan makes the full pipeline work end-to-end for draft-PR plans.
 - Pass `provider=provider` to `create_worker_impl_folder()` on line 69
 
 **Test:** `tests/unit/cli/commands/exec/scripts/test_create_worker_impl_from_issue.py`
+
 - Add test with `DraftPRPlanBackend` context, verify plan-ref.json has `"github-draft-pr"` provider
 
 ### Step 3: Add `plan_backend` input to `plan-implement.yml`
@@ -53,6 +55,7 @@ This plan makes the full pipeline work end-to-end for draft-PR plans.
 - Behavior is identical (DraftPRPlanBackend.add_comment delegates to same API) but uses correct abstraction
 
 **Test:** `tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py`
+
 - Update test to inject PlanBackend via context
 
 ### Step 5: Make `handle_no_changes.py` backend-aware
@@ -66,6 +69,7 @@ This plan makes the full pipeline work end-to-end for draft-PR plans.
   - When True: "close this PR" instead of "close both this issue and the PR". The comment goes to the PR itself (since plan_id IS the PR), so also drop "See PR #{pr_number}" (it's self-referential)
 
 **Test:** `tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py`
+
 - Add test for draft-PR mode: no `Closes #N` in body, rewording correct, comment text correct
 
 ### Step 6: Make `ci_update_pr_body.py` backend-aware
@@ -81,11 +85,13 @@ This plan makes the full pipeline work end-to-end for draft-PR plans.
 - When issue-based: existing behavior unchanged
 
 **Reusable helpers from `erk_shared.plan_store.draft_pr_lifecycle`:**
+
 - `extract_metadata_prefix()` - preserves metadata block
 - `extract_plan_content()` - gets plan from body
 - `build_original_plan_section()` - wraps plan in `<details>`
 
 **Test:** `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`
+
 - Add test for draft-PR: metadata preserved, no `Closes #N`, original plan section present
 
 ### Step 7: Make `submit.py` support draft-PR plans
@@ -95,12 +101,14 @@ This plan makes the full pipeline work end-to-end for draft-PR plans.
 This is the biggest change. For draft-PR plans, the branch and PR already exist (created at plan-save time). Submit needs a separate path.
 
 **Add `_validate_draft_pr_for_submit()` function:**
+
 - Use `ctx.github.get_pr(repo.root, plan_number)` to validate (not `ctx.issues.get_issue()`)
 - Validate: PR has `erk-plan` label, PR state is OPEN
 - Get branch name from `pr_result.head_ref_name`
 - Return a `ValidatedIssue`-compatible struct (reuse or create new dataclass)
 
 **Add `_submit_draft_pr_plan()` function:**
+
 - Fetch and checkout the existing plan branch
 - Create `.worker-impl/` with `provider="github-draft-pr"` on existing branch
 - Commit and push `.worker-impl/` to existing branch
@@ -108,22 +116,27 @@ This is the biggest change. For draft-PR plans, the branch and PR already exist 
 - Skip: no orphaned PR cleanup (the draft PR IS the plan)
 
 **Modify `_submit_single_issue()` or `submit_cmd()`:**
+
 - Detect backend: `is_draft_pr = ctx.plan_backend.get_provider_name() == "github-draft-pr"`
 - If draft-PR, dispatch to `_submit_draft_pr_plan()`
 - If issue-based, use existing flow
 
 **Add `plan_backend` to workflow dispatch inputs (line 777-787):**
+
 ```python
 "plan_backend": "draft_pr" if is_draft_pr else "github",
 ```
 
 **Use `plan_backend.add_comment()` for queued comment (line 854):**
+
 - Replace `ctx.issues.add_comment(repo.root, issue_number, comment_body)` with backend-aware call
 
 **Pass `provider` to `create_worker_impl_folder()` calls (lines 469, ~634):**
+
 - `provider="github-draft-pr"` for draft-PR, `provider="github"` for issue-based
 
 **Test:** `tests/commands/plan/test_submit.py`
+
 - Test: draft-PR submit reuses existing branch and PR (no new creations)
 - Test: workflow inputs include `plan_backend: "draft_pr"`
 - Test: no `Closes #N` in any PR body updates

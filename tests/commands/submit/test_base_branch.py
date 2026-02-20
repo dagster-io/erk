@@ -16,14 +16,14 @@ from tests.commands.submit.conftest import create_plan, make_plan_body
 from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
 
 
-def test_submit_with_custom_base_branch(tmp_path: Path, plan_backend_type: str) -> None:
+def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
     """Test submit creates PR with custom base branch when --base is specified."""
     plan = create_plan("123", "Implement feature X")
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    fake_plan_store, _ = create_plan_store({"123": plan}, backend=plan_backend_type)
+    fake_plan_store, _ = create_plan_store({"123": plan}, backend="github")
     _, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
@@ -125,7 +125,7 @@ def test_submit_with_invalid_base_branch(tmp_path: Path) -> None:
     assert len(fake_github.triggered_workflows) == 0
 
 
-def test_submit_passes_base_branch_in_workflow(tmp_path: Path, plan_backend_type: str) -> None:
+def test_submit_passes_base_branch_in_workflow(tmp_path: Path) -> None:
     """Test submit passes base_branch in workflow inputs for stacked branch support.
 
     The base_branch is used by the remote worker to rebase onto the correct parent
@@ -136,7 +136,7 @@ def test_submit_passes_base_branch_in_workflow(tmp_path: Path, plan_backend_type
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    fake_plan_store, _ = create_plan_store({"456": plan}, backend=plan_backend_type)
+    fake_plan_store, _ = create_plan_store({"456": plan}, backend="github")
     _, fake_github_issues = create_plan_store_with_plans({"456": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "feature-parent"},
@@ -179,14 +179,14 @@ def test_submit_passes_base_branch_in_workflow(tmp_path: Path, plan_backend_type
     assert inputs["base_branch"] == "feature-parent"
 
 
-def test_submit_custom_base_passes_in_workflow(tmp_path: Path, plan_backend_type: str) -> None:
+def test_submit_custom_base_passes_in_workflow(tmp_path: Path) -> None:
     """Test submit with --base passes custom base_branch in workflow inputs."""
     plan = create_plan("789", "Implement child feature")
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    fake_plan_store, _ = create_plan_store({"789": plan}, backend=plan_backend_type)
+    fake_plan_store, _ = create_plan_store({"789": plan}, backend="github")
     _, fake_github_issues = create_plan_store_with_plans({"789": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},

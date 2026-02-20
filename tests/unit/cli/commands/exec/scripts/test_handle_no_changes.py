@@ -65,6 +65,7 @@ def test_build_pr_body_includes_all_sections() -> None:
         base_branch="master",
         recent_commits="abc1234 Fix bug\ndef5678 Add feature",
         run_url="https://github.com/owner/repo/actions/runs/789",
+        is_draft_pr=False,
     )
 
     assert "## No Code Changes" in body
@@ -89,6 +90,7 @@ def test_build_pr_body_without_recent_commits() -> None:
         base_branch="main",
         recent_commits=None,
         run_url=None,
+        is_draft_pr=False,
     )
 
     assert "## No Code Changes" in body
@@ -108,6 +110,7 @@ def test_build_pr_body_with_empty_recent_commits() -> None:
         base_branch="master",
         recent_commits="",
         run_url=None,
+        is_draft_pr=False,
     )
 
     assert "## No Code Changes" in body
@@ -116,13 +119,40 @@ def test_build_pr_body_with_empty_recent_commits() -> None:
     assert "Recent commits" not in body
 
 
+def test_build_pr_body_draft_pr_no_closes_reference() -> None:
+    """Test that _build_pr_body omits Closes #N for draft-PR plans."""
+    body = _build_pr_body(
+        plan_id=789,
+        behind_count=0,
+        base_branch="master",
+        recent_commits=None,
+        run_url=None,
+        is_draft_pr=True,
+    )
+
+    assert "## No Code Changes" in body
+    assert "Closes #789" not in body
+    assert "Close this PR" in body
+    assert "linked plan" not in body
+
+
 def test_build_issue_comment() -> None:
     """Test that _build_issue_comment includes PR reference."""
-    comment = _build_issue_comment(pr_number=123)
+    comment = _build_issue_comment(pr_number=123, is_draft_pr=False)
 
     assert "no code changes" in comment.lower()
     assert "PR #123" in comment
     assert "diagnostic" in comment.lower()
+
+
+def test_build_issue_comment_draft_pr() -> None:
+    """Test that _build_issue_comment for draft-PR omits self-referential text."""
+    comment = _build_issue_comment(pr_number=789, is_draft_pr=True)
+
+    assert "no code changes" in comment.lower()
+    assert "close this PR" in comment
+    assert "PR #789" not in comment
+    assert "both this issue" not in comment
 
 
 def test_build_no_changes_title() -> None:
