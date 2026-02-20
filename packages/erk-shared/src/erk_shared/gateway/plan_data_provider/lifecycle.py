@@ -56,3 +56,64 @@ def compute_lifecycle_display(plan: Plan) -> str:
     if stage == "closed":
         return f"[dim red]{stage}[/dim red]"
     return stage
+
+
+def format_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+) -> str:
+    """Append status indicators to a lifecycle stage display string.
+
+    Adds emoji indicators to the stage text when relevant:
+    - 💥 for merge conflicts (on implementing and review stages)
+    - ✔ for approved PRs (on review stage only)
+    - ❌ for changes requested (on review stage only)
+
+    Indicators are inserted inside Rich markup tags so they inherit
+    the stage color.
+
+    Args:
+        lifecycle_display: Pre-formatted lifecycle string (may contain Rich markup)
+        has_conflicts: True if PR has merge conflicts, False/None otherwise
+        review_decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+
+    Returns:
+        Lifecycle display string with appended indicators
+    """
+    # Only add indicators for implementing and review stages
+    # Detect stage from the display string content
+    is_implementing = "implementing" in lifecycle_display
+    is_review = "review" in lifecycle_display and "REVIEW" not in lifecycle_display
+
+    if not is_implementing and not is_review:
+        return lifecycle_display
+
+    # Build indicator suffix
+    indicators: list[str] = []
+
+    if has_conflicts is True:
+        indicators.append("💥")
+
+    if is_review:
+        if review_decision == "APPROVED":
+            indicators.append("✔")
+        elif review_decision == "CHANGES_REQUESTED":
+            indicators.append("❌")
+
+    if not indicators:
+        return lifecycle_display
+
+    suffix = " " + " ".join(indicators)
+
+    # Insert suffix inside Rich markup closing tag so indicators inherit color
+    # Pattern: "[color]stage[/color]" -> "[color]stage suffix[/color]"
+    closing_idx = lifecycle_display.rfind("[/")
+    if closing_idx != -1:
+        before = lifecycle_display[:closing_idx]
+        after = lifecycle_display[closing_idx:]
+        return before + suffix + after
+
+    # No Rich markup - just append
+    return lifecycle_display + suffix

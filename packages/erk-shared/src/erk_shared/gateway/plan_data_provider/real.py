@@ -56,6 +56,7 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.gateway.plan_data_provider.lifecycle import format_lifecycle_with_status
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.conversion import (
@@ -605,6 +606,10 @@ class RealPlanDataProvider(PlanDataProvider):
         total_comment_count = 0
         comments_display = "-"
 
+        # PR status fields for lifecycle enrichment
+        pr_has_conflicts: bool | None = None
+        pr_review_decision: str | None = None
+
         if plan_id in pr_linkages:
             issue_prs = pr_linkages[plan_id]
             if review_pr is not None:
@@ -626,6 +631,10 @@ class RealPlanDataProvider(PlanDataProvider):
                     emoji += "🔗"
                 pr_display = f"#{selected_pr.number} {emoji}"
                 checks_display = format_checks_cell(selected_pr)
+
+                # Extract status fields for lifecycle enrichment
+                pr_has_conflicts = selected_pr.has_conflicts
+                pr_review_decision = selected_pr.review_decision
 
                 # Get review thread counts from batched PR data
                 if selected_pr.review_thread_counts is not None:
@@ -711,6 +720,13 @@ class RealPlanDataProvider(PlanDataProvider):
 
         # Compute lifecycle display from header or infer from metadata
         lifecycle_display = _compute_lifecycle_display(plan)
+
+        # Enrich lifecycle display with PR status indicators
+        lifecycle_display = format_lifecycle_with_status(
+            lifecycle_display,
+            has_conflicts=pr_has_conflicts,
+            review_decision=pr_review_decision,
+        )
 
         return PlanRowData(
             plan_id=plan_id,

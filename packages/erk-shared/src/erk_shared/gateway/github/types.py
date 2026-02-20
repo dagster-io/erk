@@ -197,6 +197,8 @@ class PullRequestInfo:
     head_branch: str | None = None
     # Review thread counts: (resolved_count, total_count) or None if not fetched
     review_thread_counts: tuple[int, int] | None = None
+    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+    review_decision: str | None = None
 
 
 class _NotAvailable:
