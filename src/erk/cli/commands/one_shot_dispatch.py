@@ -174,7 +174,7 @@ def dispatch_one_shot(
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
-        lifecycle_stage="pre-plan",
+        lifecycle_stage="prompted",
     )
     plan_issue_number = skeleton_result.issue_number
 

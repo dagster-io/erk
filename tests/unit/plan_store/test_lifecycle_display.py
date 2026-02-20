@@ -32,10 +32,10 @@ def _make_plan(
 # --- Header field present: each stage maps to correct color markup ---
 
 
-def test_pre_plan_stage_returns_magenta_markup() -> None:
-    """pre-plan header field returns magenta markup."""
-    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "pre-plan"})
-    assert compute_lifecycle_display(plan) == "[magenta]pre-plan[/magenta]"
+def test_prompted_stage_returns_magenta_markup() -> None:
+    """prompted header field returns magenta markup."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "prompted"})
+    assert compute_lifecycle_display(plan) == "[magenta]prompted[/magenta]"
 
 
 def test_planning_stage_returns_magenta_markup() -> None:
@@ -56,10 +56,10 @@ def test_implementing_stage_returns_yellow_markup() -> None:
     assert compute_lifecycle_display(plan) == "[yellow]implementing[/yellow]"
 
 
-def test_review_stage_returns_cyan_markup() -> None:
-    """review header field returns cyan markup."""
-    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "review"})
-    assert compute_lifecycle_display(plan) == "[cyan]review[/cyan]"
+def test_implemented_stage_returns_cyan_markup() -> None:
+    """implemented header field returns cyan markup."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
+    assert compute_lifecycle_display(plan) == "[cyan]implemented[/cyan]"
 
 
 def test_merged_stage_returns_green_markup() -> None:
@@ -84,9 +84,10 @@ def test_infer_planned_from_draft_open_pr() -> None:
 
 
 def test_infer_review_from_non_draft_open_pr() -> None:
-    """Non-draft + OPEN PR infers review stage."""
+    """Non-draft + OPEN PR infers implemented stage."""
     plan = _make_plan(metadata={"is_draft": False, "pr_state": "OPEN"})
-    assert compute_lifecycle_display(plan) == "[cyan]review[/cyan]"
+    assert compute_lifecycle_display(plan) == "[cyan]implemented[/cyan]"
+
 
 
 def test_infer_merged_from_merged_pr() -> None:

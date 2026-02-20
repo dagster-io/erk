@@ -111,7 +111,7 @@ Draft PR branches contain `.erk/branch-data/plan.md` and `.erk/branch-data/ref.j
 
 ## Lifecycle Stage Tracking
 
-Draft-PR plans participate in the same `lifecycle_stage` tracking as issue-based plans. The stage progresses through the same values (`planned` → `implementing` → `review`) and is stored in the plan-header metadata block within the PR body.
+Draft-PR plans participate in the same `lifecycle_stage` tracking as issue-based plans. The stage progresses through the same values (`planned` → `implementing` → `implemented`) and is stored in the plan-header metadata block within the PR body.
 
 See [Lifecycle Stage Tracking](lifecycle.md#lifecycle-stage-tracking) for the complete stage definitions and write points.
 

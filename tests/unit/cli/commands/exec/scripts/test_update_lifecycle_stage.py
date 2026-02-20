@@ -92,7 +92,7 @@ def test_fails_for_nonexistent_plan() -> None:
 
 def test_accepts_all_valid_stages() -> None:
     """update-lifecycle-stage accepts all valid lifecycle stage values."""
-    valid_stages = ["pre-plan", "planning", "planned", "implementing", "review"]
+    valid_stages = ["prompted", "planning", "planned", "implementing", "implemented"]
 
     for stage in valid_stages:
         issue = _make_issue_with_plan_header(100)

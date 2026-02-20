@@ -112,7 +112,7 @@ def create_plan_issue(
         created_from_workflow_run_url: Optional workflow run URL that created this plan
         learned_from_issue: Optional parent plan issue number (for learn plans, enables
             auto-update when learn plan lands)
-        lifecycle_stage: Optional initial lifecycle stage (e.g., "pre-plan", "planned")
+        lifecycle_stage: Optional initial lifecycle stage (e.g., "prompted", "planned")
 
     Returns:
         CreatePlanIssueResult with success status and details

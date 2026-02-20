@@ -22,11 +22,11 @@ from erk_shared.plan_store.types import PlanNotFound
 
 # Valid lifecycle stage values (must match LifecycleStageValue type)
 _VALID_STAGES: tuple[str, ...] = (
-    "pre-plan",
+    "prompted",
     "planning",
     "planned",
     "implementing",
-    "review",
+    "implemented",
 )
 
 

@@ -404,20 +404,20 @@ LIFECYCLE_STAGE: Literal["lifecycle_stage"] = "lifecycle_stage"
 
 # Valid values for lifecycle_stage field
 LifecycleStageValue = Literal[
-    "pre-plan",
+    "prompted",
     "planning",
     "planned",
     "implementing",
-    "review",
+    "implemented",
 ]
 """Valid values for the lifecycle_stage plan header field.
 
 Stage progression:
-- pre-plan: Plan issue created, planning not yet started
+- prompted: Plan issue created, planning not yet started (system has been prompted to plan)
 - planning: Plan is being written by an agent
 - planned: Plan written, ready for implementation (draft PR created)
 - implementing: Implementation in progress
-- review: Implementation complete, PR under review
+- implemented: Implementation complete, PR ready for review
 """
 
 # Valid values for learn_status field
@@ -785,7 +785,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         if LIFECYCLE_STAGE in data and data[LIFECYCLE_STAGE] is not None:
             if not isinstance(data[LIFECYCLE_STAGE], str):
                 raise ValueError("lifecycle_stage must be a string or null")
-            valid_stages = {"pre-plan", "planning", "planned", "implementing", "review"}
+            valid_stages = {"prompted", "planning", "planned", "implementing", "implemented"}
             if data[LIFECYCLE_STAGE] not in valid_stages:
                 stage_value = data[LIFECYCLE_STAGE]
                 valid_list = ", ".join(sorted(valid_stages))

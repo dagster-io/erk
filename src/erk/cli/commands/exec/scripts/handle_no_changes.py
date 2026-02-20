@@ -230,7 +230,7 @@ def handle_no_changes(
         backend.update_metadata(
             repo_root,
             str(plan_id),
-            metadata={"lifecycle_stage": "review"},
+            metadata={"lifecycle_stage": "implemented"},
         )
     except RuntimeError as e:
         result = HandleNoChangesError(
