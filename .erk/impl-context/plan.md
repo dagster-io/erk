@@ -10,20 +10,20 @@
 
 ## Source Plans
 
-| #    | Title                                         | Code Status | Docs Needed    |
-|------|-----------------------------------------------|-------------|----------------|
-| 7703 | Fix learn pipeline for draft-PR plans         | ✅ Merged   | 2 new docs     |
-| 7707 | Rename 'instruction' to 'prompt'              | ✅ Merged   | None (complete)|
-| 7710 | Auto-force push for plan impl branches        | ✅ Merged   | 1 new doc      |
-| 7732 | Replace "issue" with "plan" in CLI output     | ✅ Merged   | 2 doc updates  |
-| 7737 | One-shot dispatch metadata for draft_pr       | ✅ Merged   | 4 tripwires    |
-| 7742 | Move plan backend config to GlobalConfig      | ✅ Merged   | 3 new docs + tripwires |
-| 7748 | Simplify plan backend to env vars             | ✅ Merged   | 3 tripwires    |
-| 7751 | Replace gist with branch-based materials      | ❌ PR open  | DEFERRED       |
-| 7701 | Add branch column to TUI dashboard            | ✅ Merged   | 1 new doc      |
-| 7752 | Fix impl-context cleanup convergence          | ✅ Merged   | 1 correction + 1 new doc |
-| 7753 | Add `erk wt create-from` command              | ✅ Merged   | 1 new doc      |
-| 7755 | Upgrade objective-plan safety guardrails      | ✅ Merged   | 1 critical fix |
+| #    | Title                                     | Code Status | Docs Needed              |
+| ---- | ----------------------------------------- | ----------- | ------------------------ |
+| 7703 | Fix learn pipeline for draft-PR plans     | ✅ Merged   | 2 new docs               |
+| 7707 | Rename 'instruction' to 'prompt'          | ✅ Merged   | None (complete)          |
+| 7710 | Auto-force push for plan impl branches    | ✅ Merged   | 1 new doc                |
+| 7732 | Replace "issue" with "plan" in CLI output | ✅ Merged   | 2 doc updates            |
+| 7737 | One-shot dispatch metadata for draft_pr   | ✅ Merged   | 4 tripwires              |
+| 7742 | Move plan backend config to GlobalConfig  | ✅ Merged   | 3 new docs + tripwires   |
+| 7748 | Simplify plan backend to env vars         | ✅ Merged   | 3 tripwires              |
+| 7751 | Replace gist with branch-based materials  | ❌ PR open  | DEFERRED                 |
+| 7701 | Add branch column to TUI dashboard        | ✅ Merged   | 1 new doc                |
+| 7752 | Fix impl-context cleanup convergence      | ✅ Merged   | 1 correction + 1 new doc |
+| 7753 | Add `erk wt create-from` command          | ✅ Merged   | 1 new doc                |
+| 7755 | Upgrade objective-plan safety guardrails  | ✅ Merged   | 1 critical fix           |
 
 ---
 
@@ -54,6 +54,7 @@
 **File:** `docs/learned/planning/token-optimization-patterns.md`
 
 Find the section that cites `/erk:objective-plan` as a canonical haiku example and correct it:
+
 - Change: "haiku" → "sonnet"
 - Add note: As of PR #7750, objective-plan uses sonnet for better multi-step reasoning
 - Remove/update any claim that haiku is preferred for this command
@@ -67,6 +68,7 @@ Find the section that cites `/erk:objective-plan` as a canonical haiku example a
 **File:** `docs/learned/planning/impl-context.md`
 
 The "Why It Can Leak" section and path descriptions are outdated. PR #7747 ensured all 5 setup paths converge at a single cleanup point:
+
 - Replace "three paths" description with "five paths that converge at Step 2d"
 - Remove warnings about cleanup not running for some paths (now fixed)
 - Add note: cleanup is idempotent, safe to run multiple times
@@ -130,6 +132,7 @@ Add (from plan #7742):
 **File:** `docs/learned/pr-operations/plan-implementation-auto-force.md`
 
 Content:
+
 - **What it does**: `erk pr submit` auto-applies force-push when the current branch is a plan implementation branch (detected via `state.issue_number is not None`, which is set when `.impl/` is valid)
 - **Why it's safe**: Plan implementation branches always diverge from remote because `erk implement` creates them fresh and `.impl/` gets committed locally. Force-push is expected and harmless.
 - **Code location**: `src/erk/cli/commands/pr/submit_pipeline.py` — `is_plan_impl = state.issue_number is not None`, `effective_force = state.force or is_plan_impl`
@@ -143,6 +146,7 @@ Content:
 **File:** `docs/learned/planning/draft-pr-learn-pipeline.md`
 
 Content:
+
 - **The problem**: Draft-PR plans use the PR number as their plan ID. The original learn pipeline discovered plan IDs via branch name → metadata lookup, which only worked for GitHub Issue-based plans.
 - **The fix**: When `plan_backend == "github-draft-pr"`, use the PR number directly as the plan ID (short-circuit the branch-name discovery step). Implemented in `trigger_async_learn.py`.
 - **Metadata fallback**: For draft-PR plans, the gist URL (learn materials location) is stored as a comment on the PR (not in a metadata block), requiring a comment-based fallback in `land_cmd.py`.
@@ -155,6 +159,7 @@ Content:
 **File:** `docs/learned/cli/wt-create-from.md` (or `docs/learned/erk/wt-create-from.md`)
 
 Content:
+
 - **Purpose**: `erk wt create-from <branch>` allocates a worktree slot to an already-existing branch (vs `erk wt create` which creates a new branch)
 - **When to use**: When you have an existing branch (e.g., from a remote PR) and want to set up a local worktree for it
 - **Decision tree**: `wt create` (new branch, new worktree) vs `wt create-from` (existing branch, new worktree) vs `wt checkout` (if that exists)
@@ -168,6 +173,7 @@ Content:
 **File:** `docs/learned/tui/dashboard-columns.md`
 
 Content:
+
 - **Column inventory**: List all columns in the plan table with their purpose (plan #, title, status, objective, branch, etc.)
 - **Backend-conditional columns**: Some columns only appear in draft_pr mode (e.g., branch column at `plan_table.py:181`)
 - **Column ordering principles**: Why columns are ordered the way they are
@@ -180,6 +186,7 @@ Content:
 **File:** `docs/learned/cli/output-styling.md`
 
 Add a "User-Facing Terminology Guidelines" section with:
+
 - Table: When to use "plan" vs "issue" vs "PR" in user-facing output
 - Rule: Use "plan" for all user-facing references to plan items (backend-agnostic)
 - Rule: Use "PR" when specifically referring to pull requests
@@ -193,6 +200,7 @@ Add a "User-Facing Terminology Guidelines" section with:
 **Do not create documentation for the branch-based learn transport until PR #7733 merges.**
 
 When PR #7733 merges, a follow-up plan should:
+
 - Archive `docs/learned/architecture/gist-materials-interchange.md` (entire document becomes stale)
 - Rewrite `docs/learned/planning/learn-pipeline-workflow.md` Stage 4 (gist upload → branch push)
 - Update `docs/learned/planning/async-learn-local-preprocessing.md` Material Assembly section
@@ -205,22 +213,26 @@ When PR #7733 merges, a follow-up plan should:
 ## Files to Modify
 
 ### Critical (Step 1-2):
+
 - `docs/learned/planning/token-optimization-patterns.md` — fix haiku→sonnet error
 - `docs/learned/planning/impl-context.md` — update convergence description
 
 ### Tripwires (Steps 3-6):
+
 - `docs/learned/planning/tripwires.md` — add 5 tripwires
 - `docs/learned/testing/tripwires.md` — add 2 tripwires
 - `docs/learned/ci/tripwires.md` — add 1 tripwire
 - `docs/learned/architecture/tripwires.md` — add 1 tripwire
 
 ### New Files (Steps 7-10):
+
 - `docs/learned/pr-operations/plan-implementation-auto-force.md` (new)
 - `docs/learned/planning/draft-pr-learn-pipeline.md` (new)
 - `docs/learned/cli/wt-create-from.md` (new)
 - `docs/learned/tui/dashboard-columns.md` (new)
 
 ### Updates (Step 11):
+
 - `docs/learned/cli/output-styling.md` — add terminology table
 
 ---
@@ -236,6 +248,7 @@ When PR #7733 merges, a follow-up plan should:
 ## Verification
 
 After implementation, verify:
+
 1. `grep -r "haiku" docs/learned/planning/token-optimization-patterns.md` — should not find objective-plan haiku reference
 2. `grep -r "three paths" docs/learned/planning/impl-context.md` — should return no results (or only in historical context)
 3. Each new file exists and accurately describes the feature by cross-referencing the source files listed above
