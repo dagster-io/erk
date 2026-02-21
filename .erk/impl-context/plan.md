@@ -18,6 +18,7 @@ The `--new-slot` flag was just added to `erk br create` (this branch). After sav
 Insert a trunk detection sub-step at the beginning of Step 4 (before the display logic):
 
 > Run `git branch --show-current` to get the current branch name.
+>
 > - If the result is `main`, `master`, or empty (detached HEAD): **on trunk**
 > - Otherwise: **not on trunk**
 
@@ -42,6 +43,7 @@ OR exit Claude Code first, then run one of:
 ```
 
 **On trunk — recommended = new slot:**
+
 ```
   New slot (recommended — you're on trunk):
     Local: erk br create --new-slot --for-plan <issue_number>
@@ -53,6 +55,7 @@ OR exit Claude Code first, then run one of:
 ```
 
 **Not on trunk — recommended = same slot:**
+
 ```
   Same slot (recommended — you're in a slot):
     Local: erk br create --for-plan <issue_number>
