@@ -121,7 +121,7 @@ def _implement_from_issue(
         ctx,
         repo_root=repo.root,
         issue_number=int(issue_number),
-        reason=f"the plan (issue #{issue_number}) was submitted for implementation",
+        reason=f"the plan (plan #{issue_number}) was submitted for implementation",
     )
 
     ctx.console.info(f"Plan: {plan.title}")
