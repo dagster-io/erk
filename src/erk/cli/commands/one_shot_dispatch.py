@@ -387,9 +387,7 @@ def dispatch_one_shot(
                     run_id=run_id,
                     dispatched_at=queued_at,
                 )
-                user_output(
-                    click.style("\u2713", fg="green") + " Dispatch metadata written"
-                )
+                user_output(click.style("\u2713", fg="green") + " Dispatch metadata written")
             except Exception as e:
                 user_output(
                     click.style("Warning: ", fg="yellow")

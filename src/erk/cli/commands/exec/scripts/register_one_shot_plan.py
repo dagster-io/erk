@@ -97,9 +97,7 @@ def register_one_shot_plan(
             pr = github.get_pr(repo_root, pr_number)
             if isinstance(pr, PRNotFound):
                 raise RuntimeError(f"PR #{pr_number} not found")
-            ref = (
-                f"Closes {plans_repo}#{issue_number}" if plans_repo else f"Closes #{issue_number}"
-            )
+            ref = f"Closes {plans_repo}#{issue_number}" if plans_repo else f"Closes #{issue_number}"
             github.update_pr_body(repo_root, pr_number, f"{pr.body}\n\n---\n\n{ref}")
             results["pr_closing_ref"] = {"success": True}
         except Exception as exc:
