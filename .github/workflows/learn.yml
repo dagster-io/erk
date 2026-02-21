@@ -25,6 +25,11 @@ on:
         description: "URL of gist containing preprocessed learn materials"
         required: true
         type: string
+      plan_backend:
+        description: "Plan backend type (github or draft_pr)"
+        required: false
+        type: string
+        default: "github"
 
 concurrency:
   group: learn-plan-${{ github.event.inputs.plan_id }}
@@ -38,6 +43,8 @@ jobs:
     permissions:
       contents: read
       issues: write
+    env:
+      ERK_PLAN_BACKEND: ${{ inputs.plan_backend }}
     steps:
       - uses: actions/checkout@v4
         with:
