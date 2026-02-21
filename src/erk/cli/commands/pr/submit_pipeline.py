@@ -208,24 +208,19 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
             state.cwd, state.branch_name, "origin"
         )
         if divergence.behind > 0 and not state.force:
+            ahead_msg = (
+                f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead > 0 else ""
+            )
             return SubmitError(
                 phase="push_and_create_pr",
                 error_type="remote_diverged",
                 message=(
                     f"Branch '{state.branch_name}' is behind remote by "
-                    f"{divergence.behind} commit(s)"
-                    + (
-                        f" and ahead by {divergence.ahead} commit(s)"
-                        if divergence.ahead > 0
-                        else ""
-                    )
-                    + ".\n\n"
+                    f"{divergence.behind} commit(s){ahead_msg}.\n\n"
                     "The remote branch has been updated (e.g., by CI or another session).\n\n"
                     "To fix:\n"
-                    "  erk pr sync-divergence --dangerous"
-                    "   # Fetch, rebase, resolve conflicts\n"
-                    "  erk pr submit -f"
-                    "                     # Force push (overrides remote)"
+                    "  erk pr sync-divergence --dangerous   # Fetch, rebase, resolve conflicts\n"
+                    "  erk pr submit -f                     # Force push (overrides remote)"
                 ),
                 details={
                     "branch": state.branch_name,
