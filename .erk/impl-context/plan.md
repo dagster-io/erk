@@ -58,7 +58,7 @@ Existing docs with phantom references requiring action. These cleanups are HIGH 
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## Path-Based Filtering with paths-ignore
 
 <!-- Source: .github/workflows/ci.yml:3-6 -->
@@ -69,9 +69,10 @@ When a branch type contains both metadata files and source code, `branches-ignor
 on:
   push:
     paths-ignore:
-      - '.erk/impl-context/**'
-      - '.worker-impl/**'
+      - ".erk/impl-context/**"
+      - ".worker-impl/**"
 ```
+````
 
 **How paths-ignore works:** When all changed files match a `paths-ignore` pattern, GitHub prevents the workflow from being queued entirely (zero cost). When any file doesn't match the ignore patterns (e.g., `src/`, `tests/`), the workflow runs normally.
 
@@ -81,12 +82,13 @@ on:
 
 ### When to Use paths-ignore vs branches-ignore
 
-| Scenario | Use | Rationale |
-|----------|-----|-----------|
-| Branch contains ONLY metadata (e.g., `plan-review-*`) | `branches-ignore` | All pushes should skip CI |
-| Branch contains BOTH metadata AND code (e.g., `planned/*`) | `paths-ignore` | Need to distinguish based on file content |
-| Branch is ephemeral and always skippable | `branches-ignore` | Simpler configuration |
-```
+| Scenario                                                   | Use               | Rationale                                 |
+| ---------------------------------------------------------- | ----------------- | ----------------------------------------- |
+| Branch contains ONLY metadata (e.g., `plan-review-*`)      | `branches-ignore` | All pushes should skip CI                 |
+| Branch contains BOTH metadata AND code (e.g., `planned/*`) | `paths-ignore`    | Need to distinguish based on file content |
+| Branch is ephemeral and always skippable                   | `branches-ignore` | Simpler configuration                     |
+
+````
 
 ---
 
@@ -110,7 +112,7 @@ Learn branches (e.g., `learn/7781`) that only modify `.erk/impl-context/` files 
 - Skipping CI saves resources and reduces dashboard noise
 
 **If you need CI on a learn branch:** Push a code change (any file outside the ignored paths). The presence of a non-ignored file will trigger the workflow normally.
-```
+````
 
 #### 3. PR submission metadata timing
 
@@ -240,6 +242,7 @@ Items with score 2-3 (may warrant promotion with additional context):
 ### One-Shot Workflow Duplicate Detection
 
 During analysis, two docs covering "One-Shot Workflow" were detected:
+
 1. `docs/learned/planning/one-shot-workflow.md` (176 lines, audited 2026-02-16)
 2. `docs/learned/workflows/one-shot-workflow.md` (not fully analyzed)
 
