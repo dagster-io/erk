@@ -267,11 +267,12 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
     assert (
         output["workflow_url"] == "https://github.com/test-owner/test-repo/actions/runs/1234567890"
     )
-    assert isinstance(output["gist_url"], str)
+    assert isinstance(output["learn_branch"], str)
+    assert output["learn_branch"] == "learn/123"
 
 
 def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
-    """Test that workflow trigger is called with correct parameters including gist_url."""
+    """Test that workflow trigger is called with correct parameters including learn_branch."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
 
@@ -290,7 +291,7 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
         repo_info=repo_info,
     )
 
-    # Create learn dir with a dummy file so gist upload has content
+    # Create learn dir with a dummy file so branch commit has content
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-456"
     learn_dir.mkdir(parents=True)
     (learn_dir / "placeholder.txt").write_text("test content", encoding="utf-8")
@@ -301,7 +302,8 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
     workflow, inputs = fake_gh.triggered_workflows[0]
     assert workflow == "learn.yml"
     assert inputs["plan_id"] == "456"
-    assert "gist_url" in inputs
+    assert "learn_branch" in inputs
+    assert inputs["learn_branch"] == "learn/456"
 
 
 def test_trigger_async_learn_no_repo_info(tmp_path: Path) -> None:
@@ -339,7 +341,7 @@ def test_trigger_async_learn_no_context(tmp_path: Path) -> None:
 
 
 def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
-    """Test that JSON output has expected structure on success including gist_url."""
+    """Test that JSON output has expected structure on success including learn_branch."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="dagster-io", name="erk")
 
@@ -373,7 +375,7 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
     assert "workflow_triggered" in output
     assert "run_id" in output
     assert "workflow_url" in output
-    assert "gist_url" in output
+    assert "learn_branch" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
@@ -381,7 +383,7 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
     assert isinstance(output["workflow_triggered"], bool)
     assert isinstance(output["run_id"], str)
     assert isinstance(output["workflow_url"], str)
-    assert isinstance(output["gist_url"], str)
+    assert isinstance(output["learn_branch"], str)
 
 
 def test_trigger_async_learn_filtered_session_skipped(tmp_path: Path) -> None:
@@ -429,7 +431,7 @@ def test_trigger_async_learn_filtered_session_skipped(tmp_path: Path) -> None:
         repo_info=repo_info,
     )
 
-    # Create learn dir with content for gist upload
+    # Create learn dir with content for branch commit
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
     learn_dir.mkdir(parents=True)
     (learn_dir / "placeholder.txt").write_text("test", encoding="utf-8")
@@ -588,7 +590,7 @@ def test_trigger_async_learn_pr_lookup_failure_continues(tmp_path: Path) -> None
         repo_info=repo_info,
     )
 
-    # Create learn dir with content
+    # Create learn dir with content for branch commit
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-999"
     learn_dir.mkdir(parents=True)
     (learn_dir / "placeholder.txt").write_text("test", encoding="utf-8")
@@ -713,8 +715,8 @@ def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
     assert "chars)" in output_lines[0]
 
 
-def test_trigger_async_learn_logs_gist_size(tmp_path: Path) -> None:
-    """Test that gist creation logs file count and total size."""
+def test_trigger_async_learn_logs_branch_size(tmp_path: Path) -> None:
+    """Test that branch commit logs file count and total size."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
 
@@ -732,7 +734,7 @@ def test_trigger_async_learn_logs_gist_size(tmp_path: Path) -> None:
         repo_info=repo_info,
     )
 
-    # Create learn dir with multiple files for gist stats
+    # Create learn dir with multiple files for branch stats
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
     learn_dir.mkdir(parents=True)
     (learn_dir / "file1.txt").write_text("content one", encoding="utf-8")
@@ -744,9 +746,9 @@ def test_trigger_async_learn_logs_gist_size(tmp_path: Path) -> None:
     assert result.exit_code == 0
     stderr_lines = _get_stderr_lines(result.output)
 
-    gist_lines = [line for line in stderr_lines if "3 file(s)" in line]
-    assert len(gist_lines) == 1
-    assert "chars" in gist_lines[0]
+    branch_lines = [line for line in stderr_lines if "3 file(s)" in line]
+    assert len(branch_lines) == 1
+    assert "bytes" in branch_lines[0]
 
 
 def test_trigger_async_learn_skip_workflow(tmp_path: Path) -> None:
@@ -769,7 +771,7 @@ def test_trigger_async_learn_skip_workflow(tmp_path: Path) -> None:
         repo_info=repo_info,
     )
 
-    # Create learn dir with content for gist upload
+    # Create learn dir with content for branch commit
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-456"
     learn_dir.mkdir(parents=True)
     (learn_dir / "placeholder.txt").write_text("test content", encoding="utf-8")
@@ -788,8 +790,9 @@ def test_trigger_async_learn_skip_workflow(tmp_path: Path) -> None:
     assert "run_id" not in output
     assert "workflow_url" not in output
 
-    # Verify gist_url is still present
-    assert isinstance(output["gist_url"], str)
+    # Verify learn_branch is present
+    assert isinstance(output["learn_branch"], str)
+    assert output["learn_branch"] == "learn/456"
 
     # Verify no workflows were triggered on FakeGitHub
     assert len(fake_gh.triggered_workflows) == 0
@@ -900,11 +903,9 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
     assert len(planning_xmls) >= 1, f"Expected planning XML, found: {list(learn_dir.iterdir())}"
     assert len(impl_xmls) >= 1, f"Expected impl XML, found: {list(learn_dir.iterdir())}"
 
-    # Verify gist upload includes content from both sessions
-    assert len(fake_gh.created_gists) == 1
-    _filename, gist_content, _description, _public = fake_gh.created_gists[0]
-    assert planning_id in gist_content
-    assert remote_id in gist_content
+    # Verify both sessions were committed to the learn branch
+    output = _parse_json_output(result.output)
+    assert output["learn_branch"] == "learn/123"
 
 
 def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> None:

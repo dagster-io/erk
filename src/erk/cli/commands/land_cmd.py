@@ -365,11 +365,13 @@ def _prompt_async_learn_and_continue(
     # Interactive mode: show numbered choice menu
     user_output("Choose an action:")
     user_output("  1. 🚀 Trigger async learn and continue (recommended)")
-    user_output("     Reads session logs, uploads to gist, runs analysis in GitHub Actions")
+    user_output("     Reads session logs, commits to learn branch, runs analysis in GitHub Actions")
     user_output("  2. ⏩ Continue without learning")
     user_output("  3. ❌ Cancel")
     user_output("  4. 📖 Preprocess sessions, then continue landing")
-    user_output(f"     Uploads gist so you can run `erk learn {plan_issue_number}` at your leisure")
+    user_output(
+        f"     Commits learn branch so you can run `erk learn {plan_issue_number}` at your leisure"
+    )
     user_output("")
 
     choice = click.prompt(
@@ -416,7 +418,7 @@ class LearnPreprocessResult:
     """Successful result from learn preprocessing subprocess."""
 
     output: dict[str, object]
-    gist_url: str | None
+    learn_branch: str | None
 
 
 @dataclass(frozen=True)
@@ -432,10 +434,10 @@ def _run_learn_preprocessing(
     plan_issue_number: int,
     skip_workflow: bool,
 ) -> LearnPreprocessResult | LearnPreprocessError:
-    """Run learn preprocessing subprocess and store gist URL on plan header.
+    """Run learn preprocessing subprocess and store learn branch on plan header.
 
     Calls `erk exec trigger-async-learn` with optional --skip-workflow flag,
-    parses the JSON output, and stores the gist URL on the plan issue header
+    parses the JSON output, and stores the learn branch on the plan issue header
     if preprocessing was successful.
 
     Args:
@@ -468,18 +470,18 @@ def _run_learn_preprocessing(
 
     # Parse output JSON
     output = json.loads(stdout)
-    gist_url = output.get("gist_url")
+    learn_branch = output.get("learn_branch")
 
-    # Store gist URL on plan header for auto-detection by `erk learn`
-    if gist_url and output.get("success"):
-        _store_learn_materials_gist_url(
+    # Store learn branch on plan header for auto-detection by `erk learn`
+    if learn_branch and output.get("success"):
+        _store_learn_materials_branch(
             ctx,
             repo_root=ctx.cwd,
             plan_issue_number=plan_issue_number,
-            gist_url=gist_url,
+            learn_branch=learn_branch,
         )
 
-    return LearnPreprocessResult(output=output, gist_url=gist_url)
+    return LearnPreprocessResult(output=output, learn_branch=learn_branch)
 
 
 def _trigger_async_learn(
@@ -503,7 +505,7 @@ def _trigger_async_learn(
 
     header = click.style(f"🧠 Triggering async learn for plan #{plan_issue_number}...", fg="cyan")
     user_output(header)
-    user_output("   Reads local session logs, preprocesses them, and uploads to a secret gist.")
+    user_output("   Reads local session logs, preprocesses them, and commits to a learn branch.")
     user_output(
         "   A GitHub Actions workflow then analyzes sessions and creates a documentation plan."
     )
@@ -555,39 +557,44 @@ def _parse_trigger_error(stdout: str, stderr: str) -> str:
     return stderr or stdout or "unknown error"
 
 
-def _store_learn_materials_gist_url(
+def _store_learn_materials_branch(
     ctx: ErkContext,
     *,
     repo_root: Path,
     plan_issue_number: int,
-    gist_url: str,
+    learn_branch: str,
 ) -> None:
-    """Store learn materials gist URL on the plan's metadata.
+    """Store learn materials branch on the plan's metadata.
 
-    Updates the learn_materials_gist_url field on the plan-header.
+    Updates the learn_materials_branch field on the plan-header.
     Errors are logged but do not propagate.
 
     Args:
         ctx: ErkContext
         repo_root: Repository root path
         plan_issue_number: Issue number of the plan
-        gist_url: URL of the preprocessed learn materials gist
+        learn_branch: Name of the branch containing learn materials
     """
     plan_id = str(plan_issue_number)
     try:
-        ctx.plan_backend.update_metadata(repo_root, plan_id, {"learn_materials_gist_url": gist_url})
+        ctx.plan_backend.update_metadata(
+            repo_root, plan_id, {"learn_materials_branch": learn_branch}
+        )
     except PlanHeaderNotFoundError:
         # No metadata block — store as comment instead
         try:
-            ctx.plan_backend.add_comment(repo_root, plan_id, f"Learn materials gist: {gist_url}")
+            ctx.plan_backend.add_comment(
+                repo_root, plan_id, f"Learn materials branch: {learn_branch}"
+            )
         except RuntimeError as comment_err:
             user_output(
                 click.style("⚠ ", fg="yellow")
-                + f"Could not store gist URL on plan {plan_id}: {comment_err}"
+                + f"Could not store learn branch on plan {plan_id}: {comment_err}"
             )
     except RuntimeError as e:
         user_output(
-            click.style("⚠ ", fg="yellow") + f"Could not store gist URL on plan {plan_id}: {e}"
+            click.style("⚠ ", fg="yellow")
+            + f"Could not store learn branch on plan {plan_id}: {e}"
         )
 
 
@@ -597,11 +604,11 @@ def _preprocess_and_prepare_manual_learn(
     repo_root: Path,
     plan_issue_number: int,
 ) -> None:
-    """Run preprocessing for manual learn, store gist URL, then continue landing.
+    """Run preprocessing for manual learn, store branch on plan, then continue landing.
 
     Calls `erk exec trigger-async-learn --skip-workflow` to do full preprocessing
-    (discover sessions, preprocess XML, fetch PR comments, upload gist) without
-    triggering the CI workflow. Then stores the gist URL on the plan issue header.
+    (discover sessions, preprocess XML, fetch PR comments, commit to learn branch)
+    without triggering the CI workflow. Then stores the branch on the plan issue header.
 
     After preprocessing (success or failure), returns to continue with landing.
     The user can run `erk learn` at their leisure.
@@ -615,7 +622,7 @@ def _preprocess_and_prepare_manual_learn(
 
     header = click.style(f"🔄 Preprocessing sessions for plan #{plan_issue_number}...", fg="cyan")
     user_output(header)
-    user_output("   Reads local session logs, preprocesses them, and uploads to a secret gist.")
+    user_output("   Reads local session logs, preprocesses them, and commits to a learn branch.")
     user_output("")
 
     result = _run_learn_preprocessing(ctx, plan_issue_number=plan_issue_number, skip_workflow=True)
@@ -629,8 +636,8 @@ def _preprocess_and_prepare_manual_learn(
         user_output("Continuing with landing.")
         return
 
-    if result.gist_url:
-        user_output(click.style("✓", fg="green") + " Preprocessed and uploaded learn materials")
+    if result.learn_branch:
+        user_output(click.style("✓", fg="green") + " Preprocessed and committed learn materials")
 
     user_output(f"Run `erk learn {plan_issue_number}` at your leisure to learn from this plan.")
     user_output("Continuing with landing.")

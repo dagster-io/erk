@@ -129,25 +129,25 @@ def learn_cmd(
     repo = discover_repo_context(ctx, ctx.cwd)
     repo_root = repo.root
 
-    # Check for preprocessed learn materials gist URL before session discovery
-    gist_url = _get_learn_materials_gist_url(ctx, repo_root, plan_id)
-    if gist_url is not None:
+    # Check for preprocessed learn materials branch before session discovery
+    learn_branch = _get_learn_materials_branch(ctx, repo_root, plan_id)
+    if learn_branch is not None:
         user_output(
             click.style(f"Preprocessed learn materials for plan {plan_id}", bold=True)
-            + f"\n\nGist: {click.style(gist_url, fg='cyan')}"
-            + "\n\nSessions have been preprocessed and uploaded."
-            + "\nClaude will download and analyze from the gist directly."
+            + f"\n\nBranch: {click.style(learn_branch, fg='cyan')}"
+            + "\n\nSessions have been preprocessed and committed to the learn branch."
+            + "\nClaude will read materials from .erk/impl-context/ directly."
         )
         ctx.prompt_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=dangerous,
-            command=f"/erk:learn {plan_id} gist_url={gist_url}",
+            command=f"/erk:learn {plan_id}",
             target_subpath=None,
             permission_mode="edits",
         )
         return
 
-    # No gist URL — fall through to session discovery
+    # No learn branch — fall through to session discovery
     # Find sessions for the plan
     sessions_for_plan = ctx.plan_backend.find_sessions_for_plan(
         repo_root,
@@ -234,12 +234,12 @@ def _confirm_and_launch(
         )
 
 
-def _get_learn_materials_gist_url(
+def _get_learn_materials_branch(
     ctx: ErkContext,
     repo_root: Path,
     plan_id: str,
 ) -> str | None:
-    """Check plan header for a stored learn_materials_gist_url.
+    """Check plan header for a stored learn_materials_branch.
 
     Args:
         ctx: ErkContext
@@ -247,9 +247,9 @@ def _get_learn_materials_gist_url(
         plan_id: Plan identifier
 
     Returns:
-        Gist URL if found on the plan header, None otherwise
+        Branch name if found on the plan header, None otherwise
     """
-    result = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_materials_gist_url")
+    result = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_materials_branch")
     if isinstance(result, PlanNotFound):
         return None
     if not isinstance(result, str):

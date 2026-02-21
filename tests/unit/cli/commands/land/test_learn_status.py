@@ -10,7 +10,7 @@ import pytest
 from erk.cli.commands import land_cmd
 from erk.cli.commands.land_cmd import (
     _check_learn_status_and_prompt,
-    _store_learn_materials_gist_url,
+    _store_learn_materials_branch,
     _trigger_async_learn,
 )
 from erk.core.context import context_for_test
@@ -523,19 +523,19 @@ def test_check_learn_status_and_prompt_manual_learn_preprocesses_and_continues(
     assert preprocess_calls == [456]
 
 
-# Tests for _store_learn_materials_gist_url
+# Tests for _store_learn_materials_branch
 
 
-def test_store_learn_materials_gist_url_updates_plan_header(
+def test_store_learn_materials_branch_updates_plan_header(
     tmp_path: Path,
 ) -> None:
-    """Test that _store_learn_materials_gist_url stores the gist URL on the plan issue."""
+    """Test that _store_learn_materials_branch stores the branch on the plan issue."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
     issue_number = 123
 
-    # Create issue with plan header body (required for update_plan_header_learn_materials_gist_url)
+    # Create issue with plan header body (required for update_plan_header_learn_materials_branch)
     issue_body = format_plan_header_body_for_test()
     issue = create_test_issue(
         number=issue_number,
@@ -547,26 +547,26 @@ def test_store_learn_materials_gist_url_updates_plan_header(
 
     ctx = context_for_test(cwd=repo_root, issues=fake_issues)
 
-    _store_learn_materials_gist_url(
+    _store_learn_materials_branch(
         ctx,
         repo_root=repo_root,
         plan_issue_number=issue_number,
-        gist_url="https://gist.github.com/test/abc123",
+        learn_branch="learn/123",
     )
 
     # Verify FakeGitHubIssues had its body updated
     assert len(fake_issues.updated_bodies) == 1
     updated_issue_number, updated_body = fake_issues.updated_bodies[0]
     assert updated_issue_number == issue_number
-    assert "learn_materials_gist_url" in updated_body
-    assert "https://gist.github.com/test/abc123" in updated_body
+    assert "learn_materials_branch" in updated_body
+    assert "learn/123" in updated_body
 
 
-def test_store_learn_materials_gist_url_handles_missing_issue(
+def test_store_learn_materials_branch_handles_missing_issue(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that _store_learn_materials_gist_url handles missing issue gracefully."""
+    """Test that _store_learn_materials_branch handles missing issue gracefully."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -575,31 +575,31 @@ def test_store_learn_materials_gist_url_handles_missing_issue(
     ctx = context_for_test(cwd=repo_root, issues=fake_issues)
 
     # Should not raise, just print warning
-    _store_learn_materials_gist_url(
+    _store_learn_materials_branch(
         ctx,
         repo_root=repo_root,
         plan_issue_number=999,
-        gist_url="https://gist.github.com/test/abc123",
+        learn_branch="learn/999",
     )
 
     # Verify warning was printed
     captured = capsys.readouterr()
-    assert "Could not store gist URL" in captured.err
+    assert "Could not store learn branch" in captured.err
     assert "#999" in captured.err
 
     # Verify no body updates occurred
     assert len(fake_issues.updated_bodies) == 0
 
 
-# Tests for _trigger_async_learn storing gist URL
+# Tests for _trigger_async_learn storing learn branch
 
 
-def test_trigger_async_learn_stores_gist_url_on_plan_header(
+def test_trigger_async_learn_stores_learn_branch_on_plan_header(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that _trigger_async_learn stores gist URL on plan header when subprocess returns it."""
+    """Test that _trigger_async_learn stores learn branch on plan header when subprocess returns it."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -615,7 +615,7 @@ def test_trigger_async_learn_stores_gist_url_on_plan_header(
     )
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
 
-    # Mock subprocess.Popen to return successful JSON with gist_url
+    # Mock subprocess.Popen to return successful JSON with learn_branch
     class MockPopen:
         def __init__(self, cmd, **kwargs):
             self.args = cmd
@@ -627,7 +627,7 @@ def test_trigger_async_learn_stores_gist_url_on_plan_header(
                     "workflow_triggered": True,
                     "run_id": "test-run-id",
                     "workflow_url": "https://github.com/owner/repo/actions/runs/test-run-id",
-                    "gist_url": "https://gist.github.com/test/abc123",
+                    "learn_branch": "learn/123",
                 }
             )
 
@@ -640,12 +640,12 @@ def test_trigger_async_learn_stores_gist_url_on_plan_header(
 
     _trigger_async_learn(ctx, repo_root=repo_root, plan_issue_number=issue_number)
 
-    # Verify FakeGitHubIssues was updated with the gist URL
+    # Verify FakeGitHubIssues was updated with the learn branch
     assert len(fake_issues.updated_bodies) == 1
     updated_issue_number, updated_body = fake_issues.updated_bodies[0]
     assert updated_issue_number == issue_number
-    assert "learn_materials_gist_url" in updated_body
-    assert "https://gist.github.com/test/abc123" in updated_body
+    assert "learn_materials_branch" in updated_body
+    assert "learn/123" in updated_body
 
     # Verify success message was shown
     captured = capsys.readouterr()
@@ -708,13 +708,13 @@ def test_option4_calls_preprocess_and_continues_landing(
     assert preprocess_calls[0] == (repo_root, issue_number)
 
 
-# Tests for _store_learn_materials_gist_url with draft-PR backend (Fix 2)
+# Tests for _store_learn_materials_branch with draft-PR backend (Fix 2)
 
 
-def test_store_learn_materials_gist_url_comment_fallback_on_missing_metadata(
+def test_store_learn_materials_branch_comment_fallback_on_missing_metadata(
     tmp_path: Path,
 ) -> None:
-    """Test that _store_learn_materials_gist_url falls back to comment when no metadata block."""
+    """Test that _store_learn_materials_branch falls back to comment when no metadata block."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -750,11 +750,11 @@ def test_store_learn_materials_gist_url_comment_fallback_on_missing_metadata(
         plan_store=draft_backend,
     )
 
-    _store_learn_materials_gist_url(
+    _store_learn_materials_branch(
         ctx,
         repo_root=repo_root,
         plan_issue_number=issue_number,
-        gist_url="https://gist.github.com/test/abc123",
+        learn_branch="learn/7618",
     )
 
     # Verify a PR comment was added (fallback path) instead of metadata update
@@ -762,4 +762,4 @@ def test_store_learn_materials_gist_url_comment_fallback_on_missing_metadata(
     assert len(fake_gh.pr_comments) == 1
     comment_pr, comment_body = fake_gh.pr_comments[0]
     assert comment_pr == issue_number
-    assert "https://gist.github.com/test/abc123" in comment_body
+    assert "learn/7618" in comment_body
