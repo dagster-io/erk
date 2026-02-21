@@ -173,8 +173,8 @@ class PlanDataTable(DataTable):
             col_index += 1
             return
 
-        # Plans view: plan, obj, sts, title, branch, ...
-        self.add_column("sts", key="status")
+        # Plans view: plan, obj, loc, title, branch, ...
+        self.add_column("loc", key="status")
         col_index += 1
         self.add_column("title", key="title")
         col_index += 1
@@ -306,12 +306,12 @@ class PlanDataTable(DataTable):
         if row.objective_issue is not None:
             objective_cell = Text(row.objective_display, style="cyan underline")
 
-        # Compact status emoji: 💻 = local checkout, 🏃 = remote run
+        # Compact location emoji: 💻 = local checkout, ☁ = remote/cloud run
         status_parts: list[str] = []
         if row.exists_locally:
             status_parts.append("\U0001f4bb")
         if row.run_url is not None:
-            status_parts.append("\U0001f3c3")
+            status_parts.append("\u2601")
         status_cell = "".join(status_parts) if status_parts else "-"
 
         # Build values list based on columns
