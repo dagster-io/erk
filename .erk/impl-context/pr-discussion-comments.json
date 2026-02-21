@@ -1,0 +1,54 @@
+{
+  "success": true,
+  "pr_number": 7754,
+  "comments": [
+    {
+      "id": 3939023211,
+      "author": "schrockn",
+      "body": "\ud83d\udd04 Plan Queued for Implementation\n\n<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n<!-- erk:metadata-block:submission-queued -->\n<details>\n<summary>submission-queued</summary>\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-02-21T16:07:44.618353+00:00'\nsubmitted_by: schrockn\nissue_number: 7754\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n</details>\n<!-- /erk:metadata-block:submission-queued -->\n\n---\n\nPlan submitted by **schrockn** at 2026-02-21T16:07:44.618353+00:00.\n\nThe `plan-implement` workflow has been triggered via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22259916182",
+      "url": "https://github.com/dagster-io/erk/pull/7754#issuecomment-3939023211"
+    },
+    {
+      "id": 3939023787,
+      "author": "github-actions[bot]",
+      "body": "\u2699\ufe0f GitHub Action Started\n\n<details>\n<summary>\ud83d\udccb Metadata</summary>\n\n<!-- erk:metadata-block:workflow-started -->\n```yaml\nschema: workflow-started\nstatus: started\nstarted_at: 2026-02-21T16:08:15Z\nworkflow_run_id: \"22259916182\"\nworkflow_run_url: https://github.com/dagster-io/erk/actions/runs/22259916182\nbranch_name: plan/fix-learn-skill-to-display-02-21-1106\nplan_id: 7754\n```\n<!-- /erk:metadata-block:workflow-started -->\n\n</details>\n\n---\n\nSetup completed successfully.\n\n**Branch:** `plan/fix-learn-skill-to-display-02-21-1106`\n**PR:** [#7754](https://github.com/dagster-io/erk/pull/7754)\n**Status:** Ready for implementation\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22259916182)\n",
+      "url": "https://github.com/dagster-io/erk/pull/7754#issuecomment-3939023787"
+    },
+    {
+      "id": 3939032148,
+      "author": "schrockn",
+      "body": "\ud83d\udd04 Plan Queued for Implementation\n\n<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n<!-- erk:metadata-block:submission-queued -->\n<details>\n<summary>submission-queued</summary>\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-02-21T16:13:15.020311+00:00'\nsubmitted_by: schrockn\nissue_number: 7754\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n</details>\n<!-- /erk:metadata-block:submission-queued -->\n\n---\n\nPlan submitted by **schrockn** at 2026-02-21T16:13:15.020311+00:00.\n\nThe `plan-implement` workflow has been triggered via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22259999702",
+      "url": "https://github.com/dagster-io/erk/pull/7754#issuecomment-3939032148"
+    },
+    {
+      "id": 3939032528,
+      "author": "github-actions[bot]",
+      "body": "<!-- tripwires-review -->\n\n## \u2705 Tripwires Review\n\n**Last updated:** 2026-02-21 10:31:16 PT\n\nFound 0 violations across 1 file. No inline comments needed.\n\n### Tripwires Triggered\n- Universal tripwires \u2192 loaded docs/learned/universal-tripwires.md\n- Commands tripwires \u2192 loaded docs/learned/commands/tripwires.md\n- Documentation tripwires \u2192 loaded docs/learned/documentation/tripwires.md\n\n### Tier 1 Pattern Matches (Mechanical)\n\u2705 `subprocess\\.run` - None found\n\u2705 `Path\\.home\\(\\)` - None found\n\u2705 `time\\.sleep|datetime\\.now` - None found\n\u2705 `os\\.chdir` - None found\n\u2705 `gh pr diff --name-only` - None found\n\n### Tier 2 Semantic Matches (LLM-Derived)\n\u2705 Using CLAUDE_SESSION_ID as environment variable - Not applicable (markdown only)\n\u2705 Adding file I/O or subprocess to __init__ - Not applicable (documentation only)\n\u2705 Raising exceptions for expected failures - Not applicable (documentation only)\n\u2705 Modifying business logic without tests - Not applicable (documentation only)\n\u2705 Modifying frontmatter without running erk docs sync - Not applicable (no frontmatter changes)\n\u2705 Copying source code into docs - Not applicable (no code copied)\n\n### Violations Summary\nNo violations detected.\n\n### Files Reviewed\n- `.claude/commands/erk/learn.md`: 0 violations (documentation update for plan backend display logic)\n\n---\n\n### Activity Log\n- **2026-02-21 10:31:16 PT**: No tripwire violations detected. Reviewed documentation changes for plan backend display logic (draft PR vs issue conditional text).\n- **2026-02-21 10:06:28 PT**: No tripwire violations detected. Reviewed documentation changes for plan backend display logic (draft PR vs issue conditional text).\n- **2026-02-21 08:19:56 PT**: No tripwire violations detected. Reviewed documentation changes for plan backend display logic (draft PR vs issue conditional text).\n- **2026-02-21 08:18:02 PT**: No tripwire violations detected. Reviewed documentation changes for plan backend display logic (draft PR vs issue) and table whitespace fix.\n- **2026-02-21 08:14:48 PT**: No tripwire violations detected. Reviewed documentation changes for plan backend display logic (draft PR vs issue).\n- **2026-02-21 08:13:24 PT**: No tripwire violations detected. Reviewed documentation changes for plan backend display logic (draft PR vs issue).",
+      "url": "https://github.com/dagster-io/erk/pull/7754#issuecomment-3939032528"
+    },
+    {
+      "id": 3939032622,
+      "author": "github-actions[bot]",
+      "body": "\u2699\ufe0f GitHub Action Started\n\n<details>\n<summary>\ud83d\udccb Metadata</summary>\n\n<!-- erk:metadata-block:workflow-started -->\n```yaml\nschema: workflow-started\nstatus: started\nstarted_at: 2026-02-21T16:13:39Z\nworkflow_run_id: \"22259999702\"\nworkflow_run_url: https://github.com/dagster-io/erk/actions/runs/22259999702\nbranch_name: plan/fix-learn-skill-to-display-02-21-1106\nplan_id: 7754\n```\n<!-- /erk:metadata-block:workflow-started -->\n\n</details>\n\n---\n\nSetup completed successfully.\n\n**Branch:** `plan/fix-learn-skill-to-display-02-21-1106`\n**PR:** [#7754](https://github.com/dagster-io/erk/pull/7754)\n**Status:** Ready for implementation\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22259999702)\n",
+      "url": "https://github.com/dagster-io/erk/pull/7754#issuecomment-3939032622"
+    },
+    {
+      "id": 3939041524,
+      "author": "github-actions[bot]",
+      "body": "<!-- audit-pr-docs -->\n\n## \u2705 Audit PR Docs\n\n**Last updated:** 2026-02-21 08:19:55 PT\n\nNo `docs/learned/**/*.md` files changed in this PR.\n\n### Files Reviewed\n- (none \u2014 no docs/learned files in diff)\n\n### Changed Files (out of scope)\n- `.claude/commands/erk/learn.md` \u2014 not in docs/learned scope\n\n---\n\n### Activity Log\n- **2026-02-21 08:19:55 PT**: No docs/learned files changed \u2014 nothing to audit",
+      "url": "https://github.com/dagster-io/erk/pull/7754#issuecomment-3939041524"
+    },
+    {
+      "id": 3939181508,
+      "author": "github-actions[bot]",
+      "body": "\u2705 Remote rebase completed\n\nRebased `plan/fix-learn-skill-to-display-02-21-1106` onto `master`, incorporating 5 new commit(s).\n\n**Conflicts resolved:**\n- `.claude/commands/erk/learn.md`\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22261633820)",
+      "url": "https://github.com/dagster-io/erk/pull/7754#issuecomment-3939181508"
+    },
+    {
+      "id": 3939213316,
+      "author": "schrockn",
+      "body": "* **#7754** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7754?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7754?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7754#issuecomment-3939213316"
+    }
+  ]
+}

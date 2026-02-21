@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "pr_number": 7754,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v7QiI",
+      "path": "docs/learned/integrations/github-review-decision.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Pre-existing drift risks found in full doc audit.\n\nThe following sections of this document contain specific line numbers that will go stale as code evolves:\n\n1. **GraphQL Source** (lines 31-33): References `graphql_queries.py` at lines 75, 148, 197 \u2014 these line numbers will drift as the file changes.\n\n2. **Display Logic** (line 47): References `lifecycle.py:61-140` \u2014 also **inaccurate**: `format_lifecycle_with_status()` starts at line 69, not 61. Should use name-based source pointer instead.\n\n3. **Wiring in real.py** (lines 64-66): References specific line numbers 612, 639, 731 in `real.py` \u2014 will drift as code changes.\n\nSuggested fix: Replace line-number references with name-based source pointers per `docs/learned/documentation/source-pointers.md`:\n```markdown\n<!-- Source: path/to/file.py, SymbolName.method -->\nSee `SymbolName.method()` in `path/to/file.py`.\n```",
+          "created_at": "2026-02-21T16:19:29Z"
+        }
+      ]
+    }
+  ]
+}
