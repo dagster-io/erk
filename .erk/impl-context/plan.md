@@ -40,11 +40,13 @@ Two changes are needed:
 File: `packages/erk-shared/src/erk_shared/naming.py:424`
 
 Current regex only handles `planned/` (new prefix after #7749) and `P{number}-O{number}-` (issue-based):
+
 ```python
 match = re.match(r"^(?:[Pp]?\d+-|planned/)[Oo](\d+)-", branch_name)
 ```
 
 Update to also handle the old `plan/` prefix:
+
 ```python
 match = re.match(r"^(?:[Pp]?\d+-|plan(?:ned)?/)[Oo](\d+)-", branch_name)
 ```
