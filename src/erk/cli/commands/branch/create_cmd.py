@@ -276,7 +276,7 @@ def branch_create(
             result.output_for_shell_integration()
             sys.exit(0)
 
-        user_output(f"Created .impl/ folder from issue #{setup.issue_number}")
+        user_output(f"Created .impl/ folder from plan #{setup.issue_number}")
 
         # Write activation script
         activate_script_path = write_worktree_activate_script(
