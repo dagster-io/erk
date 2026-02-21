@@ -1,8 +1,9 @@
-"""Signal implementation events (started/ended) to GitHub.
+"""Signal implementation events (started/ended/submitted) to GitHub.
 
-This exec command wraps the start/end signaling operations:
+This exec command wraps the start/end/submit signaling operations:
 - "started": Combines post-start-comment and mark-impl-started
 - "ended": Runs mark-impl-ended
+- "submitted": Sets lifecycle_stage to "implemented" after PR submission
 
 Provides a single entry point for /erk:plan-implement to signal events
 with graceful failure (always exits 0 for || true pattern).
@@ -10,6 +11,7 @@ with graceful failure (always exits 0 for || true pattern).
 Usage:
     erk exec impl-signal started
     erk exec impl-signal ended
+    erk exec impl-signal submitted
 
 Output:
     JSON with success status or error information
@@ -24,6 +26,9 @@ Examples:
 
     $ erk exec impl-signal ended
     {"success": true, "event": "ended", "issue_number": 123}
+
+    $ erk exec impl-signal submitted
+    {"success": true, "event": "submitted", "issue_number": 123}
 """
 
 import getpass
@@ -47,6 +52,7 @@ from erk_shared.impl_folder import (
     read_plan_ref,
     write_local_run_state,
 )
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -352,8 +358,71 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     raise SystemExit(0)
 
 
+def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
+    """Handle 'submitted' event - set lifecycle_stage to implemented."""
+    event = "submitted"
+
+    # Get cwd from context
+    try:
+        cwd = require_cwd(ctx)
+    except SystemExit:
+        _output_error(event, "context-not-initialized", "Context not initialized")
+        return
+
+    # Find impl directory
+    impl_dir = cwd / ".impl"
+    if not impl_dir.exists():
+        impl_dir = cwd / ".worker-impl"
+
+    # Read plan reference
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is None:
+        _output_error(event, "no-issue-reference", "No plan reference found")
+        return
+
+    # Get repo root
+    try:
+        repo_root = require_repo_root(ctx)
+    except SystemExit:
+        _output_error(event, "context-not-initialized", "Context not initialized")
+        return
+
+    # Get PlanBackend from context
+    try:
+        backend = require_plan_backend(ctx)
+    except SystemExit:
+        _output_error(event, "context-not-initialized", "Context not initialized")
+        return
+
+    # Build metadata dict with lifecycle_stage transition
+    metadata: dict[str, object] = {
+        "lifecycle_stage": "implemented",
+    }
+
+    # LBYL: Check plan exists before updating
+    plan_result = backend.get_plan(repo_root, plan_ref.plan_id)
+    if isinstance(plan_result, PlanNotFound):
+        _output_error(event, "issue-not-found", f"Issue #{plan_ref.plan_id} not found")
+        return
+
+    # Update metadata via PlanBackend (no comment needed — the PR is already visible)
+    try:
+        backend.update_metadata(repo_root, plan_ref.plan_id, metadata)
+    except RuntimeError as e:
+        _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
+        return
+
+    result = SignalSuccess(
+        success=True,
+        event=event,
+        issue_number=int(plan_ref.plan_id),
+    )
+    click.echo(json.dumps(asdict(result), indent=2))
+    raise SystemExit(0)
+
+
 @click.command(name="impl-signal")
-@click.argument("event", type=click.Choice(["started", "ended"]))
+@click.argument("event", type=click.Choice(["started", "ended", "submitted"]))
 @click.option(
     "--session-id",
     default=None,
@@ -363,10 +432,11 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
 def impl_signal(ctx: click.Context, event: str, session_id: str | None) -> None:
     """Signal implementation events to GitHub.
 
-    EVENT can be 'started' or 'ended'.
+    EVENT can be 'started', 'ended', or 'submitted'.
 
     'started' posts a start comment and updates issue metadata.
     'ended' updates issue metadata with ended event.
+    'submitted' sets lifecycle_stage to "implemented" after PR submission.
 
     When --session-id is provided on 'started', also deletes the Claude plan file
     (the content has been saved to GitHub and snapshotted).
@@ -375,5 +445,7 @@ def impl_signal(ctx: click.Context, event: str, session_id: str | None) -> None:
     """
     if event == "started":
         _signal_started(ctx, session_id)
-    else:
+    elif event == "ended":
         _signal_ended(ctx, session_id)
+    else:
+        _signal_submitted(ctx, session_id)

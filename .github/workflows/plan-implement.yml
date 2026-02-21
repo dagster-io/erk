@@ -450,6 +450,11 @@ jobs:
           git push origin "$BRANCH_NAME"
           echo "CI workflows triggered via push event"
 
+      - name: Update lifecycle stage to implemented
+        if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        run: |
+          erk exec impl-signal submitted
+
       - name: Fail workflow if implementation failed
         if: steps.implement.outputs.implementation_success != 'true'
         run: |
