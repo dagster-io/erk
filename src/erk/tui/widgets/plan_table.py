@@ -153,11 +153,14 @@ class PlanDataTable(DataTable):
         plan_col_header = "pr" if self._plan_backend == "draft_pr" else "plan"
         self.add_column(plan_col_header, key="plan")
         col_index += 1
-        self.add_column("title", key="title")
+        self.add_column("obj", key="objective")
+        self._objective_column_index = col_index
         col_index += 1
 
-        # Objectives view: plan, title, prog, next step, updated, author
+        # Objectives view: plan, obj, title, prog, next step, deps, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
+            self.add_column("title", key="title")
+            col_index += 1
             self.add_column("prog", key="progress")
             col_index += 1
             self.add_column("next node", key="next_node")
@@ -170,6 +173,13 @@ class PlanDataTable(DataTable):
             col_index += 1
             return
 
+        # Plans view: plan, obj, sts, title, branch, ...
+        self.add_column("sts", key="status")
+        col_index += 1
+        self.add_column("title", key="title")
+        col_index += 1
+        self.add_column("branch", key="branch")
+        col_index += 1
         self.add_column("created", key="created")
         col_index += 1
         self.add_column("author", key="author")
@@ -190,16 +200,10 @@ class PlanDataTable(DataTable):
             col_index += 1
             self.add_column("comments", key="comments")
             col_index += 1
-            self.add_column("obj", key="objective")
-            self._objective_column_index = col_index
-            col_index += 1
             self.add_column("lrn", key="learn")
             self._learn_column_index = col_index
             col_index += 1
         else:
-            self.add_column("obj", key="objective")
-            self._objective_column_index = col_index
-            col_index += 1
             self.add_column("lrn", key="learn")
             self._learn_column_index = col_index
             col_index += 1
@@ -302,10 +306,26 @@ class PlanDataTable(DataTable):
         if row.objective_issue is not None:
             objective_cell = Text(row.objective_display, style="cyan underline")
 
+        # Compact status emoji: 💻 = local checkout, 🏃 = remote run
+        status_parts: list[str] = []
+        if row.exists_locally:
+            status_parts.append("\U0001f4bb")
+        if row.run_url is not None:
+            status_parts.append("\U0001f3c3")
+        status_cell = "".join(status_parts) if status_parts else "-"
+
         # Build values list based on columns
         # Wrap title in Text to prevent Rich markup interpretation
         # (e.g., "[erk-learn]" prefix would otherwise be treated as a markup tag)
-        values: list[str | Text] = [plan_cell, Text(row.title), row.created_display, row.author]
+        values: list[str | Text] = [
+            plan_cell,
+            objective_cell,
+            status_cell,
+            Text(row.title),
+            row.pr_head_branch or row.worktree_branch or "-",
+            row.created_display,
+            row.author,
+        ]
 
         # Draft PR mode: add lifecycle stage column (strip markup for plain display)
         if self._plan_backend == "draft_pr":
@@ -320,13 +340,11 @@ class PlanDataTable(DataTable):
                 pr_display = _strip_rich_markup(row.pr_display)
                 if row.pr_url:
                     pr_display = Text(pr_display, style="cyan underline")
-                values.extend(
-                    [pr_display, checks_display, comments_display, objective_cell, learn_cell]
-                )
+                values.extend([pr_display, checks_display, comments_display, learn_cell])
             else:
-                values.extend([checks_display, comments_display, objective_cell, learn_cell])
+                values.extend([checks_display, comments_display, learn_cell])
         else:
-            values.extend([objective_cell, learn_cell])
+            values.extend([learn_cell])
         values.extend([wt_cell, row.local_impl_display])
         if self._plan_filters.show_runs:
             remote_impl = _strip_rich_markup(row.remote_impl_display)
