@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: `erk one-shot` fails to write dispatch metadata with draft_pr backend"
-}
