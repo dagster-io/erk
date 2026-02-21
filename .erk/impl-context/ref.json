@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Detect remote divergence before `gt submit` in Graphite-first flow"
-}
