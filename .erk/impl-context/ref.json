@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Skip CI for Plan-Only and One-Shot Prompt Branches"
+}
