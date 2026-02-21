@@ -150,11 +150,11 @@ OR exit Claude Code first, then run one of:
 
   New slot (recommended — you're on trunk):
     Local: erk br create --new-slot --for-plan <issue_number>
-    Prepare+Implement: source "$(erk br create --new-slot --for-plan <issue_number> --script)" && erk implement --dangerous
+    Implement: implement the planned pr in <<branch_name>> in new worktree
 
   Same slot:
     Local: erk br create --for-plan <issue_number>
-    Prepare+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
+    Implement: implement the planned pr in <<branch_name>>
 
   Submit to Queue: erk plan submit <issue_number>
 ```
@@ -166,11 +166,11 @@ OR exit Claude Code first, then run one of:
 
   Same slot (recommended — you're in a slot):
     Local: erk br create --for-plan <issue_number>
-    Prepare+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
+    Implement: implement the planned pr in <<branch_name>>
 
   New slot:
     Local: erk br create --new-slot --for-plan <issue_number>
-    Prepare+Implement: source "$(erk br create --new-slot --for-plan <issue_number> --script)" && erk implement --dangerous
+    Implement: implement the planned pr in <<branch_name>> in new worktree
 
   Submit to Queue: erk plan submit <issue_number>
 ```
