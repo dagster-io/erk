@@ -25,6 +25,8 @@
 
 **CRITICAL: NEVER invoke `gt` commands without `--no-interactive`.** The `--interactive` flag is a global option on ALL gt commands (enabled by default). Without `--no-interactive`, gt may prompt for input and hang indefinitely. Note: `--force` does NOT disable prompts — you must pass `--no-interactive` separately.
 
+**CRITICAL: After creating an objective issue, ALWAYS run `erk objective check <number>` to validate it.** If validation fails, the objective's metadata is broken and `erk dash` will not display it correctly. Fix the issue before proceeding.
+
 ### Universal Tripwires
 
 These critical rules apply across all code areas.
