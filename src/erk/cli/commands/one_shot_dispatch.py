@@ -28,6 +28,7 @@ from erk_shared.naming import (
     sanitize_worktree_name,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store import get_plan_backend
 
 logger = logging.getLogger(__name__)
 
@@ -294,24 +295,27 @@ def dispatch_one_shot(
 
         # Write dispatch metadata and post queued comment (best-effort, only if plan issue exists)
         if plan_issue_number is not None:
-            # Write dispatch metadata to plan issue
-            try:
-                write_dispatch_metadata(
-                    plan_backend=ctx.plan_backend,
-                    github=ctx.github,
-                    repo_root=repo.root,
-                    issue_number=plan_issue_number,
-                    run_id=run_id,
-                    dispatched_at=queued_at,
-                )
-                user_output(
-                    click.style("\u2713", fg="green") + " Dispatch metadata written to issue"
-                )
-            except Exception as e:
-                user_output(
-                    click.style("Warning: ", fg="yellow")
-                    + f"Failed to update dispatch metadata: {e}"
-                )
+            # Write dispatch metadata to plan issue (github backend only).
+            # In draft_pr mode, the skeleton issue is only for branch naming
+            # and has no plan-header metadata block.
+            if get_plan_backend() != "draft_pr":
+                try:
+                    write_dispatch_metadata(
+                        plan_backend=ctx.plan_backend,
+                        github=ctx.github,
+                        repo_root=repo.root,
+                        issue_number=plan_issue_number,
+                        run_id=run_id,
+                        dispatched_at=queued_at,
+                    )
+                    user_output(
+                        click.style("\u2713", fg="green") + " Dispatch metadata written to issue"
+                    )
+                except Exception as e:
+                    user_output(
+                        click.style("Warning: ", fg="yellow")
+                        + f"Failed to update dispatch metadata: {e}"
+                    )
 
             # Post queued event comment to plan issue
             try:

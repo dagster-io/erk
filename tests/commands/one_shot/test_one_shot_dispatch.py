@@ -290,7 +290,7 @@ def test_dispatch_posts_queued_event_comment() -> None:
 def test_dispatch_writes_metadata_to_plan_issue() -> None:
     """Test that dispatch writes run_id, node_id, and timestamp metadata to the plan issue."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    with erk_isolated_fs_env(runner, env_overrides={"ERK_PLAN_BACKEND": "github"}) as env:
         env.setup_repo_structure()
 
         git = FakeGit(
@@ -318,6 +318,51 @@ def test_dispatch_writes_metadata_to_plan_issue() -> None:
         assert "last_dispatched_run_id: '1234567890'" in issue_info.body
         assert "last_dispatched_node_id: WFR_fake_node_id_1234567890" in issue_info.body
         assert "last_dispatched_at:" in issue_info.body
+
+
+def test_dispatch_skips_metadata_for_draft_pr_backend() -> None:
+    """Test that dispatch skips write_dispatch_metadata when plan backend is draft_pr.
+
+    In draft_pr mode, the skeleton issue is only for branch naming and has no
+    plan-header metadata block. The queued event comment should still be posted.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides={"ERK_PLAN_BACKEND": "draft_pr"}) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FakeGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+        params = OneShotDispatchParams(
+            prompt="fix the import in config.py",
+            model=None,
+            extra_workflow_inputs={},
+        )
+
+        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+
+        assert result is not None
+
+        # Verify dispatch metadata was NOT written to the skeleton issue
+        # (the field exists from create_plan_issue but remains null)
+        issue_info = issues.get_issue(env.cwd, 1)
+        assert not isinstance(issue_info, IssueNotFound)
+        assert "last_dispatched_run_id: '1234567890'" not in issue_info.body
+
+        # Verify queued event comment was still posted
+        queued_comments = [
+            (num, body) for num, body, _id in issues.added_comments if "One-Shot Dispatched" in body
+        ]
+        assert len(queued_comments) == 1
+        assert queued_comments[0][0] == 1
 
 
 def test_dispatch_long_prompt_truncates_workflow_input() -> None:
