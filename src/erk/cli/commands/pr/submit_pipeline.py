@@ -200,6 +200,35 @@ def push_and_create_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
 def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Graphite-first flow: gt submit handles push + PR creation."""
     click.echo(click.style("Phase 1: Graphite Submit", bold=True))
+
+    # Pre-check: detect remote divergence before gt submit
+    if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branch_name):
+        ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
+        divergence = ctx.git.branch.is_branch_diverged_from_remote(
+            state.cwd, state.branch_name, "origin"
+        )
+        if divergence.behind > 0 and not state.force:
+            ahead_msg = (
+                f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead > 0 else ""
+            )
+            return SubmitError(
+                phase="push_and_create_pr",
+                error_type="remote_diverged",
+                message=(
+                    f"Branch '{state.branch_name}' is behind remote by "
+                    f"{divergence.behind} commit(s){ahead_msg}.\n\n"
+                    "The remote branch has been updated (e.g., by CI or another session).\n\n"
+                    "To fix:\n"
+                    "  erk pr sync-divergence --dangerous   # Fetch, rebase, resolve conflicts\n"
+                    "  erk pr submit -f                     # Force push (overrides remote)"
+                ),
+                details={
+                    "branch": state.branch_name,
+                    "ahead": str(divergence.ahead),
+                    "behind": str(divergence.behind),
+                },
+            )
+
     click.echo(click.style("   Running gt submit...", dim=True))
     try:
         ctx.graphite.submit_stack(
