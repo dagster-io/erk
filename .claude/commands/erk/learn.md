@@ -705,12 +705,13 @@ fi
 eval "$CMD"
 ```
 
-Parse the JSON output to get `issue_number` (the new learn plan issue).
+Parse the JSON output to get `issue_number`, `plan_backend`, `title`, and `issue_url` (the new learn plan number).
 
 Display the result:
 
 ```
-Learn plan saved to GitHub issue #<issue_number>
+Learn plan saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #<issue_number>: <title>
+URL: <issue_url>
 ```
 
 ### Step 8: Store Tripwire Candidates on Learn Plan Issue
@@ -773,7 +774,7 @@ If other learn plans exist (count > 1):
 ```
 Post-learn actions:
   1. Submit for implementation (Recommended) — Queue for remote implementation
-  2. Review in browser — Open issue in web browser for review/editing
+  2. Review in browser — Open <"draft PR" if plan_backend=="draft_pr", else "issue"> in web browser for review/editing
   3. Consolidate with other learn plans — Merge overlapping learn plans
   4. Done — Finish learn workflow
 ```
@@ -783,14 +784,14 @@ If no other learn plans (count <= 1):
 ```
 Post-learn actions:
   1. Submit for implementation (Recommended) — Queue for remote implementation
-  2. Review in browser — Open issue in web browser for review/editing
+  2. Review in browser — Open <"draft PR" if plan_backend=="draft_pr", else "issue"> in web browser for review/editing
   3. Done — Finish learn workflow
 ```
 
 **Execute the selected action:**
 
 - **Submit**: Run `/erk:plan-submit`
-- **Review**: Run `gh issue view <issue_number> --web`, then inform the user they can run `/erk:plan-submit` when ready
+- **Review**: If `plan_backend` is `"draft_pr"`, run `gh pr view <issue_number> --web`; otherwise run `gh issue view <issue_number> --web`. Then inform the user they can run `/erk:plan-submit` when ready.
 - **Consolidate**: Run `/local:replan-learn-plans`
 - **Done**: Proceed directly to Step 11
 
