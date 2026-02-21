@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Implement lazy tip sync for worktree pool to fix stale assignment state"
+}
