@@ -643,9 +643,7 @@ def test_row_to_values_status_both() -> None:
     """Status cell shows both emojis when local checkout and run URL exist."""
     filters = PlanFilters.default()
     table = PlanDataTable(filters, plan_backend="github")
-    row = make_plan_row(
-        123, "Test Plan", exists_locally=True, run_url="https://github.com/runs/1"
-    )
+    row = make_plan_row(123, "Test Plan", exists_locally=True, run_url="https://github.com/runs/1")
 
     values = table._row_to_values(row)
 
