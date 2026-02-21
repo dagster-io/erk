@@ -114,10 +114,6 @@ class GlobalConfigSchema(BaseModel):
         description="Enable auto-navigation shell integration (opt-in)",
         json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "shell_integration"},
     )
-    plan_backend: str = Field(
-        description="Plan storage backend: 'github' (issues) or 'draft_pr' (draft PRs)",
-        json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "plan_backend"},
-    )
 
 
 class RepoConfigSchema(BaseModel):

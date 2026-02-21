@@ -1731,32 +1731,23 @@ class TestBackendLabel:
             "session_id": "test",
             "model": {"display_name": "opus", "id": "opus"},
         }
-        mock_installation = MagicMock()
-        mock_installation.config_exists.return_value = False
-        with patch("erk_statusline.statusline.RealErkInstallation", return_value=mock_installation):
-            with patch("json.load", return_value=stdin_payload):
-                with patch("builtins.print") as mock_print:
-                    main()
+        with patch("json.load", return_value=stdin_payload):
+            with patch("builtins.print") as mock_print:
+                main()
         output = mock_print.call_args[0][0]
         assert "(be:issue)" in output
 
     def test_draft_pr_backend_shows_draft_pr(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """draft_pr backend via config should show (be:draft-pr) in output."""
-        monkeypatch.delenv("ERK_PLAN_BACKEND", raising=False)
-        mock_config = MagicMock()
-        mock_config.plan_backend = "draft_pr"
-        mock_installation = MagicMock()
-        mock_installation.config_exists.return_value = True
-        mock_installation.load_config.return_value = mock_config
+        """draft_pr backend via env var should show (be:draft-pr) in output."""
+        monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
         stdin_payload = {
             "workspace": {"current_dir": ""},
             "session_id": "test",
             "model": {"display_name": "opus", "id": "opus"},
         }
-        with patch("erk_statusline.statusline.RealErkInstallation", return_value=mock_installation):
-            with patch("json.load", return_value=stdin_payload):
-                with patch("builtins.print") as mock_print:
-                    main()
+        with patch("json.load", return_value=stdin_payload):
+            with patch("builtins.print") as mock_print:
+                main()
         output = mock_print.call_args[0][0]
         assert "(be:draft-pr)" in output
 

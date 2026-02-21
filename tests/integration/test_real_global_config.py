@@ -127,7 +127,6 @@ def test_real_config_store_roundtrip_show_hidden_commands(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
         show_hidden_commands=True,
     )
     installation.save_config(config)
@@ -165,129 +164,6 @@ shell_setup_complete = true
 
     # Should default to False
     assert loaded.show_hidden_commands is False
-
-
-def test_real_config_store_loads_plan_backend_draft_pr(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that RealErkInstallation loads plan_backend='draft_pr' from config."""
-    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-
-    erk_dir = tmp_path / ".erk"
-    erk_dir.mkdir()
-    (erk_dir / "config.toml").write_text(
-        f"""
-erk_root = "{tmp_path / "erks"}"
-use_graphite = true
-shell_setup_complete = true
-plan_backend = "draft_pr"
-""".strip(),
-        encoding="utf-8",
-    )
-
-    installation = RealErkInstallation()
-    loaded = installation.load_config()
-
-    assert loaded.plan_backend == "draft_pr"
-
-
-def test_real_config_store_loads_plan_backend_default(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that missing plan_backend defaults to 'github'."""
-    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-
-    erk_dir = tmp_path / ".erk"
-    erk_dir.mkdir()
-    (erk_dir / "config.toml").write_text(
-        f"""
-erk_root = "{tmp_path / "erks"}"
-use_graphite = true
-shell_setup_complete = true
-""".strip(),
-        encoding="utf-8",
-    )
-
-    installation = RealErkInstallation()
-    loaded = installation.load_config()
-
-    assert loaded.plan_backend == "github"
-
-
-def test_real_config_store_loads_plan_backend_invalid_fallback(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that invalid plan_backend value falls back to 'github'."""
-    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-
-    erk_dir = tmp_path / ".erk"
-    erk_dir.mkdir()
-    (erk_dir / "config.toml").write_text(
-        f"""
-erk_root = "{tmp_path / "erks"}"
-use_graphite = true
-shell_setup_complete = true
-plan_backend = "invalid_value"
-""".strip(),
-        encoding="utf-8",
-    )
-
-    installation = RealErkInstallation()
-    loaded = installation.load_config()
-
-    assert loaded.plan_backend == "github"
-
-
-def test_real_config_store_roundtrip_plan_backend(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test save then load preserves plan_backend='draft_pr'."""
-    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-
-    erk_dir = tmp_path / ".erk"
-    erk_dir.mkdir()
-
-    installation = RealErkInstallation()
-
-    config = GlobalConfig(
-        erk_root=tmp_path / "erks",
-        use_graphite=True,
-        shell_setup_complete=True,
-        github_planning=True,
-        plan_backend="draft_pr",
-    )
-    installation.save_config(config)
-
-    loaded = installation.load_config()
-    assert loaded.plan_backend == "draft_pr"
-
-    # Verify plan_backend is in the saved file
-    content = (erk_dir / "config.toml").read_text(encoding="utf-8")
-    assert 'plan_backend = "draft_pr"' in content
-
-
-def test_real_config_store_save_default_plan_backend_not_written(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that default plan_backend='github' is NOT written to file."""
-    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-
-    erk_dir = tmp_path / ".erk"
-    erk_dir.mkdir()
-
-    installation = RealErkInstallation()
-
-    config = GlobalConfig(
-        erk_root=tmp_path / "erks",
-        use_graphite=True,
-        shell_setup_complete=True,
-        github_planning=True,
-        plan_backend="github",
-    )
-    installation.save_config(config)
-
-    content = (erk_dir / "config.toml").read_text(encoding="utf-8")
-    assert "plan_backend" not in content
 
 
 def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:
@@ -479,7 +355,6 @@ def test_save_config_with_interactive_claude(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
         interactive_agent=InteractiveAgentConfig(
             backend="claude",
             model="claude-opus-4-5",
@@ -518,7 +393,6 @@ def test_save_config_interactive_claude_defaults_not_written(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
         # interactive_agent defaults to InteractiveAgentConfig.default()
     )
     installation.save_config(config)
@@ -545,7 +419,6 @@ def test_save_config_interactive_claude_partial_non_defaults(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
         interactive_agent=InteractiveAgentConfig(
             backend="claude",
             model="opus",
@@ -587,7 +460,6 @@ def test_roundtrip_interactive_claude_config(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
         interactive_agent=InteractiveAgentConfig(
             backend="claude",
             model="opus",

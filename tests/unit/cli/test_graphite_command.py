@@ -116,7 +116,6 @@ def test_is_graphite_available_falls_back_to_config_when_ctx_obj_is_none(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
     )
 
     class MockErkInstallation:
@@ -148,7 +147,6 @@ def test_is_graphite_available_returns_false_when_config_disabled_and_ctx_obj_no
         use_graphite=False,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
     )
 
     class MockErkInstallation:
@@ -175,7 +173,6 @@ def test_is_graphite_available_returns_false_when_gt_not_installed_and_ctx_obj_n
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
     )
 
     class MockErkInstallation:
@@ -236,7 +233,6 @@ def test_graphite_command_invoke_checks_graphite_availability() -> None:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED),
     )
@@ -266,7 +262,6 @@ def test_graphite_command_invoke_succeeds_with_graphite_enabled() -> None:
             use_graphite=True,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
         ),
         graphite=FakeGraphite(),
     )
@@ -297,7 +292,6 @@ def test_graphite_command_with_hidden_options_invoke_checks_graphite_availabilit
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED),
     )
@@ -328,7 +322,6 @@ def test_graphite_command_with_hidden_options_preserves_hidden_options_behavior(
             use_graphite=True,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             show_hidden_commands=True,
         ),
         graphite=FakeGraphite(),
@@ -389,7 +382,6 @@ def test_graphite_command_hidden_in_help_when_graphite_unavailable() -> None:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED),
     )
@@ -429,7 +421,6 @@ def test_graphite_command_visible_in_help_when_graphite_available() -> None:
             use_graphite=True,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
         ),
         graphite=FakeGraphite(),
     )
@@ -467,7 +458,6 @@ def test_graphite_group_hidden_in_help_when_graphite_unavailable() -> None:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED),
     )
@@ -506,7 +496,6 @@ def test_graphite_group_visible_in_help_when_graphite_available() -> None:
             use_graphite=True,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
         ),
         graphite=FakeGraphite(),
     )
@@ -544,7 +533,6 @@ def test_graphite_commands_shown_in_hidden_section_when_show_hidden_enabled() ->
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             show_hidden_commands=True,
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED),
@@ -578,7 +566,6 @@ def test_graphite_command_visible_when_help_shown_without_ctx_obj(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
     )
 
     class MockErkInstallation:
@@ -626,7 +613,6 @@ def test_graphite_command_hidden_when_help_shown_without_ctx_obj_and_config_disa
         use_graphite=False,
         shell_setup_complete=True,
         github_planning=True,
-        plan_backend="github",
     )
 
     class MockErkInstallation:

@@ -676,7 +676,7 @@ def create_wt(
 
         # Prepare and validate using shared helper (returns union type)
         trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
-        plan_backend = get_plan_backend(ctx.global_config)
+        plan_backend = get_plan_backend()
         result = prepare_plan_for_worktree(
             plan, ctx.time.now(), plan_backend=plan_backend, warn_non_open=True
         )

@@ -776,7 +776,7 @@ def _gather_inputs(
         pr_number=pr_number,
         plan_issue_number=plan_issue_number,
         editor=editor,
-        plan_backend=get_plan_backend(global_config),
+        plan_backend=get_plan_backend(),
     )
 
 

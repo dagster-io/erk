@@ -654,7 +654,7 @@ def _run_interactive_mode(
     clipboard = RealClipboard()
     browser = RealBrowserLauncher()
 
-    plan_backend = get_plan_backend(ctx.global_config)
+    plan_backend = get_plan_backend()
 
     # Fetch GitHub token once at startup for fast HTTP client
     token = fetch_github_token()
