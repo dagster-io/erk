@@ -1,6 +1,7 @@
 ---
 description: Create an implementation plan from an objective node
 argument-hint: "<issue-number-or-url> [--node <node-id>]"
+allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
 ---
 
 # /erk:objective-plan
