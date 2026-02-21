@@ -1,32 +1,31 @@
-"""Upload a Claude Code session to GitHub Gist and update the plan header.
+"""Upload a Claude Code session to a git branch and update the plan header.
 
-This exec command uploads a session JSONL file to a GitHub Gist and optionally
-updates the plan-header metadata in the associated erk-plan issue.
+This exec command creates a `session/{plan_id}` branch, commits the session
+JSONL file to `.erk/session/{session_id}.jsonl`, and optionally updates the
+plan-header metadata in the associated erk-plan issue.
 
 Usage:
     # Upload from local session file
     erk exec upload-session --session-file /path/to/session.jsonl \\
-        --session-id abc-123 --source local
+        --session-id abc-123 --source local --plan-id 2521
 
     # Upload and update plan issue
     erk exec upload-session --session-file /path/to/session.jsonl \\
         --session-id abc-123 --source remote --plan-id 2521
 
 Output:
-    Structured JSON output with gist info and updated plan header fields
+    Structured JSON output with branch info and updated plan header fields
 
 Exit Codes:
-    0: Success (gist created and optionally plan header updated)
-    1: Error (gist creation failed, issue update failed)
+    0: Success (branch created and optionally plan header updated)
+    1: Error (branch creation failed, issue update failed)
 
 Examples:
     $ erk exec upload-session --session-file session.jsonl \\
           --session-id abc --source remote --plan-id 123
     {
       "success": true,
-      "gist_id": "abc123...",
-      "gist_url": "https://gist.github.com/user/abc123...",
-      "raw_url": "https://gist.githubusercontent.com/...",
+      "session_branch": "session/123",
       "session_id": "abc",
       "plan_id": 123,
       "issue_updated": true
@@ -34,6 +33,7 @@ Examples:
 """
 
 import json
+import shutil
 from datetime import UTC
 from pathlib import Path
 from typing import Literal
@@ -41,12 +41,11 @@ from typing import Literal
 import click
 
 from erk_shared.context.helpers import (
-    require_github,
+    require_git,
     require_plan_backend,
     require_repo_root,
     require_time,
 )
-from erk_shared.gateway.github.abc import GistCreateError
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -71,7 +70,7 @@ from erk_shared.plan_store.types import PlanNotFound
 @click.option(
     "--plan-id",
     type=int,
-    help="Optional plan identifier to update with gist info",
+    help="Plan identifier to create session branch and update plan header",
 )
 @click.pass_context
 def upload_session(
@@ -81,75 +80,85 @@ def upload_session(
     source: Literal["local", "remote"],
     plan_id: int | None,
 ) -> None:
-    """Upload a session JSONL to GitHub Gist and update plan header.
+    """Upload a session JSONL to a git branch and update plan header.
 
-    Creates a secret gist containing the session JSONL file, then optionally
-    updates the plan-header metadata in the associated plan with
-    the gist URL and session information.
+    Creates a session/{plan_id} branch from origin/master, commits the session
+    JSONL to .erk/session/{session_id}.jsonl, then updates the plan-header
+    metadata in the associated plan with the branch name and session information.
     """
-    repo_root = require_repo_root(ctx)
-    github = require_github(ctx)
-    time = require_time(ctx)
-
-    # Read session content
-    session_content = session_file.read_text(encoding="utf-8")
-
-    # Create gist with descriptive info
-    description = f"Claude Code session {session_id} ({source})"
-    filename = f"session-{session_id}.jsonl"
-
-    gist_result = github.create_gist(
-        filename=filename,
-        content=session_content,
-        description=description,
-        public=False,  # Secret gist for privacy
-    )
-
-    if isinstance(gist_result, GistCreateError):
+    if plan_id is None:
         error_output = {
             "success": False,
-            "error": f"Failed to create gist: {gist_result.message}",
+            "error": "--plan-id is required for branch-based session upload",
         }
         click.echo(json.dumps(error_output))
         raise SystemExit(1)
 
+    repo_root = require_repo_root(ctx)
+    git = require_git(ctx)
+    time = require_time(ctx)
+
+    session_branch = f"session/{plan_id}"
+    original_branch = git.branch.get_current_branch(repo_root)
+    start_point = original_branch or "HEAD"
+
+    # Delete existing local session branch if it exists (re-implementation idempotency)
+    local_branches = git.branch.list_local_branches(repo_root)
+    if session_branch in local_branches:
+        git.branch.delete_branch(repo_root, session_branch, force=True)
+
+    # Create session branch from origin/master
+    git.branch.create_branch(repo_root, session_branch, "origin/master", force=False)
+    git.branch.checkout_branch(repo_root, session_branch)
+
+    try:
+        # Copy session JSONL to .erk/session/ directory on the branch
+        session_dir = repo_root / ".erk" / "session"
+        session_dir.mkdir(parents=True, exist_ok=True)
+        session_dest = session_dir / f"{session_id}.jsonl"
+        shutil.copy2(session_file, session_dest)
+
+        # Stage, commit, and force-push
+        git.commit.stage_files(repo_root, [f".erk/session/{session_id}.jsonl"])
+        git.commit.commit(repo_root, f"Session {session_id} for plan #{plan_id}")
+        git.remote.push_to_remote(
+            repo_root, "origin", session_branch, set_upstream=True, force=True
+        )
+    finally:
+        git.branch.checkout_branch(repo_root, start_point)
+
     # Build base result
     result: dict[str, object] = {
         "success": True,
-        "gist_id": gist_result.gist_id,
-        "gist_url": gist_result.gist_url,
-        "raw_url": gist_result.raw_url,
+        "session_branch": session_branch,
         "session_id": session_id,
+        "plan_id": plan_id,
     }
 
-    # Update plan if requested
-    if plan_id is not None:
-        result["plan_id"] = plan_id
+    # Update plan metadata
+    backend = require_plan_backend(ctx)
+    plan_id_str = str(plan_id)
+    timestamp = time.now().replace(tzinfo=UTC).isoformat()
+    metadata: dict[str, object] = {
+        "last_session_branch": session_branch,
+        "last_session_id": session_id,
+        "last_session_at": timestamp,
+        "last_session_source": source,
+    }
 
-        backend = require_plan_backend(ctx)
-        plan_id_str = str(plan_id)
-        timestamp = time.now().replace(tzinfo=UTC).isoformat()
-        metadata: dict[str, object] = {
-            "last_session_gist_url": gist_result.gist_url,
-            "last_session_gist_id": gist_result.gist_id,
-            "last_session_id": session_id,
-            "last_session_at": timestamp,
-            "last_session_source": source,
-        }
-
-        # LBYL: Check plan exists before updating
-        plan_result = backend.get_plan(repo_root, plan_id_str)
-        if isinstance(plan_result, PlanNotFound):
-            # Plan not found but gist was created - partial success
+    # LBYL: Check plan exists before updating
+    plan_result = backend.get_plan(repo_root, plan_id_str)
+    if isinstance(plan_result, PlanNotFound):
+        # Plan not found but branch was created - partial success
+        result["issue_updated"] = False
+        result["issue_update_error"] = f"Plan #{plan_id} not found"
+    else:
+        try:
+            backend.update_metadata(repo_root, plan_id_str, metadata)
+            result["issue_updated"] = True
+        except RuntimeError as e:
+            # Plan update failed but branch was created - partial success
             result["issue_updated"] = False
-            result["issue_update_error"] = f"Plan #{plan_id} not found"
-        else:
-            try:
-                backend.update_metadata(repo_root, plan_id_str, metadata)
-                result["issue_updated"] = True
-            except RuntimeError as e:
-                # Plan update failed but gist was created - partial success
-                result["issue_updated"] = False
-                result["issue_update_error"] = str(e)
+            result["issue_update_error"] = str(e)
 
     click.echo(json.dumps(result))

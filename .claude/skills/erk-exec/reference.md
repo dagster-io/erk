@@ -32,7 +32,7 @@ Quick reference for all `erk exec` subcommands.
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                            |
-| `download-remote-session`         | Download a session from a GitHub Gist.                                      |
+| `download-remote-session`         | Download a session from a git branch.                                       |
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                  |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                          |
 | `find-project-dir`                | Find Claude Code project directory for a filesystem path.                   |
@@ -106,7 +106,7 @@ Quick reference for all `erk exec` subcommands.
 | `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                  |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.          |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
-| `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.               |
+| `upload-session`                  | Upload a session JSONL to a git branch and update plan header.              |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.         |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                               |
 | `validate-plan-content`           | Validate plan content from file or stdin.                                   |
@@ -297,16 +297,16 @@ Discover code reviews matching PR changed files.
 
 ### download-remote-session
 
-Download a session from a GitHub Gist.
+Download a session from a git branch.
 
 **Usage:** `erk exec download-remote-session`
 
 **Options:**
 
-| Flag           | Type | Required | Default        | Description                                       |
-| -------------- | ---- | -------- | -------------- | ------------------------------------------------- |
-| `--gist-url`   | TEXT | Yes      | Sentinel.UNSET | Raw gist URL to download session from             |
-| `--session-id` | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to name output directory) |
+| Flag               | Type | Required | Default        | Description                                           |
+| ------------------ | ---- | -------- | -------------- | ----------------------------------------------------- |
+| `--session-branch` | TEXT | Yes      | Sentinel.UNSET | Git branch containing the session (e.g., session/123) |
+| `--session-id`     | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to locate file on the branch) |
 
 ### exit-plan-mode-hook
 
@@ -1334,18 +1334,18 @@ Update PR title and body with AI-generated description.
 
 ### upload-session
 
-Upload a session JSONL to GitHub Gist and update plan header.
+Upload a session JSONL to a git branch and update plan header.
 
 **Usage:** `erk exec upload-session`
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description                                       |
-| ---------------- | ------- | -------- | -------------- | ------------------------------------------------- |
-| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to the session JSONL file to upload          |
-| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                            |
-| `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'               |
-| `--plan-id`      | INTEGER | No       | Sentinel.UNSET | Optional plan identifier to update with gist info |
+| Flag             | Type    | Required | Default        | Description                                                     |
+| ---------------- | ------- | -------- | -------------- | --------------------------------------------------------------- |
+| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to the session JSONL file to upload                        |
+| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                                          |
+| `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'                             |
+| `--plan-id`      | INTEGER | No       | Sentinel.UNSET | Plan identifier to create session branch and update plan header |
 
 ### user-prompt-hook
 

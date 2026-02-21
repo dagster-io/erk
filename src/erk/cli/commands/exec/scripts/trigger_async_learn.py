@@ -27,15 +27,13 @@ Examples:
 
 import json
 import shutil
-import urllib.error
-import urllib.request
+import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import NoReturn
 
 import click
 
-from erk.cli.commands.exec.scripts.download_remote_session import normalize_gist_url
 from erk.cli.commands.exec.scripts.get_learn_sessions import _discover_sessions
 from erk.cli.commands.exec.scripts.preprocess_session import (
     deduplicate_assistant_messages,
@@ -234,35 +232,47 @@ def _preprocess_session_direct(
 
 def _download_remote_session_for_learn(
     *,
-    gist_url: str,
+    session_branch: str,
     session_id: str,
     output_dir: Path,
+    repo_root: Path,
+    git,
 ) -> Path | None:
     """Download a remote session JSONL for learn preprocessing.
 
-    Downloads from a gist URL and saves to output_dir with the session_id
-    as the filename stem (required by the preprocessing pipeline).
+    Fetches the session branch from origin and extracts the session JSONL,
+    saving it to output_dir with the session_id as the filename stem
+    (required by the preprocessing pipeline).
 
     Args:
-        gist_url: Gist URL (webpage or raw) to download from.
+        session_branch: Branch name containing the session.
         session_id: Session ID used as the output filename stem.
         output_dir: Directory to save the downloaded JSONL file.
+        repo_root: Repository root path.
+        git: Git gateway for remote operations.
 
     Returns:
         Path to the downloaded file on success, None on failure.
     """
-    normalized_url = normalize_gist_url(gist_url)
-    try:
-        with urllib.request.urlopen(normalized_url) as response:
-            content = response.read()
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / f"{session_id}.jsonl"
-        output_path.write_bytes(content)
-        return output_path
-    except urllib.error.URLError as e:
-        message = click.style(f"   ⚠️  Failed to download remote session: {e}", fg="yellow")
+    git.remote.fetch_branch(repo_root, "origin", session_branch)
+
+    result = subprocess.run(
+        ["git", "show", f"origin/{session_branch}:.erk/session/{session_id}.jsonl"],
+        cwd=str(repo_root),
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        message = click.style(
+            f"   ⚠️  Failed to extract session from branch: {result.stderr.decode().strip()}",
+            fg="yellow",
+        )
         click.echo(message, err=True)
         return None
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{session_id}.jsonl"
+    output_path.write_bytes(result.stdout)
+    return output_path
 
 
 def _get_pr_for_plan_direct(
@@ -452,17 +462,19 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
                 _output_error(f"Preprocessing {prefix} session failed: Session file not found")
 
         elif source_type == "remote":
-            gist_url = source_item.get("gist_url")
-            if not isinstance(gist_url, str) or not isinstance(session_id, str):
+            session_branch = source_item.get("session_branch")
+            if not isinstance(session_branch, str) or not isinstance(session_id, str):
                 continue
 
             message = click.style(f"⬇️  Downloading remote {prefix} session...", fg="cyan")
             click.echo(message, err=True)
 
             downloaded_path = _download_remote_session_for_learn(
-                gist_url=gist_url,
+                session_branch=session_branch,
                 session_id=session_id,
                 output_dir=learn_dir / "remote-downloads",
+                repo_root=repo_root,
+                git=git,
             )
             if downloaded_path is None:
                 continue
@@ -623,6 +635,19 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
     branch_styled = click.style(learn_branch, fg="blue")
     stats_styled = click.style(f"({file_count} file(s), {total_size:,} bytes)", dim=True)
     click.echo(f"   🌿 {branch_styled} {stats_styled}", err=True)
+
+    # Clean up session branches after materials are on learn branch
+    for source_item in session_sources:
+        if not isinstance(source_item, dict):
+            continue
+        session_branch = source_item.get("session_branch")
+        if isinstance(session_branch, str):
+            subprocess.run(
+                ["git", "push", "origin", "--delete", session_branch],
+                cwd=str(repo_root),
+                capture_output=True,
+            )
+
 
     # Step 6: Trigger the learn workflow with learn_branch (unless --skip-workflow)
     if skip_workflow:

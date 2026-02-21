@@ -32,7 +32,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_remote_impl_at,
     extract_plan_header_remote_impl_run_id,
     extract_plan_header_remote_impl_session_id,
-    extract_plan_header_session_gist_url,
+    extract_plan_header_session_branch,
 )
 from erk_shared.learn.impl_events import (
     extract_implementation_sessions,
@@ -240,7 +240,7 @@ class PlanBackend(PlanStore):
             last_remote_impl_at=extract_plan_header_remote_impl_at(body),
             last_remote_impl_run_id=extract_plan_header_remote_impl_run_id(body),
             last_remote_impl_session_id=extract_plan_header_remote_impl_session_id(body),
-            last_session_gist_url=extract_plan_header_session_gist_url(body),
+            last_session_branch=extract_plan_header_session_branch(body),
             last_session_id=extract_plan_header_last_session_id(body),
             last_session_source=extract_plan_header_last_session_source(body),
         )

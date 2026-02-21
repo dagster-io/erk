@@ -48,7 +48,7 @@ def test_get_readable_sessions_finds_global_sessions() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
-        last_session_gist_url=None,
+        last_session_branch=None,
         last_session_id=None,
         last_session_source=None,
     )
@@ -88,7 +88,7 @@ def test_get_readable_sessions_returns_paths() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
-        last_session_gist_url=None,
+        last_session_branch=None,
         last_session_id=None,
         last_session_source=None,
     )
@@ -124,7 +124,7 @@ def test_get_readable_sessions_filters_missing_sessions() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
-        last_session_gist_url=None,
+        last_session_branch=None,
         last_session_id=None,
         last_session_source=None,
     )
@@ -170,7 +170,7 @@ def test_get_readable_sessions_finds_sessions_across_projects() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
-        last_session_gist_url=None,
+        last_session_branch=None,
         last_session_id=None,
         last_session_source=None,
     )
@@ -194,7 +194,7 @@ def test_get_readable_sessions_empty_when_no_sessions_exist() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
-        last_session_gist_url=None,
+        last_session_branch=None,
         last_session_id=None,
         last_session_source=None,
     )
@@ -243,7 +243,7 @@ def test_get_readable_sessions_preserves_order() -> None:
         last_remote_impl_at=None,
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
-        last_session_gist_url=None,
+        last_session_branch=None,
         last_session_id=None,
         last_session_source=None,
     )
