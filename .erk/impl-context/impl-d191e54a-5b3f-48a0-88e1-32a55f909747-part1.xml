@@ -1,0 +1,1221 @@
+<session>
+  <meta branch="planned/skip-ci-for-plan-only-a-02-21-1820" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="d191e54a-5b3f-48a0-88e1-32a55f909747"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="d191e54a-5b3f-48a0-88e1-32a55f909747" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="d191e54a-5b3f-48a0-88e1-32a55f909747" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.worker-impl/` and `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the plan-implement workflow.
+
+Step 0: No arguments provided, so no ISSUE_ARG or FILE_ARG.
+
+Step 1b: Check if `.impl/` already exists.
+
+Let me start by checking if `.impl/` exists and running `erk exec impl-init --json`.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12763" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12763}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12763" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12763}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MGXLNLCaEubkGqn3z3VYDx">
+    <param name="command">erk exec impl-init --json</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12763" cache_read_input_tokens="19041" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12763, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MGXLNLCaEubkGqn3z3VYDx">
+{"valid": true, "impl_type": "impl", "has_issue_tracking": true, "related_docs": {"skills": [], "docs": []}, "issue_number": 7781}
+  </tool_result>
+  <assistant>Valid `.impl/` exists with issue tracking (issue #7781). Let me sync with remote and read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="31804" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CYn4Xzh2zXVXH4t9WuPCW6">
+    <param name="command">erk exec setup-impl-from-issue 7781</param>
+    <param name="description">Sync local branch with remote for issue 7781</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="31804" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CYn4Xzh2zXVXH4t9WuPCW6">
+Found existing .impl/ for plan #7781, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl", "issue_number": 7781, "issue_url": "https://github.com/dagster-io/erk/pull/7781", "branch": "planned/skip-ci-for-plan-only-a-02-21-1820", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KEdcajwMDvf2b8uL5MjBo3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="31804" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KEdcajwMDvf2b8uL5MjBo3">
+     1→# Skip CI for Plan-Only and One-Shot Prompt Branches
+     2→
+     3→## Context
+     4→
+     5→CI runs on every push to every branch. For branches that only contain plan metadata (`.erk/impl-context/`) or one-shot prompts (`.worker-impl/`), this wastes CI minutes and clutters the checks column in `erk dash`. These branches have no code to lint, test, or type-check.
+     6→
+     7→## Change
+     8→
+     9→Add `paths-ignore` and `branches-ignore` to the push trigger in `.github/workflows/ci.yml`.
+    10→
+    11→### File: `.github/workflows/ci.yml` (lines 3-5)
+    12→
+    13→From:
+    14→```yaml
+    15→on:
+    16→  push:
+    17→    branches-ignore: []
+    18→```
+    19→
+    20→To:
+    21→```yaml
+    22→on:
+    23→  push:
+    24→    branches-ignore:
+    25→      - "planned/review-*"
+    26→    paths-ignore:
+    27→      - '.erk/impl-context/**'
+    28→      - '.worker-impl/**'
+    29→```
+    30→
+
+... [24 lines omitted] ...
+  </tool_result>
+  <thinking>Good, the plan is clear. Let me now:
+1. Clean up `.erk/impl-context/` if it exists
+2. Read the current CI workflow
+3. Create tasks
+4. Signal started
+5. Implement</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1156" cache_read_input_tokens="32064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan...
+
+The plan is straightforward: modify `.github/workflows/ci.yml` to add `paths-ignore` and `branches-ignore` to skip CI for plan-only and one-shot prompt branches.
+
+Let me clean up impl-context, signal started, and read the current CI workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1156" cache_read_input_tokens="32064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hf62PAdCmkEbaUsT9PMxjF">
+    <param name="command">if [ -d .erk/impl-context/ ]; then git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove ...[truncated 32 chars]...h origin "$(git branch --show-current)"; else echo "No .erk/impl-context/ to clean up"; fi</param>
+    <param name="description">Clean up impl-context directory if it exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1156" cache_read_input_tokens="32064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hf62PAdCmkEbaUsT9PMxjF">
+Exit code 1
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[planned/skip-ci-for-plan-only-a-02-21-1820 1ad028ca2] Remove .erk/impl-context/ before implementation
+ 2 files changed, 57 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+To https://github.com/dagster-io/erk.git
+ ! [rejected]            planned/skip-ci-for-plan-only-a-02-21-1820 -&gt; planned/skip-ci-for-plan-only-a-02-21-1820 (non-fast-forward)
+error: failed to push some refs to 'https://github.com/dagster-io/erk.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[planned/skip-ci-for-plan-only-a-02-21-1820 1ad028ca2] Remove .erk/impl-context/ before implementation
+ 2 files changed, 57 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+To https://github.com/dagster-io/erk.git
+ ! [rejected]            planned/skip-ci-for-plan-only-a-02-21-1820 -&gt; planned/skip-ci-for-plan-only-a-02-21-1820 (non-fast-forward)
+error: failed to push some refs to 'https://github.com/dagster-io/erk.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FC9cdcEHkgYzzeSJL1PyAe">
+    <param name="command">erk exec impl-signal started --session-id="d191e54a-5b3f-48a0-88e1-32a55f909747" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1156" cache_read_input_tokens="32064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FC9cdcEHkgYzzeSJL1PyAe">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_012u17bXnHiEMJ3HoQ7C3VLx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1156" cache_read_input_tokens="32064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012u17bXnHiEMJ3HoQ7C3VLx">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>The push was rejected because the local branch is behind remote. Let me pull and resolve this.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="33220" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Sw3pZdv6bw9gpAd3FTKwso">
+    <param name="command">git pull --rebase origin planned/skip-ci-for-plan-only-a-02-21-1820</param>
+    <param name="description">Pull rebase to sync with remote</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="33220" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sw3pZdv6bw9gpAd3FTKwso">
+From https://github.com/dagster-io/erk
+ * branch                planned/skip-ci-for-plan-only-a-02-21-1820 -&gt; FETCH_HEAD
+warning: skipped previously applied commit 4dcc56936
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config set advice.skippedCherryPicks false"
+Rebasing (1/2)Rebasing (2/2)Successfully rebased and updated refs/heads/planned/skip-ci-for-plan-only-a-02-21-1820.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RpxQVtxJcyCZbWdx2De8XC">
+    <param name="command">git push origin planned/skip-ci-for-plan-only-a-02-21-1820</param>
+    <param name="description">Push the cleaned branch to remote</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="34378" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 389}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RpxQVtxJcyCZbWdx2De8XC">
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   78963919b..713f8f133  planned/skip-ci-for-plan-only-a-02-21-1820 -&gt; planned/skip-ci-for-plan-only-a-02-21-1820
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KbcP7rhu1RGFy9Kbzi6Nkh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="34378" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 389}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KbcP7rhu1RGFy9Kbzi6Nkh">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches-ignore: []
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-worker-impl
+
+... [369 lines omitted] ...
+
+   159→      (needs.format.result == 'failure' ||
+   160→       needs.lint.result == 'failure' ||
+   161→       needs.prettier.result == 'failure' ||
+   162→       needs.docs-check.result == 'failure' ||
+   163→       needs.ty.result == 'failure')
+   276→      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+   303→      - name: Collect failure context
+   305→        id: failures
+   316→      - name: Collect actual errors
+   318→        id: errors
+   320→          errors=""
+   322→          if [ "${{ needs.format.result }}" = "failure" ]; then
+   323→            errors+="=== RUFF FORMAT ERRORS ===\n"
+   324→            errors+="$(uv run ruff format --check . 2&gt;&amp;1 || true)\n\n"
+   327→          if [ "${{ needs.lint.result }}" = "failure" ]; then
+   328→            errors+="=== RUFF LINT ERRORS ===\n"
+   329→            errors+="$(uv run ruff check . 2&gt;&amp;1 || true)\n\n"
+   332→          if [ "${{ needs.prettier.result }}" = "failure" ]; then
+   333→            errors+="=== PRETTIER ERRORS ===\n"
+   334→            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2&gt;&amp;1 || true)\n\n"
+   337→          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+   338→            errors+="=== DOCS CHECK ERRORS ===\n"
+   339→            errors+="$(make md-check 2&gt;&amp;1 || true)\n"
+   340→            errors+="$(make docs-check 2&gt;&amp;1 || true)\n\n"
+   343→          if [ "${{ needs.ty.result }}" = "failure" ]; then
+   344→            errors+="=== TY TYPE ERRORS ===\n"
+   345→            errors+="$(uv run ty check 2&gt;&amp;1 || true)\n\n"
+   349→          echo -e "$errors" &gt; /tmp/errors.txt
+   360→          echo "Debug: erk version: $(erk --version 2&gt;&amp;1 || echo 'version failed')"
+   370→            --var-file "ERRORS=/tmp/errors.txt" 2&gt;&amp;1); then
+   371→            echo "Error: Failed to get ci-autofix prompt"
+   378→            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UQxPTG2z8NM34nQ4L8DkM6">
+    <param name="command">erk exec impl-signal started --session-id="d191e54a-5b3f-48a0-88e1-32a55f909747" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="34378" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 389, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UQxPTG2z8NM34nQ4L8DkM6">
+{
+  "success": true,
+  "event": "started",
+  "issue_number": 7781
+}
+  </tool_result>
+  <thinking>Now I have a clear picture. The current `ci.yml` has:
+
+```yaml
+on:
+  push:
+    branches-ignore: []
+```
+
+I need to change it to:
+
+```yaml
+on:
+  push:
+    branches-ignore:
+      - "planned/review-*"
+    paths-ignore:
+      - '.erk/impl-context/**'
+      - '.worker-impl/**'
+```
+
+This is a simple, single-file change. Let me create a task, make the edit, then run CI.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6400" cache_read_input_tokens="34767" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6400}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. The change is straightforward — modifying lines 3-5 of `.github/workflows/ci.yml`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6400" cache_read_input_tokens="34767" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6400}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01MrQDWRVHkHuBtpo1duqGJJ">
+    <param name="subject">Add paths-ignore and branches-ignore to CI push trigger</param>
+    <param name="description">Modify .github/workflows/ci.yml to skip CI for plan-only and one-shot prompt branches by adding paths-ignore for .erk/impl-context/** and .worker-impl/**, and branches-ignore for planned/review-*.</param>
+    <param name="activeForm">Adding CI skip rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6400" cache_read_input_tokens="34767" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6400}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MrQDWRVHkHuBtpo1duqGJJ">
+Task #1 created successfully: Add paths-ignore and branches-ignore to CI push trigger
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JUPFY4JrqvCPpwKFLpLfed">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="41167" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 350, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JUPFY4JrqvCPpwKFLpLfed">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PGTS1aaYLQzdCoTUyid4JR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml</param>
+    <param name="old_string">on:
+  push:
+    branches-ignore: []</param>
+    <param name="new_string">on:
+  push:
+    branches-ignore:
+      - "planned/review-*"
+    paths-ignore:
+      - '.erk/impl-context/**'
+      - '.worker-impl/**'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="41517" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PGTS1aaYLQzdCoTUyid4JR">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify the edit looks correct.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="41607" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E7znRNXSF2QwMhxzA7GkRK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="41607" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E7znRNXSF2QwMhxzA7GkRK">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches-ignore:
+     6→      - "planned/review-*"
+     7→    paths-ignore:
+     8→      - '.erk/impl-context/**'
+     9→      - '.worker-impl/**'
+    10→  pull_request:
+    11→    types: [opened, synchronize, reopened, ready_for_review]
+    12→  workflow_dispatch:
+    13→
+    14→permissions:
+    15→  contents: write # Needed for autofix to push
+  </tool_result>
+  <assistant>The edit is correct. Now let me mark the task complete, verify `.impl/` is preserved, and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="41862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 271}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01RhRH84ZbDxAxWiihDRcvkK">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="41862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 271}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RhRH84ZbDxAxWiihDRcvkK">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TuRCkv7hvq5xPj4D178wyS">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="41862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 271}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TuRCkv7hvq5xPj4D178wyS">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl"}
+  </tool_result>
+  <assistant>Good. Now let me signal ended and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="42133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 266}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DZ9vqwj4WmF9znUfm7Tzjw">
+    <param name="command">erk exec impl-signal ended --session-id="d191e54a-5b3f-48a0-88e1-32a55f909747" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="42133" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 266, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DZ9vqwj4WmF9znUfm7Tzjw">
+{
+  "success": true,
+  "event": "ended",
+  "issue_number": 7781
+}
+  </tool_result>
+  <assistant>Now let me upload the session and then run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="166" cache_read_input_tokens="42399" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 166}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01K3Vk32f6nCnLbEYcomcr7T">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(python3 -c "import json; print(j...[truncated 199 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="166" cache_read_input_tokens="42399" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 166}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K3Vk32f6nCnLbEYcomcr7T">
+
+  </tool_result>
+  <assistant>Now let me run CI checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="42565" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 244}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_013LNhtkcJ4LaCbhGwkRi52n">
+    <param name="skill">local:fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="42565" output_tokens="64" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 244, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013LNhtkcJ4LaCbhGwkRi52n">
+Launching skill: local:fast-ci
+  </tool_result>
+  <user>You are an implementation finalizer for rapid development feedback. Your task is to run `make fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the fast CI pipeline (`make fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**Fast CI vs All CI**: The `fast-ci` target runs unit tests only, providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
+
+## CI Pipeline (make fast-ci)
+
+The `make fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format-check** - Ruff code formatting checks
+3. **prettier-check** - Markdown formatting checks
+4. **md-check** - AGENTS.md standard compliance validation
+5. **docs-validate** - Agent documentation frontmatter validation
+6. **ty** - Type checking
+7. **test** - Pytest unit tests only (fast feedback loop)
+8. **exec-reference-check** - Exec subcommand reference documentation validation
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on linting and type checking issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint ty` together. If EITHER fails, stop immediately to fix issues before proceeding to remaining checks.
+2. **Phase 2 (Remaining Checks)**: Only after phase 1 passes, run remaining checks via `make fast-ci`.
+
+This ensures that common issues (linting/formatting and type errors) are caught and fixed first, providing rapid feedback without waiting for slower test runs.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with `make fast-ci` to run the complete fast CI pipeline. Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Running fast CI checks. Starting with the fail-fast phase (lint + ty).</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="644" cache_read_input_tokens="42809" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 644}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01X4iEULZzuycuStbcpaSTyd">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run lint and ty checks</param>
+    <param name="prompt">Run `make lint ty` from the repository root at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35 and report the results. This is a fail-fast phase to catch linting and type errors early.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="644" cache_read_input_tokens="42809" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 644, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X4iEULZzuycuStbcpaSTyd">
+Both linting and type checking passed successfully.
+
+**ruff check**: All checks passed
+**ty check**: All checks passed
+
+The codebase has no linting violations or type errors.
+agentId: a0b1cd3a581e3ac09 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13423
+tool_uses: 1
+duration_ms: 3176&lt;/usage&gt;
+  </tool_result>
+  <assistant>Phase 1 passed. Now running the full fast-ci pipeline.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="43453" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 282}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01U77jb9usEcrgiXyERD8aiJ">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run full fast-ci pipeline</param>
+    <param name="prompt">Run `make fast-ci` from the repository root at /Users/schrockn/.erk/repos/erk/worktrees/er...[truncated 43 chars]... prettier-check, md-check, docs-validate, ty, test (unit tests), and exec-reference-check.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="43453" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 282}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U77jb9usEcrgiXyERD8aiJ">
+All checks passed successfully!
+
+**make fast-ci Summary:**
+
+- **Lint**: All checks passed
+- **Format Check**: 1500 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: AGENTS.md standard passed, 19 CLAUDE.md files checked with 0 violations
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md is up to date
+- **Type Checking (ty)**: All checks passed
+- **Unit Tests (erk)**: 5294 passed in 16.40s
+- **Unit Tests (erk-dev)**: 136 passed in 3.70s
+- **Unit Tests (erk-statusline)**: 126 passed in 1.30s
+
+**Total: 5556 tests passed, 0 failures**
+agentId: a46e6694eb0101ff1 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14546
+tool_uses: 1
+duration_ms: 33067&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks passed (5556 tests, 0 failures). Now let me submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="566" cache_read_input_tokens="43735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012tJWjFgajyiJ6u1DAXbyNq">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="566" cache_read_input_tokens="43735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012tJWjFgajyiJ6u1DAXbyNq">
+Exit code 1
+🚀 Submitting PR...
+
+   Committing uncommitted changes...
+Phase 1: Graphite Submit
+   Running gt submit...
+
+Error: Graphite submit failed: gt submit failed (exit code 1): WARNING: The following branch has diverged from Graphite's tracking:
+WARNING: ▸ planned/skip-ci-for-plan-only-a-02-21-1820
+WARNING: This can happen when a Git command run outside of Graphite changes the commit history of a branch.
+WARNING: You can use gt track &lt;branch&gt; to remediate a diverged branch.
+WARNING: To silence reminders about a diverged branch, untrack it with gt untrack &lt;branch&gt;.
+ERROR: Cannot perform this operation on diverged branch planned/skip-ci-for-plan-only-a-02-21-1820. 
+
+
+🚀 Submitting PR...
+
+   Committing uncommitted changes...
+Phase 1: Graphite Submit
+   Running gt submit...
+
+Error: Graphite submit failed: gt submit failed (exit code 1): WARNING: The following branch has diverged from Graphite's tracking:
+WARNING: ▸ planned/skip-ci-for-plan-only-a-02-21-1820
+WARNING: This can happen when a Git command run outside of Graphite changes the commit history of a branch.
+WARNING: You can use gt track &lt;branch&gt; to remediate a diverged branch.
+WARNING: To silence reminders about a diverged branch, untrack it with gt untrack &lt;branch&gt;.
+ERROR: Cannot perform this operation on diverged branch planned/skip-ci-for-plan-only-a-02-21-1820.
+  </tool_result>
+  <assistant>The branch diverged from Graphite's tracking due to the earlier rebase. Let me re-track it and retry.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="527" cache_read_input_tokens="44301" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 527}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01C91TWXqohREbCAAE4cdqyy">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Re-track branch in Graphite</param>
+    <param name="prompt">Run `gt track --no-interactive planned/skip-ci-for-plan-only-a-02-21-1820` from /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35 and report the results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="527" cache_read_input_tokens="44301" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 527, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C91TWXqohREbCAAE4cdqyy">
+The `gt track` command completed successfully. Here's a summary of the results:
+
+**Branch Tracking:** `planned/skip-ci-for-plan-only-a-02-21-1820` has been tracked with the following details:
+
+- **Parent branch:** master
+- **Number of commits:** 4 commits
+- **Commits in this branch:**
+  1. `14992520f` - WIP: Prepare for PR submission
+  2. `713f8f133` - Remove .erk/impl-context/ before implementation
+  3. `6531a55d9` - planned/Fix: Migrate learn pipeline from branch-based to gist-based materials storage (#7761)
+  4. `78963919b` - Add plan: Skip CI for Plan-Only and One-Shot Prompt Branches
+
+The branch was previously tracked as a child of master, and the tracking has been updated with the current information for proper restacking.
+agentId: a3b72451b1582996e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13824
+tool_uses: 1
+duration_ms: 3678&lt;/usage&gt;
+  </tool_result>
+  <assistant>Good, the branch is re-tracked. Now let me retry the PR submission.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="44828" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 464}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hyyn4VKzTMrpwtVXHto5Y1">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk after re-tracking</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="44828" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 464, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hyyn4VKzTMrpwtVXHto5Y1">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015aNwZfBYh9X6dsjxywPz1k">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="45292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 142}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QbriQDjab7D16e1CiYtT5U">
+    <param name="command">erk pr check 2&gt;&amp;1 || true</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="45292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 142}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015aNwZfBYh9X6dsjxywPz1k">
+{
+  "success": true,
+  "event": "submitted",
+  "issue_number": 7781
+}
+  </tool_result>
+  <tool_result tool="toolu_01QbriQDjab7D16e1CiYtT5U">
+Checking PR #7781 for branch planned/skip-ci-for-plan-only-a-02-21-1820...
+
+[PASS] Branch name and plan reference agree (#7781)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Plan execution complete. Here's the summary:
+
+**PR #7781** — Skip CI for Plan-Only and One-Shot Prompt Branches
+
+**Change**: Modified `.github/workflows/ci.yml` push trigger to add:
+- `branches-ignore: ["planned/review-*"]` — skips plan-review branches
+- `paths-ignore: ['.erk/impl-context/**', '.worker-impl/**']` — skips pushes that only contain plan metadata or one-shot prompts
+
+**Effect**: Plan-only pushes, one-shot prompt pushes, and learn branch pushes no longer trigger CI, saving CI minutes and reducing noise in `erk dash`. Implementation pushes with actual code changes still trigger CI normally. `pull_request` and `workflow_dispatch` triggers are unaffected.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="45434" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="336" cache_read_input_tokens="45924" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 336}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="445" cache_read_input_tokens="46271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 445}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="336" cache_read_input_tokens="46727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 336}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/7781&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>    branches-ignore:
+
+      - "planned/review-*"
+
+can we do something more deterministic than this? what are review-* branches?</user>
+  <assistant>
+
+Good question. Let me check what review branches look like in this codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="294" cache_read_input_tokens="47074" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MYFymhTXBqXLWDtq7RVB6G">
+    <param name="pattern">plan-review|PLAN-REVIEW|review-</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="294" cache_read_input_tokens="47074" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MYFymhTXBqXLWDtq7RVB6G">
+Found 15 files limit: 15, offset: 0
+tests/unit/cli/commands/exec/scripts/test_plan_create_review_branch.py
+tests/unit/cli/commands/exec/scripts/test_plan_create_review_pr.py
+tests/core/utils/test_naming.py
+src/erk/cli/commands/exec/scripts/plan_create_review_branch.py
+src/erk/cli/commands/exec/scripts/trigger_async_learn.py
+src/erk/cli/commands/exec/group.py
+packages/erk-shared/src/erk_shared/naming.py
+tests/unit/core/capabilities/test_review_capability.py
+tests/unit/cli/commands/exec/scripts/test_plan_review_complete.py
+tests/unit/cli/commands/exec/scripts/test_discover_reviews.py
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+src/erk/core/capabilities/review_capability.py
+src/erk/cli/constants.py
+src/erk/cli/commands/exec/scripts/plan_review_complete.py
+src/erk/cli/commands/exec/scripts/plan_create_review_pr.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0185JRVdmCU64joWFmEh3Yfm">
+    <param name="pattern">planned/review</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="294" cache_read_input_tokens="47074" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0185JRVdmCU64joWFmEh3Yfm">
+.github/workflows/ci.yml:6:      - "planned/review-*"
+src/erk/cli/commands/exec/scripts/plan_create_review_branch.py:161:    # Define branch and file names with timestamp (format: planned/review-{issue}-{MM-DD-HHMM})
+src/erk/cli/commands/exec/scripts/plan_create_review_branch.py:163:    branch_name = f"planned/review-{issue_number}{timestamp_suffix}"
+src/erk/cli/commands/exec/scripts/plan_create_review_branch.py:207:    Creates a branch planned/review-{issue}-{timestamp} from origin/master, writes plan
+packages/erk-shared/src/erk_shared/naming.py:436:    Plan review branches follow the pattern: planned/review-{issue_number}-{timestamp}
+packages/erk-shared/src/erk_shared/naming.py:437:    Examples: "planned/review-6214-01-15-1430"
+packages/erk-shared/src/erk_shared/naming.py:443:        Issue number if branch matches planned/review-{number}- pattern, else None
+packages/erk-shared/src/erk_shared/naming.py:446:        &gt;&gt;&gt; extract_plan_review_issue_number("planned/review-6214-01-15-1430")
+packages/erk-shared/src/erk_shared/naming.py:448:        &gt;&gt;&gt; extract_plan_review_issue_number("planned/review-42-01-28-0930")
+packages/erk-shared/src/erk_shared/naming.py:455:    match = re.match(r"^planned/review-(\d+)-", branch_name)
+tests/core/utils/test_naming.py:526:        ("planned/review-6214-01-15-1430", 6214),
+tests/core/utils/test_naming.py:527:        ("planned/review-42-01-28-0930", 42),
+tests/core/utils/test_naming.py:528:        ("planned/review-1-12-31-2359", 1),
+tests/core/utils/test_naming.py:529:        ("planned/review-99999-01-01-0000", 99999),
+tests/core/utils/test_naming.py:535:        ("planned/review", None),  # Missing issue number
+tests/core/utils/test_naming.py:536:        ("planned/review-", None),  # Missing issue number
+tests/core/utils/test_naming.py:537:        ("planned/review-abc-01-15-1430", None),  # Non-numeric issue
+tests/unit/cli/commands/exec/scripts/test_plan_create_review_pr.py:86:    branch_name = "planned/review-1234-01-15-1430"
+tests/unit/cli/commands/exec/scripts/test_plan_create_review_pr.py:147:    branch_name = "planned/review-5678-01-15-1430"
+tests/unit/cli/commands/exec/scripts/test_plan_create_review_pr.py:180:    branch_name = "planned/review-5679-01-15-1430"
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <thinking>So `planned/review-*` branches are plan review branches with the pattern `planned/review-{issue_number}-{timestamp}`. They contain only a plan markdown file for review — no code. The branch name is deterministic and well-defined.
+
+But the user is right to question this. The `branches-ignore` pattern `planned/review-*` is a glob, not a regex. Let me check if there's a more deterministic way to handle this.
+
+Actually, looking at the plan more carefully, plan-review branches contain a `PLAN-REVIEW-*.md` file. Let me check what files are pushed to these branches.
+
+Looking at the plan table:
+
+
+| Plan-review branch | `PLAN-REVIEW-*.md` | No | Branch matches `branches-ignore` |
+
+So plan-review branches have `PLAN-REVIEW-*.md` files. We could use `paths-ignore` for that too instead of `branches-ignore`. But the issue is that `paths-ignore` only works when ALL changed files match the ignore patterns. If a plan-review branch pushes `PLAN-REVIEW-1234.md`, that file doesn't match any of the current `paths-ignore` patterns (`.erk/impl-context/**` or `.worker-impl/**`). So I'd need to either add a new pattern for these plan review files or stick with the branch-based approach.
+
+Let me check what files actually get committed in plan-review branches by looking at the review branch creation script.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1480" cache_read_input_tokens="47368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1480}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>You're right to question that. Let me look at exactly what files plan-review branches push.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1480" cache_read_input_tokens="47368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1480}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GNjLcqsAvQxGK66WttdxNj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/scripts/plan_create_review_branch.py</param>
+    <param name="offset">140</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1480" cache_read_input_tokens="47368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1480}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GNjLcqsAvQxGK66WttdxNj">
+   140→    repo_root: Path,
+   141→    issue_number: int,
+   142→) -&gt; PlanReviewBranchSuccess:
+   143→    """Create a plan review branch and push to remote.
+   144→
+   145→    Args:
+   146→        git: Git gateway
+   147→        github_issues: GitHub issues gateway
+   148→        time: Time gateway for timestamps
+   149→        repo_root: Repository root path
+   150→        issue_number: Issue number to create review branch for
+   151→
+   152→    Returns:
+   153→        PlanReviewBranchSuccess on success
+   154→
+   155→    Raises:
+   156→        PlanReviewBranchException: If plan content cannot be fetched or validated
+   157→    """
+   158→    # Fetch plan content (raises PlanReviewBranchException on failure)
+   159→    plan_title, plan_content = _fetch_plan_content(github_issues, repo_root, issue_number)
+   160→
+   161→    # Define branch and file names with timestamp (format: planned/review-{issue}-{MM-DD-HHMM})
+   162→    timestamp_suffix = format_branch_timestamp_suffix(time.now())
+   163→    branch_name = f"planned/review-{issue_number}{timestamp_suffix}"
+   164→    file_name = f"PLAN-REVIEW-{issue_number}.md"
+   165→
+   166→    # Fetch origin/master, create branch, commit, and push
+   167→    # These operations let exceptions escape as they represent invariant violations
+   168→    # if they fail (network/disk/auth issues are exceptional, not expected states)
+   169→    git.remote.fetch_branch(repo_root, "origin", "master")
+
+... [60 lines omitted] ...
+
+   172→        raise UserFacingCliError(create_result.message)
+   186→    if isinstance(push_result, PushError):
+   187→        raise UserFacingCliError(push_result.message)
+   224→    except PlanReviewBranchException as e:
+   225→        error_response = PlanReviewBranchError(
+   227→            error=e.error,
+  </tool_result>
+  <assistant>Now I see the full picture. Plan-review branches push a single file: `PLAN-REVIEW-{issue}.md` at the repo root. So instead of the fuzzy `branches-ignore` glob, we can use `paths-ignore` for that file pattern too — which is more deterministic since it's based on what files changed, not the branch name.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2571" cache_read_input_tokens="48848" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2571}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TWdAvw5Ew2vjNZmhjQfpU6">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml</param>
+    <param name="old_string">    branches-ignore:
+      - "planned/review-*"
+    paths-ignore:
+      - '.erk/impl-context/**'
+      - '.worker-impl/**'</param>
+    <param name="new_string">    paths-ignore:
+      - '.erk/impl-context/**'
+      - '.worker-impl/**'
+      - 'PLAN-REVIEW-*.md'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2571" cache_read_input_tokens="48848" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2571}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TWdAvw5Ew2vjNZmhjQfpU6">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>Now all three skip conditions use `paths-ignore` — CI is skipped when **all** changed files match one of these patterns:
+
+| Pattern | Covers |
+|---|---|
+| `.erk/impl-context/**` | Plan-only pushes, learn branches |
+| `.worker-impl/**` | One-shot prompt pushes |
+| `PLAN-REVIEW-*.md` | Plan-review branches |
+
+This is more deterministic because it's based on what files actually changed, not branch naming conventions. If someone ever pushes code alongside a `PLAN-REVIEW-*.md` file, CI will still run because the code files won't match `paths-ignore`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="51419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 355}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>don't add any support for plan-review branches. we are going to eliminate the feature as it will be unnecessary in a world where all plans are prs</user>
+  <assistant>
+
+Got it. Let me remove that pattern.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="299" cache_read_input_tokens="51926" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HvTeoNC6tUA6T4b7kojaaB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml</param>
+    <param name="old_string">    paths-ignore:
+      - '.erk/impl-context/**'
+      - '.worker-impl/**'
+      - 'PLAN-REVIEW-*.md'</param>
+    <param name="new_string">    paths-ignore:
+      - '.erk/impl-context/**'
+      - '.worker-impl/**'</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="299" cache_read_input_tokens="51926" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 299, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HvTeoNC6tUA6T4b7kojaaB">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>Done. Now it's just the two `paths-ignore` patterns for plan metadata and one-shot prompts.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="52225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>/erk:pr-submit</user>
+  <user>&lt;local-command-stdout&gt;
+The PR has been submitted. Here are the results:
+
+- **PR URL:** https://github.com/dagster-io/erk/pull/7781
+- **PR Title:** Skip CI for plan-only and one-shot branches
+- **PR State:** OPEN
+- **Branch:** `planned/skip-ci-for-plan-only-a-02-21-1820`
+
+The `erk pr submit` command completed successfully. The PR is now open on GitHub.
+
+🔄 Status line refreshed
+&lt;/local-command-stdout&gt;</user>
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+</session>

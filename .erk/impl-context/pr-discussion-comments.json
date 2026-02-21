@@ -1,0 +1,48 @@
+{
+  "success": true,
+  "pr_number": 7781,
+  "comments": [
+    {
+      "id": 3939683126,
+      "author": "schrockn",
+      "body": "\ud83d\ude80 Starting implementation\n\n---\n\n**Worktree:** `erk-slot-35`\n**Branch:** `planned/skip-ci-for-plan-only-a-02-21-1820`",
+      "url": "https://github.com/dagster-io/erk/pull/7781#issuecomment-3939683126"
+    },
+    {
+      "id": 3939685305,
+      "author": "schrockn",
+      "body": "* **#7781** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7781?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7781?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7781#issuecomment-3939685305"
+    },
+    {
+      "id": 3939686175,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-code-simplifier-review -->\n\n## \u2705 Dignified Code Simplifier Review\n\n**Last updated:** 2026-02-21 15:25:17 PT\n\nNo violations detected across all modified Python files.\n\n### Patterns Checked\n\u2705 LBYL (Look Before You Leap) - Excellent use of `isinstance()` checks and guard conditions\n\u2705 Exception Handling - Proper use of try/except at CLI boundary level\n\u2705 Pathlib Usage - No path operations requiring review\n\u2705 Imports - Properly organized absolute imports in test file\n\u2705 Code Clarity - Clear variable naming and logical flow in refactored submit logic\n\n### Files Reviewed\n- `src/erk/cli/commands/submit.py`: 0 violations (well-structured error handling and guards)\n- `tests/commands/plan/test_submit.py`: 0 violations (properly organized test code)\n- `.github/workflows/ci.yml`: Not Python code, skipped\n- `docs/learned/planning/draft-pr-learn-pipeline.md`: Markdown documentation, skipped\n\n### Activity Log\n- **2026-02-21 15:25:17 PT**: No violations detected - excellent code quality",
+      "url": "https://github.com/dagster-io/erk/pull/7781#issuecomment-3939686175"
+    },
+    {
+      "id": 3939686435,
+      "author": "github-actions[bot]",
+      "body": "<!-- test-coverage-review -->\n\n## \u2705 Test Coverage Review\n\n**Last updated:** 2026-02-21 15:25:26 PT\n\nAll source code modifications have corresponding test coverage.\n\n### Files Reviewed\n\n#### Source Modified\n- `src/erk/cli/commands/submit.py`: Reordered dispatch metadata and PR body update logic; added guards for empty PR bodies; added user-facing output messages\n  - **Tests**: \u2705 `tests/commands/plan/test_submit.py` (updated with new assertions for dispatch metadata success and no warnings)\n\n#### Configuration & Documentation (Excluded)\n- `.github/workflows/ci.yml` \u2014 CI configuration\n- `docs/learned/planning/draft-pr-learn-pipeline.md` \u2014 documentation\n\n### Summary\n- **Source files modified**: 1\n- **Test files updated**: 1\n- **Coverage status**: \u2705 Complete (all source modifications have test coverage)\n- **Violations**: None\n\n### Activity Log\n- **2026-02-21 15:25:26 PT**: All source modifications covered by existing tests. Test assertions strengthened for dispatch metadata and warning checks.",
+      "url": "https://github.com/dagster-io/erk/pull/7781#issuecomment-3939686435"
+    },
+    {
+      "id": 3939687011,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-python-review -->\n\n## \u2705 Dignified Python Review\n\n**Last updated:** 2026-02-21 15:26:07 PT\n\nFound 0 violations. All Python code changes are compliant with dignified Python standards.\n\n### Patterns Checked\n\u2705 LBYL over EAFP - No try/except for control flow\n\u2705 Exception handling - Properly scoped at error boundaries\n\u2705 Path operations - Correct guards and conditions\n\u2705 Import organization - All absolute imports, no re-exports\n\u2705 Code structure - Clear patterns, no violations\n\n### Violations Summary\nNone detected.\n\n### Files Reviewed\n- `src/erk/cli/commands/submit.py`: 0 violations\n- `tests/commands/plan/test_submit.py`: 0 violations\n\n---\n\n### Activity Log\n- **2026-02-21 15:26:07 PT**: No violations detected - all Python code compliant with dignified standards (reordered metadata writing, added guard conditions, refactored test setup)",
+      "url": "https://github.com/dagster-io/erk/pull/7781#issuecomment-3939687011"
+    },
+    {
+      "id": 3939687098,
+      "author": "github-actions[bot]",
+      "body": "<!-- tripwires-review -->\n\n## \u2705 Tripwires Review\n\n**Last updated:** 2026-02-21 15:25:22 PT\n\nNo violations detected. All changes comply with erk coding standards.\n\n### Tripwires Triggered\n\n- **CI Tripwires**: branches-ignore for ephemeral patterns (compliant usage)\n- **CLI Tripwires**: Operation ordering and guard conditions\n- **Testing Tripwires**: Production metadata format usage\n- **Documentation Tripwires**: Source pointer precision\n\n### Tier 1 Pattern Matches\n\n\u2705 `monkeypatch\\.` - None found\n\u2705 `@patch` - None found  \n\u2705 `Path\\.home\\(\\)` - None found (in new code)\n\n### Tier 2 Semantic Matches\n\n\u2705 **Adding branches-ignore** - Found in .github/workflows/ci.yml (COMPLIANT - follows recommended pattern for ephemeral branches)\n\u2705 **Modifying PR body without preserving metadata** - Found guard added to prevent metadata overwriting (DEFENSIVE - prevents bug)\n\u2705 **Test data using production formats** - Found in test_submit.py (GOOD PRACTICE - uses MetadataBlock and build_plan_stage_body)\n\u2705 **Documentation source pointer precision** - Function name removed from source pointer (MINOR - less precise but not a violation)\n\n### Files Reviewed\n\n- `.github/workflows/ci.yml`: 0 violations\n- `src/erk/cli/commands/submit.py`: 0 violations\n- `tests/commands/plan/test_submit.py`: 0 violations\n- `docs/learned/planning/draft-pr-learn-pipeline.md`: 0 violations\n\n---\n\n### Activity Log\n\n- **2026-02-21 15:25:22 PT**: No violations detected. Reviewed CI workflow gating, submit pipeline ordering, test metadata formats, and documentation updates. All changes follow erk standards.",
+      "url": "https://github.com/dagster-io/erk/pull/7781#issuecomment-3939687098"
+    },
+    {
+      "id": 3939688136,
+      "author": "github-actions[bot]",
+      "body": "<!-- audit-pr-docs -->\n\n## \u274c Audit PR Docs\n\n**Last updated:** 2026-02-21 15:26:59 PT\n\nFound 2 violations across 1 file. Inaccurate claims are in unchanged context lines (not diffed), so no inline comments could be posted \u2014 violations are described below.\n\n### Patterns Checked\n\u2705 Verbatim code blocks \u2014 None found (no code blocks in doc)\n\u274c Inaccurate claims \u2014 2 found in `docs/learned/planning/draft-pr-learn-pipeline.md`\n\u2705 Duplicative sections \u2014 None found\n\u2705 Drift risk \u2014 None found\n\n### Violations Summary\n\n**1. `docs/learned/planning/draft-pr-learn-pipeline.md:29` \u2014 Inaccurate claim: \"gist URL\"**\n\nThe section \"Metadata Fallback for Gist URL\" and its description claim that the gist URL (learn materials location) is stored as a comment on the PR. In reality, the comment-based fallback in `land_cmd.py` stores the **learn materials branch name** (`learn_materials_branch` field), not a gist URL. Source: `src/erk/cli/commands/land_cmd.py:560-597` (`_store_learn_materials_branch`).\n\nSuggested fix: Rename section to \"Metadata Fallback for Learn Materials Branch\" and correct description to say the branch name (not gist URL) is stored as a comment when no metadata block is found.\n\n**2. `docs/learned/planning/draft-pr-learn-pipeline.md:34` \u2014 Inaccurate claim: wrong file path**\n\nThe \"Affected Files\" section lists `src/erk/cli/commands/pr/land_cmd.py` but the actual path is `src/erk/cli/commands/land_cmd.py` (no `pr/` subdirectory).\n\nSuggested fix: Correct the path to `src/erk/cli/commands/land_cmd.py`.\n\n### Files Reviewed\n- `docs/learned/planning/draft-pr-learn-pipeline.md`: 2 violations (SIMPLIFY verdict)\n  - Duplicative: 5% | Inaccurate: 25% | High-value: 70%\n  - Note: PR change correctly removed private method name (`_get_pr_for_plan_direct`) from source pointer per learned-docs standards\n\n---\n\n### Activity Log\n- **2026-02-21 15:26:59 PT**: Found 2 inaccurate claims in `draft-pr-learn-pipeline.md`: (1) \"Metadata Fallback for Gist URL\" section incorrectly describes gist URL when code stores learn_materials_branch; (2) wrong file path for land_cmd.py (has extra pr/ subdirectory). Inline comments not posted (violations are in unchanged context lines).",
+      "url": "https://github.com/dagster-io/erk/pull/7781#issuecomment-3939688136"
+    }
+  ]
+}
