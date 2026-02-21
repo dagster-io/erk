@@ -47,25 +47,25 @@ P{issue}-O{objective}-{slug}-{MM-DD-HHMM}
 **Without objective:**
 
 ```
-plan-{slug}-{MM-DD-HHMM}
+plan/{slug}-{MM-DD-HHMM}
 ```
 
 **With objective:**
 
 ```
-plan-O{objective}-{slug}-{MM-DD-HHMM}
+plan/O{objective}-{slug}-{MM-DD-HHMM}
 ```
 
 **Examples:**
 
-- `plan-fix-auth-bug-01-15-1430`
-- `plan-O456-fix-auth-bug-01-15-1430`
+- `plan/fix-auth-bug-01-15-1430`
+- `plan/O456-fix-auth-bug-01-15-1430`
 
 Draft-PR branches have no extractable plan ID from the branch name. `plan-ref.json` is the sole source of truth.
 
 **Constraints:**
 
-- Prefix (`P{num}-` or `P{num}-O{obj}-` or `plan-`) + sanitized title must not exceed 31 characters
+- Prefix (`P{num}-` or `P{num}-O{obj}-` or `plan/`) + sanitized title must not exceed 31 characters
 - Title is sanitized via `sanitize_worktree_name()` (lowercased, special chars replaced with hyphens)
 - Timestamp suffix: `-MM-DD-HHMM` format
 - Trailing hyphens stripped before timestamp
@@ -86,12 +86,12 @@ Extracts the plan issue number from a branch name. See `extract_leading_issue_nu
 
 <!-- Source: packages/erk-shared/src/erk_shared/naming.py, extract_objective_number -->
 
-Extracts the optional objective ID from a branch name. Supports both issue-based (`P{issue}-O{obj}-`) and draft-PR (`plan-O{obj}-`) patterns. See `extract_objective_number()` in `packages/erk-shared/src/erk_shared/naming.py`.
+Extracts the optional objective ID from a branch name. Supports both issue-based (`P{issue}-O{obj}-`) and draft-PR (`plan/O{obj}-`) patterns. See `extract_objective_number()` in `packages/erk-shared/src/erk_shared/naming.py`.
 
 - `"P123-O456-fix-auth-bug-01-15-1430"` -> `456`
-- `"plan-O456-fix-auth-01-15-1430"` -> `456`
+- `"plan/O456-fix-auth-01-15-1430"` -> `456`
 - `"P123-fix-auth-bug-01-15-1430"` -> `None`
-- `"plan-fix-auth-bug-01-15-1430"` -> `None`
+- `"plan/fix-auth-bug-01-15-1430"` -> `None`
 - Case-insensitive: `"P123-o456-fix-bug"` -> `456`
 
 ## Usage Sites
@@ -106,11 +106,12 @@ Branch creation codepaths delegate to one of two functions depending on whether 
 | One-shot dispatch     | `src/erk/cli/commands/one_shot_dispatch.py` |
 | setup-impl-from-issue | Branch creation during implementation       |
 
-**`generate_draft_pr_branch_name()`** — for draft-PR plans (`plan-...`):
+**`generate_draft_pr_branch_name()`** — for draft-PR plans (`plan/...`):
 
-| Codepath             | File                                             |
-| -------------------- | ------------------------------------------------ |
-| Plan save (draft-PR) | `src/erk/cli/commands/exec/scripts/plan_save.py` |
+| Codepath                 | File                                                            |
+| ------------------------ | --------------------------------------------------------------- |
+| Plan save (draft-PR)     | `src/erk/cli/commands/exec/scripts/plan_save.py`                |
+| Plan migrate to draft-PR | `src/erk/cli/commands/exec/scripts/plan_migrate_to_draft_pr.py` |
 
 The one-shot dispatch also has a fallback for non-plan tasks: `oneshot-{slug}-{MM-DD-HHMM}`.
 

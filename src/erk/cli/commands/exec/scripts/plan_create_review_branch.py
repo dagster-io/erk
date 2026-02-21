@@ -158,9 +158,9 @@ def _create_review_branch_impl(
     # Fetch plan content (raises PlanReviewBranchException on failure)
     plan_title, plan_content = _fetch_plan_content(github_issues, repo_root, issue_number)
 
-    # Define branch and file names with timestamp (format: plan-review-{issue}-{MM-DD-HHMM})
+    # Define branch and file names with timestamp (format: plan/review-{issue}-{MM-DD-HHMM})
     timestamp_suffix = format_branch_timestamp_suffix(time.now())
-    branch_name = f"plan-review-{issue_number}{timestamp_suffix}"
+    branch_name = f"plan/review-{issue_number}{timestamp_suffix}"
     file_name = f"PLAN-REVIEW-{issue_number}.md"
 
     # Fetch origin/master, create branch, commit, and push
@@ -204,7 +204,7 @@ def plan_create_review_branch(
 ) -> None:
     """Create a plan review branch and push to remote.
 
-    Creates a branch plan-review-{issue}-{timestamp} from origin/master, writes plan
+    Creates a branch plan/review-{issue}-{timestamp} from origin/master, writes plan
     to PLAN-REVIEW-{issue}.md, commits, and pushes to origin.
     """
     git = require_git(ctx)

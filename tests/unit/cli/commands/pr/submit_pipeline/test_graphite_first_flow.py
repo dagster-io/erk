@@ -231,6 +231,39 @@ def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
     assert result.pr_number == 42
 
 
+def test_branch_not_on_remote_skips_divergence_check(tmp_path: Path) -> None:
+    """Branch absent from remote proceeds to gt submit without divergence check."""
+    pr = _pr_details(number=42, branch="feature")
+    fake_graphite = FakeGraphite()
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+    )
+    fake_git = FakeGit(
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+        repository_roots={tmp_path: tmp_path},
+        # remote_branches omitted: branch does not exist on remote
+    )
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        github=fake_github,
+        cwd=tmp_path,
+        global_config=global_config,
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = _graphite_first_flow(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert result.pr_number == 42
+
+
 def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -> None:
     """Non-plan branch (no issue_number) still errors when behind remote."""
     fake_git = FakeGit(
@@ -256,3 +289,33 @@ def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitError)
     assert result.error_type == "remote_diverged"
+
+
+def test_branch_behind_remote_returns_error(tmp_path: Path) -> None:
+    """SubmitError(error_type='remote_diverged') when branch is behind remote."""
+    fake_graphite = FakeGraphite()
+    fake_git = FakeGit(
+        remote_branches={tmp_path: ["origin/feature"]},
+        branch_divergence={
+            (tmp_path, "feature", "origin"): BranchDivergence(is_diverged=False, ahead=0, behind=3)
+        },
+    )
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=tmp_path,
+        global_config=global_config,
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = _graphite_first_flow(ctx, state)
+
+    assert isinstance(result, SubmitError)
+    assert result.error_type == "remote_diverged"
+    assert "behind" in result.message
