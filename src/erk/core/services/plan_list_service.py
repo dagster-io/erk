@@ -25,6 +25,7 @@ from erk_shared.plan_store.draft_pr_lifecycle import (
     has_original_plan_section,
 )
 
+
 class DraftPRPlanListService(PlanListService):
     """Plan list service for draft-PR-backed plans.
 
