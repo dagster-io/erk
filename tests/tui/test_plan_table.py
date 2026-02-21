@@ -602,7 +602,7 @@ def test_stage_column_index_none_for_github() -> None:
     assert table._stage_column_index is None
 
 
-# --- Tests for compact status emoji column ---
+# --- Tests for compact location emoji column ---
 
 
 def test_row_to_values_status_empty() -> None:
@@ -629,14 +629,14 @@ def test_row_to_values_status_local_only() -> None:
 
 
 def test_row_to_values_status_remote_only() -> None:
-    """Status cell shows runner emoji when only run URL exists."""
+    """Status cell shows cloud emoji when only run URL exists."""
     filters = PlanFilters.default()
     table = PlanDataTable(filters, plan_backend="github")
     row = make_plan_row(123, "Test Plan", run_url="https://github.com/runs/1")
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\U0001f3c3"
+    assert values[2] == "\u2601\ufe0f"
 
 
 def test_row_to_values_status_both() -> None:
@@ -647,4 +647,4 @@ def test_row_to_values_status_both() -> None:
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\U0001f4bb\U0001f3c3"
+    assert values[2] == "\U0001f4bb\u2601\ufe0f"
