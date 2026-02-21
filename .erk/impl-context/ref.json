@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Migrate session storage to GitHub Gists and streamline TUI title display"
+}
