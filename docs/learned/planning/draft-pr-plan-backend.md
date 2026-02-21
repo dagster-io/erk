@@ -74,14 +74,11 @@ The backend uses explicit `isinstance()` checks and conditional type conversion 
 
 ## Title Prefixing Behavior
 
-Draft PR titles (and issue-based plan titles) are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`:
+Draft PR titles (and issue-based plan titles) are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`.
 
-```python
-def get_title_tag_from_labels(labels: list[str]) -> str:
-    return "[erk-learn]" if "erk-learn" in labels else "[erk-plan]"
-```
+<!-- Source: packages/erk-shared/src/erk_shared/plan_utils.py:178-190, get_title_tag_from_labels -->
 
-The prefix is prepended to the plan title during PR creation (e.g., `[erk-plan] My Feature`). For erk-learn plans, the prefix becomes `[erk-learn]` to distinguish documentation/learning plans from implementation plans in the PR list.
+The function returns `"[erk-learn]"` if `"erk-learn"` is in the labels list, otherwise `"[erk-plan]"`. The prefix is prepended to the plan title during PR creation (e.g., `[erk-plan] My Feature`). For erk-learn plans, the prefix becomes `[erk-learn]` to distinguish documentation/learning plans from implementation plans in the PR list.
 
 ## GraphQL Refactor: `list_plan_prs_with_details()`
 

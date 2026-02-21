@@ -22,29 +22,17 @@ Missing any dimension means a command can appear when it shouldn't, or be invisi
 
 ## `_is_github_backend()` Predicate
 
-**Location:** `src/erk/tui/commands/registry.py:31-33`
+<!-- Source: src/erk/tui/commands/registry.py:31-33, _is_github_backend -->
 
-```python
-def _is_github_backend(ctx: CommandContext) -> bool:
-    """Return True if the active plan backend is github (issue-based)."""
-    return ctx.plan_backend == "github"
-```
+The function checks `ctx.plan_backend == "github"` and returns `True` for issue-based plans. See `src/erk/tui/commands/registry.py:31-33` for the implementation.
 
 The `plan_backend` field is a `PlanBackendType` value (`"github"` or `"github-draft-pr"`).
 
 ## `CommandContext` with `plan_backend`
 
-**Location:** `src/erk/tui/commands/types.py:23-35`
+<!-- Source: src/erk/tui/commands/types.py:23-35, CommandContext -->
 
-```python
-@dataclass(frozen=True)
-class CommandContext:
-    row: PlanRowData
-    view_mode: ViewMode
-    plan_backend: PlanBackendType
-```
-
-The `plan_backend` field is set from the app's active backend configuration and passed to every command's `is_available` and `get_display_name` functions.
+The `CommandContext` frozen dataclass at `src/erk/tui/commands/types.py:23-35` carries `row`, `view_mode`, and `plan_backend` fields. The `plan_backend` field is set from the app's active backend configuration and passed to every command's `is_available` and `get_display_name` functions.
 
 ## Commands Hidden in `draft_pr` Mode
 
@@ -57,9 +45,9 @@ Two commands are hidden when the backend is `github-draft-pr`:
 
 **Registry entry pattern** (`registry.py:314-329`):
 
-```python
-is_available=lambda ctx: _is_plan_view(ctx) and _is_github_backend(ctx),
-```
+<!-- Source: src/erk/tui/commands/registry.py:319, copy_prepare command -->
+
+The `is_available` lambda combines `_is_plan_view(ctx) and _is_github_backend(ctx)`. See `registry.py:319` for the exact expression.
 
 ## Adding Backend-Filtered Commands
 

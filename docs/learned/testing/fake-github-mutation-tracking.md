@@ -57,27 +57,14 @@ Every tracking list uses a typed tuple with a specific field order. The conventi
 
 ## Three-Component Pattern for Tracking Lists
 
-Each mutation tracking list follows a three-component pattern. Example: `mark_pr_ready` in `FakeGitHub` (`fake.py:164-793`):
+Each mutation tracking list follows a three-component pattern. Example: `mark_pr_ready` in `FakeGitHub`:
 
-1. **Private list** (initialized in `__init__`):
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:164, FakeGitHub.__init__ -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:771-777, FakeGitHub.mark_pr_ready -->
 
-   ```python
-   self._marked_pr_ready: list[int] = []
-   ```
-
-2. **Recording method** (appends to private list on call):
-
-   ```python
-   def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
-       self._marked_pr_ready.append(pr_number)
-   ```
-
-3. **Read-only property with defensive copy** (prevents test mutations from affecting fake state):
-   ```python
-   @property
-   def marked_ready_prs(self) -> list[int]:
-       return list(self._marked_pr_ready)
-   ```
+1. **Private list** (initialized in `__init__` at `fake.py:164`): a typed list, e.g. `self._marked_pr_ready: list[int] = []`
+2. **Recording method** (`fake.py:771-777`): the gateway method appends to the private list and returns `None`
+3. **Read-only property with defensive copy**: returns `list(self._private_list)` to prevent test mutations from corrupting fake state
 
 The defensive `list()` copy ensures tests that do `fake.marked_ready_prs.pop()` don't corrupt the fake's internal state.
 

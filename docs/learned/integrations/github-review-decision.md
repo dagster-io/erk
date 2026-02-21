@@ -36,11 +36,9 @@ Raw values returned by GitHub: `"APPROVED"`, `"CHANGES_REQUESTED"`, `"REVIEW_REQ
 
 ## `PullRequestInfo` Type
 
-**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/types.py:201` (approximately)
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py:201, PullRequestInfo -->
 
-```python
-review_decision: str | None
-```
+The `review_decision: str | None` field at `packages/erk-shared/src/erk_shared/gateway/github/types.py:201` stores the raw GraphQL `reviewDecision` value.
 
 `None` means the PR has no review state (e.g., no reviewers assigned, or `REVIEW_REQUIRED` maps to no indicator).
 
