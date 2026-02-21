@@ -213,6 +213,81 @@ def find_branch_assignment(state: PoolState, branch_name: str) -> SlotAssignment
 
 
 @dataclass(frozen=True)
+class PoolSyncResult:
+    """Result of syncing pool assignments with actual git state."""
+
+    state: PoolState
+    synced_count: int
+
+
+def sync_pool_assignments(
+    state: PoolState,
+    git: Git,
+    pool_json_path: Path,
+) -> PoolSyncResult:
+    """Sync pool assignments with actual git branch state.
+
+    For each assignment, checks the actual branch in the worktree and
+    updates pool.json when mismatches are detected. This handles the case
+    where users manually run ``gt create`` or ``git checkout`` in a pool
+    slot, causing the recorded branch to diverge from the actual branch.
+
+    Args:
+        state: Current pool state
+        git: Git gateway for branch operations
+        pool_json_path: Path to pool.json for saving updated state
+
+    Returns:
+        PoolSyncResult with potentially updated state and count of synced assignments
+    """
+    updated_assignments: list[SlotAssignment] = []
+    synced_count = 0
+
+    for assignment in state.assignments:
+        if not assignment.worktree_path.exists():
+            updated_assignments.append(assignment)
+            continue
+
+        actual_branch = git.branch.get_current_branch(assignment.worktree_path)
+
+        if actual_branch is None:
+            # Detached HEAD — leave assignment unchanged
+            updated_assignments.append(assignment)
+            continue
+
+        if actual_branch == assignment.branch_name:
+            updated_assignments.append(assignment)
+            continue
+
+        if is_placeholder_branch(actual_branch):
+            updated_assignments.append(assignment)
+            continue
+
+        # Branch changed — update assignment, preserve original assigned_at
+        updated_assignments.append(
+            SlotAssignment(
+                slot_name=assignment.slot_name,
+                branch_name=actual_branch,
+                assigned_at=assignment.assigned_at,
+                worktree_path=assignment.worktree_path,
+            )
+        )
+        synced_count += 1
+
+    if synced_count == 0:
+        return PoolSyncResult(state=state, synced_count=0)
+
+    new_state = PoolState(
+        version=state.version,
+        pool_size=state.pool_size,
+        slots=state.slots,
+        assignments=tuple(updated_assignments),
+    )
+    save_pool_state(pool_json_path, new_state)
+    return PoolSyncResult(state=new_state, synced_count=synced_count)
+
+
+@dataclass(frozen=True)
 class ExistingAssignmentValidation:
     """Result of validating an existing branch assignment."""
 
@@ -529,6 +604,10 @@ def allocate_slot_for_branch(
             slots=(),
             assignments=(),
         )
+
+    # Sync pool assignments with actual git state before making decisions
+    sync_result = sync_pool_assignments(state, ctx.git, repo.pool_json_path)
+    state = sync_result.state
 
     # Check if branch is already assigned
     existing = find_branch_assignment(state, branch_name)
