@@ -1,10 +1,9 @@
 """Unit tests for download-remote-session exec script.
 
-Tests downloading session files from GitHub Gist URLs.
-Uses fake URL fetchers injected into _execute_download.
+Tests downloading session files from git branches.
+Uses FakeGit injected into _execute_download for git operations.
 """
 
-import urllib.error
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -12,11 +11,12 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.download_remote_session import (
     _execute_download,
     _get_remote_sessions_dir,
-    normalize_gist_url,
 )
 from erk.cli.commands.exec.scripts.download_remote_session import (
     download_remote_session as download_remote_session_command,
 )
+from erk_shared.context.context import ErkContext
+from erk_shared.gateway.git.fake import FakeGit
 
 # ============================================================================
 # 1. Helper Function Tests (2 tests)
@@ -47,67 +47,22 @@ def test_get_remote_sessions_dir_returns_existing(tmp_path: Path) -> None:
 
 
 # ============================================================================
-# 2. URL Normalization Tests (4 tests)
+# 2. CLI Argument Validation Tests (2 tests)
 # ============================================================================
 
 
-def test_normalize_gist_url_webpage_to_raw() -> None:
-    """Test that gist.github.com webpage URL is converted to raw URL.
-
-    Uses /raw/ without filename - GitHub redirects to the first file in single-file gists.
-    """
-    webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb"
-
-    result = normalize_gist_url(webpage_url)
-
-    expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/"
-    assert result == expected
-
-
-def test_normalize_gist_url_webpage_with_trailing_slash() -> None:
-    """Test that webpage URL with trailing slash is handled correctly."""
-    webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb/"
-
-    result = normalize_gist_url(webpage_url)
-
-    expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/"
-    assert result == expected
-
-
-def test_normalize_gist_url_raw_passthrough() -> None:
-    """Test that gist.githubusercontent.com raw URL passes through unchanged."""
-    raw_url = "https://gist.githubusercontent.com/user/abc123/raw/session.jsonl"
-
-    result = normalize_gist_url(raw_url)
-
-    assert result == raw_url
-
-
-def test_normalize_gist_url_unknown_format_passthrough() -> None:
-    """Test that unknown URL formats pass through unchanged."""
-    unknown_url = "https://example.com/some/path"
-
-    result = normalize_gist_url(unknown_url)
-
-    assert result == unknown_url
-
-
-# ============================================================================
-# 3. CLI Argument Validation Tests (2 tests)
-# ============================================================================
-
-
-def test_cli_missing_gist_url() -> None:
-    """Test CLI requires --gist-url option."""
+def test_cli_missing_session_branch() -> None:
+    """Test CLI requires --session-branch option."""
     runner = CliRunner()
 
     result = runner.invoke(
         download_remote_session_command,
         ["--session-id", "test-123"],
+        obj=ErkContext.for_test(),
     )
 
     assert result.exit_code != 0
-    assert "gist-url" in result.output.lower() or "missing" in result.output.lower()
+    assert "session-branch" in result.output.lower() or "missing" in result.output.lower()
 
 
 def test_cli_missing_session_id() -> None:
@@ -116,7 +71,8 @@ def test_cli_missing_session_id() -> None:
 
     result = runner.invoke(
         download_remote_session_command,
-        ["--gist-url", "https://gist.githubusercontent.com/user/abc/raw/session.jsonl"],
+        ["--session-branch", "session/42"],
+        obj=ErkContext.for_test(),
     )
 
     assert result.exit_code != 0
@@ -124,59 +80,37 @@ def test_cli_missing_session_id() -> None:
 
 
 # ============================================================================
-# 4. Core Logic Tests (4 tests) — call _execute_download with fake fetchers
+# 3. Core Logic Tests (2 tests) — call _execute_download with FakeGit
 # ============================================================================
 
 
-def test_success_download(tmp_path: Path) -> None:
-    """Test successful download from gist URL."""
-    session_id = "abc-123"
-    gist_url = "https://gist.githubusercontent.com/user/abc123/raw/session.jsonl"
-    session_content = '{"type": "assistant"}\n{"type": "user"}\n'
+def test_error_download_fails_when_branch_not_found(tmp_path: Path) -> None:
+    """Test error when git show fails to extract session from branch.
+
+    tmp_path is not a git repository, so subprocess git show returns non-zero.
+    The FakeGit records the fetch_branch call but does not make real git calls.
+    """
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
 
     exit_code, output = _execute_download(
         repo_root=tmp_path,
-        gist_url=gist_url,
-        session_id=session_id,
-        url_fetcher=lambda url: session_content.encode("utf-8"),
-    )
-
-    assert exit_code == 0
-    assert output["success"] is True
-    assert output["session_id"] == session_id
-    assert output["source"] == "gist"
-    assert "session.jsonl" in str(output["path"])
-
-    session_file = Path(str(output["path"]))
-    assert session_file.exists()
-    assert session_file.read_text(encoding="utf-8") == session_content
-
-
-def test_error_download_fails(tmp_path: Path) -> None:
-    """Test error when gist URL cannot be fetched."""
-    session_id = "bad-session"
-    gist_url = "https://gist.githubusercontent.com/user/nonexistent/raw/session.jsonl"
-
-    def failing_fetcher(url: str) -> bytes:
-        raise urllib.error.URLError("404 Not Found")
-
-    exit_code, output = _execute_download(
-        repo_root=tmp_path,
-        gist_url=gist_url,
-        session_id=session_id,
-        url_fetcher=failing_fetcher,
+        session_branch="session/42",
+        session_id="test-session-123",
+        git=fake_git,
     )
 
     assert exit_code == 1
     assert output["success"] is False
-    assert "Failed to download from gist URL" in str(output["error"])
+    assert "Failed to extract session from branch" in str(output["error"])
+
+    # Verify fetch was attempted via FakeGit
+    assert ("origin", "session/42") in fake_git.fetched_branches
 
 
 def test_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
-    """Test that existing directory contents are cleaned up on re-download."""
+    """Test that existing directory contents are cleaned up before download attempt."""
     session_id = "redownload-session"
-    gist_url = "https://gist.githubusercontent.com/user/abc/raw/session.jsonl"
-    new_content = '{"new": true}\n'
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
 
     # Pre-create the session directory with old files
     session_dir = tmp_path / ".erk" / "scratch" / "remote-sessions" / session_id
@@ -184,49 +118,15 @@ def test_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     old_file = session_dir / "old-session.jsonl"
     old_file.write_text('{"old": true}\n', encoding="utf-8")
 
-    exit_code, output = _execute_download(
+    # Download attempt (will fail since tmp_path is not a git repo)
+    exit_code, _output = _execute_download(
         repo_root=tmp_path,
-        gist_url=gist_url,
+        session_branch="session/42",
         session_id=session_id,
-        url_fetcher=lambda url: new_content.encode("utf-8"),
+        git=fake_git,
     )
 
-    assert exit_code == 0
-    assert output["success"] is True
-
-    # Verify old file was cleaned up and new file exists as session.jsonl
-    assert not old_file.exists()
-    session_file = session_dir / "session.jsonl"
-    assert session_file.exists()
-    content = session_file.read_text(encoding="utf-8")
-    assert "new" in content
-
-
-def test_webpage_url_normalized_before_download(tmp_path: Path) -> None:
-    """Test successful download from gist.github.com webpage URL (normalized to raw)."""
-    session_id = "webpage-session"
-    webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb"
-    session_content = '{"type": "assistant"}\n'
-
-    captured_urls: list[str] = []
-
-    def capturing_fetcher(url: str) -> bytes:
-        captured_urls.append(url)
-        return session_content.encode("utf-8")
-
-    exit_code, output = _execute_download(
-        repo_root=tmp_path,
-        gist_url=webpage_url,
-        session_id=session_id,
-        url_fetcher=capturing_fetcher,
-    )
-
-    assert exit_code == 0
-    assert output["success"] is True
-    assert output["session_id"] == session_id
-
-    # Verify the URL was normalized before download (uses /raw/ without filename)
-    expected_raw_url = (
-        "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/"
-    )
-    assert captured_urls == [expected_raw_url]
+    # Old file should be cleaned up even though download failed
+    assert not old_file.exists(), "Old file should be cleaned up before download attempt"
+    # Download fails because tmp_path is not a git repo
+    assert exit_code == 1

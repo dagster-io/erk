@@ -20,7 +20,7 @@ class SessionSourceDict(TypedDict):
     session_id: str
     run_id: str | None
     path: str | None
-    gist_url: str | None
+    session_branch: str | None
 
 
 class SessionSource(ABC):
@@ -77,25 +77,25 @@ class SessionSource(ABC):
 
     @property
     @abstractmethod
-    def gist_url(self) -> str | None:
-        """Return the gist URL where the session JSONL is stored.
+    def session_branch(self) -> str | None:
+        """Return the git branch where the session JSONL is stored.
 
         Returns:
-            Gist raw URL for remote sessions uploaded via gist, None otherwise.
+            Branch name for remote sessions uploaded via branch, None otherwise.
         """
 
     def to_dict(self) -> SessionSourceDict:
         """Serialize to a dictionary for JSON output.
 
         Returns:
-            Dictionary with source_type, session_id, run_id, path, and gist_url.
+            Dictionary with source_type, session_id, run_id, path, and session_branch.
         """
         return SessionSourceDict(
             source_type=self.source_type,
             session_id=self.session_id,
             run_id=self.run_id,
             path=self.path,
-            gist_url=self.gist_url,
+            session_branch=self.session_branch,
         )
 
 
@@ -143,8 +143,8 @@ class LocalSessionSource(SessionSource):
         return self._path
 
     @property
-    def gist_url(self) -> None:
-        """Return None - local sessions have no gist URL."""
+    def session_branch(self) -> None:
+        """Return None - local sessions have no session branch."""
         return None
 
 
@@ -153,23 +153,23 @@ class RemoteSessionSource(SessionSource):
 
     Remote sessions are those that originated from a GitHub Actions workflow
     run or other remote execution environment. They can be retrieved via:
-    - Gist URL (preferred): Direct download from gist raw URL
+    - Session branch (preferred): Fetch session JSONL from a git branch
     - Artifact (legacy): Download from GitHub Actions artifact using run_id
 
     Attributes:
         session_id: The Claude Code session ID
-        run_id: The GitHub Actions run ID (optional for gist-based sessions)
+        run_id: The GitHub Actions run ID (optional for branch-based sessions)
         path: Optional file path, populated after the session is downloaded.
               None when remote session is discovered but not yet downloaded.
-        gist_url: Optional gist raw URL for direct download (preferred method)
+        session_branch: Optional branch name for direct download (preferred method)
     """
 
-    __slots__ = ("_session_id", "_run_id", "_path", "_gist_url")
+    __slots__ = ("_session_id", "_run_id", "_path", "_session_branch")
 
     _session_id: str
     _run_id: str | None
     _path: str | None
-    _gist_url: str | None
+    _session_branch: str | None
 
     def __init__(
         self,
@@ -177,12 +177,12 @@ class RemoteSessionSource(SessionSource):
         session_id: str,
         run_id: str | None,
         path: str | None,
-        gist_url: str | None,
+        session_branch: str | None,
     ) -> None:
         self._session_id = session_id
         self._run_id = run_id
         self._path = path
-        self._gist_url = gist_url
+        self._session_branch = session_branch
 
     @property
     def source_type(self) -> Literal["remote"]:
@@ -210,10 +210,10 @@ class RemoteSessionSource(SessionSource):
         return self._path
 
     @property
-    def gist_url(self) -> str | None:
-        """Return the gist raw URL for direct download.
+    def session_branch(self) -> str | None:
+        """Return the git branch name for direct download.
 
         Returns:
-            Gist raw URL if the session was uploaded to gist, None otherwise.
+            Branch name if the session was committed to a branch, None otherwise.
         """
-        return self._gist_url
+        return self._session_branch

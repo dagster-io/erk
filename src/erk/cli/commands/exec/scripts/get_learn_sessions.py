@@ -102,7 +102,7 @@ def _build_result(
         last_remote_impl_run_id=sessions_for_plan.last_remote_impl_run_id,
         last_remote_impl_session_id=sessions_for_plan.last_remote_impl_session_id,
         session_sources=[source.to_dict() for source in session_sources],
-        last_session_gist_url=sessions_for_plan.last_session_gist_url,
+        last_session_branch=sessions_for_plan.last_session_branch,
         last_session_id=sessions_for_plan.last_session_id,
         last_session_source=sessions_for_plan.last_session_source,
     )
@@ -165,17 +165,17 @@ def _discover_sessions(
                 session_paths.append(str(path))
                 session_sources.append(LocalSessionSource(session_id=sid, path=str(path)))
 
-    # Add remote session source from gist-based or legacy artifact session
-    # Prefer gist-based fields (last_session_*) over legacy fields (last_remote_impl_*)
+    # Add remote session source from branch-based or legacy artifact session
+    # Prefer branch-based fields (last_session_*) over legacy fields (last_remote_impl_*)
     if (
-        sessions_for_plan.last_session_gist_url is not None
+        sessions_for_plan.last_session_branch is not None
         and sessions_for_plan.last_session_id is not None
     ):
-        # Use gist-based session (preferred)
+        # Use branch-based session (preferred)
         remote_source = RemoteSessionSource(
             session_id=sessions_for_plan.last_session_id,
-            run_id=None,  # Gist-based sessions don't use run IDs
-            gist_url=sessions_for_plan.last_session_gist_url,
+            run_id=None,  # Branch-based sessions don't use run IDs
+            session_branch=sessions_for_plan.last_session_branch,
             path=None,  # Path is None until downloaded
         )
         session_sources.append(remote_source)
@@ -188,7 +188,7 @@ def _discover_sessions(
             session_id=sessions_for_plan.last_remote_impl_session_id,
             run_id=sessions_for_plan.last_remote_impl_run_id,
             path=None,  # Path is None until downloaded
-            gist_url=None,
+            session_branch=None,
         )
         session_sources.append(remote_source)
 

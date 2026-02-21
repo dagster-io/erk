@@ -26,7 +26,7 @@ class GetLearnSessionsResultDict(TypedDict):
     last_remote_impl_run_id: str | None
     last_remote_impl_session_id: str | None
     session_sources: list[SessionSourceDict]
-    last_session_gist_url: str | None
+    last_session_branch: str | None
     last_session_id: str | None
     last_session_source: str | None
 

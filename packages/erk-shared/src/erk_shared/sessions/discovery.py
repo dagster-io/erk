@@ -27,7 +27,7 @@ class SessionsForPlan:
         last_remote_impl_at: Timestamp of remote implementation (if implemented via GitHub Actions)
         last_remote_impl_run_id: GitHub Actions run ID for remote implementation
         last_remote_impl_session_id: Claude Code session ID for remote implementation
-        last_session_gist_url: URL of gist containing latest session JSONL
+        last_session_branch: Branch containing latest session JSONL
         last_session_id: Session ID of latest uploaded session
         last_session_source: "local" or "remote" indicating session origin
     """
@@ -38,8 +38,8 @@ class SessionsForPlan:
     last_remote_impl_at: str | None
     last_remote_impl_run_id: str | None
     last_remote_impl_session_id: str | None
-    # New gist-based session fields
-    last_session_gist_url: str | None
+    # Branch-based session fields
+    last_session_branch: str | None
     last_session_id: str | None
     last_session_source: str | None  # "local" or "remote"
 

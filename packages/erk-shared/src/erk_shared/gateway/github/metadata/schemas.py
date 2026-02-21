@@ -335,8 +335,7 @@ PlanHeaderFieldName = Literal[
     "last_learn_at",
     "learn_status",
     "learn_run_id",
-    "last_session_gist_url",
-    "last_session_gist_id",
+    "last_session_branch",
     "last_session_id",
     "last_session_at",
     "last_session_source",
@@ -380,9 +379,8 @@ LAST_LEARN_AT: Literal["last_learn_at"] = "last_learn_at"
 LEARN_STATUS: Literal["learn_status"] = "learn_status"
 LEARN_RUN_ID: Literal["learn_run_id"] = "learn_run_id"
 
-# Session gist fields (unified for local and remote)
-LAST_SESSION_GIST_URL: Literal["last_session_gist_url"] = "last_session_gist_url"
-LAST_SESSION_GIST_ID: Literal["last_session_gist_id"] = "last_session_gist_id"
+# Session branch fields (unified for local and remote)
+LAST_SESSION_BRANCH: Literal["last_session_branch"] = "last_session_branch"
 LAST_SESSION_ID: Literal["last_session_id"] = "last_session_id"
 LAST_SESSION_AT: Literal["last_session_at"] = "last_session_at"
 LAST_SESSION_SOURCE: Literal["last_session_source"] = "last_session_source"
@@ -475,8 +473,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         learn_plan_issue: Issue number of generated learn plan (nullable)
         learn_plan_pr: PR number that implemented the learn plan (nullable)
         learned_from_issue: Parent plan issue number (for learn plans only) (nullable)
-        last_session_gist_url: URL of gist containing session JSONL (nullable)
-        last_session_gist_id: ID of gist containing session JSONL (nullable)
+        last_session_branch: Branch containing session JSONL (nullable)
         last_session_id: Claude Code session ID of uploaded session (nullable)
         last_session_at: ISO 8601 timestamp of session upload (nullable)
         last_session_source: "local" or "remote" indicating session origin (nullable)
@@ -515,8 +512,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LAST_LEARN_AT,
             LEARN_STATUS,
             LEARN_RUN_ID,
-            LAST_SESSION_GIST_URL,
-            LAST_SESSION_GIST_ID,
+            LAST_SESSION_BRANCH,
             LAST_SESSION_ID,
             LAST_SESSION_AT,
             LAST_SESSION_SOURCE,
@@ -700,19 +696,12 @@ class PlanHeaderSchema(MetadataBlockSchema):
             if len(data[LEARN_RUN_ID]) == 0:
                 raise ValueError("learn_run_id must not be empty when provided")
 
-        # Validate optional last_session_gist_url field
-        if LAST_SESSION_GIST_URL in data and data[LAST_SESSION_GIST_URL] is not None:
-            if not isinstance(data[LAST_SESSION_GIST_URL], str):
-                raise ValueError("last_session_gist_url must be a string or null")
-            if len(data[LAST_SESSION_GIST_URL]) == 0:
-                raise ValueError("last_session_gist_url must not be empty when provided")
-
-        # Validate optional last_session_gist_id field
-        if LAST_SESSION_GIST_ID in data and data[LAST_SESSION_GIST_ID] is not None:
-            if not isinstance(data[LAST_SESSION_GIST_ID], str):
-                raise ValueError("last_session_gist_id must be a string or null")
-            if len(data[LAST_SESSION_GIST_ID]) == 0:
-                raise ValueError("last_session_gist_id must not be empty when provided")
+        # Validate optional last_session_branch field
+        if LAST_SESSION_BRANCH in data and data[LAST_SESSION_BRANCH] is not None:
+            if not isinstance(data[LAST_SESSION_BRANCH], str):
+                raise ValueError("last_session_branch must be a string or null")
+            if len(data[LAST_SESSION_BRANCH]) == 0:
+                raise ValueError("last_session_branch must not be empty when provided")
 
         # Validate optional last_session_id field
         if LAST_SESSION_ID in data and data[LAST_SESSION_ID] is not None:

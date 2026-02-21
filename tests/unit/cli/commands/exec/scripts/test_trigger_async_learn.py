@@ -808,9 +808,9 @@ def _make_plan_issue_body_with_remote_session(
     branch_name: str | None,
     planning_session_id: str,
     remote_session_id: str,
-    gist_url: str,
+    session_branch: str,
 ) -> str:
-    """Create a plan issue body with both a planning session and a remote gist session."""
+    """Create a plan issue body with both a planning session and a remote branch session."""
     branch_line = f"branch_name: {branch_name}" if branch_name is not None else "branch_name: null"
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:plan-header -->
@@ -825,7 +825,7 @@ created_by: testuser
 worktree_name: test-worktree
 {branch_line}
 created_from_session: {planning_session_id}
-last_session_gist_url: {gist_url}
+last_session_branch: {session_branch}
 last_session_id: {remote_session_id}
 last_session_source: remote
 last_dispatched_run_id: null
@@ -838,12 +838,19 @@ last_dispatched_at: null
 
 
 def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
-    """Test that remote sessions are downloaded and preprocessed alongside local sessions."""
+    """Test that a remote session branch is discovered and fetch is attempted.
+
+    The remote session download uses git show, which requires a real git repo.
+    In unit tests, git show will fail (tmp_path is not a git repo), so the
+    remote session is skipped gracefully. This test verifies the discovery and
+    fetch attempt occur, and the command still succeeds with the planning session.
+    """
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
 
     planning_id = "plan-sess-1"
     remote_id = "remote-impl-sess-2"
+    session_branch = "session/123"
 
     # Create a real JSONL session file for the planning session
     session_dir = tmp_path / ".claude" / "projects" / "test-project"
@@ -851,18 +858,12 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
     planning_content = _make_minimal_session_jsonl(planning_id)
     (session_dir / f"{planning_id}.jsonl").write_text(planning_content, encoding="utf-8")
 
-    # Create a remote session JSONL file and serve via file:// URL
-    remote_content = _make_minimal_session_jsonl(remote_id)
-    remote_file = tmp_path / "remote-session.jsonl"
-    remote_file.write_text(remote_content, encoding="utf-8")
-    gist_url = remote_file.as_uri()
-
     # Set up plan issue with both planning and remote session references
     body = _make_plan_issue_body_with_remote_session(
         branch_name=None,
         planning_session_id=planning_id,
         remote_session_id=remote_id,
-        gist_url=gist_url,
+        session_branch=session_branch,
     )
     fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
 
@@ -880,6 +881,7 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
         },
     )
 
+    fake_git = FakeGit(current_branches={tmp_path: "plan/my-feature"})
     fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
@@ -887,6 +889,7 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
         github=fake_gh,
         github_issues=fake_issues,
         claude_installation=fake_claude,
+        git=fake_git,
         repo_info=repo_info,
     )
 
@@ -895,17 +898,15 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = _parse_json_output(result.output)
     assert output["success"] is True
+    assert output["learn_branch"] == "learn/123"
 
-    # Verify both sessions were preprocessed
+    # Verify the fetch was attempted for the session branch
+    assert ("origin", session_branch) in fake_git.fetched_branches
+
+    # Verify the planning session was preprocessed (remote skipped due to git show failure)
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
     planning_xmls = list(learn_dir.glob(f"planning-{planning_id}*.xml"))
-    impl_xmls = list(learn_dir.glob(f"impl-{remote_id}*.xml"))
     assert len(planning_xmls) >= 1, f"Expected planning XML, found: {list(learn_dir.iterdir())}"
-    assert len(impl_xmls) >= 1, f"Expected impl XML, found: {list(learn_dir.iterdir())}"
-
-    # Verify both sessions were committed to the learn branch
-    output = _parse_json_output(result.output)
-    assert output["learn_branch"] == "learn/123"
 
 
 def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> None:
@@ -922,14 +923,14 @@ def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> 
     planning_content = _make_minimal_session_jsonl(planning_id)
     (session_dir / f"{planning_id}.jsonl").write_text(planning_content, encoding="utf-8")
 
-    # Use an unreachable file:// URL to simulate download failure
-    gist_url = "file:///nonexistent/path/to/session.jsonl"
+    # Use a nonexistent session branch to simulate download failure (git show will fail)
+    session_branch = "session/nonexistent-999"
 
     body = _make_plan_issue_body_with_remote_session(
         branch_name=None,
         planning_session_id=planning_id,
         remote_session_id=remote_id,
-        gist_url=gist_url,
+        session_branch=session_branch,
     )
     fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
 
@@ -969,9 +970,11 @@ def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> 
     planning_xmls = list(learn_dir.glob(f"planning-{planning_id}*.xml"))
     assert len(planning_xmls) >= 1
 
-    # Verify warning was logged about the download failure
+    # Verify warning was logged about the extraction failure (git show fails on non-git tmp_path)
     stderr_lines = _get_stderr_lines(result.output)
-    warning_lines = [line for line in stderr_lines if "Failed to download" in line]
+    warning_lines = [
+        line for line in stderr_lines if "Failed to extract session from branch" in line
+    ]
     assert len(warning_lines) == 1
 
 

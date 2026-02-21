@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.debug import debug_log
-from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
+from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
@@ -2242,62 +2242,6 @@ query {{
             return True
         except RuntimeError:
             return False
-
-    def create_gist(
-        self,
-        *,
-        filename: str,
-        content: str,
-        description: str,
-        public: bool,
-    ) -> GistCreated | GistCreateError:
-        """Create a GitHub Gist via gh CLI.
-
-        Uses `gh gist create` with stdin input so --filename works correctly.
-        When passing a file path, --filename is ignored; it only works with stdin (-).
-        """
-        try:
-            # Build command - use "-" to read from stdin so --filename works
-            cmd = [
-                "gh",
-                "gist",
-                "create",
-                "-",  # Read from stdin
-                "--filename",
-                filename,
-                "--desc",
-                description,
-            ]
-            if public:
-                cmd.append("--public")
-
-            # Execute and pass content via stdin
-            result = run_subprocess_with_context(
-                cmd=cmd,
-                operation_context=f"create gist '{filename}'",
-                input=content,
-            )
-
-            # Parse output - gh gist create outputs the gist URL
-            gist_url = result.stdout.strip()
-            if not gist_url:
-                return GistCreateError(message="No gist URL returned from gh CLI")
-
-            # Extract gist ID from URL (format: https://gist.github.com/{user}/{gist_id})
-            gist_id = gist_url.rstrip("/").split("/")[-1]
-
-            # Construct raw URL for the file
-            # Format: https://gist.githubusercontent.com/{user}/{gist_id}/raw/{filename}
-            raw_url = gist_url.replace("gist.github.com", "gist.githubusercontent.com").rstrip("/")
-            raw_url = f"{raw_url}/raw/{filename}"
-
-            return GistCreated(
-                gist_id=gist_id,
-                gist_url=gist_url,
-                raw_url=raw_url,
-            )
-        except RuntimeError as e:
-            return GistCreateError(message=str(e))
 
     def create_commit_status(
         self,
