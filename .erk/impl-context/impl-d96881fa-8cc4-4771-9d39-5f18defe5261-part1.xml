@@ -1,0 +1,1068 @@
+<session>
+  <meta branch="plan/replace-session-gist-archi-02-21-1117" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="d96881fa-8cc4-4771-9d39-5f18defe5261"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="d96881fa-8cc4-4771-9d39-5f18defe5261" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="d96881fa-8cc4-4771-9d39-5f18defe5261" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.worker-impl/` and `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user is invoking the `/erk:plan-implement` command. Let me follow the agent instructions carefully.
+
+### Step 0: Parse Arguments
+No arguments provided (empty `args`).
+
+### Step 1: Determine Implementation Source
+Since no argument was provided, I need to check if `.impl/` already exists.
+
+Let me run `erk exec impl-init --json` to check.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12826" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12826}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12826" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12826}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Pn7DbAVneHK6TUaanZzh76">
+    <param name="command">erk exec impl-init --json 2&gt;&amp;1</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12826" cache_read_input_tokens="18998" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12826, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pn7DbAVneHK6TUaanZzh76">
+{"valid": true, "impl_type": "impl", "has_issue_tracking": true, "related_docs": {"skills": [], "docs": []}, "issue_number": 7757}
+  </tool_result>
+  <thinking>`.impl/` exists and is valid with `has_issue_tracking: true`. I need to call `setup-impl-from-issue` to sync with remote.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="31824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>`.impl/` already exists. Syncing with remote issue #7757...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="31824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012w1SWtdbwmHpQmGjq7REv3">
+    <param name="command">erk exec setup-impl-from-issue 7757 2&gt;&amp;1</param>
+    <param name="description">Sync local branch with remote plan from issue #7757</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="31824" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012w1SWtdbwmHpQmGjq7REv3">
+Found existing .impl/ for plan #7757, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/.impl", "issue_number": 7757, "issue_url": "https://github.com/dagster-io/erk/pull/7757", "branch": "plan/replace-session-gist-archi-02-21-1117", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <thinking>Good. Now let me proceed to Step 2d to clean up any `.erk/impl-context/` directory.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="32078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 313}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TYBYNwJD7yvYbN721Ldm1d">
+    <param name="command">if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove...[truncated 53 chars]...h --show-current)"
+else
+  echo ".erk/impl-context/ does not exist, nothing to clean up"
+fi</param>
+    <param name="description">Clean up .erk/impl-context/ if present</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="32078" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 313, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TYBYNwJD7yvYbN721Ldm1d">
+Exit code 1
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plan/replace-session-gist-archi-02-21-1117 d470eb29c] Remove .erk/impl-context/ before implementation
+ 2 files changed, 200 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+To https://github.com/dagster-io/erk.git
+ ! [rejected]            plan/replace-session-gist-archi-02-21-1117 -&gt; plan/replace-session-gist-archi-02-21-1117 (non-fast-forward)
+error: failed to push some refs to 'https://github.com/dagster-io/erk.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plan/replace-session-gist-archi-02-21-1117 d470eb29c] Remove .erk/impl-context/ before implementation
+ 2 files changed, 200 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+To https://github.com/dagster-io/erk.git
+ ! [rejected]            plan/replace-session-gist-archi-02-21-1117 -&gt; plan/replace-session-gist-archi-02-21-1117 (non-fast-forward)
+error: failed to push some refs to 'https://github.com/dagster-io/erk.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+  </tool_result>
+  <thinking>The push was rejected because the local branch is behind the remote. I need to pull and rebase first.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="32391" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 797}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WrVF5B5Rr95xMdMEVCD2Fj">
+    <param name="command">git pull --rebase origin plan/replace-session-gist-archi-02-21-1117 2&gt;&amp;1</param>
+    <param name="description">Pull and rebase to sync with remote branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="32391" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 797, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WrVF5B5Rr95xMdMEVCD2Fj">
+From https://github.com/dagster-io/erk
+ * branch                plan/replace-session-gist-archi-02-21-1117 -&gt; FETCH_HEAD
+Rebasing (1/2)dropping d907d3b0ea2dec6b4231145f3752b8b7404b2da3 Add plan: Replace Session Gist Archival with Branch-Based Storage -- patch contents already upstream
+Rebasing (2/2)Successfully rebased and updated refs/heads/plan/replace-session-gist-archi-02-21-1117.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Vdv3JbhzkF8MGC6GKbxYZK">
+    <param name="command">git push origin plan/replace-session-gist-archi-02-21-1117 2&gt;&amp;1</param>
+    <param name="description">Push after rebase</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="33188" output_tokens="96" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 290, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vdv3JbhzkF8MGC6GKbxYZK">
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   a99751ae3..fbac5ba5e  plan/replace-session-gist-archi-02-21-1117 -&gt; plan/replace-session-gist-archi-02-21-1117
+  </tool_result>
+  <thinking>Good. Now let me read the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="33478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 253}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="33478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 253}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018NV599XQYvxc9J3N21Ug6V">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="33478" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 253, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018NV599XQYvxc9J3N21Ug6V">
+     1→## Summary
+     2→
+     3→- Replace session gist upload/download with branch-based storage (`session/{plan_id}` branches)
+     4→- Remove `create_gist` from GitHub gateway ABC and all implementations (real, fake, dry_run, printing)
+     5→- Update plan-header metadata: `last_session_gist_url`/`last_session_gist_id` → `last_session_branch`
+     6→- Update `RemoteSessionSource`, `SessionsForPlan`, and all consuming code
+     7→- Net deletion of ~530 lines (375 added, 908 removed)
+     8→
+     9→## Test plan
+    10→
+    11→- [x] All unit tests pass (5,267 tests)
+    12→- [x] erk-dev tests pass (136 tests)
+    13→- [x] erk-statusline tests pass (126 tests)
+    14→- [x] Lint, format, type checking all pass
+    15→- [x] `.impl/` folder preserved and verified
+    16→- [x] Exec reference docs regenerated and up to date
+    17→
+    18→Implements: #7757
+    19→
+    20→🤖 Generated with [Claude Code](https://claude.com/claude-code)
+    21→---
+    22→
+    23→
+    24→To checkout this PR in a fresh worktree and environment locally, run:
+    25→
+    26→```
+    27→source "$(erk pr checkout 7757 --script)" &amp;&amp; erk pr sync --dangerous
+    28→```
+
+&lt;system-reminder&gt;
+
+... [3 lines omitted] ...
+  </tool_result>
+  <thinking>This is a draft-PR-based plan. The `.impl/plan.md` contains a commit message/PR description rather than an implementation plan with phases. Let me check the PR itself to understand what we need to implement.
+
+Let me look at the PR #7757 to understand what's been done and what's left.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="609" cache_read_input_tokens="33731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 609}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The `.impl/plan.md` is a PR description. Let me check the PR and any existing changes to understand the current state.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="609" cache_read_input_tokens="33731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 609}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SyByQ5K88KjhLWVU1wWywu">
+    <param name="command">gh pr view 7757 2&gt;&amp;1</param>
+    <param name="description">View PR #7757 details</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="609" cache_read_input_tokens="33731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 609}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SyByQ5K88KjhLWVU1wWywu">
+title:	Replace session gist archival with branch-based storage
+state:	OPEN
+author:	schrockn
+labels:	erk-plan
+assignees:	
+reviewers:	
+projects:	
+milestone:	
+number:	7757
+url:	https://github.com/dagster-io/erk/pull/7757
+additions:	207
+deletions:	0
+auto-merge:	disabled
+--
+## Summary
+
+- Replace session gist upload/download with branch-based storage (`session/{plan_id}` branches)
+- Remove `create_gist` from GitHub gateway ABC and all implementations (real, fake, dry_run, printing)
+- Update plan-header metadata: `last_session_gist_url`/`last_session_gist_id` → `last_session_branch`
+- Update `RemoteSessionSource`, `SessionsForPlan`, and all consuming code
+- Net deletion of ~530 lines (375 added, 908 removed)
+
+## Test plan
+
+- [x] All unit tests pass (5,267 tests)
+- [x] erk-dev tests pass (136 tests)
+- [x] erk-statusline tests pass (126 tests)
+- [x] Lint, format, type checking all pass
+- [x] `.impl/` folder preserved and verified
+- [x] Exec reference docs regenerated and up to date
+
+... [12 lines omitted] ...
+  </tool_result>
+  <thinking>The PR has 207 additions and 0 deletions. The plan mentions "Net deletion of ~530 lines (375 added, 908 removed)". So there's still significant work to be done. Let me check the actual diff / current state of the branch.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="718" cache_read_input_tokens="34340" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 718}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019QMMC8cdruc45NhvCvNAmd">
+    <param name="command">git diff master...HEAD --stat 2&gt;&amp;1 | head -50</param>
+    <param name="description">Show diff stats between master and current branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="718" cache_read_input_tokens="34340" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 718, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019QMMC8cdruc45NhvCvNAmd">
+ .claude/commands/erk/learn.md                      |  77 ++-----
+ .claude/skills/erk-exec/reference.md               |  34 +---
+ .github/workflows/learn.yml                        |  12 +-
+ .worker-impl/README.md                             |  10 +
+ .worker-impl/plan-ref.json                         |   9 +
+ .worker-impl/plan.md                               | 188 +++++++++++++++++
+ .../gateway/github/metadata/plan_header.py         |  22 +-
+ .../erk_shared/gateway/github/metadata/schemas.py  |  22 +-
+ src/erk/cli/commands/exec/group.py                 |   8 -
+ .../exec/scripts/download_learn_materials.py       | 222 ---------------------
+ .../commands/exec/scripts/trigger_async_learn.py   |  91 +++++----
+ .../exec/scripts/upload_learn_materials.py         | 126 ------------
+ src/erk/cli/commands/land_cmd.py                   |  60 +++---
+ src/erk/cli/commands/learn/learn_cmd.py            |  24 +--
+ tests/commands/learn/test_display.py               |  62 +++---
+ tests/shared/github/test_plan_header_extraction.py |  50 +++--
+ .../exec/scripts/test_download_learn_materials.py  | 197 ------------------
+ .../exec/scripts/test_trigger_async_learn.py       |  47 ++---
+ .../exec/scripts/test_upload_learn_materials.py    | 194 ------------------
+ tests/unit/cli/commands/land/test_learn_status.py  |  56 +++---
+ 20 files changed, 460 insertions(+), 1051 deletions(-)
+  </tool_result>
+  <thinking>There's already significant work done. Let me look at what's changed to understand the current state.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="35058" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 648}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016xi5PdNELSoeoC7mtYNShU">
+    <param name="command">git diff master...HEAD --name-status 2&gt;&amp;1</param>
+    <param name="description">Show list of changed files with status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="35058" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 648}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016xi5PdNELSoeoC7mtYNShU">
+M	.claude/commands/erk/learn.md
+M	.claude/skills/erk-exec/reference.md
+M	.github/workflows/learn.yml
+A	.worker-impl/README.md
+A	.worker-impl/plan-ref.json
+A	.worker-impl/plan.md
+M	packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+M	packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py
+M	src/erk/cli/commands/exec/group.py
+D	src/erk/cli/commands/exec/scripts/download_learn_materials.py
+M	src/erk/cli/commands/exec/scripts/trigger_async_learn.py
+D	src/erk/cli/commands/exec/scripts/upload_learn_materials.py
+M	src/erk/cli/commands/land_cmd.py
+M	src/erk/cli/commands/learn/learn_cmd.py
+M	tests/commands/learn/test_display.py
+M	tests/shared/github/test_plan_header_extraction.py
+D	tests/unit/cli/commands/exec/scripts/test_download_learn_materials.py
+M	tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py
+D	tests/unit/cli/commands/exec/scripts/test_upload_learn_materials.py
+M	tests/unit/cli/commands/land/test_learn_status.py
+  </tool_result>
+  <thinking>The plan says:
+- Replace session gist upload/download with branch-based storage (`session/{plan_id}` branches)
+- Remove `create_gist` from GitHub gateway ABC and all implementations (real, fake, dry_run, printing)
+- Update plan-header metadata: `last_session_gist_url`/`last_session_gist_id` → `last_session_branch`
+- Update `RemoteSessionSource`, `SessionsForPlan`, and all consuming code
+- Net deletion of ~530 lines (375 added, 908 removed)
+
+The current diff shows 460 insertions and 1051 deletions across 20 files. 
+
+There's a discrepancy here—the PR shows 207 additions with no deletions, but the git diff shows 460 additions and 1051 deletions. This suggests there might be commits in the plan branch that happened after the implementation context was captured. Let me check the git log to understand what's been committed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="509" cache_read_input_tokens="35706" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 509}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L6PaPuqRoTnghGxG3DDQzN">
+    <param name="command">git log --oneline master..HEAD 2&gt;&amp;1</param>
+    <param name="description">Show commits on current branch vs master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="509" cache_read_input_tokens="35706" output_tokens="346" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L6PaPuqRoTnghGxG3DDQzN">
+fbac5ba5e Remove .erk/impl-context/ before implementation
+a99751ae3 Add plan for PR #7757
+96ff37091 style: fix prettier formatting in .erk/impl-context/
+71d7774e7 Add plan: Replace Session Gist Archival with Branch-Based Storage
+9c2abd83f Replace gist transport with impl-context for learn pipeline
+  </tool_result>
+  <thinking>So the branch has:
+1. A commit from master: "Replace gist transport with impl-context for learn pipeline" (9c2abd83f) - which is actually a commit FROM master that was merged into the branch at some point 
+
+Wait, let me check if that commit from master is the 9c2abd83f one.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="36215" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FnfZw8SfR3tWtKZZdfg8Ko">
+    <param name="command">git log --oneline -10 master 2&gt;&amp;1</param>
+    <param name="description">Show recent master commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="36215" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FnfZw8SfR3tWtKZZdfg8Ko">
+56b4db950 docs: consolidate Feb 21 implementations, fix critical objective-plan documentation error (#7759)
+07901cd92 Fix: Add `impl-signal submitted` event to transition lifecycle stage to "implemented" (#7729)
+e8713bd6d Upgrade objective-plan command with safety guardrails and model improvement (#7750)
+4ccff29e2 Add `erk wt create-from` command for allocating slots to existing branches (#7712)
+a9c8ec9f1 Fix: Ensure impl-context cleanup runs for all plan-implement setup paths (#7747)
+8e1a123fb Simplify plan backend configuration to use only environment variables (#7740)
+339cc4d98 Move plan backend configuration to GlobalConfig (#7722)
+8622d1854 Fix `erk one-shot` dispatch metadata writing for draft_pr backend (#7720)
+d17948889 Replace "issue" with "plan" in user-facing implement command output (#7721)
+4941c3970 planned/Add objective validation rule to AGENTS.md (#7717)
+  </tool_result>
+  <thinking>The commit `9c2abd83f Replace gist transport with impl-context for learn pipeline` is on the current branch but not on master. Let me look at what it does.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="36663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01578KQMz8WZ58W8QDoYsy37">
+    <param name="command">git show --stat 9c2abd83f 2&gt;&amp;1</param>
+    <param name="description">Show stats for the first implementation commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="36663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01578KQMz8WZ58W8QDoYsy37">
+commit 9c2abd83fb1a4b714d2ce9ede67c25b88ab0e75f
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Sat Feb 21 09:15:38 2026 -0500
+
+    Replace gist transport with impl-context for learn pipeline
+    
+    The learn pipeline now commits preprocessed materials to a branch (`learn/{plan_id}`) in `.erk/impl-context/` instead of uploading to a secret gist. The CI workflow checks out the learn branch directly, eliminating custom delimiter-based packing/unpacking logic and Gist API dependencies. This simplifies the transport layer and reduces failure points.
+    
+    ## Files Changed
+    
+    &lt;details&gt;
+    &lt;summary&gt;Files Changed&lt;/summary&gt;
+    
+    ### Deleted (4 files)
+    - `src/erk/cli/commands/exec/scripts/download_learn_materials.py` - Gist download logic no longer needed
+    - `src/erk/cli/commands/exec/scripts/upload_learn_materials.py` - Gist upload logic replaced with git commits
+    - `tests/unit/cli/commands/exec/scripts/test_download_learn_materials.py` - Tests for deleted download script
+    - `tests/unit/cli/commands/exec/scripts/test_upload_learn_materials.py` - Tests for deleted upload script
+    
+    ### Modified (16 files)
+    - `.claude/commands/erk/learn.md` - Updated to detect and read `.erk/impl-context/` instead of gist URLs
+    - `.claude/skills/erk-exec/reference.md` - Removed `download-learn-materials` and `upload-learn-materials` from exec reference
+    - `.github/workflows/learn.yml` - Checkout learn branch, replaced `gist_url` input with `learn_branch`, added cleanup step
+    - `.github/workflows/plan-implement.yml` - Removed `impl-signal submitted` lifecycle stage transition
+    - `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py` - Renamed functions: `*_gist_url` → `*_branch`
+    - `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` - Schema change: `learn_materials_gist_url` → `learn_materials_branch`
+    - `src/erk/cli/commands/exec/group.py` - Removed gist command registrations
+    - `src/erk/cli/commands/exec/scripts/impl_signal.py` - Removed "submitted" event and associated handler
+    - `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` - Replaced gist upload with branch creation and commit to `.erk/impl-context/`
+    - `src/erk/cli/commands/land_cmd.py` - Updated to store/display learn branch metadata
+
+... [49 lines omitted] ...
+  </tool_result>
+  <thinking>It looks like there's already a substantial implementation commit on the branch. The plan summary says:
+- Replace session gist upload/download with branch-based storage (`session/{plan_id}` branches)
+- Remove `create_gist` from GitHub gateway ABC and all implementations (real, fake, dry_run, printing)
+- Update plan-header metadata: `last_session_gist_url`/`last_session_gist_id` → `last_session_branch`
+- Update `RemoteSessionSource`, `SessionsForPlan`, and all consuming code
+- Net deletion of ~530 lines (375 added, 908 removed)
+
+
+- The PR description talks about "learn pipeline" with branch-based storage rather than session gist archival, and the commit message mentions replacing gist transport with impl-context. Looking at the actual plan in `.impl/plan.md`, it's just the final PR/commit message format without implementation phases—the work already happened in commit `9c2abd83f`. The PR title says "Replace session gist archival with branch-based storage" but there's a mismatch between what the PR describes and what the commit actually does.
+
+So `/erk:plan-implement` really just needs to run CI and submit the PR since the implementation is already complete. I should signal GitHub started, verify everything works, run CI, then submit the PR. Looking at the plan, I need to check whether the implementation actually addressed the session gist archival changes or if it tackled a different gist-related refactor in the learn pipeline instead. Let me examine what `trigger_async_learn.py` does now to clarify which problem was actually solved.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1752" cache_read_input_tokens="37098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1752}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>The branch already has implementation commit `9c2abd83f`. Let me understand the current state and what might still be needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1752" cache_read_input_tokens="37098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1752}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QEzMvMu5aXBPwAZvpkESDA">
+    <param name="command">erk exec impl-signal started --session-id="d96881fa-8cc4-4771-9d39-5f18defe5261" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1752" cache_read_input_tokens="37098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1752}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QEzMvMu5aXBPwAZvpkESDA">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "github-api-failed",
+  "message": "Failed to post event: plan-header block not found in PR body"
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011QYxdkxf2PQX1uwGTSbTbD">
+    <param name="command">grep -n "create_gist\|upload_session\|upload-session\|session_gist\|RemoteSessionSource\|S...[truncated 6 chars]...on_gist\|last_session_branch" $(git diff master...HEAD --name-only) 2&gt;/dev/null | head -60</param>
+    <param name="description">Check for gist-related code still in the changed files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1118" cache_read_input_tokens="38850" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1118, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011QYxdkxf2PQX1uwGTSbTbD">
+.claude/skills/erk-exec/reference.md:109:| `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.               |
+.claude/skills/erk-exec/reference.md:1335:### upload-session
+.claude/skills/erk-exec/reference.md:1339:**Usage:** `erk exec upload-session`
+.worker-impl/plan.md:7:This plan replaces the gist with the same branch-based pattern: CI commits the session to a `session/{plan_id}` branch, consumers fetch it via `git.remote.fetch_branch()` + `git show`, and the branch is cleaned up after consumption. This also allows removing `create_gist` from the GitHub gateway ABC entirely (nothing else uses it).
+.worker-impl/plan.md:11:### 1. Replace `upload_session.py` with branch-based storage
+.worker-impl/plan.md:13:**File:** `src/erk/cli/commands/exec/scripts/upload_session.py`
+.worker-impl/plan.md:15:Replace the `create_gist()` call with the branch creation pattern from `trigger_async_learn.py`:
+.worker-impl/plan.md:21:- Store `last_session_branch` (not `gist_url`/`gist_id`) on plan metadata
+.worker-impl/plan.md:26:- `last_session_branch` (replaces `last_session_gist_url` + `last_session_gist_id`)
+.worker-impl/plan.md:70:- Check `sessions_for_plan.last_session_branch` instead of `last_session_gist_url`
+.worker-impl/plan.md:71:- Build `RemoteSessionSource` with `session_branch=` instead of `gist_url=`
+.worker-impl/plan.md:73:Output fields: Replace `last_session_gist_url` with `last_session_branch` in `_build_result()` (line 105).
+.worker-impl/plan.md:75:### 5. Update `RemoteSessionSource` dataclass
+.worker-impl/plan.md:86:- Replace `last_session_gist_url` with `last_session_branch`
+.worker-impl/plan.md:88:### 7. Update `SessionsForPlan` dataclass
+.worker-impl/plan.md:92:- Replace `last_session_gist_url: str | None` with `last_session_branch: str | None`
+.worker-impl/plan.md:107:- Remove `extract_plan_header_session_gist_url()` and `extract_plan_header_session_gist_id()`
+.worker-impl/plan.md:109:- Update `update_plan_header_session_gist()` → `update_plan_header_session_branch()`
+.worker-impl/plan.md:117:- Replace `extract_plan_header_session_gist_url` call with `extract_plan_header_session_branch`
+.worker-impl/plan.md:118:- Update `SessionsForPlan` construction
+.worker-impl/plan.md:120:### 11. Remove `create_gist` from GitHub gateway
+.worker-impl/plan.md:122:Since `upload_session.py` was the only consumer of `create_gist`:
+.worker-impl/plan.md:124:- **`abc.py`**: Remove `create_gist` abstract method, `GistCreated`, `GistCreateError` types
+.worker-impl/plan.md:125:- **`real.py`**: Remove `create_gist` implementation
+.worker-impl/plan.md:126:- **`fake.py`**: Remove `create_gist` implementation and `_created_gists` tracking
+.worker-impl/plan.md:127:- **`dry_run.py`**: Remove `create_gist` implementation
+.worker-impl/plan.md:128:- **`printing.py`**: Remove `create_gist` implementation
+.worker-impl/plan.md:134:Minimal change — the `upload-session` exec command interface stays the same (same options), just the internal mechanism changes. Verify the step name and any output parsing still works.
+.worker-impl/plan.md:146:- `tests/unit/cli/commands/exec/scripts/test_upload_session.py` — Replace gist assertions with branch assertions
+.worker-impl/plan.md:151:- Any gateway tests referencing `create_gist`
+
+... [30 lines omitted] ...
+
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:706:                raise ValueError("last_session_gist_url must be a string or null")
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:708:                raise ValueError("last_session_gist_url must not be empty when provided")
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:713:                raise ValueError("last_session_gist_id must be a string or null")
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:715:                raise ValueError("last_session_gist_id must not be empty when provided")
+  </tool_result>
+  <thinking>Now I understand the full picture. The plan in `.worker-impl/plan.md` is the actual implementation plan. The commit `9c2abd83f` replaced the gist transport for the **learn pipeline** (upload-learn-materials/download-learn-materials), but the plan says to also replace the **session archival** (upload-session) and remove `create_gist` from the GitHub gateway.
+
+So the implementation is **partially complete**. Specifically:
+1. ✅ Replaced gist for learn pipeline (trigger_async_learn.py)
+2. ✅ Deleted download_learn_materials.py and upload_learn_materials.py
+
+
+3. ❌ Still need to replace upload_session.py with branch-based storage
+4. ❌ Still need to remove create_gist from GitHub gateway ABC
+5. ❌ Still need to update RemoteSessionSource, SessionsForPlan
+6. ❌ Still need to update plan-header metadata for session gist fields
+
+Let me check the full `.worker-impl/plan.md` to see what else needs to be done.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2607" cache_read_input_tokens="39968" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2607}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The implementation is only partially complete. Let me read the full plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2607" cache_read_input_tokens="39968" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2607}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UajGLWMRLnbbYJsuU2F2Sr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/.worker-impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2607" cache_read_input_tokens="39968" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2607}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UajGLWMRLnbbYJsuU2F2Sr">
+     1→# Replace Session Gist Archival with Branch-Based Storage
+     2→
+     3→## Context
+     4→
+     5→After PR #7733 replaced gist transport for *learn materials*, the session gist archival system is the last remaining gist dependency. When `plan-implement.yml` completes a remote implementation, it uploads the full session JSONL to a secret GitHub gist, then `trigger_async_learn.py` (during `erk land`) downloads it from the gist for preprocessing. This has several problems: no cleanup (gists accumulate forever), uncompressed uploads (100MB+ sessions), authentication gaps (secret gists via `gh` but unauthenticated `urllib` downloads), and rate limits.
+     6→
+     7→This plan replaces the gist with the same branch-based pattern: CI commits the session to a `session/{plan_id}` branch, consumers fetch it via `git.remote.fetch_branch()` + `git show`, and the branch is cleaned up after consumption. This also allows removing `create_gist` from the GitHub gateway ABC entirely (nothing else uses it).
+     8→
+     9→## Changes
+    10→
+    11→### 1. Replace `upload_session.py` with branch-based storage
+    12→
+    13→**File:** `src/erk/cli/commands/exec/scripts/upload_session.py`
+    14→
+    15→Replace the `create_gist()` call with the branch creation pattern from `trigger_async_learn.py`:
+    16→
+    17→- Create `session/{plan_id}` branch from `origin/master`
+    18→- Copy session JSONL to `.erk/session/{session_id}.jsonl` on that branch
+    19→- Commit and force-push (force for re-implementation idempotency)
+    20→- Restore original branch in `finally` block
+    21→- Store `last_session_branch` (not `gist_url`/`gist_id`) on plan metadata
+    22→
+    23→Needs access to git gateway — add `require_git(ctx)` alongside existing `require_github(ctx)`.
+    24→
+    25→Metadata fields stored on plan header:
+    26→- `last_session_branch` (replaces `last_session_gist_url` + `last_session_gist_id`)
+    27→- `last_session_id` (unchanged)
+    28→- `last_session_at` (unchanged)
+    29→- `last_session_source` (unchanged)
+    30→
+
+... [164 lines omitted] ...
+
+   124→- **`abc.py`**: Remove `create_gist` abstract method, `GistCreated`, `GistCreateError` types
+   158→- `GistCreated`, `GistCreateError` types
+  </tool_result>
+  <thinking>Now I understand. The plan has 14 steps. The commit `9c2abd83f` (which was "Replace gist transport with impl-context for learn pipeline") addressed some of these, but not all. Let me check what was done in that commit vs what this plan requires.
+
+The commit affected:
+- `.claude/commands/erk/learn.md` ✓ (step 13)
+- `.github/workflows/learn.yml` ✓ (part of steps - learn workflow)
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py` - modified
+
+
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` - modified
+- `src/erk/cli/commands/exec/group.py` - modified
+- Several learn pipeline scripts were deleted or modified, including the download and upload materials scripts and the async trigger script
+- `src/erk/cli/commands/land_cmd.py` and `src/erk/cli/commands/learn/learn_cmd.py` were updated along with their tests
+
+I still need to work through the remaining steps: implementing branch-based storage and download for sessions, updating the remote session download logic in the async trigger, refactoring session discovery and the related dataclasses, and updating the plan header metadata schema.
+
+But I'm realizing an important distinction—the commit about replacing gist transport was specifically for the learn pipeline materials stored in `.erk/impl-context/`, not the session archival gist. These are two separate concerns, so I need to be careful about which gist references I'm actually replacing.
+
+Looking at the git history, it seems the prior work already handled the learn materials transition, and now this plan is focused on doing the same for session archival when the CI runs `upload_session.py`. Let me trace through the commits more carefully to understand what's already been done versus what still needs to happen. I'm realizing there might be some confusion about what was actually implemented here. PR #7733 already merged changes to replace gist transport for the learn materials pipeline, but this branch seems to have done something similar in `trigger_async_learn.py` instead of tackling the session archival that the plan describes. Let me compare what's on master versus what's in this branch to understand what actually changed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4207" cache_read_input_tokens="42575" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4207}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me understand what's already been implemented and what remains.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4207" cache_read_input_tokens="42575" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4207}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WEKiW3TyvCW4oSRA8M32DV">
+    <param name="command">gh pr view 7733 --json title,state,mergedAt 2&gt;&amp;1</param>
+    <param name="description">Check PR #7733 status (the learn materials PR)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4207" cache_read_input_tokens="42575" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4207}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WEKiW3TyvCW4oSRA8M32DV">
+{"mergedAt":null,"state":"OPEN","title":"Replace gist transport with impl-context for learn pipeline"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KtZ9zWXvKdNhDgeTWoJDpG">
+    <param name="command">ls src/erk/cli/commands/exec/scripts/ 2&gt;&amp;1</param>
+    <param name="description">List exec scripts in current branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4207" cache_read_input_tokens="42575" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4207}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KtZ9zWXvKdNhDgeTWoJDpG">
+__init__.py
+__pycache__
+add_plan_label.py
+add_reaction_to_comment.py
+add_remote_execution_note.py
+AGENTS.md
+capture_session_info.py
+check_impl.py
+ci_update_pr_body.py
+ci_verify_autofix.py
+CLAUDE.md
+close_issue_with_comment.py
+create_issue_from_session.py
+create_plan_from_context.py
+create_worker_impl_from_issue.py
+dash_data.py
+detect_trunk_branch.py
+discover_reviews.py
+download_remote_session.py
+exit_plan_mode_hook.py
+extract_latest_plan.py
+find_project_dir.py
+generate_pr_address_summary.py
+generate_pr_summary.py
+get_closing_text.py
+get_embedded_prompt.py
+get_issue_body.py
+get_issue_timeline_prs.py
+get_learn_sessions.py
+get_plan_info.py
+
+... [64 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SAKjuxTHhHqeW1odMU23hJ">
+    <param name="command">git show master:src/erk/cli/commands/exec/scripts/upload_session.py 2&gt;&amp;1 | head -20</param>
+    <param name="description">Check upload_session.py on master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4207" cache_read_input_tokens="42575" output_tokens="1738" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4207, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SAKjuxTHhHqeW1odMU23hJ">
+"""Upload a Claude Code session to GitHub Gist and update the plan header.
+
+This exec command uploads a session JSONL file to a GitHub Gist and optionally
+updates the plan-header metadata in the associated erk-plan issue.
+
+Usage:
+    # Upload from local session file
+    erk exec upload-session --session-file /path/to/session.jsonl \\
+        --session-id abc-123 --source local
+
+    # Upload and update plan issue
+    erk exec upload-session --session-file /path/to/session.jsonl \\
+        --session-id abc-123 --source remote --plan-id 2521
+
+Output:
+    Structured JSON output with gist info and updated plan header fields
+
+Exit Codes:
+    0: Success (gist created and optionally plan header updated)
+    1: Error (gist creation failed, issue update failed)
+  </tool_result>
+  <thinking>OK, so:1. PR #7733 is still OPEN (not merged to master yet) - it's the one that replaces learn materials gist. The commit `9c2abd83f` in this branch appears to be implementing PR #7733's content but we're on a different branch (plan/replace-session-gist-archi-02-21-1117)! 
+
+Wait, that doesn't make sense. Let me re-check.Actually, looking at the commit message again: "Replace gist transport with impl-context for learn pipeline". PR #7733 title: "Replace gist transport with impl-context for learn pipeline". They match exactly! So commit `9c2abd83f` IS the implementation of PR #7733, but it was committed to this branch (plan/replace-session-gist-archi-02-21-1117) rather than the PR #7733 branch.
+
+
+So it looks like the learn materials implementation got committed to this branch first, either as a prerequisite for the session archival work or because the plan command started with that part before moving on to the actual session gist archival implementation. Looking at the git log, I can see that commit `9c2abd83f` was actually implemented on this branch as part of the prior session's work, even though the plan file is focused on session gist archival—so the implementation diverged from the documented plan. The changes from that commit aren't in master yet since PR #7733 is still open.
+
+I think the right move is to continue building the session gist archival changes on top of what's already here, since the plan explicitly states it's replacing the gist with the same branch-based pattern that was already applied to the learn materials. This branch will end up containing both sets of changes, which makes sense given they're following the same architectural approach.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2829" cache_read_input_tokens="46782" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2829}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01A8inyQESpkVJ89eETvMyNq">
+    <param name="command">gh pr view 7733 --json headRefName 2&gt;&amp;1</param>
+    <param name="description">Check what branch PR #7733 is on</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2829" cache_read_input_tokens="46782" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2829}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A8inyQESpkVJ89eETvMyNq">
+{"headRefName":"plan/replace-gist-transport-wit-02-21-0915"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ENx25Vd8aZD1S6Btegk2ku">
+    <param name="command">cat src/erk/cli/commands/exec/scripts/upload_session.py 2&gt;&amp;1 | head -60</param>
+    <param name="description">Check current state of upload_session.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2829" cache_read_input_tokens="46782" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2829}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ENx25Vd8aZD1S6Btegk2ku">
+"""Upload a Claude Code session to GitHub Gist and update the plan header.
+
+This exec command uploads a session JSONL file to a GitHub Gist and optionally
+updates the plan-header metadata in the associated erk-plan issue.
+
+Usage:
+    # Upload from local session file
+    erk exec upload-session --session-file /path/to/session.jsonl \\
+        --session-id abc-123 --source local
+
+    # Upload and update plan issue
+    erk exec upload-session --session-file /path/to/session.jsonl \\
+        --session-id abc-123 --source remote --plan-id 2521
+
+Output:
+    Structured JSON output with gist info and updated plan header fields
+
+Exit Codes:
+    0: Success (gist created and optionally plan header updated)
+    1: Error (gist creation failed, issue update failed)
+
+Examples:
+    $ erk exec upload-session --session-file session.jsonl \\
+          --session-id abc --source remote --plan-id 123
+    {
+      "success": true,
+      "gist_id": "abc123...",
+      "gist_url": "https://gist.github.com/user/abc123...",
+      "raw_url": "https://gist.githubusercontent.com/...",
+      "session_id": "abc",
+
+... [30 lines omitted] ...
+
+from erk_shared.gateway.github.abc import GistCreateError
+  </tool_result>
+  <thinking>OK so:
+- PR #7733 is on branch `plan/replace-gist-transport-wit-02-21-0915` (different branch)
+- `upload_session.py` in the CURRENT branch still uses gists
+
+So the commit `9c2abd83f` on this branch (plan/replace-session-gist-archi-02-21-1117) implemented learn materials gist replacement, but we're ON the session gist archival branch. The learn materials changes are an independent set of changes that were made on THIS branch, stacking on top of each other.
+
+Now, the current state of the files on this branch:
+
+
+I need to systematically check which files still need updates for the session gist replacement — `upload_session.py` definitely needs changes, and I should verify `download_remote_session.py` and `trigger_async_learn.py` to see if they're affected by the session branch handling or if they were already updated as part of the learn materials work. So the session gist archival is the actual work needed here - I need to update `upload_session.py` and check `download_remote_session.py` to replace their gist-based storage with the branch pattern that was already implemented for the learn materials.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2718" cache_read_input_tokens="49611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2718}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have full context. The branch has prerequisite learn-pipeline changes from a prior session, but the core session gist archival work (steps 1-14) still needs implementation. Let me load the relevant skills and read the key files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2718" cache_read_input_tokens="49611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2718}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01PGwHgPRge4GD1bgkXz7hAA">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2718" cache_read_input_tokens="49611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2718}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PGwHgPRge4GD1bgkXz7hAA">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <tool_use name="Skill" id="toolu_01KPX37hrLweaeXPh9HxsFtH">
+    <param name="skill">fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2718" cache_read_input_tokens="49611" output_tokens="999" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2718, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KPX37hrLweaeXPh9HxsFtH">
+Launching skill: fake-driven-testing
+  </tool_result>
+</session>

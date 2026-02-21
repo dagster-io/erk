@@ -1,0 +1,1079 @@
+<session>
+  <meta branch="plan/replace-session-gist-archi-02-21-1117" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01J2EbhtPq1vcnKnTbRQLT4e">
+Exit code 1
+sed: 1: "/Users/schrockn/.erk/re ...": bad flag in substitute command: 'e'
+
+sed: 1: "/Users/schrockn/.erk/re ...": bad flag in substitute command: 'e'
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018pXgk3MF55QJyZ5ZofD3A3">
+    <param name="command">sed -i '' 's/last_session_gist_url=None,/last_session_branch=None,/g' /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/unit/sessions/test_discovery.py</param>
+    <param name="description">Rename last_session_gist_url to last_session_branch in test_discovery.py (macOS sed)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="154573" output_tokens="173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 470, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018pXgk3MF55QJyZ5ZofD3A3">
+
+  </tool_result>
+  <assistant>Now rewrite `test_upload_session.py` for branch-based storage. The tests need to use `FakeGit` instead of `FakeGitHub`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="155043" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 199}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FheQ68Nu7Au6DZiErCQV2z">
+    <param name="command">grep -n "class FakeGit\|FakeGit\b" packages/erk-shared/src/erk_shared/gateway/git/fake.py | head -5</param>
+    <param name="description">Check FakeGit location</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="155043" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 199}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FheQ68Nu7Au6DZiErCQV2z">
+3:FakeGit is an in-memory implementation that accepts pre-configured state
+60:class FakeGit(Git):
+92:        git_ops = FakeGit(
+166:        """Create FakeGit with pre-configured state.
+334:        # Branch operations subgateway - linked to FakeGit's state
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QrNPA1cazLMJCab6WSJgRW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">60</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="155242" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 244}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QrNPA1cazLMJCab6WSJgRW">
+    60→class FakeGit(Git):
+    61→    """In-memory fake implementation of git operations.
+    62→
+    63→    State Management:
+    64→    -----------------
+    65→    This fake maintains mutable state to simulate git's stateful behavior.
+    66→    Operations like add_worktree, checkout_branch modify internal state.
+    67→    State changes are visible to subsequent method calls within the same test.
+    68→
+    69→    When to Use Mutation:
+    70→    --------------------
+    71→    - Operations that simulate stateful external systems (git, databases)
+    72→    - When tests need to verify sequences of operations
+    73→    - When simulating side effects visible to production code
+    74→
+    75→    Constructor Injection:
+    76→    ---------------------
+    77→    All INITIAL state is provided via constructor (immutable after construction).
+    78→    Runtime mutations occur through operation methods.
+    79→    Tests should construct fakes with complete initial state.
+    80→
+    81→    Mutation Tracking:
+    82→    -----------------
+    83→    This fake tracks mutations for test assertions via read-only properties:
+    84→    - deleted_branches: Branches deleted via delete_branch()
+    85→    - added_worktrees: Worktrees added via add_worktree()
+    86→    - removed_worktrees: Worktrees removed via remove_worktree()
+    87→    - checked_out_branches: Branches checked out via checkout_branch()
+    88→
+    89→    Examples:
+
+... [95 lines omitted] ...
+
+   130→        delete_branch_raises: dict[str, Exception] | None = None,
+   133→        tracking_branch_failures: dict[str, str] | None = None,
+   142→        add_all_raises: Exception | None = None,
+   143→        fetch_branch_raises: Exception | None = None,
+   144→        pull_branch_raises: Exception | None = None,
+   148→        rebase_continue_raises: Exception | None = None,
+   155→        push_to_remote_error: PushError | None = None,
+   159→        rebase_abort_raises: Exception | None = None,
+   160→        pull_rebase_error: PullRebaseError | None = None,
+   162→        create_branch_error: BranchAlreadyExists | None = None,
+   163→        add_worktree_error: str | None = None,
+   164→        remove_worktree_error: str | None = None,
+  </tool_result>
+  <thinking>I need to understand FakeGit well enough to use it in tests. The upload_session.py uses:
+- `git.branch.get_current_branch(repo_root)` 
+- `git.branch.list_local_branches(repo_root)`
+- `git.branch.delete_branch(repo_root, session_branch, force=True)`
+- `git.branch.create_branch(repo_root, session_branch, "origin/master", force=False)`
+- `git.branch.checkout_branch(repo_root, session_branch)`
+- `git.commit.stage_files(repo_root, [...])`
+
+
+- `git.commit.commit(repo_root, ...)`
+- `git.remote.push_to_remote(repo_root, "origin", session_branch, set_upstream=True, force=True)`
+
+FakeGit supports `current_branches` and `local_branches` parameters, so I need to set up the mock with the right initial state, then verify that the branch operations, commit, and push all executed correctly, and finally check that the plan's metadata was updated accordingly. Let me check how ErkContext handles dependency injection for FakeGit.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2328" cache_read_input_tokens="155486" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2328}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013HKqLxgS1CFRSoqYUeHH8N">
+    <param name="command">grep -n "def for_test\|git.*:" packages/erk-shared/src/erk_shared/context/context.py | head -20</param>
+    <param name="description">Check ErkContext.for_test signature for git injection</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2328" cache_read_input_tokens="155486" output_tokens="410" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013HKqLxgS1CFRSoqYUeHH8N">
+76:    git: Git  # Note: branch ops accessed via git.branch subgateway
+77:    github: GitHub  # Note: issues accessed via github.issues property
+78:    github_admin: GitHubAdmin  # GitHub Actions admin operations
+151:    def github_issues(self) -&gt; GitHubIssues:
+204:    def for_test(
+206:        github_issues: GitHubIssues | None = None,
+207:        git: Git | None = None,
+208:        github: GitHub | None = None,
+223:            github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
+224:            git: Optional Git implementation. If None, creates FakeGit.
+225:            github: Optional GitHub implementation. If None, creates FakeGitHub.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013ibN4cdtFr5qoyvVZkw1bJ">
+    <param name="command">grep -n "checked_out_branches\|created_branches\|pushed_branches\|pushed_refs\|staged_files\|committed_messages" packages/erk-shared/src/erk_shared/gateway/git/fake.py | head -30</param>
+    <param name="description">Check FakeGit mutation tracking properties</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="841" cache_read_input_tokens="157814" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 841, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ibN4cdtFr5qoyvVZkw1bJ">
+87:    - checked_out_branches: Branches checked out via checkout_branch()
+108:        assert (repo, "feature") in git_ops.checked_out_branches
+277:        self._checked_out_branches: list[tuple[Path, str]] = []
+282:        self._staged_files: list[str] = []
+284:        self._pushed_branches: list[PushedBranch] = []
+285:        self._created_branches: list[
+355:            created_branches=self._created_branches,
+357:            checked_out_branches=self._checked_out_branches,
+374:            pushed_branches=self._pushed_branches,
+390:            staged_files=self._staged_files,
+499:    def created_branches(self) -&gt; list[tuple[Path, str, str, bool]]:
+505:        return self._created_branches.copy()
+525:    def checked_out_branches(self) -&gt; list[tuple[Path, str]]:
+531:        return self._checked_out_branches.copy()
+592:    def staged_files(self) -&gt; list[str]:
+594:        return self._staged_files
+600:        Returns list of CommitRecord objects with cwd, message, and staged_files.
+605:    def pushed_branches(self) -&gt; list[PushedBranch]:
+611:        return self._pushed_branches
+  </tool_result>
+  <thinking>Now I have enough context to rewrite the upload_session test. The new test should:
+1. Use FakeGit (not FakeGitHub) since the implementation uses git
+2. Test that branch was created, files staged, committed, and pushed
+3. Test metadata update on the plan
+4. Test error case when plan_id is None
+
+Let me also check `CommitRecord` and `PushedBranch`:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="158655" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 473}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BWmq5AiZxxJFRQFUe2spbJ">
+    <param name="command">grep -n "class CommitRecord\|class PushedBranch" packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="description">Find CommitRecord and PushedBranch classes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="158655" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 473, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BWmq5AiZxxJFRQFUe2spbJ">
+44:class PushedBranch(NamedTuple):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TL4QCJ5hFThbCY7CQcNmFm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">44</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="159128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TL4QCJ5hFThbCY7CQcNmFm">
+    44→class PushedBranch(NamedTuple):
+    45→    """Record of a branch push operation.
+    46→
+    47→    Attributes:
+    48→        remote: Remote name (e.g., "origin")
+    49→        branch: Branch name that was pushed
+    50→        set_upstream: Whether -u flag was used to set upstream tracking
+    51→        force: Whether --force flag was used for force push
+    52→    """
+    53→
+    54→    remote: str
+    55→    branch: str
+    56→    set_upstream: bool
+    57→    force: bool
+    58→
+    59→
+    60→class FakeGit(Git):
+    61→    """In-memory fake implementation of git operations.
+    62→
+    63→    State Management:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012GDF4cg12yw2epA85xPAw5">
+    <param name="command">grep -n "committed_messages\|commits\b\|commit_records" packages/erk-shared/src/erk_shared/gateway/git/fake.py | head -10</param>
+    <param name="description">Check commit tracking in FakeGit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="159128" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012GDF4cg12yw2epA85xPAw5">
+127:        recent_commits: dict[Path, list[dict[str, str]]] | None = None,
+180:                for commits on remote but not locally
+182:            recent_commits: Mapping of cwd -&gt; list of commit info dicts
+239:        self._recent_commits = recent_commits or {}
+283:        self._commits: list[CommitRecord] = []
+381:            recent_commits=self._recent_commits,
+391:            commits=self._commits,
+597:    def commits(self) -&gt; list[CommitRecord]:
+598:        """Read-only access to commits for test assertions.
+602:        return list(self._commits)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q2DtZEsbBwTz7bH427V5Ai">
+    <param name="command">grep -n "class CommitRecord" packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py 2&gt;/dev/null</param>
+    <param name="description">Find CommitRecord class definition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="736" cache_read_input_tokens="159382" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 736}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q2DtZEsbBwTz7bH427V5Ai">
+12:class CommitRecord:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01S4FrjFNRbGZm8xVzbckPcH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py</param>
+    <param name="offset">1</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="131" cache_read_input_tokens="160118" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 131}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S4FrjFNRbGZm8xVzbckPcH">
+     1→"""Fake implementation of Git commit operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class CommitRecord:
+    13→    """Record of a commit operation.
+    14→
+    15→    Attributes:
+    16→        cwd: Working directory where commit was made
+    17→        message: Commit message
+    18→        staged_files: Files that were staged at time of commit
+    19→    """
+    20→
+    21→    cwd: Path
+    22→    message: str
+    23→    staged_files: tuple[str, ...]
+    24→
+    25→
+    26→class FakeGitCommitOps(GitCommitOps):
+    27→    """In-memory fake implementation of Git commit operations.
+    28→
+    29→    This fake accepts pre-configured state in its constructor and tracks
+    30→    mutations for test assertions.
+
+... [10 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have enough to write the new test_upload_session.py. The key things:1. No more FakeGitHub (gist creation), now use FakeGit
+2. Test branch creation with FakeGit3. Verify metadata is updated in the plan
+
+The new upload_session.py requires plan_id and uses git to create a session branch. If plan_id is None, it fails with an error.The tests should:1. `test_upload_session_branch_created` - verify session branch created and pushed2. `test_upload_session_with_issue_update` - verify plan metadata updated with `last_session_branch`3. 
+
+I also need to add tests for when the plan isn't found even though the branch was created, and when no plan_id is provided at all. Let me check how ErkContext.for_test sets up FakeGit to ensure my test setup will work correctly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="160249" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J58okm9H1AdDXi8cgi55iw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="offset">204</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="160249" output_tokens="381" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 594, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J58okm9H1AdDXi8cgi55iw">
+   204→    def for_test(
+   205→        *,
+   206→        github_issues: GitHubIssues | None = None,
+   207→        git: Git | None = None,
+   208→        github: GitHub | None = None,
+   209→        claude_installation: ClaudeInstallation | None = None,
+   210→        prompt_executor: PromptExecutor | None = None,
+   211→        debug: bool = False,
+   212→        repo_root: Path | None = None,
+   213→        cwd: Path | None = None,
+   214→        repo_info: RepoInfo | None = None,
+   215→        package_info: ErkPackageInfo | None = None,
+   216→    ) -&gt; ErkContext:
+   217→        """Create test context with optional pre-configured implementations.
+   218→
+   219→        Provides full control over all context parameters with sensible test defaults
+   220→        for any unspecified values. Uses fakes by default to avoid subprocess calls.
+   221→
+   222→        Args:
+   223→            github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
+   224→            git: Optional Git implementation. If None, creates FakeGit.
+   225→            github: Optional GitHub implementation. If None, creates FakeGitHub.
+   226→            claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
+   227→            prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+   228→            debug: Whether to enable debug mode (default False).
+   229→            repo_root: Repository root path (defaults to Path("/fake/repo"))
+   230→            cwd: Current working directory (defaults to Path("/fake/worktree"))
+   231→            repo_info: Optional RepoInfo (owner/name). If None, repo_info will be None in context.
+   232→
+   233→        Returns:
+
+... [29 lines omitted] ...
+  </tool_result>
+  <assistant>Now rewrite `test_upload_session.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1268" cache_read_input_tokens="160843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1268}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01JA7QV9JTFqv1zPEyCQ4vAv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/unit/cli/commands/exec/scripts/test_upload_session.py</param>
+    <param name="content">"""Unit tests for upload-session command."""
+
+import json
+from datetime import UTC, dateti...[truncated 6071 chars]...utput
+    # Branch was still created
+    assert output["session_branch"] == "session/999"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1268" cache_read_input_tokens="160843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1268}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JA7QV9JTFqv1zPEyCQ4vAv">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/unit/cli/commands/exec/scripts/test_upload_session.py has been updated successfully.
+  </tool_result>
+  <assistant>Now rewrite `test_download_remote_session.py` for branch-based download:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2128" cache_read_input_tokens="162111" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2128}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015TW7xUCYHRxw6fsJB5kuo4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2128" cache_read_input_tokens="162111" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2128}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me analyze the conversation chronologically:
+
+1. The user invoked `/erk:plan-implement` command with no arguments
+2. The agent followed the plan-implement workflow:
+   - Checked `.impl/` folder - found valid with `has_issue_tracking: true` and `issue_number: 7757`
+   - Called `setup-impl-from-issue 7757` 
+   - Cleaned up `.erk/impl-context/` (removed it from git)
+   - Had to pull/rebase because push was rejected (branch behind remote)
+   - Read `.impl/plan.md` - found it's a PR description, not a phased plan
+   - Read `.worker-impl/plan.md` - found the actual implementation plan
+
+3. The plan (from `.worker-impl/plan.md`) is to replace session gist archival with branch-based storage:
+   - Steps 1-14 covering: upload_session.py, download_remote_session.py, trigger_async_learn.py, get_learn_sessions.py, RemoteSessionSource, GetLearnSessionsResultDict, SessionsForPlan, schemas.py, plan_header.py, backend.py, GitHub gateway (remove create_gist), plan-implement.yml, learn.md, tests
+
+4. The branch already had commit `9c2abd83f` "Replace gist transport with impl-context for learn pipeline" which handled the learn materials pipeline but NOT the session gist archival.
+
+5. Loaded skills: `dignified-python` and `fake-driven-testing`
+
+6. Signaled GitHub started (failed - no plan-header block in PR body)
+
+7. Created 6 tasks for implementation phases
+
+8. Implemented Phase 4 (shared types, schema, plan header, backend):
+   - Updated `schemas.py`: removed `LAST_SESSION_GIST_URL`/`LAST_SESSION_GIST_ID`, added `LAST_SESSION_BRANCH`
+   - Updated `plan_header.py`: renamed functions, removed gist extractors, added branch extractor
+   - Updated `discovery.py` (`SessionsForPlan`): renamed field
+   - Updated `backend.py`: updated import and SessionsForPlan construction
+   - Rewrote `session_source.py` (`RemoteSessionSource`): renamed `gist_url` → `session_branch`
+   - Updated `get_learn_sessions_result.py` (`GetLearnSessionsResultDict`)
+   - Updated `get_learn_sessions.py`: updated session source discovery
+
+9. Implemented Phase 1 (upload_session.py):
+   - Rewrote to use git branch instead of gist
+   - Requires plan_id (returns error if None)
+   - Creates session/{plan_id} branch, copies JSONL, commits, pushes
+
+10. Implemented Phase 2 (download_remote_session.py):
+    - Rewrote to use git fetch + git show instead of urllib
+    - Changed `--gist-url` to `--session-branch`
+
+11. Implemented Phase 3 (trigger_async_learn.py):
+    - Updated `_download_remote_session_for_learn` to use session_branch + git
+    - Removed normalize_gist_url import
+    - Updated caller to read `session_branch` instead of `gist_url`
+    - Added session branch cleanup after learn branch push
+
+12. Implemented Phase 5 (remove create_gist from GitHub gateway):
+    - Removed `GistCreated`, `GistCreateError` from `abc.py`
+    - Removed `create_gist` from `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`
+    - Removed `_created_gists`, `_next_gist_id`, `_gist_create_error` from `fake.py`
+
+13. Started Phase 6 (update tests):
+    - Ran `make fast-ci` - found errors:
+      - Unused `dataclass` import in `abc.py`
+      - Format issues in `abc.py` and `trigger_async_learn.py`
+      - Exec reference docs out of date
+      - Test failures: `SessionsForPlan` still called with `last_session_gist_url`
+    - Fixed `abc.py` import
+    - Fixed `test_discovery.py` with sed (renamed `last_session_gist_url` → `last_session_branch`)
+    - Rewrote `test_upload_session.py` for branch-based approach (using FakeGit)
+    - Started reading `test_download_remote_session.py` to rewrite it
+
+The summary request was triggered mid-Phase 6, specifically right when the agent had just read the contents of `test_download_remote_session.py` and was about to rewrite it.
+
+Key pending work:
+- Rewrite `test_download_remote_session.py` for branch-based download
+- Update `test_trigger_async_learn.py` for session_branch
+- Remove `create_gist` tests from `test_real_github.py`
+- Fix format issues in `trigger_async_learn.py`
+- Regenerate exec reference docs
+- Run CI again to verify all passes
+- Submit PR
+
+Summary:
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement` (no arguments) to implement plan #7757: "Replace Session Gist Archival with Branch-Based Storage". The implementation goal is to replace GitHub Gist-based session upload/download with a git branch-based pattern (`session/{plan_id}` branches), remove `create_gist` from the GitHub gateway ABC and all implementations, and update all consuming code.
+
+2. Key Technical Concepts:
+   - Branch-based session storage: `session/{plan_id}` branches instead of GitHub Gists
+   - Git gateway pattern (ABC/Real/Fake/DryRun/Printing implementations)
+   - `SessionsForPlan` dataclass for plan session metadata
+   - `RemoteSessionSource` / `LocalSessionSource` session source abstractions
+   - Plan-header metadata schema (`schemas.py`, `plan_header.py`, `backend.py`)
+   - Click-based exec scripts with context injection (`require_git`, `require_github`, etc.)
+   - FakeGit for test injection
+   - Fake-driven testing architecture (no real subprocess calls in unit tests)
+   - `erk exec upload-session`, `download-remote-session`, `trigger-async-learn`, `get-learn-sessions` commands
+   - `make fast-ci` CI pipeline including lint, format, type check, and unit tests
+
+3. Files and Code Sections:
+   - **`.impl/plan.md`** — PR description (not implementation plan); branch is `plan/replace-session-gist-archi-02-21-1117`, PR #7757
+   - **`.worker-impl/plan.md`** — Actual 14-step implementation plan, read in full
+   - **`packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`**
+     - Removed `"last_session_gist_url"` and `"last_session_gist_id"` from `VALID_PLAN_HEADER_FIELDS`
+     - Added `"last_session_branch"`
+     - Removed constants `LAST_SESSION_GIST_URL`, `LAST_SESSION_GIST_ID`; added `LAST_SESSION_BRANCH`
+     - Replaced gist_url/gist_id validation with session_branch validation
+     - Updated docstring
+   - **`packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`**
+     - Changed import: `LAST_SESSION_GIST_ID`, `LAST_SESSION_GIST_URL` → `LAST_SESSION_BRANCH`
+     - Removed `update_plan_header_session_gist()`, added `update_plan_header_session_branch()`
+     - Removed `extract_plan_header_session_gist_url()`, `extract_plan_header_session_gist_id()`
+     - Added `extract_plan_header_session_branch()`
+   - **`packages/erk-shared/src/erk_shared/sessions/discovery.py`**
+     - `SessionsForPlan` dataclass: renamed `last_session_gist_url: str | None` → `last_session_branch: str | None`
+     - Updated docstring
+   - **`packages/erk-shared/src/erk_shared/learn/extraction/session_source.py`** — Fully rewritten:
+     - `SessionSourceDict`: `gist_url: str | None` → `session_branch: str | None`
+     - `SessionSource` ABC: `gist_url` abstract property → `session_branch`
+     - `LocalSessionSource`: `gist_url` → `session_branch` (returns None)
+     - `RemoteSessionSource`: `__slots__`, `__init__`, `_gist_url`/`gist_url` → `_session_branch`/`session_branch`
+     - `to_dict()` updated
+   - **`packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py`**
+     - `GetLearnSessionsResultDict`: `last_session_gist_url` → `last_session_branch`
+   - **`packages/erk-shared/src/erk_shared/plan_store/backend.py`**
+     - Import: `extract_plan_header_session_gist_url` → `extract_plan_header_session_branch`
+     - `SessionsForPlan` construction: `last_session_gist_url=` → `last_session_branch=`
+   - **`src/erk/cli/commands/exec/scripts/get_learn_sessions.py`**
+     - `_build_result`: `last_session_gist_url` → `last_session_branch`
+     - `_discover_sessions`: checks `last_session_branch` instead of `last_session_gist_url`; `RemoteSessionSource(session_branch=...)` instead of `RemoteSessionSource(gist_url=...)`
+   - **`src/erk/cli/commands/exec/scripts/upload_session.py`** — Fully rewritten:
+     - Uses `require_git(ctx)` instead of `require_github(ctx)`
+     - Creates `session/{plan_id}` branch from `origin/master`, copies JSONL, commits, force-pushes
+     - Returns error if `plan_id is None`
+     - Stores `last_session_branch` metadata (not gist fields)
+     - Output: `session_branch` field instead of `gist_id`/`gist_url`/`raw_url`
+   - **`src/erk/cli/commands/exec/scripts/download_remote_session.py`** — Fully rewritten:
+     - `--session-branch` option instead of `--gist-url`
+     - `_download_from_branch()` uses `git.remote.fetch_branch()` + `subprocess.run(["git", "show", ...])`
+     - `_execute_download` takes `git` param instead of `url_fetcher`
+     - Output: `"source": "branch"` instead of `"gist"`
+     - Removed `normalize_gist_url`, urllib imports
+   - **`src/erk/cli/commands/exec/scripts/trigger_async_learn.py`**
+     - Removed `urllib.error`, `urllib.request` imports
+     - Removed `normalize_gist_url` import from `download_remote_session`
+     - Added `import subprocess`
+     - `_download_remote_session_for_learn` rewritten: `gist_url` → `session_branch`, uses git fetch + git show
+     - Caller updated: reads `session_branch` from source dict
+     - Added session branch cleanup loop after learn branch push
+   - **`packages/erk-shared/src/erk_shared/gateway/github/abc.py`**
+     - Removed `GistCreated`, `GistCreateError` dataclasses
+     - Removed `create_gist` abstract method
+     - Removed unused `from dataclasses import dataclass`
+     - Fixed extra blank line
+   - **`packages/erk-shared/src/erk_shared/gateway/github/real.py`**
+     - Import: removed `GistCreated, GistCreateError`; kept `GitHub`
+     - Removed `create_gist` method (50+ lines)
+   - **`packages/erk-shared/src/erk_shared/gateway/github/fake.py`**
+     - Import: removed `GistCreated, GistCreateError`
+     - Removed `gist_create_error` constructor param
+     - Removed `_gist_create_error`, `_created_gists`, `_next_gist_id` state
+     - Removed `create_gist` method and `created_gists` property
+   - **`packages/erk-shared/src/erk_shared/gateway/github/dry_run.py`**
+     - Import: removed `GistCreated, GistCreateError`
+     - Removed `create_gist` method
+   - **`packages/erk-shared/src/erk_shared/gateway/github/printing.py`**
+     - Import: removed `GistCreated, GistCreateError`
+     - Removed `create_gist` method
+   - **`tests/unit/sessions/test_discovery.py`**
+     - All `last_session_gist_url=None` → `last_session_branch=None` (via sed)
+   - **`tests/unit/cli/commands/exec/scripts/test_upload_session.py`** — Fully rewritten:
+     - Tests now use `FakeGit` instead of `FakeGitHub`
+     - `test_upload_session_no_plan_id` — error when plan_id missing
+     - `test_upload_session_branch_created` — branch created and pushed
+     - `test_upload_session_with_issue_update` — metadata updated with `last_session_branch`
+     - `test_upload_session_plan_not_found` — branch created but issue update fails
+   - **`tests/unit/cli/commands/exec/scripts/test_download_remote_session.py`** — Read, needs rewrite (was in progress)
+
+4. Errors and fixes:
+   - **Push rejected (non-fast-forward)** when cleaning up `.erk/impl-context/`: Fixed by `git pull --rebase origin plan/...` then `git push`
+   - **`abc.py` unused `dataclass` import + F401/I001 ruff errors**: Fixed by removing `from dataclasses import dataclass` and the extra blank line after GistCreated/GistCreateError removal
+   - **Test failures**: `SessionsForPlan.__init__()` received unexpected kwarg `last_session_gist_url` — Fixed by running `sed` on `test_discovery.py` to rename the field
+
+5. Problem Solving:
+   - Determined the branch already had the learn pipeline implementation (commit `9c2abd83f`) as a prerequisite
+   - The actual plan (steps 1-14) covers session archival which was NOT yet implemented
+   - Mapped all 14 plan steps to specific code changes and executed them systematically
+   - `make fast-ci` revealed import/format issues in `abc.py` and test failures in `test_discovery.py` — both fixed
+
+6. All user messages:
+   - The user invoked `/erk:plan-implement` via the skill system (no text message, just skill invocation)
+   - No other user messages — the entire conversation is the agent autonomously executing the plan-implement workflow
+
+7. Pending Tasks:
+   - Rewrite `tests/unit/cli/commands/exec/scripts/test_download_remote_session.py` for branch-based download (all gist URL normalization tests must be removed/replaced with branch-based tests; `--gist-url` → `--session-branch`; `url_fetcher` → `git` parameter in `_execute_download`)
+   - Update `tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py` — remove gist_url references (lines ~811-932), update session source to use `session_branch`
+   - Remove `create_gist` tests from `tests/integration/test_real_github.py` (~lines 1140-1190+)
+   - Fix format issue in `trigger_async_learn.py` (prettier/ruff formatting)
+   - Regenerate exec reference docs: `erk-dev gen-exec-reference-docs`
+   - Fix `.worker-impl/plan.md` prettier issue
+   - Run `make fast-ci` again to verify all passes
+   - Signal GitHub ended (`erk exec impl-signal ended`)
+   - Upload session for async learn
+   - Verify `.impl/` preserved (`erk exec impl-verify`)
+   - Submit PR (`erk pr submit`)
+
+8. Current Work:
+   The agent was in Phase 6 (Update tests and regenerate exec reference docs), specifically:
+   - Had just run `make fast-ci` and identified test failures
+   - Fixed `abc.py` imports
+   - Fixed `test_discovery.py` (renamed field via sed)
+   - Rewrote `test_upload_session.py` completely for branch-based approach
+   - Read the full content of `test_download_remote_session.py` (the old gist-based version) and was about to rewrite it
+
+   The test file read showed these gist-based tests that need replacing:
+   - `normalize_gist_url` tests (4 tests) — function no longer exists
+   - `test_cli_missing_gist_url` — option renamed to `--session-branch`
+   - `_execute_download` tests with `url_fetcher` parameter — now takes `git` parameter
+
+9. Optional Next Step:
+   Rewrite `tests/unit/cli/commands/exec/scripts/test_download_remote_session.py` for the new branch-based `download_remote_session.py`. The old tests test `normalize_gist_url`, `_execute_download` with `url_fetcher`, and CLI with `--gist-url`. The new tests must test `_execute_download` with a `FakeGit` parameter, `--session-branch` CLI option, and `_download_from_branch` using git show. The `normalize_gist_url` tests should be entirely removed since the function was deleted.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-plan-replace-session-gist-archi-02-21-1117/d96881fa-8cc4-4771-9d39-5f18defe5261.jsonl
+Please continue the conversation from where we left off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <thinking>Let me continue from where we left off. The summary tells me I was in Phase 6 (Update tests) and had just read `test_download_remote_session.py`. I need to:
+
+1. Rewrite `test_download_remote_session.py` for branch-based download
+2. Update `test_trigger_async_learn.py` 
+3. Remove `create_gist` tests from `test_real_github.py`
+4. Fix format issues
+5. Regenerate exec reference docs
+6. Run CI again
+7. Submit PR
+
+Let me start by reading the files I need to work on.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="30665" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30665}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the current state of the test file for download_remote_session and the other files I need to update.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="30665" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30665}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PAuminPRCTTDT2ntKGxKtv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="30665" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30665}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PAuminPRCTTDT2ntKGxKtv">
+     1→"""Unit tests for download-remote-session exec script.
+     2→
+     3→Tests downloading session files from GitHub Gist URLs.
+     4→Uses fake URL fetchers injected into _execute_download.
+     5→"""
+     6→
+     7→import urllib.error
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.download_remote_session import (
+    13→    _execute_download,
+    14→    _get_remote_sessions_dir,
+    15→    normalize_gist_url,
+    16→)
+    17→from erk.cli.commands.exec.scripts.download_remote_session import (
+    18→    download_remote_session as download_remote_session_command,
+    19→)
+    20→
+    21→# ============================================================================
+    22→# 1. Helper Function Tests (2 tests)
+    23→# ============================================================================
+    24→
+    25→
+    26→def test_get_remote_sessions_dir_creates_directory(tmp_path: Path) -&gt; None:
+    27→    """Test that the remote sessions directory is created if it doesn't exist."""
+    28→    session_id = "test-session-123"
+    29→
+    30→    result = _get_remote_sessions_dir(tmp_path, session_id)
+
+... [208 lines omitted] ...
+
+    39→    """Test that existing directory is returned without error."""
+   155→def test_error_download_fails(tmp_path: Path) -&gt; None:
+   156→    """Test error when gist URL cannot be fetched."""
+   161→        raise urllib.error.URLError("404 Not Found")
+   172→    assert "Failed to download from gist URL" in str(output["error"])
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SZWrGADfZuwDrqvnhEszqu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/download_remote_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="30665" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30665}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SZWrGADfZuwDrqvnhEszqu">
+     1→"""Download a Claude Code session from a git branch.
+     2→
+     3→This exec command downloads a session and stores it in the
+     4→.erk/scratch/remote-sessions/ directory for learn workflow processing.
+     5→
+     6→Usage:
+     7→    erk exec download-remote-session --session-branch session/123 --session-id abc-123
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and session file path
+    11→
+    12→Exit Codes:
+    13→    0: Success (session file downloaded and located)
+    14→    1: Error (download failed)
+    15→
+    16→Examples:
+    17→    $ erk exec download-remote-session --session-branch session/123 --session-id abc-123
+    18→    {
+    19→      "success": true,
+    20→      "session_id": "abc-123",
+    21→      "path": "...",
+    22→      "source": "branch"
+    23→    }
+    24→"""
+    25→
+    26→import json
+    27→import shutil
+    28→import subprocess
+    29→from pathlib import Path
+    30→
+
+... [150 lines omitted] ...
+
+    73→        Path to the downloaded session file on success, error message string on failure.
+    84→        return f"Failed to extract session from branch: {result.stderr.decode().strip()}"
+   126→        return 1, {"success": False, "error": result}
+  </tool_result>
+  <thinking>Now I have the current state. Let me look at the `download_remote_session.py` - it uses `_execute_download` with `git` parameter and `session_branch`. The `_download_from_branch` function uses `git.remote.fetch_branch()` and `subprocess.run(["git", "show", ...])`.
+
+I need to rewrite the test file. The key change is:
+1. Remove all `normalize_gist_url` tests (function no longer exists)
+2. Update `test_cli_missing_gist_url` to test for `--session-branch` instead
+
+
+3. Update `test_cli_missing_session_id` to use `--session-branch`
+4. Rewrite `_execute_download` tests to use `FakeGit` instead of `url_fetcher`
+5. Remove `test_webpage_url_normalized_before_download` (no longer relevant)
+
+For the `_download_from_branch` function, I need to understand how `FakeGit.remote.fetch_branch()` works and what `subprocess.run(["git", "show", ...])` does in the actual implementation so I can mock it properly in the tests. the git show command to extract the session file. So the subprocess call is unavoidable in the current design, which means testing `_execute_download` requires either mocking subprocess or accepting integration tests that hit the actual filesystem and git commands. the `git show` call into the FakeGit interface so it's properly testable. Looking at how `upload_session` was tested with FakeGit, I should follow that same pattern and move the subprocess call into the git gateway rather than trying to mock it. , looking at the description again: "Rewrite `test_download_remote_session.py` for branch-based download". The summary says tests for `_execute_download` now take `git` parameter instead of `url_fetcher`.
+
+But given that `_download_from_branch` calls `subprocess.run` directly, to test this properly we'd need to either:
+1. Not test `_execute_download` directly (only test through CLI with mocked subprocess)
+2. Add a `git show` method to the Git gateway
+
+Hmm, but looking at the ci_skill or devrun agent, let me also check how trigger_async_learn.py's tests handle this - it also uses subprocess for git show in the new implementation.
+
+Actually, I think the simplest approach for the test rewrite is:
+1. Keep the `_get_remote_sessions_dir` helper tests (unchanged)
+2. Update CLI arg validation tests (change `--gist-url` to `--session-branch`)
+3. For the core logic, we can test at the CLI level but `subprocess.run` will fail since there's no real git repo
+
+The real issue is that `_download_from_branch` uses both FakeGit for the remote fetch and direct subprocess calls for git show, so I need to understand what FakeGit actually provides for remote operations before deciding how to mock this properly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12458" cache_read_input_tokens="49663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12458}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check the FakeGit implementation to understand what's available for testing, and read the trigger_async_learn test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12458" cache_read_input_tokens="49663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12458}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01MH9s63tw4QhPwEPNtPRkhm">
+    <param name="pattern">packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12458" cache_read_input_tokens="49663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12458}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MH9s63tw4QhPwEPNtPRkhm">
+/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/git/fake.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SGe3JbJFC6F2pmWdMdPWpd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12458" cache_read_input_tokens="49663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12458}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SGe3JbJFC6F2pmWdMdPWpd">
+     1→"""Unit tests for trigger_async_learn exec script.
+     2→
+     3→Tests triggering the learn.yml workflow for async learn.
+     4→Uses FakeGitHub, FakeGitHubIssues, and FakeClaudeInstallation for
+     5→dependency injection — no subprocess mocking.
+     6→"""
+     7→
+     8→import json
+     9→from datetime import UTC, datetime
+    10→from pathlib import Path
+    11→
+    12→from click.testing import CliRunner
+    13→
+    14→from erk.cli.commands.exec.scripts.trigger_async_learn import (
+    15→    _get_pr_for_plan_direct,
+    16→)
+    17→from erk.cli.commands.exec.scripts.trigger_async_learn import (
+    18→    trigger_async_learn as trigger_async_learn_command,
+    19→)
+    20→from erk_shared.context.context import ErkContext
+    21→from erk_shared.gateway.claude_installation.fake import (
+    22→    FakeClaudeInstallation,
+    23→    FakeProject,
+    24→    FakeSessionData,
+    25→)
+    26→from erk_shared.gateway.git.fake import FakeGit
+    27→from erk_shared.gateway.github.fake import FakeGitHub
+    28→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    29→from erk_shared.gateway.github.issues.types import IssueInfo
+    30→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo, RepoInfo
+
+... [75 lines omitted] ...
+
+    45→    raise ValueError(f"No JSON found in output: {output!r}")
+    59→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    93→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <thinking>Let me also read the FakeGit to understand what remote operations it supports:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3324" cache_read_input_tokens="62121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3324}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018eYcxgFHWGmkaQ4S9czEr9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3324" cache_read_input_tokens="62121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3324}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018eYcxgFHWGmkaQ4S9czEr9">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
+    22→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    23→from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    24→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    25→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    26→from erk_shared.gateway.git.commit_ops.fake import CommitRecord, FakeGitCommitOps
+    27→from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    28→from erk_shared.gateway.git.config_ops.fake import ConfigSetRecord, FakeGitConfigOps
+    29→from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    30→from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
+
+... [55 lines omitted] ...
+
+    33→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <tool_use name="Read" id="toolu_012JmHDovSuhKLdyumST8tK9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py</param>
+    <param name="offset">100</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3324" cache_read_input_tokens="62121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3324}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012JmHDovSuhKLdyumST8tK9">
+   100→schema_version: '2'
+   101→created_at: '2025-11-25T14:37:43.513418+00:00'
+   102→created_by: testuser
+   103→worktree_name: test-worktree
+   104→{branch_line}
+   105→created_from_session: {planning_session_id}
+   106→{impl_line}
+   107→last_dispatched_run_id: null
+   108→last_dispatched_at: null
+   109→
+   110→```
+   111→
+   112→&lt;/details&gt;
+   113→&lt;!-- /erk:metadata-block:plan-header --&gt;"""
+   114→
+   115→
+   116→def _make_issue_info(number: int, body: str) -&gt; IssueInfo:
+   117→    """Create test IssueInfo."""
+   118→    now = datetime.now(UTC)
+   119→    return IssueInfo(
+   120→        number=number,
+   121→        title="Test Issue",
+   122→        body=body,
+   123→        state="OPEN",
+   124→        url=f"https://github.com/test-owner/test-repo/issues/{number}",
+   125→        labels=["erk-plan"],
+   126→        assignees=[],
+   127→        created_at=now,
+   128→        updated_at=now,
+   129→        author="test-user",
+
+... [125 lines omitted] ...
+  </tool_result>
+  <thinking>Let me continue reading the trigger_async_learn test to understand its structure, and also look at what parts reference gist_url.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3587" cache_read_input_tokens="65445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3587}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the parts of test_trigger_async_learn.py that reference gist_url to know what needs updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3587" cache_read_input_tokens="65445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3587}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SoiWc72nMn5XZ7TmZo6vCa">
+    <param name="pattern">gist_url|gist-url|gist_id|gist\.github</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3587" cache_read_input_tokens="65445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3587}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SoiWc72nMn5XZ7TmZo6vCa">
+808-    branch_name: str | None,
+809-    planning_session_id: str,
+810-    remote_session_id: str,
+811:    gist_url: str,
+812-) -&gt; str:
+813-    """Create a plan issue body with both a planning session and a remote gist session."""
+814-    branch_line = f"branch_name: {branch_name}" if branch_name is not None else "branch_name: null"
+--
+825-worktree_name: test-worktree
+826-{branch_line}
+827-created_from_session: {planning_session_id}
+828:last_session_gist_url: {gist_url}
+829-last_session_id: {remote_session_id}
+830-last_session_source: remote
+831-last_dispatched_run_id: null
+--
+855-    remote_content = _make_minimal_session_jsonl(remote_id)
+856-    remote_file = tmp_path / "remote-session.jsonl"
+857-    remote_file.write_text(remote_content, encoding="utf-8")
+858:    gist_url = remote_file.as_uri()
+859-
+860-    # Set up plan issue with both planning and remote session references
+861-    body = _make_plan_issue_body_with_remote_session(
+862-        branch_name=None,
+863-        planning_session_id=planning_id,
+864-        remote_session_id=remote_id,
+865:        gist_url=gist_url,
+866-    )
+867-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+868-
+
+... [14 lines omitted] ...
+
+925-    # Use an unreachable file:// URL to simulate download failure
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014APDeYkFnwRLeZXXuroVVu">
+    <param name="pattern">create_gist|GistCreated|gist</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/tests/integration/test_real_github.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3587" cache_read_input_tokens="65445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3587}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014APDeYkFnwRLeZXXuroVVu">
+13-from pytest import MonkeyPatch
+14-
+15:from erk_shared.gateway.github.abc import GistCreated, GistCreateError
+16-from erk_shared.gateway.github.real import RealGitHub
+17-from erk_shared.gateway.github.types import MergeError, MergeResult
+--
+1138-
+1139-# ============================================================================
+1140:# create_gist() Tests
+1141-# ============================================================================
+1142-
+1143-
+1144:def test_create_gist_success(monkeypatch: MonkeyPatch) -&gt; None:
+1145:    """Test create_gist uses correct gh gist create command and parses output."""
+1146-    called_with: list[list[str]] = []
+1147-    captured_input: list[str | None] = []
+--
+1150-        called_with.append(cmd)
+1151-        captured_input.append(kwargs.get("input"))
+1152:        # gh gist create returns the gist URL on stdout
+1153-        return subprocess.CompletedProcess(
+1154-            args=cmd,
+1155-            returncode=0,
+1156:            stdout="https://gist.github.com/testuser/abc123def456\n",
+1157-            stderr="",
+1158-        )
+--
+1160-    with mock_subprocess_run(monkeypatch, mock_run):
+1161-        ops = RealGitHub.for_test()
+1162:        result = ops.create_gist(
+
+... [80 lines omitted] ...
+
+1220:def test_create_gist_failure(monkeypatch: MonkeyPatch) -&gt; None:
+1221:    """Test create_gist returns GistCreateError on command failure."""
+1224:        raise RuntimeError("gh gist create failed: not authenticated")
+1241:    """Test create_gist returns GistCreateError when gh returns empty output."""
+1260-        assert isinstance(result, GistCreateError)
+  </tool_result>
+  <thinking>Now I can see what needs to be done:
+
+1. **`test_download_remote_session.py`**: Completely rewrite - remove all `normalize_gist_url` tests, update CLI test from `--gist-url` to `--session-branch`, update `_execute_download` tests to use FakeGit instead of url_fetcher.
+
+   But there's a problem: `_download_from_branch` calls `subprocess.run(["git", "show", ...])` directly, which won't work in unit tests without a real git repo. Looking at the new implementation:
+   
+   ```python
+   def _download_from_branch(
+       *,
+       repo_root: Path,
+       session_branch: str,
+       session_id: str,
+       session_dir: Path,
+       git,
+   ) -&gt; Path | str:
+       git.remote.fetch_branch(repo_root, "origin", session_branch)
+       session_file = session_dir / "session.jsonl"
+       result = subprocess.run(
+           ["git", "show", f"origin/{session_branch}:.erk/session/{session_id}.jsonl"],
+           cwd=str(repo_root),
+           capture_output=True,
+       ```
+
+   The function fetches the branch using the git object, then runs a subprocess command to retrieve the session file from git. I need to mock the subprocess call in tests since we can't rely on an actual git repository. Looking at the test file around lines 808-935, I see the remote session tests rely on `gist_url` with `file://` URLs that work with the old `urllib` approach, but the new `subprocess.run(["git", "show", ...])` implementation breaks those tests since they don't have actual git repos to query.
+
+The rewritten `_download_remote_session_for_learn` function now uses `session_branch` and calls git fetch plus git show instead of the old URL download mechanism, so I need to figure out how to update the test setup to work with this new git-based approach rather than just pointing to a local file. I need to check what `_download_remote_session_for_learn` actually does now after my changes—it's using git fetch and git show instead of the old gist URL approach. The test challenge is that FakeGit doesn't have a way to simulate showing file contents from a remote branch, so I either need to add that capability to the mock or convert these tests to use real git repositories. I need to check the current state of `trigger_async_learn.py` to see how the git integration is implemented and figure out the best way to test it without requiring a real repository.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2688" cache_read_input_tokens="69032" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2688}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the current state of trigger_async_learn.py and the worker plan for guidance:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2688" cache_read_input_tokens="69032" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2688}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016JxcPhKLJDyNCEqQn8igf8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/trigger_async_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2688" cache_read_input_tokens="69032" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2688}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016JxcPhKLJDyNCEqQn8igf8">
+     1→"""Trigger async learn workflow for a plan issue.
+     2→
+     3→This exec command orchestrates the full local learn pipeline:
+     4→1. Discovers session sources for the plan
+     5→2. Preprocesses sessions locally
+     6→3. Fetches PR review comments if applicable
+     7→4. Commits materials to a learn branch in .erk/impl-context/
+     8→5. Triggers the learn.yml GitHub Actions workflow with the learn branch
+     9→
+    10→Usage:
+    11→    erk exec trigger-async-learn &lt;plan_id&gt;
+    12→
+    13→Output:
+    14→    JSON with success status and workflow information:
+    15→    {"success": true, "plan_id": "123", "workflow_triggered": true,
+    16→     "run_id": "12345678", "workflow_url": "https://...", "learn_branch": "learn/123"}
+    17→
+    18→    On error:
+    19→    {"success": false, "error": "message"}
+    20→
+    21→Examples:
+    22→    $ erk exec trigger-async-learn 5753
+    23→    {"success": true, "plan_id": "5753", "workflow_triggered": true,
+    24→     "run_id": "12345678", "workflow_url": "https://github.com/owner/repo/actions/runs/12345678",
+    25→     "learn_branch": "learn/5753"}
+    26→"""
+    27→
+    28→import json
+    29→import shutil
+    30→import subprocess
+
+... [659 lines omitted] ...
+
+    60→from erk_shared.non_ideal_state import GitHubAPIFailed
+    89→class TriggerError:
+    90→    """Error response for trigger-async-learn command."""
+    93→    error: str
+   122→def _output_error(message: str) -&gt; NoReturn:
+   123→    """Output error JSON and exit."""
+   124→    result = TriggerError(success=False, error=message)
+   255→        Path to the downloaded file on success, None on failure.
+   266→            f"   ⚠️  Failed to extract session from branch: "
+   297→        Dict with pr_number and pr details on success, None on failure
+   370→        _output_error("Context not initialized")
+   375→        _output_error("Not in a GitHub repository")
+   401→        _output_error(f"Failed to get session sources: {sessions.get('error', 'unknown error')}")
+   463→                _output_error(f"Preprocessing {prefix} session failed: Session file not found")
+   522→        warning = click.style(
+   523→            "   ⏭️  Getting PR for plan failed, skipping: No PR found",
+   526→        click.echo(warning, err=True)
+   571→        if isinstance(comments_result, GitHubAPIFailed):
+   574→                "error": comments_result.message,
+   599→        _output_error("No files found in learn directory")
+   672→    except RuntimeError as e:
+   673→        _output_error(f"Failed to trigger workflow: {e}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UeafPdGmsMRX3Qt3qRN9yM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/.worker-impl/plan.md</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2688" cache_read_input_tokens="69032" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2688}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UeafPdGmsMRX3Qt3qRN9yM">
+     1→# Replace Session Gist Archival with Branch-Based Storage
+     2→
+     3→## Context
+     4→
+     5→After PR #7733 replaced gist transport for *learn materials*, the session gist archival system is the last remaining gist dependency. When `plan-implement.yml` completes a remote implementation, it uploads the full session JSONL to a secret GitHub gist, then `trigger_async_learn.py` (during `erk land`) downloads it from the gist for preprocessing. This has several problems: no cleanup (gists accumulate forever), uncompressed uploads (100MB+ sessions), authentication gaps (secret gists via `gh` but unauthenticated `urllib` downloads), and rate limits.
+     6→
+     7→This plan replaces the gist with the same branch-based pattern: CI commits the session to a `session/{plan_id}` branch, consumers fetch it via `git.remote.fetch_branch()` + `git show`, and the branch is cleaned up after consumption. This also allows removing `create_gist` from the GitHub gateway ABC entirely (nothing else uses it).
+     8→
+     9→## Changes
+    10→
+    11→### 1. Replace `upload_session.py` with branch-based storage
+    12→
+    13→**File:** `src/erk/cli/commands/exec/scripts/upload_session.py`
+    14→
+    15→Replace the `create_gist()` call with the branch creation pattern from `trigger_async_learn.py`:
+    16→
+    17→- Create `session/{plan_id}` branch from `origin/master`
+    18→- Copy session JSONL to `.erk/session/{session_id}.jsonl` on that branch
+    19→- Commit and force-push (force for re-implementation idempotency)
+    20→- Restore original branch in `finally` block
+    21→- Store `last_session_branch` (not `gist_url`/`gist_id`) on plan metadata
+    22→
+    23→Needs access to git gateway — add `require_git(ctx)` alongside existing `require_github(ctx)`.
+    24→
+    25→Metadata fields stored on plan header:
+    26→- `last_session_branch` (replaces `last_session_gist_url` + `last_session_gist_id`)
+    27→- `last_session_id` (unchanged)
+    28→- `last_session_at` (unchanged)
+    29→- `last_session_source` (unchanged)
+    30→
+
+... [55 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me continue reading the plan for guidance on test updates.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12530" cache_read_input_tokens="71720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12530}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the rest of the plan for test guidance:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12530" cache_read_input_tokens="71720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12530}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014janBhGzf3grjgU2dC9Z6U">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/.worker-impl/plan.md</param>
+    <param name="offset">80</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12530" cache_read_input_tokens="71720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12530}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014janBhGzf3grjgU2dC9Z6U">
+    80→- Update `__slots__`, `__init__`, property, `to_dict()`
+    81→
+    82→### 6. Update `GetLearnSessionsResultDict`
+    83→
+    84→**File:** `packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py`
+    85→
+    86→- Replace `last_session_gist_url` with `last_session_branch`
+    87→
+    88→### 7. Update `SessionsForPlan` dataclass
+    89→
+    90→**File:** `packages/erk-shared/src/erk_shared/sessions/discovery.py` (line 19)
+    91→
+    92→- Replace `last_session_gist_url: str | None` with `last_session_branch: str | None`
+    93→
+    94→### 8. Update plan header metadata schema
+    95→
+    96→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+    97→
+    98→- Remove `LAST_SESSION_GIST_URL` and `LAST_SESSION_GIST_ID` field definitions (~lines 383-384)
+    99→- Add `LAST_SESSION_BRANCH` field definition
+   100→- Update `VALID_PLAN_HEADER_FIELDS` list
+   101→- Update validation block: remove gist_url/gist_id validation, add session_branch validation
+   102→
+   103→### 9. Update plan header extractors
+   104→
+   105→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
+   106→
+   107→- Remove `extract_plan_header_session_gist_url()` and `extract_plan_header_session_gist_id()`
+   108→- Add `extract_plan_header_session_branch()`
+   109→- Update `update_plan_header_session_gist()` → `update_plan_header_session_branch()`
+
+... [85 lines omitted] ...
+
+   124→- **`abc.py`**: Remove `create_gist` abstract method, `GistCreated`, `GistCreateError` types
+   158→- `GistCreated`, `GistCreateError` types
+  </tool_result>
+</session>

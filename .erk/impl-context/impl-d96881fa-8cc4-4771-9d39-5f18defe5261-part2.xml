@@ -1,0 +1,1272 @@
+<session>
+  <meta branch="plan/replace-session-gist-archi-02-21-1117" />
+  <meta model="claude-sonnet-4-6" />
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/.claude/skills/fake-driven-testing
+
+# Fake-Driven Testing Architecture for Python
+
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+
+**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+
+## Overview
+
+This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+
+```
+┌─────────────────────────────────────────┐
+│  Layer 5: Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────┤
+│  Layer 4: Business Logic Tests (70%)   │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────┤
+│  Layer 3: Pure Unit Tests (10%)        │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────┤
+│  Layer 2: Integration Sanity Tests (10%)│  ← Fast validation with mocking
+├─────────────────────────────────────────┤
+│  Layer 1: Fake Infrastructure Tests (5%)│  ← Verify test doubles work
+└─────────────────────────────────────────┘
+```
+
+**Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
+
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+
+## Quick Decision: What Should I Read?
+
+**Adding a feature or fixing a bug?**
+→ Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`
+
+**Need to understand where to put a test?**
+→ Read `testing-strategy.md`
+
+**Working with Python-specific patterns?**
+→ Read `python-specific.md`
+
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
+
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
+**Need to implement a specific pattern (CliRunner, builders, etc.)?**
+→ Read `patterns.md`
+
+**Not sure if I'm doing it right?**
+→ Read `anti-patterns.md`
+
+**Just need a quick lookup?**
+→ Read `quick-reference.md`
+
+## When to Read Each Reference Document
+
+### 📖 `gateway-architecture.md`
+
+**Read when**:
+
+- Adding or changing gateway/ABC interfaces
+- Understanding the ABC/Real/Fake/DryRun pattern
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
+
+**Contents**:
+
+- What are gateway classes? (naming: gateways/adapters/providers)
+- The four implementations (ABC, Real, Fake, DryRun)
+- Code examples for each
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
+
+### 📖 `testing-strategy.md`
+
+**Read when**:
+
+- Deciding where to put a test
+- Understanding the five testing layers
+- Need test distribution guidance (5/70/10/10/5 rule)
+- Want to know which layer tests what
+
+**Contents**:
+
+- Layer 1: Unit tests of fakes (verify test infrastructure)
+- Layer 2: Integration sanity tests with mocking (quick validation)
+- Layer 3: Pure unit tests (zero dependencies, isolated testing)
+- Layer 4: Business logic over fakes (majority of tests)
+- Layer 5: Business logic integration tests (smoke tests over real systems)
+- Decision tree: where should my test go?
+- Test distribution examples
+
+### 📖 `python-specific.md`
+
+**Read when**:
+
+- Working with pytest fixtures
+- Need Python mocking patterns
+- Testing Flask/FastAPI/Django applications
+- Understanding Python testing tools
+- Need Python-specific commands
+
+**Contents**:
+
+- pytest fixtures and parametrization
+- Mocking with unittest.mock and pytest-mock
+- Testing web frameworks (Flask, FastAPI, Django)
+- Python testing commands
+- Type hints in tests
+- Python packaging for test utilities
+
+### 📖 `workflows.md`
+
+**Read when**:
+
+- Adding a new feature (step-by-step)
+- Fixing a bug (step-by-step)
+- Adding a gateway method (complete checklist)
+- Changing an interface (what to update)
+- Managing dry-run features
+
+**Contents**:
+
+- Adding a new feature (TDD workflow)
+- Fixing a bug (reproduce → fix → regression test)
+- Adding a gateway method (8-step checklist with examples)
+- Changing an interface (update all layers)
+- Managing dry-run features (wrapping pattern)
+- Testing with builder patterns
+
+### 📖 `patterns.md`
+
+**Read when**:
+
+- Implementing constructor injection for fakes
+- Adding mutation tracking to fakes
+- Using CliRunner for CLI tests
+- Building complex test scenarios with builders
+- Testing dry-run behavior
+- Need code examples of specific patterns
+
+**Contents**:
+
+- Constructor injection (how and why)
+- Mutation tracking properties (read-only access)
+- Using CliRunner (not subprocess)
+- Builder patterns for complex scenarios
+- Simulated environment pattern
+- Error injection pattern
+- Dry-run testing pattern
+
+### 📖 `anti-patterns.md`
+
+**Read when**:
+
+- Unsure if your approach is correct
+- Want to avoid common mistakes
+- Reviewing code for bad patterns
+- Debugging why tests are slow/brittle
+
+**Contents**:
+
+- ❌ Testing speculative features
+- ❌ Hardcoded paths in tests (catastrophic)
+- ❌ Not updating all layers
+- ❌ Using subprocess in unit tests
+- ❌ Complex logic in gateway classes
+- ❌ Fakes with I/O operations
+- ❌ Testing implementation details
+- ❌ Incomplete test coverage for gateways
+
+### 📖 `quick-reference.md`
+
+**Read when**:
+
+- Quick lookup for file locations
+- Finding example tests to reference
+- Looking up common fixtures
+- Need command reference
+- Want test distribution guidelines
+
+**Contents**:
+
+- Decision tree (where to add test)
+- File location map (source + tests)
+- Common fixtures (tmp_path, CliRunner, etc.)
+- Common test patterns (code snippets)
+- Example tests to reference
+- Useful commands (pytest, ty, etc.)
+- Quick checklist for adding gateway methods
+
+## Quick Navigation by Task
+
+### I'm adding a new feature
+
+1. **Quick start**: `quick-reference.md` → Decision tree
+2. **Step-by-step**: `workflows.md#adding-a-new-feature`
+3. **Patterns**: `patterns.md` (CliRunner, builders)
+4. **Avoid**: `anti-patterns.md` (speculative tests, hardcoded paths)
+
+### I'm fixing a bug
+
+1. **Step-by-step**: `workflows.md#fixing-a-bug`
+2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I'm adding/changing a gateway method
+
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
+4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
+
+### I don't know where my test should go
+
+1. **Decision tree**: `quick-reference.md#decision-tree`
+2. **Detailed guide**: `testing-strategy.md`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I need to implement a pattern
+
+1. **All patterns**: `patterns.md`
+2. **Examples**: `quick-reference.md#common-test-patterns`
+
+### I think I'm doing something wrong
+
+1. **Anti-patterns**: `anti-patterns.md`
+2. **Correct approach**: `workflows.md`
+
+## Visual Layer Guide
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 5: Business Logic Integration Tests (5%)               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Real database, filesystem, APIs, actual subprocess        │ │
+│ │ Purpose: Smoke tests, catch integration issues           │ │
+│ │ When: Sparingly, for critical workflows                  │ │
+│ │ Speed: Seconds per test                                   │ │
+│ │ Location: tests/e2e/ or tests/integration/               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 4: Business Logic Tests (70%) ← MOST TESTS HERE       │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
+│ │ Purpose: Test features and business logic extensively    │ │
+│ │ When: For EVERY feature and bug fix                      │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/, tests/services/, tests/commands/  │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 3: Pure Unit Tests (10%)                               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Zero dependencies, no fakes, no mocks                    │ │
+│ │ Purpose: Test isolated utilities and helpers             │ │
+│ │ When: For pure functions, data structures, parsers       │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/                                     │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 2: Integration Sanity Tests (10%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ RealDatabase with mocked connections                     │ │
+│ │ Purpose: Quick validation, catch syntax errors           │ │
+│ │ When: When adding/changing real implementation           │ │
+│ │ Speed: Fast (mocked)                                      │ │
+│ │ Location: tests/integration/test_real_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 1: Fake Infrastructure Tests (5%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Test FakeDatabase itself                                 │ │
+│ │ Purpose: Verify test infrastructure is reliable          │ │
+│ │ When: When adding/changing fake implementation           │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/fakes/test_fake_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Key Principles
+
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
+2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
+3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
+4. **Test what you're building**: No speculative tests, only active work
+5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+
+## Layer Selection Guide
+
+**Distinguishing Layer 3 (Pure Unit) from Layer 4 (Business Logic):**
+
+- **Layer 3 (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+  - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
+  - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
+  - Testing data structures: `LinkedList.append()` without any external dependencies
+
+- **Layer 4 (Business Logic Tests)**: Uses fakes for external dependencies
+  - Testing commands: `create_worktree(fake_git, name="feature")`
+  - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
+  - Testing business logic that coordinates multiple integrations
+
+**If your test imports a Fake\*, it belongs in Layer 4, not Layer 3.**
+
+## Default Testing Strategy
+
+**When in doubt**:
+
+- Write test over fakes (Layer 4) for business logic
+- Write pure unit test (Layer 3) for utilities/helpers with no dependencies
+- Use `pytest` with fixtures
+- Use `tmp_path` fixture (not hardcoded paths)
+- Follow examples in `quick-reference.md`
+
+## Summary
+
+**For quick tasks**: Start with `quick-reference.md`
+
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
+
+**For step-by-step guidance**: Use `workflows.md`
+
+**For implementation details**: Use `patterns.md`
+
+**For validation**: Check `anti-patterns.md`
+
+**For Python specifics**: Check `python-specific.md`
+</user>
+  <thinking>Now let me read the current state of the key files I need to modify. Let me start by reading all the relevant source files to understand what needs to change.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="5567" cache_read_input_tokens="52329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5567}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read all the key files I need to modify in parallel.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="5567" cache_read_input_tokens="52329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5567}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UVmNmK1qbidLwdy5hjCGk2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/upload_session.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="5567" cache_read_input_tokens="52329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5567}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UVmNmK1qbidLwdy5hjCGk2">
+     1→"""Upload a Claude Code session to GitHub Gist and update the plan header.
+     2→
+     3→This exec command uploads a session JSONL file to a GitHub Gist and optionally
+     4→updates the plan-header metadata in the associated erk-plan issue.
+     5→
+     6→Usage:
+     7→    # Upload from local session file
+     8→    erk exec upload-session --session-file /path/to/session.jsonl \\
+     9→        --session-id abc-123 --source local
+    10→
+    11→    # Upload and update plan issue
+    12→    erk exec upload-session --session-file /path/to/session.jsonl \\
+    13→        --session-id abc-123 --source remote --plan-id 2521
+    14→
+    15→Output:
+    16→    Structured JSON output with gist info and updated plan header fields
+    17→
+    18→Exit Codes:
+    19→    0: Success (gist created and optionally plan header updated)
+    20→    1: Error (gist creation failed, issue update failed)
+    21→
+    22→Examples:
+    23→    $ erk exec upload-session --session-file session.jsonl \\
+    24→          --session-id abc --source remote --plan-id 123
+    25→    {
+    26→      "success": true,
+    27→      "gist_id": "abc123...",
+    28→      "gist_url": "https://gist.github.com/user/abc123...",
+    29→      "raw_url": "https://gist.githubusercontent.com/...",
+    30→      "session_id": "abc",
+
+... [131 lines omitted] ...
+
+    49→from erk_shared.gateway.github.abc import GistCreateError
+   108→    if isinstance(gist_result, GistCreateError):
+   109→        error_output = {
+   111→            "error": f"Failed to create gist: {gist_result.message}",
+   113→        click.echo(json.dumps(error_output))
+   145→            result["issue_update_error"] = f"Plan #{plan_id} not found"
+   150→            except RuntimeError as e:
+   151→                # Plan update failed but gist was created - partial success
+   153→                result["issue_update_error"] = str(e)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FYsSqiQ4fbCe5w8TQcX3gm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/download_remote_session.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="5567" cache_read_input_tokens="52329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5567}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FYsSqiQ4fbCe5w8TQcX3gm">
+     1→"""Download a Claude Code session from a GitHub Gist URL.
+     2→
+     3→This exec command downloads a session and stores it in the
+     4→.erk/scratch/remote-sessions/ directory for learn workflow processing.
+     5→
+     6→Usage:
+     7→    erk exec download-remote-session --gist-url &lt;gist-raw-url&gt; --session-id abc-123
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and session file path
+    11→
+    12→Exit Codes:
+    13→    0: Success (session file downloaded and located)
+    14→    1: Error (download failed)
+    15→
+    16→Examples:
+    17→    $ erk exec download-remote-session --gist-url &lt;gist-raw-url&gt; --session-id abc-123
+    18→    {
+    19→      "success": true,
+    20→      "session_id": "abc-123",
+    21→      "path": "...",
+    22→      "source": "gist"
+    23→    }
+    24→"""
+    25→
+    26→import json
+    27→import shutil
+    28→import urllib.error
+    29→import urllib.request
+    30→from collections.abc import Callable
+
+... [168 lines omitted] ...
+
+   104→        Path to the downloaded session file on success, error message string on failure.
+   112→    except urllib.error.URLError as e:
+   113→        return f"Failed to download from gist URL: {e}"
+   146→        return 1, {"success": False, "error": result}
+  </tool_result>
+  <tool_use name="Read" id="toolu_0119BrD7TQyhk1x97Gauobkn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/trigger_async_learn.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="5567" cache_read_input_tokens="52329" output_tokens="360" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5567, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0119BrD7TQyhk1x97Gauobkn">
+     1→"""Trigger async learn workflow for a plan issue.
+     2→
+     3→This exec command orchestrates the full local learn pipeline:
+     4→1. Discovers session sources for the plan
+     5→2. Preprocesses sessions locally
+     6→3. Fetches PR review comments if applicable
+     7→4. Commits materials to a learn branch in .erk/impl-context/
+     8→5. Triggers the learn.yml GitHub Actions workflow with the learn branch
+     9→
+    10→Usage:
+    11→    erk exec trigger-async-learn &lt;plan_id&gt;
+    12→
+    13→Output:
+    14→    JSON with success status and workflow information:
+    15→    {"success": true, "plan_id": "123", "workflow_triggered": true,
+    16→     "run_id": "12345678", "workflow_url": "https://...", "learn_branch": "learn/123"}
+    17→
+    18→    On error:
+    19→    {"success": false, "error": "message"}
+    20→
+    21→Examples:
+    22→    $ erk exec trigger-async-learn 5753
+    23→    {"success": true, "plan_id": "5753", "workflow_triggered": true,
+    24→     "run_id": "12345678", "workflow_url": "https://github.com/owner/repo/actions/runs/12345678",
+    25→     "learn_branch": "learn/5753"}
+    26→"""
+    27→
+    28→import json
+    29→import shutil
+    30→import urllib.error
+
+... [634 lines omitted] ...
+
+    62→from erk_shared.non_ideal_state import GitHubAPIFailed
+    91→class TriggerError:
+    92→    """Error response for trigger-async-learn command."""
+    95→    error: str
+   124→def _output_error(message: str) -&gt; NoReturn:
+   125→    """Output error JSON and exit."""
+   126→    result = TriggerError(success=False, error=message)
+   252→        Path to the downloaded file on success, None on failure.
+   262→    except urllib.error.URLError as e:
+   263→        message = click.style(f"   ⚠️  Failed to download remote session: {e}", fg="yellow")
+   286→        Dict with pr_number and pr details on success, None on failure
+   359→        _output_error("Context not initialized")
+   364→        _output_error("Not in a GitHub repository")
+   390→        _output_error(f"Failed to get session sources: {sessions.get('error', 'unknown error')}")
+   452→                _output_error(f"Preprocessing {prefix} session failed: Session file not found")
+   509→        warning = click.style(
+   510→            "   ⏭️  Getting PR for plan failed, skipping: No PR found",
+   513→        click.echo(warning, err=True)
+   558→        if isinstance(comments_result, GitHubAPIFailed):
+   561→                "error": comments_result.message,
+   586→        _output_error("No files found in learn directory")
+   647→    except RuntimeError as e:
+   648→        _output_error(f"Failed to trigger workflow: {e}")
+  </tool_result>
+  <thinking>Now let me read the other key files.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13680" cache_read_input_tokens="57896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13680}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X759b1dumEhesGotppegjQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="offset">90</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13680" cache_read_input_tokens="57896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13680}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X759b1dumEhesGotppegjQ">
+    90→) -&gt; GetLearnSessionsResultDict:
+    91→    """Build the result dict from session data."""
+    92→    return GetLearnSessionsResultDict(
+    93→        success=True,
+    94→        plan_id=plan_id,
+    95→        planning_session_id=sessions_for_plan.planning_session_id,
+    96→        implementation_session_ids=sessions_for_plan.implementation_session_ids,
+    97→        learn_session_ids=sessions_for_plan.learn_session_ids,
+    98→        readable_session_ids=readable_session_ids,
+    99→        session_paths=session_paths,
+   100→        local_session_ids=local_session_ids,
+   101→        last_remote_impl_at=sessions_for_plan.last_remote_impl_at,
+   102→        last_remote_impl_run_id=sessions_for_plan.last_remote_impl_run_id,
+   103→        last_remote_impl_session_id=sessions_for_plan.last_remote_impl_session_id,
+   104→        session_sources=[source.to_dict() for source in session_sources],
+   105→        last_session_gist_url=sessions_for_plan.last_session_gist_url,
+   106→        last_session_id=sessions_for_plan.last_session_id,
+   107→        last_session_source=sessions_for_plan.last_session_source,
+   108→    )
+   109→
+   110→
+   111→def _discover_sessions(
+   112→    *,
+   113→    plan_backend,
+   114→    claude_installation,
+   115→    repo_root: Path,
+   116→    cwd: Path,
+   117→    plan_id: str,
+   118→    branch_name: str | None,
+   119→) -&gt; GetLearnSessionsResultDict:
+
+... [95 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EBfMJdU2FPezCVweoC5iDu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/learn/extraction/session_source.py</param>
+    <param name="offset">140</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13680" cache_read_input_tokens="57896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13680}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EBfMJdU2FPezCVweoC5iDu">
+   140→    @property
+   141→    def path(self) -&gt; str | None:
+   142→        """Return the file path where the session is located."""
+   143→        return self._path
+   144→
+   145→    @property
+   146→    def gist_url(self) -&gt; None:
+   147→        """Return None - local sessions have no gist URL."""
+   148→        return None
+   149→
+   150→
+   151→class RemoteSessionSource(SessionSource):
+   152→    """Session source for sessions from remote implementations.
+   153→
+   154→    Remote sessions are those that originated from a GitHub Actions workflow
+   155→    run or other remote execution environment. They can be retrieved via:
+   156→    - Gist URL (preferred): Direct download from gist raw URL
+   157→    - Artifact (legacy): Download from GitHub Actions artifact using run_id
+   158→
+   159→    Attributes:
+   160→        session_id: The Claude Code session ID
+   161→        run_id: The GitHub Actions run ID (optional for gist-based sessions)
+   162→        path: Optional file path, populated after the session is downloaded.
+   163→              None when remote session is discovered but not yet downloaded.
+   164→        gist_url: Optional gist raw URL for direct download (preferred method)
+   165→    """
+   166→
+   167→    __slots__ = ("_session_id", "_run_id", "_path", "_gist_url")
+   168→
+   169→    _session_id: str
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YK45zsU6htroG9CMdDpKD5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/sessions/discovery.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13680" cache_read_input_tokens="57896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13680}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YK45zsU6htroG9CMdDpKD5">
+     1→"""Session discovery for plans.
+     2→
+     3→This module provides functions to discover Claude Code sessions
+     4→associated with a plan issue.
+     5→"""
+     6→
+     7→import sys
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→from erk_shared.gateway.claude_installation.abc import (
+    12→    ClaudeInstallation,
+    13→    FoundSession,
+    14→)
+    15→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    16→from erk_shared.learn.extraction.session_schema import extract_git_branch
+    17→
+    18→
+    19→@dataclass(frozen=True)
+    20→class SessionsForPlan:
+    21→    """Sessions associated with a plan issue.
+    22→
+    23→    Attributes:
+    24→        planning_session_id: Session that created the plan (from created_from_session)
+    25→        implementation_session_ids: Sessions where plan was implemented
+    26→        learn_session_ids: Sessions where learn was previously invoked
+    27→        last_remote_impl_at: Timestamp of remote implementation (if implemented via GitHub Actions)
+    28→        last_remote_impl_run_id: GitHub Actions run ID for remote implementation
+    29→        last_remote_impl_session_id: Claude Code session ID for remote implementation
+    30→        last_session_gist_url: URL of gist containing latest session JSONL
+
+... [35 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me read the remaining key files to complete my understanding.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3696" cache_read_input_tokens="71576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3696}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N8So6bqACxFGWTpVe8Xa6h">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/learn/extraction/session_source.py</param>
+    <param name="offset">175</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3696" cache_read_input_tokens="71576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3696}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N8So6bqACxFGWTpVe8Xa6h">
+   175→        self,
+   176→        *,
+   177→        session_id: str,
+   178→        run_id: str | None,
+   179→        path: str | None,
+   180→        gist_url: str | None,
+   181→    ) -&gt; None:
+   182→        self._session_id = session_id
+   183→        self._run_id = run_id
+   184→        self._path = path
+   185→        self._gist_url = gist_url
+   186→
+   187→    @property
+   188→    def source_type(self) -&gt; Literal["remote"]:
+   189→        """Return 'remote' for remote sessions."""
+   190→        return "remote"
+   191→
+   192→    @property
+   193→    def session_id(self) -&gt; str:
+   194→        """Return the session ID."""
+   195→        return self._session_id
+   196→
+   197→    @property
+   198→    def run_id(self) -&gt; str | None:
+   199→        """Return the GitHub Actions run ID if available."""
+   200→        return self._run_id
+   201→
+   202→    @property
+   203→    def path(self) -&gt; str | None:
+   204→        """Return the file path where the session is located.
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PBqxpRDUFimU3vtHh5eCyi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3696" cache_read_input_tokens="71576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3696}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PBqxpRDUFimU3vtHh5eCyi">
+     1→"""TypedDict definitions for get-learn-sessions JSON output.
+     2→
+     3→These types are the single source of truth for the JSON schema produced by
+     4→get-learn-sessions and consumed by trigger-async-learn (and other callers).
+     5→Using TypedDict gives static type safety via ty check without runtime overhead,
+     6→and maps directly to the dict access patterns used by JSON consumers.
+     7→"""
+     8→
+     9→from typing import TypedDict
+    10→
+    11→from erk_shared.learn.extraction.session_source import SessionSourceDict
+    12→
+    13→
+    14→class GetLearnSessionsResultDict(TypedDict):
+    15→    """Successful result from get-learn-sessions command."""
+    16→
+    17→    success: bool
+    18→    plan_id: str
+    19→    planning_session_id: str | None
+    20→    implementation_session_ids: list[str]
+    21→    learn_session_ids: list[str]
+    22→    readable_session_ids: list[str]
+    23→    session_paths: list[str]
+    24→    local_session_ids: list[str]
+    25→    last_remote_impl_at: str | None
+    26→    last_remote_impl_run_id: str | None
+    27→    last_remote_impl_session_id: str | None
+    28→    session_sources: list[SessionSourceDict]
+    29→    last_session_gist_url: str | None
+    30→    last_session_id: str | None
+
+... [14 lines omitted] ...
+
+    34→class GetLearnSessionsErrorDict(TypedDict):
+    35→    """Error result from get-learn-sessions command."""
+    38→    error: str
+  </tool_result>
+  <tool_use name="Read" id="toolu_0173KpP7KduB2hVsc74RAAdd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">330</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3696" cache_read_input_tokens="71576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3696}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0173KpP7KduB2hVsc74RAAdd">
+   330→    "source_repo",
+   331→    "objective_issue",
+   332→    "created_from_session",
+   333→    "created_from_workflow_run_url",
+   334→    "last_learn_session",
+   335→    "last_learn_at",
+   336→    "learn_status",
+   337→    "learn_run_id",
+   338→    "last_session_gist_url",
+   339→    "last_session_gist_id",
+   340→    "last_session_id",
+   341→    "last_session_at",
+   342→    "last_session_source",
+   343→    "learn_plan_issue",
+   344→    "learn_plan_pr",
+   345→    "learned_from_issue",
+   346→    "learn_materials_branch",
+   347→    "review_pr",
+   348→    "last_review_pr",
+   349→    "lifecycle_stage",
+   350→]
+   351→"""Union type of all valid plan-header field names."""
+   352→
+   353→# Required fields
+   354→SCHEMA_VERSION: Literal["schema_version"] = "schema_version"
+   355→CREATED_AT: Literal["created_at"] = "created_at"
+   356→CREATED_BY: Literal["created_by"] = "created_by"
+   357→
+   358→# Optional fields
+   359→WORKTREE_NAME: Literal["worktree_name"] = "worktree_name"
+
+... [55 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me read the remaining files.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3199" cache_read_input_tokens="75272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3199}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SaiuSQya84tNSV3WwwuXxV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">680</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3199" cache_read_input_tokens="75272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3199}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SaiuSQya84tNSV3WwwuXxV">
+   680→        if LEARN_STATUS in data and data[LEARN_STATUS] is not None:
+   681→            if not isinstance(data[LEARN_STATUS], str):
+   682→                raise ValueError("learn_status must be a string or null")
+   683→            valid_statuses = {
+   684→                "not_started",
+   685→                "pending",
+   686→                "completed_no_plan",
+   687→                "completed_with_plan",
+   688→                "pending_review",
+   689→                "plan_completed",
+   690→            }
+   691→            if data[LEARN_STATUS] not in valid_statuses:
+   692→                status_value = data[LEARN_STATUS]
+   693→                valid_list = ", ".join(sorted(valid_statuses))
+   694→                raise ValueError(f"learn_status must be one of: {valid_list}. Got '{status_value}'")
+   695→
+   696→        # Validate optional learn_run_id field
+   697→        if LEARN_RUN_ID in data and data[LEARN_RUN_ID] is not None:
+   698→            if not isinstance(data[LEARN_RUN_ID], str):
+   699→                raise ValueError("learn_run_id must be a string or null")
+   700→            if len(data[LEARN_RUN_ID]) == 0:
+   701→                raise ValueError("learn_run_id must not be empty when provided")
+   702→
+   703→        # Validate optional last_session_gist_url field
+   704→        if LAST_SESSION_GIST_URL in data and data[LAST_SESSION_GIST_URL] is not None:
+   705→            if not isinstance(data[LAST_SESSION_GIST_URL], str):
+   706→                raise ValueError("last_session_gist_url must be a string or null")
+   707→            if len(data[LAST_SESSION_GIST_URL]) == 0:
+   708→                raise ValueError("last_session_gist_url must not be empty when provided")
+   709→
+
+... [35 lines omitted] ...
+
+   713→                raise ValueError("last_session_gist_id must be a string or null")
+   715→                raise ValueError("last_session_gist_id must not be empty when provided")
+   720→                raise ValueError("last_session_id must be a string or null")
+   722→                raise ValueError("last_session_id must not be empty when provided")
+   727→                raise ValueError("last_session_at must be a string or null")
+   729→                raise ValueError("last_session_at must not be empty when provided")
+   734→                raise ValueError("last_session_source must be a string or null")
+   738→                raise ValueError(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UTvgW1QQL2oRToJgu5qFD7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">1070</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3199" cache_read_input_tokens="75272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3199}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UTvgW1QQL2oRToJgu5qFD7">
+  1070→    schema.validate(updated_data)
+  1071→
+  1072→    # Create new block and render
+  1073→    new_block = MetadataBlock(key="plan-header", data=updated_data)
+  1074→    new_block_content = render_metadata_block(new_block)
+  1075→
+  1076→    # Replace block in full body
+  1077→    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+  1078→
+  1079→
+  1080→def update_plan_header_session_gist(
+  1081→    *,
+  1082→    issue_body: str,
+  1083→    gist_url: str,
+  1084→    gist_id: str,
+  1085→    session_id: str,
+  1086→    session_at: str,
+  1087→    source: SessionSourceValue,
+  1088→) -&gt; str:
+  1089→    """Update session gist fields in plan-header metadata block.
+  1090→
+  1091→    Updates all 5 session gist fields atomically:
+  1092→    - last_session_gist_url (URL of the gist)
+  1093→    - last_session_gist_id (gist ID)
+  1094→    - last_session_id (Claude Code session ID)
+  1095→    - last_session_at (ISO 8601 timestamp)
+  1096→    - last_session_source ("local" or "remote")
+  1097→
+  1098→    Args:
+  1099→        issue_body: Current issue body containing plan-header block
+
+... [95 lines omitted] ...
+
+  1110→        ValueError: If plan-header block not found or invalid
+  1115→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VJpEvkdh29nkNiQe7jkKpv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">230</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3199" cache_read_input_tokens="75272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3199}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VJpEvkdh29nkNiQe7jkKpv">
+   230→            learn_seen.add(metadata_learn_session)
+   231→        for session_id in comment_learn_sessions:
+   232→            if session_id not in learn_seen:
+   233→                learn_session_ids.append(session_id)
+   234→                learn_seen.add(session_id)
+   235→
+   236→        return SessionsForPlan(
+   237→            planning_session_id=planning_session_id,
+   238→            implementation_session_ids=implementation_session_ids,
+   239→            learn_session_ids=learn_session_ids,
+   240→            last_remote_impl_at=extract_plan_header_remote_impl_at(body),
+   241→            last_remote_impl_run_id=extract_plan_header_remote_impl_run_id(body),
+   242→            last_remote_impl_session_id=extract_plan_header_remote_impl_session_id(body),
+   243→            last_session_gist_url=extract_plan_header_session_gist_url(body),
+   244→            last_session_id=extract_plan_header_last_session_id(body),
+   245→            last_session_source=extract_plan_header_last_session_source(body),
+   246→        )
+   247→
+   248→    # Branch → Plan resolution
+   249→
+   250→    @abstractmethod
+   251→    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -&gt; Plan | PlanNotFound:
+   252→        """Look up the plan associated with a branch.
+   253→
+   254→        Resolves the branch name to a plan identifier and fetches the full plan.
+   255→        Returns PlanNotFound if the branch is not a plan branch or the plan
+   256→        doesn't exist.
+   257→
+   258→        Args:
+   259→            repo_root: Repository root directory
+
+... [15 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me read the GitHub gateway ABC to understand the `create_gist` interface.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4088" cache_read_input_tokens="78471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4088}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RTPzPrae7KsD5NSuYZ5i5k">
+    <param name="command">grep -n "create_gist\|GistCreated\|GistCreateError" packages/erk-shared/src/erk_shared/gateway/github/abc.py | head -30</param>
+    <param name="description">Find create_gist in the ABC</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4088" cache_read_input_tokens="78471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4088}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RTPzPrae7KsD5NSuYZ5i5k">
+26:class GistCreated:
+35:class GistCreateError:
+761:    def create_gist(
+768:    ) -&gt; GistCreated | GistCreateError:
+780:            GistCreated on success with gist_id, gist_url, and raw_url.
+781:            GistCreateError on failure with error message.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01F6Cb7K9bZMbr3fBAMRQVPu">
+    <param name="command">grep -n "create_gist\|GistCreated\|GistCreateError" packages/erk-shared/src/erk_shared/gat...[truncated 113 chars]...un.py packages/erk-shared/src/erk_shared/gateway/github/printing.py 2&gt;/dev/null | head -40</param>
+    <param name="description">Find create_gist in all gateway implementations</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4088" cache_read_input_tokens="78471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4088}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F6Cb7K9bZMbr3fBAMRQVPu">
+packages/erk-shared/src/erk_shared/gateway/github/real.py:21:from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
+packages/erk-shared/src/erk_shared/gateway/github/real.py:2246:    def create_gist(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:2253:    ) -&gt; GistCreated | GistCreateError:
+packages/erk-shared/src/erk_shared/gateway/github/real.py:2284:                return GistCreateError(message="No gist URL returned from gh CLI")
+packages/erk-shared/src/erk_shared/gateway/github/real.py:2294:            return GistCreated(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:2300:            return GistCreateError(message=str(e))
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:13:from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:114:            gist_create_error: If set, create_gist() returns GistCreateError with this message.
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:1121:    def create_gist(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:1128:    ) -&gt; GistCreated | GistCreateError:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:1131:        Returns GistCreateError if gist_create_error is configured,
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:1132:        otherwise returns GistCreated with fake IDs.
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:1135:            return GistCreateError(message=self._gist_create_error)
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:1141:        return GistCreated(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:5:from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:340:    def create_gist(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:347:    ) -&gt; GistCreated | GistCreateError:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:350:        Returns a fake GistCreated to allow dry-run workflows to continue.
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:352:        return GistCreated(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:7:from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:369:    def create_gist(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:376:    ) -&gt; GistCreated | GistCreateError:
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:380:        result = self._wrapped.create_gist(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:383:        if isinstance(result, GistCreated):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KQMYABLXaCZibt9ypqVz4s">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">1185</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4088" cache_read_input_tokens="78471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4088}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KQMYABLXaCZibt9ypqVz4s">
+  1185→def extract_plan_header_last_session_source(issue_body: str) -&gt; SessionSourceValue | None:
+  1186→    """Extract last_session_source from plan-header block.
+  1187→
+  1188→    Args:
+  1189→        issue_body: Issue body containing plan-header block
+  1190→
+  1191→    Returns:
+  1192→        "local" or "remote" if found, None otherwise
+  1193→    """
+  1194→    block = find_metadata_block(issue_body, "plan-header")
+  1195→    if block is None:
+  1196→        return None
+  1197→
+  1198→    # Type narrowing: validation ensures this is a valid SessionSourceValue
+  1199→    value = block.data.get(LAST_SESSION_SOURCE)
+  1200→    if value is None:
+  1201→        return None
+  1202→    return value
+  1203→
+  1204→
+  1205→def extract_plan_header_learn_plan_issue(issue_body: str) -&gt; int | None:
+  1206→    """Extract learn_plan_issue from plan-header block.
+  1207→
+  1208→    Args:
+  1209→        issue_body: Issue body containing plan-header block
+  1210→
+  1211→    Returns:
+  1212→        Issue number of generated learn plan if found, None otherwise
+  1213→    """
+  1214→    block = find_metadata_block(issue_body, "plan-header")
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a comprehensive understanding of the current state. Let me create tasks and start implementing.
+
+Here's a summary of what needs to be done:
+
+**Step 1: Replace `upload_session.py` with branch-based storage**
+- Create `session/{plan_id}` branch from `origin/master`
+- Copy session JSONL to `.erk/session/{session_id}.jsonl` on that branch
+- Commit and force-push
+- Store `last_session_branch` (not `gist_url`/`gist_id`) on plan metadata
+- Needs `require_git(ctx)` 
+
+
+- Output: `session_branch` instead of `gist_id`/`gist_url`/`raw_url`
+
+**Step 2: Replace `download_remote_session.py` with branch-based download**
+- Replace `--gist-url` option with `--session-branch`
+- Use `git.remote.fetch_branch()` then `git show`
+- Remove `normalize_gist_url()`, urllib imports
+- Add `require_git(ctx)`
+- Output: `"source": "branch"` instead of `"gist"`
+
+**Step 3: Update `trigger_async_learn.py` remote session download**
+- Modify how it retrieves sessions from remote branches instead of gists
+
+, using git operations to fetch and display the session data
+- Remove the gist normalization logic and update the caller to read `session_branch` from the source item
+- Clean up the session branch after the learn branch is created and pushed
+
+**Step 4: Update `get_learn_sessions.py` session source discovery**
+- Switch to checking `sessions_for_plan.last_session_branch` and building `RemoteSessionSource` with the branch parameter instead of gist URL
+- Update output fields to use `last_session_branch` instead of `last_session_gist_url`
+
+Now I need to update the dataclasses and schema constants to reflect this change throughout the codebase. I'm replacing `gist_url` with `session_branch` in `RemoteSessionSource`, updating `GetLearnSessionsResultDict` and `SessionsForPlan` to use the new field name, and removing the old gist-related constants from the plan header metadata schema while adding the new branch constant.
+
+Next, I'll update the plan header extractor functions by removing the gist-specific ones and adding a new extractor for the session branch, then rename the update function accordingly. After that, I need to update the plan store backend to use the new extractor and finally remove the `create_gist` method from the GitHub gateway since we're no longer creating gists.
+
+I should also verify the workflow and documentation updates, then tackle the test updates. Before diving into implementation, let me look at how `trigger_async_learn.py` handles branch creation and file commits, plus review the git gateway methods to understand the patterns I'll need to follow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="82559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2154}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have full context. Let me create tasks and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="82559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2154}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_017EdoVhmbjcmVtT9rgvfJP9">
+    <param name="subject">Replace upload_session.py with branch-based storage</param>
+    <param name="description">Replace gist creation in upload_session.py with branch-based pattern. Create session/{plan...[truncated 119 chars]...adata. Needs require_git(ctx). Output: session_branch instead of gist_id/gist_url/raw_url.</param>
+    <param name="activeForm">Replacing upload_session.py gist with branch storage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="82559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2154}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017EdoVhmbjcmVtT9rgvfJP9">
+Task #1 created successfully: Replace upload_session.py with branch-based storage
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01AwGwHMnDizJmAPciickjHw">
+    <param name="subject">Replace download_remote_session.py with branch-based download</param>
+    <param name="description">Replace --gist-url option with --session-branch. Use git.remote.fetch_branch() + git show subprocess. Remove normalize_gist_url(), urllib imports. Add require_git(ctx). Output: "source": "branch".</param>
+    <param name="activeForm">Replacing download_remote_session.py gist with branch download</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="82559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2154}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AwGwHMnDizJmAPciickjHw">
+Task #2 created successfully: Replace download_remote_session.py with branch-based download
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01AUbw6D1feiYqsZ31pwzyK8">
+    <param name="subject">Update trigger_async_learn.py remote session download</param>
+    <param name="description">Update _download_remote_session_for_learn() to use session_branch instead of gist_url. Rep...[truncated 95 chars]... read session_branch from source item. Add session branch cleanup after learn branch push.</param>
+    <param name="activeForm">Updating trigger_async_learn.py for branch-based session download</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="82559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2154}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AUbw6D1feiYqsZ31pwzyK8">
+Task #3 created successfully: Update trigger_async_learn.py remote session download
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_015e2zqJqMgLtxrQ3Y31jZ1j">
+    <param name="subject">Update shared types, schema, plan header, and backend</param>
+    <param name="description">Update: (4) get_learn_sessions.py - check last_session_branch instead of last_session_gist...[truncated 243 chars]...ate extractors and update function; (10) backend.py - update SessionsForPlan construction.</param>
+    <param name="activeForm">Updating shared types, schema, and plan header</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="82559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2154}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015e2zqJqMgLtxrQ3Y31jZ1j">
+Task #4 created successfully: Update shared types, schema, plan header, and backend
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Vy9CUdmGrR5Wvz8zznPRPV">
+    <param name="subject">Remove create_gist from GitHub gateway ABC and all implementations</param>
+    <param name="description">Remove create_gist abstract method, GistCreated, GistCreateError types from abc.py. Remove...[truncated 10 chars]...om real.py, fake.py, dry_run.py, printing.py. Remove _created_gists tracking from fake.py.</param>
+    <param name="activeForm">Removing create_gist from GitHub gateway</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="82559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2154}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vy9CUdmGrR5Wvz8zznPRPV">
+Task #5 created successfully: Remove create_gist from GitHub gateway ABC and all implementations
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_017TYkGHwEaP5wzbx7GbVksF">
+    <param name="subject">Update tests and regenerate exec reference docs</param>
+    <param name="description">Update test files: test_upload_session.py (branch assertions), test_download_remote_sessio...[truncated 122 chars]....py (schema fields). Remove gateway tests for create_gist. Regenerate exec reference docs.</param>
+    <param name="activeForm">Updating tests and regenerating exec docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="82559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2154}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017TYkGHwEaP5wzbx7GbVksF">
+Task #6 created successfully: Update tests and regenerate exec reference docs
+  </tool_result>
+  <thinking>Let me now look at how the git gateway works for branch creation, so I can pattern the upload_session.py implementation correctly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2353" cache_read_input_tokens="84713" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2353}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the git gateway interface to understand branch/commit operations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2353" cache_read_input_tokens="84713" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2353}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VkKBJdYQPLvCP3a5dJ78aN">
+    <param name="command">grep -n "fetch_branch\|create_branch\|checkout_branch\|stage_files\|commit\|push_to_remote" packages/erk-shared/src/erk_shared/gateway/git/abc.py | head -40</param>
+    <param name="description">Check git gateway ABC methods</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2353" cache_read_input_tokens="84713" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2353}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VkKBJdYQPLvCP3a5dJ78aN">
+22:    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+36:        is_diverged: True if the branch has commits both ahead and behind the remote.
+38:        ahead: Number of commits on local branch not present on remote.
+39:        behind: Number of commits on remote branch not present locally.
+127:    def commit(self) -&gt; GitCommitOps:
+128:        """Access commit operations subgateway."""
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BznGUZ6Azb6v8di4LU42UT">
+    <param name="command">grep -n "def fetch_branch\|def push_to_remote\|def create_branch" packages/erk-shared/src/erk_shared/gateway/git/remote.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check git remote gateway methods</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2353" cache_read_input_tokens="84713" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2353}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BznGUZ6Azb6v8di4LU42UT">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015dAXGEM9hxnAhni8RXT7bs">
+    <param name="command">find packages/erk-shared/src/erk_shared/gateway/git -name "*.py" | head -20</param>
+    <param name="description">List git gateway files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="87066" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 471}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015dAXGEM9hxnAhni8RXT7bs">
+packages/erk-shared/src/erk_shared/gateway/git/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/__init__.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/__init__.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/__init__.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MECmrzGVVXZmE94WYviHv6">
+    <param name="command">grep -n "def " packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py</param>
+    <param name="description">Check git remote_ops ABC methods</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="87537" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 630}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MECmrzGVVXZmE94WYviHv6">
+28:    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -&gt; None:
+39:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+51:    def fetch_pr_ref(
+73:    def push_to_remote(
+97:    def pull_rebase(
+121:    def get_remote_url(self, repo_root: Path, remote: str) -&gt; str:
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KvssuQg5vGj8UwGpwGgSzQ">
+    <param name="command">grep -n "def " packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py 2&gt;/dev/null | head -30</param>
+    <param name="description">Check git branch_ops ABC methods</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="87537" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 630}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KvssuQg5vGj8UwGpwGgSzQ">
+27:    def create_branch(
+44:    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -&gt; None:
+55:    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+65:    def checkout_detached(self, cwd: Path, ref: str) -&gt; None:
+75:    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; None:
+93:    def get_current_branch(self, cwd: Path) -&gt; str | None:
+105:    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+117:    def list_remote_branches(self, repo_root: Path) -&gt; list[str]:
+132:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+145:    def detect_trunk_branch(self, repo_root: Path) -&gt; str:
+161:    def validate_trunk_branch(self, repo_root: Path, name: str) -&gt; str:
+177:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+191:    def get_ahead_behind(self, cwd: Path, branch: str) -&gt; tuple[int, int]:
+204:    def get_all_branch_sync_info(self, repo_root: Path) -&gt; dict[str, BranchSyncInfo]:
+218:    def is_branch_diverged_from_remote(
+237:    def get_branch_issue(self, repo_root: Path, branch: str) -&gt; int | None:
+253:    def get_behind_commit_authors(self, cwd: Path, branch: str) -&gt; list[str]:
+269:    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -&gt; str | None:
+286:    def get_branch_commits_with_authors(
+  </tool_result>
+  <thinking>Now I have enough understanding. Let me look at how the trigger_async_learn.py creates the learn branch to use as a pattern for upload_session.py.
+
+From the trigger_async_learn.py code I read, the pattern is:
+1. Get original branch
+2. Delete existing local branch if it exists
+3. Create branch from `origin/master`
+4. Checkout the branch
+5. In try block: copy files, stage, commit, push
+6. In finally block: checkout original branch
+
+For upload_session.py, I need to:
+1. Copy session JSONL to `.erk/session/{session_id}.jsonl` on the `session/{plan_id}` branch
+
+
+2. Commit and force-push
+3. Restore original branch in finally block
+
+Now I should check the commit_ops ABC to see how the `commit` function works and what stage_files does.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="869" cache_read_input_tokens="88167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 869}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011oXReybzMfVB4CkS2bFrCC">
+    <param name="command">grep -n "def " packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py</param>
+    <param name="description">Check git commit_ops ABC methods</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="869" cache_read_input_tokens="88167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 869}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011oXReybzMfVB4CkS2bFrCC">
+25:    def stage_files(self, cwd: Path, paths: list[str]) -&gt; None:
+38:    def commit(self, cwd: Path, message: str) -&gt; None:
+53:    def add_all(self, cwd: Path) -&gt; None:
+65:    def amend_commit(self, cwd: Path, message: str) -&gt; None:
+82:    def get_commit_message(self, repo_root: Path, commit_sha: str) -&gt; str | None:
+95:    def get_commit_messages_since(self, cwd: Path, base_branch: str) -&gt; list[str]:
+110:    def get_head_commit_message_full(self, cwd: Path) -&gt; str:
+124:    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -&gt; list[dict[str, str]]:
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01YG8QcwihSAfscdQYFrKsHa">
+    <param name="command">grep -n "def git\|def require_git\|from erk_shared.context.helpers" packages/erk-shared/src/erk_shared/context/helpers.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check context helpers for require_git</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="869" cache_read_input_tokens="88167" output_tokens="428" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 869, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YG8QcwihSAfscdQYFrKsHa">
+160:def require_git(ctx: click.Context) -&gt; Git:
+189:def require_github(ctx: click.Context) -&gt; GitHub:
+  </tool_result>
+  <thinking>Now I understand the full picture. Let me start implementing.
+
+## Phase 1: Replace `upload_session.py` with branch-based storage
+
+The key changes:
+1. Add `require_git(ctx)`
+2. Create `session/{plan_id}` branch from `origin/master`
+3. Copy session JSONL to `.erk/session/{session_id}.jsonl` on that branch
+4. Commit and force-push (force for re-implementation idempotency)
+5. Restore original branch in `finally` block
+6. Store `last_session_branch` metadata
+7. Output: `session_branch` instead of `gist_id`/`gist_url`/`raw_url`
+
+
+8. I'll follow the same pattern as `trigger_async_learn.py` — save the current branch, delete any existing session branch locally, create a fresh one from `origin/master`, then restore the original branch afterward. Setting up the session branch with a similar pattern—checking for existing branches, creating a fresh one from origin/master, then setting up the session directory structure and copying the session data.
+
+Now I'm realizing the session JSONL needs to go into `.erk/session/{session_id}.jsonl` on that branch, then I'll stage and commit it before pushing upstream, and finally switch back to the original branch. After that, I need to update the metadata to track which session branch was just created.
+
+For the metadata, I'm replacing the old gist-based fields (`last_session_gist_url` and `last_session_gist_id`) with a single `last_session_branch` field, while keeping `last_session_id`, `last_session_at`, and `last_session_source` unchanged. The JSON output will also shift from using `gist_id`/`gist_url`/`raw_url` to just `session_branch`.
+
+One thing I'm noticing though—the plan requires `--plan-id` for branch creation since we need the `session/{plan_id}` directory structure, but the current code has `plan_id` as optional. I need to either make it required when creating a branch or handle the case where it's None.
+
+Looking at the existing logic, when `plan_id is None`, the plan metadata doesn't get updated anyway. So I'll keep the branch creation logic inside the `if plan_id is not None:` check to ensure we only create branches when we have the necessary plan ID. create gist, output gist info with plan_id, update plan. For the branch-based approach, if plan_id is missing, I can't create a meaningful `session/{plan_id}` branch — I could either fail with an error or use a fallback like `session/local-{session_id}`, though the plan seems to expect plan_id to always be present for this flow.
+
+Looking at the actual command interface in step 10b, `--issue-number` is always provided, and the CI workflow also supplies plan_id, so in practice plan_id should be available. I'll keep `--plan-id` optional in the interface but make branch creation conditional on it — if it's missing, I'll output an error prompting the user to provide it.
+
+Let me check the workflow file to understand what it's actually doing.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="89036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 726}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LxrctA4scviX5S1wchg6MJ">
+    <param name="command">grep -n "upload-session\|upload_session" .github/workflows/plan-implement.yml | head -20</param>
+    <param name="description">Check how upload-session is called in CI</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="89036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 726}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LxrctA4scviX5S1wchg6MJ">
+280:          erk exec upload-session \
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CDWeHVeVW9FDstjBqjgJQX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+    <param name="offset">120</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="89036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 726}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CDWeHVeVW9FDstjBqjgJQX">
+   120→    @abstractmethod
+   121→    def remote(self) -&gt; GitRemoteOps:
+   122→        """Access remote operations subgateway."""
+   123→        ...
+   124→
+   125→    @property
+   126→    @abstractmethod
+   127→    def commit(self) -&gt; GitCommitOps:
+   128→        """Access commit operations subgateway."""
+   129→        ...
+   130→
+   131→    @property
+   132→    @abstractmethod
+   133→    def status(self) -&gt; GitStatusOps:
+   134→        """Access status operations subgateway."""
+   135→        ...
+   136→
+   137→    @property
+   138→    @abstractmethod
+   139→    def rebase(self) -&gt; GitRebaseOps:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BnfVP9yzoCRj3xu1JgKq4w">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/.github/workflows/plan-implement.yml</param>
+    <param name="offset">270</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2726" cache_read_input_tokens="89762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2726}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+</session>

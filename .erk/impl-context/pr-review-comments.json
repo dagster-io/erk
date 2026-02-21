@@ -1,0 +1,60 @@
+{
+  "success": true,
+  "pr_number": 7757,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v7jzz",
+      "path": "src/erk/cli/commands/exec/scripts/download_remote_session.py",
+      "line": 78,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: subprocess.run() missing check=True - silent failure on non-zero exit (subprocess.md)",
+          "created_at": "2026-02-21T18:07:38Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "False positive: This is an intentional LBYL pattern. Line 83 checks `result.returncode != 0` and returns an error message string for graceful degradation. Adding `check=True` would raise an exception instead of returning the user-friendly error. Per subprocess-wrappers.md: DO NOT migrate check=False LBYL patterns.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 18:32 UTC_",
+          "created_at": "2026-02-21T18:32:22Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v7j0r",
+      "path": "src/erk/cli/commands/exec/scripts/trigger_async_learn.py",
+      "line": 259,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: subprocess.run() missing check=True - silent failure on non-zero exit (subprocess.md)",
+          "created_at": "2026-02-21T18:07:43Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "False positive: This is an intentional LBYL pattern. Line 264 checks `result.returncode != 0` and returns None for graceful degradation. The function docstring says it returns Path or None. Adding check=True would break this contract. Per subprocess-wrappers.md: DO NOT migrate check=False LBYL patterns.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 18:32 UTC_",
+          "created_at": "2026-02-21T18:32:24Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v7j19",
+      "path": "src/erk/cli/commands/exec/scripts/trigger_async_learn.py",
+      "line": 645,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: subprocess.run() missing check=True - silent failure on non-zero exit (subprocess.md)",
+          "created_at": "2026-02-21T18:07:48Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "False positive: This is a fire-and-forget cleanup operation (deleting session branches after materials are safely on the learn branch). Failure to delete a branch should not block the learn workflow. Per subprocess-wrappers.md graceful degradation section: use this pattern when the operation is optional and has fire-and-forget semantics.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 18:32 UTC_",
+          "created_at": "2026-02-21T18:32:26Z"
+        }
+      ]
+    }
+  ]
+}

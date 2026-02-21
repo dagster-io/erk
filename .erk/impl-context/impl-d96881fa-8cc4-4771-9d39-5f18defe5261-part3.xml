@@ -1,0 +1,911 @@
+<session>
+  <meta branch="plan/replace-session-gist-archi-02-21-1117" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01BnfVP9yzoCRj3xu1JgKq4w">
+   270→          fi
+   271→
+   272→      - name: Upload session to gist and update plan header
+   273→        if: always() &amp;&amp; steps.session.outputs.session_id
+   274→        env:
+   275→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   276→          PLAN_ID: ${{ inputs.plan_id }}
+   277→          SESSION_ID: ${{ steps.session.outputs.session_id }}
+   278→          SESSION_FILE: ${{ steps.session.outputs.session_file }}
+   279→        run: |
+   280→          erk exec upload-session \
+   281→            --session-file "$SESSION_FILE" \
+   282→            --session-id "$SESSION_ID" \
+   283→            --source remote \
+   284→            --plan-id "$PLAN_ID"
+   285→
+   286→      - name: Update plan header with remote impl info
+   287→        if: always() &amp;&amp; steps.session.outputs.session_id
+   288→        continue-on-error: true
+   289→        env:
+   290→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   291→          PLAN_ID: ${{ inputs.plan_id }}
+   292→          RUN_ID: ${{ github.run_id }}
+   293→          SESSION_ID: ${{ steps.session.outputs.session_id }}
+   294→          BRANCH_NAME: ${{ inputs.branch_name }}
+   295→        run: |
+   296→          erk exec update-plan-remote-session \
+   297→            --plan-id "$PLAN_ID" \
+   298→            --run-id "$RUN_ID" \
+   299→            --session-id "$SESSION_ID" \
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>Good. The CI always provides `--plan-id`, so that's fine. Now let me start implementing all the phases.
+
+## Implementation Plan
+
+### Phase 1: Replace `upload_session.py` with branch-based storage
+
+The new `upload_session.py` will:
+1. Add `require_git(ctx)` and `shutil`
+2. Remove gist creation logic
+3. Add branch creation pattern (like trigger_async_learn.py)
+4. Create `session/{plan_id}` branch from `origin/master`
+5. Copy session JSONL to `.erk/session/{session_id}.jsonl` on that branch
+
+
+6. Commit and force-push, then restore the original branch in a finally block
+7. Store `last_session_branch` metadata instead of gist URLs
+8. Return `session_branch` in the output rather than gist identifiers
+
+If plan_id is missing, I'll error out since the branch approach requires it, even though the interface keeps it optional for backward compatibility.
+
+### Phase 2: Replace `download_remote_session.py` with branch-based download
+
+The new download_remote_session.py will swap `--gist-url` for `--session-branch` and fetch the session data directly from the branch instead.
+
+### Phase 3: Update `trigger_async_learn.py` remote session download
+
+I need to refactor the remote session download to use `session_branch` and git operations instead of urllib, then clean up the session branch after the learn branch is created and pushed.
+
+### Phase 4: Update shared types, schema, plan header, and backend
+
+Still updating schema... I need to remove the `create_gist` function from the GitHub gateway implementations across multiple files: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, and `printing.py`. Then I'll move on to updating the test suite to reflect these changes.
+
+Now I'm starting Phase 1 by rewriting the `upload_session.py` module. I'm creating a new command that uploads a Claude Code session to a git branch and updates the plan header metadata, replacing the old gist-based approach with branch-based storage.
+
+Writing the upload command implementation... Setting up the CLI command structure... I'm checking that plan-id is provided, then retrieving the repo root, git instance, and time utility from the context. I'm setting up the session branch name based on the plan ID, capturing the current branch to restore it later, and checking if the session branch already exists locally so I can delete it for idempotency.
+
+Setting up the session branch from origin/master and checking out to it...
+
+Copying the session JSONL file to the .erk/session directory, then staging, committing, and force-pushing the changes to origin before checking back out to the original branch. After that, I'm building the result object with the session and plan details, then preparing to update the plan backend with a timestamp.
+
+Now I'm creating metadata about the session and checking if the plan exists before attempting to update it—if the plan isn't found, I'll mark the issue update as failed, otherwise I'll proceed with updating the metadata.
+
+Then I need to verify whether the `require_github` import is still necessary since I'm removing the gist creation functionality, and I should also clean up the related `GistCreateError` import. Before updating the tests, I want to implement the schema changes in Phase 4 first since those will determine what fields `upload_session.py` can actually update.
+
+I'll work through the phases in order to avoid circular dependencies: starting with the schema updates to add the branch field and remove gist-related fields, then updating the plan header extractor and rename functions, followed by the SessionsForPlan field renaming, backend construction changes, RemoteSessionSource updates, and finally the session discovery logic. After that I can tackle the three main command files.
+
+But I'm realizing there's a dependency issue I need to handle carefully—the schema validation will reject the old gist fields once I remove them, but `upload_session.py` calls `backend.update_metadata()` with those fields, so I need to trace through exactly how that flow works to update it in the right order.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="667" cache_read_input_tokens="92488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 667}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at how the plan backend updates metadata.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="667" cache_read_input_tokens="92488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 667}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LspT16g9698ANdWQarEHNJ">
+    <param name="command">grep -n "update_metadata\|update_plan_header" packages/erk-shared/src/erk_shared/plan_store/backend.py | head -20</param>
+    <param name="description">Find update_metadata in plan_store backend</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="667" cache_read_input_tokens="92488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 667}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LspT16g9698ANdWQarEHNJ">
+68:        update_metadata: Update plan metadata
+316:    def update_metadata(
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PoVXPQpZoJ4PYNJhyDyetd">
+    <param name="command">grep -n "update_plan_header_session_gist\|session_gist\|session_branch" packages/erk-shared/src/erk_shared/plan_store/ -r | head -20</param>
+    <param name="description">Find session gist references in plan_store</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="667" cache_read_input_tokens="92488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 667}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PoVXPQpZoJ4PYNJhyDyetd">
+packages/erk-shared/src/erk_shared/plan_store/backend.py:35:    extract_plan_header_session_gist_url,
+packages/erk-shared/src/erk_shared/plan_store/backend.py:243:            last_session_gist_url=extract_plan_header_session_gist_url(body),
+Binary file packages/erk-shared/src/erk_shared/plan_store/__pycache__/backend.cpython-313.pyc matches
+  </tool_result>
+  <tool_use name="Read" id="toolu_016w5u4dcuVub8c6auusPtrX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">315</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3445" cache_read_input_tokens="93155" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3445}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016w5u4dcuVub8c6auusPtrX">
+   315→    @abstractmethod
+   316→    def update_metadata(
+   317→        self,
+   318→        repo_root: Path,
+   319→        plan_id: str,
+   320→        metadata: Mapping[str, object],
+   321→    ) -&gt; None:
+   322→        """Update plan metadata.
+   323→
+   324→        Args:
+   325→            repo_root: Repository root directory
+   326→            plan_id: Provider-specific identifier
+   327→            metadata: New metadata to set
+   328→
+   329→        Raises:
+   330→            PlanHeaderNotFoundError: If plan has no plan-header metadata block
+   331→            RuntimeError: If provider fails or plan not found
+   332→        """
+   333→        ...
+   334→
+   335→    @abstractmethod
+   336→    def update_plan_content(
+   337→        self,
+   338→        repo_root: Path,
+   339→        plan_id: str,
+   340→        content: str,
+   341→    ) -&gt; None:
+   342→        """Update the plan content body.
+   343→
+   344→        Args:
+
+... [15 lines omitted] ...
+
+   350→            RuntimeError: If plan not found or update fails
+  </tool_result>
+  <thinking>The `update_metadata` takes a `Mapping[str, object]` and the implementation will use those keys to update the plan header. The schema validation will determine what fields are valid. Let me check how `update_metadata` actually works in the implementation to understand how the schema validation is applied.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="611" cache_read_input_tokens="96600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 611}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DthgnqKb9danWzdrKybp8n">
+    <param name="command">grep -n "def update_metadata" packages/erk-shared/src/erk_shared/plan_store/providers/github_issues.py packages/erk-shared/src/erk_shared/plan_store/providers/github_draft_pr.py 2&gt;/dev/null | head -10</param>
+    <param name="description">Find update_metadata implementations</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="611" cache_read_input_tokens="96600" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 611, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DthgnqKb9danWzdrKybp8n">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MHu3tpXNqbDfvJ3rbx1Lm7">
+    <param name="command">find packages/erk-shared/src/erk_shared/plan_store -name "*.py" | xargs grep -l "def update_metadata" 2&gt;/dev/null</param>
+    <param name="description">Find files with update_metadata implementation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="97211" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 247}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MHu3tpXNqbDfvJ3rbx1Lm7">
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/draft_pr.py
+packages/erk-shared/src/erk_shared/plan_store/github.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Uu5sm5m4Y4Am764YSfFTut">
+    <param name="command">grep -n "update_metadata\|update_plan_header" packages/erk-shared/src/erk_shared/plan_store/github.py | head -20</param>
+    <param name="description">Check update_metadata in github plan store</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="195" cache_read_input_tokens="97458" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 195, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Uu5sm5m4Y4Am764YSfFTut">
+456:    def update_metadata(
+637:        self.update_metadata(repo_root, plan_id, metadata)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T5muKpcKCYcRVx1MgTDJLh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/plan_store/github.py</param>
+    <param name="offset">456</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="97653" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T5muKpcKCYcRVx1MgTDJLh">
+   456→    def update_metadata(
+   457→        self,
+   458→        repo_root: Path,
+   459→        plan_id: str,
+   460→        metadata: Mapping[str, object],
+   461→    ) -&gt; None:
+   462→        """Update plan metadata in the issue body.
+   463→
+   464→        Fetches the current issue body, updates the plan-header metadata block,
+   465→        and updates the issue body. Accepts any field recognized by PlanHeaderSchema
+   466→        except immutable fields (schema_version, created_at, created_by).
+   467→
+   468→        Args:
+   469→            repo_root: Repository root directory
+   470→            plan_id: Provider-specific identifier (issue number)
+   471→            metadata: New metadata to set (validated by PlanHeaderSchema)
+   472→
+   473→        Raises:
+   474→            RuntimeError: If provider fails or plan not found
+   475→        """
+   476→        issue_number = int(plan_id)
+   477→        issue = self._github_issues.get_issue(repo_root, issue_number)
+   478→        if isinstance(issue, IssueNotFound):
+   479→            msg = f"Issue #{issue_number} not found"
+   480→            raise RuntimeError(msg)
+   481→
+   482→        # Parse current metadata from issue body
+   483→        block = find_metadata_block(issue.body, "plan-header")
+   484→        if block is None:
+   485→            raise PlanHeaderNotFoundError("plan-header block not found in issue body")
+
+... [15 lines omitted] ...
+  </tool_result>
+  <thinking>The `update_metadata` calls `schema.validate()` after merging. So if I add `last_session_branch` to the schema as a valid field and remove the gist fields, then the schema will accept the new field names. Good.
+
+Now let me plan the implementation order:
+
+1. **schemas.py** - Add `LAST_SESSION_BRANCH`, remove `LAST_SESSION_GIST_URL`/`LAST_SESSION_GIST_ID`, update `VALID_PLAN_HEADER_FIELDS`, update validation
+2. **plan_header.py** - Add `extract_plan_header_session_branch()`, add `update_plan_header_session_branch()`, remove old gist functions
+
+
+3. **discovery.py**, **session_source.py**, **get_learn_sessions_result.py**, and **backend.py** - Replace all the gist field references with the new `last_session_branch` field throughout these modules.
+4. **get_learn_sessions.py**, **upload_session.py**, **download_remote_session.py**, and **trigger_async_learn.py** - Update session handling to work with branches instead of gists.
+5. **GitHub gateway implementations** - Remove the gist creation method across all variants (abc, real, fake, dry_run, printing).
+
+Now I'm moving into the schema updates. I need to modify `VALID_PLAN_HEADER_FIELDS` to remove the old gist URL and ID fields, then add the new branch field. I'll also need to clean up the related constants.
+
+Updating validation logic...</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="97807" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R6h5RXcZTmzT5vgGZrzbkZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">730</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="97807" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R6h5RXcZTmzT5vgGZrzbkZ">
+   730→
+   731→        # Validate optional last_session_source field
+   732→        if LAST_SESSION_SOURCE in data and data[LAST_SESSION_SOURCE] is not None:
+   733→            if not isinstance(data[LAST_SESSION_SOURCE], str):
+   734→                raise ValueError("last_session_source must be a string or null")
+   735→            valid_sources = {"local", "remote"}
+   736→            if data[LAST_SESSION_SOURCE] not in valid_sources:
+   737→                source_value = data[LAST_SESSION_SOURCE]
+   738→                raise ValueError(
+   739→                    f"last_session_source must be 'local' or 'remote', got '{source_value}'"
+   740→                )
+   741→
+   742→        # Validate optional learn_plan_issue field
+   743→        if LEARN_PLAN_ISSUE in data and data[LEARN_PLAN_ISSUE] is not None:
+   744→            if not isinstance(data[LEARN_PLAN_ISSUE], int):
+   745→                raise ValueError("learn_plan_issue must be an integer or null")
+   746→            if data[LEARN_PLAN_ISSUE] &lt;= 0:
+   747→                raise ValueError("learn_plan_issue must be positive when provided")
+   748→
+   749→        # Validate optional learn_plan_pr field
+   750→        if LEARN_PLAN_PR in data and data[LEARN_PLAN_PR] is not None:
+   751→            if not isinstance(data[LEARN_PLAN_PR], int):
+   752→                raise ValueError("learn_plan_pr must be an integer or null")
+   753→            if data[LEARN_PLAN_PR] &lt;= 0:
+   754→                raise ValueError("learn_plan_pr must be positive when provided")
+   755→
+   756→        # Validate optional learned_from_issue field
+   757→        if LEARNED_FROM_ISSUE in data and data[LEARNED_FROM_ISSUE] is not None:
+   758→            if not isinstance(data[LEARNED_FROM_ISSUE], int):
+   759→                raise ValueError("learned_from_issue must be an integer or null")
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DKA9LFangm2MBXGXxPC9cY">
+    <param name="command">grep -n "LAST_SESSION_GIST\|last_session_gist" packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="description">Find all gist references in schemas.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="97807" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DKA9LFangm2MBXGXxPC9cY">
+338:    "last_session_gist_url",
+339:    "last_session_gist_id",
+384:LAST_SESSION_GIST_URL: Literal["last_session_gist_url"] = "last_session_gist_url"
+385:LAST_SESSION_GIST_ID: Literal["last_session_gist_id"] = "last_session_gist_id"
+478:        last_session_gist_url: URL of gist containing session JSONL (nullable)
+479:        last_session_gist_id: ID of gist containing session JSONL (nullable)
+518:            LAST_SESSION_GIST_URL,
+519:            LAST_SESSION_GIST_ID,
+703:        # Validate optional last_session_gist_url field
+704:        if LAST_SESSION_GIST_URL in data and data[LAST_SESSION_GIST_URL] is not None:
+705:            if not isinstance(data[LAST_SESSION_GIST_URL], str):
+706:                raise ValueError("last_session_gist_url must be a string or null")
+707:            if len(data[LAST_SESSION_GIST_URL]) == 0:
+708:                raise ValueError("last_session_gist_url must not be empty when provided")
+710:        # Validate optional last_session_gist_id field
+711:        if LAST_SESSION_GIST_ID in data and data[LAST_SESSION_GIST_ID] is not None:
+712:            if not isinstance(data[LAST_SESSION_GIST_ID], str):
+713:                raise ValueError("last_session_gist_id must be a string or null")
+714:            if len(data[LAST_SESSION_GIST_ID]) == 0:
+715:                raise ValueError("last_session_gist_id must not be empty when provided")
+  </tool_result>
+  <thinking>Now let me look at the full schemas.py section where these fields are used.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2214" cache_read_input_tokens="98562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2214}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have everything I need. Let me implement all phases.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2214" cache_read_input_tokens="98562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2214}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01D3c8JzsiFp4wePV2ZAV9an">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2214" cache_read_input_tokens="98562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2214}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D3c8JzsiFp4wePV2ZAV9an">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Update shared types, schema, plan header, and backend**
+
+First, update `schemas.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="136" cache_read_input_tokens="100776" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 136}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013difQbi1ySYujGtkZJdE5u">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">    "last_session_gist_url",
+    "last_session_gist_id",
+    "last_session_id",</param>
+    <param name="new_string">    "last_session_branch",
+    "last_session_id",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="136" cache_read_input_tokens="100776" output_tokens="226" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 136, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013difQbi1ySYujGtkZJdE5u">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the constant definitions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="100912" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 325}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01555c4KtoR9rWEQA8dDRh3Y">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string"># Session gist fields (unified for local and remote)
+LAST_SESSION_GIST_URL: Literal["last_...[truncated 77 chars]...] = "last_session_gist_id"
+LAST_SESSION_ID: Literal["last_session_id"] = "last_session_id"</param>
+    <param name="new_string"># Session branch fields (unified for local and remote)
+LAST_SESSION_BRANCH: Literal["last_session_branch"] = "last_session_branch"
+LAST_SESSION_ID: Literal["last_session_id"] = "last_session_id"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="100912" output_tokens="326" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01555c4KtoR9rWEQA8dDRh3Y">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the docstring and the list of optional fields in the schema class:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="101237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 425}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E4gHdbs3NX48j7UNTqGmLJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">470</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="101237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 425}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E4gHdbs3NX48j7UNTqGmLJ">
+   470→        last_learn_session: Session ID that last invoked learn (nullable)
+   471→        last_learn_at: ISO 8601 timestamp of last learn invocation (nullable)
+   472→        learn_status: Learning workflow status (nullable)
+   473→        learn_plan_issue: Issue number of generated learn plan (nullable)
+   474→        learn_plan_pr: PR number that implemented the learn plan (nullable)
+   475→        learned_from_issue: Parent plan issue number (for learn plans only) (nullable)
+   476→        last_session_gist_url: URL of gist containing session JSONL (nullable)
+   477→        last_session_gist_id: ID of gist containing session JSONL (nullable)
+   478→        last_session_id: Claude Code session ID of uploaded session (nullable)
+   479→        last_session_at: ISO 8601 timestamp of session upload (nullable)
+   480→        last_session_source: "local" or "remote" indicating session origin (nullable)
+   481→        learn_materials_branch: Branch containing preprocessed learn materials (nullable)
+   482→        review_pr: PR number for plan review (nullable)
+   483→        last_review_pr: PR number of the last completed review (nullable)
+   484→        lifecycle_stage: Current stage in the plan lifecycle (nullable)
+   485→    """
+   486→
+   487→    def validate(self, data: dict[str, Any]) -&gt; None:
+   488→        """Validate plan-header data structure."""
+   489→        required_fields = {
+   490→            SCHEMA_VERSION,
+   491→            CREATED_AT,
+   492→            CREATED_BY,
+   493→        }
+   494→        optional_fields = {
+   495→            WORKTREE_NAME,
+   496→            BRANCH_NAME,
+   497→            PLAN_COMMENT_ID,
+   498→            LAST_DISPATCHED_RUN_ID,
+   499→            LAST_DISPATCHED_NODE_ID,
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012sZun5tXMK7nspN4Pf6ET1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">        last_session_gist_url: URL of gist containing session JSONL (nullable)
+        las...[truncated 34 chars]... (nullable)
+        last_session_id: Claude Code session ID of uploaded session (nullable)</param>
+    <param name="new_string">        last_session_branch: Branch containing session JSONL (nullable)
+        last_session_id: Claude Code session ID of uploaded session (nullable)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1140" cache_read_input_tokens="101662" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1140}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012sZun5tXMK7nspN4Pf6ET1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0135Z1oyyzjqAU3iuVekWQpf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">            LAST_SESSION_GIST_URL,
+            LAST_SESSION_GIST_ID,
+            LAST_SESSION_ID,</param>
+    <param name="new_string">            LAST_SESSION_BRANCH,
+            LAST_SESSION_ID,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="102802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 344}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0135Z1oyyzjqAU3iuVekWQpf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the gist validation blocks and add session_branch validation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="103146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017beUQUXHRCrQDrnxJJmAxk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">        # Validate optional last_session_gist_url field
+        if LAST_SESSION_GIST_URL i...[truncated 712 chars]...st_id must not be empty when provided")
+
+        # Validate optional last_session_id field</param>
+    <param name="new_string">        # Validate optional last_session_branch field
+        if LAST_SESSION_BRANCH in da...[truncated 270 chars]...ranch must not be empty when provided")
+
+        # Validate optional last_session_id field</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="103146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017beUQUXHRCrQDrnxJJmAxk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `plan_header.py` - add new extractor and update function, remove old gist functions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="886" cache_read_input_tokens="103447" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 886}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M1sdKksh6aUeXMUCRXfw4C">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">1,</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="886" cache_read_input_tokens="103447" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 886}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M1sdKksh6aUeXMUCRXfw4C">
+&lt;tool_use_error&gt;InputValidationError: Read failed due to the following issue:
+The parameter `offset` type is expected as `number` but provided as `string`&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XL3aWRAebQJhnNJKoPhTCU">
+    <param name="command">grep -n "LAST_SESSION_GIST\|from erk_shared.gateway.github.metadata.schemas import" packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py | head -20</param>
+    <param name="description">Find gist-related imports and usages in plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="104333" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 240, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XL3aWRAebQJhnNJKoPhTCU">
+25:from erk_shared.gateway.github.metadata.schemas import (
+45:    LAST_SESSION_GIST_ID,
+46:    LAST_SESSION_GIST_URL,
+1119:    updated_data[LAST_SESSION_GIST_URL] = gist_url
+1120:    updated_data[LAST_SESSION_GIST_ID] = gist_id
+1150:    return block.data.get(LAST_SESSION_GIST_URL)
+1166:    return block.data.get(LAST_SESSION_GIST_ID)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TJu8jHE2ZZFdFRnpE8fGCh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">25</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="104573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TJu8jHE2ZZFdFRnpE8fGCh">
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    BRANCH_NAME,
+    27→    CREATED_AT,
+    28→    CREATED_BY,
+    29→    CREATED_FROM_SESSION,
+    30→    CREATED_FROM_WORKFLOW_RUN_URL,
+    31→    LAST_DISPATCHED_AT,
+    32→    LAST_DISPATCHED_NODE_ID,
+    33→    LAST_DISPATCHED_RUN_ID,
+    34→    LAST_LEARN_AT,
+    35→    LAST_LEARN_SESSION,
+    36→    LAST_LOCAL_IMPL_AT,
+    37→    LAST_LOCAL_IMPL_EVENT,
+    38→    LAST_LOCAL_IMPL_SESSION,
+    39→    LAST_LOCAL_IMPL_USER,
+    40→    LAST_REMOTE_IMPL_AT,
+    41→    LAST_REMOTE_IMPL_RUN_ID,
+    42→    LAST_REMOTE_IMPL_SESSION_ID,
+    43→    LAST_REVIEW_PR,
+    44→    LAST_SESSION_AT,
+    45→    LAST_SESSION_GIST_ID,
+    46→    LAST_SESSION_GIST_URL,
+    47→    LAST_SESSION_ID,
+    48→    LAST_SESSION_SOURCE,
+    49→    LEARN_MATERIALS_BRANCH,
+    50→    LEARN_PLAN_ISSUE,
+    51→    LEARN_PLAN_PR,
+    52→    LEARN_RUN_ID,
+    53→    LEARN_STATUS,
+    54→    LEARNED_FROM_ISSUE,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KTTzpq6TCgeHvvtdMawVbe">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">    LAST_REVIEW_PR,
+    LAST_SESSION_AT,
+    LAST_SESSION_GIST_ID,
+    LAST_SESSION_GIST_URL,
+    LAST_SESSION_ID,
+    LAST_SESSION_SOURCE,</param>
+    <param name="new_string">    LAST_REVIEW_PR,
+    LAST_SESSION_AT,
+    LAST_SESSION_BRANCH,
+    LAST_SESSION_ID,
+    LAST_SESSION_SOURCE,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="104867" output_tokens="279" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 664, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KTTzpq6TCgeHvvtdMawVbe">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the `update_plan_header_session_gist` function and the two extractor functions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="105531" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 361}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CtWTF8QZXsc2pqrPbTR9jy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_session_gist(
+    *,
+    issue_body: str,
+    gist_url: str,
+    gi...[truncated 2555 chars]...    if block is None:
+        return None
+
+    return block.data.get(LAST_SESSION_GIST_ID)</param>
+    <param name="new_string">def update_plan_header_session_branch(
+    *,
+    issue_body: str,
+    session_branch: str...[truncated 2056 chars]...
+    if block is None:
+        return None
+
+    return block.data.get(LAST_SESSION_BRANCH)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="105531" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 361}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CtWTF8QZXsc2pqrPbTR9jy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `SessionsForPlan` in `discovery.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1738" cache_read_input_tokens="105892" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1738}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01N8GtHRn7VxtzsAMNMxW1dP">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/sessions/discovery.py</param>
+    <param name="old_string">    last_remote_impl_at: str | None
+    last_remote_impl_run_id: str | None
+    last_remot...[truncated 84 chars]...    last_session_id: str | None
+    last_session_source: str | None  # "local" or "remote"</param>
+    <param name="new_string">    last_remote_impl_at: str | None
+    last_remote_impl_run_id: str | None
+    last_remot...[truncated 80 chars]...    last_session_id: str | None
+    last_session_source: str | None  # "local" or "remote"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1738" cache_read_input_tokens="105892" output_tokens="370" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N8GtHRn7VxtzsAMNMxW1dP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/sessions/discovery.py has been updated successfully.
+  </tool_result>
+  <assistant>Also update the docstring in `SessionsForPlan`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="107630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 446}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015DjrC6Wxfjug9Hd9Lg9Yds">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/sessions/discovery.py</param>
+    <param name="old_string">        last_session_gist_url: URL of gist containing latest session JSONL
+        last_session_id: Session ID of latest uploaded session</param>
+    <param name="new_string">        last_session_branch: Branch containing latest session JSONL
+        last_session_id: Session ID of latest uploaded session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="107630" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 446, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015DjrC6Wxfjug9Hd9Lg9Yds">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/sessions/discovery.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `backend.py` - replace `extract_plan_header_session_gist_url` with `extract_plan_header_session_branch`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="108076" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 545}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HLnSvGphcGn3rQwpbziYEU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">30</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="108076" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 545}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HLnSvGphcGn3rQwpbziYEU">
+    30→    extract_plan_header_last_session_source,
+    31→    extract_plan_header_local_impl_session,
+    32→    extract_plan_header_remote_impl_at,
+    33→    extract_plan_header_remote_impl_run_id,
+    34→    extract_plan_header_remote_impl_session_id,
+    35→    extract_plan_header_session_gist_url,
+    36→)
+    37→from erk_shared.learn.impl_events import (
+    38→    extract_implementation_sessions,
+    39→    extract_learn_sessions,
+    40→)
+    41→from erk_shared.plan_store.store import PlanStore
+    42→from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery
+    43→from erk_shared.sessions.discovery import SessionsForPlan
+    44→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01YXGLTviKtR8KHD5txwhCEo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="old_string">    extract_plan_header_session_gist_url,
+)</param>
+    <param name="new_string">    extract_plan_header_session_branch,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="108621" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 502}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YXGLTviKtR8KHD5txwhCEo">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/plan_store/backend.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MNwdeXiZFS46AVWoxkFLzw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="old_string">            last_session_gist_url=extract_plan_header_session_gist_url(body),</param>
+    <param name="new_string">            last_session_branch=extract_plan_header_session_branch(body),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="109123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 272}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MNwdeXiZFS46AVWoxkFLzw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/plan_store/backend.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `RemoteSessionSource` in `session_source.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="109395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 289}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Aj3HrppC8kJKwHKhXxsfXo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/learn/extraction/session_source.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="109395" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 289, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Aj3HrppC8kJKwHKhXxsfXo">
+     1→"""Session source abstraction for learn workflow.
+     2→
+     3→This module provides an abstraction layer over session source metadata,
+     4→enabling the learn workflow to handle both local sessions (from ~/.claude)
+     5→and remote sessions (from GitHub Actions artifacts) uniformly.
+     6→
+     7→The key insight is that session *files* are always local during processing
+     8→(remote sessions get downloaded first), but we need to track *where* they
+     9→came from for proper attribution and filtering.
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from typing import Literal, TypedDict
+    14→
+    15→
+    16→class SessionSourceDict(TypedDict):
+    17→    """TypedDict for serialized SessionSource data."""
+    18→
+    19→    source_type: str
+    20→    session_id: str
+    21→    run_id: str | None
+    22→    path: str | None
+    23→    gist_url: str | None
+    24→
+    25→
+    26→class SessionSource(ABC):
+    27→    """Abstract base class describing where a session came from.
+    28→
+    29→    All implementations must provide:
+    30→    - source_type: Identifier for the source (e.g., "local", "remote")
+
+... [195 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to update `session_source.py`:
+1. Rename `gist_url` to `session_branch` in `SessionSourceDict`
+2. Update ABC to rename `gist_url` property to `session_branch`
+3. Update `LocalSessionSource.gist_url` → `session_branch` (returning None)
+4. Update `RemoteSessionSource.gist_url` → `session_branch`
+5. Update `to_dict()` method
+6. Update `__slots__`, `__init__`
+
+Let me rewrite the file with all these changes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2601" cache_read_input_tokens="109684" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2601}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CGC2UMg6BNsYhnrjCAqD8D">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/learn/extraction/session_source.py</param>
+    <param name="content">"""Session source abstraction for learn workflow.
+
+This module provides an abstraction lay...[truncated 6443 chars]...as committed to a branch, None otherwise.
+        """
+        return self._session_branch
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2601" cache_read_input_tokens="109684" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2601}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CGC2UMg6BNsYhnrjCAqD8D">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/learn/extraction/session_source.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `GetLearnSessionsResultDict`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1999" cache_read_input_tokens="112285" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1999}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NEmYYY68tV5sgeW9vwvWyH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py</param>
+    <param name="old_string">    session_sources: list[SessionSourceDict]
+    last_session_gist_url: str | None
+    last_session_id: str | None</param>
+    <param name="new_string">    session_sources: list[SessionSourceDict]
+    last_session_branch: str | None
+    last_session_id: str | None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1999" cache_read_input_tokens="112285" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1999, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NEmYYY68tV5sgeW9vwvWyH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `get_learn_sessions.py` - update session source discovery and output:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="114284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 338}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RuXDVa3tYfTUpEBaTb9Zys">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="offset">1</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="114284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 338}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RuXDVa3tYfTUpEBaTb9Zys">
+     1→"""Get session information for a plan issue.
+     2→
+     3→This exec script returns JSON with session data for use by the /erk:learn skill.
+     4→It replaces the `erk learn --json --no-track` workflow, separating data retrieval
+     5→from tracking.
+     6→
+     7→Usage:
+     8→    erk exec get-learn-sessions &lt;issue-number&gt;
+     9→    erk exec get-learn-sessions &lt;issue-url&gt;
+    10→
+    11→Output:
+    12→    JSON object with session information:
+    13→    {
+    14→        "success": true,
+    15→        "plan_id": "123",
+    16→        "planning_session_id": "abc-123" | null,
+    17→        "implementation_session_ids": [...],
+    18→        "learn_session_ids": [...],
+    19→        "readable_session_ids": [...],
+    20→        "session_paths": [...],
+    21→        "local_session_ids": [...],
+    22→        "last_remote_impl_at": "2024-01-01T..." | null,
+    23→        "last_remote_impl_run_id": "12345678" | null,
+    24→        "last_remote_impl_session_id": "abc-def-ghi" | null
+    25→    }
+    26→
+    27→Exit Codes:
+    28→    0: Success
+    29→    1: Error (invalid issue, GitHub failure, etc.)
+    30→"""
+
+... [65 lines omitted] ...
+
+    45→    GetLearnSessionsErrorDict,
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EmMAoSqCuBzx49YX4ExfUr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">        last_remote_impl_session_id=sessions_for_plan.last_remote_impl_session_id,
+       ...[truncated 86 chars]...for_plan.last_session_gist_url,
+        last_session_id=sessions_for_plan.last_session_id,</param>
+    <param name="new_string">        last_remote_impl_session_id=sessions_for_plan.last_remote_impl_session_id,
+       ...[truncated 82 chars]...s_for_plan.last_session_branch,
+        last_session_id=sessions_for_plan.last_session_id,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1485" cache_read_input_tokens="114622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1485}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EmMAoSqCuBzx49YX4ExfUr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the session source discovery section that checks `last_session_gist_url`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="116107" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AgcfkTAwKp7QxHnixqK2g9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">    # Add remote session source from gist-based or legacy artifact session
+    # Prefer gi...[truncated 1003 chars]...nloaded
+            gist_url=None,
+        )
+        session_sources.append(remote_source)</param>
+    <param name="new_string">    # Add remote session source from branch-based or legacy artifact session
+    # Prefer ...[truncated 1019 chars]...d
+            session_branch=None,
+        )
+        session_sources.append(remote_source)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="116107" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AgcfkTAwKp7QxHnixqK2g9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_018KrPKCLhTkuvn7Gq5eaqCC">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="948" cache_read_input_tokens="116528" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 948, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018KrPKCLhTkuvn7Gq5eaqCC">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 1: Replace `upload_session.py` with branch-based storage**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="117476" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_015AcbuRMTNqa6KnJ7fnhH6q">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="117476" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015AcbuRMTNqa6KnJ7fnhH6q">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Write" id="toolu_01FFcXMq9t8daqGpV5FqrLmy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/upload_session.py</param>
+    <param name="content">"""Upload a Claude Code session to a git branch and update the plan header.
+
+This exec com...[truncated 5184 chars]...lse
+            result["issue_update_error"] = str(e)
+
+    click.echo(json.dumps(result))
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="110" cache_read_input_tokens="117564" output_tokens="1722" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 110, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FFcXMq9t8daqGpV5FqrLmy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/upload_session.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_018PEPYuwCgSmpD83GraXbZr">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1797" cache_read_input_tokens="117674" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1797, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018PEPYuwCgSmpD83GraXbZr">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 2: Replace `download_remote_session.py` with branch-based download**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="119471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01D4T7C5ShnfsA4fnziHDsaD">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="119471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D4T7C5ShnfsA4fnziHDsaD">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Write" id="toolu_01JqJR72nz1mYfu1Lr3Ka962">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/download_remote_session.py</param>
+    <param name="content">"""Download a Claude Code session from a git branch.
+
+This exec command downloads a sessio...[truncated 4662 chars]...click.echo(json.dumps(output))
+    if exit_code != 0:
+        raise SystemExit(exit_code)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="119559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 112}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JqJR72nz1mYfu1Lr3Ka962">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/download_remote_session.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01DsKqpFXnJrtMn4UdNUjSWF">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1618" cache_read_input_tokens="119671" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1618}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DsKqpFXnJrtMn4UdNUjSWF">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 3: Update `trigger_async_learn.py` remote session download**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="121289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01XC8F7KL6j6mrXNDbwQeDTi">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="121289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XC8F7KL6j6mrXNDbwQeDTi">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BYoiaoepzsvmywBPLzeW51">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/trigger_async_learn.py</param>
+    <param name="old_string">import json
+import shutil
+import urllib.error
+import urllib.request
+from dataclasses impor...[truncated 142 chars]...e_gist_url
+from erk.cli.commands.exec.scripts.get_learn_sessions import _discover_sessions</param>
+    <param name="new_string">import json
+import shutil
+import subprocess
+from dataclasses import asdict, dataclass
+from...[truncated 33 chars]...ort click
+
+from erk.cli.commands.exec.scripts.get_learn_sessions import _discover_sessions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="110" cache_read_input_tokens="121377" output_tokens="314" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 110, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BYoiaoepzsvmywBPLzeW51">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/trigger_async_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace `_download_remote_session_for_learn` with branch-based version:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="391" cache_read_input_tokens="121487" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 391}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0173ZLFPNuhFdzJqbfLk2ZkU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/trigger_async_learn.py</param>
+    <param name="old_string">def _download_remote_session_for_learn(
+    *,
+    gist_url: str,
+    session_id: str,
+   ...[truncated 953 chars]...mote session: {e}", fg="yellow")
+        click.echo(message, err=True)
+        return None</param>
+    <param name="new_string">def _download_remote_session_for_learn(
+    *,
+    session_branch: str,
+    session_id: st...[truncated 1273 chars]... / f"{session_id}.jsonl"
+    output_path.write_bytes(result.stdout)
+    return output_path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="391" cache_read_input_tokens="121487" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 391}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0173ZLFPNuhFdzJqbfLk2ZkU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plan/replace-session-gist-archi-02-21-1117/src/erk/cli/commands/exec/scripts/trigger_async_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the caller that reads `gist_url` from source items (~line 454):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1013" cache_read_input_tokens="121878" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1013}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+</session>
