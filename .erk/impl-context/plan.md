@@ -41,12 +41,14 @@ https://gist.github.com/schrockn/3a6159c8441de665d1b8ff4cb9f100ce
 The boundary between haiku and sonnet for delegated work is not simply "mechanical vs reasoning" but depends on specific task characteristics.
 
 **Use haiku when the task is purely mechanical:**
+
 - Fetching data via CLI commands
 - Simple parsing without validation
 - Format conversion with fixed rules
 - No judgment or recommendations required
 
 **Upgrade to sonnet when the task requires:**
+
 - Validation logic beyond simple existence checks
 - Mapping between multiple status taxonomies
 - Making recommendations based on analyzed data
@@ -86,6 +88,7 @@ Commands that use Task delegation must:
 From `/erk:objective-plan`:
 
 The command has `allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode`. This means:
+
 - The parent command can use these 5 tools
 - Delegated Task agents inherit these restrictions
 - Task agents cannot use Write or Edit (intentionally excluded)
@@ -128,6 +131,7 @@ When instructed to parse JSON output from CLI tools, agents often default to wri
 ### Anti-Pattern Example
 
 Agent workflow when parsing `erk objective check --json-output`:
+
 1. Run CLI command, capture JSON
 2. Write Python script to parse JSON
 3. Run Python script via Bash tool
@@ -136,6 +140,7 @@ Agent workflow when parsing `erk objective check --json-output`:
 ### Correct Pattern
 
 Agent workflow for the same task:
+
 1. Run CLI command, capture JSON
 2. Parse JSON directly (LLMs can do this natively)
 3. Format the data inline
@@ -143,6 +148,7 @@ Agent workflow for the same task:
 ### Why This Matters
 
 Script generation causes:
+
 - Unnecessary complexity (scripts can have bugs)
 - Token waste (script code + execution in context window)
 - Slower execution (extra tool use round-trips)
@@ -206,7 +212,7 @@ See `docs/learned/planning/cli-parsing-anti-patterns.md` for why agents default 
 
 **Draft Content:**
 
-```markdown
+````markdown
 ---
 description: Efficient batch resolution of PR review threads
 read-when:
@@ -227,6 +233,7 @@ Use `erk exec resolve-review-threads` with JSON stdin for batch operations inste
 ```bash
 echo '[{"thread_id": "...", "resolution": "..."}]' | erk exec resolve-review-threads
 ```
+````
 
 ## Benefits
 
@@ -237,6 +244,7 @@ echo '[{"thread_id": "...", "resolution": "..."}]' | erk exec resolve-review-thr
 ## Related Patterns
 
 Combine with complexity-based classification for optimal workflow:
+
 1. Classify threads by complexity (local, multi-location, cross-cutting, complex)
 2. Execute batches from simplest to most complex
 3. Resolve all threads in a single batch call after fixes
@@ -244,7 +252,8 @@ Combine with complexity-based classification for optimal workflow:
 ## Example
 
 PR #7750 session resolved threads using this pattern after addressing review comments.
-```
+
+````
 
 ---
 
@@ -273,8 +282,10 @@ Skills with `context: fork` metadata do NOT create true subagent isolation when 
 
 Use Task tool explicitly:
 
-```
+````
+
 Task(prompt="Run the pr-feedback-classifier skill against PR #N...")
+
 ```
 
 ### Incorrect Pattern
@@ -282,7 +293,9 @@ Task(prompt="Run the pr-feedback-classifier skill against PR #N...")
 Do NOT use skill invocation for isolation:
 
 ```
+
 Skill(name="pr-feedback-classifier")
+
 ```
 
 This appears to work but does not create true isolation in `--print` mode.
@@ -356,6 +369,7 @@ The re-check after fix confirmed compliance with the minimal-set principle. This
 **Existing doc:** `docs/learned/planning/token-optimization-patterns.md`
 **Conflict:** The existing doc explicitly cites `/erk:objective-plan` Step 2 as the canonical example of "use haiku for mechanical work", but PR #7750 upgrades this to sonnet.
 **Resolution:** Update the existing document to:
+
 1. Remove `/erk:objective-plan` as the canonical haiku example
 2. Add criteria for when to upgrade from haiku to sonnet
 3. Use `.claude/commands/erk/replan.md` as the new canonical haiku example (it performs parallel fetch-parse-format without validation or recommendations)
