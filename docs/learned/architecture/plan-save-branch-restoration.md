@@ -30,17 +30,9 @@ Key properties:
 
 ## Git Plumbing Approach
 
-The `commit_files_to_branch` method on `GitCommitOps` uses a temporary index file to avoid modifying the real index:
+The `commit_files_to_branch` method on `GitCommitOps` uses a temporary index file to create a commit without modifying the working tree, HEAD, or the real index. This is race-condition-free because no branch checkout occurs.
 
-1. `git rev-parse <branch>` — resolve parent commit
-2. `git read-tree <parent>` — read parent tree into temp index
-3. `git hash-object -w --stdin` — hash each file's content
-4. `git update-index --add --cacheinfo` — add blobs to temp index
-5. `git write-tree` — create tree from temp index
-6. `git commit-tree` — create commit with parent
-7. `git update-ref` — update branch ref to new commit
-
-This is race-condition-free because no branch checkout occurs.
+See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py` for the full implementation.
 
 ## Evolution
 
