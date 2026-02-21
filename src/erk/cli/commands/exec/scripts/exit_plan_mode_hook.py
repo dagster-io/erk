@@ -53,6 +53,7 @@ from typing import Self
 import click
 
 from erk.hooks.decorators import HookContext, hook_command
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
@@ -692,6 +693,7 @@ def _gather_inputs(
     claude_installation: ClaudeInstallation,
     git: Git,
     branch_manager: BranchManager,
+    global_config: GlobalConfig | None,
 ) -> HookInput:
     """Gather all inputs from environment. All I/O happens here.
 
@@ -774,7 +776,7 @@ def _gather_inputs(
         pr_number=pr_number,
         plan_issue_number=plan_issue_number,
         editor=editor,
-        plan_backend=get_plan_backend(),
+        plan_backend=get_plan_backend(global_config),
     )
 
 
@@ -847,6 +849,7 @@ def exit_plan_mode_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
         claude_installation=ctx.obj.claude_installation,
         git=ctx.obj.git,
         branch_manager=branch_manager,
+        global_config=global_config,
     )
 
     # Pure decision logic (no I/O)

@@ -21,6 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import NamedTuple
 
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.plan_store import get_plan_backend
 from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
 from erk_statusline.context import StatuslineContext
@@ -1189,7 +1190,11 @@ def main():
         objective_issue = None
         github_data = None
 
-        backend_type = get_plan_backend()
+        # Load global config for plan backend resolution
+        installation = RealErkInstallation()
+        global_config = installation.load_config() if installation.config_exists() else None
+
+        backend_type = get_plan_backend(global_config)
         backend_display = "draft-pr" if backend_type == "draft_pr" else "issue"
 
         if cwd:

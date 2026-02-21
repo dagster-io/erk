@@ -26,12 +26,6 @@ This plan describes the implementation of a new feature.
 - Step 3: Add tests and documentation"""
 
 
-@pytest.fixture(autouse=True)
-def _use_draft_pr_backend(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Set ERK_PLAN_BACKEND to draft_pr for all tests in this module."""
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
-
-
 def _draft_pr_context(
     *,
     tmp_path: Path,
@@ -51,6 +45,7 @@ def _draft_pr_context(
         github=fake_github,
         git=fake_git,
         claude_installation=fake_claude,
+        plan_backend="draft_pr",
         cwd=tmp_path,
         repo_root=tmp_path,
     )
@@ -90,13 +85,15 @@ def test_draft_pr_success_display(tmp_path: Path) -> None:
 def test_delegates_to_issue_when_not_draft_pr(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """ERK_PLAN_BACKEND="github" delegates to plan_save_to_issue."""
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "github")
+    """plan_backend="github" delegates to plan_save_to_issue."""
+    monkeypatch.delenv("ERK_PLAN_BACKEND", raising=False)
     fake_issues = FakeGitHubIssues()
     fake_github = FakeGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(
         github=fake_github,
+        github_issues=fake_issues,
         claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        plan_backend="github",
         cwd=tmp_path,
         repo_root=tmp_path,
     )
@@ -288,6 +285,7 @@ def test_draft_pr_tracks_branch_with_graphite(tmp_path: Path) -> None:
         git=fake_git,
         graphite=fake_graphite,
         claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        plan_backend="draft_pr",
         cwd=tmp_path,
         repo_root=tmp_path,
     )

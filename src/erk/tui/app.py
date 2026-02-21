@@ -34,9 +34,9 @@ from erk.tui.views.types import (
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
+from erk_shared.context.types import PlanBackendType
 from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
-from erk_shared.plan_store import PlanBackendType
 
 
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:

@@ -11,7 +11,7 @@ from textual.widgets import DataTable
 
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.views.types import ViewMode
-from erk_shared.plan_store import PlanBackendType
+from erk_shared.context.types import PlanBackendType
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp

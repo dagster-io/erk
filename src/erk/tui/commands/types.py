@@ -6,7 +6,7 @@ from enum import Enum, auto
 
 from erk.tui.data.types import PlanRowData
 from erk.tui.views.types import ViewMode
-from erk_shared.plan_store import PlanBackendType
+from erk_shared.context.types import PlanBackendType
 
 
 class CommandCategory(Enum):
