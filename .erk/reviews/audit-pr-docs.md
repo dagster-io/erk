@@ -3,7 +3,7 @@ name: Audit PR Docs
 paths:
   - "docs/learned/**/*.md"
 marker: "<!-- audit-pr-docs -->"
-model: claude-opus-4-6
+model: claude-sonnet-4-6
 timeout_minutes: 30
 allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
 enabled: true

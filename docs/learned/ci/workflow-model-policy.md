@@ -34,7 +34,7 @@ The `.erk/reviews/` directory contains review configurations that intentionally 
 
 | Review Config                  | Model               | Rationale                       |
 | ------------------------------ | ------------------- | ------------------------------- |
-| `audit-pr-docs.md`             | `claude-opus-4-6`   | Complex doc analysis needs Opus |
+| `audit-pr-docs.md`             | `claude-sonnet-4-6` | Balanced cost vs reasoning      |
 | `dignified-python.md`          | `claude-haiku-4-5`  | Pattern matching is lightweight |
 | `tripwires.md`                 | `claude-sonnet-4-5` | Balanced cost vs reasoning      |
 | `test-coverage.md`             | `claude-haiku-4-5`  | Coverage checks are mechanical  |
