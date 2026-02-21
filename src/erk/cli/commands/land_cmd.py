@@ -1054,9 +1054,8 @@ def _validate_pr_for_landing(
     check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
 
     # 5. Learn status check (for plan branches)
-    # Check when: has plan issue AND (is_current_branch OR has worktree)
     plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, target.branch)
-    if plan_id is not None and (target.is_current_branch or target.worktree_path is not None):
+    if plan_id is not None:
         _check_learn_status_and_prompt(
             ctx,
             repo_root=main_repo_root,
