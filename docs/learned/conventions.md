@@ -167,6 +167,33 @@ In this case, use a slots-based class with underscore-prefixed internal fields. 
 - Internal slots use underscores (`_session_id`) to avoid shadowing properties
 - Immutability is by convention (underscore prefix signals "don't mutate"), not runtime enforcement
 
+## LBYL Violations in Disguise
+
+### `.get()` Chaining
+
+Chained `.get()` calls are an EAFP violation. They silently return `None` on missing keys instead of failing explicitly:
+
+```python
+# WRONG: EAFP violation — silent None on missing key
+value = config.get("section", {}).get("key")
+
+# CORRECT: LBYL — check each level explicitly
+if "section" in config and "key" in config["section"]:
+    value = config["section"]["key"]
+```
+
+### `lambda` in `default_factory`
+
+Using `lambda` in `default_factory` is forbidden. Use a named function instead:
+
+```python
+# WRONG: lambda in default_factory
+field(default_factory=lambda: [])
+
+# CORRECT: use list directly
+field(default_factory=list)
+```
+
 ## Single-Use Locals Line-Length Exception
 
 When a single-use local variable is introduced solely to avoid a line-length violation, prefer shortening the variable name rather than ignoring the single-use locals rule. A shorter but still descriptive name keeps the code compact without introducing an unnecessary intermediate binding:

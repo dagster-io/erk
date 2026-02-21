@@ -21,6 +21,9 @@ tripwires:
     warning: "Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json."
   - action: "delegating batch file renames from a plan"
     warning: "Verify each file path exists before delegating. Wrong paths cause silent coverage gaps in rename operations."
+  - action: "renaming a lifecycle stage value"
+    warning: "Update 4 locations: LifecycleStageValue type, valid_stages set, _VALID_STAGES tuple, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors."
+    score: 7
 ---
 
 # Plan Lifecycle

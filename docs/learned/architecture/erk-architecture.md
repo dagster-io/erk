@@ -44,6 +44,9 @@ tripwires:
     warning: "Validate at the single construction point (factory/reader function). Callers should trust returned objects without re-validation. This is the construction boundary principle."
   - action: "adding new file format support without read-then-fallback"
     warning: "When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for the canonical pattern."
+  - action: "adding a new field to ErkContext dataclass"
+    warning: "Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values."
+    score: 6
 ---
 
 # Erk Architecture Patterns

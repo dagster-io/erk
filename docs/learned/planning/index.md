@@ -39,10 +39,13 @@
 - **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures or skeleton plan issues, integrating objectives with one-shot dispatch
 - **[parallel-audit-pattern.md](parallel-audit-pattern.md)** — designing parallel agent workflows for bulk operations, implementing multi-agent batch processing, understanding how audit-scan or learn commands parallelize work
 - **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
+- **[plan-creation-pathways.md](plan-creation-pathways.md)** — understanding how plans are created in erk, adding a new plan creation entry point, debugging which code path created a plan
 - **[plan-execution-patterns.md](plan-execution-patterns.md)** — implementing a plan from a GitHub issue, understanding branch naming and worktree isolation, designing PR submission workflows for plans
 - **[plan-header-privatization.md](plan-header-privatization.md)** — migrating callers of plan_header.py functions, understanding why plan_header functions are being privatized, working with PlanBackend metadata operations
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
+- **[plan-migrate-to-draft-pr.md](plan-migrate-to-draft-pr.md)** — migrating an issue-based plan to a draft PR, understanding two-phase metadata preservation during migration, debugging metadata loss after plan migration
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
+- **[plan-title-prefix-system.md](plan-title-prefix-system.md)** — working with PR titles for plan implementations, understanding the planned/ prefix on PR titles, debugging why a PR title has or lacks the planned/ prefix
 - **[planning-patterns.md](planning-patterns.md)** — preparing to enter plan mode, optimizing plan creation workflow, delegating tasks during planning
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
 - **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan issue, debugging why get-pr-for-plan returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field
