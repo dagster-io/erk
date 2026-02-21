@@ -38,15 +38,16 @@ https://gist.github.com/schrockn/28b880a17c9867a23d92b21b1b1eb5f6
 
 When displaying identifiers in CLI output, use domain-appropriate terminology:
 
-| Entity Type       | User-Facing Term | Variable Name    | Context                              |
-| ----------------- | ---------------- | ---------------- | ------------------------------------ |
-| Plan (any backend)| `plan #123`      | `issue_number`   | GitHub issue or draft PR plan        |
-| Objective         | `objective #456` | `objective_id`   | Multi-plan objective tracker         |
-| Pull Request      | `PR #789`        | `pr_number`      | Submitted/merged PR                  |
+| Entity Type        | User-Facing Term | Variable Name  | Context                       |
+| ------------------ | ---------------- | -------------- | ----------------------------- |
+| Plan (any backend) | `plan #123`      | `issue_number` | GitHub issue or draft PR plan |
+| Objective          | `objective #456` | `objective_id` | Multi-plan objective tracker  |
+| Pull Request       | `PR #789`        | `pr_number`    | Submitted/merged PR           |
 
 **Key principle:** User-facing output uses abstract terms ("plan") while internal code uses concrete types (`issue_number`, `draft_pr_id`). This decouples UX from implementation.
 
 **Examples:**
+
 - `"Fetching plan from GitHub..."` (not "issue")
 - `"Plan #123 not found"` (not "Issue #123")
 - `"Created .impl/ folder from plan #456"` (not "issue #456")
@@ -64,7 +65,7 @@ See `src/erk/cli/commands/implement.py` for reference implementation.
 
 **Draft Content:**
 
-```markdown
+````markdown
 ### Output String Checklist for Phase 1
 
 When renaming display terminology, check ALL of these locations:
@@ -84,7 +85,9 @@ When renaming display terminology, check ALL of these locations:
 ```bash
 grep -r '"old_term"' tests/
 ```
-```
+````
+
+````
 
 ---
 
@@ -111,7 +114,7 @@ When code handles multiple GitHub issue types, use specific variable names:
 | Draft PR plan number     | `plan_id`         | `int` (same as issue plan) |
 
 **Note:** When a function accepts any plan source (issue or draft PR), the parameter can remain `issue_number` internally. The distinction is primarily for clarity when multiple issue types are handled in the same scope.
-```
+````
 
 ---
 
@@ -150,6 +153,7 @@ When a bot flags an issue:
 ## Resolution
 
 For confirmed false positives:
+
 - Reply with specific line numbers showing the issue is already resolved
 - Reference the actual code state, not the diff context
 - Resolve the thread without code changes
@@ -180,6 +184,7 @@ Automated reviewers follow a predictable lifecycle:
 **Key insight:** After addressing bot feedback with a new commit, the bot will automatically re-analyze. Wait for re-analysis before manually resolving threads—the bot may resolve them automatically.
 
 Bots that demonstrated this pattern in PR #7721:
+
 - dignified-code-simplifier: Re-analyzed after fix commits, confirmed resolution
 - test-coverage-bot: Re-analyzed and auto-updated status
 ```
@@ -194,7 +199,7 @@ Bots that demonstrated this pattern in PR #7721:
 
 **Draft Content:**
 
-```markdown
+````markdown
 ### Batch Resolution with Mixed Thread Types
 
 When resolving multiple PR threads in a single call, threads can have different resolution types:
@@ -217,8 +222,10 @@ When resolving multiple PR threads in a single call, threads can have different 
   }
 ]
 ```
+````
 
 This pattern resolves both actual fixes and false-positive dismissals in a single API call.
+
 ```
 
 ---
@@ -300,3 +307,4 @@ Items with score 2-3 (may warrant promotion with additional context):
 **Score:** 2/10 (criteria: External tool quirk +1, Repeated pattern +1)
 
 **Notes:** Specific to bot review workflow. Important for avoiding unnecessary code changes, but missing it only adds noise to PRs—it doesn't cause broken code or silent failures. The cost of missing this pattern is wasted time, not production bugs. Documentation is more appropriate than a tripwire.
+```
