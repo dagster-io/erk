@@ -5,6 +5,7 @@
 The `learn.yml` GitHub Actions workflow does NOT accept a `plan_backend` input and does NOT set the `ERK_PLAN_BACKEND` env var. This means when `trigger_async_learn.py` dispatches the workflow, the learn workflow always runs with the default "github" backend — even for draft-PR plans where the plan_id is a PR number.
 
 Compare with `plan-implement.yml` which already handles this correctly:
+
 - Has `plan_backend` input (line 40-43)
 - Sets `ERK_PLAN_BACKEND: ${{ inputs.plan_backend }}` (line 101)
 
@@ -45,9 +46,9 @@ The `plan_backend` variable is already available in scope (line 376: `plan_backe
 
 ## Files to modify
 
-| File | Change |
-|------|--------|
-| `.github/workflows/learn.yml` | Add `plan_backend` input + `ERK_PLAN_BACKEND` env var |
+| File                                                       | Change                                                    |
+| ---------------------------------------------------------- | --------------------------------------------------------- |
+| `.github/workflows/learn.yml`                              | Add `plan_backend` input + `ERK_PLAN_BACKEND` env var     |
 | `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` | Pass `plan_backend` in `workflow_inputs` dict (~line 623) |
 
 ## Verification
