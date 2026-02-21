@@ -14,12 +14,12 @@ https://gist.github.com/schrockn/7ec042bf3db0b37e203e34c4576083c0
 
 ## Summary
 
-| Metric                         | Count |
-| ------------------------------ | ----- |
-| Documentation items            | 10    |
-| Contradictions to resolve      | 0     |
-| Tripwire candidates (score>=4) | 4     |
-| Potential tripwires (score 2-3)| 2     |
+| Metric                          | Count |
+| ------------------------------- | ----- |
+| Documentation items             | 10    |
+| Contradictions to resolve       | 0     |
+| Tripwire candidates (score>=4)  | 4     |
+| Potential tripwires (score 2-3) | 2     |
 
 ## Documentation Items
 
@@ -65,6 +65,7 @@ https://gist.github.com/schrockn/7ec042bf3db0b37e203e34c4576083c0
 **Warning:** The `plan_backend` input must flow through the entire workflow chain (CLI -> workflow_dispatch -> reusable workflow -> environment variable). Missing propagation causes draft-PR plans to be implemented on issue-based branches, resulting in empty PRs because the wrong branch is used during implementation.
 
 **Verification checklist:**
+
 - CLI dispatch includes `plan_backend` in inputs dict (see `one_shot_dispatch.py`)
 - Workflow declares `plan_backend` input (see `.github/workflows/one-shot.yml`)
 - Workflow forwards `plan_backend` to implement job with `${{ inputs.plan_backend }}`
@@ -92,6 +93,7 @@ https://gist.github.com/schrockn/7ec042bf3db0b37e203e34c4576083c0
 **Warning:** Cleanup operations must execute unconditionally for all paths. In multi-path commands, place cleanup at convergence points where all paths merge, not in conditional branches. Ensure cleanup is idempotent (safe to run multiple times).
 
 **Pattern:**
+
 1. Identify operation that must run for all paths (e.g., `.erk/impl-context/` removal)
 2. Make operation idempotent: `if [ -d path/ ]; then rm -rf path/; fi`
 3. Find convergence point where all conditional paths merge
@@ -143,6 +145,7 @@ See `packages/erk-shared/src/erk_shared/plan_store/__init__.py` for the `get_pla
 ## GlobalConfig Contents
 
 The global configuration file contains:
+
 - `default_branch`: The repository's default branch name
 - `repo_root`: Absolute path to the repository root
 <!-- NOTE: Remove plan_backend from this list - field was removed in PR #7740 -->
@@ -188,6 +191,7 @@ Commands with multiple conditional paths (e.g., A/B/C/D/E based on different inp
 ## Pattern
 
 Operations that must run unconditionally should be:
+
 - Idempotent (safe to run multiple times)
 - Placed at convergence points (after all conditional paths merge)
 - Not duplicated across branches (violates DRY, risks drift)
@@ -195,6 +199,7 @@ Operations that must run unconditionally should be:
 ## Example
 
 The `plan-implement.md` command has 5 paths:
+
 - Path 1a: Existing `.impl/` folder
 - Path 1a-file: File path input
 - Path 1b-with-tracking: Issue with tracking setup
@@ -235,6 +240,7 @@ See `.claude/commands/erk/plan-implement.md` for the actual implementation.
 **Warning:** Tests must assert the input appears in the workflow dispatch payload with the correct value for all backend scenarios. Don't just verify function execution - verify the complete payload structure. Automated test coverage review will flag missing assertions.
 
 **Pattern:** When adding a new input (e.g., `plan_backend`), add assertions in:
+
 - Issue-based test: `assert inputs["plan_backend"] == "github"`
 - Draft-PR test: `assert inputs["plan_backend"] == "draft_pr"`
 
@@ -258,10 +264,10 @@ See `.claude/commands/erk/plan-implement.md` for the actual implementation.
 
 ## Workflow Inputs
 
-| Input Name | Type | Required | Default | Purpose |
-|-----------|------|----------|---------|---------|
-| ... | ... | ... | ... | ... |
-| `plan_backend` | string | false | "github" | Specifies plan storage backend (github or draft_pr). Added in PR #7740. Forwarded to plan-implement.yml. |
+| Input Name     | Type   | Required | Default  | Purpose                                                                                                  |
+| -------------- | ------ | -------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| ...            | ...    | ...      | ...      | ...                                                                                                      |
+| `plan_backend` | string | false    | "github" | Specifies plan storage backend (github or draft_pr). Added in PR #7740. Forwarded to plan-implement.yml. |
 
 The `plan_backend` input is computed by the CLI dispatch based on whether the plan is draft-PR-based. See `src/erk/cli/commands/one_shot_dispatch.py` for the dispatch logic.
 
@@ -286,11 +292,13 @@ The `plan_backend` input is computed by the CLI dispatch based on whether the pl
 When workflow dispatch includes backend-specific inputs, tests must verify correct values for both `github` and `draft_pr` backends.
 
 **Pattern:**
+
 - Issue-based plans should assert backend-specific values for the github path
 - Draft-PR plans should assert backend-specific values for the draft_pr path
 - Both assertions should appear in the same test file for easy comparison
 
 **Example:** See `tests/commands/one_shot/test_one_shot_dispatch.py`:
+
 - `test_dispatch_happy_path()` verifies `inputs["plan_backend"] == "github"`
 - `test_dispatch_draft_pr_lifecycle()` verifies `inputs["plan_backend"] == "draft_pr"`
 
@@ -313,6 +321,7 @@ This ensures the CLI correctly determines and passes backend type to the workflo
 ## Backend Selection
 
 Backend selection is controlled by the `ERK_PLAN_BACKEND` environment variable:
+
 - `"github"`: Issue-based plans (default)
 - `"draft_pr"`: Draft-PR-based plans
 
@@ -339,6 +348,7 @@ See `packages/erk-shared/src/erk_shared/plan_store/__init__.py` for the implemen
 ## Task Management Tools
 
 During plan implementation, task management is handled via the appropriate tool:
+
 - **TaskCreate/TaskUpdate**: Newer interface for session task tracking
 - **TodoWrite**: Alternative interface shown in some documentation examples
 
@@ -357,7 +367,7 @@ Note: This observation emerged from session analysis - the implementation used T
 
 **Draft Content:**
 
-```markdown
+````markdown
 <!-- Include as a section in multi-path-command-refactoring.md -->
 
 ## Idempotent Cleanup Operations
@@ -365,26 +375,31 @@ Note: This observation emerged from session analysis - the implementation used T
 When placing cleanup operations at convergence points, ensure they are idempotent:
 
 **Pattern:**
+
 ```bash
 # Idempotent directory removal
 if [ -d .erk/impl-context/ ]; then
   rm -rf .erk/impl-context/
 fi
 ```
+````
 
 **Why idempotency matters:**
+
 - Safe to call from multiple code paths without guards
 - Enables placement at convergence points
 - Reduces conditional complexity
 
 **Anti-pattern:**
+
 ```bash
 # Non-idempotent - fails if directory doesn't exist
 rm -rf .erk/impl-context/  # May fail or behave unexpectedly
 ```
 
 See `.claude/commands/erk/plan-implement.md` Step 2d for the cleanup implementation.
-```
+
+````
 
 ---
 
@@ -402,7 +417,7 @@ See `.claude/commands/erk/plan-implement.md` Step 2d for the cleanup implementat
 Note: The `plan_backend` field was removed from GlobalConfig in PR #7740. Backend selection is now controlled exclusively via the `ERK_PLAN_BACKEND` environment variable.
 
 If any examples in this document reference `global_config.plan_backend`, they should be removed or updated to show environment variable usage instead.
-```
+````
 
 ---
 
