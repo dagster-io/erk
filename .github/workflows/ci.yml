@@ -2,8 +2,6 @@ name: ci
 
 on:
   push:
-    branches-ignore:
-      - "planned/review-*"
     paths-ignore:
       - '.erk/impl-context/**'
       - '.worker-impl/**'
