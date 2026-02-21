@@ -35,7 +35,7 @@ CLI dispatch → skeleton issue → branch + draft PR → workflow trigger
 
 Two CLI commands trigger the pipeline:
 
-- `erk one-shot <instruction>` -- direct dispatch
+- `erk one-shot <prompt>` -- direct dispatch
 - `erk objective plan <issue> --one-shot [--node <id>]` -- objective-driven dispatch
 
 Both converge on `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
@@ -52,9 +52,9 @@ The dispatch function creates a **skeleton plan issue** before generating the br
 **Skeleton content:**
 
 ```
-_Skeleton: plan content will be populated by one-shot workflow._
+_One-shot: plan content will be populated by one-shot workflow._
 
-**Instruction:** {instruction}
+**Prompt:** {prompt}
 ```
 
 The skeleton optionally includes `objective_id` when dispatched from an objective roadmap.
@@ -68,12 +68,12 @@ The slug is truncated to stay under git's 31-character worktree limit.
 
 ## Objective Integration
 
-When dispatched via `erk objective plan --one-shot`, the `_handle_one_shot()` function in `src/erk/cli/commands/objective/plan_cmd.py`:
+When dispatched via `erk objective plan --one-shot`, the objective plan command:
 
 1. Validates the objective exists
-2. Builds an instruction string including step ID and phase name for context
-3. Passes `objective_issue` and `step_id` as `extra_workflow_inputs` in `OneShotDispatchParams`
-4. These become `OBJECTIVE_ISSUE` and `STEP_ID` environment variables in the workflow
+2. Builds a prompt string including step ID and phase name for context
+3. Passes `objective_issue` and `node_id` as `extra_workflow_inputs` in `OneShotDispatchParams`
+4. These become `OBJECTIVE_ISSUE` and `NODE_ID` environment variables in the workflow
 
 ## GitHub Actions Workflow
 
@@ -83,11 +83,11 @@ The `.github/workflows/one-shot.yml` workflow has two jobs:
 
 1. Validates secrets (ERK_QUEUE_GH_PAT)
 2. Checks out the branch and sets up tools
-3. Writes instruction to `.impl/task.md`
+3. Writes prompt to `.impl/prompt.md`
 4. Runs `/erk:one-shot-plan` Claude command with environment variables:
    - `WORKFLOW_RUN_URL` -- current workflow run URL
    - `OBJECTIVE_ISSUE` -- objective issue number (if from roadmap)
-   - `STEP_ID` -- specific roadmap step ID
+   - `NODE_ID` -- specific roadmap node ID
    - `PLAN_ISSUE_NUMBER` -- pre-created skeleton issue number
 5. Validates Claude produced `.impl/plan.md` and `.impl/plan-result.json`
 6. Runs `erk exec register-one-shot-plan` for metadata registration
@@ -107,11 +107,12 @@ concurrency:
 
 ## Registration Step (Best-Effort Composition)
 
-`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs three independent operations that `erk plan submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk plan submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
 
 1. **Dispatch metadata** -- the primary metadata source is the CLI dispatch (`write_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py`), with CI registration as a fallback. Writes `run_id`, `node_id`, `dispatched_at` to the plan issue's `plan-header` metadata block.
 2. **Queued comment** -- adds a "Queued for Implementation" emoji comment to the issue with PR link and workflow run URL
 3. **PR closing reference** -- updates the PR body with `Closes #N` to enable auto-close on merge
+4. **Lifecycle stage** -- updates the plan issue's lifecycle stage to "planned"
 
 The command outputs JSON results for each operation with success/error details.
 
@@ -136,7 +137,7 @@ One-shot dispatch and `erk plan submit` both push branches and create PRs, but o
 
 `.claude/commands/erk/one-shot-plan.md` defines what Claude does during the plan job:
 
-1. Reads instruction from `.impl/task.md`
+1. Reads prompt from `.impl/prompt.md`
 2. Fetches objective context if `$OBJECTIVE_ISSUE` is set
 3. Explores codebase following documentation-first discovery
 4. Writes a comprehensive, self-contained plan to `.impl/plan.md`

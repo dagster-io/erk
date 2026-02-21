@@ -26,11 +26,11 @@ def test_generate_branch_name_sanitizes_special_chars() -> None:
     assert re.match(r"^oneshot-[a-z0-9-]+-\d{2}-\d{2}-\d{4}$", name) is not None
 
 
-def test_generate_branch_name_truncates_long_instruction() -> None:
-    """Test that long instructions are truncated."""
-    long_instruction = "a" * 100
+def test_generate_branch_name_truncates_long_prompt() -> None:
+    """Test that long prompts are truncated."""
+    long_prompt = "a" * 100
     name = generate_branch_name(
-        long_instruction, time=FakeTime(), plan_issue_number=None, objective_id=None
+        long_prompt, time=FakeTime(), plan_issue_number=None, objective_id=None
     )
     # Should be bounded in length: oneshot- (8) + slug (max ~23) + timestamp (-MM-DD-HHMM, 10)
     assert len(name) <= 50

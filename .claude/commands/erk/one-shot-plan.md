@@ -1,16 +1,16 @@
 ---
-description: Create a plan from a one-shot instruction, save it as a GitHub issue, and write results to .impl/ (used by CI workflow)
+description: Create a plan from a one-shot prompt, save it as a GitHub issue, and write results to .impl/ (used by CI workflow)
 ---
 
 # One-Shot Plan
 
-You are running autonomously in a CI workflow. Your job is to read an instruction, explore the codebase, create a detailed implementation plan, and save it as a GitHub issue.
+You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a GitHub issue.
 
 **Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
 
-## Step 1: Read the Instruction
+## Step 1: Read the Prompt
 
-Read `.impl/task.md` to understand what you need to do.
+Read `.impl/prompt.md` to understand what you need to do.
 
 ## Step 2: Read Objective Context (if present)
 
@@ -24,7 +24,7 @@ Read `AGENTS.md` to understand the project conventions. Follow its documentation
 
 Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
 
-- Search for files, patterns, and existing implementations related to the instruction
+- Search for files, patterns, and existing implementations related to the prompt
 - Identify which files need to be created or modified
 - Understand existing architecture and patterns
 - Find relevant tests and test patterns
@@ -82,5 +82,5 @@ Use the `issue_number` and `title` extracted from the Step 6 output.
 - This is planning only — do NOT implement any code changes
 - Your outputs are `.impl/plan.md` and `.impl/plan-result.json`
 - The plan must be detailed enough for another agent to implement without additional context
-- Keep the plan focused on the instruction
+- Keep the plan focused on the prompt
 - Never modify CHANGELOG.md
