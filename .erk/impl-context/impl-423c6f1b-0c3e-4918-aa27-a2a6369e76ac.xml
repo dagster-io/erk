@@ -1,0 +1,956 @@
+<session>
+  <meta branch="planned/plan-reorganize-dash-ta-02-21-1308" />
+  <meta model="claude-opus-4-6" />
+  <user>i want to see what it looks like if we just drop the title column. comment it out, but don't delete fetching and other plumbing</user>
+  <thinking>The user wants to comment out the title column in what appears to be a TUI dashboard. Let me find the relevant code. The branch name suggests this is about reorganizing the dash/TUI table.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="29046" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 29046, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Let me find the relevant TUI table code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="29046" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 29046, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_01JCL2PkrbWpympojurngXxh">
+    <param name="pattern">title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29046" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 29046, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01JCL2PkrbWpympojurngXxh">
+Found 9 files
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/screens/unresolved_comments_screen.py
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/data/types.py
+src/erk/tui/filtering/logic.py
+src/erk/tui/screens/help_screen.py
+src/erk/tui/screens/plan_body_screen.py
+src/erk/tui/app.py
+src/erk/tui/widgets/command_output.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SLAjvcjxjihA55gaJjaBBx">
+    <param name="pattern">title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29046" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 29046, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01SLAjvcjxjihA55gaJjaBBx">
+src/erk/tui/widgets/plan_table.py:149:        Objectives view uses enriched columns (plan, title, progress, next, updated, author).
+src/erk/tui/widgets/plan_table.py:160:        # Objectives view: plan, obj, title, prog, next step, deps, updated, author
+src/erk/tui/widgets/plan_table.py:162:            self.add_column("title", key="title")
+src/erk/tui/widgets/plan_table.py:176:        # Plans view: plan, obj, sts, title, branch, ...
+src/erk/tui/widgets/plan_table.py:179:        self.add_column("title", key="title")
+src/erk/tui/widgets/plan_table.py:275:        # Objectives view: plan, title, progress, next, updated, author
+src/erk/tui/widgets/plan_table.py:277:            display_title = row.title
+src/erk/tui/widgets/plan_table.py:278:            display_title = display_title.removeprefix("Objective: ")
+src/erk/tui/widgets/plan_table.py:281:                Text(display_title),
+src/erk/tui/widgets/plan_table.py:318:        # Wrap title in Text to prevent Rich markup interpretation
+src/erk/tui/widgets/plan_table.py:324:            Text(row.title),
+src/erk/tui/widgets/command_output.py:50:    def __init__(self, title: str) -&gt; None:
+src/erk/tui/widgets/command_output.py:54:            title: Title to show at the top of the panel
+src/erk/tui/widgets/command_output.py:57:        self._title = title
+src/erk/tui/widgets/command_output.py:75:            yield Static(f"[bold]{self._title}[/bold]", id="output-header")
+src/erk/tui/data/types.py:19:        title: Plan title (truncated for display)
+src/erk/tui/data/types.py:31:        full_title: Complete untruncated plan title
+src/erk/tui/data/types.py:33:        pr_title: PR title if linked
+src/erk/tui/data/types.py:70:    title: str
+src/erk/tui/data/types.py:82:    full_title: str
+src/erk/tui/data/types.py:84:    pr_title: str | None
+src/erk/tui/app.py:550:        title: str,
+src/erk/tui/app.py:580:                title=title,
+src/erk/tui/app.py:629:                full_title=row.full_title,
+src/erk/tui/app.py:652:                full_title=row.full_title,
+src/erk/tui/app.py:902:                        title=f"Fix Conflicts Remote PR #{row.pr_number}",
+src/erk/tui/app.py:933:                        title=f"Address Remote PR #{row.pr_number}",
+src/erk/tui/app.py:948:                    title=f"Submit Plan #{row.plan_id}",
+src/erk/tui/app.py:978:                    title=f"Land PR #{pr_num}",
+src/erk/tui/app.py:1014:                title=f"Implement (One-Shot) #{row.plan_id}",
+
+... [42 lines omitted] ...
+  </tool_result>
+  <assistant>Let me read the plan_table.py file to see the full column setup and row rendering.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2881" cache_read_input_tokens="29046" cache_creation="{'ephemeral_5m_input_tokens': 2881, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_01V4Wr729ZbWtU529S3CiapM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2881" cache_read_input_tokens="29046" cache_creation="{'ephemeral_5m_input_tokens': 2881, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01V4Wr729ZbWtU529S3CiapM">
+     1→"""Plan table widget for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from rich.text import Text
+     8→from textual.events import Click
+     9→from textual.message import Message
+    10→from textual.widgets import DataTable
+    11→
+    12→from erk.tui.data.types import PlanFilters, PlanRowData
+    13→from erk.tui.views.types import ViewMode
+    14→from erk_shared.context.types import PlanBackendType
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk.tui.app import ErkDashApp
+    18→
+    19→
+    20→class PlanDataTable(DataTable):
+    21→    """DataTable subclass for displaying plans.
+    22→
+    23→    Manages column configuration and row population from PlanRowData.
+    24→    Uses row selection mode (not cell selection) for simpler navigation.
+    25→    """
+    26→
+    27→    class LocalWtClicked(Message):
+    28→        """Posted when user clicks local-wt column on a row with existing worktree."""
+    29→
+    30→        def __init__(self, row_index: int) -&gt; None:
+
+... [431 lines omitted] ...
+  </tool_result>
+  <assistant>Now I can see the structure. I need to comment out the title column in both the plans view and objectives view. Let me make the edits.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8305" cache_read_input_tokens="31927" cache_creation="{'ephemeral_5m_input_tokens': 8305, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01QTHg8Hfkb9oqCnJ1x7ZyxU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # Objectives view: plan, obj, title, prog, next step, deps, updated, author
+      ...[truncated 63 chars]...ey="title")
+            col_index += 1
+            self.add_column("prog", key="progress")</param>
+    <param name="new_string">        # Objectives view: plan, obj, prog, next step, deps, updated, author
+        if se...[truncated 60 chars]...="title")
+            # col_index += 1
+            self.add_column("prog", key="progress")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8305" cache_read_input_tokens="31927" output_tokens="308" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 8305}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01QTHg8Hfkb9oqCnJ1x7ZyxU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EMZQwc6sCVAVX6RvxiEeoJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # Plans view: plan, obj, sts, title, branch, ...
+        self.add_column("sts", ke...[truncated 41 chars]...itle", key="title")
+        col_index += 1
+        self.add_column("branch", key="branch")</param>
+    <param name="new_string">        # Plans view: plan, obj, sts, branch, ...
+        self.add_column("sts", key="stat...[truncated 38 chars]...le", key="title")
+        # col_index += 1
+        self.add_column("branch", key="branch")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="40232" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 387}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01EMZQwc6sCVAVX6RvxiEeoJ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now comment out the title values in `_row_to_values`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="40619" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_017ZXNAtnDcaKm1BqquwFVsb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # Objectives view: plan, title, progress, next, updated, author
+        if self._v...[truncated 341 chars]...ps_display,
+                row.updated_display,
+                row.author,
+            )</param>
+    <param name="new_string">        # Objectives view: plan, progress, next, updated, author
+        if self._view_mod...[truncated 340 chars]...ps_display,
+                row.updated_display,
+                row.author,
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="40619" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_017ZXNAtnDcaKm1BqquwFVsb">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016mp6iSeZdmUUWU49NXxxMW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # Build values list based on columns
+        # Wrap title in Text to prevent Rich ...[truncated 197 chars]...            Text(row.title),
+            row.pr_head_branch or row.worktree_branch or "-",</param>
+    <param name="new_string">        # Build values list based on columns
+        values: list[str | Text] = [
+        ...[truncated 80 chars]...# title column commented out
+            row.pr_head_branch or row.worktree_branch or "-",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="40980" output_tokens="326" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 593}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_016mp6iSeZdmUUWU49NXxxMW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Done. I commented out the title column in three places:
+
+1. **Objectives view columns** (line 162-163) — `add_column("title")` and its `col_index` increment
+2. **Plans view columns** (line 179-180) — `add_column("title")` and its `col_index` increment  
+3. **Objectives view values** (line 277-281) — the `display_title` computation and `Text(display_title)` in the return tuple
+4. **Plans view values** (line 324) — `Text(row.title)` in the values list
+
+All data fetching, `PlanRowData.title`, and other plumbing remains intact — only the column definition and its cell value are commented out.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="41573" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+  <assistant>No response requested.</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <user>this is better. drop everytihng related to title</user>
+  <thinking>The user wants me to fully remove (not just comment out) everything related to the title column in the plan table. Since this is plan mode, I need to be careful - but wait, the user said "drop everything related to title" which is a pretty clear and simple task. Let me look at what's currently commented out and what other title-related code exists.
+
+Actually, I'm in plan mode. I need to plan this, not execute it. But this is a very simple task - just removing commented-out code and any remaining title references in the plan_table.py file. Let me check what needs to be removed.
+
+Let me re-read the current state of the file to understand what to remove. Actually, I already read it and can see the changes. 
+
+I need to identify all the places where title is referenced - the commented-out column setup, the value extraction code in both views, and the column layout comments. But I also need to check the filtering logic since it likely filters on title, and there might be other files that reference title too.
+
+The user's intent seems to have shifted from "comment it out but keep the plumbing" to "drop everything related to title" - which could mean removing the title field from the data types entirely, stripping it from filtering logic, and deleting all the commented-out code. Given they said the commented-out version looked better, I think they want me to fully remove the title column and clean up all the related code, not just delete the commented-out lines. they want to clean up by removing the commented-out code (and possibly the title field from PlanRowData and filtering). But since they said "everything related to title", let me plan to remove:
+
+1. Commented-out title column code in plan_table.py
+2. The `title` field from `PlanRowData` in data/types.py
+3. Title-based filtering in filtering/logic.py
+4. Any references to `row.title` elsewhere
+
+But wait - `full_title` and `pr_title` are used in detail screens (plan_detail_screen.py, plan_body_screen.py). Those are different from the table title column. The user might just mean the table column title, not the full_title used in detail views.
+
+Let me think about the scope more carefully. The `title` field on PlanRowData is used for the table column (now removed) and filtering. I think "everything related to title" most likely means the table column and its supporting infrastructure, but I should be clear about what I'm removing and ask if the scope extends to the data type and filtering logic. I'm going to remove the `title` field from PlanRowData and strip out all references to it in the table display and filtering logic, while keeping `full_title` and `pr_title` since they serve different purposes in the detail views.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="23827" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 23827, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>This is straightforward — remove all the commented-out title code and the `title` field itself from the data layer. Let me quickly check what references `row.title` vs `full_title` to scope the removal correctly.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="23827" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 23827, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_016q98awuXq1in6frgaV9Uga">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="23827" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 23827, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_016q98awuXq1in6frgaV9Uga">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class PlanRowData:
+    11→    """Row data for displaying a plan in the TUI table.
+    12→
+    13→    Contains pre-formatted display strings and raw data needed for actions.
+    14→    Immutable to ensure table state consistency.
+    15→
+    16→    Attributes:
+    17→        plan_id: GitHub issue number (e.g., 123)
+    18→        plan_url: Full URL to the GitHub issue
+    19→        title: Plan title (truncated for display)
+    20→        pr_number: PR number if linked, None otherwise
+    21→        pr_url: URL to PR (GitHub or Graphite), None if no PR
+    22→        pr_display: Formatted PR cell content (e.g., "#123 👀")
+    23→        checks_display: Formatted checks cell (e.g., "✓" or "✗")
+    24→        worktree_name: Name of local worktree, empty string if none
+    25→        exists_locally: Whether worktree exists on local machine
+    26→        local_impl_display: Relative time since last local impl (e.g., "2h ago")
+    27→        remote_impl_display: Relative time since last remote impl
+    28→        run_id_display: Formatted workflow run ID
+    29→        run_state_display: Formatted workflow run state
+    30→        run_url: URL to the GitHub Actions run page
+
+... [127 lines omitted] ...
+
+    41→        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+  </tool_result>
+  <tool_use name="Read" id="toolu_013N3nxbm3ig4hWaeF1eHnbg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/filtering/logic.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="23827" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 23827, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_013N3nxbm3ig4hWaeF1eHnbg">
+     1→"""Pure filtering logic for TUI dashboard."""
+     2→
+     3→from erk.tui.data.types import PlanRowData
+     4→
+     5→
+     6→def filter_plans(plans: list[PlanRowData], query: str) -&gt; list[PlanRowData]:
+     7→    """Filter plans by query matching title, plan ID, or PR number.
+     8→
+     9→    Case-insensitive substring matching against:
+    10→    - Plan title
+    11→    - Plan ID (as string)
+    12→    - PR number (as string, if present)
+    13→
+    14→    Args:
+    15→        plans: List of plans to filter
+    16→        query: Search query string
+    17→
+    18→    Returns:
+    19→        Filtered list of plans matching the query.
+    20→        Returns all plans if query is empty.
+    21→    """
+    22→    if not query:
+    23→        return plans
+    24→
+    25→    query_lower = query.lower()
+    26→    result: list[PlanRowData] = []
+    27→
+    28→    for plan in plans:
+    29→        # Check title (case-insensitive)
+    30→        if query_lower in plan.title.lower():
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GF2vaeyK3iZWPQ23kvnxNy">
+    <param name="pattern">\brow\.title\b|\.title\b</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="23827" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 23827, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01GF2vaeyK3iZWPQ23kvnxNy">
+src/erk/tui/widgets/plan_table.py:277:            # display_title = row.title
+src/erk/tui/widgets/plan_table.py:322:            # Text(row.title),  # title column commented out
+src/erk/tui/filtering/logic.py:30:        if query_lower in plan.title.lower():
+  </tool_result>
+  <thinking>Now I need to find where `title` is set when constructing PlanRowData. Let me check app.py for the construction sites.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6551" cache_read_input_tokens="42868" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Now let me find where `PlanRowData` is constructed and where `title=` is passed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6551" cache_read_input_tokens="42868" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_01GyJ7vye2qhXL8yhfRCAY96">
+    <param name="pattern">\btitle=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6551" cache_read_input_tokens="42868" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01GyJ7vye2qhXL8yhfRCAY96">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SHE3oYxkNs3qnv7GvfzTAD">
+    <param name="pattern">\btitle\b</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/provider.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6551" cache_read_input_tokens="42868" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01SHE3oYxkNs3qnv7GvfzTAD">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/provider.py. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01F56G5za8BzTatnKP5MQNjD">
+    <param name="pattern">make_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6551" cache_read_input_tokens="42868" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01F56G5za8BzTatnKP5MQNjD">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Ut6SRw39494pNkSjn62H87">
+    <param name="pattern">src/erk/tui/data/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="763" cache_read_input_tokens="49419" cache_creation="{'ephemeral_5m_input_tokens': 763, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01Ut6SRw39494pNkSjn62H87">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NvTrGfxAu7DKkYYKkTSUvS">
+    <param name="pattern">make_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="763" cache_read_input_tokens="49419" cache_creation="{'ephemeral_5m_input_tokens': 763, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01NvTrGfxAu7DKkYYKkTSUvS">
+Found 6 files
+tests/unit/cli/commands/exec/scripts/test_dash_data.py
+tests/tui/test_app.py
+tests/tui/test_plan_table.py
+tests/tui/commands/test_execute_command.py
+tests/tui/commands/test_registry.py
+tests/tui/filtering/test_logic.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0115BpXbyRjKuoUUscq6N48e">
+    <param name="pattern">\btitle=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="763" cache_read_input_tokens="49419" cache_creation="{'ephemeral_5m_input_tokens': 763, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_0115BpXbyRjKuoUUscq6N48e">
+src/erk/tui/app.py:580:                title=title,
+src/erk/tui/app.py:902:                        title=f"Fix Conflicts Remote PR #{row.pr_number}",
+src/erk/tui/app.py:933:                        title=f"Address Remote PR #{row.pr_number}",
+src/erk/tui/app.py:948:                    title=f"Submit Plan #{row.plan_id}",
+src/erk/tui/app.py:978:                    title=f"Land PR #{pr_num}",
+src/erk/tui/app.py:1014:                title=f"Implement (One-Shot) #{row.plan_id}",
+src/erk/tui/app.py:1023:                title=f"Check Objective #{row.plan_id}",
+src/erk/tui/app.py:1032:                title=f"Close Objective #{row.plan_id}",
+src/erk/tui/screens/plan_detail_screen.py:364:            title=f"Fix Conflicts Remote PR #{self._row.pr_number}",
+src/erk/tui/screens/plan_detail_screen.py:662:                    title=f"Fix Conflicts Remote PR #{row.pr_number}",
+src/erk/tui/screens/plan_detail_screen.py:670:                    title=f"Address Remote PR #{row.pr_number}",
+src/erk/tui/screens/plan_detail_screen.py:687:                    title=f"Submit Plan #{row.plan_id}",
+src/erk/tui/screens/plan_detail_screen.py:718:                    title=f"Land PR #{pr_num}",
+  </tool_result>
+  <thinking>The `title=` on lines 902, 933, 948, 978, 1014, 1023, 1032, 364, 662, 670, 687, 718 are for `CommandOutputPanel(title=...)` - that's a different `title` parameter, not the PlanRowData.title field.
+
+The key one is line 580 in app.py: `title=title,` which is where PlanRowData is constructed. Let me see how `title` is computed there.
+
+Also need to check the test files for `make_plan_row` and `title`.
+
+
+Now I'm looking at the app.py context around line 580 and examining the test fakes to understand how the title gets set.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1130" cache_read_input_tokens="50182" cache_creation="{'ephemeral_5m_input_tokens': 1130, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_015xyyLJYAPMXMPSpakpnmUe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/app.py</param>
+    <param name="offset">540</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1130" cache_read_input_tokens="50182" cache_creation="{'ephemeral_5m_input_tokens': 1130, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_015xyyLJYAPMXMPSpakpnmUe">
+   540→                "Objective update failed",
+   541→                severity="error",
+   542→                timeout=8,
+   543→            )
+   544→
+   545→    def _push_streaming_detail(
+   546→        self,
+   547→        *,
+   548→        row: PlanRowData,
+   549→        command: list[str],
+   550→        title: str,
+   551→        timeout: float,
+   552→        on_success: Callable[[], None] | None,
+   553→    ) -&gt; None:
+   554→        """Push a detail screen and run a streaming command after refresh."""
+   555→        executor = RealCommandExecutor(
+   556→            browser_launch=self._provider.browser.launch,
+   557→            clipboard_copy=self._provider.clipboard.copy,
+   558→            close_plan_fn=self._provider.close_plan,
+   559→            notify_fn=self._notify_with_severity,
+   560→            refresh_fn=self.action_refresh,
+   561→            submit_to_queue_fn=self._provider.submit_to_queue,
+   562→            update_objective_fn=lambda oi, pn, br: self._update_objective_async(
+   563→                objective_issue=oi,
+   564→                pr_num=pn,
+   565→                branch=br,
+   566→            ),
+   567→        )
+   568→        detail_screen = PlanDetailScreen(
+   569→            row=row,
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0191y6NAoknDzQd5YDigy2m7">
+    <param name="pattern">\btitle\b</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1130" cache_read_input_tokens="50182" cache_creation="{'ephemeral_5m_input_tokens': 1130, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_0191y6NAoknDzQd5YDigy2m7">
+tests/tui/test_app.py:679:        """Detail modal shows full untruncated title."""
+tests/tui/test_app.py:681:            "This is a very long plan title that would normally be truncated "
+tests/tui/test_app.py:1100:            title: str,
+tests/tui/test_app.py:1180:                title="Test Command",
+tests/tui/test_app.py:1220:                title="Test Command",
+tests/tui/test_app.py:1262:                title="Test Command",
+tests/tui/test_app.py:1306:                title="Test Command",
+tests/tui/test_app.py:1560:        """PlanBodyScreen shows plan number and full title in header."""
+tests/tui/test_app.py:1561:        full_title = "This is a very long plan title that should be shown in full"
+tests/tui/data/test_provider.py:573:                        title="Fix issue",
+tests/tui/data/test_provider.py:711:            title="Test Plan",
+tests/tui/data/test_provider.py:729:                    title="Fix issue",
+tests/tui/data/test_provider.py:792:            title="Test Plan",
+tests/tui/data/test_provider.py:810:                    title="Fix issue",
+tests/tui/data/test_provider.py:873:            title="Test Plan",
+tests/tui/data/test_provider.py:944:            title="Test Plan",
+tests/tui/data/test_provider.py:1012:            title="Test Plan",
+tests/tui/data/test_provider.py:1079:            title="Test Plan",
+tests/tui/data/test_provider.py:1148:            title="Test Plan",
+tests/tui/data/test_provider.py:1219:            title="Test Plan",
+tests/tui/data/test_provider.py:1290:            title="Test Plan",
+tests/tui/data/test_provider.py:1363:            title="Test Plan",
+tests/tui/commands/test_execute_command.py:24:        title: str,
+tests/tui/commands/test_execute_command.py:165:            title="Test",
+tests/tui/commands/test_execute_command.py:242:            title="Test",
+tests/tui/filtering/test_logic.py:8:    """Filters plans by title substring match."""
+tests/tui/test_plan_table.py:59:        assert row.title == "Test Plan"
+tests/tui/test_plan_table.py:164:        # plan, obj, sts, title, branch, created, author, lrn, local-wt, local-impl
+tests/tui/test_plan_table.py:192:        # plan, obj, sts, title, branch, created, author,
+tests/tui/test_plan_table.py:222:        # PR display at index 7 (plan, obj, sts, title, branch, created, author, pr, ...)
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014VUMZPAtzcQx73uZaCnKbH">
+    <param name="pattern">\btitle\b</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1130" cache_read_input_tokens="50182" cache_creation="{'ephemeral_5m_input_tokens': 1130, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_014VUMZPAtzcQx73uZaCnKbH">
+17:    assert result["title"] == "Test Plan"
+31:        title="Datetime Test",
+92:        title="Tuple Test",
+175:        "title",
+233:        title="JSON Test",
+  </tool_result>
+  <thinking>Now I need to understand what `make_plan_row` looks like and where it's defined, to understand what needs to change in the tests.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3086" cache_read_input_tokens="51312" cache_creation="{'ephemeral_5m_input_tokens': 3086, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Let me find the `make_plan_row` helper and check how the filtering test uses `title`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3086" cache_read_input_tokens="51312" cache_creation="{'ephemeral_5m_input_tokens': 3086, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_01TjGbDJ6Bbnoa6jx4yRXe3w">
+    <param name="pattern">def make_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3086" cache_read_input_tokens="51312" cache_creation="{'ephemeral_5m_input_tokens': 3086, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01TjGbDJ6Bbnoa6jx4yRXe3w">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HWBmFRRgyewFZXzroCgH5S">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/filtering/test_logic.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3086" cache_read_input_tokens="51312" cache_creation="{'ephemeral_5m_input_tokens': 3086, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01HWBmFRRgyewFZXzroCgH5S">
+     1→"""Tests for filter_plans logic."""
+     2→
+     3→from erk.tui.filtering.logic import filter_plans
+     4→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     5→
+     6→
+     7→def test_filter_by_title_substring() -&gt; None:
+     8→    """Filters plans by title substring match."""
+     9→    plans = [
+    10→        make_plan_row(1, "Add user authentication"),
+    11→        make_plan_row(2, "Fix login bug"),
+    12→        make_plan_row(3, "Refactor database"),
+    13→    ]
+    14→    result = filter_plans(plans, "login")
+    15→    assert len(result) == 1
+    16→    assert result[0].plan_id == 2
+    17→
+    18→
+    19→def test_filter_by_issue_number() -&gt; None:
+    20→    """Filters plans by issue number."""
+    21→    plans = [
+    22→        make_plan_row(123, "Plan A"),
+    23→        make_plan_row(456, "Plan B"),
+    24→        make_plan_row(789, "Plan C"),
+    25→    ]
+    26→    result = filter_plans(plans, "456")
+    27→    assert len(result) == 1
+    28→    assert result[0].plan_id == 456
+    29→
+    30→
+
+... [95 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NogYewqwZHQhkiJUXLnkBs">
+    <param name="pattern">def make_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4734" cache_read_input_tokens="54398" cache_creation="{'ephemeral_5m_input_tokens': 4734, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01NogYewqwZHQhkiJUXLnkBs">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0155a6hHwKoHam5SKaERVYNK">
+    <param name="pattern">def make_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="59132" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_0155a6hHwKoHam5SKaERVYNK">
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:237:def make_plan_row(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01C6XLmzeoTC6b6hK5nvSDmR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="offset">230</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="59303" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 297}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01C6XLmzeoTC6b6hK5nvSDmR">
+   230→        Args:
+   231→            pr_number: The PR number
+   232→            threads: List of PRReviewThread to return
+   233→        """
+   234→        self._review_threads_by_pr[pr_number] = threads
+   235→
+   236→
+   237→def make_plan_row(
+   238→    plan_id: int,
+   239→    title: str = "Test Plan",
+   240→    *,
+   241→    plan_url: str | None = None,
+   242→    plan_body: str = "",
+   243→    pr_number: int | None = None,
+   244→    pr_url: str | None = None,
+   245→    pr_title: str | None = None,
+   246→    pr_state: str | None = None,
+   247→    pr_head_branch: str | None = None,
+   248→    pr_display: str | None = None,
+   249→    worktree_name: str = "",
+   250→    worktree_branch: str | None = None,
+   251→    exists_locally: bool = False,
+   252→    run_url: str | None = None,
+   253→    run_id: str | None = None,
+   254→    run_status: str | None = None,
+   255→    run_conclusion: str | None = None,
+   256→    comment_counts: tuple[int, int] | None = None,
+   257→    learn_status: str | None = None,
+   258→    learn_plan_issue: int | None = None,
+   259→    learn_plan_issue_closed: bool | None = None,
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_019eZKhSQ21qPysdGpNxy1GG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="offset">309</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1386" cache_read_input_tokens="59600" cache_creation="{'ephemeral_5m_input_tokens': 1386, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_019eZKhSQ21qPysdGpNxy1GG">
+   309→
+   310→    Returns:
+   311→        PlanRowData populated with test data
+   312→    """
+   313→    if plan_url is None:
+   314→        plan_url = f"https://github.com/test/repo/issues/{plan_id}"
+   315→
+   316→    # Compute learn_display (full text) and learn_display_icon (icon-only)
+   317→    if learn_status is None or learn_status == "not_started":
+   318→        learn_display = "- not started"
+   319→        learn_display_icon = "-"
+   320→    elif learn_status == "pending":
+   321→        learn_display = "⟳ in progress"
+   322→        learn_display_icon = "⟳"
+   323→    elif learn_status == "completed_no_plan":
+   324→        learn_display = "∅ no insights"
+   325→        learn_display_icon = "∅"
+   326→    elif learn_status == "completed_with_plan" and learn_plan_issue is not None:
+   327→        if learn_plan_issue_closed is True:
+   328→            learn_display = f"✅ #{learn_plan_issue}"
+   329→            learn_display_icon = f"✅ #{learn_plan_issue}"
+   330→        else:
+   331→            learn_display = f"📋 #{learn_plan_issue}"
+   332→            learn_display_icon = f"📋 #{learn_plan_issue}"
+   333→    elif learn_status == "plan_completed" and learn_plan_pr is not None:
+   334→        learn_display = f"✓ #{learn_plan_pr}"
+   335→        learn_display_icon = f"✓ #{learn_plan_pr}"
+   336→    else:
+   337→        learn_display = "- not started"
+   338→        learn_display_icon = "-"
+
+... [50 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me also check how `title` is populated in the real data provider.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1397" cache_read_input_tokens="60986" cache_creation="{'ephemeral_5m_input_tokens': 1397, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_01XDj5roGAT3Uon5ZSYbq4gK">
+    <param name="pattern">title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1397" cache_read_input_tokens="60986" cache_creation="{'ephemeral_5m_input_tokens': 1397, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01XDj5roGAT3Uon5ZSYbq4gK">
+Found 2 files
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01ULJ54Xftq569G1xLxBpfqU">
+    <param name="pattern">\btitle\b</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="62383" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01ULJ54Xftq569G1xLxBpfqU">
+526:        # Truncate title for display
+527:        title = plan.title
+528:        if len(title) &gt; 50:
+529:            title = title[:47] + "..."
+531:        # Store full title
+532:        full_title = plan.title
+623:                pr_title = selected_pr.title
+739:            title=title,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TD2sRs8gEzeJdjmeVSushs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">520</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="62627" cache_creation="{'ephemeral_5m_input_tokens': 354, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01TD2sRs8gEzeJdjmeVSushs">
+   520→        workflow_run: WorkflowRun | None,
+   521→        worktree_by_plan_id: dict[int, tuple[str, str | None]],
+   522→        use_graphite: bool,
+   523→        learn_issue_states: dict[int, bool],
+   524→    ) -&gt; PlanRowData:
+   525→        """Build a single PlanRowData from plan and related data."""
+   526→        # Truncate title for display
+   527→        title = plan.title
+   528→        if len(title) &gt; 50:
+   529→            title = title[:47] + "..."
+   530→
+   531→        # Store full title
+   532→        full_title = plan.title
+   533→
+   534→        # Worktree info
+   535→        worktree_name = ""
+   536→        worktree_branch: str | None = None
+   537→        exists_locally = False
+   538→
+   539→        if plan_id in worktree_by_plan_id:
+   540→            worktree_name, worktree_branch = worktree_by_plan_id[plan_id]
+   541→            exists_locally = True
+   542→
+   543→        # Extract from pre-parsed header fields (no repeated YAML parsing)
+   544→        local_impl_str: str | None = None
+   545→        remote_impl_str: str | None = None
+   546→        learn_status: str | None = None
+   547→        learn_plan_issue: int | None = None
+   548→        learn_plan_pr: int | None = None
+   549→        learn_run_id: str | None = None
+  </tool_result>
+  <assistant>Now I also need to check `test_dash_data.py` for `title`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="565" cache_read_input_tokens="62981" cache_creation="{'ephemeral_5m_input_tokens': 565, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_01TEAygsZy1GXaFWUUmmosTV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="offset">160</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="565" cache_read_input_tokens="62981" cache_creation="{'ephemeral_5m_input_tokens': 565, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01TEAygsZy1GXaFWUUmmosTV">
+   160→
+   161→    assert result["pr_number"] == 200
+   162→    assert result["pr_url"] == "https://github.com/test/repo/pull/200"
+   163→    assert result["pr_title"] == "Fix something"
+   164→    assert result["pr_state"] == "OPEN"
+   165→
+   166→
+   167→def test_serialize_plan_row_all_fields_present() -&gt; None:
+   168→    """Test that all PlanRowData fields appear in serialized output."""
+   169→    row = make_plan_row(1, "All Fields")
+   170→    result = _serialize_plan_row(row)
+   171→
+   172→    expected_fields = {
+   173→        "plan_id",
+   174→        "plan_url",
+   175→        "title",
+   176→        "pr_number",
+   177→        "pr_url",
+   178→        "pr_display",
+   179→        "checks_display",
+   180→        "worktree_name",
+   181→        "exists_locally",
+   182→        "local_impl_display",
+   183→        "remote_impl_display",
+   184→        "run_id_display",
+   185→        "run_state_display",
+   186→        "run_url",
+   187→        "full_title",
+   188→        "plan_body",
+   189→        "pr_title",
+  </tool_result>
+  <assistant>Now let me also check how filtering uses `full_title` — if we drop `title`, the filter should use `full_title` instead.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1915" cache_read_input_tokens="63546" cache_creation="{'ephemeral_5m_input_tokens': 1915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_01QSa9JmoWRJeo79aQcURTcM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1915" cache_read_input_tokens="63546" cache_creation="{'ephemeral_5m_input_tokens': 1915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01QSa9JmoWRJeo79aQcURTcM">
+     1→"""Unit tests for dash-data exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def test_serialize_plan_row_basic() -&gt; None:
+    12→    """Test basic serialization of PlanRowData to dict."""
+    13→    row = make_plan_row(123, "Test Plan")
+    14→    result = _serialize_plan_row(row)
+    15→
+    16→    assert result["plan_id"] == 123
+    17→    assert result["title"] == "Test Plan"
+    18→    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
+    19→    assert result["pr_number"] is None
+    20→    assert result["exists_locally"] is False
+    21→    assert result["last_local_impl_at"] is None
+    22→    assert result["last_remote_impl_at"] is None
+    23→
+    24→
+    25→def test_serialize_plan_row_datetime_fields() -&gt; None:
+    26→    """Test that datetime fields are converted to ISO 8601 strings."""
+    27→    now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
+    28→    row = PlanRowData(
+    29→        plan_id=456,
+    30→        plan_url="https://github.com/test/repo/issues/456",
+  </tool_result>
+  <thinking>Now I have a good understanding of the full scope. Let me check one more thing - the `_serialize_plan_row` function to see how it handles `title`:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1806" cache_read_input_tokens="65461" cache_creation="{'ephemeral_5m_input_tokens': 1806, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Good, I have the full picture. Let me check `_serialize_plan_row` to see if it uses `dataclasses.asdict` or manual field mapping.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1806" cache_read_input_tokens="65461" cache_creation="{'ephemeral_5m_input_tokens': 1806, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_016QQmCGqbnEFfDY5ZYWA9CT">
+    <param name="pattern">def _serialize_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1806" cache_read_input_tokens="65461" cache_creation="{'ephemeral_5m_input_tokens': 1806, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_016QQmCGqbnEFfDY5ZYWA9CT">
+35:def _serialize_plan_row(row: PlanRowData) -&gt; dict[str, Any]:
+36-    """Convert PlanRowData to JSON-serializable dict.
+37-
+38-    Handles datetime fields (to ISO 8601 strings) and tuple fields
+39-    (log_entries) to lists for JSON compatibility.
+40-    """
+41-    data = dataclasses.asdict(row)
+42-    for key in ("last_local_impl_at", "last_remote_impl_at", "updated_at", "created_at"):
+43-        if isinstance(data[key], datetime):
+44-            data[key] = data[key].isoformat()
+45-    # Convert log_entries tuple of tuples to list of lists
+46-    data["log_entries"] = [list(entry) for entry in row.log_entries]
+47-    return data
+48-
+49-
+50-@click.command(name="dash-data")
+51-@click.option("--state", type=click.Choice(["open", "closed"]), default=None)
+52-@click.option("--label", multiple=True, default=("erk-plan",))
+53-@click.option("--limit", type=int, default=None)
+54-@click.option("--show-prs/--no-show-prs", default=True)
+55-@click.option("--show-runs/--no-show-runs", default=False)
+  </tool_result>
+  <assistant>It uses `dataclasses.asdict(row)`, so removing the `title` field will automatically remove it from serialization. Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="738" cache_read_input_tokens="67267" cache_creation="{'ephemeral_5m_input_tokens': 738, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Write" id="toolu_019628UtTMqhwU33sMKVEkNZ">
+    <param name="file_path">/Users/schrockn/.claude/plans/wise-gliding-fiddle.md</param>
+    <param name="content"># Remove `title` field from PlanRowData
+
+## Context
+
+After experimenting with commenting o...[truncated 2566 chars]....py`
+- Run `ty` and `ruff` checks
+- Run `erk dash -i` to visually confirm no title column
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="738" cache_read_input_tokens="67267" output_tokens="1004" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 738}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_019628UtTMqhwU33sMKVEkNZ">
+File created successfully at: /Users/schrockn/.claude/plans/wise-gliding-fiddle.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012TriRhD3s21A7LNXWoQJ9J">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}]</param>
+    <param name="plan"># Remove `title` field from PlanRowData
+
+## Context
+
+After experimenting with commenting o...[truncated 2566 chars]....py`
+- Run `ty` and `ruff` checks
+- Run `erk dash -i` to visually confirm no title column
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1042" cache_read_input_tokens="68005" cache_creation="{'ephemeral_5m_input_tokens': 1042, 'ephemeral_1h_input_tokens': 0}" output_tokens="29" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_012TriRhD3s21A7LNXWoQJ9J">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/wise-gliding-fiddle.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Remove `title` field from PlanRowData
+Current context: (wt:erk-slot-35) (br:planned/plan-reorganize-dash-ta-02-21-1308) (pr:#7765)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/p"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 423c6f1b-0c3e-4918-aa27-a2a6369e76ac \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Remove `title` field from PlanRowData
+
+### Context
+
+After experimenting with commenting out the title column in `erk dash`, it looks better without it. The branch name provides enough identification. Now fully remove the `title` field and all references — `full_title` and `pr_title` remain (used in detail screens).
+
+### Changes
+
+1. **`src/erk/tui/data/types.py`** — Delete `title: str` field and its docstring
+2. **`src/erk/tui/widgets/plan_table.py`** — Delete all commented-out title code
+3. **`src/erk/tui/filtering/logic.py`** — Switch filter from `plan.title` to `plan.full_title`
+4. **`packages/.../plan_data_provider/real.py`** — Remove title truncation block, remove `title=` from constructor
+5. **`packages/.../plan_data_provider/fake.py`** — Rename `title` param to `full_title`, remove `title=` from constructor
+6. **Tests** — Update column index comments, remove `title` assertions, fix expected field sets
+
+### Verification
+
+- Run affected tests, ty, ruff
+- Visual check with `erk dash -i`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="779" cache_read_input_tokens="69047" cache_creation="{'ephemeral_5m_input_tokens': 779, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="AskUserQuestion" id="toolu_01MmnQDu3BcrVonme3uy7rbz">
+    <param name="questions">[{'question': '📋 Remove `title` field from PlanRowData\nCurrent context: (wt:erk-slot-35) ...[truncated 479 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="779" cache_read_input_tokens="69047" output_tokens="560" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 779}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01MmnQDu3BcrVonme3uy7rbz">
+User has answered your questions: "📋 Remove `title` field from PlanRowData
+Current context: (wt:erk-slot-35) (br:planned/plan-reorganize-dash-ta-02-21-1308) (pr:#7765)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PqGSJiTFEszaNjhJgNSb1j">
+    <param name="command">erk exec marker create --session-id 423c6f1b-0c3e-4918-aa27-a2a6369e76ac exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="663" cache_read_input_tokens="69826" cache_creation="{'ephemeral_5m_input_tokens': 663, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01PqGSJiTFEszaNjhJgNSb1j">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01V78RMdgc6aVuXsxPvyWWia">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}]</param>
+    <param name="plan"># Remove `title` field from PlanRowData
+
+## Context
+
+After experimenting with commenting o...[truncated 2566 chars]....py`
+- Run `ty` and `ruff` checks
+- Run `erk dash -i` to visually confirm no title column
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="70489" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 229}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01V78RMdgc6aVuXsxPvyWWia">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

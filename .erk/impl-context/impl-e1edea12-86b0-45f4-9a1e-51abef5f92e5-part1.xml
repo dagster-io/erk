@@ -1,0 +1,947 @@
+<session>
+  <meta branch="planned/plan-reorganize-dash-ta-02-21-1308" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Remove `title` field from PlanRowData
+
+## Context
+
+After experimenting with commenting out the title column in `erk dash`, it looks better without it. The branch name provides enough identification. Now fully remove the `title` field and all references — `full_title` and `pr_title` remain (used in detail screens).
+
+## Changes
+
+### 1. `src/erk/tui/data/types.py` — Remove `title` field from PlanRowData
+- Delete `title: str` field (line 70)
+- Delete its docstring entry (line 19)
+
+### 2. `src/erk/tui/widgets/plan_table.py` — Delete commented-out title code
+- Delete commented-out `add_column("title")` in objectives view (lines 162-163)
+- Delete commented-out `add_column("title")` in plans view (lines 179-180)
+- Delete commented-out `display_title` / `Text(display_title)` in objectives `_row_to_values` (lines 277-278, 281)
+- Delete commented-out `Text(row.title)` in plans `_row_to_values` (line 322)
+
+### 3. `src/erk/tui/filtering/logic.py` — Switch filter from `title` to `full_title`
+- Change `plan.title.lower()` to `plan.full_title.lower()` (line 30)
+- Update docstring to say "full title" instead of "title"
+
+### 4. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` — Remove title truncation
+- Delete the truncation block (lines 526-529: `title = plan.title`, truncation logic)
+- Remove `title=title` from `PlanRowData(...)` constructor call (line 739)
+
+### 5. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` — Remove `title` param from `make_plan_row`
+- Remove `title: str = "Test Plan"` parameter (line 239)
+- Remove `title=title` from `PlanRowData(...)` constructor (line 371)
+- Keep `full_title=title` as-is (line 383) — but change it to `full_title="Test Plan"` hardcoded default since `title` param no longer exists
+- Actually: the second positional arg to `make_plan_row(plan_id, title)` is used everywhere. Change it to `full_title` parameter name, keep it positional.
+
+### 6. Test files — Update references
+
+- **`tests/tui/test_plan_table.py`**: Update all column index comments (title no longer at index 3; everything after `sts` shifts left by 1). Update objectives view test expectations.
+- **`tests/tui/filtering/test_logic.py`**: No changes needed (still passes title string as second arg to `make_plan_row`, which becomes `full_title`)
+- **`tests/unit/cli/commands/exec/scripts/test_dash_data.py`**: Remove `assert result["title"]` checks, remove `"title"` from expected fields set
+- **`tests/tui/data/test_provider.py`**: Remove `title=` from `PlanRowData(...)` constructors if any are manual
+
+## Verification
+
+- Run `devrun` for `pytest tests/tui/ tests/unit/cli/commands/exec/scripts/test_dash_data.py`
+- Run `ty` and `ruff` checks
+- Run `erk dash -i` to visually confirm no title column
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/423c6f1b-0c3e-4918-aa27-a2a6369e76ac.jsonl</user>
+  <thinking>Let me implement this plan step by step. First, let me read the relevant files to understand the current state.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7669" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7669, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>I'll start by reading all the files that need to be modified in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7669" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7669, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_01SBsAX9UhXEoXvgu7GiqG6R">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7669" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7669, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01SBsAX9UhXEoXvgu7GiqG6R">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class PlanRowData:
+    11→    """Row data for displaying a plan in the TUI table.
+    12→
+    13→    Contains pre-formatted display strings and raw data needed for actions.
+    14→    Immutable to ensure table state consistency.
+    15→
+    16→    Attributes:
+    17→        plan_id: GitHub issue number (e.g., 123)
+    18→        plan_url: Full URL to the GitHub issue
+    19→        title: Plan title (truncated for display)
+    20→        pr_number: PR number if linked, None otherwise
+    21→        pr_url: URL to PR (GitHub or Graphite), None if no PR
+    22→        pr_display: Formatted PR cell content (e.g., "#123 👀")
+    23→        checks_display: Formatted checks cell (e.g., "✓" or "✗")
+    24→        worktree_name: Name of local worktree, empty string if none
+    25→        exists_locally: Whether worktree exists on local machine
+    26→        local_impl_display: Relative time since last local impl (e.g., "2h ago")
+    27→        remote_impl_display: Relative time since last remote impl
+    28→        run_id_display: Formatted workflow run ID
+    29→        run_state_display: Formatted workflow run state
+    30→        run_url: URL to the GitHub Actions run page
+
+... [127 lines omitted] ...
+
+    41→        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ao77QH13Uo2cDj6KR2Z5P5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7669" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7669, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01Ao77QH13Uo2cDj6KR2Z5P5">
+     1→"""Plan table widget for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from rich.text import Text
+     8→from textual.events import Click
+     9→from textual.message import Message
+    10→from textual.widgets import DataTable
+    11→
+    12→from erk.tui.data.types import PlanFilters, PlanRowData
+    13→from erk.tui.views.types import ViewMode
+    14→from erk_shared.context.types import PlanBackendType
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk.tui.app import ErkDashApp
+    18→
+    19→
+    20→class PlanDataTable(DataTable):
+    21→    """DataTable subclass for displaying plans.
+    22→
+    23→    Manages column configuration and row population from PlanRowData.
+    24→    Uses row selection mode (not cell selection) for simpler navigation.
+    25→    """
+    26→
+    27→    class LocalWtClicked(Message):
+    28→        """Posted when user clicks local-wt column on a row with existing worktree."""
+    29→
+    30→        def __init__(self, row_index: int) -&gt; None:
+
+... [429 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WXbpS3AXgvPMVtVZqeppgS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/filtering/logic.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7669" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7669, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01WXbpS3AXgvPMVtVZqeppgS">
+     1→"""Pure filtering logic for TUI dashboard."""
+     2→
+     3→from erk.tui.data.types import PlanRowData
+     4→
+     5→
+     6→def filter_plans(plans: list[PlanRowData], query: str) -&gt; list[PlanRowData]:
+     7→    """Filter plans by query matching title, plan ID, or PR number.
+     8→
+     9→    Case-insensitive substring matching against:
+    10→    - Plan title
+    11→    - Plan ID (as string)
+    12→    - PR number (as string, if present)
+    13→
+    14→    Args:
+    15→        plans: List of plans to filter
+    16→        query: Search query string
+    17→
+    18→    Returns:
+    19→        Filtered list of plans matching the query.
+    20→        Returns all plans if query is empty.
+    21→    """
+    22→    if not query:
+    23→        return plans
+    24→
+    25→    query_lower = query.lower()
+    26→    result: list[PlanRowData] = []
+    27→
+    28→    for plan in plans:
+    29→        # Check title (case-insensitive)
+    30→        if query_lower in plan.title.lower():
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012s438EA4UnHBqkeZnikEEA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7669" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7669, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_01VGam3BnqGUcs5TXQ9ok8eo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7669" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7669, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01VGam3BnqGUcs5TXQ9ok8eo">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRReviewThread
+    13→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [390 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    55→        self._update_objective_error: str | None = None
+    83→            RuntimeError: If fetch_error is set
+    86→        if self._fetch_error is not None:
+    87→            raise RuntimeError(self._fetch_error)
+   139→        if self._update_objective_error is not None:
+   140→            raise RuntimeError(self._update_objective_error)
+  </tool_result>
+  <tool_result tool="toolu_012s438EA4UnHBqkeZnikEEA">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.issues.types import IssueNotFound
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    find_metadata_block,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [861 lines omitted] ...
+
+   338→            raise RuntimeError(f"objective-update-after-land failed: {result.stdout}")
+   695→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <thinking>Now let me also read the test files that need updating.</thinking>
+  <usage input_tokens="5736" cache_creation_input_tokens="26829" cache_read_input_tokens="26710" cache_creation="{'ephemeral_5m_input_tokens': 26829, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Now let me read the test files.</assistant>
+  <usage input_tokens="5736" cache_creation_input_tokens="26829" cache_read_input_tokens="26710" cache_creation="{'ephemeral_5m_input_tokens': 26829, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_018hpvUsb8og3LA767nao24v">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="5736" cache_creation_input_tokens="26829" cache_read_input_tokens="26710" cache_creation="{'ephemeral_5m_input_tokens': 26829, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_018hpvUsb8og3LA767nao24v">
+     1→"""Tests for PlanDataTable widget."""
+     2→
+     3→from rich.text import Text
+     4→
+     5→from erk.tui.data.types import PlanFilters
+     6→from erk.tui.views.types import ViewMode
+     7→from erk.tui.widgets.plan_table import PlanDataTable, _strip_rich_markup
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def _text_to_str(value: str | Text) -&gt; str:
+    12→    """Convert Text or str to plain string for assertions."""
+    13→    if isinstance(value, Text):
+    14→        return value.plain
+    15→    return value
+    16→
+    17→
+    18→class TestStripRichMarkup:
+    19→    """Tests for _strip_rich_markup utility function."""
+    20→
+    21→    def test_removes_link_tags(self) -&gt; None:
+    22→        """Link markup is removed."""
+    23→        text = "[link=https://example.com]click here[/link]"
+    24→        result = _strip_rich_markup(text)
+    25→        assert result == "click here"
+    26→
+    27→    def test_removes_color_tags(self) -&gt; None:
+    28→        """Color markup is removed."""
+    29→        text = "[cyan]colored text[/cyan]"
+    30→        result = _strip_rich_markup(text)
+
+... [621 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_015JXBp3pWeyMsxoRK8BtVyR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/filtering/test_logic.py</param>
+  </tool_use>
+  <usage input_tokens="5736" cache_creation_input_tokens="26829" cache_read_input_tokens="26710" cache_creation="{'ephemeral_5m_input_tokens': 26829, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_015JXBp3pWeyMsxoRK8BtVyR">
+     1→"""Tests for filter_plans logic."""
+     2→
+     3→from erk.tui.filtering.logic import filter_plans
+     4→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     5→
+     6→
+     7→def test_filter_by_title_substring() -&gt; None:
+     8→    """Filters plans by title substring match."""
+     9→    plans = [
+    10→        make_plan_row(1, "Add user authentication"),
+    11→        make_plan_row(2, "Fix login bug"),
+    12→        make_plan_row(3, "Refactor database"),
+    13→    ]
+    14→    result = filter_plans(plans, "login")
+    15→    assert len(result) == 1
+    16→    assert result[0].plan_id == 2
+    17→
+    18→
+    19→def test_filter_by_issue_number() -&gt; None:
+    20→    """Filters plans by issue number."""
+    21→    plans = [
+    22→        make_plan_row(123, "Plan A"),
+    23→        make_plan_row(456, "Plan B"),
+    24→        make_plan_row(789, "Plan C"),
+    25→    ]
+    26→    result = filter_plans(plans, "456")
+    27→    assert len(result) == 1
+    28→    assert result[0].plan_id == 456
+    29→
+    30→
+
+... [95 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FPyPryMH3KKK6ccyMqBMKE">
+    <param name="pattern">title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5736" cache_creation_input_tokens="26829" cache_read_input_tokens="26710" cache_creation="{'ephemeral_5m_input_tokens': 26829, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01FPyPryMH3KKK6ccyMqBMKE">
+17:    assert result["title"] == "Test Plan"
+31:        title="Datetime Test",
+43:        full_title="Datetime Test",
+45:        pr_title=None,
+92:        title="Tuple Test",
+104:        full_title="Tuple Test",
+106:        pr_title=None,
+156:        pr_title="Fix something",
+163:    assert result["pr_title"] == "Fix something"
+175:        "title",
+187:        "full_title",
+189:        "pr_title",
+233:        title="JSON Test",
+245:        full_title="JSON Test Full Title",
+247:        pr_title="Fix it",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Wf5aN5tC8ChE7vgzqcYR95">
+    <param name="pattern">\.title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/data/test_provider.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5736" cache_creation_input_tokens="26829" cache_read_input_tokens="26710" cache_creation="{'ephemeral_5m_input_tokens': 26829, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01Wf5aN5tC8ChE7vgzqcYR95">
+No matches found
+  </tool_result>
+  <thinking>Now let me read the test_dash_data.py file to understand the full context of what needs to change there.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="20536" cache_read_input_tokens="53539" cache_creation="{'ephemeral_5m_input_tokens': 20536, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Let me read the test_dash_data.py file for the full picture.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="20536" cache_read_input_tokens="53539" cache_creation="{'ephemeral_5m_input_tokens': 20536, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_01HpfBmAkAxBuNuYJUebPvrG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20536" cache_read_input_tokens="53539" cache_creation="{'ephemeral_5m_input_tokens': 20536, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01HpfBmAkAxBuNuYJUebPvrG">
+     1→"""Unit tests for dash-data exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def test_serialize_plan_row_basic() -&gt; None:
+    12→    """Test basic serialization of PlanRowData to dict."""
+    13→    row = make_plan_row(123, "Test Plan")
+    14→    result = _serialize_plan_row(row)
+    15→
+    16→    assert result["plan_id"] == 123
+    17→    assert result["title"] == "Test Plan"
+    18→    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
+    19→    assert result["pr_number"] is None
+    20→    assert result["exists_locally"] is False
+    21→    assert result["last_local_impl_at"] is None
+    22→    assert result["last_remote_impl_at"] is None
+    23→
+    24→
+    25→def test_serialize_plan_row_datetime_fields() -&gt; None:
+    26→    """Test that datetime fields are converted to ISO 8601 strings."""
+    27→    now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
+    28→    row = PlanRowData(
+    29→        plan_id=456,
+    30→        plan_url="https://github.com/test/repo/issues/456",
+
+... [262 lines omitted] ...
+  </tool_result>
+  <thinking>Now I also need to check the `_serialize_plan_row` function to understand how `title` is serialized. Let me also check if there are other references to `row.title` or `plan.title` I might be missing.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5375" cache_read_input_tokens="74075" cache_creation="{'ephemeral_5m_input_tokens': 5375, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Let me also check the `_serialize_plan_row` function and scan for any other `title` references.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5375" cache_read_input_tokens="74075" cache_creation="{'ephemeral_5m_input_tokens': 5375, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_01BFwdqchh3pii9iuGsyS9Ja">
+    <param name="pattern">_serialize_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5375" cache_read_input_tokens="74075" cache_creation="{'ephemeral_5m_input_tokens': 5375, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01BFwdqchh3pii9iuGsyS9Ja">
+35:def _serialize_plan_row(row: PlanRowData) -&gt; dict[str, Any]:
+36-    """Convert PlanRowData to JSON-serializable dict.
+37-
+38-    Handles datetime fields (to ISO 8601 strings) and tuple fields
+39-    (log_entries) to lists for JSON compatibility.
+40-    """
+41-    data = dataclasses.asdict(row)
+42-    for key in ("last_local_impl_at", "last_remote_impl_at", "updated_at", "created_at"):
+43-        if isinstance(data[key], datetime):
+44-            data[key] = data[key].isoformat()
+45-    # Convert log_entries tuple of tuples to list of lists
+46-    data["log_entries"] = [list(entry) for entry in row.log_entries]
+47-    return data
+48-
+49-
+50-@click.command(name="dash-data")
+--
+106:    plans = [_serialize_plan_row(row) for row in rows]
+107-
+108-    click.echo(json.dumps({"success": True, "plans": plans, "count": len(plans)}))
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XLCikmXHS3b3T8szDRubmA">
+    <param name="pattern">\.title\b</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5375" cache_read_input_tokens="74075" cache_creation="{'ephemeral_5m_input_tokens': 5375, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01XLCikmXHS3b3T8szDRubmA">
+src/erk/agent_docs/operations.py:383:                    doc_title=result.frontmatter.title,
+src/erk/agent_docs/operations.py:440:    title = category.replace("-", " ").replace("_", " ").title()
+src/erk/agent_docs/operations.py:643:    title = category.name.replace("-", " ").replace("_", " ").title()
+src/erk/agent_docs/models.py:50:        return bool(self.title) and len(self.read_when) &gt; 0
+src/erk/tui/widgets/plan_table.py:277:            # display_title = row.title
+src/erk/tui/widgets/plan_table.py:322:            # Text(row.title),  # title column commented out
+src/erk/cli/commands/wt/delete_cmd.py:102:            + f"Closed PR #{pr.number}: {click.style(pr.title, fg='cyan')}"
+src/erk/core/plan_context_provider.py:104:        return f"Objective #{objective_id}: {objective_info.title}"
+src/erk/tui/filtering/logic.py:30:        if query_lower in plan.title.lower():
+src/erk/cli/commands/land_pipeline.py:417:        subject = f"{pr_details.title} (#{state.pr_number})" if pr_details.title else None
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py:185:            click.echo(f"- Title: {result.title}")
+src/erk/cli/commands/plan/view.py:286:    user_output(_format_field("Title", click.style(plan.title, bold=True)))
+src/erk/cli/commands/run/list_cmd.py:72:            if not issue.title or not issue.title.strip():
+src/erk/cli/commands/run/list_cmd.py:145:                title = issue.title
+src/erk/cli/commands/plan/docs/unextracted_cmd.py:59:        title = issue.title
+src/erk/cli/commands/implement.py:127:    ctx.console.info(f"Plan: {plan.title}")
+src/erk/cli/commands/implement.py:130:    dry_run_desc = f"Would create .impl/ from plan #{issue_number}\n  Title: {plan.title}"
+src/erk/cli/commands/implement.py:133:        base_name=plan.title,
+src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:193:        plan_title: str = pr_result.title
+src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:206:        plan_title = pr_result.title
+src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:298:            issue_number, plan.title, timestamp, objective_id=plan.objective_id
+src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:348:        "plan_title": plan.title,
+src/erk/cli/commands/exec/scripts/get_plans_for_objective.py:71:                    "title": plan.title,
+src/erk/cli/commands/launch_cmd.py:80:    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+src/erk/cli/commands/launch_cmd.py:132:    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+src/erk/cli/commands/submit.py:384:        title=pr_result.title,
+src/erk/cli/commands/submit.py:489:        "plan_title": validated.title,
+src/erk/cli/commands/submit.py:572:        issue_title=validated.title,
+src/erk/cli/commands/submit.py:643:        issue_number, issue.title, ctx.time.now(), objective_id=objective_id
+src/erk/cli/commands/submit.py:766:    pr_title = _add_planned_prefix(_strip_plan_markers(issue.title))
+
+... [43 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture of all the changes needed. Let me also check if there are any other references to `plan.title` specifically within the `PlanRowData` context (not general plan title). The grep above shows many `.title` references, but most of them are Plan model titles (not PlanRowData.title). The key ones in the PlanRowData context are:
+
+1. `src/erk/tui/data/types.py` - line 70: `title: str` field
+2. `src/erk/tui/widgets/plan_table.py` - commented out references at lines 277, 322
+
+
+3. `src/erk/tui/filtering/logic.py` - line 30: `plan.title.lower()`
+4. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` - lines 526-529, 739
+5. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` - lines 239, 371, 383
+6. Test files
+
+Now I'll start making the changes systematically across all these locations.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3336" cache_read_input_tokens="79450" cache_creation="{'ephemeral_5m_input_tokens': 3336, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>I have a clear picture of all changes needed. Let me create tasks and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3336" cache_read_input_tokens="79450" cache_creation="{'ephemeral_5m_input_tokens': 3336, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskCreate" id="toolu_01Bmr5VCFXqZxv4wS6U6qXfT">
+    <param name="subject">Remove `title` field from PlanRowData dataclass</param>
+    <param name="description">Delete `title: str` field and its docstring entry from src/erk/tui/data/types.py</param>
+    <param name="activeForm">Removing title field from PlanRowData</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3336" cache_read_input_tokens="79450" output_tokens="452" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3336}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01Bmr5VCFXqZxv4wS6U6qXfT">
+Task #1 created successfully: Remove `title` field from PlanRowData dataclass
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01G72RMqC4CTXssmxXfqPBDa">
+    <param name="subject">Delete commented-out title code from plan_table.py</param>
+    <param name="description">Remove all commented-out title references in plan_table.py</param>
+    <param name="activeForm">Cleaning up commented-out title code</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="82786" cache_creation="{'ephemeral_5m_input_tokens': 478, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01G72RMqC4CTXssmxXfqPBDa">
+Task #2 created successfully: Delete commented-out title code from plan_table.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_013xy2gKZoskMpR8kqCq1NJp">
+    <param name="subject">Switch filter from title to full_title</param>
+    <param name="description">Change plan.title.lower() to plan.full_title.lower() in filtering/logic.py</param>
+    <param name="activeForm">Switching filter to use full_title</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="148" cache_read_input_tokens="83264" cache_creation="{'ephemeral_5m_input_tokens': 148, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_013xy2gKZoskMpR8kqCq1NJp">
+Task #3 created successfully: Switch filter from title to full_title
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01W8Xhk46bbGF996kyq4mALU">
+    <param name="subject">Remove title truncation from real provider</param>
+    <param name="description">Delete truncation block and title= from PlanRowData constructor in real.py</param>
+    <param name="activeForm">Removing title truncation from real provider</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="83412" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 149}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01W8Xhk46bbGF996kyq4mALU">
+Task #4 created successfully: Remove title truncation from real provider
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01TB2GXoKJXKCYzww2jbbWGZ">
+    <param name="subject">Update fake provider make_plan_row</param>
+    <param name="description">Remove title param, rename to full_title, update PlanRowData constructor in fake.py</param>
+    <param name="activeForm">Updating fake provider</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="83561" cache_creation="{'ephemeral_5m_input_tokens': 142, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01TB2GXoKJXKCYzww2jbbWGZ">
+Task #5 created successfully: Update fake provider make_plan_row
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01NHgEsvCWNzMNyqnhzrkXVr">
+    <param name="subject">Update test files</param>
+    <param name="description">Update test_plan_table.py, test_dash_data.py with title field removal</param>
+    <param name="activeForm">Updating test files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="83703" cache_creation="{'ephemeral_5m_input_tokens': 143, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01NHgEsvCWNzMNyqnhzrkXVr">
+Task #6 created successfully: Update test files
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014qUyLvkQhPWPgqaxmmQXrf">
+    <param name="subject">Run tests and verification</param>
+    <param name="description">Run pytest, ty, and ruff to verify changes</param>
+    <param name="activeForm">Running verification</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="133" cache_read_input_tokens="83846" cache_creation="{'ephemeral_5m_input_tokens': 133, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_014qUyLvkQhPWPgqaxmmQXrf">
+Task #7 created successfully: Run tests and verification
+  </tool_result>
+  <assistant>Now let me start implementing. I'll do the core changes first (steps 1-5), then tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="124" cache_read_input_tokens="83979" cache_creation="{'ephemeral_5m_input_tokens': 124, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskUpdate" id="toolu_01ALeexSukiPzQQahRDdAPKL">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="124" cache_read_input_tokens="83979" cache_creation="{'ephemeral_5m_input_tokens': 124, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01ALeexSukiPzQQahRDdAPKL">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Step 1: Remove `title` field from PlanRowData**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="114" cache_read_input_tokens="84103" cache_creation="{'ephemeral_5m_input_tokens': 114, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01X2doBy27drVUJYZ8hGj8rU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py</param>
+    <param name="old_string">        title: Plan title (truncated for display)
+        pr_number: PR number if linked, None otherwise</param>
+    <param name="new_string">        pr_number: PR number if linked, None otherwise</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="114" cache_read_input_tokens="84103" cache_creation="{'ephemeral_5m_input_tokens': 114, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01X2doBy27drVUJYZ8hGj8rU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012DLdQ8wbExm2XLcBVX6g3C">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py</param>
+    <param name="old_string">    plan_id: int
+    plan_url: str | None
+    title: str
+    pr_number: int | None</param>
+    <param name="new_string">    plan_id: int
+    plan_url: str | None
+    pr_number: int | None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="84217" output_tokens="200" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 258}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_012DLdQ8wbExm2XLcBVX6g3C">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01HGUZStWKFdiUhhx9Focc6y">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="84475" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 258}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01HGUZStWKFdiUhhx9Focc6y">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Step 2: Delete commented-out title code from plan_table.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="84733" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskUpdate" id="toolu_015wXe18MMr6JKCKkco8pmSh">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="84733" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_015wXe18MMr6JKCKkco8pmSh">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AUNVhCNpVDB47QBhWNwu1r">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">            # self.add_column("title", key="title")
+            # col_index += 1
+            self.add_column("prog", key="progress")</param>
+    <param name="new_string">            self.add_column("prog", key="progress")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="109" cache_read_input_tokens="84821" cache_creation="{'ephemeral_5m_input_tokens': 109, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01AUNVhCNpVDB47QBhWNwu1r">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015SBKjorc2JpauQHobXoSkd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # self.add_column("title", key="title")
+        # col_index += 1
+        self.add_column("branch", key="branch")</param>
+    <param name="new_string">        self.add_column("branch", key="branch")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="84930" cache_creation="{'ephemeral_5m_input_tokens': 259, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_015SBKjorc2JpauQHobXoSkd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01P9iTVrqb7cTYMRv4246B57">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        if self._view_mode == ViewMode.OBJECTIVES:
+            # display_title = row.title...[truncated 97 chars]...ll,
+                # Text(display_title),
+                row.objective_progress_display,</param>
+    <param name="new_string">        if self._view_mode == ViewMode.OBJECTIVES:
+            return (
+                plan_cell,
+                row.objective_progress_display,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="85189" output_tokens="255" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 259}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01P9iTVrqb7cTYMRv4246B57">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017YWhhg1jA2CpeYEFfcZd23">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">            plan_cell,
+            objective_cell,
+            status_cell,
+            # Text(row.title),  # title column commented out
+            row.pr_head_branch or row.worktree_branch or "-",</param>
+    <param name="new_string">            plan_cell,
+            objective_cell,
+            status_cell,
+            row.pr_head_branch or row.worktree_branch or "-",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="85448" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 315}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_017YWhhg1jA2CpeYEFfcZd23">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01DaMfAaqwEiA5nYhKVCzG1v">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="85763" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01DaMfAaqwEiA5nYhKVCzG1v">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Step 3: Switch filter from `title` to `full_title`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="86061" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskUpdate" id="toolu_01CteByei1VewAF3SobfPt8s">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="86061" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01CteByei1VewAF3SobfPt8s">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01J4niVBScC6pjpJCQWpZBy8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/filtering/logic.py</param>
+    <param name="old_string">def filter_plans(plans: list[PlanRowData], query: str) -&gt; list[PlanRowData]:
+    """Filter...[truncated 77 chars]...gainst:
+    - Plan title
+    - Plan ID (as string)
+    - PR number (as string, if present)</param>
+    <param name="new_string">def filter_plans(plans: list[PlanRowData], query: str) -&gt; list[PlanRowData]:
+    """Filter...[truncated 87 chars]...t:
+    - Plan full title
+    - Plan ID (as string)
+    - PR number (as string, if present)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="109" cache_read_input_tokens="86149" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 109}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01J4niVBScC6pjpJCQWpZBy8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/filtering/logic.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VzarpSMZojK2bUwop3uet9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/filtering/logic.py</param>
+    <param name="old_string">        # Check title (case-insensitive)
+        if query_lower in plan.title.lower():</param>
+    <param name="new_string">        # Check full title (case-insensitive)
+        if query_lower in plan.full_title.lower():</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="86258" output_tokens="198" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 365}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01VzarpSMZojK2bUwop3uet9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/filtering/logic.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Bdheu8GPbTasoURzsuXpzc">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="86623" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01Bdheu8GPbTasoURzsuXpzc">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Step 4: Remove title truncation from real provider**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="86879" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskUpdate" id="toolu_01R1itwKUUATvbCWkW3XMJzy">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="86879" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01R1itwKUUATvbCWkW3XMJzy">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ExJFvuvuKQyaR4LLv9WWjr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">        """Build a single PlanRowData from plan and related data."""
+        # Truncate ti...[truncated 59 chars]...    title = title[:47] + "..."
+
+        # Store full title
+        full_title = plan.title</param>
+    <param name="new_string">        """Build a single PlanRowData from plan and related data."""
+        full_title = plan.title</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="104" cache_read_input_tokens="86967" cache_creation="{'ephemeral_5m_input_tokens': 104, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01ExJFvuvuKQyaR4LLv9WWjr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FWaNzZo3BtMevN6DPi1RYD">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">            plan_id=plan_id,
+            plan_url=plan.url,
+            title=title,
+            pr_number=pr_number,</param>
+    <param name="new_string">            plan_id=plan_id,
+            plan_url=plan.url,
+            pr_number=pr_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="87071" output_tokens="223" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 321}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01FWaNzZo3BtMevN6DPi1RYD">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01WyiTyW35eGiZzAgEkGUa9Q">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="87392" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01WyiTyW35eGiZzAgEkGUa9Q">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Step 5: Update fake provider make_plan_row**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="87685" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskUpdate" id="toolu_013vzvHEWN7fVA8U2EkT1GsD">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="87685" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_013vzvHEWN7fVA8U2EkT1GsD">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014U5TmfJgqWeHm4sU4JG34m">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="old_string">def make_plan_row(
+    plan_id: int,
+    title: str = "Test Plan",
+    *,</param>
+    <param name="new_string">def make_plan_row(
+    plan_id: int,
+    full_title: str = "Test Plan",
+    *,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="87773" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 105}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_014U5TmfJgqWeHm4sU4JG34m">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01L9NZZAt2uVnaBmh9Zae5rU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="old_string">    Args:
+        plan_id: GitHub issue number
+        title: Plan title</param>
+    <param name="new_string">    Args:
+        plan_id: GitHub issue number
+        full_title: Full plan title</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="87878" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01L9NZZAt2uVnaBmh9Zae5rU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the constructor call — remove `title=title` and change `full_title=title` to `full_title=full_title`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="88167" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_012KHv7b8GBwxmJhmpDV9wch">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="old_string">    return PlanRowData(
+        plan_id=plan_id,
+        plan_url=plan_url,
+        title=...[truncated 264 chars]...lay="-",
+        run_state_display="-",
+        run_url=run_url,
+        full_title=title,</param>
+    <param name="new_string">    return PlanRowData(
+        plan_id=plan_id,
+        plan_url=plan_url,
+        pr_num...[truncated 248 chars]...-",
+        run_state_display="-",
+        run_url=run_url,
+        full_title=full_title,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="88167" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_012KHv7b8GBwxmJhmpDV9wch">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01AK2w94dVjxtchRshk6nNtU">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="88435" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01AK2w94dVjxtchRshk6nNtU">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Step 6: Update test files**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="89002" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskUpdate" id="toolu_015bfgBdnqUNXaQ6rqrHon69">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="89002" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_015bfgBdnqUNXaQ6rqrHon69">
+Updated task #6 status
+  </tool_result>
+  <assistant>First, update `test_plan_table.py`. The title column is gone, so indices shift left by 1 for everything after `sts` (index 2). Let me update systematically:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="100" cache_read_input_tokens="89090" cache_creation="{'ephemeral_5m_input_tokens': 100, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_019eBBvoSLG2QaNkoVFiJDgt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    def test_make_plan_row_defaults(self) -&gt; None:
+        """make_plan_row creates row wi...[truncated 107 chars]...le == "Test Plan"
+        assert row.plan_url == "https://github.com/test/repo/issues/123"</param>
+    <param name="new_string">    def test_make_plan_row_defaults(self) -&gt; None:
+        """make_plan_row creates row wi...[truncated 112 chars]...le == "Test Plan"
+        assert row.plan_url == "https://github.com/test/repo/issues/123"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="100" cache_read_input_tokens="89090" output_tokens="381" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 100}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_019eBBvoSLG2QaNkoVFiJDgt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `test_row_to_values_basic` — title column is removed, so total count goes from 10 to 9, and indices after `sts` (index 2) shift left by 1:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="89190" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01L8PJ2d2nT8iE9j9nsLyyGx">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    def test_row_to_values_basic(self) -&gt; None:
+        """Basic row conversion without op...[truncated 964 chars]...= "-"  # worktree (not exists)
+        assert _text_to_str(values[9]) == "-"  # local impl</param>
+    <param name="new_string">    def test_row_to_values_basic(self) -&gt; None:
+        """Basic row conversion without op...[truncated 902 chars]...= "-"  # worktree (not exists)
+        assert _text_to_str(values[8]) == "-"  # local impl</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="89190" output_tokens="919" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 438}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01L8PJ2d2nT8iE9j9nsLyyGx">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `test_row_to_values_with_prs` — from 13 to 12, indices shift:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="976" cache_read_input_tokens="89628" cache_creation="{'ephemeral_5m_input_tokens': 976, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01P2rtxRu2UBrXHLSreJE5NN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    def test_row_to_values_with_prs(self) -&gt; None:
+        """Row conversion with PR colum...[truncated 1008 chars]...for PR with no counts)
+        assert _text_to_str(values[10]) == "-"  # learn (no status)</param>
+    <param name="new_string">    def test_row_to_values_with_prs(self) -&gt; None:
+        """Row conversion with PR colum...[truncated 946 chars]... for PR with no counts)
+        assert _text_to_str(values[9]) == "-"  # learn (no status)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="976" cache_read_input_tokens="89628" output_tokens="922" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 976}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01P2rtxRu2UBrXHLSreJE5NN">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Update `test_row_to_values_with_pr_link_indicator`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="979" cache_read_input_tokens="90604" cache_creation="{'ephemeral_5m_input_tokens': 979, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01KVVuoSmXFAW4ucZt4q2ufQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # PR display at index 7 (plan, obj, sts, title, branch, created, author, pr, ...)
+        assert _text_to_str(values[7]) == "#456 ✅🔗"</param>
+    <param name="new_string">        # PR display at index 6 (plan, obj, sts, branch, created, author, pr, ...)
+        assert _text_to_str(values[6]) == "#456 ✅🔗"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="979" cache_read_input_tokens="90604" cache_creation="{'ephemeral_5m_input_tokens': 979, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01KVVuoSmXFAW4ucZt4q2ufQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Update `test_row_to_values_with_runs`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="91583" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01EFcGaepfDxpKnjL41kzamz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # plan, obj, sts, title, branch, created, author, lrn, local-wt, local-impl,
+        # remote-impl, run-id, run-state
+        assert len(values) == 13</param>
+    <param name="new_string">        # plan, obj, sts, branch, created, author, lrn, local-wt, local-impl,
+        # remote-impl, run-id, run-state
+        assert len(values) == 12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="91583" output_tokens="267" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 328}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01EFcGaepfDxpKnjL41kzamz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Update `test_row_to_values_with_worktree`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="547" cache_read_input_tokens="91911" cache_creation="{'ephemeral_5m_input_tokens': 547, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+</session>

@@ -1,0 +1,808 @@
+<session>
+  <meta branch="planned/plan-reorganize-dash-ta-02-21-1308" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_01K8tEaQbEkrhDrW4d6sBP2E">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # Worktree is at index 8 (after plan, obj, sts, title, branch, created, author, lrn)
+        assert values[8] == "feature-branch"</param>
+    <param name="new_string">        # Worktree is at index 7 (after plan, obj, sts, branch, created, author, lrn)
+        assert values[7] == "feature-branch"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="547" cache_read_input_tokens="91911" cache_creation="{'ephemeral_5m_input_tokens': 547, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01K8tEaQbEkrhDrW4d6sBP2E">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Update branch index tests (from 4 to 3):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="310" cache_read_input_tokens="92458" cache_creation="{'ephemeral_5m_input_tokens': 310, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_016iTtLrfkabVafPuY6QZ8CP">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # Branch is at index 4 (after plan, obj, sts, title)
+        assert values[4] == "feat/my-branch"</param>
+    <param name="new_string">        # Branch is at index 3 (after plan, obj, sts)
+        assert values[3] == "feat/my-branch"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="310" cache_read_input_tokens="92458" output_tokens="228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 310}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_016iTtLrfkabVafPuY6QZ8CP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01S9Nh8YUmfxbJi27iDw9YHw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # Branch is at index 4 (after plan, obj, sts, title)
+        assert values[4] == "local-branch"</param>
+    <param name="new_string">        # Branch is at index 3 (after plan, obj, sts)
+        assert values[3] == "local-branch"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="92768" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01S9Nh8YUmfxbJi27iDw9YHw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01S4AeJGAipe79rzZ8mVZj4e">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        assert values[4] == "pr-branch"</param>
+    <param name="new_string">        assert values[3] == "pr-branch"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="93053" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01S4AeJGAipe79rzZ8mVZj4e">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Update learn column index tests (from 7 to 6):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="227" cache_read_input_tokens="93320" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01XiuFXSzJcvMTonov8Z9g2k">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # Learn column is at index 7 (after plan, obj, sts, title, branch, created, author)
+        learn_cell = values[7]</param>
+    <param name="new_string">        # Learn column is at index 6 (after plan, obj, sts, branch, created, author)
+        learn_cell = values[6]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="227" cache_read_input_tokens="93320" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01XiuFXSzJcvMTonov8Z9g2k">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LYDVeWSzKA8uc6XdibQajE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # Learn column at index 7 (after plan, obj, sts, title, branch, created, author)
+        learn_cell = values[7]</param>
+    <param name="new_string">        # Learn column at index 6 (after plan, obj, sts, branch, created, author)
+        learn_cell = values[6]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="93547" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 290}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01LYDVeWSzKA8uc6XdibQajE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Update author index test (from 6 to 5):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="93837" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01Pp452k83EdqjUfiozEUnn8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # Author is at index 6 (after plan, obj, sts, title, branch, created)
+        assert values[6] == "schrockn"</param>
+    <param name="new_string">        # Author is at index 5 (after plan, obj, sts, branch, created)
+        assert values[5] == "schrockn"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="93837" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01Pp452k83EdqjUfiozEUnn8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the column index comments in `TestLocalWtColumnIndex` — title is gone, so indices shift:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="94110" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01VgEGpfzz8aWkQBUkUQNaYx">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    def test_expected_column_index_without_prs(self) -&gt; None:
+        """Expected column i...[truncated 1388 chars]...: runs come after local-wt
+        expected_index = 11
+        assert expected_index == 11</param>
+    <param name="new_string">    def test_expected_column_index_without_prs(self) -&gt; None:
+        """Expected column i...[truncated 1356 chars]...: runs come after local-wt
+        expected_index = 10
+        assert expected_index == 10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="94110" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01VgEGpfzz8aWkQBUkUQNaYx">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the objectives view tests. The title column was removed from objectives too, so the count goes from 7 to 6, and the `values[1]` which was title becomes progress:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1214" cache_read_input_tokens="94624" cache_creation="{'ephemeral_5m_input_tokens': 1214, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_015Zo21bmhmALsp37X5KWQmT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    def test_objectives_view_has_enriched_columns(self) -&gt; None:
+        """Objectives vie...[truncated 2424 chars]...ep
+        assert values[4] == "-"  # deps
+        assert values[5] == "2h ago"  # updated</param>
+    <param name="new_string">    def test_objectives_view_has_enriched_columns(self) -&gt; None:
+        """Objectives vie...[truncated 1462 chars]...ep
+        assert values[3] == "-"  # deps
+        assert values[4] == "2h ago"  # updated</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1214" cache_read_input_tokens="94624" output_tokens="1456" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1214}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_015Zo21bmhmALsp37X5KWQmT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `TestShowPrColumnFalse` — adjust comments and counts:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1513" cache_read_input_tokens="95838" cache_creation="{'ephemeral_5m_input_tokens': 1513, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01DQ3xU6tPQrgygWNogoQAuQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    def test_row_to_values_with_show_pr_column_false_excludes_pr_value(self) -&gt; None:
+    ...[truncated 323 chars]..., branch, created, author,
+          chks, comments, lrn, local-wt, local-impl
+        """</param>
+    <param name="new_string">    def test_row_to_values_with_show_pr_column_false_excludes_pr_value(self) -&gt; None:
+    ...[truncated 309 chars]..., branch, created, author,
+          chks, comments, lrn, local-wt, local-impl
+        """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1513" cache_read_input_tokens="95838" output_tokens="511" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1513}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01DQ3xU6tPQrgygWNogoQAuQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01V7LAY6mNGgbY656J15XV4j">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # One fewer value than with show_pr_column=True (which produces 13)
+        assert len(values) == 12</param>
+    <param name="new_string">        # One fewer value than with show_pr_column=True (which produces 12)
+        assert len(values) == 11</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="97351" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 568}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01V7LAY6mNGgbY656J15XV4j">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GxNJpdg7hrwXe8Ds5sqew3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        assert len(values) == 13
+        # pr at index 7 (after plan, obj, sts, title, branch, created, author)
+        assert _text_to_str(values[7]) == "#456"</param>
+    <param name="new_string">        assert len(values) == 12
+        # pr at index 6 (after plan, obj, sts, branch, created, author)
+        assert _text_to_str(values[6]) == "#456"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="97919" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 263}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01GxNJpdg7hrwXe8Ds5sqew3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the stage column tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="98182" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01U11fY66sYjUVr34XKUL3zj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    # draft_pr adds stage after author:
+    # plan, obj, sts, title, branch, created, auth...[truncated 98 chars]... branch, created, author) - markup stripped
+    assert _text_to_str(values[7]) == "review"</param>
+    <param name="new_string">    # draft_pr adds stage after author:
+    # plan, obj, sts, branch, created, author, sta...[truncated 84 chars]... branch, created, author) - markup stripped
+    assert _text_to_str(values[6]) == "review"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="98182" output_tokens="348" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 307}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01U11fY66sYjUVr34XKUL3zj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VdrEbcye8QDezoR7K9rTBQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    # github mode: plan, obj, sts, title, branch, created, author, lrn, local-wt, local-impl = 10
+    assert len(values) == 10</param>
+    <param name="new_string">    # github mode: plan, obj, sts, branch, created, author, lrn, local-wt, local-impl = 9
+    assert len(values) == 9</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="98489" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 628}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01VdrEbcye8QDezoR7K9rTBQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `test_dash_data.py`. Remove `title` from assertions and manual PlanRowData constructors:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="99117" cache_creation="{'ephemeral_5m_input_tokens': 291, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01GHmmdXTQ6edw18xDMKVf6J">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">    assert result["plan_id"] == 123
+    assert result["title"] == "Test Plan"
+    assert result["plan_url"] == "https://github.com/test/repo/issues/123"</param>
+    <param name="new_string">    assert result["plan_id"] == 123
+    assert result["plan_url"] == "https://github.com/test/repo/issues/123"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="99117" cache_creation="{'ephemeral_5m_input_tokens': 291, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01GHmmdXTQ6edw18xDMKVf6J">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <assistant>Remove `title=` from the manual PlanRowData constructors in this test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="99408" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01CbUbLPPUDJLS1X4sV7MF5Q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">    row = PlanRowData(
+        plan_id=456,
+        plan_url="https://github.com/test/repo/issues/456",
+        title="Datetime Test",
+        pr_number=None,</param>
+    <param name="new_string">    row = PlanRowData(
+        plan_id=456,
+        plan_url="https://github.com/test/repo/issues/456",
+        pr_number=None,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="99408" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01CbUbLPPUDJLS1X4sV7MF5Q">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DVTSBctHkZYMS6vgR7Qh7Z">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">    row = PlanRowData(
+        plan_id=789,
+        plan_url="https://github.com/test/repo/issues/789",
+        title="Tuple Test",
+        pr_number=None,</param>
+    <param name="new_string">    row = PlanRowData(
+        plan_id=789,
+        plan_url="https://github.com/test/repo/issues/789",
+        pr_number=None,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="99736" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01DVTSBctHkZYMS6vgR7Qh7Z">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <assistant>Remove `"title"` from `expected_fields`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="100069" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_018TaYL7YAcLr988uH6HZwQR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">    expected_fields = {
+        "plan_id",
+        "plan_url",
+        "title",
+        "pr_number",</param>
+    <param name="new_string">    expected_fields = {
+        "plan_id",
+        "plan_url",
+        "pr_number",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="100069" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_018TaYL7YAcLr988uH6HZwQR">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <assistant>Remove `title=` from the last PlanRowData constructor in test_dash_data.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="100382" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01YFcgeYSRc2BAvFVfBNPWaT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">    row = PlanRowData(
+        plan_id=42,
+        plan_url="https://github.com/test/repo/issues/42",
+        title="JSON Test",
+        pr_number=99,</param>
+    <param name="new_string">    row = PlanRowData(
+        plan_id=42,
+        plan_url="https://github.com/test/repo/issues/42",
+        pr_number=99,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="100382" output_tokens="271" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 289}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01YFcgeYSRc2BAvFVfBNPWaT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01AkHAsxyYgXF87ucDYPnBkA">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="100671" cache_creation="{'ephemeral_5m_input_tokens': 558, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01AkHAsxyYgXF87ucDYPnBkA">
+Updated task #6 status
+  </tool_result>
+  <assistant>**Step 7: Run tests and verification**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="101229" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskUpdate" id="toolu_01EStPk34Gc8k9V5ffto871s">
+    <param name="taskId">7</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="101229" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01EStPk34Gc8k9V5ffto871s">
+Updated task #7 status
+  </tool_result>
+  <tool_use name="Task" id="toolu_018Dd8GaepR2S7rpxQuZcuND">
+    <param name="description">Run tests and type checks</param>
+    <param name="prompt">Run the following commands and report results. Do NOT fix anything, just report.
+
+1. Run p...[truncated 628 chars]...provider/fake.py`
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="101" cache_read_input_tokens="101317" cache_creation="{'ephemeral_5m_input_tokens': 101, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_018Dd8GaepR2S7rpxQuZcuND">
+## Results Summary
+
+**pytest failed: 1 issue found**
+
+- **File:** `tests/tui/commands/test_execute_command.py`
+- **Test:** `TestExecuteCommandClosePlan::test_close_plan_does_nothing_without_issue_url`
+- **Error:** `TypeError: PlanRowData.__init__() got an unexpected keyword argument 'title'`
+- **Location:** Line 162
+- **Issue:** The test is trying to pass a `title` argument to `PlanRowData()`, but the dataclass definition no longer accepts this parameter.
+
+**ty passed:** All checks passed!
+
+**ruff passed:** All checks passed!
+agentId: a7c51993fd00d26fc (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16616
+tool_uses: 5
+duration_ms: 8783&lt;/usage&gt;
+  </tool_result>
+  <thinking>There's one more test file that needs updating: `tests/tui/commands/test_execute_command.py`. Let me fix it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="102036" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 102036}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>One more test file needs fixing. Let me find and update it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="102036" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 102036}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Bn4NS3pEfTj1cq5gzNWSBp">
+    <param name="pattern">title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="102036" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 102036}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bn4NS3pEfTj1cq5gzNWSBp">
+24:        title: str,
+165:            title="Test",
+177:            full_title="Test",
+179:            pr_title=None,
+242:            title="Test",
+254:            full_title="Test",
+256:            pr_title=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JA7C628W2hUN6MyQhf8oxn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">155</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="102036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 282}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JA7C628W2hUN6MyQhf8oxn">
+   155→    These tests verify the guard conditions. The HTTP client behavior
+   156→    is tested in tests/tui/data/test_provider.py.
+   157→    """
+   158→
+   159→    def test_close_plan_does_nothing_without_issue_url(self) -&gt; None:
+   160→        """close_plan does nothing if no issue URL."""
+   161→        # Create row directly to set plan_url=None (make_plan_row defaults it)
+   162→        row = PlanRowData(
+   163→            plan_id=123,
+   164→            plan_url=None,  # Explicitly None
+   165→            title="Test",
+   166→            pr_number=None,
+   167→            pr_url=None,
+   168→            pr_display="-",
+   169→            checks_display="-",
+   170→            worktree_name="",
+   171→            exists_locally=False,
+   172→            local_impl_display="-",
+   173→            remote_impl_display="-",
+   174→            run_id_display="-",
+   175→            run_state_display="-",
+   176→            run_url=None,
+   177→            full_title="Test",
+   178→            plan_body="",
+   179→            pr_title=None,
+   180→            pr_state=None,
+   181→            pr_head_branch=None,
+   182→            worktree_branch=None,
+   183→            last_local_impl_at=None,
+   184→            last_remote_impl_at=None,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01J9oLgZ7PEeZGqxZbmd8LqL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">230</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="649" cache_read_input_tokens="102318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 649}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J9oLgZ7PEeZGqxZbmd8LqL">
+   230→        executor = FakeCommandExecutor()
+   231→        # repo_root not provided - streaming command should not execute
+   232→        screen = PlanDetailScreen(row=row, executor=executor)
+   233→        screen.execute_command("submit_to_queue")
+   234→        # No executor methods should be called (streaming is independent)
+   235→        assert executor.refresh_count == 0
+   236→
+   237→    def test_submit_to_queue_does_nothing_without_issue_url(self) -&gt; None:
+   238→        """submit_to_queue does nothing if no issue URL."""
+   239→        row = PlanRowData(
+   240→            plan_id=123,
+   241→            plan_url=None,  # Explicitly None
+   242→            title="Test",
+   243→            pr_number=None,
+   244→            pr_url=None,
+   245→            pr_display="-",
+   246→            checks_display="-",
+   247→            worktree_name="",
+   248→            exists_locally=False,
+   249→            local_impl_display="-",
+   250→            remote_impl_display="-",
+   251→            run_id_display="-",
+   252→            run_state_display="-",
+   253→            run_url=None,
+   254→            full_title="Test",
+   255→            plan_body="",
+   256→            pr_title=None,
+   257→            pr_state=None,
+   258→            pr_head_branch=None,
+   259→            worktree_branch=None,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ALcrxeiqxg5SwTCmJVSEyP">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="old_string">            title="Test",
+            pr_number=None,
+            pr_url=None,
+           ...[truncated 199 chars]...           run_state_display="-",
+            run_url=None,
+            full_title="Test",</param>
+    <param name="new_string">            pr_number=None,
+            pr_url=None,
+            pr_display="-",
+         ...[truncated 173 chars]...           run_state_display="-",
+            run_url=None,
+            full_title="Test",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="102967" output_tokens="362" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 655, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ALcrxeiqxg5SwTCmJVSEyP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py has been updated. All occurrences of '            title="Test",
+            pr_number=None,
+            pr_url=None,
+            pr_display="-",
+            checks_display="-",
+            worktree_name="",
+            exists_locally=False,
+            local_impl_display="-",
+            remote_impl_display="-",
+            run_id_display="-",
+            run_state_display="-",
+            run_url=None,
+            full_title="Test",' were successfully replaced with '            pr_number=None,
+            pr_url=None,
+            pr_display="-",
+            checks_display="-",
+            worktree_name="",
+            exists_locally=False,
+            local_impl_display="-",
+            remote_impl_display="-",
+            run_id_display="-",
+            run_state_display="-",
+            run_url=None,
+            full_title="Test",'.
+  </tool_result>
+  <assistant>Now let me also check if there are other files with `title=` in PlanRowData constructors that I might have missed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="103622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 648}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DqCXHa9Jd2vvmWBzTE4ySo">
+    <param name="pattern">PlanRowData\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="103622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 648}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DqCXHa9Jd2vvmWBzTE4ySo">
+Found 2 files
+tests/tui/commands/test_execute_command.py
+tests/unit/cli/commands/exec/scripts/test_dash_data.py
+  </tool_result>
+  <assistant>Good, I've already fixed both. Now let me also check for any `\.title` references in the `src/erk/tui/` directory that I might have missed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="104270" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 205}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VwtpvSkSpovyoyryBG8YFX">
+    <param name="pattern">row\.title|plan\.title|\.title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="104270" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 205}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VwtpvSkSpovyoyryBG8YFX">
+No matches found
+  </tool_result>
+  <assistant>Good, all `title` references are cleaned from `src/erk/tui/`. Now let me run the tests again.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="407" cache_read_input_tokens="104475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 407}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01PdjNakK6QaMHQud82QdeHF">
+    <param name="description">Re-run tests after fix</param>
+    <param name="prompt">Run the following commands and report results. Do NOT fix anything, just report.
+
+1. Run p...[truncated 387 chars]...est_dash_data.py`
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="407" cache_read_input_tokens="104475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 407}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PdjNakK6QaMHQud82QdeHF">
+## Results Summary
+
+**pytest failed: 1 issue found**
+
+File: `tests/tui/commands/test_execute_command.py:162`
+Test: `TestExecuteCommandClosePlan::test_close_plan_does_nothing_without_issue_url`
+Error: `TypeError: PlanRowData.__init__() missing 1 required positional argument: 'lifecycle_display'`
+
+The test is creating a `PlanRowData` instance but is missing the `lifecycle_display` argument that was added to the dataclass. The test needs to be updated to include this required field.
+
+---
+
+**ruff passed: All checks passed!**
+agentId: aff99f9fdc2f52315 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16093
+tool_uses: 3
+duration_ms: 7668&lt;/usage&gt;
+  </tool_result>
+  <thinking>The issue is that removing `title` from a positional spot shifted the positional arguments. Let me look at the PlanRowData constructor call in test_execute_command.py to understand what happened. The `title` parameter was removed, but since these are keyword arguments, the issue is different. Let me re-read the file to see what happened.
+
+Actually, the issue is that when I used `replace_all=true`, it might have removed the `title=` from a function parameter instead of PlanRowData. Let me check.
+
+Wait, actually the issue is simpler. When I did replace_all, I removed `title="Test"` from both occurrences. 
+
+The error about `lifecycle_display` being missing is strange since it was already in the constructor before my changes. Let me look at the actual file to see what's going on.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="557" cache_read_input_tokens="104882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 557}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the current state of the file around line 162.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="557" cache_read_input_tokens="104882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 557}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011YHxxoNb7kCzFb6oYaMySJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">12</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="557" cache_read_input_tokens="104882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 557}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011YHxxoNb7kCzFb6oYaMySJ">
+    12→
+    13→class _CapturingPlanDetailScreen(PlanDetailScreen):
+    14→    """Subclass that captures on_success callback instead of running a subprocess."""
+    15→
+    16→    def __init__(self, **kwargs: object) -&gt; None:
+    17→        super().__init__(**kwargs)  # type: ignore[arg-type]
+    18→        self.captured_on_success: Callable[[], None] | None = None
+    19→
+    20→    def run_streaming_command(
+    21→        self,
+    22→        command: list[str],
+    23→        cwd: Path,
+    24→        title: str,
+    25→        *,
+    26→        timeout: float = 30.0,
+    27→        on_success: Callable[[], None] | None = None,
+    28→    ) -&gt; None:
+    29→        """Capture on_success instead of spawning a subprocess."""
+    30→        self.captured_on_success = on_success
+    31→
+    32→
+    33→class TestExecuteCommandBrowserCommands:
+    34→    """Tests for browser-related commands."""
+    35→
+    36→    def test_open_browser_opens_pr_url_when_available(self) -&gt; None:
+    37→        """open_browser opens PR URL when PR is available."""
+    38→        row = make_plan_row(
+    39→            123,
+    40→            "Test",
+    41→            pr_url="https://github.com/test/repo/pull/456",
+  </tool_result>
+  <assistant>Good - the `title: str` on line 24 is part of `_CapturingPlanDetailScreen.run_streaming_command` parameter, not PlanRowData. That's fine.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="105439" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 788}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SuxHeiHL6EcnxH98JAxXhm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">158</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="105439" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 788}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SuxHeiHL6EcnxH98JAxXhm">
+   158→
+   159→    def test_close_plan_does_nothing_without_issue_url(self) -&gt; None:
+   160→        """close_plan does nothing if no issue URL."""
+   161→        # Create row directly to set plan_url=None (make_plan_row defaults it)
+   162→        row = PlanRowData(
+   163→            plan_id=123,
+   164→            plan_url=None,  # Explicitly None
+   165→            pr_number=None,
+   166→            pr_url=None,
+   167→            pr_display="-",
+   168→            checks_display="-",
+   169→            worktree_name="",
+   170→            exists_locally=False,
+   171→            local_impl_display="-",
+   172→            remote_impl_display="-",
+   173→            run_id_display="-",
+   174→            run_state_display="-",
+   175→            run_url=None,
+   176→            full_title="Test",
+   177→            plan_body="",
+   178→            pr_title=None,
+   179→            pr_state=None,
+   180→            pr_head_branch=None,
+   181→            worktree_branch=None,
+   182→            last_local_impl_at=None,
+   183→            last_remote_impl_at=None,
+   184→            run_id=None,
+   185→            run_status=None,
+   186→            run_conclusion=None,
+   187→            log_entries=(),
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Wnv2nXKVZfjfYysfg8CLwD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">205</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="845" cache_read_input_tokens="106227" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 845}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wnv2nXKVZfjfYysfg8CLwD">
+   205→            updated_at=datetime(2025, 1, 1, tzinfo=UTC),
+   206→            updated_display="-",
+   207→            created_at=datetime(2025, 1, 1, tzinfo=UTC),
+   208→            created_display="-",
+   209→            author="test-user",
+   210→            is_learn_plan=False,
+   211→        )
+   212→        executor = FakeCommandExecutor()
+   213→        screen = PlanDetailScreen(row=row, executor=executor)
+   214→        screen.execute_command("close_plan")
+   215→        assert executor.refresh_count == 0
+   216→
+   217→
+   218→class TestExecuteCommandSubmitToQueue:
+   219→    """Tests for submit_to_queue command.
+   220→
+   221→    Note: submit_to_queue now uses a non-blocking toast + background worker pattern
+   222→    (like close_plan and land_pr). These tests verify the guard conditions. The
+   223→    async worker behavior is tested in test_app.py.
+   224→    """
+  </tool_result>
+  <assistant>I see — `lifecycle_display=` is missing from the constructor. This is a pre-existing issue — the test was created before `lifecycle_display` was added, but it worked because `title="Test"` happened to fill the positional slot. Now that `title` is removed, the positional layout shifted and `lifecycle_display` is the missing arg. Let me add it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="107072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 412}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VPBhmEM1AEDwekMooehyUU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="old_string">            author="test-user",
+            is_learn_plan=False,
+        )
+        executo...[truncated 106 chars]...plan")
+        assert executor.refresh_count == 0
+
+
+class TestExecuteCommandSubmitToQueue:</param>
+    <param name="new_string">            author="test-user",
+            is_learn_plan=False,
+            lifecycle_dis...[truncated 141 chars]...plan")
+        assert executor.refresh_count == 0
+
+
+class TestExecuteCommandSubmitToQueue:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="107072" output_tokens="400" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 412, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VPBhmEM1AEDwekMooehyUU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check the second PlanRowData constructor in the same file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="107484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 459}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LPafryGzUAK9NkcGg6bEBG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">237</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="107484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 459}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LPafryGzUAK9NkcGg6bEBG">
+   237→    def test_submit_to_queue_does_nothing_without_issue_url(self) -&gt; None:
+   238→        """submit_to_queue does nothing if no issue URL."""
+   239→        row = PlanRowData(
+   240→            plan_id=123,
+   241→            plan_url=None,  # Explicitly None
+   242→            pr_number=None,
+   243→            pr_url=None,
+   244→            pr_display="-",
+   245→            checks_display="-",
+   246→            worktree_name="",
+   247→            exists_locally=False,
+   248→            local_impl_display="-",
+   249→            remote_impl_display="-",
+   250→            run_id_display="-",
+   251→            run_state_display="-",
+   252→            run_url=None,
+   253→            full_title="Test",
+   254→            plan_body="",
+   255→            pr_title=None,
+   256→            pr_state=None,
+   257→            pr_head_branch=None,
+   258→            worktree_branch=None,
+   259→            last_local_impl_at=None,
+   260→            last_remote_impl_at=None,
+   261→            run_id=None,
+   262→            run_status=None,
+   263→            run_conclusion=None,
+   264→            log_entries=(),
+   265→            resolved_comment_count=0,
+   266→            total_comment_count=0,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YEAUxo4UdaQd44fXv1HKtg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">286</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1032" cache_read_input_tokens="107943" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1032}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YEAUxo4UdaQd44fXv1HKtg">
+   286→            author="test-user",
+   287→            is_learn_plan=False,
+   288→        )
+   289→        executor = FakeCommandExecutor()
+   290→        screen = PlanDetailScreen(row=row, executor=executor)
+   291→        screen.execute_command("submit_to_queue")
+   292→        assert executor.refresh_count == 0
+   293→
+   294→
+   295→class TestExecuteCommandLandPR:
+  </tool_result>
+  <assistant>Same issue — missing `lifecycle_display`. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="108975" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 253}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MaEgJgAW4Ds9VrS75wgwAK">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py</param>
+    <param name="old_string">            author="test-user",
+            is_learn_plan=False,
+        )
+        executo...[truncated 70 chars]...      screen.execute_command("submit_to_queue")
+        assert executor.refresh_count == 0</param>
+    <param name="new_string">            author="test-user",
+            is_learn_plan=False,
+            lifecycle_dis...[truncated 105 chars]...      screen.execute_command("submit_to_queue")
+        assert executor.refresh_count == 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="108975" output_tokens="315" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 253, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MaEgJgAW4Ds9VrS75wgwAK">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/commands/test_execute_command.py has been updated successfully.
+  </tool_result>
+  <assistant>Now re-run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="374" cache_read_input_tokens="109228" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 374}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Wcdi8Chx6MnhtFhyUytY3X">
+    <param name="description">Re-run tests final check</param>
+    <param name="prompt">Run this command and report results. Do NOT fix anything, just report.
+
+`uv run pytest tes...[truncated 32 chars]...sh_data.py -x -v`
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="374" cache_read_input_tokens="109228" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 374}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wcdi8Chx6MnhtFhyUytY3X">
+pytest passed: 345 tests passed in 34.08s
+
+All tests in tests/tui/ and tests/unit/cli/commands/exec/scripts/test_dash_data.py passed successfully with no failures.
+agentId: a8b24e46ece0170a9 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14016
+tool_uses: 1
+duration_ms: 37614&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 345 tests pass. Let me mark the task complete.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="109602" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01WXDE9e2T5fWQikbvzAyFVa">
+    <param name="taskId">7</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="109602" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WXDE9e2T5fWQikbvzAyFVa">
+Updated task #7 status
+  </tool_result>
+  <assistant>All done. Here's a summary of the changes:
+
+**Files modified (7):**
+
+1. **`src/erk/tui/data/types.py`** — Removed `title: str` field and its docstring entry from `PlanRowData`
+2. **`src/erk/tui/widgets/plan_table.py`** — Deleted all commented-out title column/value code (4 blocks)
+3. **`src/erk/tui/filtering/logic.py`** — Changed `plan.title.lower()` to `plan.full_title.lower()` and updated docstring
+4. **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`** — Removed title truncation block and `title=title` from constructor
+5. **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`** — Renamed `title` param to `full_title`, removed `title=title` from constructor
+6. **`tests/tui/test_plan_table.py`** — Updated all column index assertions (shifted left by 1), updated value counts, removed title-specific tests from objectives view
+7. **`tests/unit/cli/commands/exec/scripts/test_dash_data.py`** — Removed `title=` from PlanRowData constructors and `"title"` from expected fields set
+8. **`tests/tui/commands/test_execute_command.py`** — Removed `title=` from PlanRowData constructors, added missing `lifecycle_display="-"`
+
+**Verification:** 345 tests pass, ty and ruff clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="103" cache_read_input_tokens="109903" output_tokens="403" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 103, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
