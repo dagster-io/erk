@@ -44,6 +44,11 @@ on:
         required: false
         type: string
         default: ""
+      plan_backend:
+        description: "Plan backend type (github or draft_pr)"
+        required: false
+        type: string
+        default: "github"
 
 concurrency:
   group: one-shot-${{ inputs.branch_name }}
@@ -228,4 +233,5 @@ jobs:
       pr_number: ${{ inputs.pr_number }}
       model_name: ${{ inputs.model_name }}
       base_branch: ${{ needs.plan.outputs.base_branch }}
+      plan_backend: ${{ inputs.plan_backend }}
     secrets: inherit

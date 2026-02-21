@@ -76,12 +76,13 @@ def test_dispatch_happy_path() -> None:
         assert base == "main"
         assert "Closes #1" in pr_body
 
-        # Verify workflow was triggered with plan_issue_number
+        # Verify workflow was triggered with plan_issue_number and plan_backend
         assert len(github.triggered_workflows) == 1
         workflow, inputs = github.triggered_workflows[0]
         assert workflow == "one-shot.yml"
         assert inputs["prompt"] == "fix the import in config.py"
         assert inputs["plan_issue_number"] == "1"
+        assert inputs["plan_backend"] == "github"
 
         # Verify PR body was updated with workflow run link and closing reference
         assert len(github.updated_pr_bodies) == 1
@@ -387,10 +388,11 @@ def test_dispatch_draft_pr_lifecycle() -> None:
         pr_number = result.pr_number
         assert (pr_number, "erk-plan") in github.added_labels
 
-        # Workflow inputs include plan_issue_number = pr_number
+        # Workflow inputs include plan_issue_number = pr_number and plan_backend
         assert len(github.triggered_workflows) == 1
         _workflow, inputs = github.triggered_workflows[0]
         assert inputs["plan_issue_number"] == str(pr_number)
+        assert inputs["plan_backend"] == "draft_pr"
 
         # Dispatch metadata written to the PR (the plan entity).
         # The PR body is updated with footer, then dispatch metadata written
