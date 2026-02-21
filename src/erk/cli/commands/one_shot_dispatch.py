@@ -202,16 +202,16 @@ def dispatch_one_shot(
     try:
         ctx.branch_manager.checkout_branch(repo.root, branch_name)
 
-        # Write prompt to .worker-impl/task.md so it's committed to the branch
+        # Write prompt to .worker-impl/prompt.md so it's committed to the branch
         # (.impl/ is in .gitignore; .worker-impl/ is the committable counterpart
         # that the remote workflow copies into .impl/)
         worker_impl_dir = repo.root / ".worker-impl"
         worker_impl_dir.mkdir(parents=True, exist_ok=True)
-        task_file = worker_impl_dir / "task.md"
-        task_file.write_text(params.prompt + "\n", encoding="utf-8")
+        prompt_file = worker_impl_dir / "prompt.md"
+        prompt_file.write_text(params.prompt + "\n", encoding="utf-8")
 
         # Stage and commit with prompt file
-        ctx.git.commit.stage_files(repo.root, [".worker-impl/task.md"])
+        ctx.git.commit.stage_files(repo.root, [".worker-impl/prompt.md"])
         ctx.git.commit.commit(repo.root, f"One-shot: {params.prompt[:60]}")
 
         # Push to remote
@@ -246,11 +246,11 @@ def dispatch_one_shot(
         user_output(f"Created draft PR #{pr_number}")
 
         # Build workflow inputs
-        # Truncate prompt for workflow input (full text is in .worker-impl/task.md)
+        # Truncate prompt for workflow input (full text is in .worker-impl/prompt.md)
         max_input_len = 500
         truncated_prompt = params.prompt[:max_input_len]
         if len(params.prompt) > max_input_len:
-            truncated_prompt += "... (full prompt committed to .worker-impl/task.md)"
+            truncated_prompt += "... (full prompt committed to .worker-impl/prompt.md)"
 
         inputs: dict[str, str] = {
             "prompt": truncated_prompt,

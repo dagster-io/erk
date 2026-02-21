@@ -51,7 +51,7 @@ erk one-shot "Add a --verbose flag to the plan submit command" --model sonnet
 
 1. Validates prompt and optional model parameter
 2. Generates branch name via `generate_branch_name()` in `one_shot_dispatch.py`: `P{N}-{slug}-{MM-DD-HHMM}` when `plan_issue_number` is provided, otherwise `oneshot-{slug}-{MM-DD-HHMM}`
-3. Creates branch from trunk, writes prompt to `.worker-impl/task.md`, and commits
+3. Creates branch from trunk, writes prompt to `.worker-impl/prompt.md`, and commits
 4. Pushes branch to remote
 5. Creates a draft PR with prompt in description
 6. Triggers the `one-shot.yml` GitHub Actions workflow
@@ -68,7 +68,7 @@ Two-phase design with separate jobs:
 ### Plan Job
 
 1. **Setup:** Checkout repo, configure auth (GitHub token, Anthropic API key), install tools (uv, erk, claude, prettier)
-2. **Write prompt:** Creates `.impl/task.md` with the user's prompt
+2. **Write prompt:** Creates `.impl/prompt.md` with the user's prompt
 3. **Detect trunk:** Identifies main/master branch
 4. **Run planning:** Executes `/erk:one-shot-plan` Claude command
 5. **Validate outputs:** Checks `.impl/plan.md` and `.impl/plan-result.json` exist
@@ -94,7 +94,7 @@ Two-phase design with separate jobs:
 
 Runs in a fresh Claude session inside GitHub Actions:
 
-1. Read `.impl/task.md` (prompt from workflow)
+1. Read `.impl/prompt.md` (prompt from workflow)
 2. Load AGENTS.md project context and scan docs/learned/
 3. Explore codebase with Glob/Grep for relevant files
 4. Write comprehensive plan to `.impl/plan.md`

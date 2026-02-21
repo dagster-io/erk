@@ -10,7 +10,7 @@ You are running autonomously in a CI workflow. Your job is to read a prompt, exp
 
 ## Step 1: Read the Prompt
 
-Read `.impl/task.md` to understand what you need to do.
+Read `.impl/prompt.md` to understand what you need to do.
 
 ## Step 2: Read Objective Context (if present)
 

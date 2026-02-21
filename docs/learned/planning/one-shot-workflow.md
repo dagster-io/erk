@@ -83,7 +83,7 @@ The `.github/workflows/one-shot.yml` workflow has two jobs:
 
 1. Validates secrets (ERK_QUEUE_GH_PAT)
 2. Checks out the branch and sets up tools
-3. Writes prompt to `.impl/task.md`
+3. Writes prompt to `.impl/prompt.md`
 4. Runs `/erk:one-shot-plan` Claude command with environment variables:
    - `WORKFLOW_RUN_URL` -- current workflow run URL
    - `OBJECTIVE_ISSUE` -- objective issue number (if from roadmap)
@@ -137,7 +137,7 @@ One-shot dispatch and `erk plan submit` both push branches and create PRs, but o
 
 `.claude/commands/erk/one-shot-plan.md` defines what Claude does during the plan job:
 
-1. Reads prompt from `.impl/task.md`
+1. Reads prompt from `.impl/prompt.md`
 2. Fetches objective context if `$OBJECTIVE_ISSUE` is set
 3. Explores codebase following documentation-first discovery
 4. Writes a comprehensive, self-contained plan to `.impl/plan.md`

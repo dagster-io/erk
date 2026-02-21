@@ -94,18 +94,18 @@ jobs:
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
 
-      - name: Write prompt to .impl/task.md
+      - name: Write prompt to .impl/prompt.md
         env:
           PROMPT: ${{ inputs.prompt }}
         run: |
-          if [ -f .worker-impl/task.md ]; then
-            echo "Prompt already committed to .worker-impl/task.md"
+          if [ -f .worker-impl/prompt.md ]; then
+            echo "Prompt already committed to .worker-impl/prompt.md"
             mkdir -p .impl
-            cp .worker-impl/task.md .impl/task.md
+            cp .worker-impl/prompt.md .impl/prompt.md
           else
             mkdir -p .impl
-            printf '%s\n' "$PROMPT" > .impl/task.md
-            echo "Prompt written to .impl/task.md from workflow input"
+            printf '%s\n' "$PROMPT" > .impl/prompt.md
+            echo "Prompt written to .impl/prompt.md from workflow input"
           fi
 
       - name: Detect trunk branch
