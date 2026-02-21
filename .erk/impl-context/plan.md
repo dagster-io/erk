@@ -12,16 +12,17 @@ The fix is simple: replace "issue" with "plan" in user-facing output strings. "P
 
 User-visible string replacements:
 
-| Line | Old | New |
-|------|-----|-----|
-| 103 | `"Fetching issue from GitHub..."` | `"Fetching plan from GitHub..."` |
-| 106 | `f"Issue #{issue_number} not found"` | `f"Plan #{issue_number} not found"` |
-| 114 | `f"Issue #{issue_number} does not have the 'erk-plan' label."` | `f"Plan #{issue_number} does not have the 'erk-plan' label."` |
-| 127 | `f"Issue: {plan.title}"` | `f"Plan: {plan.title}"` |
-| 130 | `f"Would create .impl/ from issue #{issue_number}"` | `f"Would create .impl/ from plan #{issue_number}"` |
-| 414 | `f"Detected GitHub issue #{target_info.issue_number}"` | `f"Detected plan #{target_info.issue_number}"` |
+| Line | Old                                                            | New                                                           |
+| ---- | -------------------------------------------------------------- | ------------------------------------------------------------- |
+| 103  | `"Fetching issue from GitHub..."`                              | `"Fetching plan from GitHub..."`                              |
+| 106  | `f"Issue #{issue_number} not found"`                           | `f"Plan #{issue_number} not found"`                           |
+| 114  | `f"Issue #{issue_number} does not have the 'erk-plan' label."` | `f"Plan #{issue_number} does not have the 'erk-plan' label."` |
+| 127  | `f"Issue: {plan.title}"`                                       | `f"Plan: {plan.title}"`                                       |
+| 130  | `f"Would create .impl/ from issue #{issue_number}"`            | `f"Would create .impl/ from plan #{issue_number}"`            |
+| 414  | `f"Detected GitHub issue #{target_info.issue_number}"`         | `f"Detected plan #{target_info.issue_number}"`                |
 
 Docstring/comment updates adjacent to changed lines:
+
 - Line 84: `"Implement feature from GitHub issue"` → `"Implement feature from plan"`
 - Line 98: comment `"Discover repo context for issue fetch"` → `"Discover repo context for plan fetch"`
 
@@ -29,18 +30,18 @@ Help text in click command docstring (lines 329-343): Replace "GitHub issue" wit
 
 ### `src/erk/cli/commands/implement_shared.py`
 
-| Line | Old | New |
-|------|-----|-----|
-| 520 | `"Fetching issue from GitHub..."` | `"Fetching plan from GitHub..."` |
-| 525 | `f"Error: Issue #{issue_number} not found"` | `f"Error: Plan #{issue_number} not found"` |
-| 530 | `f"Issue: {plan.title}"` | `f"Plan: {plan.title}"` |
-| 545 | `f"Would create worktree from issue #{issue_number}"` | `f"Would create worktree from plan #{issue_number}"` |
+| Line | Old                                                   | New                                                  |
+| ---- | ----------------------------------------------------- | ---------------------------------------------------- |
+| 520  | `"Fetching issue from GitHub..."`                     | `"Fetching plan from GitHub..."`                     |
+| 525  | `f"Error: Issue #{issue_number} not found"`           | `f"Error: Plan #{issue_number} not found"`           |
+| 530  | `f"Issue: {plan.title}"`                              | `f"Plan: {plan.title}"`                              |
+| 545  | `f"Would create worktree from issue #{issue_number}"` | `f"Would create worktree from plan #{issue_number}"` |
 
 ### `src/erk/cli/commands/branch/create_cmd.py`
 
-| Line | Old | New |
-|------|-----|-----|
-| 279 | `f"Created .impl/ folder from issue #{setup.issue_number}"` | `f"Created .impl/ folder from plan #{setup.issue_number}"` |
+| Line | Old                                                         | New                                                        |
+| ---- | ----------------------------------------------------------- | ---------------------------------------------------------- |
+| 279  | `f"Created .impl/ folder from issue #{setup.issue_number}"` | `f"Created .impl/ folder from plan #{setup.issue_number}"` |
 
 ### Out of scope
 
