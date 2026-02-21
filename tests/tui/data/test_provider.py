@@ -239,9 +239,9 @@ class TestBuildWorktreeMapping:
         assert len(mapping) == 0
 
     def test_draft_pr_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
-        """Draft PR branch (plan-*) resolved via .impl/plan-ref.json.
+        """Draft PR branch (planned/*) resolved via .impl/plan-ref.json.
 
-        Branch name 'plan-fix-missing-data-02-19-1416' doesn't contain a
+        Branch name 'planned/fix-missing-data-02-19-1416' doesn't contain a
         numeric issue prefix. The plan ID (PR number) comes from
         .impl/plan-ref.json inside the worktree directory.
         """
@@ -253,7 +253,7 @@ class TestBuildWorktreeMapping:
 
         worktree_path = tmp_path / "worktrees" / "erk-slot-05"
         worktree_path.mkdir(parents=True)
-        branch_name = "plan-fix-missing-data-02-19-1416"
+        branch_name = "planned/fix-missing-data-02-19-1416"
 
         # Create .impl/plan-ref.json on disk (read_plan_ref does direct I/O)
         impl_dir = worktree_path / ".impl"
@@ -305,6 +305,136 @@ class TestBuildWorktreeMapping:
         assert worktree_name == "erk-slot-05"
         assert worktree_branch == branch_name
 
+    def test_planned_slash_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
+        """Draft PR branch with planned/ prefix resolved via .impl/plan-ref.json.
+
+        Branch name 'planned/fix-auth-bug-01-15-1430' doesn't contain a
+        numeric issue prefix. The plan ID comes from .impl/plan-ref.json.
+        """
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        worktree_path = tmp_path / "worktrees" / "erk-slot-03"
+        worktree_path.mkdir(parents=True)
+        branch_name = "planned/fix-auth-bug-01-15-1430"
+
+        # Create .impl/plan-ref.json on disk (read_plan_ref does direct I/O)
+        impl_dir = worktree_path / ".impl"
+        impl_dir.mkdir()
+        plan_ref_data = {
+            "provider": "github-draft-pr",
+            "plan_id": "8001",
+            "url": "https://github.com/test/repo/pull/8001",
+            "created_at": "2026-01-15T14:30:00+00:00",
+            "synced_at": "2026-01-15T14:30:00+00:00",
+            "labels": ["erk-plan"],
+            "objective_id": None,
+        }
+        (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                    WorktreeInfo(path=worktree_path, branch=branch_name, is_root=False),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        mapping = provider._build_worktree_mapping()
+
+        # Plan ID 8001 should be extracted from .impl/plan-ref.json
+        assert 8001 in mapping
+        worktree_name, worktree_branch = mapping[8001]
+        assert worktree_name == "erk-slot-03"
+        assert worktree_branch == branch_name
+
+    def test_planned_hyphen_branch_not_matched(self, tmp_path: Path) -> None:
+        """Branch with 'planned-' (hyphen) prefix is NOT matched.
+
+        Only 'planned/' (forward slash) is valid. This test ensures the
+        startswith check uses the correct delimiter.
+        """
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        worktree_path = tmp_path / "worktrees" / "erk-slot-04"
+        worktree_path.mkdir(parents=True)
+        branch_name = "planned-fix-auth-bug-01-15-1430"
+
+        # Create .impl/plan-ref.json — should NOT be read because prefix is wrong
+        impl_dir = worktree_path / ".impl"
+        impl_dir.mkdir()
+        plan_ref_data = {
+            "provider": "github-draft-pr",
+            "plan_id": "9999",
+            "url": "https://github.com/test/repo/pull/9999",
+            "created_at": "2026-01-15T14:30:00+00:00",
+            "synced_at": "2026-01-15T14:30:00+00:00",
+            "labels": ["erk-plan"],
+            "objective_id": None,
+        }
+        (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                    WorktreeInfo(path=worktree_path, branch=branch_name, is_root=False),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        mapping = provider._build_worktree_mapping()
+
+        # planned- (hyphen) should NOT be recognized — only planned/ (slash) is valid
+        assert 9999 not in mapping
+        assert len(mapping) == 0
+
     def test_draft_pr_branch_without_plan_ref_not_in_mapping(self, tmp_path: Path) -> None:
         """Draft PR branch without .impl/plan-ref.json is not in mapping."""
         repo_root = tmp_path / "repo"
@@ -315,7 +445,7 @@ class TestBuildWorktreeMapping:
 
         worktree_path = tmp_path / "worktrees" / "erk-slot-05"
         worktree_path.mkdir(parents=True)
-        branch_name = "plan-fix-something-02-19-1416"
+        branch_name = "planned/fix-something-02-19-1416"
 
         # No .impl/plan-ref.json created
 
@@ -349,7 +479,7 @@ class TestBuildWorktreeMapping:
 
         mapping = provider._build_worktree_mapping()
 
-        # No plan-ref.json, so plan-* branch should not produce an entry
+        # No plan-ref.json, so planned/* branch should not produce an entry
         assert len(mapping) == 0
 
 
