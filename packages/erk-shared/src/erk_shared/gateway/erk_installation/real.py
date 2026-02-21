@@ -10,11 +10,11 @@ import json
 import os
 import tomllib
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import tomlkit
 
-from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
+from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig, PlanBackendType
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 
 if TYPE_CHECKING:
@@ -72,7 +72,10 @@ class RealErkInstallation(ErkInstallation):
 
         # Validate plan_backend value
         raw_plan_backend = data.get("plan_backend", "github")
-        plan_backend = raw_plan_backend if raw_plan_backend in ("draft_pr", "github") else "github"
+        if raw_plan_backend in ("draft_pr", "github"):
+            plan_backend: PlanBackendType = cast(PlanBackendType, raw_plan_backend)
+        else:
+            plan_backend: PlanBackendType = "github"
 
         return GlobalConfig(
             erk_root=Path(root).expanduser().resolve(),
