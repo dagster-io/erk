@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add `sync_idempotent` to handle gt sync failures gracefully"
+}
