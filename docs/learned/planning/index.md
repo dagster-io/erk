@@ -35,6 +35,7 @@
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
 - **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plan issues that lack metadata blocks
 - **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan issue schema, coordinating metadata changes across files
+- **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding IssueNextSteps vs DraftPRNextSteps, adding new next-steps commands to plan output
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[objective-update-after-land.md](objective-update-after-land.md)** — modifying the land pipeline's post-merge behavior, working with objective-update-after-land exec script, understanding fail-open patterns in erk
 - **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures or skeleton plan issues, integrating objectives with one-shot dispatch

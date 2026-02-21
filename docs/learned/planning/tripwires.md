@@ -58,6 +58,8 @@ Rules triggered by matching actions in code.
 
 **blocking implementation on review PR feedback** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Review PRs are advisory and non-blocking. Implementation can proceed regardless of review PR state.
 
+**calling `create_worker_impl_folder()` without checking `worker_impl_folder_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if worker_impl_folder_exists(): remove_worker_impl_folder()` before creating. Stale .worker-impl/ from a prior failed submission causes errors.
+
 **calling commands that depend on `.impl/plan-ref.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json.
 
 **calling preprocess_session functions from trigger_async_learn** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. trigger_async_learn duplicates the exec script's filtering pipeline as \_preprocess_session_direct(). If you change the exec script's pipeline, update the direct function too.
@@ -77,6 +79,8 @@ Rules triggered by matching actions in code.
 **classifying a single-artifact API reference as NEW_DOC** → Read [Cornerstone Enforcement in Learn Pipeline](cornerstone-enforcement.md) first. Apply the three-rule SHOULD_BE_CODE test first. Single-artifact knowledge belongs in code (types, docstrings, or comments), not docs/learned/.
 
 **closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+
+**committing to draft-PR plan branches after checkout without pulling remote** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Both setup_impl_from_issue.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
 
 **consolidating issues that already have erk-consolidated label** → Read [Consolidation Labels](consolidation-labels.md) first. Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated.
 
@@ -115,6 +119,8 @@ Rules triggered by matching actions in code.
 **gathering sessions for preprocessing** → Read [Learn Workflow](learn-workflow.md) first. Sessions >100k characters MUST be preprocessed first. Use erk exec preprocess-session for ~99% token reduction.
 
 **grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
+
+**hardcoding next-steps command strings instead of using the dataclass properties** → Read [Next Steps Output Formatting](next-steps-output.md) first. Use IssueNextSteps or DraftPRNextSteps dataclasses from erk_shared.output.next_steps. They are the single source of truth for command formatting.
 
 **implementing PR body generation with checkout footers** → Read [Plan Lifecycle](lifecycle.md) first. HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``
 
@@ -205,6 +211,8 @@ Rules triggered by matching actions in code.
 **updating imports one file at a time during gateway consolidation** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Use LibCST for systematic import updates. Manual editing misses call sites and creates partial migration states. See docs/learned/refactoring/libcst-systematic-imports.md.
 
 **using 'steps' instead of 'nodes' in new plan metadata code** → Read [Schema V3 Migration](schema-v3-migration.md) first. Schema v3 uses 'nodes' (not 'steps'). The parser accepts both for backward compatibility but the renderer always emits v3. See schema-v3-migration.md.
+
+**using `extract_metadata_prefix` or `extract_plan_content` without validating separator context** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. extract_metadata_prefix() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation.
 
 **using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
 

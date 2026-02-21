@@ -14,6 +14,8 @@ tripwires:
     warning: "Extract metadata prefix on every lifecycle transition via extract_metadata_prefix() to prevent metadata loss."
   - action: "parsing plan content without backward compatibility"
     warning: "extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing."
+  - action: "using `extract_metadata_prefix` or `extract_plan_content` without validating separator context"
+    warning: "The content separator `\\n\\n---\\n\\n` can accidentally form from 'Remotely executed' notes + footer delimiter. extract_metadata_prefix() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation."
   - action: "adding <code> inside <summary> elements in PR bodies"
     warning: "Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>."
     score: 8
@@ -91,6 +93,21 @@ Two distinct separators serve different purposes:
 - **Footer separator** (`\n---\n`, single newline each side): Standard PR footer delimiter. Found with `rsplit()`.
 
 These are distinct: `find()` matches the first (content), `rsplit()` matches the last (footer).
+
+## False Match Prevention
+
+The content separator `\n\n---\n\n` can accidentally form when "Remotely executed" notes or other text end with a blank line followed by the footer delimiter `\n---\n`. This creates a false positive for `find()`.
+
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py:186-192 -->
+
+`extract_metadata_prefix()` defends against this by validating that `<!-- erk:metadata-block:` appears in the prefix (line 190). If the marker is absent, the function returns an empty string rather than treating the accidental separator as the real content boundary.
+
+The asymmetric search strategy reinforces this:
+
+- **Content separator**: `find()` — matches the _first_ occurrence (metadata is always at the top)
+- **Footer separator**: `rsplit()` — matches the _last_ occurrence (footer is always at the bottom)
+
+This means even if `\n\n---\n\n` appears mid-body, `find()` still finds the real separator first (which has the metadata marker above it), and `rsplit()` still finds the real footer last.
 
 ## Constants
 
