@@ -13,7 +13,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_branch_name,
     extract_plan_header_last_learn_at,
     extract_plan_header_last_learn_session,
-    extract_plan_header_learn_materials_gist_url,
+    extract_plan_header_learn_materials_branch,
     extract_plan_header_learn_plan_issue,
     extract_plan_header_learn_plan_pr,
     extract_plan_header_learn_status,
@@ -22,7 +22,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_remote_impl_run_id,
     extract_plan_header_remote_impl_session_id,
     update_plan_header_learn_event,
-    update_plan_header_learn_materials_gist_url,
+    update_plan_header_learn_materials_branch,
     update_plan_header_learn_plan_completed,
     update_plan_header_learn_result,
     update_plan_header_learn_status,
@@ -1716,48 +1716,44 @@ def test_clear_plan_header_review_pr_no_block_raises() -> None:
         clear_plan_header_review_pr(body)
 
 
-# === Learn Materials Gist URL Tests ===
+# === Learn Materials Branch Tests ===
 
 
-def test_extract_plan_header_learn_materials_gist_url_returns_none_for_invalid_body() -> None:
-    """extract_plan_header_learn_materials_gist_url returns None when block is missing."""
+def test_extract_plan_header_learn_materials_branch_returns_none_for_invalid_body() -> None:
+    """extract_plan_header_learn_materials_branch returns None when block is missing."""
     body = "No metadata block here"
 
-    result = extract_plan_header_learn_materials_gist_url(body)
+    result = extract_plan_header_learn_materials_branch(body)
     assert result is None
 
 
-def test_extract_plan_header_learn_materials_gist_url_returns_none_when_not_set() -> None:
-    """extract_plan_header_learn_materials_gist_url returns None when field is not present."""
+def test_extract_plan_header_learn_materials_branch_returns_none_when_not_set() -> None:
+    """extract_plan_header_learn_materials_branch returns None when field is not present."""
     body = format_plan_header_body_for_test()
 
-    result = extract_plan_header_learn_materials_gist_url(body)
+    result = extract_plan_header_learn_materials_branch(body)
     assert result is None
 
 
-def test_extract_plan_header_learn_materials_gist_url() -> None:
-    """extract_plan_header_learn_materials_gist_url returns the URL when set."""
-    # Create a body and then update it to include the gist URL
+def test_extract_plan_header_learn_materials_branch() -> None:
+    """extract_plan_header_learn_materials_branch returns the branch when set."""
+    # Create a body and then update it to include the learn branch
     body = format_plan_header_body_for_test()
-    updated_body = update_plan_header_learn_materials_gist_url(
-        body, "https://gist.github.com/user/abc123"
-    )
+    updated_body = update_plan_header_learn_materials_branch(body, "learn/123")
 
-    result = extract_plan_header_learn_materials_gist_url(updated_body)
-    assert result == "https://gist.github.com/user/abc123"
+    result = extract_plan_header_learn_materials_branch(updated_body)
+    assert result == "learn/123"
 
 
-def test_update_plan_header_learn_materials_gist_url() -> None:
-    """update_plan_header_learn_materials_gist_url sets the field correctly."""
+def test_update_plan_header_learn_materials_branch() -> None:
+    """update_plan_header_learn_materials_branch sets the field correctly."""
     body = format_plan_header_body_for_test()
 
-    updated_body = update_plan_header_learn_materials_gist_url(
-        body, "https://gist.github.com/user/def456"
-    )
+    updated_body = update_plan_header_learn_materials_branch(body, "learn/456")
 
     # Verify by extracting the value back
-    result = extract_plan_header_learn_materials_gist_url(updated_body)
-    assert result == "https://gist.github.com/user/def456"
+    result = extract_plan_header_learn_materials_branch(updated_body)
+    assert result == "learn/456"
 
     # Verify original fields preserved
     block = find_metadata_block(updated_body, "plan-header")
@@ -1766,9 +1762,9 @@ def test_update_plan_header_learn_materials_gist_url() -> None:
     assert block.data["created_by"] == "test-user"
 
 
-def test_update_plan_header_learn_materials_gist_url_raises_for_missing_block() -> None:
-    """update_plan_header_learn_materials_gist_url raises ValueError if no plan-header."""
+def test_update_plan_header_learn_materials_branch_raises_for_missing_block() -> None:
+    """update_plan_header_learn_materials_branch raises ValueError if no plan-header."""
     body = "Some content without plan-header"
 
     with pytest.raises(ValueError, match="plan-header block not found"):
-        update_plan_header_learn_materials_gist_url(body, "https://gist.github.com/user/abc123")
+        update_plan_header_learn_materials_branch(body, "learn/123")

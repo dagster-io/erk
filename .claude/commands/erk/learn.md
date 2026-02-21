@@ -12,7 +12,6 @@ Create a documentation plan from Claude Code sessions associated with a plan imp
 ```
 /erk:learn                              # Infers plan from current branch
 /erk:learn 4655                          # Explicit plan number
-/erk:learn 4655 gist_url=https://...    # With preprocessed materials gist
 ```
 
 ## Purpose
@@ -23,23 +22,23 @@ All documentation produced by this command follows the content quality standards
 
 **Prerequisite:** Load the `learned-docs` skill for content quality standards before proceeding.
 
-Tell the user (choose the appropriate pipeline display based on whether `gist_url` was provided in the command arguments):
+Tell the user (choose the appropriate pipeline display based on whether `.erk/impl-context/` exists):
 
-**When `gist_url` is provided:**
+**When `.erk/impl-context/` exists (CI/async mode):**
 
 ```
 Learn pipeline for plan #<plan-number> (using preprocessed materials):
-  1. Download preprocessed materials from gist
+  1. Read preprocessed materials from .erk/impl-context/
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
   4. Save plan as a new GitHub issue
 ```
 
-**When no `gist_url`:**
+**When no `.erk/impl-context/`:**
 
 ```
 Learn pipeline for plan #<plan-number>:
-  1. Discover and preprocess session logs, upload to gist
+  1. Discover and preprocess session logs
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
   4. Save plan as a new GitHub issue
@@ -64,9 +63,13 @@ If the issue is NOT a learn plan, proceed to Step 2.
 
 ### Step 2: Check for Preprocessed Materials
 
-Check if a `gist_url` parameter was provided in the command arguments (format: `gist_url=https://...`).
+Check if `.erk/impl-context/` exists and contains files (this is the case when running in CI after `trigger-async-learn` committed materials to the learn branch):
 
-**If `gist_url` is provided:**
+```bash
+ls .erk/impl-context/ 2>/dev/null
+```
+
+**If `.erk/impl-context/` contains files:**
 
 1. Create the learn directory:
 
@@ -74,34 +77,23 @@ Check if a `gist_url` parameter was provided in the command arguments (format: `
    mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
    ```
 
-2. Download and extract the gist:
+2. Copy files from impl-context to the learn directory:
 
    ```bash
-   result=$(erk exec download-learn-materials \
-       --gist-url "<gist_url>" \
-       --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn)
-
-   # Check for failure
-   if echo "$result" | jq -e '.success == false' > /dev/null 2>&1; then
-       echo "ERROR: Failed to download learn materials: $(echo "$result" | jq -r '.error')"
-       exit 1
-   fi
-
-   file_count=$(echo "$result" | jq -r '.file_count')
-   echo "Downloaded $file_count file(s) from gist"
+   cp .erk/impl-context/* .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/
    ```
 
 3. Tell the user:
 
    ```
-   Using preprocessed materials from gist:
-     - Downloaded N file(s) to .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/
+   Using preprocessed materials from .erk/impl-context/:
+     - Copied N file(s) to .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/
      - Skipping session discovery and preprocessing
    ```
 
 4. **Skip to Step 4** (Gather and Analyze Sessions). The preprocessed sessions and PR comments are already in the learn directory.
 
-**If no `gist_url` is provided:**
+**If `.erk/impl-context/` does not exist or is empty:**
 
 Proceed to Step 3 for standard session discovery and preprocessing.
 
@@ -150,7 +142,7 @@ erk exec get-pr-for-plan <plan-number>
 
 This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.
 
-**Note:** If you downloaded preprocessed materials from a gist in Step 2, skip the "Preprocess Sessions" and "Save PR Comments" subsections. The files are already in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`. Proceed to "Launch Parallel Analysis Agents".
+**Note:** If you copied preprocessed materials from `.erk/impl-context/` in Step 2, skip the "Preprocess Sessions" and "Save PR Comments" subsections. The files are already in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`. Proceed to "Launch Parallel Analysis Agents".
 
 #### Check Existing Documentation
 
@@ -221,7 +213,7 @@ Preprocessing N session(s): compressing JSONL → XML, deduplicating, truncating
 
 #### Save PR Comments
 
-If a PR exists for this plan, save PR comments for the gist:
+If a PR exists for this plan, save PR comments for analysis:
 
 ```bash
 erk exec get-pr-review-comments --pr <pr-number> --include-resolved \
@@ -229,36 +221,6 @@ erk exec get-pr-review-comments --pr <pr-number> --include-resolved \
 
 erk exec get-pr-discussion-comments --pr <pr-number> \
     > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/pr-discussion-comments.json
-```
-
-#### Upload to Gist
-
-**Note:** If you downloaded preprocessed materials from a gist in Step 2, skip this subsection. The gist URL is already available from the command arguments.
-
-Upload preprocessed session files and PR comments to a secret gist:
-
-```bash
-result=$(erk exec upload-learn-materials \
-    --learn-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
-    --issue <issue-number>)
-
-# Check for failure
-if echo "$result" | jq -e '.success == false' > /dev/null 2>&1; then
-    echo "ERROR: Failed to upload learn materials: $(echo "$result" | jq -r '.error')"
-    exit 1
-fi
-
-gist_url=$(echo "$result" | jq -r '.gist_url')
-echo "Gist created: $gist_url"
-```
-
-Display the gist URL to the user and save it for the plan issue.
-
-Tell the user:
-
-```
-Uploaded preprocessed sessions to secret gist: <gist_url>
-  Contents: N session XML file(s), PR review comments, PR discussion comments
 ```
 
 #### Launch Parallel Analysis Agents
@@ -506,7 +468,6 @@ Task(
     - session_analysis_paths: [".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md", ...]
     - diff_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md" (or null if no PR)
     - plan_title: <title from plan issue>
-    - gist_url: <gist URL from Step 4>
     - pr_number: <PR number if available, else null>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md
 
@@ -750,8 +711,6 @@ Display the result:
 
 ```
 Learn plan saved to GitHub issue #<issue_number>
-
-Raw materials: <gist-url>
 ```
 
 ### Step 8: Store Tripwire Candidates on Learn Plan Issue

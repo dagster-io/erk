@@ -272,24 +272,24 @@ def test_learn_without_dangerous_flag(tmp_path: Path) -> None:
     assert "/erk:learn" in command
 
 
-def _make_plan_body_with_gist_url(session_id: str, gist_url: str) -> str:
-    """Create a valid issue body with plan-header metadata including learn_materials_gist_url."""
+def _make_plan_body_with_learn_branch(session_id: str, learn_branch: str) -> str:
+    """Create a valid issue body with plan-header metadata including learn_materials_branch."""
     plan_header_data = {
         "schema_version": "2",
         "created_at": "2024-01-01T00:00:00Z",
         "created_by": "test-user",
         "created_from_session": session_id,
-        "learn_materials_gist_url": gist_url,
+        "learn_materials_branch": learn_branch,
     }
     header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
     return f"{header_block}\n\n# Plan\n\nTest plan content"
 
 
-def test_learn_passes_gist_url_when_available(tmp_path: Path) -> None:
-    """Verify learn_materials_gist_url from plan header is passed to /erk:learn command."""
-    session_id = "test-session-gist"
-    gist_url = "https://gist.github.com/testuser/abc123def456"
-    issue_body = _make_plan_body_with_gist_url(session_id, gist_url)
+def test_learn_passes_learn_branch_when_available(tmp_path: Path) -> None:
+    """Verify learn_materials_branch from plan header triggers learn branch path."""
+    session_id = "test-session-branch"
+    learn_branch = "learn/789"
+    issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
 
     now = datetime.now(UTC)
     fake_issues = FakeGitHubIssues(
@@ -359,19 +359,19 @@ def test_learn_passes_gist_url_when_available(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # Verify execute_interactive was called with gist_url in the command
+    # Verify execute_interactive was called without gist_url param (branch path uses plain command)
     assert len(fake_executor.interactive_calls) == 1
     _worktree_path, _dangerous, command, _target_subpath, _model, _ = (
         fake_executor.interactive_calls[0]
     )
-    assert f"/erk:learn 789 gist_url={gist_url}" == command
+    assert command == "/erk:learn 789"
 
 
-def test_gist_url_skips_session_discovery_and_display(tmp_path: Path) -> None:
-    """When gist URL is present, session paths are not displayed."""
-    session_id = "test-session-gist-skip"
-    gist_url = "https://gist.github.com/testuser/skip-sessions-test"
-    issue_body = _make_plan_body_with_gist_url(session_id, gist_url)
+def test_learn_branch_skips_session_discovery_and_display(tmp_path: Path) -> None:
+    """When learn branch is present, session paths are not displayed."""
+    session_id = "test-session-branch-skip"
+    learn_branch = "learn/555"
+    issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
 
     now = datetime.now(UTC)
     fake_issues = FakeGitHubIssues(
@@ -446,25 +446,25 @@ def test_gist_url_skips_session_discovery_and_display(tmp_path: Path) -> None:
     captured_output = result.output
     # CliRunner captures stderr in output when mix_stderr=True (default)
     assert "Preprocessed learn materials for plan 555" in captured_output
-    assert "https://gist.github.com/testuser/skip-sessions-test" in captured_output
-    assert "Sessions have been preprocessed and uploaded." in captured_output
+    assert "learn/555" in captured_output
+    assert "Sessions have been preprocessed and committed to the learn branch." in captured_output
 
     # Output should NOT contain session discovery artifacts
     assert "Sessions for plan" not in captured_output
     assert "Planning session" not in captured_output
     assert "Readable sessions" not in captured_output
 
-    # The command passed to execute_interactive should include gist_url
+    # The command passed to execute_interactive should NOT include gist_url
     assert len(fake_executor.interactive_calls) == 1
     _worktree_path, _dangerous, command, _target_subpath, _model, _ = (
         fake_executor.interactive_calls[0]
     )
-    assert command == f"/erk:learn 555 gist_url={gist_url}"
+    assert command == "/erk:learn 555"
 
 
-def test_learn_without_gist_url_does_not_include_param(tmp_path: Path) -> None:
-    """Verify command has no gist_url when plan header doesn't have one."""
-    session_id = "test-session-no-gist"
+def test_learn_without_learn_branch_does_not_include_param(tmp_path: Path) -> None:
+    """Verify command has no learn_branch when plan header doesn't have one."""
+    session_id = "test-session-no-branch"
     issue_body = _make_plan_body_with_session(session_id)
 
     now = datetime.now(UTC)
@@ -535,20 +535,20 @@ def test_learn_without_gist_url_does_not_include_param(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # Verify command does NOT include gist_url
+    # Verify command does NOT include learn_branch
     assert len(fake_executor.interactive_calls) == 1
     _worktree_path, _dangerous, command, _target_subpath, _model, _ = (
         fake_executor.interactive_calls[0]
     )
     assert command == "/erk:learn 321"
-    assert "gist_url" not in command
+    assert "learn_branch" not in command
 
 
-def test_gist_url_auto_launches_without_interactive_flag(tmp_path: Path) -> None:
-    """Gist-URL path always auto-launches, even without -i flag."""
-    session_id = "test-session-gist-auto"
-    gist_url = "https://gist.github.com/testuser/auto-launch-test"
-    issue_body = _make_plan_body_with_gist_url(session_id, gist_url)
+def test_learn_branch_auto_launches_without_interactive_flag(tmp_path: Path) -> None:
+    """Learn-branch path always auto-launches, even without -i flag."""
+    session_id = "test-session-branch-auto"
+    learn_branch = "learn/900"
+    issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
 
     now = datetime.now(UTC)
     fake_issues = FakeGitHubIssues(
@@ -614,7 +614,7 @@ def test_gist_url_auto_launches_without_interactive_flag(tmp_path: Path) -> None
 
     runner = CliRunner()
 
-    # Act: Run learn WITHOUT -i flag — gist path should still auto-launch
+    # Act: Run learn WITHOUT -i flag — branch path should still auto-launch
     result = runner.invoke(cli, ["learn", "900"], obj=ctx)
 
     # Assert: Should auto-launch without prompting
@@ -623,7 +623,7 @@ def test_gist_url_auto_launches_without_interactive_flag(tmp_path: Path) -> None
     _worktree_path, _dangerous, command, _target_subpath, _model, _ = (
         fake_executor.interactive_calls[0]
     )
-    assert f"/erk:learn 900 gist_url={gist_url}" == command
+    assert command == "/erk:learn 900"
 
 
 def test_dangerous_flag_auto_launches_without_interactive_flag(tmp_path: Path) -> None:
