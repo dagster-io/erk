@@ -60,7 +60,7 @@ erk exec impl-init --json
 
 If this succeeds with `"valid": true`:
 
-- If `has_issue_tracking: false`: **Skip directly to Step 3** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
 - If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
 
 Otherwise, set up from the specified issue:
@@ -121,8 +121,8 @@ erk exec impl-init --json
 
 If this succeeds with `"valid": true`:
 
-- If `has_issue_tracking: false`: **Skip directly to Step 3** (file-based plan, no remote to sync with).
-- If `has_issue_tracking: true`: **Call `setup-impl-from-issue <issue_number>`** to sync the local branch with remote, then proceed to Step 3. The `issue_number` is available in `.impl/issue.json`.
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue <issue_number>`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
 
 If it fails or returns `"valid": false`, continue to Step 2.
 
@@ -172,9 +172,9 @@ erk exec impl-init --json
 
 Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
 
-### Step 2d: Clean Up Plan Staging Directory
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
 
-If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
 
 ```bash
 if [ -d .erk/impl-context/ ]; then
@@ -184,7 +184,7 @@ if [ -d .erk/impl-context/ ]; then
 fi
 ```
 
-This directory contains the plan content committed during plan-save. After `setup-impl-from-issue` reads it into `.impl/`, the local copy is deleted, but the git-tracked version may still exist.
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
 
 ### Step 3: Read Plan and Load Context
 
