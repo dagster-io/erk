@@ -56,7 +56,7 @@ class TestPlanRowData:
         """make_plan_row creates row with sensible defaults."""
         row = make_plan_row(123, "Test Plan")
         assert row.plan_id == 123
-        assert row.title == "Test Plan"
+        assert row.full_title == "Test Plan"
         assert row.plan_url == "https://github.com/test/repo/issues/123"
         assert row.pr_number is None
         assert row.pr_display == "-"
@@ -161,18 +161,17 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # plan, obj, sts, title, branch, created, author, lrn, local-wt, local-impl
-        assert len(values) == 10
+        # plan, obj, sts, branch, created, author, lrn, local-wt, local-impl
+        assert len(values) == 9
         assert _text_to_str(values[0]) == "#123"
         assert _text_to_str(values[1]) == "-"  # objective (none)
         assert values[2] == "-"  # status (no local, no run)
-        assert _text_to_str(values[3]) == "Test Plan"
-        assert values[4] == "-"  # branch (none)
-        assert values[5] == "-"  # created_display
-        assert values[6] == "test-user"  # author
-        assert _text_to_str(values[7]) == "-"  # learn (no status)
-        assert _text_to_str(values[8]) == "-"  # worktree (not exists)
-        assert _text_to_str(values[9]) == "-"  # local impl
+        assert values[3] == "-"  # branch (none)
+        assert values[4] == "-"  # created_display
+        assert values[5] == "test-user"  # author
+        assert _text_to_str(values[6]) == "-"  # learn (no status)
+        assert _text_to_str(values[7]) == "-"  # worktree (not exists)
+        assert _text_to_str(values[8]) == "-"  # local impl
 
     def test_row_to_values_with_prs(self) -> None:
         """Row conversion with PR columns enabled."""
@@ -189,19 +188,18 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # plan, obj, sts, title, branch, created, author,
+        # plan, obj, sts, branch, created, author,
         # pr, chks, comments, lrn, local-wt, local-impl
-        assert len(values) == 13
+        assert len(values) == 12
         assert _text_to_str(values[1]) == "-"  # objective (none)
         assert values[2] == "-"  # status (no local, no run)
-        assert _text_to_str(values[3]) == "Test Plan"
-        assert values[4] == "-"  # branch (none)
-        assert values[5] == "-"  # created_display
-        assert values[6] == "test-user"  # author
-        assert _text_to_str(values[7]) == "#456"  # pr display
-        assert values[8] == "-"  # checks
-        assert values[9] == "0/0"  # comments (default for PR with no counts)
-        assert _text_to_str(values[10]) == "-"  # learn (no status)
+        assert values[3] == "-"  # branch (none)
+        assert values[4] == "-"  # created_display
+        assert values[5] == "test-user"  # author
+        assert _text_to_str(values[6]) == "#456"  # pr display
+        assert values[7] == "-"  # checks
+        assert values[8] == "0/0"  # comments (default for PR with no counts)
+        assert _text_to_str(values[9]) == "-"  # learn (no status)
 
     def test_row_to_values_with_pr_link_indicator(self) -> None:
         """Row conversion shows 🔗 indicator for PRs that will close issues."""
@@ -219,8 +217,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # PR display at index 7 (plan, obj, sts, title, branch, created, author, pr, ...)
-        assert _text_to_str(values[7]) == "#456 ✅🔗"
+        # PR display at index 6 (plan, obj, sts, branch, created, author, pr, ...)
+        assert _text_to_str(values[6]) == "#456 ✅🔗"
 
     def test_row_to_values_with_runs(self) -> None:
         """Row conversion with run columns enabled."""
@@ -237,9 +235,9 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # plan, obj, sts, title, branch, created, author, lrn, local-wt, local-impl,
+        # plan, obj, sts, branch, created, author, lrn, local-wt, local-impl,
         # remote-impl, run-id, run-state
-        assert len(values) == 13
+        assert len(values) == 12
 
     def test_row_to_values_with_worktree(self) -> None:
         """Row shows worktree name when exists locally."""
@@ -254,8 +252,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Worktree is at index 8 (after plan, obj, sts, title, branch, created, author, lrn)
-        assert values[8] == "feature-branch"
+        # Worktree is at index 7 (after plan, obj, sts, branch, created, author, lrn)
+        assert values[7] == "feature-branch"
 
     def test_row_to_values_branch_from_pr_head(self) -> None:
         """Row shows pr_head_branch when available."""
@@ -265,8 +263,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Branch is at index 4 (after plan, obj, sts, title)
-        assert values[4] == "feat/my-branch"
+        # Branch is at index 3 (after plan, obj, sts)
+        assert values[3] == "feat/my-branch"
 
     def test_row_to_values_branch_falls_back_to_worktree_branch(self) -> None:
         """Row falls back to worktree_branch when pr_head_branch is None."""
@@ -276,8 +274,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Branch is at index 4 (after plan, obj, sts, title)
-        assert values[4] == "local-branch"
+        # Branch is at index 3 (after plan, obj, sts)
+        assert values[3] == "local-branch"
 
     def test_row_to_values_branch_prefers_pr_head_over_worktree(self) -> None:
         """Row prefers pr_head_branch over worktree_branch."""
@@ -289,7 +287,7 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        assert values[4] == "pr-branch"
+        assert values[3] == "pr-branch"
 
     def test_row_to_values_with_learn_status_clickable(self) -> None:
         """Row shows learn display with clickable styling when issue/PR set."""
@@ -304,8 +302,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Learn column is at index 7 (after plan, obj, sts, title, branch, created, author)
-        learn_cell = values[7]
+        # Learn column is at index 6 (after plan, obj, sts, branch, created, author)
+        learn_cell = values[6]
         # Should be styled as clickable (cyan underline)
         assert isinstance(learn_cell, Text)
         assert learn_cell.plain == "📋 #456"
@@ -320,8 +318,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Learn column at index 7 (after plan, obj, sts, title, branch, created, author)
-        learn_cell = values[7]
+        # Learn column at index 6 (after plan, obj, sts, branch, created, author)
+        learn_cell = values[6]
         # Should be plain string (not styled)
         assert learn_cell == "⟳"
 
@@ -333,8 +331,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Author is at index 6 (after plan, obj, sts, title, branch, created)
-        assert values[6] == "schrockn"
+        # Author is at index 5 (after plan, obj, sts, branch, created)
+        assert values[5] == "schrockn"
 
 
 class TestLocalWtColumnIndex:
@@ -349,47 +347,47 @@ class TestLocalWtColumnIndex:
         assert table.local_wt_column_index is None
 
     def test_expected_column_index_without_prs(self) -> None:
-        """Expected column index is 8 when show_prs=False.
+        """Expected column index is 7 when show_prs=False.
 
         This test verifies the expected column calculation logic.
         The actual _setup_columns() requires a running Textual app context.
         """
-        # Without PRs: plan(0), obj(1), sts(2), title(3), branch(4),
-        # created(5), author(6), lrn(7), local-wt(8), local-impl(9)
-        expected_index = 8
-        assert expected_index == 8
+        # Without PRs: plan(0), obj(1), sts(2), branch(3),
+        # created(4), author(5), lrn(6), local-wt(7), local-impl(8)
+        expected_index = 7
+        assert expected_index == 7
 
     def test_expected_column_index_with_prs(self) -> None:
-        """Expected column index is 11 when show_prs=True.
+        """Expected column index is 10 when show_prs=True.
 
         This test verifies the expected column calculation logic.
         The actual _setup_columns() requires a running Textual app context.
         """
         # Column layout with PRs:
-        # With PRs: plan(0), obj(1), sts(2), title(3), branch(4), author(5),
-        # created(6), pr(7), chks(8), comments(9), lrn(10), local-wt(11), local-impl(12)
-        expected_index = 11
-        assert expected_index == 11
+        # With PRs: plan(0), obj(1), sts(2), branch(3), created(4), author(5),
+        # pr(6), chks(7), comments(8), lrn(9), local-wt(10), local-impl(11)
+        expected_index = 10
+        assert expected_index == 10
 
     def test_expected_column_index_with_all_columns(self) -> None:
-        """Expected column index is 11 with show_prs=True and show_runs=True.
+        """Expected column index is 10 with show_prs=True and show_runs=True.
 
         The local-wt column index doesn't change with show_runs because
         run columns are added after local-wt.
         """
         # Column layout:
-        # plan(0), obj(1), sts(2), title(3), branch(4), created(5), author(6),
-        # pr(7), chks(8), comments(9), lrn(10), local-wt(11), local-impl(12), ...runs
-        # Still 11: runs come after local-wt
-        expected_index = 11
-        assert expected_index == 11
+        # plan(0), obj(1), sts(2), branch(3), created(4), author(5),
+        # pr(6), chks(7), comments(8), lrn(9), local-wt(10), local-impl(11), ...runs
+        # Still 10: runs come after local-wt
+        expected_index = 10
+        assert expected_index == 10
 
 
 class TestObjectivesViewRowConversion:
     """Tests for row conversion in Objectives view."""
 
     def test_objectives_view_has_enriched_columns(self) -> None:
-        """Objectives view produces plan, title, progress, next, updated, author."""
+        """Objectives view produces plan, progress, next, deps, updated, author."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
@@ -397,37 +395,14 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        # Objectives view: plan, title, progress, next, deps, updated, author
-        assert len(values) == 7
+        # Objectives view: plan, progress, next, deps, updated, author
+        assert len(values) == 6
         assert _text_to_str(values[0]) == "#42"
-        assert _text_to_str(values[1]) == "Objective Plan"
-        assert values[2] == "-"  # progress_display
-        assert _text_to_str(values[3]) == "-"  # next_step_display
-        assert values[4] == "-"  # deps_display
-        assert values[5] == "-"  # updated_display
-        assert values[6] == "test-user"  # author
-
-    def test_objectives_view_strips_title_prefix(self) -> None:
-        """Objectives view strips 'Objective: ' prefix from title."""
-        filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
-        table._view_mode = ViewMode.OBJECTIVES
-        row = make_plan_row(42, "Objective: Enrich Dashboard")
-
-        values = table._row_to_values(row)
-
-        assert _text_to_str(values[1]) == "Enrich Dashboard"
-
-    def test_objectives_view_preserves_non_prefixed_title(self) -> None:
-        """Objectives view preserves titles without the prefix."""
-        filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
-        table._view_mode = ViewMode.OBJECTIVES
-        row = make_plan_row(42, "My Plan Title")
-
-        values = table._row_to_values(row)
-
-        assert _text_to_str(values[1]) == "My Plan Title"
+        assert values[1] == "-"  # progress_display
+        assert _text_to_str(values[2]) == "-"  # next_step_display
+        assert values[3] == "-"  # deps_display
+        assert values[4] == "-"  # updated_display
+        assert values[5] == "test-user"  # author
 
     def test_objectives_view_shows_progress_and_next(self) -> None:
         """Objectives view shows progress and next step from row data."""
@@ -446,10 +421,10 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        assert values[2] == "3/7"  # progress
-        assert _text_to_str(values[3]) == "1.3 Add tests"  # next step
-        assert values[4] == "-"  # deps
-        assert values[5] == "2h ago"  # updated
+        assert values[1] == "3/7"  # progress
+        assert _text_to_str(values[2]) == "1.3 Add tests"  # next step
+        assert values[3] == "-"  # deps
+        assert values[4] == "2h ago"  # updated
 
 
 class TestShowPrColumnFalse:
@@ -458,12 +433,12 @@ class TestShowPrColumnFalse:
     def test_row_to_values_with_show_pr_column_false_excludes_pr_value(self) -> None:
         """When show_pr_column=False, pr_display is omitted from row values.
 
-        With show_prs=True, show_pr_column=True (13 values):
-          plan, obj, sts, title, branch, created, author, pr,
+        With show_prs=True, show_pr_column=True (12 values):
+          plan, obj, sts, branch, created, author, pr,
           chks, comments, lrn, local-wt, local-impl
 
-        With show_prs=True, show_pr_column=False (12 values):
-          plan, obj, sts, title, branch, created, author,
+        With show_prs=True, show_pr_column=False (11 values):
+          plan, obj, sts, branch, created, author,
           chks, comments, lrn, local-wt, local-impl
         """
         filters = PlanFilters(
@@ -480,8 +455,8 @@ class TestShowPrColumnFalse:
 
         values = table._row_to_values(row)
 
-        # One fewer value than with show_pr_column=True (which produces 13)
-        assert len(values) == 12
+        # One fewer value than with show_pr_column=True (which produces 12)
+        assert len(values) == 11
 
     def test_row_to_values_with_show_pr_column_false_pr_display_not_in_values(self) -> None:
         """When show_pr_column=False, the pr_display string is absent from values."""
@@ -519,9 +494,9 @@ class TestShowPrColumnFalse:
 
         values = table._row_to_values(row)
 
-        assert len(values) == 13
-        # pr at index 7 (after plan, obj, sts, title, branch, created, author)
-        assert _text_to_str(values[7]) == "#456"
+        assert len(values) == 12
+        # pr at index 6 (after plan, obj, sts, branch, created, author)
+        assert _text_to_str(values[6]) == "#456"
 
 
 # --- Tests for stage column logic in draft_pr mode ---
@@ -543,10 +518,10 @@ def test_row_to_values_draft_pr_includes_stage() -> None:
     values = table._row_to_values(row)
 
     # draft_pr adds stage after author:
-    # plan, obj, sts, title, branch, created, author, stage, lrn, local-wt, local-impl
-    assert len(values) == 11
-    # Stage at index 7 (after plan, obj, sts, title, branch, created, author) - markup stripped
-    assert _text_to_str(values[7]) == "review"
+    # plan, obj, sts, branch, created, author, stage, lrn, local-wt, local-impl
+    assert len(values) == 10
+    # Stage at index 6 (after plan, obj, sts, branch, created, author) - markup stripped
+    assert _text_to_str(values[6]) == "review"
 
 
 def test_row_to_values_github_does_not_include_stage() -> None:
@@ -564,8 +539,8 @@ def test_row_to_values_github_does_not_include_stage() -> None:
 
     values = table._row_to_values(row)
 
-    # github mode: plan, obj, sts, title, branch, created, author, lrn, local-wt, local-impl = 10
-    assert len(values) == 10
+    # github mode: plan, obj, sts, branch, created, author, lrn, local-wt, local-impl = 9
+    assert len(values) == 9
 
 
 def test_stage_column_index_set_for_draft_pr() -> None:

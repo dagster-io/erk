@@ -14,7 +14,6 @@ def test_serialize_plan_row_basic() -> None:
     result = _serialize_plan_row(row)
 
     assert result["plan_id"] == 123
-    assert result["title"] == "Test Plan"
     assert result["plan_url"] == "https://github.com/test/repo/issues/123"
     assert result["pr_number"] is None
     assert result["exists_locally"] is False
@@ -28,7 +27,6 @@ def test_serialize_plan_row_datetime_fields() -> None:
     row = PlanRowData(
         plan_id=456,
         plan_url="https://github.com/test/repo/issues/456",
-        title="Datetime Test",
         pr_number=None,
         pr_url=None,
         pr_display="-",
@@ -89,7 +87,6 @@ def test_serialize_plan_row_tuple_to_list() -> None:
     row = PlanRowData(
         plan_id=789,
         plan_url="https://github.com/test/repo/issues/789",
-        title="Tuple Test",
         pr_number=None,
         pr_url=None,
         pr_display="-",
@@ -172,7 +169,6 @@ def test_serialize_plan_row_all_fields_present() -> None:
     expected_fields = {
         "plan_id",
         "plan_url",
-        "title",
         "pr_number",
         "pr_url",
         "pr_display",
@@ -230,7 +226,6 @@ def test_serialize_plan_row_json_roundtrip() -> None:
     row = PlanRowData(
         plan_id=42,
         plan_url="https://github.com/test/repo/issues/42",
-        title="JSON Test",
         pr_number=99,
         pr_url="https://github.com/test/repo/pull/99",
         pr_display="#99 ✅",

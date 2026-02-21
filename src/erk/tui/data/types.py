@@ -16,7 +16,6 @@ class PlanRowData:
     Attributes:
         plan_id: GitHub issue number (e.g., 123)
         plan_url: Full URL to the GitHub issue
-        title: Plan title (truncated for display)
         pr_number: PR number if linked, None otherwise
         pr_url: URL to PR (GitHub or Graphite), None if no PR
         pr_display: Formatted PR cell content (e.g., "#123 👀")
@@ -67,7 +66,6 @@ class PlanRowData:
 
     plan_id: int
     plan_url: str | None
-    title: str
     pr_number: int | None
     pr_url: str | None
     pr_display: str
