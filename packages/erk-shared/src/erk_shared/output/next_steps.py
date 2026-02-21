@@ -43,7 +43,7 @@ class DraftPRNextSteps:
 
     @property
     def checkout_and_implement(self) -> str:
-        return f"erk br co {self.branch_name} && erk implement --dangerous"
+        return f'source "$(erk br co {self.branch_name} --script)" && erk implement --dangerous'
 
 
 # Slash commands (static, don't need issue number)

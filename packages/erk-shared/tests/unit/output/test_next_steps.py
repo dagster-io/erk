@@ -21,4 +21,4 @@ def test_format_draft_pr_next_steps_plain_contains_branch_name() -> None:
     """format_draft_pr_next_steps_plain includes branch name in checkout command."""
     output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo")
     assert "plan-feature-foo" in output
-    assert "erk br co" in output
+    assert 'source "$(erk br co' in output

@@ -23,7 +23,7 @@ class TestDraftPRNextSteps:
     def test_checkout_and_implement_uses_branch_name(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
         assert steps.checkout_and_implement == (
-            "erk br co plan-my-feature-02-20 && erk implement --dangerous"
+            'source "$(erk br co plan-my-feature-02-20 --script)" && erk implement --dangerous'
         )
 
 
