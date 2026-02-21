@@ -17,6 +17,9 @@ tripwires:
     warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
   - action: "asserting on YAML metadata field values with exact string matching"
     warning: 'Assert on key-only format (''field_name:''), not ''field_name: "value"''. YAML serialization differs from Python repr.'
+  - action: "changing cleanup or deletion behavior without updating test assertions"
+    warning: "When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior."
+    score: 4
 ---
 
 # Erk Test Reference

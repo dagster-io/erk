@@ -8,6 +8,9 @@ read_when:
 tripwires:
   - action: "adding plan storage behavior without checking plan backend type"
     warning: "Two backends exist (github, draft_pr). Verify behavior works for both. See draft-pr-plan-backend.md."
+  - action: "validating plan_id in exec scripts without checking provider type"
+    warning: "Draft-PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; draft-PR plans use PR numbers."
+    score: 4
 ---
 
 # Draft PR Plan Backend

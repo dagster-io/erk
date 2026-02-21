@@ -136,6 +136,8 @@ Rules triggered by matching actions in code.
 
 **merging a plan review PR** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan review PRs are NEVER merged. They exist only for inline review comments. Close without merging when review is complete.
 
+**migrating a plan without preserving operational metadata** → Read [Plan Migration to Draft PR](plan-migrate-to-draft-pr.md) first. create_plan() only sets a subset of fields. Use update_metadata() in a second phase to carry over operational fields like lifecycle_stage, last_dispatched_at, etc. See \_FIELDS_HANDLED_BY_CREATE in plan_migrate_to_draft_pr.py:206-216.
+
 **modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
 
 **modifying marker deletion behavior in exit-plan-mode hook** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates.
@@ -165,6 +167,8 @@ Rules triggered by matching actions in code.
 **removing .worker-impl/ during implementation (before CI passes)** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes.
 
 **removing git-tracked temporary directories in setup scripts** → Read [Impl-Context Staging Directory](impl-context.md) first. Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_issue.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d.
+
+**renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 4 locations: LifecycleStageValue type, valid_stages set, \_VALID_STAGES tuple, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
 
 **renaming gateway files during a move without checking for non-standard naming** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Source files that don't follow standard naming (e.g., executor.py instead of abc.py) must be renamed to abc.py/real.py/fake.py during the move. The gateway directory convention requires standard file names.
 
@@ -201,6 +205,8 @@ Rules triggered by matching actions in code.
 **using opus/sonnet for mechanical data fetching or formatting tasks** → Read [Token Optimization Patterns](token-optimization-patterns.md) first. Use haiku for mechanical work (fetch, parse, format). Reserve expensive models for synthesis and reasoning.
 
 **using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
+
+**validating plan_id in exec scripts without checking provider type** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Draft-PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; draft-PR plans use PR numbers.
 
 **writing a plan step that says 'update X' without a file path** → Read [Context Preservation Patterns](context-preservation-patterns.md) first. Generic references force re-discovery. Include the full path, line numbers, and evidence. See the five dimensions below.
 

@@ -6,6 +6,10 @@ read_when:
   - "creating new event types for issue tracking"
 last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
+tripwires:
+  - action: "modifying render_metadata_block() or parse_metadata_block_body()"
+    warning: "Both metadata/core.py AND metadata_blocks.py contain identical implementations. Tests import from metadata_blocks.py. Changes to one must be mirrored in the other, or behavior diverges silently."
+    score: 6
 ---
 
 # Metadata Blocks Reference
