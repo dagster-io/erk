@@ -27,6 +27,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
+    _detect_worktree_context,
     plan_save_to_issue,
 )
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
@@ -245,6 +246,8 @@ def _save_as_draft_pr(
         )
 
     # Output
+    wt_ctx = _detect_worktree_context(ctx)
+
     if output_format == "display":
         click.echo(f"Plan saved as draft PR #{plan_number}")
         click.echo(f"Title: {prefixed_title}")
@@ -253,7 +256,11 @@ def _save_as_draft_pr(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_draft_pr_next_steps_plain(plan_number, branch_name=branch_name))
+        click.echo(
+            format_draft_pr_next_steps_plain(
+                plan_number, branch_name=branch_name, worktree_context=wt_ctx
+            )
+        )
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
@@ -263,6 +270,9 @@ def _save_as_draft_pr(
             "branch_name": branch_name,
             "plan_backend": "draft_pr",
         }
+        if wt_ctx is not None and wt_ctx.is_in_slot:
+            output_data["is_in_slot"] = True
+            output_data["slot_name"] = wt_ctx.slot_name
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
         click.echo(json.dumps(output_data))

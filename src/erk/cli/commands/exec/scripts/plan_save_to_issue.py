@@ -29,6 +29,8 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
+from erk.core.worktree_pool import load_pool_state
 from erk_shared.context.helpers import (
     get_repo_identifier,
     require_claude_installation,
@@ -42,7 +44,7 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.github.metadata.session import render_session_exchanges_block
 from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.learn.extraction.session_schema import extract_session_exchanges_from_jsonl
-from erk_shared.output.next_steps import format_next_steps_plain
+from erk_shared.output.next_steps import WorktreeContext, format_next_steps_plain
 from erk_shared.plan_store.plan_content import resolve_plan_content
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
@@ -50,6 +52,29 @@ from erk_shared.scratch.session_markers import (
     create_plan_saved_marker,
     get_existing_saved_issue,
 )
+
+
+def _detect_worktree_context(ctx: click.Context) -> WorktreeContext | None:
+    """Detect if the current working directory is in a pool slot.
+
+    Returns WorktreeContext if in a slot, None otherwise.
+    """
+    from erk_shared.context.context import ErkContext
+    from erk_shared.context.types import NoRepoSentinel
+
+    erk_ctx = ctx.obj
+    if erk_ctx is None or not isinstance(erk_ctx, ErkContext):
+        return None
+    repo = erk_ctx.repo
+    if isinstance(repo, NoRepoSentinel):
+        return None
+    state = load_pool_state(repo.pool_json_path)
+    if state is None:
+        return None
+    assignment = find_assignment_by_worktree_path(state, repo.root)
+    if assignment is None:
+        return None
+    return WorktreeContext(is_in_slot=True, slot_name=assignment.slot_name)
 
 
 @click.command(name="plan-save-to-issue")
@@ -295,6 +320,8 @@ def plan_save_to_issue(
     if result.issue_number is None:
         raise RuntimeError("Unexpected: issue_number is None after successful create_plan_issue")
 
+    wt_ctx = _detect_worktree_context(ctx)
+
     if output_format == "display":
         click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
         click.echo(f"Title: {result.title}")
@@ -302,7 +329,7 @@ def plan_save_to_issue(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_next_steps_plain(result.issue_number))
+        click.echo(format_next_steps_plain(result.issue_number, worktree_context=wt_ctx))
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
@@ -311,6 +338,9 @@ def plan_save_to_issue(
             "title": result.title,
             "plan_backend": "github",
         }
+        if wt_ctx is not None and wt_ctx.is_in_slot:
+            output_data["is_in_slot"] = True
+            output_data["slot_name"] = wt_ctx.slot_name
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
         click.echo(json.dumps(output_data))

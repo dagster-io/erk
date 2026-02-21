@@ -125,7 +125,7 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan 
 
 ### Step 4: Display Results
 
-On success, display based on `plan_backend` from JSON output:
+On success, display based on `plan_backend` and `is_in_slot` from JSON output:
 
 **Header (both backends):**
 
@@ -133,6 +133,52 @@ On success, display based on `plan_backend` from JSON output:
 Plan "<title>" saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #<issue_number>
 URL: <issue_url>
 ```
+
+**When `is_in_slot` is `true` in JSON output** (user is in a worktree slot):
+
+Use "Stack here" labeling instead of "Local" and add an "Advanced" section.
+
+**If `plan_backend` is `"draft_pr"` and in slot:**
+
+```
+Next steps:
+
+View PR: gh pr view <issue_number> --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Stack here: erk br create --for-plan <issue_number>
+  Stack+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
+  Submit to Queue: erk plan submit <issue_number>
+
+Advanced — new worktree (run from root worktree):
+  erk br create --for-plan <issue_number>
+```
+
+**If `plan_backend` is `"github"` (or absent) and in slot:**
+
+```
+Next steps:
+
+View Issue: gh issue view <issue_number> --web
+
+In Claude Code:
+  Prepare (stacks in current worktree): /erk:prepare
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
+
+OR exit Claude Code first, then run one of:
+  Stack here: erk br create --for-plan <issue_number>
+  Stack+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
+  Submit to Queue: erk plan submit <issue_number>
+
+Advanced — new worktree (run from root worktree):
+  erk br create --for-plan <issue_number>
+```
+
+**When `is_in_slot` is absent or `false`** (not in slot — default):
 
 **If `plan_backend` is `"draft_pr"`:**
 

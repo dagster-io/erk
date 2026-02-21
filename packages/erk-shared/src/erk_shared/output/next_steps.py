@@ -4,6 +4,14 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class WorktreeContext:
+    """Context about whether the user is in a pool slot."""
+
+    is_in_slot: bool
+    slot_name: str | None
+
+
+@dataclass(frozen=True)
 class IssueNextSteps:
     """Canonical commands for issue operations."""
 
@@ -54,9 +62,27 @@ SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
 PREPARE_SLASH_COMMAND = "/erk:prepare"
 
 
-def format_next_steps_plain(issue_number: int) -> str:
+def format_next_steps_plain(issue_number: int, *, worktree_context: WorktreeContext | None) -> str:
     """Format for CLI output (plain text)."""
     s = IssueNextSteps(issue_number)
+
+    if worktree_context is not None and worktree_context.is_in_slot:
+        return f"""Next steps:
+
+View Issue: {s.view}
+
+In Claude Code:
+  Prepare (stacks in current worktree): {PREPARE_SLASH_COMMAND}
+  Submit to queue: {SUBMIT_SLASH_COMMAND}
+
+OR exit Claude Code first, then run one of:
+  Stack here: {s.prepare}
+  Stack+Implement: {s.prepare_and_implement}
+  Submit to Queue: {s.submit}
+
+Advanced — new worktree (run from root worktree):
+  {s.prepare}"""
+
     return f"""Next steps:
 
 View Issue: {s.view}
@@ -71,9 +97,27 @@ OR exit Claude Code first, then run one of:
   Submit to Queue: {s.submit}"""
 
 
-def format_draft_pr_next_steps_plain(pr_number: int, *, branch_name: str) -> str:
+def format_draft_pr_next_steps_plain(
+    pr_number: int, *, branch_name: str, worktree_context: WorktreeContext | None
+) -> str:
     """Format for CLI output (plain text) for draft PR plans."""
     s = DraftPRNextSteps(pr_number=pr_number, branch_name=branch_name)
+
+    if worktree_context is not None and worktree_context.is_in_slot:
+        return f"""Next steps:
+
+View PR: {s.view}
+
+In Claude Code:
+  Submit to queue: {SUBMIT_SLASH_COMMAND}
+
+Outside Claude Code:
+  Stack here: {s.checkout_and_implement}
+  Submit to queue: {s.submit}
+
+Advanced — new worktree (run from root worktree):
+  {s.checkout_and_implement}"""
+
     return f"""Next steps:
 
 View PR: {s.view}
