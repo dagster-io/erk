@@ -51,7 +51,7 @@ erk one-shot "Add a --verbose flag to the plan submit command" --model sonnet
 
 1. Validates prompt and optional model parameter
 2. Generates branch name via `generate_branch_name()` in `one_shot_dispatch.py`: `P{N}-{slug}-{MM-DD-HHMM}` when `plan_issue_number` is provided, otherwise `oneshot-{slug}-{MM-DD-HHMM}`
-3. Creates branch from trunk with an empty commit
+3. Creates branch from trunk, writes prompt to `.worker-impl/task.md`, and commits
 4. Pushes branch to remote
 5. Creates a draft PR with prompt in description
 6. Triggers the `one-shot.yml` GitHub Actions workflow
