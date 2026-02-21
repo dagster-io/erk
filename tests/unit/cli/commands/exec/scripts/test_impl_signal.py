@@ -412,3 +412,22 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
     assert data["success"] is True
     assert data["event"] == "submitted"
     assert data["issue_number"] == 200
+
+
+def test_submitted_issue_not_found(tmp_path: Path) -> None:
+    """Submitted event returns error when plan issue doesn't exist."""
+    fake_issues = FakeGitHubIssues(issues={})
+    _setup_plan_ref(tmp_path / ".impl", plan_id="999")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        impl_signal,
+        ["submitted"],
+        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is False
+    assert data["event"] == "submitted"
+    assert data["error_type"] == "issue-not-found"

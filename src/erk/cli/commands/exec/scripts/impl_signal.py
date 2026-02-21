@@ -52,6 +52,7 @@ from erk_shared.impl_folder import (
     read_plan_ref,
     write_local_run_state,
 )
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -397,6 +398,12 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     metadata: dict[str, object] = {
         "lifecycle_stage": "implemented",
     }
+
+    # LBYL: Check plan exists before updating
+    plan_result = backend.get_plan(repo_root, plan_ref.plan_id)
+    if isinstance(plan_result, PlanNotFound):
+        _output_error(event, "issue-not-found", f"Issue #{plan_ref.plan_id} not found")
+        return
 
     # Update metadata via PlanBackend (no comment needed — the PR is already visible)
     try:
