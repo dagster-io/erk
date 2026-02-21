@@ -14,12 +14,12 @@ Branch: `learn/7733` (PR #7733)
 
 ## Summary
 
-| Metric                         | Count |
-| ------------------------------ | ----- |
-| Documentation items            | 14    |
-| Contradictions to resolve      | 7     |
-| Tripwire candidates (score>=4) | 5     |
-| Potential tripwires (score 2-3)| 3     |
+| Metric                          | Count |
+| ------------------------------- | ----- |
+| Documentation items             | 14    |
+| Contradictions to resolve       | 7     |
+| Tripwire candidates (score>=4)  | 5     |
+| Potential tripwires (score 2-3) | 3     |
 
 ## Stale Documentation Cleanup
 
@@ -65,6 +65,7 @@ copies preprocessed materials into `.erk/impl-context/`, commits them, and force
 the branch to origin. This replaces the former gist upload step.
 
 Key behaviors:
+
 - Branch naming convention: `learn/{plan_id}` (e.g., `learn/7733`)
 - Uses `git.branch.*` and `git.remote.*` gateways directly (NOT BranchManager)
 - try/finally pattern ensures the original branch is always restored after commit
@@ -188,6 +189,7 @@ Convention: `learn/{plan_id}` (e.g., `learn/7733`).
 <!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py -->
 
 Lifecycle:
+
 1. `trigger_async_learn` creates branch from `origin/master`
 2. Copies preprocessed files to `.erk/impl-context/` on that branch
 3. Commits and force-pushes to origin
@@ -297,6 +299,7 @@ analysis, gap analysis) are copied into `.erk/impl-context/` on a temporary bran
 committed, and pushed to origin. CI checks out this branch and reads the files directly.
 
 Lifecycle on learn branches:
+
 1. Created by `trigger_async_learn` during the branch commit step
 2. Contains preprocessed learn materials (not plan/ref files)
 3. Read by CI after checking out the learn branch
@@ -438,7 +441,7 @@ Rule of thumb: try/finally (cleanup) = correct. try/except (control flow) = viol
      Update any references to the stats output format. -->
 ```
 
-#### 14. SHOULD_BE_CODE: Add docstring to _store_learn_materials_branch()
+#### 14. SHOULD_BE_CODE: Add docstring to \_store_learn_materials_branch()
 
 **Location:** `src/erk/cli/commands/land_cmd.py`
 **Action:** CODE_CHANGE
