@@ -41,10 +41,10 @@ This goes after `erk pr submit` succeeds but before `erk pr check`.
 Add a new step after "Trigger CI workflows" (after line 451):
 
 ```yaml
-    - name: Update lifecycle stage to implemented
-      if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
-      run: |
-        erk exec impl-signal submitted
+- name: Update lifecycle stage to implemented
+  if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+  run: |
+    erk exec impl-signal submitted
 ```
 
 ### 4. Add tests
