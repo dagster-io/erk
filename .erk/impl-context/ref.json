@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Infer \"implementing\" lifecycle stage from workflow run presence"
-}
