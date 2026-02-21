@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Simplify plan backend configuration to use only environment variables"
+}
