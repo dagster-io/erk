@@ -41,6 +41,9 @@ from erk_shared.plan_store.types import PlanNotFound
     help="GitHub issue number or URL with erk-plan label",
 )
 @click.option("--no-slot", is_flag=True, help="Create branch without slot assignment")
+@click.option(
+    "--new-slot", is_flag=True, help="Force allocation of a new slot instead of stacking in place"
+)
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
 @click.option(
     "--create-only",
@@ -75,6 +78,7 @@ def branch_create(
     branch_name: str | None,
     for_plan: str | None,
     no_slot: bool,
+    new_slot: bool,
     force: bool,
     *,
     create_only: bool,
@@ -117,6 +121,10 @@ def branch_create(
 
     if docker and (codespace or codespace_name is not None):
         user_output("Error: --docker and --codespace/--codespace-name cannot be used together.")
+        raise SystemExit(1) from None
+
+    if new_slot and no_slot:
+        user_output("Error: --new-slot and --no-slot cannot be used together.")
         raise SystemExit(1) from None
 
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -211,7 +219,7 @@ def branch_create(
     # Detect if running in an assigned slot (for stack-in-place)
     state = load_pool_state(repo.pool_json_path)
     current_assignment = None
-    if state is not None:
+    if state is not None and not new_slot:
         current_assignment = find_assignment_by_worktree_path(state, repo.root)
 
     if current_assignment is not None:
