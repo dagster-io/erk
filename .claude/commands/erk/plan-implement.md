@@ -298,6 +298,12 @@ erk pr submit
 
 This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
 
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2>/dev/null || true
+```
+
 Then validate PR rules:
 
 ```bash

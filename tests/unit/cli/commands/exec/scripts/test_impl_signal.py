@@ -340,3 +340,75 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
     run_state = json.loads(run_state_file.read_text(encoding="utf-8"))
     assert run_state["last_event"] == "started"
     assert run_state["session_id"] == "test-session-789"
+
+
+# --- Submitted event tests ---
+
+
+def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
+    """Submitted event sets lifecycle_stage to 'implemented' via PlanBackend."""
+    issue = _make_issue(number=100)
+    fake_issues = FakeGitHubIssues(issues={100: issue})
+    _setup_plan_ref(tmp_path / ".impl", plan_id="100")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        impl_signal,
+        ["submitted"],
+        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is True
+    assert data["event"] == "submitted"
+    assert data["issue_number"] == 100
+
+    # No comment for submitted events
+    assert len(fake_issues.added_comments) == 0
+
+    # Verify issue body was updated (metadata block with lifecycle_stage)
+    assert len(fake_issues.updated_bodies) == 1
+    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
+    assert updated_issue_number == 100
+    assert "implemented" in updated_body
+
+
+def test_submitted_no_plan_ref(tmp_path: Path) -> None:
+    """Returns error when no plan-ref.json exists for submitted event."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    (impl_dir / "plan.md").write_text("# Plan", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        impl_signal,
+        ["submitted"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is False
+    assert data["event"] == "submitted"
+    assert data["error_type"] == "no-issue-reference"
+
+
+def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
+    """Submitted event succeeds without --session-id (not required)."""
+    issue = _make_issue(number=200)
+    fake_issues = FakeGitHubIssues(issues={200: issue})
+    _setup_plan_ref(tmp_path / ".impl", plan_id="200")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        impl_signal,
+        ["submitted"],
+        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is True
+    assert data["event"] == "submitted"
+    assert data["issue_number"] == 200
