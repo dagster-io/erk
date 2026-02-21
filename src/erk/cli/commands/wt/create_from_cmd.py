@@ -26,8 +26,9 @@ def create_from_wt(ctx: ErkContext, branch: str, force: bool, script: bool) -> N
     Allocates a fresh pool slot for an existing branch and navigates to it.
     Use this when you need a separate worktree for work that already has a branch.
 
-    \b
     Examples:
+
+    \b
       erk wt create-from feature-auth
       erk wt create-from feature-auth --force
       source <(erk wt create-from feature-auth --script)
@@ -73,43 +74,42 @@ def create_from_wt(ctx: ErkContext, branch: str, force: bool, script: bool) -> N
     )
 
     # Navigate to the worktree
-    styled_branch = click.style(branch, fg="yellow")
-    styled_slot = click.style(result.slot_name, fg="cyan")
-
-    if result.already_assigned:
-        script_msg = f'echo "Branch {branch} already in slot {result.slot_name}"'
-    else:
-        script_msg = f'echo "Assigned {branch} to {result.slot_name}"'
-
     should_output = navigate_to_worktree(
         ctx,
         worktree_path=result.worktree_path,
         branch=branch,
         script=script,
         command_name="create-from",
-        script_message=script_msg,
+        script_message=(
+            f'echo "Branch {branch} already in slot {result.slot_name}"'
+            if result.already_assigned
+            else f'echo "Assigned {branch} to {result.slot_name}"'
+        ),
         relative_path=None,
         post_cd_commands=None,
     )
 
-    if should_output:
-        if result.already_assigned:
-            user_output(f"Branch {styled_branch} already assigned to {styled_slot}")
-        else:
-            user_output(
-                click.style("✓ ", fg="green") + f"Assigned {styled_branch} to {styled_slot}"
-            )
+    if not should_output:
+        return
 
-        display_sync_status(ctx, worktree_path=result.worktree_path, branch=branch, script=script)
+    styled_branch = click.style(branch, fg="yellow")
+    styled_slot = click.style(result.slot_name, fg="cyan")
 
-        activation_script_path = ensure_worktree_activate_script(
-            worktree_path=result.worktree_path,
-            post_create_commands=None,
-        )
-        print_activation_instructions(
-            activation_script_path,
-            source_branch=None,
-            force=False,
-            config=activation_config_activate_only(),
-            copy=True,
-        )
+    if result.already_assigned:
+        user_output(f"Branch {styled_branch} already assigned to {styled_slot}")
+    else:
+        user_output(click.style("✓ ", fg="green") + f"Assigned {styled_branch} to {styled_slot}")
+
+    display_sync_status(ctx, worktree_path=result.worktree_path, branch=branch, script=script)
+
+    activation_script_path = ensure_worktree_activate_script(
+        worktree_path=result.worktree_path,
+        post_create_commands=None,
+    )
+    print_activation_instructions(
+        activation_script_path,
+        source_branch=None,
+        force=False,
+        config=activation_config_activate_only(),
+        copy=True,
+    )
