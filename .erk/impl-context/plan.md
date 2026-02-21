@@ -277,8 +277,8 @@ This allows safe divergence resolution without losing PR feedback progress.
 
 Some erk exec commands produce no output on success. For these commands, always follow with an explicit verification step:
 
-| Command | Verification |
-|---------|-------------|
+| Command                          | Verification                            |
+| -------------------------------- | --------------------------------------- |
 | `erk exec update-pr-description` | `gh pr view <number> --json title,body` |
 
 When building commands that wrap silent operations, include verification in the workflow rather than assuming success from lack of error output.
@@ -454,7 +454,7 @@ This is the highest-scoring tripwire candidate because the failure mode is compl
 
 Items with score 2-3 (may warrant promotion with additional context):
 
-### 1. Test Files Must Live in tests/**
+### 1. Test Files Must Live in tests/\*\*
 
 **Score:** 3/10 (criteria: Cross-cutting +2, Repeated pattern +1)
 **Notes:** Already documented in testing docs, but PR comments show confusion persists. May warrant stronger emphasis as tripwire if confusion continues. Currently addressed via documentation update rather than tripwire addition.
