@@ -88,15 +88,22 @@ def register_one_shot_plan(
         results["queued_comment"] = {"success": False, "error": str(exc)}
 
     # Op 3: PR closing reference
-    try:
-        pr = github.get_pr(repo_root, pr_number)
-        if isinstance(pr, PRNotFound):
-            raise RuntimeError(f"PR #{pr_number} not found")
-        ref = f"Closes {plans_repo}#{issue_number}" if plans_repo else f"Closes #{issue_number}"
-        github.update_pr_body(repo_root, pr_number, f"{pr.body}\n\n---\n\n{ref}")
-        results["pr_closing_ref"] = {"success": True}
-    except Exception as exc:
-        results["pr_closing_ref"] = {"success": False, "error": str(exc)}
+    # Guard: skip when issue_number == pr_number (draft_pr mode).
+    # The draft PR IS the plan — Closes #N would be self-referential.
+    if issue_number == pr_number:
+        results["pr_closing_ref"] = {"success": True, "skipped": "self-referential"}
+    else:
+        try:
+            pr = github.get_pr(repo_root, pr_number)
+            if isinstance(pr, PRNotFound):
+                raise RuntimeError(f"PR #{pr_number} not found")
+            ref = (
+                f"Closes {plans_repo}#{issue_number}" if plans_repo else f"Closes #{issue_number}"
+            )
+            github.update_pr_body(repo_root, pr_number, f"{pr.body}\n\n---\n\n{ref}")
+            results["pr_closing_ref"] = {"success": True}
+        except Exception as exc:
+            results["pr_closing_ref"] = {"success": False, "error": str(exc)}
 
     # Op 4: update lifecycle stage to "planned"
     try:
