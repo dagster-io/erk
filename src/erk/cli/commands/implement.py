@@ -410,14 +410,14 @@ def implement(
     target_info = detect_target_type(target)
 
     # Output target detection diagnostic
-    if target_info.target_type in ("issue_number", "issue_url"):
-        ctx.console.info(f"Detected GitHub issue #{target_info.issue_number}")
+    if target_info.target_type in ("plan_number", "plan_url"):
+        ctx.console.info(f"Detected GitHub issue #{target_info.plan_number}")
     elif target_info.target_type == "file_path":
         ctx.console.info(f"Detected plan file: {target}")
 
     # Dispatch based on target type
-    if target_info.target_type in ("issue_number", "issue_url"):
-        if target_info.issue_number is None:
+    if target_info.target_type in ("plan_number", "plan_url"):
+        if target_info.plan_number is None:
             user_output(
                 click.style("Error: ", fg="red") + "Failed to extract issue number from target"
             )
@@ -425,7 +425,7 @@ def implement(
 
         _implement_from_issue(
             ctx,
-            issue_number=target_info.issue_number,
+            issue_number=target_info.plan_number,
             dry_run=dry_run,
             submit=submit,
             dangerous=dangerous,
