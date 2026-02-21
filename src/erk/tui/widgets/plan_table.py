@@ -156,11 +156,11 @@ class PlanDataTable(DataTable):
         self.add_column("obj", key="objective")
         self._objective_column_index = col_index
         col_index += 1
-        self.add_column("title", key="title")
-        col_index += 1
 
-        # Objectives view: plan, title, prog, next step, updated, author
+        # Objectives view: plan, obj, title, prog, next step, deps, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
+            self.add_column("title", key="title")
+            col_index += 1
             self.add_column("prog", key="progress")
             col_index += 1
             self.add_column("next node", key="next_node")
@@ -173,6 +173,11 @@ class PlanDataTable(DataTable):
             col_index += 1
             return
 
+        # Plans view: plan, obj, sts, title, branch, ...
+        self.add_column("sts", key="status")
+        col_index += 1
+        self.add_column("title", key="title")
+        col_index += 1
         self.add_column("branch", key="branch")
         col_index += 1
         self.add_column("created", key="created")
@@ -301,12 +306,21 @@ class PlanDataTable(DataTable):
         if row.objective_issue is not None:
             objective_cell = Text(row.objective_display, style="cyan underline")
 
+        # Compact status emoji: 💻 = local checkout, 🏃 = remote run
+        status_parts: list[str] = []
+        if row.exists_locally:
+            status_parts.append("\U0001f4bb")
+        if row.run_url is not None:
+            status_parts.append("\U0001f3c3")
+        status_cell = "".join(status_parts) if status_parts else "-"
+
         # Build values list based on columns
         # Wrap title in Text to prevent Rich markup interpretation
         # (e.g., "[erk-learn]" prefix would otherwise be treated as a markup tag)
         values: list[str | Text] = [
             plan_cell,
             objective_cell,
+            status_cell,
             Text(row.title),
             row.pr_head_branch or row.worktree_branch or "-",
             row.created_display,
