@@ -621,6 +621,9 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
     workflow_inputs: dict[str, str] = {
         "plan_id": plan_id,
         "gist_url": str(gist_url),
+        "plan_backend": (
+            "draft_pr" if plan_backend.get_provider_name() == "github-draft-pr" else "github"
+        ),
     }
 
     try:
