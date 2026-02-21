@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: Non-fast-forward push in draft-PR plan submission"
-}
