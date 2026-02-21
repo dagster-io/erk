@@ -17,6 +17,9 @@ tripwires:
   - action: "adding <code> inside <summary> elements in PR bodies"
     warning: "Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>."
     score: 8
+  - action: "marking a draft-PR plan as 'implementation complete' and referencing itself as the implementing PR"
+    warning: "Self-referential close prevention: when a draft PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard."
+    score: 9
 ---
 
 # Draft PR Lifecycle

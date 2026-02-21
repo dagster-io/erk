@@ -22,6 +22,8 @@ Rules triggered by matching actions in code.
 
 **adding a new pipeline stage to trigger-async-learn** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md.
 
+**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+
 **adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
 
 **adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
@@ -100,6 +102,8 @@ Rules triggered by matching actions in code.
 
 **detecting plan backend by checking backend type directly** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect draft-PR plans. This is backend-agnostic and works across all backends.
 
+**editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
+
 **editing plan content only in the PR branch without syncing** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan content lives in two places (PR branch + issue comment). Edit the local file, then sync to the issue with `erk exec plan-update-from-feedback`. See plan-file-sync-pattern.md.
 
 **entering Plan Mode in replan or consolidation workflow** → Read [Context Preservation in Replan Workflow](context-preservation-in-replan.md) first. Gather investigation context FIRST (Step 6a). Enter plan mode only after collecting file paths, evidence, and discoveries. Sparse plans are destructive to downstream implementation.
@@ -134,6 +138,8 @@ Rules triggered by matching actions in code.
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
+**marking a draft-PR plan as 'implementation complete' and referencing itself as the implementing PR** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Self-referential close prevention: when a draft PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard.
+
 **merging a plan review PR** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan review PRs are NEVER merged. They exist only for inline review comments. Close without merging when review is complete.
 
 **migrating a plan without preserving operational metadata** → Read [Plan Migration to Draft PR](plan-migrate-to-draft-pr.md) first. create_plan() only sets a subset of fields. Use update_metadata() in a second phase to carry over operational fields like lifecycle_stage, last_dispatched_at, etc. See \_FIELDS_HANDLED_BY_CREATE in plan_migrate_to_draft_pr.py.
@@ -157,6 +163,8 @@ Rules triggered by matching actions in code.
 **passing session content to an analysis agent** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. Raw JSONL sessions can be 6+ million characters. Always preprocess first. The learn workflow validates preprocessed output exists before spawning agents.
 
 **prompting an agent to 'include findings in the plan' without structuring them first** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Unstructured prompts don't work — agents summarize at too high a level. Use the four-category gathering step instead.
+
+**reading ERK_PLAN_BACKEND env var inside inner functions when global_config is already in scope** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Backend detection precedence: when GlobalConfig.plan_backend is available via context, use it. Never fall back to re-reading env vars inside inner functions if global_config is already in scope — the context value takes precedence and re-reading env vars bypasses context overrides.
 
 **reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 
@@ -185,6 +193,8 @@ Rules triggered by matching actions in code.
 **running sequential analysis that could be parallelized** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input.
 
 **saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
+
+**spawning a GitHub Actions workflow from erk without passing plan_backend as an explicit input** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Draft-PR backend propagation: GitHub Actions reusable workflows (workflow_call) do NOT inherit environment variables from the caller. ERK_PLAN_BACKEND must be declared as an explicit workflow input and passed by the caller. Ambient env vars are invisible to reusable workflows.
 
 **staging .worker-impl/ deletion without an immediate commit** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
 

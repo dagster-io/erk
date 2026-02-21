@@ -18,6 +18,9 @@ tripwires:
     warning: "dispatch_one_shot() and _submit_single_issue() in submit.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other."
   - action: "writing post-dispatch operations without try/except guards"
     warning: "Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py."
+  - action: "editing plan body content in plan creation, replan, or one-shot dispatch"
+    warning: "One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers."
+    score: 9
 ---
 
 # One-Shot Workflow

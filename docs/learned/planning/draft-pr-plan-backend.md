@@ -11,6 +11,12 @@ tripwires:
   - action: "validating plan_id in exec scripts without checking provider type"
     warning: "Draft-PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; draft-PR plans use PR numbers."
     score: 4
+  - action: "reading ERK_PLAN_BACKEND env var inside inner functions when global_config is already in scope"
+    warning: "Backend detection precedence: when GlobalConfig.plan_backend is available via context, use it. Never fall back to re-reading env vars inside inner functions if global_config is already in scope — the context value takes precedence and re-reading env vars bypasses context overrides."
+    score: 8
+  - action: "spawning a GitHub Actions workflow from erk without passing plan_backend as an explicit input"
+    warning: "Draft-PR backend propagation: GitHub Actions reusable workflows (workflow_call) do NOT inherit environment variables from the caller. ERK_PLAN_BACKEND must be declared as an explicit workflow input and passed by the caller. Ambient env vars are invisible to reusable workflows."
+    score: 9
 ---
 
 # Draft PR Plan Backend

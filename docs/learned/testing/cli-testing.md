@@ -6,6 +6,13 @@ read_when:
   - "writing tests for erk CLI commands"
   - "using ErkContext.for_test()"
   - "testing Click commands with context"
+tripwires:
+  - action: "testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner"
+    warning: "CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(mix_stderr=False, env={}) to isolate completely. Never rely on ambient env being clean."
+    score: 7
+  - action: "renaming a user-facing string in CLI output and updating related test assertions"
+    warning: "Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout."
+    score: 6
 ---
 
 # CLI Testing Patterns

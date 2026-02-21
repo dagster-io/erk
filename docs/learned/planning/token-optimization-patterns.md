@@ -60,7 +60,9 @@ A subtle failure mode: creating the consolidated output before all background ag
 
 <!-- Source: .claude/commands/erk/objective-plan.md, Step 2 -->
 
-The `/erk:objective-plan` command demonstrates this. Step 2 delegates objective data fetching (issue metadata, roadmap parsing, status mapping, step recommendation) to a haiku-tier general-purpose agent. The parent never makes the 3+ sequential fetches itself — it receives a single structured summary.
+The `/erk:objective-plan` command demonstrates this. Step 2 delegates objective data fetching (issue metadata, roadmap parsing, status mapping, step recommendation) to a sonnet-tier general-purpose agent. The parent never makes the 3+ sequential fetches itself — it receives a single structured summary.
+
+Note: As of PR #7750, `/erk:objective-plan` uses `sonnet` (not `haiku`) because the work involves multi-step reasoning over structured objective data, not pure mechanical formatting.
 
 <!-- Source: docs/learned/reference/objective-summary-format.md -->
 
@@ -85,7 +87,7 @@ The output contract is specified in `objective-summary-format.md`, which defines
 | Codebase investigation, analysis   | Default (sonnet) | Needs reasoning for status assessment |
 | Plan synthesis, creative decisions | Parent agent     | Highest-quality reasoning required    |
 
-**Anti-pattern**: Using opus or sonnet for data fetching and formatting. The `/erk:objective-plan` command explicitly uses haiku for this reason — the work is mechanical and doesn't benefit from more capable models.
+**Anti-pattern**: Using opus or sonnet for pure data fetching and formatting where haiku suffices. Note: `/erk:objective-plan` uses `sonnet` (not `haiku`) because it involves multi-step reasoning over objective roadmap data, not just mechanical formatting.
 
 ## Anti-Patterns
 
