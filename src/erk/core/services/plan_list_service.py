@@ -25,8 +25,6 @@ from erk_shared.plan_store.draft_pr_lifecycle import (
     has_original_plan_section,
 )
 
-_PLAN_LABEL = "erk-plan"
-
 
 class DraftPRPlanListService(PlanListService):
     """Plan list service for draft-PR-backed plans.
@@ -71,7 +69,7 @@ class DraftPRPlanListService(PlanListService):
         Returns:
             PlanListData with plans from draft PRs
         """
-        all_labels = [_PLAN_LABEL, *labels]
+        all_labels = labels
 
         # Single GraphQL call returns both PRDetails and rich PullRequestInfo
         pr_details_list, pr_linkages = self._github.list_plan_prs_with_details(
