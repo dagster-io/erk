@@ -7,13 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- as-of: f24b02de7 -->
+<!-- as-of: 3a4c03bed -->
 
 ### Major Changes
 
 - Add draft PR plan backend: plans can now be stored as GitHub draft PRs instead of issues, with all workflows (plan-save, plan-implement, learn, CI) supporting both backends via environment-driven configuration (3351bd7, 2cba6a73, 8559caff, a76cab09, 60787e1f, 2d1a14ec, 7a5fde04, 0b41c581, 2db84a17, 24e699cf, f2654e91, 909d81ca, ca311d22, be00080c, b796427, fe30038, c814624, d9fdb99, b37158fd, 68410fd)
 - Add objective dependency graph with `depends_on` support: roadmaps support explicit cross-phase dependencies, with a new "deps" column in Objectives dashboard and `--all-unblocked` dispatch for parallel node implementation (97e480be, aa36c19d, f9dde530, 1030f07f, 8ece7717)
 - Overhaul objective vocabulary and structure toward graph-based model: rename 'step' to 'node' with schema v3, merge `objective inspect` into `objective view` with dependency graph display, rename `objective-implement` to `objective-plan`, and fix node status validation (ff55ce0, e45e1c6, 861c7a0, 7fa81768, 04bb893, 5210dcf, 97bec22)
+- Stack-in-place branch creation and `prepare` command removal: `erk br create` in assigned worktree slots now updates the assignment tip in place, enabling stacked branches to share a single worktree. `erk prepare` removed; use `erk br create --for-plan` instead (fe03e628a)
 
 ### Added
 
@@ -23,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Claude inference kill switch via `CLAUDE_ENABLED` repository variable (2effff7)
 - Add `--up` option to `erk stack consolidate` for upstack-only consolidation (09cca66)
 - Add `--file` option to `erk one-shot` for passing long instructions via file (5e7f89d)
+- Add `erk wt create-from` command for allocating worktree slots to existing branches with automatic remote branch fetching and `--force` flag (4ccff29e2)
+- Add branch column to TUI dashboard between "title" and "created" (7b4d8e190)
+- Add remote divergence pre-check before `gt submit` with actionable error messages (4a9b06e24)
 
 ### Changed
 
@@ -33,6 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename `objective-implement` command to `objective-plan` to reflect planning-focused purpose (04bb893)
 - Canonicalize branch naming to encode objective IDs consistently across submit and one-shot codepaths (c524572)
 - Add "Closes #N" reference to one-shot dispatch PR bodies at creation time for immediate TUI linkage (5457b02)
+- Migrate session and learn material storage from GitHub Gists to git branches (3a4c03bed, c7f936340, 12f964cb5)
+- Rename "instruction" to "prompt" throughout `erk one-shot` feature (279873ac5)
+- Replace "issue" with "plan" in implement command output for backend-agnostic messaging (d17948889)
+- Infer "implementing" lifecycle stage when plan has active workflow run (bb5e3ca6f)
+- Auto-force push for plan implementation branches in `erk pr submit` (3c0ee7fcf)
+- Restore PR status indicators (merge conflicts, review decisions) in dashboard (03e09b0a7)
+- Fix shell activation in draft PR next steps to use `source "$(erk br co ...)"` pattern (a78bb01ba)
+- Use branch name instead of PR number in draft PR checkout next steps (433beb649)
+- Publish draft PRs during `erk pr submit` with mutation-safe tracking (5a545a9f4)
 
 ### Fixed
 
@@ -44,6 +57,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix local session fallback in `/erk:learn` to filter by branch name, preventing unrelated sessions from other branches (97bb0ad)
 - Fix missing `branch_name` in plan-header metadata causing PR lookup failure during async learn (7be24b2)
 - Fix `erk-remote-setup` GitHub Action to accept either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` instead of requiring both (08cf227)
+- Fix draft PR plan list label duplication causing `erk plan list` to return "No plans found" (fe5d2a6d8)
+- Fix `erk one-shot` dispatch metadata writing for draft_pr backend (8622d1854)
+- Fix learn pipeline for draft-PR plans with direct PR lookup and metadata fallback (fb8280e2b)
+- Fix non-fast-forward push in draft-PR plan submission by adding rebase sync (d683f3b0b)
+- Fix `submit` command crashing when `.worker-impl/` already exists (670c3bbb9)
+- Fix `extract_metadata_prefix` falsely matching footer separator in PR bodies (fa37bb0b8)
+- Fix `.erk/impl-context/` cleanup by deferring git removal to plan-implement (d16b20077)
+- Implement lazy tip sync for worktree pool to fix stale assignment state (a5683ff04)
+
+### Removed
+
+- Remove `erk prepare` command — use `erk br create --for-plan` instead (fe03e628a)
 
 ## [0.7.4] - 2026-02-16 05:33 PT
 
