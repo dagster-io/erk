@@ -1,5 +1,6 @@
 """Tests for erk plan submit command."""
 
+import json
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
@@ -396,5 +397,197 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
         assert "Checking out existing plan branch" in result.output
         assert "Creating .worker-impl/ folder" in result.output
         assert "Workflow triggered" in result.output
+
+        assert "Traceback" not in result.output
+
+
+def test_submit_draft_pr_plan_cleans_up_stale_worker_impl_folder() -> None:
+    """Test that _submit_draft_pr_plan cleans up stale .worker-impl/ before creating new one.
+
+    When a previous submission failed and left behind a .worker-impl/ folder,
+    the draft-PR submit path should remove it before creating the new one.
+    This tests the cleanup logic at submit.py:440-443.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "draft-pr-plan-branch"
+
+        pr_body = (
+            "<!-- plan-header: {} -->\n\n"
+            "---\n\n"
+            "# Plan: Test Draft PR Cleanup\n\n"
+            "- Step 1: Do something\n"
+            "- Step 2: Do something else"
+        )
+
+        pr_42 = PRDetails(
+            number=42,
+            url="https://github.com/test-owner/test-repo/pull/42",
+            title="[erk-plan] Test Draft PR Cleanup",
+            body=pr_body,
+            state="OPEN",
+            is_draft=True,
+            base_ref_name="main",
+            head_ref_name=plan_branch,
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner="test-owner",
+            repo="test-repo",
+            labels=("erk-plan",),
+        )
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+
+        draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=[],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        # Pre-create a stale .worker-impl/ folder (simulating a prior failed submission)
+        stale_worker_impl = env.cwd / ".worker-impl"
+        stale_worker_impl.mkdir()
+        stale_marker = stale_worker_impl / "stale-marker.txt"
+        stale_marker.write_text("leftover from previous run")
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=draft_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
+
+        # Verify cleanup message was printed
+        assert "Cleaning up previous .worker-impl/ folder" in result.output
+
+        # Verify stale marker file no longer exists
+        assert not stale_marker.exists()
+
+        # Verify new .worker-impl/ was created with correct files
+        worker_impl = env.cwd / ".worker-impl"
+        assert (worker_impl / "plan.md").exists()
+        assert (worker_impl / "plan-ref.json").exists()
+
+        # Verify plan-ref.json has correct provider
+        plan_ref = json.loads((worker_impl / "plan-ref.json").read_text())
+        assert plan_ref["provider"] == "github-draft-pr"
+
+        assert "Traceback" not in result.output
+
+
+def test_submit_issue_plan_cleans_up_stale_worker_impl_folder() -> None:
+    """Test that _create_branch_and_pr cleans up stale .worker-impl/ before creating new one.
+
+    When a previous submission failed and left behind a .worker-impl/ folder,
+    the issue-based submit path should remove it before creating the new one.
+    This tests the cleanup logic at submit.py:713-716.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        issue = IssueInfo(
+            number=42,
+            title="[erk-plan] Test Issue Cleanup",
+            body="Test plan body for cleanup test",
+            state="OPEN",
+            url="https://github.com/test-owner/test-repo/issues/42",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(issues={42: issue})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=[],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+        )
+
+        # Pre-create a stale .worker-impl/ folder (simulating a prior failed submission)
+        stale_worker_impl = env.cwd / ".worker-impl"
+        stale_worker_impl.mkdir()
+        stale_marker = stale_worker_impl / "stale-marker.txt"
+        stale_marker.write_text("leftover from previous run")
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+        )
+
+        result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
+
+        # Verify cleanup message was printed
+        assert "Cleaning up previous .worker-impl/ folder" in result.output
+
+        # Verify stale marker file no longer exists
+        assert not stale_marker.exists()
+
+        # Verify new .worker-impl/ was created with correct files
+        worker_impl = env.cwd / ".worker-impl"
+        assert (worker_impl / "plan.md").exists()
+        assert (worker_impl / "plan-ref.json").exists()
+
+        # Verify plan-ref.json has correct provider
+        plan_ref = json.loads((worker_impl / "plan-ref.json").read_text())
+        assert plan_ref["provider"] == "github"
 
         assert "Traceback" not in result.output
