@@ -4,8 +4,8 @@ This exec command orchestrates the full local learn pipeline:
 1. Discovers session sources for the plan
 2. Preprocesses sessions locally
 3. Fetches PR review comments if applicable
-4. Uploads materials to a gist
-5. Triggers the learn.yml GitHub Actions workflow with the gist URL
+4. Commits materials to a learn branch in .erk/impl-context/
+5. Triggers the learn.yml GitHub Actions workflow with the learn branch
 
 Usage:
     erk exec trigger-async-learn <plan_id>
@@ -13,7 +13,7 @@ Usage:
 Output:
     JSON with success status and workflow information:
     {"success": true, "plan_id": "123", "workflow_triggered": true,
-     "run_id": "12345678", "workflow_url": "https://...", "gist_url": "https://..."}
+     "run_id": "12345678", "workflow_url": "https://...", "learn_branch": "learn/123"}
 
     On error:
     {"success": false, "error": "message"}
@@ -22,10 +22,11 @@ Examples:
     $ erk exec trigger-async-learn 5753
     {"success": true, "plan_id": "5753", "workflow_triggered": true,
      "run_id": "12345678", "workflow_url": "https://github.com/owner/repo/actions/runs/12345678",
-     "gist_url": "https://gist.github.com/user/abc123..."}
+     "learn_branch": "learn/5753"}
 """
 
 import json
+import shutil
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass
@@ -46,9 +47,6 @@ from erk.cli.commands.exec.scripts.preprocess_session import (
     split_entries_to_chunks,
     truncate_tool_parameters,
 )
-from erk.cli.commands.exec.scripts.upload_learn_materials import (
-    combine_learn_material_files,
-)
 from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
@@ -58,7 +56,6 @@ from erk_shared.context.helpers import (
     require_plan_backend,
     require_repo_root,
 )
-from erk_shared.gateway.github.abc import GistCreateError
 from erk_shared.gateway.github.checks import GitHubChecks
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
 from erk_shared.gateway.github.types import PRNotFound
@@ -77,7 +74,7 @@ class TriggerSuccess:
     workflow_triggered: bool
     run_id: str
     workflow_url: str
-    gist_url: str
+    learn_branch: str
 
 
 @dataclass(frozen=True)
@@ -87,7 +84,7 @@ class PreprocessSuccess:
     success: bool
     plan_id: str
     workflow_triggered: bool
-    gist_url: str
+    learn_branch: str
 
 
 @dataclass(frozen=True)
@@ -98,7 +95,7 @@ class TriggerError:
     error: str
 
 
-def _output_success(plan_id: str, run_id: str, workflow_url: str, gist_url: str) -> None:
+def _output_success(plan_id: str, run_id: str, workflow_url: str, learn_branch: str) -> None:
     """Output success JSON and exit."""
     result = TriggerSuccess(
         success=True,
@@ -106,19 +103,19 @@ def _output_success(plan_id: str, run_id: str, workflow_url: str, gist_url: str)
         workflow_triggered=True,
         run_id=run_id,
         workflow_url=workflow_url,
-        gist_url=gist_url,
+        learn_branch=learn_branch,
     )
     click.echo(json.dumps(asdict(result)))
     raise SystemExit(0)
 
 
-def _output_preprocess_success(plan_id: str, gist_url: str) -> None:
+def _output_preprocess_success(plan_id: str, learn_branch: str) -> None:
     """Output preprocess-only success JSON and exit."""
     result = PreprocessSuccess(
         success=True,
         plan_id=plan_id,
         workflow_triggered=False,
-        gist_url=gist_url,
+        learn_branch=learn_branch,
     )
     click.echo(json.dumps(asdict(result)))
     raise SystemExit(0)
@@ -342,7 +339,7 @@ def _get_pr_for_plan_direct(
 @click.option(
     "--skip-workflow",
     is_flag=True,
-    help="Run preprocessing and upload gist, but skip triggering the learn.yml workflow.",
+    help="Run preprocessing and commit to learn branch, but skip triggering the workflow.",
 )
 @click.pass_context
 def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool) -> None:
@@ -354,8 +351,8 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
     1. Gets session sources for the plan
     2. Preprocesses sessions locally
     3. Fetches PR review comments if applicable
-    4. Uploads materials to a gist
-    5. Triggers the learn.yml workflow with the gist URL (unless --skip-workflow)
+    4. Commits materials to a learn branch in .erk/impl-context/
+    5. Triggers the learn.yml workflow with the learn branch (unless --skip-workflow)
     """
     # Get required dependencies from context
     if ctx.obj is None:
@@ -583,44 +580,58 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
         message = click.style(f"   📄 Wrote {discussion_comments_file.name}", dim=True)
         click.echo(message, err=True)
 
-    # Step 5: Upload learn materials to gist (direct function calls)
-    message = click.style("☁️ Uploading to gist...", fg="cyan")
-    click.echo(message, err=True)
-
+    # Step 5: Commit learn materials to a learn branch in .erk/impl-context/
     learn_files = sorted(f for f in learn_dir.iterdir() if f.is_file())
     if not learn_files:
         _output_error("No files found in learn directory")
         return
 
-    combined_content = combine_learn_material_files(learn_dir)
+    learn_branch = f"learn/{plan_id}"
+    original_branch = git.branch.get_current_branch(repo_root)
+    start_point = original_branch or "HEAD"
 
-    gist_result = github.create_gist(
-        filename=f"learn-materials-plan-{plan_id}.txt",
-        content=combined_content,
-        description=f"Learn materials for plan {plan_id}",
-        public=False,
-    )
+    message = click.style(f"🌿 Creating learn branch {learn_branch}...", fg="cyan")
+    click.echo(message, err=True)
 
-    if isinstance(gist_result, GistCreateError):
-        _output_error(f"Failed to upload learn materials: {gist_result.message}")
-        return
+    # Delete existing local learn branch if it exists (re-learn scenario)
+    local_branches = git.branch.list_local_branches(repo_root)
+    if learn_branch in local_branches:
+        git.branch.delete_branch(repo_root, learn_branch, force=True)
 
-    gist_url = gist_result.gist_url
+    # Create learn branch from origin/master
+    git.branch.create_branch(repo_root, learn_branch, "origin/master", force=False)
+    git.branch.checkout_branch(repo_root, learn_branch)
+
+    try:
+        # Copy preprocessed files to .erk/impl-context/
+        impl_context_dir = repo_root / ".erk" / "impl-context"
+        impl_context_dir.mkdir(parents=True, exist_ok=True)
+        for f in learn_files:
+            shutil.copy2(f, impl_context_dir / f.name)
+
+        # Stage, commit, push
+        file_paths = [f".erk/impl-context/{f.name}" for f in learn_files]
+        git.commit.stage_files(repo_root, file_paths)
+        git.commit.commit(repo_root, f"Learn materials for plan #{plan_id}")
+        git.remote.push_to_remote(repo_root, "origin", learn_branch, set_upstream=True, force=True)
+    finally:
+        git.branch.checkout_branch(repo_root, start_point)
+
     file_count = len(learn_files)
-    total_size = len(combined_content)
+    total_size = sum(f.stat().st_size for f in learn_files)
 
-    url_styled = click.style(f"{gist_url}", fg="blue", underline=True)
-    stats_styled = click.style(f"({file_count} file(s), {total_size:,} chars)", dim=True)
-    click.echo(f"   🔗 {url_styled} {stats_styled}", err=True)
+    branch_styled = click.style(learn_branch, fg="blue")
+    stats_styled = click.style(f"({file_count} file(s), {total_size:,} bytes)", dim=True)
+    click.echo(f"   🌿 {branch_styled} {stats_styled}", err=True)
 
-    # Step 6: Trigger the learn workflow with gist_url (unless --skip-workflow)
+    # Step 6: Trigger the learn workflow with learn_branch (unless --skip-workflow)
     if skip_workflow:
-        _output_preprocess_success(plan_id, gist_url)
+        _output_preprocess_success(plan_id, learn_branch)
         return
 
     workflow_inputs: dict[str, str] = {
         "plan_id": plan_id,
-        "gist_url": str(gist_url),
+        "learn_branch": learn_branch,
         "plan_backend": (
             "draft_pr" if plan_backend.get_provider_name() == "github-draft-pr" else "github"
         ),
@@ -644,4 +655,4 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
         run_id=run_id,
     )
 
-    _output_success(plan_id, run_id, workflow_url, gist_url)
+    _output_success(plan_id, run_id, workflow_url, learn_branch)

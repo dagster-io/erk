@@ -35,9 +35,6 @@ from erk.cli.commands.exec.scripts.create_worker_impl_from_issue import (
 from erk.cli.commands.exec.scripts.dash_data import dash_data
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
 from erk.cli.commands.exec.scripts.discover_reviews import discover_reviews
-from erk.cli.commands.exec.scripts.download_learn_materials import (
-    download_learn_materials,
-)
 from erk.cli.commands.exec.scripts.download_remote_session import (
     download_remote_session,
 )
@@ -183,9 +180,6 @@ from erk.cli.commands.exec.scripts.update_plan_remote_session import (
 from erk.cli.commands.exec.scripts.update_pr_description import (
     update_pr_description,
 )
-from erk.cli.commands.exec.scripts.upload_learn_materials import (
-    upload_learn_materials,
-)
 from erk.cli.commands.exec.scripts.upload_session import upload_session
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
 from erk.cli.commands.exec.scripts.validate_claude_credentials import (
@@ -217,7 +211,6 @@ exec_group.add_command(dash_data, name="dash-data")
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
 exec_group.add_command(discover_reviews, name="discover-reviews")
-exec_group.add_command(download_learn_materials, name="download-learn-materials")
 exec_group.add_command(download_remote_session, name="download-remote-session")
 exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
@@ -289,7 +282,6 @@ exec_group.add_command(update_lifecycle_stage, name="update-lifecycle-stage")
 exec_group.add_command(update_objective_node, name="update-objective-node")
 exec_group.add_command(update_plan_remote_session, name="update-plan-remote-session")
 exec_group.add_command(update_pr_description, name="update-pr-description")
-exec_group.add_command(upload_learn_materials, name="upload-learn-materials")
 exec_group.add_command(upload_session, name="upload-session")
 exec_group.add_command(ci_update_pr_body)
 exec_group.add_command(ci_verify_autofix, name="ci-verify-autofix")
