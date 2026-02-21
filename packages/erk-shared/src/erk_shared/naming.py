@@ -396,10 +396,11 @@ def extract_leading_issue_number(branch_name: str) -> int | None:
 def extract_objective_number(branch_name: str) -> int | None:
     """Extract objective number from branch name.
 
-    Supports two branch naming patterns:
+    Supports branch naming patterns:
 
     - Issue-based: ``P{plan}-O{objective}-{slug}-{timestamp}``
-    - Draft-PR: ``planned/O{objective}-{slug}-{timestamp}``
+    - Draft-PR (current): ``planned/O{objective}-{slug}-{timestamp}``
+    - Draft-PR (legacy): ``plan/O{objective}-{slug}-{timestamp}``
 
     Also supports lowercase "o" prefix for case-insensitive matching.
 
@@ -416,12 +417,14 @@ def extract_objective_number(branch_name: str) -> int | None:
         456
         >>> extract_objective_number("planned/O456-fix-auth-01-15-1430")
         456
+        >>> extract_objective_number("plan/O456-fix-auth-01-15-1430")
+        456
         >>> extract_objective_number("P123-fix-auth-bug-01-15-1430")
         None
         >>> extract_objective_number("feature-branch")
         None
     """
-    match = re.match(r"^(?:[Pp]?\d+-|planned/)[Oo](\d+)-", branch_name)
+    match = re.match(r"^(?:[Pp]?\d+-|plan(?:ned)?/)[Oo](\d+)-", branch_name)
     if match:
         return int(match.group(1))
     return None

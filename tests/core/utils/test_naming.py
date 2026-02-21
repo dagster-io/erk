@@ -475,10 +475,14 @@ def test_generate_issue_branch_name_with_objective_truncates_long_title() -> Non
         # Draft-PR branches with objective ID
         ("planned/O456-fix-auth-bug-01-15-1430", 456),
         ("planned/O1-add-tests-12-31-2359", 1),
+        # Legacy plan/ prefix branches with objective ID
+        ("plan/O456-fix-auth-01-15-1430", 456),
+        ("plan/O7709-plan-lazy-tip-sync-f-02-21-1116", 7709),
         # Without objective ID
         ("P123-fix-auth-bug-01-15-1430", None),
         ("P42-my-feature", None),
         ("planned/fix-auth-bug-01-15-1430", None),
+        ("plan/fix-auth-bug-01-15-1430", None),
         ("feature-branch", None),
         ("master", None),
     ],

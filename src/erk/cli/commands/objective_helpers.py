@@ -11,6 +11,7 @@ import click
 
 from erk.core.context import ErkContext
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
+from erk_shared.naming import extract_objective_number
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound, PlanState
 
@@ -138,18 +139,17 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     """Extract objective issue number from branch's linked plan issue.
 
     Returns objective issue number if:
-    1. Branch is associated with a plan
-    2. Plan issue has objective_id in its metadata
+    1. Branch is associated with a plan with objective_id in metadata, OR
+    2. Branch name encodes the objective number (fallback)
 
     Returns None otherwise (fail-open - never blocks landing).
     """
-    # This is a fail-open feature (non-critical), so we return None
-    # for any failure: plan not found, empty plan content, etc.
     try:
         result = ctx.plan_backend.get_plan_for_branch(repo_root, branch)
     except RuntimeError:
-        return None
+        return extract_objective_number(branch)
     if isinstance(result, PlanNotFound):
-        return None
-
-    return result.objective_id
+        return extract_objective_number(branch)
+    if result.objective_id is not None:
+        return result.objective_id
+    return extract_objective_number(branch)
