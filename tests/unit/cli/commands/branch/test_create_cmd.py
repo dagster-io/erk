@@ -1079,3 +1079,65 @@ def test_branch_create_no_slot_from_assigned_slot_skips_assignment() -> None:
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].branch_name == "existing-branch"
+
+
+def test_branch_create_new_slot_forces_allocation_from_assigned_slot() -> None:
+    """Test that --new-slot forces a new slot allocation instead of stacking in place."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "existing-branch"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-branch"]},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pre-create pool state with cwd assigned to a slot
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="existing-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(repo.pool_json_path, existing_state)
+
+        test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, repo=repo)
+
+        result = runner.invoke(
+            cli,
+            ["br", "create", "--new-slot", "new-branch"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Assigned new-branch to" in result.output
+        # Should NOT say "Stacked" or "in place"
+        assert "Stacked" not in result.output
+        assert "in place" not in result.output
+
+        # Verify two assignments exist (original + new)
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 2
+
+        # Verify no worktree_path collision between the two assignments
+        worktree_paths = {a.worktree_path for a in state.assignments}
+        assert len(worktree_paths) == 2
