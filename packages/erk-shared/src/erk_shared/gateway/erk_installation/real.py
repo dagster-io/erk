@@ -70,11 +70,16 @@ class RealErkInstallation(ErkInstallation):
             allow_dangerous=bool(ia_data.get("allow_dangerous", False)),
         )
 
+        # Validate plan_backend value
+        raw_plan_backend = data.get("plan_backend", "github")
+        plan_backend = raw_plan_backend if raw_plan_backend in ("draft_pr", "github") else "github"
+
         return GlobalConfig(
             erk_root=Path(root).expanduser().resolve(),
             use_graphite=bool(data.get("use_graphite", False)),
             shell_setup_complete=bool(data.get("shell_setup_complete", False)),
             github_planning=bool(data.get("github_planning", True)),
+            plan_backend=plan_backend,
             fix_conflicts_require_dangerous_flag=bool(
                 data.get("fix_conflicts_require_dangerous_flag", True)
             ),
@@ -140,6 +145,8 @@ class RealErkInstallation(ErkInstallation):
         doc["show_hidden_commands"] = config.show_hidden_commands
         doc["prompt_learn_on_land"] = config.prompt_learn_on_land
         doc["shell_integration"] = config.shell_integration
+        if config.plan_backend != "github":
+            doc["plan_backend"] = config.plan_backend
 
         # Add [interactive-agent] section if any non-default values are set
         ic = config.interactive_agent

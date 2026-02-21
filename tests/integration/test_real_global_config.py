@@ -127,6 +127,7 @@ def test_real_config_store_roundtrip_show_hidden_commands(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
+        plan_backend="github",
         show_hidden_commands=True,
     )
     installation.save_config(config)
@@ -355,6 +356,7 @@ def test_save_config_with_interactive_claude(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
+        plan_backend="github",
         interactive_agent=InteractiveAgentConfig(
             backend="claude",
             model="claude-opus-4-5",
@@ -393,6 +395,7 @@ def test_save_config_interactive_claude_defaults_not_written(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
+        plan_backend="github",
         # interactive_agent defaults to InteractiveAgentConfig.default()
     )
     installation.save_config(config)
@@ -419,6 +422,7 @@ def test_save_config_interactive_claude_partial_non_defaults(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
+        plan_backend="github",
         interactive_agent=InteractiveAgentConfig(
             backend="claude",
             model="opus",
@@ -460,6 +464,7 @@ def test_roundtrip_interactive_claude_config(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
+        plan_backend="github",
         interactive_agent=InteractiveAgentConfig(
             backend="claude",
             model="opus",

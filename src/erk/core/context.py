@@ -379,6 +379,7 @@ def context_for_test(
             use_graphite=False,
             shell_setup_complete=False,
             github_planning=True,
+            plan_backend="github",
         )
 
     if erk_installation is None:
@@ -609,7 +610,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # PLAN_BACKEND_SPLIT: selects DraftPRPlanBackend or GitHubPlanStore based on ERK_PLAN_BACKEND
     plan_store: PlanStore
     plan_list_service: PlanListService
-    if get_plan_backend() == "draft_pr":
+    if get_plan_backend(global_config) == "draft_pr":
         plan_store = DraftPRPlanBackend(github, issues, time=RealTime())
         plan_list_service = DraftPRPlanListService(github)
     else:

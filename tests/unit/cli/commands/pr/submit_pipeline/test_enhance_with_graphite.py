@@ -65,6 +65,7 @@ def _graphite_config() -> GlobalConfig:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
 
 

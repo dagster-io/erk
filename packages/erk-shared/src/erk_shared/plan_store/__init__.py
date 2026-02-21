@@ -13,18 +13,36 @@ Note: PlanBackend is a BACKEND (composes gateways), not a gateway. It has no
 fake implementation. Test by injecting fake gateways into real backends.
 """
 
+from __future__ import annotations
+
 import os
-from typing import Literal, cast
+from typing import TYPE_CHECKING, cast
 
-PlanBackendType = Literal["draft_pr", "github"]
+from erk_shared.context.types import PlanBackendType
+
+if TYPE_CHECKING:
+    from erk_shared.context.types import GlobalConfig
 
 
-def get_plan_backend() -> PlanBackendType:
-    """Read plan backend from ERK_PLAN_BACKEND env var.
+def get_plan_backend(global_config: GlobalConfig | None = None) -> PlanBackendType:
+    """Resolve plan backend: env var > config > default ("github").
 
-    Valid values: "github" (default), "draft_pr".
+    Three-tier resolution:
+    1. ERK_PLAN_BACKEND env var (highest priority, for CI)
+    2. global_config.plan_backend (config setting)
+    3. "github" (default)
+
+    Args:
+        global_config: Global configuration, or None if not available.
+
+    Returns:
+        Resolved plan backend type.
     """
-    value = os.environ.get("ERK_PLAN_BACKEND", "github")
-    if value not in ("draft_pr", "github"):
+    env_value = os.environ.get("ERK_PLAN_BACKEND")
+    if env_value is not None:
+        if env_value in ("draft_pr", "github"):
+            return cast(PlanBackendType, env_value)
         return "github"
-    return cast(PlanBackendType, value)
+    if global_config is not None:
+        return global_config.plan_backend
+    return "github"

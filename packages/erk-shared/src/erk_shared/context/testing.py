@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from erk_shared.context.context import ErkContext
-from erk_shared.context.types import LoadedConfig, RepoContext
+from erk_shared.context.types import GlobalConfig, LoadedConfig, PlanBackendType, RepoContext
 
 if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
@@ -33,7 +33,6 @@ from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.store import PlanStore
 
@@ -50,6 +49,7 @@ def context_for_test(
     prompt_executor: PromptExecutor | None = None,
     codespace: Codespace | None = None,
     plan_store: PlanStore | None = None,
+    plan_backend: PlanBackendType = "github",
     local_config: LoadedConfig | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
@@ -76,7 +76,9 @@ def context_for_test(
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
         plan_store: Optional PlanStore. If None, creates GitHubPlanStore or
-            DraftPRPlanBackend based on ERK_PLAN_BACKEND env var.
+            DraftPRPlanBackend based on plan_backend parameter.
+        plan_backend: Plan storage backend type. Controls which PlanStore is created
+            when plan_store is not explicitly provided. Defaults to "github".
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -180,16 +182,14 @@ def context_for_test(
 
     resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
 
-    # Resolve plan_store: explicit > constant-based selection > default (GitHubPlanStore)
+    # Resolve plan_store: explicit > plan_backend param > default (GitHubPlanStore)
     resolved_plan_store: PlanStore
     if plan_store is not None:
         resolved_plan_store = plan_store
-    # PLAN_BACKEND_SPLIT: test context mirrors production
-    # - selects DraftPRPlanBackend or GitHubPlanStore
     # When github_issues is explicitly passed, the caller is setting up for the github
     # backend (FakeGitHubIssues with issues/comments). Use GitHubPlanStore to match
-    # their intent rather than switching to DraftPRPlanBackend based on the env var.
-    elif get_plan_backend() == "draft_pr" and not issues_explicitly_passed:
+    # their intent rather than switching to DraftPRPlanBackend.
+    elif plan_backend == "draft_pr" and not issues_explicitly_passed:
         resolved_plan_store = DraftPRPlanBackend(resolved_github, resolved_issues, time=FakeTime())
     else:
         resolved_plan_store = GitHubPlanStore(resolved_issues, fake_time)
@@ -218,7 +218,10 @@ def context_for_test(
         cwd=resolved_cwd,
         repo=repo,
         repo_info=repo_info,
-        global_config=None,
+        global_config=GlobalConfig.test(
+            erk_root=Path("/fake/erk"),
+            plan_backend=plan_backend,
+        ),
         local_config=resolved_local_config,
         package_info=package_info,
         dry_run=False,

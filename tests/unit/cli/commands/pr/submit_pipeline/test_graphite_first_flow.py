@@ -93,6 +93,7 @@ def test_submit_failure_returns_error(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
     ctx = context_for_test(
         graphite=fake_graphite,
@@ -120,6 +121,7 @@ def test_restack_error_returns_actionable_message(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
     ctx = context_for_test(
         graphite=fake_graphite,
@@ -145,6 +147,7 @@ def test_pr_not_found_after_submit_returns_error(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
     ctx = context_for_test(
         graphite=fake_graphite,
@@ -176,6 +179,7 @@ def test_success(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
     ctx = context_for_test(
         git=fake_git,
@@ -215,6 +219,7 @@ def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
     ctx = context_for_test(
         git=fake_git,
@@ -248,6 +253,7 @@ def test_branch_not_on_remote_skips_divergence_check(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
     ctx = context_for_test(
         git=fake_git,
@@ -277,6 +283,7 @@ def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
     ctx = context_for_test(
         git=fake_git,
@@ -305,6 +312,7 @@ def test_branch_behind_remote_returns_error(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
+        plan_backend="github",
     )
     ctx = context_for_test(
         git=fake_git,
