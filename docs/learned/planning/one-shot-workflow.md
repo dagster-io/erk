@@ -72,8 +72,8 @@ When dispatched via `erk objective plan --one-shot`, the objective plan command:
 
 1. Validates the objective exists
 2. Builds a prompt string including step ID and phase name for context
-3. Passes `objective_issue` and `step_id` as `extra_workflow_inputs` in `OneShotDispatchParams`
-4. These become `OBJECTIVE_ISSUE` and `STEP_ID` environment variables in the workflow
+3. Passes `objective_issue` and `node_id` as `extra_workflow_inputs` in `OneShotDispatchParams`
+4. These become `OBJECTIVE_ISSUE` and `NODE_ID` environment variables in the workflow
 
 ## GitHub Actions Workflow
 
@@ -87,7 +87,7 @@ The `.github/workflows/one-shot.yml` workflow has two jobs:
 4. Runs `/erk:one-shot-plan` Claude command with environment variables:
    - `WORKFLOW_RUN_URL` -- current workflow run URL
    - `OBJECTIVE_ISSUE` -- objective issue number (if from roadmap)
-   - `STEP_ID` -- specific roadmap step ID
+   - `NODE_ID` -- specific roadmap node ID
    - `PLAN_ISSUE_NUMBER` -- pre-created skeleton issue number
 5. Validates Claude produced `.impl/plan.md` and `.impl/plan-result.json`
 6. Runs `erk exec register-one-shot-plan` for metadata registration
