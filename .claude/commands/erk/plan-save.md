@@ -125,6 +125,11 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan 
 
 ### Step 4: Display Results
 
+**Trunk detection:** Before displaying, run `git branch --show-current` to get the current branch name.
+
+- If the result is `main`, `master`, or empty (detached HEAD): **on trunk = true**
+- Otherwise: **on trunk = false**
+
 On success, display based on `plan_backend` from JSON output:
 
 **Header (both backends):**
@@ -132,6 +137,42 @@ On success, display based on `plan_backend` from JSON output:
 ```
 Plan "<title>" saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #<issue_number>
 URL: <issue_url>
+```
+
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br create --new-slot --for-plan <issue_number>
+    Prepare+Implement: source "$(erk br create --new-slot --for-plan <issue_number> --script)" && erk implement --dangerous
+
+  Same slot:
+    Local: erk br create --for-plan <issue_number>
+    Prepare+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
+
+  Submit to Queue: erk plan submit <issue_number>
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br create --for-plan <issue_number>
+    Prepare+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
+
+  New slot:
+    Local: erk br create --new-slot --for-plan <issue_number>
+    Prepare+Implement: source "$(erk br create --new-slot --for-plan <issue_number> --script)" && erk implement --dangerous
+
+  Submit to Queue: erk plan submit <issue_number>
 ```
 
 **If `plan_backend` is `"draft_pr"`:**
@@ -144,10 +185,7 @@ View PR: gh pr view <issue_number> --web
 In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
 
-OR exit Claude Code first, then run one of:
-  Local: erk br create --for-plan <issue_number>
-  Prepare+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
-  Submit to Queue: erk plan submit <issue_number>
+<slot options block from above>
 ```
 
 **If `plan_backend` is `"github"` (or absent):**
@@ -161,10 +199,7 @@ In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
   Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
 
-OR exit Claude Code first, then run one of:
-  Local: erk br create --for-plan <issue_number>
-  Prepare+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
-  Submit to Queue: erk plan submit <issue_number>
+<slot options block from above>
 ```
 
 If objective was verified, also display: `Verified objective link: #<objective-number>`
