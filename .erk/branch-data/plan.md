@@ -18,6 +18,7 @@ The `--all-unblocked` feature (node 2.1) dispatches multiple objective nodes sim
 **File**: `src/erk/cli/commands/objective/view_cmd.py` (line ~91)
 
 Add a case for `planning` between `skipped` and the default pending case:
+
 ```python
 if status == "planning":
     ref_text = f" plan {escape(plan)}" if plan else ""
@@ -38,6 +39,7 @@ After the `─── Roadmap ───` header (line 249), before the phase tabl
 This gives immediate visibility into what's running in parallel without changing the existing phase table structure.
 
 Collect in-flight nodes:
+
 ```python
 in_flight_nodes = [
     (step, phase)
@@ -52,14 +54,17 @@ in_flight_nodes = [
 **File**: `src/erk/cli/commands/objective/view_cmd.py` (lines 324-356)
 
 Update the Nodes line to include `planning` count when > 0:
+
 ```
 Nodes:       3/7 done, 1 in progress, 2 planning, 1 pending
 ```
 
 Add "In flight" line showing total dispatched count (planning + in_progress):
+
 ```
 In flight:   3 (1 in progress, 2 planning)
 ```
+
 Only show this line when count > 0.
 
 Keep "Unblocked" line as-is (shows pending unblocked count — what's ready to dispatch next).
@@ -69,6 +74,7 @@ Keep "Unblocked" line as-is (shows pending unblocked count — what's ready to d
 **File**: `src/erk/cli/commands/objective/view_cmd.py`, `_display_json()` (lines 125-156)
 
 Add to the graph dict:
+
 - `in_flight`: list of node IDs with planning or in_progress status
 
 The `summary` dict already includes `planning` count from `compute_graph_summary()`.
@@ -78,6 +84,7 @@ The `summary` dict already includes `planning` count from `compute_graph_summary
 **File**: `tests/unit/cli/commands/objective/test_view_cmd.py`
 
 Add a new test fixture `OBJECTIVE_WITH_PARALLEL_DISPATCH` using schema v3 with:
+
 - 1.1: done
 - 2.1: planning (dispatched, depends on 1.1)
 - 2.2: in_progress (dispatched, depends on 1.1)
@@ -85,6 +92,7 @@ Add a new test fixture `OBJECTIVE_WITH_PARALLEL_DISPATCH` using schema v3 with:
 - 3.1: pending (depends on 2.1, 2.2, 2.3 — blocked)
 
 New tests:
+
 - `test_view_planning_status_emoji()`: planning status shows 📋 emoji
 - `test_view_in_flight_section_shown()`: "In Flight" section appears with correct count when dispatched nodes exist
 - `test_view_in_flight_section_hidden()`: "In Flight" section not shown when no active nodes (use existing OBJECTIVE_WITH_ROADMAP which has no planning nodes — but it does have in_progress, so we need a fixture with only done/pending)
@@ -94,10 +102,10 @@ New tests:
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
-| `src/erk/cli/commands/objective/view_cmd.py` | Add planning status, In Flight section, enhanced summary, JSON update |
-| `tests/unit/cli/commands/objective/test_view_cmd.py` | New fixture and 5-6 new tests |
+| File                                                 | Change                                                                |
+| ---------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/erk/cli/commands/objective/view_cmd.py`         | Add planning status, In Flight section, enhanced summary, JSON update |
+| `tests/unit/cli/commands/objective/test_view_cmd.py` | New fixture and 5-6 new tests                                         |
 
 ## Verification
 
