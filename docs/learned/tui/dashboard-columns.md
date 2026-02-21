@@ -32,6 +32,7 @@ These columns appear in the standard plans view (`ViewMode.PLANS`):
 | `local-impl`   | `local_impl`  | Yes            | Always                                                |
 | `remote-impl`  | `remote_impl` | No             | Only when `show_runs` is enabled                      |
 | `run-id`       | `run_id`      | No             | Only when `show_runs` is enabled                      |
+| `run-state`    | `run_state`   | No             | Only when `show_runs` is enabled                      |
 
 ## Objectives View Columns
 

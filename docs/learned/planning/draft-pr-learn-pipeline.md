@@ -16,13 +16,11 @@ The original learn pipeline discovered plan IDs via branch name → metadata loo
 
 ## The Fix
 
-When `plan_backend.get_provider_name() == "github-draft-pr"`, `_get_pr_for_plan_direct()` in `trigger_async_learn.py` short-circuits the branch-name discovery step and uses the PR number directly as the plan ID:
+When `plan_backend.get_provider_name() == "github-draft-pr"`, `_get_pr_for_plan_direct()` in `trigger_async_learn.py` short-circuits the branch-name discovery step and uses the PR number directly as the plan ID.
 
-```python
-# src/erk/cli/commands/exec/scripts/trigger_async_learn.py
-if plan_backend.get_provider_name() == "github-draft-pr":
-    pr_result = github.get_pr(repo_root, int(plan_id))
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct -->
+
+See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
 
 For issue-based plans, the function falls back to branch-name lookup via `plan_backend.get_metadata_field(repo_root, plan_id, "branch_name")`.
 

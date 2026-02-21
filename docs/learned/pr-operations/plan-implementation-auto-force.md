@@ -14,11 +14,9 @@ read_when:
 
 Auto-force is triggered when `state.issue_number is not None`, which is set when `.impl/` is valid and contains issue tracking metadata.
 
-```python
-# src/erk/cli/commands/pr/submit_pipeline.py
-is_plan_impl = state.issue_number is not None
-effective_force = state.force or is_plan_impl
-```
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _run_phase1_graphite_submit -->
+
+See `_run_phase1_graphite_submit()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
 
 ## Why It's Safe
 
