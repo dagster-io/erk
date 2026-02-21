@@ -28,6 +28,7 @@ import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root
 from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+from erk_shared.plan_store.types import PlanHeaderNotFoundError
 
 
 @dataclass(frozen=True)
@@ -164,6 +165,16 @@ def track_learn_result(
                 "learn_plan_pr": plan_pr,
             },
         )
+    except PlanHeaderNotFoundError:
+        error = TrackLearnResultError(
+            success=False,
+            error="no-metadata-block",
+            message=(
+                f"Plan {plan_id} has no plan-header metadata block — cannot update learn status"
+            ),
+        )
+        click.echo(json.dumps(asdict(error)), err=True)
+        raise SystemExit(1) from None
     except RuntimeError as e:
         error = TrackLearnResultError(
             success=False,

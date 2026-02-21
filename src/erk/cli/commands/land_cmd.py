@@ -57,7 +57,7 @@ from erk.core.worktree_pool import (
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.output.output import machine_output, user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound
 from erk_shared.stack.validation import validate_parent_is_trunk
 
 
@@ -576,6 +576,15 @@ def _store_learn_materials_gist_url(
     plan_id = str(plan_issue_number)
     try:
         ctx.plan_backend.update_metadata(repo_root, plan_id, {"learn_materials_gist_url": gist_url})
+    except PlanHeaderNotFoundError:
+        # No metadata block — store as comment instead
+        try:
+            ctx.plan_backend.add_comment(repo_root, plan_id, f"Learn materials gist: {gist_url}")
+        except RuntimeError as comment_err:
+            user_output(
+                click.style("⚠ ", fg="yellow")
+                + f"Could not store gist URL on plan {plan_id}: {comment_err}"
+            )
     except RuntimeError as e:
         user_output(
             click.style("⚠ ", fg="yellow") + f"Could not store gist URL on plan {plan_id}: {e}"
