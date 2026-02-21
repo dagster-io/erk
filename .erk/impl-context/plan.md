@@ -63,6 +63,7 @@ Pattern for resolving configuration values with multiple sources.
 See `packages/erk-shared/src/erk_shared/plan_store/__init__.py` for `get_plan_backend()` reference implementation.
 
 Key implementation details:
+
 - Check env var with `os.environ.get()` first
 - Validate env var value against allowed values
 - Fall back to config field when env var is absent or invalid
@@ -88,7 +89,7 @@ CRITICAL: Environment variables have highest priority, so ambient values from de
 
 **Draft Content:**
 
-```markdown
+````markdown
 ---
 read-when:
   - adding a new field to GlobalConfig
@@ -127,6 +128,7 @@ CRITICAL: Use Grep to find ALL `GlobalConfig(` constructor calls in tests:
 ```bash
 rg "GlobalConfig\(" tests/
 ```
+````
 
 PR #7722 required updating 7+ test files with explicit field values.
 
@@ -134,7 +136,8 @@ PR #7722 required updating 7+ test files with explicit field values.
 
 See `packages/erk-shared/src/erk_shared/context/types.py` for GlobalConfig definition.
 See `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` for load/save implementation.
-```
+
+````
 
 ---
 
@@ -159,7 +162,7 @@ See `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` for lo
 - Verify test data matches the backend type (draft PR needs branch_name, issue-based needs erk-plan label)
 
 **Why:** Silent wrong-path routing causes tests to pass for wrong reasons. The KeyError on `branch_name` in session add78f25 was caused by test defaulting to issue-based backend while expecting draft PR output.
-```
+````
 
 ---
 
@@ -171,7 +174,7 @@ See `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` for lo
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## CliRunner Environment Variable Isolation
 
 **Trigger:** Writing tests that rely on GlobalConfig values in three-tier resolution
@@ -179,6 +182,7 @@ See `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` for lo
 **Warning:** CliRunner does NOT automatically isolate environment variables. When testing three-tier resolution (env > config > default), use `env_overrides` in `erk_isolated_fs_env()` or `monkeypatch.delenv()` to prevent ambient env vars from overriding test config. ERK_PLAN_BACKEND leaking from user's shell will override all test GlobalConfig values.
 
 **Pattern:**
+
 ```python
 # Option 1: Override in erk_isolated_fs_env
 with erk_isolated_fs_env(env_overrides={"ERK_PLAN_BACKEND": "github"}):
@@ -189,9 +193,11 @@ def test_something(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("ERK_PLAN_BACKEND", raising=False)
     ...
 ```
+````
 
 **Why:** Session part6 had 6 test failures because developer's `ERK_PLAN_BACKEND=draft_pr` leaked through CliRunner and overrode all test configurations.
-```
+
+````
 
 ---
 
@@ -213,10 +219,11 @@ def test_something(monkeypatch: pytest.MonkeyPatch):
 **Correct:**
 ```python
 from erk_shared.context.types import PlanBackendType
-```
+````
 
 **Why:** Type consolidation prevents import confusion and ensures single source of truth for type definition.
-```
+
+````
 
 ---
 
@@ -248,11 +255,12 @@ erk config set plan_backend draft_pr
 # Or edit ~/.erk/config.toml directly
 [global]
 plan_backend = "draft_pr"
-```
+````
 
 ### CLI Usage
 
 The `get_plan_backend()` function now requires `global_config` parameter:
+
 ```python
 plan_backend = get_plan_backend(ctx.global_config)
 ```
@@ -260,7 +268,8 @@ plan_backend = get_plan_backend(ctx.global_config)
 ### Backward Compatibility
 
 The environment variable `ERK_PLAN_BACKEND` continues to work and takes highest priority, ensuring CI workflows function unchanged.
-```
+
+````
 
 ---
 
@@ -296,9 +305,10 @@ def _use_draft_pr_backend():
     os.environ["ERK_PLAN_BACKEND"] = "draft_pr"
     yield
     del os.environ["ERK_PLAN_BACKEND"]
-```
+````
 
 After (explicit parameter):
+
 ```python
 ctx = context_for_test(plan_backend="draft_pr")
 ```
@@ -312,7 +322,8 @@ ctx = context_for_test(plan_backend="draft_pr")
 ## Source Reference
 
 See `packages/erk-shared/src/erk_shared/context/testing.py` for `context_for_test()` implementation.
-```
+
+````
 
 ---
 
@@ -343,7 +354,7 @@ When passing complex JSON (especially with newlines) to `erk exec` commands, use
 # FAILS: Control characters in JSON
 echo '[{"thread_id": "123", "comment": "Fixed...\nReplaced..."}]' | erk exec resolve-review-threads
 # Error: Invalid control character at: line 1 column 121
-```
+````
 
 ## The Solution
 
@@ -362,7 +373,8 @@ cat /tmp/threads.json | erk exec resolve-review-threads
 - Heredoc preserves newlines as literal characters
 - File-based approach avoids shell escaping issues
 - Single-quoted EOF prevents variable expansion
-```
+
+````
 
 ---
 
@@ -392,7 +404,7 @@ Systematic pattern for updating all constructor calls when a dataclass field bec
 1. **Grep for constructor calls**
    ```bash
    rg "ClassName\(" --type py
-   ```
+````
 
 2. **Analyze indentation patterns**
    - Module-level: typically 8 spaces
@@ -411,6 +423,7 @@ Systematic pattern for updating all constructor calls when a dataclass field bec
 ## Example from GlobalConfig
 
 PR #7722 added `plan_backend` as required field:
+
 - Grepped for `GlobalConfig(`
 - Found 15+ call sites across 7 test files
 - Grouped by indentation pattern
@@ -419,7 +432,8 @@ PR #7722 added `plan_backend` as required field:
 ## Common Pitfall
 
 Read file to verify exact indentation before replace_all. Class method bodies use different indentation than module-level code.
-```
+
+````
 
 ---
 
@@ -439,9 +453,10 @@ When converting validation ternaries to LBYL guards, use `cast()` for type narro
 ### Before (ternary):
 ```python
 plan_backend = raw_value if raw_value in ("draft_pr", "github") else "github"
-```
+````
 
 ### After (LBYL guard):
+
 ```python
 if raw_value in ("draft_pr", "github"):
     plan_backend: PlanBackendType = cast(PlanBackendType, raw_value)
@@ -456,7 +471,8 @@ After the `if` check validates `raw_value`, the type checker doesn't automatical
 ### Source Reference
 
 See `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` for example in `load_config()`.
-```
+
+````
 
 ---
 
@@ -490,19 +506,25 @@ Pattern for identifying and responding to bot review false positives.
 ## Response Templates
 
 ### Already Resolved
-```
+````
+
 Already resolved - the latest bot review shows 0 violations for this pattern. This comment was based on an earlier commit.
+
 ```
 
 ### False Positive (with explanation)
 ```
+
 This is a false positive. Line N already extracts the expression to an intermediate variable:
 `erk_global_config = erk_ctx.global_config if erk_ctx is not None else None`
+
 ```
 
 ### Duplicate Thread
 ```
+
 Same fix applied in thread above. All instances updated in commit abc123.
+
 ```
 
 ## Checking Review Timing
@@ -535,16 +557,17 @@ Test data must match the configured backend type to avoid silent failures.
 
 ## Backend Data Requirements
 
-| Backend | Required Fields | Label |
-|---------|----------------|-------|
-| draft_pr | branch_name, PR metadata | N/A |
-| github (issue) | N/A | erk-plan label |
+| Backend        | Required Fields          | Label          |
+| -------------- | ------------------------ | -------------- |
+| draft_pr       | branch_name, PR metadata | N/A            |
+| github (issue) | N/A                      | erk-plan label |
 
 ## Error Pattern
+```
 
-```
 KeyError: 'branch_name'
-```
+
+````
 
 This occurs when test expects draft PR output but backend defaults to issue-based.
 
@@ -564,8 +587,9 @@ ctx = context_for_test()  # defaults to github
 # RIGHT: Explicit backend with matching data
 ctx = context_for_test(plan_backend="draft_pr")
 # Test data includes branch_name -> passes
-```
-```
+````
+
+````
 
 ---
 
@@ -615,7 +639,7 @@ Required test scenarios for three-tier resolution (env var > config > default).
 ## Source Reference
 
 See `tests/unit/plan_store/test_get_plan_backend.py` and `tests/integration/test_real_global_config.py` for implementation.
-```
+````
 
 ---
 
@@ -632,14 +656,15 @@ Add `plan_backend` to GlobalConfig section:
 ```markdown
 ## GlobalConfig Fields
 
-| Field | Type | Default | Notes |
-|-------|------|---------|-------|
-| erk_root | Path | required | Root path of erk installation |
+| Field        | Type            | Default  | Notes                                        |
+| ------------ | --------------- | -------- | -------------------------------------------- |
+| erk_root     | Path            | required | Root path of erk installation                |
 | plan_backend | PlanBackendType | "github" | Plan storage backend (three-tier resolution) |
 
 ### plan_backend
 
 Controls which plan storage backend to use. Supports three-tier resolution:
+
 1. `ERK_PLAN_BACKEND` env var (highest priority)
 2. Config file `plan_backend` field
 3. Default: `"github"`
@@ -704,7 +729,7 @@ PR #7722 had 4 duplicate threads due to bot review timing lag - all valid feedba
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## Context Extraction Patterns
 
 Different patterns for extracting ErkContext depending on function type.
@@ -719,6 +744,7 @@ def my_command(ctx: click.Context):
     global_config = erk_ctx.global_config
     # or directly: ctx.obj.global_config
 ```
+````
 
 ### From ErkContext directly (internal helpers)
 
@@ -741,7 +767,8 @@ result = _gather_inputs(global_config, ...)
 - CLI command entry point: `click.Context` with `ctx.obj`
 - Internal helper: Direct `ErkContext` parameter
 - Hooks: Extract once, thread through helpers
-```
+
+````
 
 ---
 
@@ -769,7 +796,7 @@ When adding config fields, ensure 5 integration test scenarios:
 5. **Default suppression** - Default values NOT written to config file
 
 See `tests/integration/test_real_global_config.py` for `plan_backend` examples.
-```
+````
 
 ---
 
@@ -787,11 +814,13 @@ Add section:
 ## When Refactoring Requires New Tests
 
 ### Requires new tests:
+
 - Logic changes (new branches, different behavior)
 - New functionality (new outputs, new error cases)
 - Bug fixes (test should fail before fix, pass after)
 
 ### Does NOT require new tests:
+
 - Parameter renames (existing tests cover behavior)
 - Call signature updates (threading params through)
 - Import reorganization
@@ -812,7 +841,7 @@ PR bot reviews may flag "significant modifications" - distinguish between logic 
 
 Reinforce config minimalism pattern:
 
-```markdown
+````markdown
 ## Config Minimalism
 
 Default values are NOT written to config file. Only non-default values are persisted.
@@ -827,13 +856,15 @@ def save_config(config: GlobalConfig):
         doc["plan_backend"] = config.plan_backend
     # ... write doc to file
 ```
+````
 
 ### Benefits
 
 - Clean config files (only user customizations)
 - Easier upgrades (defaults can change)
 - Clear intent (explicit values are intentional)
-```
+
+````
 
 ---
 
@@ -864,10 +895,11 @@ class GlobalConfig:
     @classmethod
     def test(cls, *, erk_root: Path = ..., plan_backend: PlanBackendType = "github"):
         return cls(erk_root=erk_root, plan_backend=plan_backend)
-```
+````
 
 The test factory must mirror the dataclass defaults for consistent behavior.
-```
+
+````
 
 ---
 
@@ -897,14 +929,15 @@ def test_with_custom_config(monkeypatch):
 
     monkeypatch.setattr(RealErkInstallation, "__call__", lambda: mock_installation)
     # Component now sees custom_config
-```
+````
 
 ### Why Not Env Vars
 
 - Env vars can leak to/from other tests
 - Three-tier resolution makes env vars override config
 - Mocking the source is more reliable
-```
+
+````
 
 ---
 
@@ -930,7 +963,7 @@ def _use_draft_pr_backend():
 
 def test_something(_use_draft_pr_backend):
     ctx = context_for_test()  # Relies on env var
-```
+````
 
 ### After (explicit parameter)
 
@@ -945,7 +978,8 @@ def test_something():
 - No env var contamination between tests
 - Works correctly with three-tier resolution
 - Easier to understand test requirements at a glance
-```
+
+````
 
 ---
 
@@ -973,7 +1007,7 @@ def test_something():
 - Full address: `/erk:pr-address`
 - Thread resolution: `cat threads.json | erk exec resolve-review-threads`
 - Submit: `erk pr submit`
-```
+````
 
 ---
 
@@ -985,7 +1019,7 @@ def test_something():
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## DRY for Deterministic Function Calls
 
 When the same deterministic function call appears multiple times in the same scope with identical arguments, extract to a variable.
@@ -998,6 +1032,7 @@ def list_plans():
         # ... draft PR logic
     plans = fetch_plans(get_plan_backend(ctx.global_config))  # Duplicate
 ```
+````
 
 ### After
 
@@ -1014,7 +1049,8 @@ def list_plans():
 - Clearer code (intent stated once)
 - Easier to change (single location)
 - Bot reviewers flag this pattern
-```
+
+````
 
 ---
 
@@ -1036,12 +1072,14 @@ def list_plans():
 **Correct:**
 ```python
 plan_backend = get_plan_backend(ctx.global_config)
-```
+````
 
 **Wrong:**
+
 ```python
 plan_backend = get_plan_backend()  # Misses config tier
 ```
+
 ```
 
 ---
@@ -1199,3 +1237,4 @@ Items with score 2-3 (may warrant promotion with additional context):
 **Location:** dignified-python skill
 **Action:** SKIP (already documented)
 **Description:** The pattern of extracting complex expressions to local variables before function calls is already covered by "clarity over brevity" and line length guidance.
+```
