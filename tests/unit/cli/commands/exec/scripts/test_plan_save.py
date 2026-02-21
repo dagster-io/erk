@@ -63,7 +63,7 @@ def test_draft_pr_success_json(tmp_path: Path) -> None:
     assert output["success"] is True
     assert "issue_number" in output
     assert "branch_name" in output
-    assert output["branch_name"].startswith("plan/")
+    assert output["branch_name"].startswith("planned/")
     assert output["plan_backend"] == "draft_pr"
 
 
@@ -77,9 +77,9 @@ def test_draft_pr_success_display(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert "Plan saved as draft PR" in result.output
     assert "Title: [erk-plan] Feature Plan" in result.output
-    assert "Branch: plan/" in result.output
+    assert "Branch: planned/" in result.output
     assert "erk br co" in result.output
-    assert "plan/" in result.output  # branch name appears in checkout command
+    assert "planned/" in result.output  # branch name appears in checkout command
 
 
 def test_delegates_to_issue_when_not_draft_pr(
@@ -229,9 +229,9 @@ def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
     # Four checkouts: branch_manager.create_branch() does checkout+restore for gt track,
     # then plan_save does checkout+restore for committing plan file
     assert len(fake_git.checked_out_branches) == 4
-    assert fake_git.checked_out_branches[0][1].startswith("plan/")  # for gt track
+    assert fake_git.checked_out_branches[0][1].startswith("planned/")  # for gt track
     assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # restore
-    assert fake_git.checked_out_branches[2][1].startswith("plan/")  # for plan commit
+    assert fake_git.checked_out_branches[2][1].startswith("planned/")  # for plan commit
     assert fake_git.checked_out_branches[3] == (tmp_path, "feature-branch")  # final restore
 
 

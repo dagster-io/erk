@@ -497,7 +497,7 @@ class RealPlanDataProvider(PlanDataProvider):
             )
 
             # Fallback for draft-PR branches: read .impl/plan-ref.json
-            if issue_number is None and worktree.branch and worktree.branch.startswith("plan-"):
+            if issue_number is None and worktree.branch and worktree.branch.startswith("planned-"):
                 impl_dir = worktree.path / ".impl"
                 plan_ref = read_plan_ref(impl_dir)
                 if plan_ref is not None and plan_ref.plan_id.isdigit():

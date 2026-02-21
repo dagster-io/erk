@@ -165,7 +165,7 @@ def dispatch_one_shot(
 
     # --- Backend-conditional entity creation ---
     # github backend: create skeleton issue first for P<N>- branch naming
-    # draft_pr backend: skip skeleton issue, use plan/ branch naming, PR is the plan
+    # draft_pr backend: skip skeleton issue, use planned/ branch naming, PR is the plan
     plan_issue_number: int | None = None
     if not is_draft_pr:
         skeleton_plan_content = (
@@ -190,7 +190,7 @@ def dispatch_one_shot(
 
     # Generate branch name
     if is_draft_pr:
-        # draft_pr: plan/ prefix (no issue number needed)
+        # draft_pr: planned/ prefix (no issue number needed)
         branch_name = generate_draft_pr_branch_name(
             params.prompt,
             ctx.time.now(),
