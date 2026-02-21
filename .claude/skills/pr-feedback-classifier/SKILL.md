@@ -63,8 +63,8 @@ For each comment, determine:
 
 Classification determines how the thread is presented to the user, not whether it appears.
 
-- **Actionable**: Code changes requested, violations to fix, missing tests, documentation updates requested
-- **Informational**: Bot suggestions (optional/could), CI-generated style suggestions, acknowledgments on review threads
+- **Actionable**: Code changes requested, violations to fix, missing tests, documentation updates requested, bot suggestions to add tests, bot style/refactoring suggestions (optional/could)
+- **Informational**: CI-generated style suggestions, acknowledgments on review threads
 
 **Important:** Every unresolved review thread goes into `actionable_threads`, regardless of whether it's from a bot or human. The `classification` field distinguishes how the user should handle it.
 
@@ -110,13 +110,13 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
     {
       "thread_id": "PRRT_kwDOPxC3hc5q73Nf",
       "type": "review",
-      "path": "src/utils.py",
-      "line": 10,
+      "path": "src/api.py",
+      "line": 55,
       "is_outdated": false,
-      "classification": "informational",
-      "action_summary": "Bot suggestion: extract helper function (optional)",
-      "complexity": "local",
-      "original_comment": "Consider extracting this into a helper"
+      "classification": "actionable",
+      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+      "complexity": "single_file",
+      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
     }
   ],
   "discussion_actions": [
@@ -136,16 +136,16 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
       "item_indices": [0]
     },
     {
+      "name": "Single-File",
+      "complexity": "single_file",
+      "auto_proceed": true,
+      "item_indices": [1]
+    },
+    {
       "name": "Cross-Cutting",
       "complexity": "cross_cutting",
       "auto_proceed": false,
       "item_indices": [0]
-    },
-    {
-      "name": "Informational",
-      "complexity": "informational",
-      "auto_proceed": false,
-      "item_indices": [1]
     }
   ],
   "error": null
