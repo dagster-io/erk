@@ -648,7 +648,6 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
                 capture_output=True,
             )
 
-
     # Step 6: Trigger the learn workflow with learn_branch (unless --skip-workflow)
     if skip_workflow:
         _output_preprocess_success(plan_id, learn_branch)
