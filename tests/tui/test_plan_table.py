@@ -107,6 +107,7 @@ class TestPlanRowData:
         assert row.pr_number == 456
         assert row.pr_display == "#456 ✅🔗"
 
+
 class TestPlanDataTableRowConversion:
     """Tests for PlanDataTable row value conversion."""
 
