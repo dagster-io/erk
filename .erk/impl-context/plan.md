@@ -18,12 +18,12 @@ The `erk exec update-lifecycle-stage` command already exists and handles both is
 Add a new step after "Trigger CI workflows" (after line 451):
 
 ```yaml
-    - name: Update lifecycle stage to implemented
-      if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
-      env:
-        PLAN_ID: ${{ inputs.plan_id }}
-      run: |
-        erk exec update-lifecycle-stage --plan-id "$PLAN_ID" --stage implemented
+- name: Update lifecycle stage to implemented
+  if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+  env:
+    PLAN_ID: ${{ inputs.plan_id }}
+  run: |
+    erk exec update-lifecycle-stage --plan-id "$PLAN_ID" --stage implemented
 ```
 
 This uses the same condition as the other success-path steps (Mark PR ready, Clean up staging dirs, Update PR body, Trigger CI).
