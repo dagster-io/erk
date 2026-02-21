@@ -18,21 +18,21 @@ Delete the entire `### Step 2d: Clean Up Plan Staging Directory` section and its
 
 Insert a new section with updated heading and description making clear this runs for ALL paths:
 
-```markdown
+````markdown
 ### Step 2d: Clean Up Plan Staging Directory (All Paths)
 
 **All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
 
 \```bash
 if [ -d .erk/impl-context/ ]; then
-  git rm -rf .erk/impl-context/
-  git commit -m "Remove .erk/impl-context/ before implementation"
-  git push origin "$(git branch --show-current)"
+git rm -rf .erk/impl-context/
+git commit -m "Remove .erk/impl-context/ before implementation"
+git push origin "$(git branch --show-current)"
 fi
 \```
 
 This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
-```
+````
 
 ### 3. Update three "Skip to Step 3" references to "Skip to Step 2d"
 
@@ -48,13 +48,13 @@ The note already references Step 2d correctly. No change needed — the step num
 
 After the change, all 5 paths pass through Step 2d:
 
-| Path | Route | Hits Cleanup? |
-|------|-------|--------------|
-| 1a (valid, no tracking) | 1a → **Step 2d** → Step 3 | Yes |
-| 1a (valid, tracking) | 1a → setup-impl-from-issue → **Step 2d** → Step 3 | Yes (falls through) |
-| 1a-file | 1a-file → impl-init → **Step 2d** → Step 3 | Yes (falls through) |
-| 1b (valid) | 1b → **Step 2d** → Step 3 | Yes |
-| 1c (plan save) | Step 2 → 2b → 2c → **Step 2d** → Step 3 | Yes |
+| Path                    | Route                                             | Hits Cleanup?       |
+| ----------------------- | ------------------------------------------------- | ------------------- |
+| 1a (valid, no tracking) | 1a → **Step 2d** → Step 3                         | Yes                 |
+| 1a (valid, tracking)    | 1a → setup-impl-from-issue → **Step 2d** → Step 3 | Yes (falls through) |
+| 1a-file                 | 1a-file → impl-init → **Step 2d** → Step 3        | Yes (falls through) |
+| 1b (valid)              | 1b → **Step 2d** → Step 3                         | Yes                 |
+| 1c (plan save)          | Step 2 → 2b → 2c → **Step 2d** → Step 3           | Yes                 |
 
 ## Verification
 
