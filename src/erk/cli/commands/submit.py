@@ -504,16 +504,7 @@ def _submit_draft_pr_plan(
     # Compute workflow URL
     workflow_url = _build_workflow_run_url(validated.url, run_id)
 
-    # Update PR body with workflow run link (best-effort)
-    try:
-        pr_details = ctx.github.get_pr(repo.root, plan_number)
-        if not isinstance(pr_details, PRNotFound):
-            updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
-            ctx.github.update_pr_body(repo.root, plan_number, updated_body)
-    except Exception as e:
-        logger.warning("Failed to update PR body with workflow run link: %s", e)
-
-    # Write dispatch metadata
+    # Write dispatch metadata FIRST (before any PR body modification)
     try:
         write_dispatch_metadata(
             plan_backend=ctx.plan_backend,
@@ -528,6 +519,16 @@ def _submit_draft_pr_plan(
         user_output(
             click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
         )
+
+    # Update PR body with workflow run link (best-effort)
+    # Guard: only append if body is non-empty to avoid overwriting metadata block
+    try:
+        pr_details = ctx.github.get_pr(repo.root, plan_number)
+        if not isinstance(pr_details, PRNotFound) and pr_details.body:
+            updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
+            ctx.github.update_pr_body(repo.root, plan_number, updated_body)
+    except Exception as e:
+        logger.warning("Failed to update PR body with workflow run link: %s", e)
 
     # Post queued event comment via PlanBackend
     try:

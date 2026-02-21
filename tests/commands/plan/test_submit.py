@@ -10,11 +10,13 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
@@ -307,13 +309,21 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
     with erk_isolated_fs_env(runner) as env:
         plan_branch = "draft-pr-plan-branch"
 
-        # PR body with plan content in the expected format
-        pr_body = (
-            "<!-- plan-header: {} -->\n\n"
-            "---\n\n"
-            "# Plan: Test Draft PR Plan\n\n"
-            "- Step 1: Do something\n"
-            "- Step 2: Do something else"
+        # PR body with plan content in production metadata format
+        plan_header = render_metadata_block(
+            MetadataBlock(
+                key="plan-header",
+                data={
+                    "schema_version": "2",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                    "created_by": "testuser",
+                    "branch_name": plan_branch,
+                },
+            )
+        )
+        pr_body = build_plan_stage_body(
+            plan_header,
+            "# Plan: Test Draft PR Plan\n\n- Step 1: Do something\n- Step 2: Do something else",
         )
 
         pr_42 = PRDetails(
@@ -398,6 +408,10 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
         assert "Creating .worker-impl/ folder" in result.output
         assert "Workflow triggered" in result.output
 
+        # Verify: no warnings, dispatch metadata written successfully
+        assert "Warning:" not in result.output
+        assert "Dispatch metadata written" in result.output
+
         assert "Traceback" not in result.output
 
 
@@ -412,12 +426,21 @@ def test_submit_draft_pr_plan_cleans_up_stale_worker_impl_folder() -> None:
     with erk_isolated_fs_env(runner) as env:
         plan_branch = "draft-pr-plan-branch"
 
-        pr_body = (
-            "<!-- plan-header: {} -->\n\n"
-            "---\n\n"
-            "# Plan: Test Draft PR Cleanup\n\n"
-            "- Step 1: Do something\n"
-            "- Step 2: Do something else"
+        # PR body with plan content in production metadata format
+        plan_header = render_metadata_block(
+            MetadataBlock(
+                key="plan-header",
+                data={
+                    "schema_version": "2",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                    "created_by": "testuser",
+                    "branch_name": plan_branch,
+                },
+            )
+        )
+        pr_body = build_plan_stage_body(
+            plan_header,
+            "# Plan: Test Draft PR Cleanup\n\n- Step 1: Do something\n- Step 2: Do something else",
         )
 
         pr_42 = PRDetails(
@@ -503,6 +526,10 @@ def test_submit_draft_pr_plan_cleans_up_stale_worker_impl_folder() -> None:
         # Verify plan-ref.json has correct provider
         plan_ref = json.loads((worker_impl / "plan-ref.json").read_text())
         assert plan_ref["provider"] == "github-draft-pr"
+
+        # Verify: no warnings, dispatch metadata written successfully
+        assert "Warning:" not in result.output
+        assert "Dispatch metadata written" in result.output
 
         assert "Traceback" not in result.output
 
