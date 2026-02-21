@@ -157,10 +157,8 @@ class PlanDataTable(DataTable):
         self._objective_column_index = col_index
         col_index += 1
 
-        # Objectives view: plan, obj, title, prog, next step, deps, updated, author
+        # Objectives view: plan, obj, prog, next step, deps, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
-            self.add_column("title", key="title")
-            col_index += 1
             self.add_column("prog", key="progress")
             col_index += 1
             self.add_column("next node", key="next_node")
@@ -173,10 +171,8 @@ class PlanDataTable(DataTable):
             col_index += 1
             return
 
-        # Plans view: plan, obj, sts, title, branch, ...
+        # Plans view: plan, obj, sts, branch, ...
         self.add_column("sts", key="status")
-        col_index += 1
-        self.add_column("title", key="title")
         col_index += 1
         self.add_column("branch", key="branch")
         col_index += 1
@@ -272,13 +268,10 @@ class PlanDataTable(DataTable):
         if row.plan_url:
             plan_cell = Text(plan_cell, style="cyan underline")
 
-        # Objectives view: plan, title, progress, next, updated, author
+        # Objectives view: plan, progress, next, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
-            display_title = row.title
-            display_title = display_title.removeprefix("Objective: ")
             return (
                 plan_cell,
-                Text(display_title),
                 row.objective_progress_display,
                 Text(row.objective_next_node_display),
                 row.objective_deps_display,
@@ -315,13 +308,10 @@ class PlanDataTable(DataTable):
         status_cell = "".join(status_parts) if status_parts else "-"
 
         # Build values list based on columns
-        # Wrap title in Text to prevent Rich markup interpretation
-        # (e.g., "[erk-learn]" prefix would otherwise be treated as a markup tag)
         values: list[str | Text] = [
             plan_cell,
             objective_cell,
             status_cell,
-            Text(row.title),
             row.pr_head_branch or row.worktree_branch or "-",
             row.created_display,
             row.author,

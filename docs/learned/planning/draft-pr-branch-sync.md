@@ -12,6 +12,8 @@ tripwires:
     warning: "Use plan.header_fields.get(BRANCH_NAME) to detect draft-PR plans. This is backend-agnostic and works across all backends."
   - action: "creating a new branch for a draft-PR plan"
     warning: "Draft-PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one."
+  - action: "committing to draft-PR plan branches after checkout without pulling remote"
+    warning: "Both setup_impl_from_issue.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures."
 ---
 
 # Draft PR Branch Sync
@@ -80,6 +82,17 @@ For `draft_pr` backend: the branch was created by plan-save and is expected to e
 - If branch only exists on remote, it creates tracking and checks out
 
 This is why `plan-implement` always calls `setup-impl-from-issue` even when `.impl/` already exists with issue tracking.
+
+## Pattern Consistency: Setup and Submit
+
+Both `setup_impl_from_issue.py` and `submit.py` use an identical three-step sync pattern when working with draft-PR plan branches:
+
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:81-97 -->
+<!-- Source: src/erk/cli/commands/submit.py:431-445 -->
+
+Both paths call the same three-step sequence: `fetch_branch()` → `create_tracking_branch()` / `checkout_branch()` → `pull_rebase()`. See the source files for exact call signatures.
+
+PR #7697 added the missing `pull_rebase()` call to the submit path. Without it, the submit path would attempt to push commits onto a branch that had diverged from remote, causing non-fast-forward push failures.
 
 ## Issue-Based Plan Branching
 

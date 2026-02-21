@@ -60,6 +60,19 @@ This field enables:
 - Tracing provenance of automatically generated plans
 - Quick navigation from plan issue to the workflow that created it
 
+## Field Naming Clarification: `learned_from_issue` vs `learn_plan_issue`
+
+Two related fields exist with similar names but different scopes:
+
+| Field                | Where It Lives                       | What It Stores                           | Direction           |
+| -------------------- | ------------------------------------ | ---------------------------------------- | ------------------- |
+| `learned_from_issue` | Plan-header metadata (PR/issue body) | Parent plan's issue number               | Learn plan → parent |
+| `learn_plan_issue`   | Plan object (in-memory)              | Same value, surfaced through the gateway | Learn plan → parent |
+
+`learned_from_issue` is the **storage-layer** field name (in the plan-header metadata block written to GitHub issue/PR bodies). `learn_plan_issue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).
+
+Both point the same direction: from a learn plan back to the parent implementation plan that generated it. The gateway reads `learned_from_issue` from the metadata block and populates `learn_plan_issue` on the `Plan` object.
+
 ## Pipeline Stages and Preservation
 
 ### GitHub Gateway

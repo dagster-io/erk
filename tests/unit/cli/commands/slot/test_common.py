@@ -13,10 +13,17 @@ from erk.cli.commands.slot.common import (
     get_pool_size,
     is_placeholder_branch,
     is_slot_initialized,
+    sync_pool_assignments,
 )
 from erk.cli.config import LoadedConfig
 from erk.core.context import context_for_test
-from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
+from erk.core.worktree_pool import (
+    PoolState,
+    SlotAssignment,
+    SlotInfo,
+    load_pool_state,
+    save_pool_state,
+)
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 
@@ -632,3 +639,251 @@ class TestFindAssignmentByWorktree:
 
         assert result == assignment2
         assert result.slot_name == "erk-slot-02"
+
+
+def test_sync_no_changes_when_branches_match(tmp_path: Path) -> None:
+    """Returns same state and synced_count=0 when all branches match."""
+    wt_path = tmp_path / "worktrees" / "erk-slot-01"
+    wt_path.mkdir(parents=True)
+    assignment = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T12:00:00+00:00",
+        worktree_path=wt_path,
+    )
+    state = PoolState.test(assignments=(assignment,))
+    git = FakeGit(current_branches={wt_path: "feature-a"})
+    pool_json = tmp_path / "pool.json"
+
+    result = sync_pool_assignments(state, git, pool_json)
+
+    assert result.synced_count == 0
+    assert result.state is state
+
+
+def test_sync_updates_when_branch_changed(tmp_path: Path) -> None:
+    """Updates branch_name and preserves assigned_at when branch changed."""
+    wt_path = tmp_path / "worktrees" / "erk-slot-01"
+    wt_path.mkdir(parents=True)
+    assignment = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T12:00:00+00:00",
+        worktree_path=wt_path,
+    )
+    state = PoolState.test(assignments=(assignment,))
+    git = FakeGit(current_branches={wt_path: "feature-b"})
+    pool_json = tmp_path / "pool.json"
+
+    result = sync_pool_assignments(state, git, pool_json)
+
+    assert result.synced_count == 1
+    assert len(result.state.assignments) == 1
+    synced = result.state.assignments[0]
+    assert synced.branch_name == "feature-b"
+    assert synced.assigned_at == "2024-01-01T12:00:00+00:00"
+    assert synced.slot_name == "erk-slot-01"
+    assert synced.worktree_path == wt_path
+
+
+def test_sync_saves_to_disk_on_change(tmp_path: Path) -> None:
+    """pool.json is updated on disk after sync detects a change."""
+    wt_path = tmp_path / "worktrees" / "erk-slot-01"
+    wt_path.mkdir(parents=True)
+    assignment = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T12:00:00+00:00",
+        worktree_path=wt_path,
+    )
+    state = PoolState.test(assignments=(assignment,))
+    git = FakeGit(current_branches={wt_path: "feature-b"})
+    pool_json = tmp_path / "pool.json"
+
+    sync_pool_assignments(state, git, pool_json)
+
+    loaded = load_pool_state(pool_json)
+    assert loaded is not None
+    assert loaded.assignments[0].branch_name == "feature-b"
+
+
+def test_sync_does_not_save_when_unchanged(tmp_path: Path) -> None:
+    """pool.json mtime is unchanged when no sync needed."""
+    wt_path = tmp_path / "worktrees" / "erk-slot-01"
+    wt_path.mkdir(parents=True)
+    assignment = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T12:00:00+00:00",
+        worktree_path=wt_path,
+    )
+    state = PoolState.test(assignments=(assignment,))
+    git = FakeGit(current_branches={wt_path: "feature-a"})
+    pool_json = tmp_path / "pool.json"
+    # Write initial state to disk
+    save_pool_state(pool_json, state)
+    mtime_before = pool_json.stat().st_mtime
+
+    sync_pool_assignments(state, git, pool_json)
+
+    mtime_after = pool_json.stat().st_mtime
+    assert mtime_before == mtime_after
+
+
+def test_sync_skips_missing_worktree_path(tmp_path: Path) -> None:
+    """Non-existent worktree paths are left unchanged."""
+    missing_path = tmp_path / "worktrees" / "erk-slot-01"  # Not created
+    assignment = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T12:00:00+00:00",
+        worktree_path=missing_path,
+    )
+    state = PoolState.test(assignments=(assignment,))
+    git = FakeGit()
+    pool_json = tmp_path / "pool.json"
+
+    result = sync_pool_assignments(state, git, pool_json)
+
+    assert result.synced_count == 0
+    assert result.state.assignments[0].branch_name == "feature-a"
+
+
+def test_sync_skips_detached_head(tmp_path: Path) -> None:
+    """Detached HEAD (None branch) leaves assignment unchanged."""
+    wt_path = tmp_path / "worktrees" / "erk-slot-01"
+    wt_path.mkdir(parents=True)
+    assignment = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T12:00:00+00:00",
+        worktree_path=wt_path,
+    )
+    state = PoolState.test(assignments=(assignment,))
+    # None indicates detached HEAD
+    git = FakeGit(current_branches={wt_path: None})
+    pool_json = tmp_path / "pool.json"
+
+    result = sync_pool_assignments(state, git, pool_json)
+
+    assert result.synced_count == 0
+    assert result.state.assignments[0].branch_name == "feature-a"
+
+
+def test_sync_skips_placeholder_branch(tmp_path: Path) -> None:
+    """Placeholder branches are left unchanged."""
+    wt_path = tmp_path / "worktrees" / "erk-slot-01"
+    wt_path.mkdir(parents=True)
+    assignment = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T12:00:00+00:00",
+        worktree_path=wt_path,
+    )
+    state = PoolState.test(assignments=(assignment,))
+    git = FakeGit(current_branches={wt_path: "__erk-slot-01-br-stub__"})
+    pool_json = tmp_path / "pool.json"
+
+    result = sync_pool_assignments(state, git, pool_json)
+
+    assert result.synced_count == 0
+    assert result.state.assignments[0].branch_name == "feature-a"
+
+
+def test_sync_multiple_assignments(tmp_path: Path) -> None:
+    """Syncs changed assignments while preserving unchanged ones."""
+    wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+    wt2_path = tmp_path / "worktrees" / "erk-slot-02"
+    wt3_path = tmp_path / "worktrees" / "erk-slot-03"
+    wt1_path.mkdir(parents=True)
+    wt2_path.mkdir(parents=True)
+    wt3_path.mkdir(parents=True)
+    assignment1 = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T10:00:00+00:00",
+        worktree_path=wt1_path,
+    )
+    assignment2 = SlotAssignment(
+        slot_name="erk-slot-02",
+        branch_name="feature-b",
+        assigned_at="2024-01-01T11:00:00+00:00",
+        worktree_path=wt2_path,
+    )
+    assignment3 = SlotAssignment(
+        slot_name="erk-slot-03",
+        branch_name="feature-c",
+        assigned_at="2024-01-01T12:00:00+00:00",
+        worktree_path=wt3_path,
+    )
+    state = PoolState.test(assignments=(assignment1, assignment2, assignment3))
+    git = FakeGit(
+        current_branches={
+            wt1_path: "feature-a",  # unchanged
+            wt2_path: "feature-b-new",  # changed
+            wt3_path: "feature-c",  # unchanged
+        }
+    )
+    pool_json = tmp_path / "pool.json"
+
+    result = sync_pool_assignments(state, git, pool_json)
+
+    assert result.synced_count == 1
+    assert result.state.assignments[0].branch_name == "feature-a"
+    assert result.state.assignments[1].branch_name == "feature-b-new"
+    assert result.state.assignments[1].assigned_at == "2024-01-01T11:00:00+00:00"
+    assert result.state.assignments[2].branch_name == "feature-c"
+
+
+def test_eviction_uses_synced_state(tmp_path: Path) -> None:
+    """End-to-end: sync + find_inactive_slot avoids evicting active slot.
+
+    Scenario: slot-01 is assigned to feature-a in pool.json, but the user
+    manually checked out feature-x. Without sync, find_inactive_slot would
+    see slot-01 as assigned to feature-a and not evict it even though
+    feature-a no longer occupies it. With sync, the assignment updates to
+    feature-x, and the eviction logic operates on accurate state.
+    """
+    repo_root = tmp_path / "repo"
+    wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+    wt2_path = tmp_path / "worktrees" / "erk-slot-02"
+    wt1_path.mkdir(parents=True)
+    wt2_path.mkdir(parents=True)
+    assignment1 = SlotAssignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-a",
+        assigned_at="2024-01-01T10:00:00+00:00",
+        worktree_path=wt1_path,
+    )
+    assignment2 = SlotAssignment(
+        slot_name="erk-slot-02",
+        branch_name="feature-b",
+        assigned_at="2024-01-01T11:00:00+00:00",
+        worktree_path=wt2_path,
+    )
+    state = PoolState.test(pool_size=2, assignments=(assignment1, assignment2))
+    # User manually changed slot-01 from feature-a to feature-x
+    git = FakeGit(
+        current_branches={
+            wt1_path: "feature-x",
+            wt2_path: "feature-b",
+        },
+        worktrees={
+            repo_root: [
+                WorktreeInfo(path=wt1_path, branch="feature-x"),
+                WorktreeInfo(path=wt2_path, branch="feature-b"),
+            ]
+        },
+    )
+    pool_json = tmp_path / "pool.json"
+
+    # First sync to get accurate state
+    sync_result = sync_pool_assignments(state, git, pool_json)
+
+    # Verify sync updated slot-01's branch
+    assert sync_result.state.assignments[0].branch_name == "feature-x"
+
+    # Now find_inactive_slot operates on accurate state — both slots are
+    # assigned so none should be available for eviction
+    inactive = find_inactive_slot(sync_result.state, git, repo_root)
+    assert inactive is None

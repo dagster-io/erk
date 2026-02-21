@@ -4,6 +4,7 @@
 # Ci Documentation
 
 - **[autofix-job-needs.md](autofix-job-needs.md)** — modifying the autofix job's needs list in ci.yml, adding a new CI job that might block autofix, understanding why autofix runs independently of tests
+- **[automated-review-system.md](automated-review-system.md)** — understanding what automated reviews run on PRs, debugging unexpected review comments on a PR, adding a new automated review bot, understanding re-review triggers
 - **[ci-iteration.md](ci-iteration.md)** — running CI commands in workflows, delegating pytest, ty, ruff commands, understanding devrun agent restrictions
 - **[claude-code-docker.md](claude-code-docker.md)** — Running Claude Code in GitHub Actions containers, Debugging permission errors in CI Docker containers, Choosing between container and container-less CI approaches
 - **[claude-commands-prettier.md](claude-commands-prettier.md)** — Creating slash commands in .claude/commands/, Modifying existing .claude/ markdown files, Getting Prettier formatting errors in CI
@@ -36,6 +37,7 @@
 - **[prompt-patterns.md](prompt-patterns.md)** — Using Claude Code in GitHub Actions workflows, Creating multi-line prompts in CI YAML, Adding new prompts to the erk bundle
 - **[review-spec-format.md](review-spec-format.md)** — creating a new code review, understanding why review specs follow certain patterns, debugging review behavior or structure
 - **[review-types-taxonomy.md](review-types-taxonomy.md)** — creating a new review workflow, deciding whether to extend an existing review or create a new one, understanding review scope boundaries
+- **[test-coverage-detection.md](test-coverage-detection.md)** — understanding how the test-coverage-review bot maps source to test files, debugging false positives in test coverage review, adding test files in the correct location for coverage detection
 - **[workflow-gating-patterns.md](workflow-gating-patterns.md)** — adding conditional execution to GitHub Actions workflows, implementing label-based CI skipping, understanding why CI was skipped on a PR
 - **[workflow-model-policy.md](workflow-model-policy.md)** — creating or modifying GitHub Actions workflows that invoke Claude, choosing which Claude model to use in a workflow, understanding why all workflows default to Opus
 - **[workflow-naming-conventions.md](workflow-naming-conventions.md)** — creating new GitHub Actions workflows launchable via erk launch, understanding the relationship between CLI names and workflow files

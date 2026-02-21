@@ -56,6 +56,8 @@ Rules triggered by matching actions in code.
 
 **creating a new review without checking taxonomy** → Read [Review Types Taxonomy](review-types-taxonomy.md) first. Consult this taxonomy first. Creating overlapping reviews wastes CI resources and confuses PR status checks.
 
+**creating a new review without checking the review types taxonomy** → Read [Automated Review System](automated-review-system.md) first. Consult review-types-taxonomy.md first. Creating overlapping reviews wastes CI resources and confuses PR status checks.
+
 **creating or modifying a reusable GitHub Actions workflow (workflow_call) that depends on ERK_PLAN_BACKEND or other env vars** → Read [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) first. Reusable workflow input forwarding: GitHub Actions reusable workflows (via workflow_call) do NOT inherit environment variables from the caller workflow. Declare ERK_PLAN_BACKEND (and any other required env vars) as explicit inputs in the reusable workflow, and pass them explicitly from the caller workflow. Ambient env vars are NOT forwarded automatically.
 
 **creating workflows that invoke Claude without specifying model** → Read [Workflow Model Policy](workflow-model-policy.md) first. All workflows MUST default to claude-opus-4-6. See workflow-model-policy.md for the standardization rationale.
@@ -67,6 +69,8 @@ Rules triggered by matching actions in code.
 **interpolating ${{ }} expressions directly into shell command arguments** → Read [GitHub Actions Security Patterns](github-actions-security.md) first. Use environment variables instead. Direct interpolation allows shell injection. Read [GitHub Actions Security Patterns](ci/github-actions-security.md) first.
 
 **investigating a bot complaint about formatting** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Prettier is the formatting authority for markdown/YAML/JSON files. If prettier --check passes locally, dismiss the bot complaint. See docs/learned/pr-operations/automated-review-handling.md.
+
+**placing test files outside both tests/ and packages/\*/tests/ directories** → Read [Test Coverage Detection](test-coverage-detection.md) first. The test-coverage-review bot only searches tests/**/ and packages/\*/tests/**/ for corresponding test files. Tests placed elsewhere will not be detected and will cause false 'no tests' flags.
 
 **reading statusCheckRollup results immediately after push** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. After push, results show completed runs only, not in-progress. Wait for new check suite to appear before reading CI status.
 

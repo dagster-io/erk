@@ -80,6 +80,40 @@ When using Graphite for stacked PRs, draft status does **not** cascade:
 - Marking a base PR ready does not auto-mark dependent PRs ready (GitHub limitation)
 - After base merges, dependent PRs must be individually marked ready with `gh pr ready` or via the gateway
 
+## Troubleshooting: Common Failures
+
+### Non-Fast-Forward Push
+
+**Cause**: Missing `pull_rebase()` in the submit path for draft-PR plans. The local branch was behind remote after checkout.
+
+**Symptoms**: `git push` fails with "non-fast-forward" error during `erk pr submit`.
+
+**Resolution**: Fixed in PR #7697 by adding `pull_rebase()` to the submit path's three-step sync sequence. See [Draft PR Branch Sync](../planning/draft-pr-branch-sync.md#pattern-consistency-setup-and-submit).
+
+### Graphite Divergence
+
+**Cause**: Branch updated remotely (by CI or another session) between local changes and `gt submit`.
+
+**Symptoms**: `gt submit` fails or `erk pr submit` returns `remote_diverged` error with behind count.
+
+**Resolution**: Run `erk pr sync-divergence --dangerous` to fetch, rebase, and resolve conflicts. Or use `erk pr submit -f` to force push (overrides remote). See [Graphite Divergence Detection](../erk/graphite-divergence-detection.md).
+
+### .worker-impl/ Already Exists
+
+**Cause**: Stale `.worker-impl/` from a prior failed submission was not cleaned up.
+
+**Symptoms**: `create_worker_impl_folder()` fails because the directory already exists.
+
+**Resolution**: Fixed in PR #7687 by adding LBYL cleanup: `if worker_impl_folder_exists(): remove_worker_impl_folder()` before creation in both submit paths.
+
+### Footer Separator False Match
+
+**Cause**: Accidental `\n\n---\n\n` formed from "Remotely executed" notes ending with a blank line followed by the footer delimiter.
+
+**Symptoms**: `extract_metadata_prefix()` or `extract_plan_content()` returns incorrect content, causing plan body corruption during stage transitions.
+
+**Resolution**: `extract_metadata_prefix()` validates the `<!-- erk:metadata-block:` marker in the prefix. See [Draft PR Lifecycle — False Match Prevention](../planning/draft-pr-lifecycle.md#false-match-prevention).
+
 ## Related Documentation
 
 - [PR Submission Workflow](pr-submission-workflow.md) — Git-only PR creation path

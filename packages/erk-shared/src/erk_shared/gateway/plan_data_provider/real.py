@@ -523,12 +523,6 @@ class RealPlanDataProvider(PlanDataProvider):
         learn_issue_states: dict[int, bool],
     ) -> PlanRowData:
         """Build a single PlanRowData from plan and related data."""
-        # Truncate title for display
-        title = plan.title
-        if len(title) > 50:
-            title = title[:47] + "..."
-
-        # Store full title
         full_title = plan.title
 
         # Worktree info
@@ -736,7 +730,6 @@ class RealPlanDataProvider(PlanDataProvider):
         return PlanRowData(
             plan_id=plan_id,
             plan_url=plan.url,
-            title=title,
             pr_number=pr_number,
             pr_url=pr_url,
             pr_display=pr_display,
