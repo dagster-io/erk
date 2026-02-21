@@ -21,6 +21,8 @@ from erk_shared.gateway.github.metadata.plan_header import (
 )
 from erk_shared.gateway.github.metadata.schemas import (
     CREATED_FROM_SESSION,
+    CREATED_FROM_WORKFLOW_RUN_URL,
+    LEARNED_FROM_ISSUE,
     OBJECTIVE_ISSUE,
     SOURCE_REPO,
     PlanHeaderSchema,
@@ -297,6 +299,20 @@ class DraftPRPlanBackend(PlanBackend):
             str(created_from_session_raw) if created_from_session_raw is not None else None
         )
 
+        learned_from_issue_raw = metadata.get(LEARNED_FROM_ISSUE)
+        learned_from_issue_val: int | None = (
+            int(learned_from_issue_raw)
+            if learned_from_issue_raw is not None and isinstance(learned_from_issue_raw, (int, str))
+            else None
+        )
+
+        created_from_workflow_run_url_raw = metadata.get(CREATED_FROM_WORKFLOW_RUN_URL)
+        created_from_workflow_run_url_val: str | None = (
+            str(created_from_workflow_run_url_raw)
+            if created_from_workflow_run_url_raw is not None
+            else None
+        )
+
         created_at = self._time.now().replace(tzinfo=UTC).isoformat()
         metadata_body = format_plan_header_body(
             created_at=created_at,
@@ -317,13 +333,13 @@ class DraftPRPlanBackend(PlanBackend):
             source_repo=source_repo_str,
             objective_issue=objective_id,
             created_from_session=created_from_session_str,
-            created_from_workflow_run_url=None,
+            created_from_workflow_run_url=created_from_workflow_run_url_val,
             last_learn_session=None,
             last_learn_at=None,
             learn_status=None,
             learn_plan_issue=None,
             learn_plan_pr=None,
-            learned_from_issue=None,
+            learned_from_issue=learned_from_issue_val,
             lifecycle_stage="planned",
         )
 
