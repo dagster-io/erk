@@ -13,6 +13,7 @@ The fix follows the established `restack_idempotent` / `squash_branch_idempotent
 **File:** `packages/erk-shared/src/erk_shared/gateway/gt/types.py`
 
 Add a new "Sync Operation Types" section (after the Restack section) with:
+
 - `SyncErrorType = Literal["sync-unstaged-changes", "sync-failed"]`
 - `SyncSuccess(frozen=True)` with `success: Literal[True]`, `message: str`
 - `SyncError(frozen=True)` with `success: Literal[False]`, `error_type: SyncErrorType`, `message: str`
@@ -22,6 +23,7 @@ Add a new "Sync Operation Types" section (after the Restack section) with:
 **File:** `packages/erk-shared/src/erk_shared/gateway/graphite/abc.py`
 
 Add concrete method (NOT abstract) on the `Graphite` class, following `restack_idempotent` pattern:
+
 - Wraps `self.sync()` in try/except `RuntimeError`
 - On success: returns `SyncSuccess`
 - On error with "unstaged changes" or "conflicting unstaged": returns `SyncError` with `error_type="sync-unstaged-changes"`
@@ -33,12 +35,14 @@ Add concrete method (NOT abstract) on the `Graphite` class, following `restack_i
 **File:** `src/erk/cli/commands/pr/sync_cmd.py`
 
 Replace line 231-232:
+
 ```python
 ctx.graphite.sync(repo.root, force=True, quiet=False)
 user_output(click.style("✓", fg="green") + " Synced with remote")
 ```
 
 With:
+
 ```python
 sync_result = ctx.graphite.sync_idempotent(repo.root, force=True, quiet=False)
 if isinstance(sync_result, SyncError):
