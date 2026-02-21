@@ -25,6 +25,7 @@ all_labels = labels
 ```
 
 Also remove the constant at line 28:
+
 ```python
 # Remove this line:
 _PLAN_LABEL = "erk-plan"
