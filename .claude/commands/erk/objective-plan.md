@@ -1,6 +1,7 @@
 ---
 description: Create an implementation plan from an objective node
 argument-hint: "<issue-number-or-url> [--node <node-id>]"
+allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
 ---
 
 # /erk:objective-plan
@@ -77,12 +78,14 @@ If no default found from current branch, prompt user using AskUserQuestion with 
 
 ### Step 2: Launch Task Agent for Data Fetching
 
-Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"` to fetch and parse objective data:
+Use the Task tool with `subagent_type: "general-purpose"` and `model: "sonnet"` to fetch and parse objective data:
 
 **Task Prompt:**
 
 ```
 Fetch and validate objective #<issue-number> and return a structured summary.
+
+CRITICAL: Do NOT write scripts or code. Only use the Bash tool to run the erk CLI commands listed below.
 
 Instructions:
 1. Run: erk exec get-issue-body <issue-number>
@@ -93,7 +96,7 @@ Instructions:
 3. Create objective context marker:
    erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <issue-number> objective-context
 4. Run: erk objective check <issue-number> --json-output --allow-legacy
-5. Return a compact structured summary in this exact format:
+5. Format the JSON output from step 4 into the structured summary below. Do NOT write Python or any other scripts to parse the data — just read the JSON output directly and format it yourself.
 
 OBJECTIVE: #<number> — <title>
 STATUS: <OPEN|CLOSED>
