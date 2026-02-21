@@ -285,6 +285,7 @@ def test_draft_pr_tracks_branch_with_graphite(tmp_path: Path) -> None:
         git=fake_git,
         graphite=fake_graphite,
         claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        plan_backend="draft_pr",
         cwd=tmp_path,
         repo_root=tmp_path,
     )
