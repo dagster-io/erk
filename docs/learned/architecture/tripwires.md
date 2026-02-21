@@ -108,7 +108,7 @@ Rules triggered by matching actions in code.
 
 **checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code** [pattern: `isinstance\(.*GraphiteDisabled\)`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager.
 
-**checking out a branch in plan_save without restoring the original** → Read [Plan Save Branch Restoration](plan-save-branch-restoration.md) first. Plan save must always restore the original branch via try/finally. See plan-save-branch-restoration.md.
+**checking out a branch in plan_save to commit files** → Read [Plan Save Branch Restoration](plan-save-branch-restoration.md) first. Plan save uses git plumbing (commit_files_to_branch) to commit without checkout. Do NOT add checkout_branch calls. See plan-save-branch-restoration.md.
 
 **choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
 
