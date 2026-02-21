@@ -3,6 +3,7 @@
 ## Context
 
 When re-submitting a draft-PR plan via `erk plan submit` (e.g., from the TUI), the command crashes with `FileExistsError` because `.worker-impl/` already exists on the branch from a prior submission. This can happen when:
+
 - A previous submission's workflow failed and left `.worker-impl/` on the branch
 - The user re-submits a plan that was already submitted
 
@@ -19,6 +20,7 @@ Add cleanup of existing `.worker-impl/` before calling `create_worker_impl_folde
 1. **Update import** (line 47): Add `remove_worker_impl_folder` and `worker_impl_folder_exists` to the import from `erk_shared.worker_impl_folder`
 
 2. **Draft-PR path** (before line 436): After `checkout_branch` and before `create_worker_impl_folder`, add:
+
    ```python
    if worker_impl_folder_exists(repo.root):
        user_output("Cleaning up previous .worker-impl/ folder...")
