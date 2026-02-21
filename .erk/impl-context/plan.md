@@ -15,12 +15,14 @@ The `trigger-async-learn` infrastructure already handles remote sessions via bra
 **File:** `src/erk/cli/commands/land_cmd.py` (lines 1058-1059)
 
 Change:
+
 ```python
 plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, target.branch)
 if plan_id is not None and (target.is_current_branch or target.worktree_path is not None):
 ```
 
 To:
+
 ```python
 plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, target.branch)
 if plan_id is not None:
@@ -31,11 +33,13 @@ if plan_id is not None:
 **File:** `src/erk/cli/commands/land_pipeline.py` (line 341)
 
 Change:
+
 ```python
 if plan_id is not None and (state.is_current_branch or state.worktree_path is not None):
 ```
 
 To:
+
 ```python
 if plan_id is not None:
 ```
