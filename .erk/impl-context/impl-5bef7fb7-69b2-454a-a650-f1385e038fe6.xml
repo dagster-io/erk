@@ -1,0 +1,161 @@
+<session>
+  <meta branch="plan/O7709-plan-lazy-tip-sync-f-02-21-1116" />
+  <meta model="claude-opus-4-6" />
+  <user>im a bit confused about the scenarios where this pr helps. can you explain</user>
+  <thinking>The user is asking about the current PR on this branch. Let me look at the recent commits and understand what this PR is about. The branch is `plan/O7709-plan-lazy-tip-sync-f-02-21-1116` and the most recent commit is "Implement lazy tip sync for worktree pool to fix stale assignment state". Let me look at the changes in this PR.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="9959" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9959}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the PR to understand what it does.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="9959" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9959}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AYGJnjmNuL56soFqrSxcxv">
+    <param name="command">git log master..HEAD --oneline</param>
+    <param name="description">Show commits on this branch vs master</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9959" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9959}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AYGJnjmNuL56soFqrSxcxv">
+e80190208 Implement lazy tip sync for worktree pool to fix stale assignment state
+a925a488a Remove plan staging dirs before implementation
+13dfc03e8 Update plan for plan #7756 (rerun)
+e5b400ab5 Add plan for PR #7756
+96fed0072 Add plan: Plan: Lazy Tip Sync for Worktree Pool
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RxmP57xd9W22EBzXbqnjCT">
+    <param name="command">git diff master..HEAD --stat</param>
+    <param name="description">Show files changed in this PR</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9959" cache_read_input_tokens="19041" output_tokens="320" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9959, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RxmP57xd9W22EBzXbqnjCT">
+ src/erk/cli/commands/slot/common.py         |  79 +++++++++
+ tests/commands/branch/test_checkout_cmd.py  |  46 +++--
+ tests/unit/cli/commands/slot/test_common.py | 257 +++++++++++++++++++++++++++-
+ 3 files changed, 364 insertions(+), 18 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014A9CH9jU8KpFEiwh2LRpeR">
+    <param name="command">git diff master..HEAD</param>
+    <param name="description">Show full diff of this PR</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="513" cache_read_input_tokens="29000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 513}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014A9CH9jU8KpFEiwh2LRpeR">
+diff --git a/src/erk/cli/commands/slot/common.py b/src/erk/cli/commands/slot/common.py
+index 1a4e6f54a..67e908381 100644
+--- a/src/erk/cli/commands/slot/common.py
++++ b/src/erk/cli/commands/slot/common.py
+@@ -212,6 +212,81 @@ def find_branch_assignment(state: PoolState, branch_name: str) -&gt; SlotAssignment
+     return None
+ 
+ 
++@dataclass(frozen=True)
++class PoolSyncResult:
++    """Result of syncing pool assignments with actual git state."""
++
++    state: PoolState
++    synced_count: int
++
++
++def sync_pool_assignments(
++    state: PoolState,
++    git: Git,
++    pool_json_path: Path,
++) -&gt; PoolSyncResult:
++    """Sync pool assignments with actual git branch state.
++
++    For each assignment, checks the actual branch in the worktree and
++    updates pool.json when mismatches are detected. This handles the case
++    where users manually run ``gt create`` or ``git checkout`` in a pool
++    slot, causing the recorded branch to diverge from the actual branch.
++
++    Args:
++        state: Current pool state
+
+... [417 lines omitted] ...
+
+         assert result.exit_code == 0, f"Failed: {result.output}"
++        # Dirty slot-01 is untouched — no error.
++        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Here's the scenario this PR fixes:
+
+**The problem: stale `pool.json` state**
+
+Erk maintains a pool of git worktree "slots" (like `erk-slot-01`, `erk-slot-02`). When you run `erk branch checkout feature-a`, erk records in `pool.json` that slot-01 is assigned to `feature-a`. But there's nothing stopping you (or another tool) from changing the branch in that worktree outside of erk — e.g. running `gt create`, `git checkout`, or `gt modify` directly in the slot directory.
+
+When that happens, `pool.json` says slot-01 has `feature-a`, but the slot actually has `some-other-branch`. That's stale state.
+
+**Two concrete scenarios where this caused problems:**
+
+1. **"Fixing stale state" error path was disruptive.** Before this PR, if you ran `erk branch checkout target-branch` and erk found that the slot assigned to `target-branch` actually had a different branch checked out, it would print a "Fixing stale state" warning and try to force-checkout the target branch into that slot. This was wrong — the user probably *wanted* that other branch there (they manually checked it out). Worse, if the slot had uncommitted changes, it would **fail with an error** about uncommitted changes, blocking you entirely.
+
+2. **Eviction decisions based on wrong data.** When the pool is full and erk needs to pick a slot to evict, it looks at which branches are assigned where. If the assignment data is stale, erk could make bad eviction decisions — e.g. thinking slot-01 has `feature-a` when it actually has active work on `feature-x`.
+
+**What the PR does: lazy tip sync**
+
+Before making any allocation decision, `sync_pool_assignments` checks what branch is *actually* in each worktree and silently updates `pool.json` to match reality. This means:
+
+- **Scenario 1**: You manually switch slot-01 to `different-branch`, then run `erk branch checkout target-branch`. Instead of erroring, erk now silently updates slot-01's assignment to `different-branch` (what's actually there), then allocates `target-branch` to a fresh slot. No error, no disruption.
+
+- **Scenario 2**: Same as above but with dirty files in slot-01. Before: hard error. Now: erk doesn't touch slot-01 at all — it just gives `target-branch` a new slot. The dirty files are irrelevant.
+
+**TL;DR**: If you ever change branches inside a pool slot without going through erk, this PR makes erk notice and adapt instead of getting confused or erroring out.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6085" cache_read_input_tokens="29513" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6085}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>why is this part of objecitive 7709</user>
+  <assistant>
+
+Good question. Let me check what objective 7709 is about.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="169" cache_read_input_tokens="36233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 169}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EWZmbjvw37nRjqgJHpoeQh">
+    <param name="command">gh issue view 7709 --json title,body --jq '.title + "\n\n" + .body'</param>
+    <param name="description">View objective 7709</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="169" cache_read_input_tokens="36233" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 169, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EWZmbjvw37nRjqgJHpoeQh">
+Objective: Worktree-per-stack as default workflow
+
+# Objective: Worktree-per-stack as default workflow
+
+&gt; Make stacked PRs share a worktree by default, so a single slot serves an entire stack (often tied to an objective), with `erk wt create-from &lt;branch&gt;` as the escape hatch for isolation.
+
+## Goal
+
+A developer working through a multi-PR objective stays in one worktree. `erk br create` from within an assigned slot stacks in place — new branch created on top via `gt create`, slot assignment updated to new tip, no new slot consumed. Slots become "workspaces for goals" rather than "containers for branches." A 4-slot pool supports 4 concurrent objectives with arbitrarily deep stacks, not just 4 branches.
+
+**Key command roles:**
+- **`erk br create`** — creates branch. When run from an assigned slot, stacks in place. When run from root worktree, allocates a new slot. `--for-plan` also sets up `.impl/`.
+- **`erk implement`** — works in-place in current directory. No slot allocation. Unchanged by this objective.
+- **`erk wt create-from &lt;branch&gt;`** — escape hatch to allocate a fresh slot for a specific branch.
+
+## Design Decisions
+
+1. **Stack-in-place is the default for `erk br create`**: When run from within an already-assigned slot, creates the new branch on top of the current branch in the same worktree rather than allocating a new slot.
+2. **First `erk br create` from root worktree allocates a new slot**: The entry point to a new stack is unchanged.
+3. **Track just the tip**: `SlotAssignment` stays as-is (one branch name per slot). When a new branch is created on top, the assignment updates to the new tip. Graphite owns the stack graph — the pool doesn't learn about stacks.
+4. **Lazy tip sync**: The slot reflects whatever `git branch --show-current` returns. `pool.json` is a cache that re-syncs on any `erk wt` operation, so manual git/gt operations don't cause staleness.
+5. **`erk wt create-from &lt;branch&gt;`**: Dedicated subcommand (positional arg) to allocate a fresh slot and check out a specific branch there. Serves as the escape hatch from stack-in-place, and also as the standalone "give me a worktree for this branch" command. Distinct from `erk wt create --from-branch` which is a flag on the general `create` command.
+6. **No metaphor names**: Commands describe what they do (`create-from`), not abstractions (`eject`, `detach`).
+7. **`prepare` removed**: The old `erk prepare` command was deleted in Phase 1 as redundant with `erk br create --for-plan`.
+
+## Roadmap
+
+### Phase 1: Stack-in-place steelthread ✅
+
+Minimal vertical slice: `erk br create` detects it's running in an already-assigned slot and stacks in place instead of allocating a new slot. Also removed the redundant `prepare` command.
+
+... [51 lines omitted] ...
+  </tool_result>
+  <thinking>Now it's clear. The objective is "Worktree-per-stack as default workflow" and this PR implements Phase 3 ("Lazy tip sync and polish") of that objective.
+
+The connection is: when slots hold entire stacks (not just single branches), the branch in a slot changes frequently — every time you `gt create` to add to the stack, the tip moves. The pool.json needs to stay in sync with reality. Lazy tip sync is the mechanism that makes pool.json a resilient cache rather than a brittle record.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1981" cache_read_input_tokens="36402" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1981}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>It's **Phase 3** of the objective. The connection makes more sense when you see the full picture:
+
+The objective is **"Worktree-per-stack as default workflow"** — slots hold entire stacks, not just single branches. Phase 1 made `erk br create` stack-in-place (creating new branches on top within the same slot). Phase 2 added the escape hatch (`erk wt create-from`).
+
+The key insight: **once slots hold stacks, the branch in a slot changes all the time.** Every `gt create` moves the tip. And users will naturally use `gt` and `git` directly — not always going through `erk br create`. So `pool.json` will inevitably drift from reality.
+
+Lazy tip sync is what makes the "track just the tip" design decision (Decision #4 in the objective) actually work. Without it, the stack-in-place workflow from Phase 1 introduces a new class of staleness bugs that didn't exist when slots were 1:1 with branches. It's the resilience layer that lets the first two phases be used in practice without things breaking when users do normal git/gt operations in their slots.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1981" cache_read_input_tokens="36402" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1981}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
