@@ -40,6 +40,8 @@ Rules triggered by matching actions in code.
 
 **running gt sync without verifying clean working tree** → Read [Graphite Stack Troubleshooting](graphite-stack-troubleshooting.md) first. gt sync performs a rebase that can lose uncommitted changes. Commit or stash first. See docs/learned/workflows/git-sync-state-preservation.md
 
+**running raw git commands (checkout, branch) without gt track on a Graphite-managed branch** → Read [Graphite Divergence Detection](graphite-divergence-detection.md) first. Raw git commands (checkout, branch) without `gt track` cause Graphite's cache to diverge from actual branch state. Use BranchManager which handles Graphite tracking automatically, or call `gt track` after raw git operations.
+
 **treating informational_count as including review threads** → Read [PR Feedback Classifier Schema](pr-feedback-classifier-schema.md) first. informational_count covers ONLY discussion comments, not review threads. All unresolved review threads must appear individually in actionable_threads.
 
 **using `gh codespace create` to create a codespace** → Read [Codespace Machine Types](codespace-machine-types.md) first. The machines endpoint returns HTTP 500 for this repo. Use `POST /user/codespaces` REST API directly. See the workaround section below.

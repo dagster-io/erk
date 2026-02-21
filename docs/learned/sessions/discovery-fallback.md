@@ -30,7 +30,7 @@ Erk has two distinct session discovery commands that serve different purposes. C
 
 ### Why two commands?
 
-`list-sessions` knows nothing about plans — it scans the local Claude Code project directory and returns what's there. `get-learn-sessions` starts from a plan issue, extracts session IDs from GitHub metadata (plan-header fields and issue comments), then checks which ones are actually readable on disk. It also discovers remote sessions (gist-based or legacy artifact-based) that `list-sessions` would never find.
+`list-sessions` knows nothing about plans — it scans the local Claude Code project directory and returns what's there. `get-learn-sessions` starts from a plan issue, extracts session IDs from GitHub metadata (plan-header fields and issue comments), then checks which ones are actually readable on disk. It also discovers remote sessions (branch-based or legacy artifact-based) that `list-sessions` would never find.
 
 <!-- Source: packages/erk-shared/src/erk_shared/sessions/discovery.py, find_sessions_for_plan -->
 
@@ -74,7 +74,7 @@ When a learn workflow needs session data, the ideal source (planning session) is
 | -------- | ------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | 1        | Planning session          | `created_from_session` in plan-header                                                   | Created in a prior Claude Code session, since cleaned up            |
 | 2        | Implementation session    | `last_local_impl_session` in plan-header + issue comments                               | Same reason — different session lifecycle                           |
-| 3        | Remote session (gist)     | `last_session_gist_url` in plan-header                                                  | Gist may have been deleted; requires download step                  |
+| 3        | Remote session (branch)   | `last_session_branch` in plan-header                                                    | Branch may have been deleted; requires checkout step                |
 | 4        | Remote session (artifact) | `last_remote_impl_run_id` in plan-header                                                | Legacy path; GitHub Actions artifacts expire after 90 days          |
 | 5        | Local fallback scan       | `find_local_sessions_for_project()` scans project directory, filtered by current branch | No metadata link to plan, but recent sessions may still be relevant |
 | 6        | Skip analysis             | Always available                                                                        | Produces no session insights, but workflow continues                |

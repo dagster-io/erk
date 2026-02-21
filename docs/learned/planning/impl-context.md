@@ -16,6 +16,9 @@ tripwires:
     score: 9
   - action: "calling `create_worker_impl_folder()` without checking `worker_impl_folder_exists()` first"
     warning: "Both submit paths use LBYL: `if worker_impl_folder_exists(): remove_worker_impl_folder()` before creating. Stale .worker-impl/ from a prior failed submission causes errors."
+  - action: "pushing implementation commits after impl-context cleanup without git pull --rebase"
+    warning: "After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures."
+    score: 4
 ---
 
 # Impl-Context Staging Directory

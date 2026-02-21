@@ -92,6 +92,23 @@ When reusing a slot, `cleanup_worktree_artifacts()` removes stale data:
 
 These directories are in `.gitignore` so they persist across branch switches without cleanup.
 
+## Transparent State Correction
+
+The pool treats manual `git checkout` and `gt create` operations in pool slots as valid. When a user changes branches directly inside a worktree slot, the pool silently corrects its state on the next allocation call rather than raising an error.
+
+<!-- Source: src/erk/cli/commands/slot/common.py:223-287, sync_pool_assignments -->
+
+`sync_pool_assignments()` runs before every allocation decision. It compares each assignment's recorded branch against the actual git branch in the worktree and updates `pool.json` when mismatches are detected. If no corrections are needed, it skips the disk write entirely (preserving file mtime).
+
+Edge cases handled:
+
+- **Missing worktree directory** — assignment preserved (may be temporarily unmounted)
+- **Detached HEAD** — assignment preserved (user may be mid-operation)
+- **Placeholder branches** — assignment preserved (don't record stub branch names)
+- **Branch changed** — assignment updated with actual branch, original `assigned_at` preserved for LRU ordering
+
+For full details on the sync algorithm, see [Slot Pool State Sync](../architecture/slot-pool-state-sync.md).
+
 ## Diagnostics & Repair
 
 ### Sync Issues (`src/erk/cli/commands/slot/diagnostics.py`)
