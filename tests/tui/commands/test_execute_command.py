@@ -162,7 +162,6 @@ class TestExecuteCommandClosePlan:
         row = PlanRowData(
             plan_id=123,
             plan_url=None,  # Explicitly None
-            title="Test",
             pr_number=None,
             pr_url=None,
             pr_display="-",
@@ -209,6 +208,7 @@ class TestExecuteCommandClosePlan:
             created_display="-",
             author="test-user",
             is_learn_plan=False,
+            lifecycle_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -239,7 +239,6 @@ class TestExecuteCommandSubmitToQueue:
         row = PlanRowData(
             plan_id=123,
             plan_url=None,  # Explicitly None
-            title="Test",
             pr_number=None,
             pr_url=None,
             pr_display="-",
@@ -286,6 +285,7 @@ class TestExecuteCommandSubmitToQueue:
             created_display="-",
             author="test-user",
             is_learn_plan=False,
+            lifecycle_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)

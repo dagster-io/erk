@@ -236,7 +236,7 @@ class FakePlanDataProvider(PlanDataProvider):
 
 def make_plan_row(
     plan_id: int,
-    title: str = "Test Plan",
+    full_title: str = "Test Plan",
     *,
     plan_url: str | None = None,
     plan_body: str = "",
@@ -276,7 +276,7 @@ def make_plan_row(
 
     Args:
         plan_id: GitHub issue number
-        title: Plan title
+        full_title: Full plan title
         plan_url: URL to the issue (defaults to GitHub URL pattern)
         plan_body: Raw issue body text (markdown)
         pr_number: PR number if linked
@@ -368,7 +368,6 @@ def make_plan_row(
     return PlanRowData(
         plan_id=plan_id,
         plan_url=plan_url,
-        title=title,
         pr_number=pr_number,
         pr_url=pr_url,
         pr_display=final_pr_display,
@@ -380,7 +379,7 @@ def make_plan_row(
         run_id_display="-",
         run_state_display="-",
         run_url=run_url,
-        full_title=title,
+        full_title=full_title,
         plan_body=plan_body,
         pr_title=pr_title,
         pr_state=pr_state,
