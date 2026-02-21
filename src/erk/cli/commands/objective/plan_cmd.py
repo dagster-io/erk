@@ -240,7 +240,7 @@ def _handle_all_unblocked(
     successful_dispatches: list[tuple[str, int]] = []
 
     for node, phase_name in resolved.nodes:
-        instruction = (
+        prompt = (
             f"/erk:objective-plan {resolved.issue_number}\n"
             f"Implement step {node.id} of objective #{resolved.issue_number}: "
             f"{node.description} (Phase: {phase_name})"
@@ -249,7 +249,7 @@ def _handle_all_unblocked(
         user_output(f"Dispatching node {click.style(node.id, bold=True)}: {node.description}")
 
         params = OneShotDispatchParams(
-            instruction=instruction,
+            prompt=prompt,
             model=model,
             extra_workflow_inputs={
                 "objective_issue": str(resolved.issue_number),
@@ -647,8 +647,8 @@ def _handle_one_shot(
     # Normalize model name
     model = normalize_model_name(model)
 
-    # Build instruction
-    instruction = (
+    # Build prompt
+    prompt = (
         f"/erk:objective-plan {issue_number}\n"
         f"Implement step {target_node.id} of objective #{issue_number}: "
         f"{target_node.description} (Phase: {phase_name})"
@@ -658,10 +658,10 @@ def _handle_one_shot(
         f"Dispatching node {click.style(target_node.id, bold=True)}: {target_node.description}"
     )
     user_output(f"Phase: {phase_name}")
-    user_output(f"Instruction: {instruction}")
+    user_output(f"Prompt: {prompt}")
 
     params = OneShotDispatchParams(
-        instruction=instruction,
+        prompt=prompt,
         model=model,
         extra_workflow_inputs={
             "objective_issue": str(issue_number),

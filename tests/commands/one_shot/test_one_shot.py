@@ -63,7 +63,7 @@ def test_one_shot_happy_path() -> None:
         assert len(github.triggered_workflows) == 1
         workflow, inputs = github.triggered_workflows[0]
         assert workflow == "one-shot.yml"
-        assert inputs["instruction"] == "fix the import in config.py"
+        assert inputs["prompt"] == "fix the import in config.py"
         assert "branch_name" in inputs
         assert "pr_number" in inputs
 
@@ -71,8 +71,8 @@ def test_one_shot_happy_path() -> None:
         assert git.branch.get_current_branch(env.cwd) == "main"
 
 
-def test_one_shot_empty_instruction() -> None:
-    """Test that empty instruction is rejected."""
+def test_one_shot_empty_prompt() -> None:
+    """Test that empty prompt is rejected."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -93,7 +93,7 @@ def test_one_shot_empty_instruction() -> None:
         )
 
         assert result.exit_code == 1
-        assert "Instruction must not be empty" in result.output
+        assert "Prompt must not be empty" in result.output
 
 
 def test_one_shot_dry_run() -> None:
@@ -192,7 +192,7 @@ def test_one_shot_model_alias() -> None:
 
 
 def test_one_shot_pr_title_truncation() -> None:
-    """Test that long instructions are truncated in PR title."""
+    """Test that long prompts are truncated in PR title."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -207,11 +207,11 @@ def test_one_shot_pr_title_truncation() -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        long_instruction = "a" * 100
+        long_prompt = "a" * 100
 
         result = runner.invoke(
             cli,
-            ["one-shot", long_instruction],
+            ["one-shot", long_prompt],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -221,7 +221,7 @@ def test_one_shot_pr_title_truncation() -> None:
         # PR title should be truncated: tuple is (branch, title, body, base, draft)
         _branch, title, _body, _base, _draft = github.created_prs[0]
         assert "..." in title
-        assert len(title) < len(long_instruction) + 20
+        assert len(title) < len(long_prompt) + 20
 
 
 def test_one_shot_restores_branch_on_error() -> None:
@@ -281,14 +281,14 @@ def test_one_shot_rejects_detached_head() -> None:
 
 
 def test_one_shot_file_option() -> None:
-    """Test --file option reads instruction from a file."""
+    """Test --file option reads prompt from a file."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Write instruction to a file
-        instruction_file = env.cwd / "instruction.md"
-        instruction_file.write_text("fix the import in config.py\n", encoding="utf-8")
+        # Write prompt to a file
+        prompt_file = env.cwd / "prompt.md"
+        prompt_file.write_text("fix the import in config.py\n", encoding="utf-8")
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -302,7 +302,7 @@ def test_one_shot_file_option() -> None:
 
         result = runner.invoke(
             cli,
-            ["one-shot", "--file", str(instruction_file)],
+            ["one-shot", "--file", str(prompt_file)],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -310,10 +310,10 @@ def test_one_shot_file_option() -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Done!" in result.output
 
-        # Verify instruction was read from file and passed through
+        # Verify prompt was read from file and passed through
         assert len(github.triggered_workflows) == 1
         _workflow, inputs = github.triggered_workflows[0]
-        assert "fix the import in config.py" in inputs["instruction"]
+        assert "fix the import in config.py" in inputs["prompt"]
 
 
 def test_one_shot_file_and_argument_rejected() -> None:
@@ -322,8 +322,8 @@ def test_one_shot_file_and_argument_rejected() -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        instruction_file = env.cwd / "instruction.md"
-        instruction_file.write_text("some instruction\n", encoding="utf-8")
+        prompt_file = env.cwd / "prompt.md"
+        prompt_file.write_text("some prompt\n", encoding="utf-8")
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -336,7 +336,7 @@ def test_one_shot_file_and_argument_rejected() -> None:
 
         result = runner.invoke(
             cli,
-            ["one-shot", "inline instruction", "--file", str(instruction_file)],
+            ["one-shot", "inline prompt", "--file", str(prompt_file)],
             obj=ctx,
         )
 
@@ -344,7 +344,7 @@ def test_one_shot_file_and_argument_rejected() -> None:
         assert "not both" in result.output
 
 
-def test_one_shot_no_instruction_rejected() -> None:
+def test_one_shot_no_prompt_rejected() -> None:
     """Test that providing neither argument nor --file is rejected."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -366,4 +366,4 @@ def test_one_shot_no_instruction_rejected() -> None:
         )
 
         assert result.exit_code == 1
-        assert "instruction argument or --file" in result.output
+        assert "prompt argument or --file" in result.output

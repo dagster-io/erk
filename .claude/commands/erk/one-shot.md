@@ -1,36 +1,36 @@
 ---
 description: Submit a task for fully autonomous remote planning and implementation
-argument-hint: <instruction>
+argument-hint: <prompt>
 ---
 
 # One-Shot Autonomous Execution
 
-Submit a task for fully autonomous remote execution. The instruction will be dispatched to a GitHub Actions workflow where Claude autonomously explores, plans, implements, and creates a PR.
+Submit a task for fully autonomous remote execution. The prompt will be dispatched to a GitHub Actions workflow where Claude autonomously explores, plans, implements, and creates a PR.
 
 ## Steps
 
-1. Validate that `$ARGUMENTS` is non-empty. If empty, tell the user they need to provide an instruction.
+1. Validate that `$ARGUMENTS` is non-empty. If empty, tell the user they need to provide a prompt.
 
-2. Write the instruction text to a scratch file to avoid shell quoting issues with long or complex instructions:
+2. Write the prompt text to a scratch file to avoid shell quoting issues with long or complex prompts:
 
 ```bash
-# Write instruction to session-scoped scratch file
+# Write prompt to session-scoped scratch file
 mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}
-cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-instruction.md << 'INSTRUCTION_EOF'
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-prompt.md << 'PROMPT_EOF'
 $ARGUMENTS
-INSTRUCTION_EOF
+PROMPT_EOF
 ```
 
 3. Run the CLI command with --file:
 
 ```bash
-erk one-shot --file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-instruction.md
+erk one-shot --file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-prompt.md
 ```
 
 4. Clean up the scratch file:
 
 ```bash
-rm -f .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-instruction.md
+rm -f .erk/scratch/sessions/${CLAUDE_SESSION_ID}/one-shot-prompt.md
 ```
 
 5. Display the output to the user, which includes the PR URL and workflow run URL.

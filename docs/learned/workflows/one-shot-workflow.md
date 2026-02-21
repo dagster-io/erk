@@ -16,7 +16,7 @@ audit_result: clean
 
 # One-Shot Workflow
 
-Single-command dispatch for autonomous remote planning and implementation. The user provides a natural language instruction, and erk handles branch creation, planning, and implementation via GitHub Actions.
+Single-command dispatch for autonomous remote planning and implementation. The user provides a natural language prompt, and erk handles branch creation, planning, and implementation via GitHub Actions.
 
 ## Architecture Overview
 
@@ -24,13 +24,13 @@ Single-command dispatch for autonomous remote planning and implementation. The u
 User (Local CLI)
     |
     v
-erk one-shot "instruction"
+erk one-shot "prompt"
     | (creates branch, draft PR, triggers workflow)
     v
 GitHub Actions: one-shot.yml
     |
     +-- plan job (Claude session 1)
-    |   |  Read instruction -> Explore codebase -> Write plan -> Save as GitHub issue
+    |   |  Read prompt -> Explore codebase -> Write plan -> Save as GitHub issue
     |   |  Register plan with erk exec register-one-shot-plan
     |   v
     +-- implement job (Claude session 2, depends on plan)
@@ -49,11 +49,11 @@ erk one-shot "Add a --verbose flag to the plan submit command" --model sonnet
 
 **Responsibilities:**
 
-1. Validates instruction and optional model parameter
+1. Validates prompt and optional model parameter
 2. Generates branch name via `generate_branch_name()` in `one_shot_dispatch.py`: `P{N}-{slug}-{MM-DD-HHMM}` when `plan_issue_number` is provided, otherwise `oneshot-{slug}-{MM-DD-HHMM}`
 3. Creates branch from trunk with an empty commit
 4. Pushes branch to remote
-5. Creates a draft PR with instruction in description
+5. Creates a draft PR with prompt in description
 6. Triggers the `one-shot.yml` GitHub Actions workflow
 7. Restores the original branch after workflow trigger (even on error)
 
@@ -68,7 +68,7 @@ Two-phase design with separate jobs:
 ### Plan Job
 
 1. **Setup:** Checkout repo, configure auth (GitHub token, Anthropic API key), install tools (uv, erk, claude, prettier)
-2. **Write instruction:** Creates `.impl/task.md` with the user's instruction
+2. **Write prompt:** Creates `.impl/task.md` with the user's prompt
 3. **Detect trunk:** Identifies main/master branch
 4. **Run planning:** Executes `/erk:one-shot-plan` Claude command
 5. **Validate outputs:** Checks `.impl/plan.md` and `.impl/plan-result.json` exist
@@ -94,7 +94,7 @@ Two-phase design with separate jobs:
 
 Runs in a fresh Claude session inside GitHub Actions:
 
-1. Read `.impl/task.md` (instruction from workflow)
+1. Read `.impl/task.md` (prompt from workflow)
 2. Load AGENTS.md project context and scan docs/learned/
 3. Explore codebase with Glob/Grep for relevant files
 4. Write comprehensive plan to `.impl/plan.md`
