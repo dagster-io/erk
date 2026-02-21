@@ -57,13 +57,6 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
-    class LearnClicked(Message):
-        """Posted when user clicks learn column on a row with a learn plan issue or PR."""
-
-        def __init__(self, row_index: int) -> None:
-            super().__init__()
-            self.row_index = row_index
-
     class ObjectiveClicked(Message):
         """Posted when user clicks objective column on a row with an objective issue."""
 
@@ -86,7 +79,6 @@ class PlanDataTable(DataTable):
         self._plan_column_index: int = 0  # Always first column
         self._objective_column_index: int | None = None
         self._pr_column_index: int | None = None
-        self._learn_column_index: int | None = None
         self._local_wt_column_index: int | None = None
         self._run_id_column_index: int | None = None
         self._stage_column_index: int | None = None
@@ -131,7 +123,6 @@ class PlanDataTable(DataTable):
         self._plan_column_index = 0
         self._objective_column_index = None
         self._pr_column_index = None
-        self._learn_column_index = None
         self._local_wt_column_index = None
         self._run_id_column_index = None
         self._stage_column_index = None
@@ -199,13 +190,6 @@ class PlanDataTable(DataTable):
             self.add_column("chks", key="chks")
             col_index += 1
             self.add_column("comments", key="comments")
-            col_index += 1
-            self.add_column("lrn", key="learn")
-            self._learn_column_index = col_index
-            col_index += 1
-        else:
-            self.add_column("lrn", key="learn")
-            self._learn_column_index = col_index
             col_index += 1
         self._local_wt_column_index = col_index
         self.add_column("local-wt", key="local_wt")
@@ -292,15 +276,6 @@ class PlanDataTable(DataTable):
         else:
             wt_cell = "-"
 
-        # Format learn cell - use icon-only for table, colorize if clickable
-        learn_cell: str | Text = row.learn_display_icon
-        if (
-            row.learn_plan_issue is not None
-            or row.learn_plan_pr is not None
-            or row.learn_run_url is not None
-        ):
-            learn_cell = Text(row.learn_display_icon, style="cyan underline")
-
         # Format objective cell - colorize if clickable
         objective_cell: str | Text = row.objective_display
         if row.objective_issue is not None:
@@ -340,11 +315,9 @@ class PlanDataTable(DataTable):
                 pr_display = _strip_rich_markup(row.pr_display)
                 if row.pr_url:
                     pr_display = Text(pr_display, style="cyan underline")
-                values.extend([pr_display, checks_display, comments_display, learn_cell])
+                values.extend([pr_display, checks_display, comments_display])
             else:
-                values.extend([checks_display, comments_display, learn_cell])
-        else:
-            values.extend([learn_cell])
+                values.extend([checks_display, comments_display])
         values.extend([wt_cell, row.local_impl_display])
         if self._plan_filters.show_runs:
             remote_impl = _strip_rich_markup(row.remote_impl_display)
@@ -403,19 +376,6 @@ class PlanDataTable(DataTable):
         if self._objective_column_index is not None and col_index == self._objective_column_index:
             if row_index < len(self._rows) and self._rows[row_index].objective_issue is not None:
                 self.post_message(self.ObjectiveClicked(row_index))
-                event.prevent_default()
-                event.stop()
-                return
-
-        # Check learn column - post event if learn plan issue, PR, or run URL exists
-        if self._learn_column_index is not None and col_index == self._learn_column_index:
-            row = self._rows[row_index] if row_index < len(self._rows) else None
-            if row is not None and (
-                row.learn_plan_issue is not None
-                or row.learn_plan_pr is not None
-                or row.learn_run_url is not None
-            ):
-                self.post_message(self.LearnClicked(row_index))
                 event.prevent_default()
                 event.stop()
                 return
