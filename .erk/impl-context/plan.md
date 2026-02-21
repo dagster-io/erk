@@ -14,12 +14,12 @@ https://gist.github.com/schrockn/73dd986b896dd1203bc19efdef8e0775
 
 ## Summary
 
-| Metric | Count |
-|--------|-------|
-| Documentation items | 16 |
-| Contradictions to resolve | 1 |
-| Tripwire candidates (score>=4) | 4 |
-| Potential tripwires (score 2-3) | 3 |
+| Metric                          | Count |
+| ------------------------------- | ----- |
+| Documentation items             | 16    |
+| Contradictions to resolve       | 1     |
+| Tripwire candidates (score>=4)  | 4     |
+| Potential tripwires (score 2-3) | 3     |
 
 ## Documentation Items
 
@@ -76,7 +76,7 @@ After PR creation in draft_pr mode, `plan_issue_number = pr_number` is set. This
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## Self-Referential Close Prevention
 
 **Trigger:** Before adding `Closes #N` to a draft PR body when the issue number equals the PR number
@@ -84,16 +84,19 @@ After PR creation in draft_pr mode, `plan_issue_number = pr_number` is set. This
 **Warning:** Draft PR IS the plan entity in draft_pr backend. Adding a self-referential close directive (`Closes #N` where N is the PR number) would cause the PR to close itself on merge, destroying the plan.
 
 **Guard pattern:**
+
 ```python
 if issue_number == pr_number:
     # Self-referential: skip closing ref
     return
 ```
+````
 
 **Score:** 9/10 (Non-obvious +2, Cross-cutting +2, Destructive potential +2, Silent failure +2, External tool quirk +1)
 
 See `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` for the guard implementation.
-```
+
+````
 
 ---
 
@@ -118,7 +121,7 @@ For draft_pr backend, skip the post-dispatch PR body update entirely. The metada
 **Score:** 8/10 (Non-obvious +2, Cross-cutting +2, Destructive potential +2, Repeated pattern +1, External tool quirk +1)
 
 See `src/erk/cli/commands/one_shot_dispatch.py` for the conditional skip logic.
-```
+````
 
 ---
 
@@ -130,7 +133,7 @@ See `src/erk/cli/commands/one_shot_dispatch.py` for the conditional skip logic.
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## Context-Based Backend Detection
 
 **Trigger:** Before using `get_plan_backend()` in code that has access to a context object
@@ -138,6 +141,7 @@ See `src/erk/cli/commands/one_shot_dispatch.py` for the conditional skip logic.
 **Warning:** `get_plan_backend()` reads directly from `ERK_PLAN_BACKEND` environment variable. This bypasses test context injection, causing environment variable leakage from the developer's shell into tests. Tests will fail unpredictably based on the developer's environment.
 
 **Pattern:**
+
 ```python
 # WRONG: Environment variable leakage
 backend = get_plan_backend()
@@ -145,11 +149,13 @@ backend = get_plan_backend()
 # RIGHT: Respects injected test context
 backend = ctx.plan_backend.get_provider_name()
 ```
+````
 
 **Score:** 7/10 (Non-obvious +2, Cross-cutting +2, Silent failure +2, Repeated pattern +1)
 
 This pattern is essential for any backend-conditional production code that also needs deterministic test coverage.
-```
+
+````
 
 ---
 
@@ -184,7 +190,7 @@ When testing draft_pr backend behavior, pass `plan_store` explicitly:
 ```python
 plan_store = DraftPRPlanBackend(github, issues, time=FakeTime())
 ctx = build_workspace_test_context(env, plan_store=plan_store)
-```
+````
 
 This overrides the `context_for_test` heuristic that defaults to `GitHubPlanStore`.
 
@@ -210,7 +216,8 @@ Understanding how test context is built:
 4. -> Creates `GitHubPlanStore(issues)` when `plan_store` not explicit
 
 The `issues` kwarg triggers a heuristic that creates GitHubPlanStore, bypassing any environment variable detection.
-```
+
+````
 
 ---
 
@@ -226,9 +233,10 @@ The `issues` kwarg triggers a heuristic that creates GitHubPlanStore, bypassing 
 <!-- UPDATE this table row -->
 
 | One-shot dispatch (`one_shot_dispatch`) | Backend-aware (github or draft_pr) | Skeleton issue (github only), Draft PR (draft_pr only) |
-```
+````
 
 The existing documentation states one-shot only supports github backend with skeleton issues. This is now incorrect. One-shot dispatch supports both backends:
+
 - **github backend**: Creates skeleton issue, uses `P<N>-` branch naming, writes metadata to issue
 - **draft_pr backend**: Skips skeleton issue, uses `plan/` branch naming, writes metadata to draft PR
 
@@ -258,19 +266,19 @@ read-when:
 
 The canonical provider names returned by `get_provider_name()`:
 
-| Backend | Provider Name | Branch Prefix |
-|---------|---------------|---------------|
-| GitHub Issue Backend | `"github"` | `P<N>-` |
-| Draft PR Backend | `"github-draft-pr"` | `plan/` |
+| Backend              | Provider Name       | Branch Prefix |
+| -------------------- | ------------------- | ------------- |
+| GitHub Issue Backend | `"github"`          | `P<N>-`       |
+| Draft PR Backend     | `"github-draft-pr"` | `plan/`       |
 
 ## Configuration Values
 
 The `ERK_PLAN_BACKEND` environment variable accepts:
 
-| Value | Backend |
-|-------|---------|
-| `github` | GitHub Issue Backend (default) |
-| `draft_pr` | Draft PR Backend |
+| Value      | Backend                        |
+| ---------- | ------------------------------ |
+| `github`   | GitHub Issue Backend (default) |
+| `draft_pr` | Draft PR Backend               |
 
 ## Common Confusion
 
@@ -303,6 +311,7 @@ read-when:
 After implementing a fix that makes tests pass, ask: **"Does this feel like a hack?"**
 
 Signs of a band-aid fix:
+
 - Adding a backend-conditional skip without understanding why the operation fails
 - Guard clauses that check for specific backends to avoid errors
 - Comments explaining "this is needed because..."
@@ -325,6 +334,7 @@ PR submission doesn't mean work is complete if the solution feels architecturall
 ## Prevention
 
 When implementing fixes for backend-conditional behavior:
+
 1. First implement the minimal fix
 2. Ask: "Does this feel like a hack?"
 3. If yes: Document the architectural issue and either fix properly or create follow-up
@@ -346,9 +356,10 @@ When implementing fixes for backend-conditional behavior:
 Add section documenting the fundamental difference in entity lifecycles:
 
 ### GitHub Backend
-
 ```
+
 skeleton issue (plan entity) -> branch -> PR (implementation entity)
+
 ```
 
 The skeleton issue IS the plan entity. It exists before any implementation begins.
@@ -356,7 +367,9 @@ The skeleton issue IS the plan entity. It exists before any implementation begin
 ### Draft PR Backend
 
 ```
+
 branch -> draft PR (plan entity, unified)
+
 ```
 
 The draft PR IS the plan entity. No skeleton issue is needed or created.
@@ -381,7 +394,7 @@ The "plan entity unification" pattern assigns `plan_issue_number = pr_number` af
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## Backend Detection in Code
 
 When writing backend-conditional logic, use the context-based pattern:
@@ -394,13 +407,15 @@ if is_draft_pr:
 else:
     # github path
 ```
+````
 
 **Why not `get_plan_backend()`?**
 
 The `get_plan_backend()` function reads directly from the `ERK_PLAN_BACKEND` environment variable. This creates test isolation problems: tests without explicit environment overrides inherit the developer's shell configuration.
 
 Using `ctx.plan_backend.get_provider_name()` respects the injected test context, enabling deterministic test coverage.
-```
+
+````
 
 ---
 
@@ -421,10 +436,11 @@ When testing non-default plan backends, pass `plan_store` explicitly:
 # Testing draft_pr backend
 plan_store = DraftPRPlanBackend(github, issues, time=FakeTime())
 ctx = build_workspace_test_context(env, plan_store=plan_store)
-```
+````
 
 Do not rely on `ERK_PLAN_BACKEND` environment variable for test backend selection. The `context_for_test` function has heuristics that may override environment variables when certain parameters (like `issues`) are passed.
-```
+
+````
 
 ---
 
@@ -443,10 +459,11 @@ When using GitHub GraphQL API to query PR data, don't assume the repository owne
 
 ```bash
 gh pr view <number> --json url
-```
+````
 
 Extract the owner from the URL, then use in GraphQL queries. This prevents `NOT_FOUND` errors when working in forked repositories or worktrees with different remote configurations.
-```
+
+````
 
 ---
 
@@ -470,7 +487,7 @@ Some operations are wrapped in try/except with warning logs (like queued comment
 - Focus assertions on critical paths (e.g., dispatch metadata writes)
 - Accept that best-effort operations may fail in fakes
 - Document fake limitations where they cause test behavior to diverge from production
-```
+````
 
 ---
 
@@ -487,9 +504,9 @@ Some operations are wrapped in try/except with warning logs (like queued comment
 
 The `plan_issue_number` workflow input has dual semantics:
 
-| Backend | Meaning |
-|---------|---------|
-| github | Issue number of the skeleton plan issue |
+| Backend  | Meaning                                     |
+| -------- | ------------------------------------------- |
+| github   | Issue number of the skeleton plan issue     |
 | draft_pr | PR number of the draft PR (the plan entity) |
 
 This is intentional: the "plan entity unification" pattern allows downstream workflow steps to reference the plan entity uniformly without backend-specific logic.
@@ -509,7 +526,7 @@ See `.github/workflows/one-shot.yml` for the input definition.
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## Dynamic Test Assertions
 
 **Trigger:** Before hardcoding PR/issue numbers in test assertions
@@ -517,6 +534,7 @@ See `.github/workflows/one-shot.yml` for the input definition.
 **Warning:** FakeGitHub assigns PR numbers starting from 999, not 1. Hardcoded assertions like `assert pr_number == 1` will fail.
 
 **Pattern:**
+
 ```python
 # WRONG
 result = dispatch_one_shot(...)
@@ -526,9 +544,11 @@ assert labels_applied_to_pr(1)
 result = dispatch_one_shot(...)
 assert labels_applied_to_pr(result.pr_number)
 ```
+````
 
 Use dynamic values from function results in assertions.
-```
+
+````
 
 ---
 
@@ -549,7 +569,7 @@ The `context_for_test` function has heuristics that may override environment var
 - This prioritizes explicit parameters over environment detection
 
 To test a specific backend, pass `plan_store` explicitly rather than relying on environment variable detection.
-```
+````
 
 ---
 
