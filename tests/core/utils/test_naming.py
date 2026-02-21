@@ -473,12 +473,12 @@ def test_generate_issue_branch_name_with_objective_truncates_long_title() -> Non
         ("P123-o456-fix-bug", 456),
         ("p123-o789-feature", 789),
         # Draft-PR branches with objective ID
-        ("plan/O456-fix-auth-bug-01-15-1430", 456),
-        ("plan/O1-add-tests-12-31-2359", 1),
+        ("planned/O456-fix-auth-bug-01-15-1430", 456),
+        ("planned/O1-add-tests-12-31-2359", 1),
         # Without objective ID
         ("P123-fix-auth-bug-01-15-1430", None),
         ("P42-my-feature", None),
-        ("plan/fix-auth-bug-01-15-1430", None),
+        ("planned/fix-auth-bug-01-15-1430", None),
         ("feature-branch", None),
         ("master", None),
     ],
@@ -501,8 +501,8 @@ def test_extract_objective_number(branch_name: str, expected: int | None) -> Non
         ("2382-convert-erk-create-raw-ext-12-05-2359", 2382),
         ("42-fix-bug", 42),
         # Draft-PR branches return None (no extractable issue number)
-        ("plan/fix-auth-bug-01-15-1430", None),
-        ("plan/O456-fix-auth-01-15-1430", None),
+        ("planned/fix-auth-bug-01-15-1430", None),
+        ("planned/O456-fix-auth-01-15-1430", None),
         # Invalid formats
         ("feature-branch", None),
         ("master", None),
@@ -519,18 +519,18 @@ def test_extract_leading_issue_number_with_objective_format(
     ("branch_name", "expected"),
     [
         # Valid plan review branches
-        ("plan/review-6214-01-15-1430", 6214),
-        ("plan/review-42-01-28-0930", 42),
-        ("plan/review-1-12-31-2359", 1),
-        ("plan/review-99999-01-01-0000", 99999),
+        ("planned/review-6214-01-15-1430", 6214),
+        ("planned/review-42-01-28-0930", 42),
+        ("planned/review-1-12-31-2359", 1),
+        ("planned/review-99999-01-01-0000", 99999),
         # Not plan review branches
         ("P2382-convert-erk-create-raw-ext", None),
         ("2382-convert-erk-create-raw-ext", None),
         ("feature-branch", None),
         ("master", None),
-        ("plan/review", None),  # Missing issue number
-        ("plan/review-", None),  # Missing issue number
-        ("plan/review-abc-01-15-1430", None),  # Non-numeric issue
+        ("planned/review", None),  # Missing issue number
+        ("planned/review-", None),  # Missing issue number
+        ("planned/review-abc-01-15-1430", None),  # Non-numeric issue
     ],
 )
 def test_extract_plan_review_issue_number(branch_name: str, expected: int | None) -> None:
@@ -546,35 +546,35 @@ def test_extract_plan_review_issue_number(branch_name: str, expected: int | None
             "Fix Auth Bug",
             datetime(2024, 1, 15, 14, 30),
             None,
-            "plan/fix-auth-bug-01-15-1430",
+            "planned/fix-auth-bug-01-15-1430",
         ),
         # Different timestamp
         (
             "My Feature",
             datetime(2024, 6, 20, 10, 0),
             None,
-            "plan/my-feature-06-20-1000",
+            "planned/my-feature-06-20-1000",
         ),
         # Midnight edge case
         (
             "Update Docs",
             datetime(2024, 1, 1, 0, 0),
             None,
-            "plan/update-docs-01-01-0000",
+            "planned/update-docs-01-01-0000",
         ),
         # With objective ID
         (
             "Fix Auth Bug",
             datetime(2024, 1, 15, 14, 30),
             456,
-            "plan/O456-fix-auth-bug-01-15-1430",
+            "planned/O456-fix-auth-bug-01-15-1430",
         ),
         # Single digit objective
         (
             "Add Tests",
             datetime(2024, 12, 31, 23, 59),
             1,
-            "plan/O1-add-tests-12-31-2359",
+            "planned/O1-add-tests-12-31-2359",
         ),
     ],
 )
@@ -595,7 +595,7 @@ def test_generate_draft_pr_branch_name_truncates_long_title() -> None:
     # Base (plan-...) should be truncated to 31 chars, then timestamp appended
     # Total = 31 + 11 (timestamp with hyphen) = 42 chars max
     assert len(result) <= 42
-    assert result.startswith("plan/")
+    assert result.startswith("planned/")
     assert result.endswith("-01-15-1430")
     # No trailing hyphen before timestamp
     assert not result[:-11].endswith("-")
@@ -620,6 +620,6 @@ def test_generate_draft_pr_branch_name_with_objective_truncates() -> None:
     result = generate_draft_pr_branch_name(long_title, timestamp, objective_id=456)
 
     assert len(result) <= 42
-    assert result.startswith("plan/O456-")
+    assert result.startswith("planned/O456-")
     assert result.endswith("-01-15-1430")
     assert not result[:-11].endswith("-")
