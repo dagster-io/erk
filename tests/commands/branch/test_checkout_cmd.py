@@ -488,7 +488,12 @@ def test_branch_checkout_stale_assignment_worktree_missing() -> None:
 
 
 def test_branch_checkout_stale_assignment_wrong_branch() -> None:
-    """Test that stale assignment with wrong branch checked out is fixed."""
+    """Test that stale assignment with wrong branch is synced and target gets a new slot.
+
+    With lazy tip sync, the pool state is corrected before allocation decisions.
+    The assignment updates from target-branch to different-branch (what's actually
+    checked out), and target-branch gets a fresh slot allocation.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -531,18 +536,23 @@ def test_branch_checkout_stale_assignment_wrong_branch() -> None:
             result = runner.invoke(branch_group, ["checkout", "target-branch"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"
-        # Should warn about fixing stale state
-        assert "Fixing stale state" in result.output
-        assert "was 'different-branch'" in result.output
-        # Should checkout the correct branch
-        assert len(git.checked_out_branches) == 1
-        checkout_path, checkout_branch = git.checked_out_branches[0]
-        assert checkout_path == slot_worktree_path
-        assert checkout_branch == "target-branch"
+        # Lazy tip sync corrects the assignment, then target-branch gets a new slot.
+        # No "Fixing stale state" message — sync handles the mismatch transparently.
+        # target-branch gets allocated to a new on-demand slot (slot-02)
+        assert len(git.added_worktrees) == 1
+        added_path, added_branch = git.added_worktrees[0]
+        assert added_branch == "target-branch"
+        assert "erk-slot-02" in str(added_path)
 
 
 def test_branch_checkout_stale_assignment_wrong_branch_with_uncommitted_changes() -> None:
-    """Test that stale assignment with uncommitted changes fails gracefully."""
+    """Test that stale assignment with uncommitted changes doesn't block target branch.
+
+    With lazy tip sync, the assignment is corrected to reflect the actual branch
+    (different-branch). The dirty slot-01 is now assigned to different-branch,
+    and target-branch gets a fresh slot allocation — the uncommitted changes
+    in slot-01 are irrelevant since we don't touch that slot.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -582,14 +592,16 @@ def test_branch_checkout_stale_assignment_wrong_branch_with_uncommitted_changes(
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(branch_group, ["checkout", "target-branch"], obj=ctx)
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "target-branch"], obj=ctx)
 
-        assert result.exit_code == 1
-        assert "uncommitted changes" in result.output
-        assert "different-branch" in result.output
-        assert "target-branch" in result.output
-        # Should NOT attempt checkout
-        assert len(git.checked_out_branches) == 0
+        # Sync corrects the assignment, target-branch gets a fresh slot.
+        # Dirty slot-01 is untouched — no error.
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert len(git.added_worktrees) == 1
+        added_path, added_branch = git.added_worktrees[0]
+        assert added_branch == "target-branch"
+        assert "erk-slot-02" in str(added_path)
 
 
 def test_branch_checkout_internal_state_mismatch_allocated_but_not_checked_out() -> None:
