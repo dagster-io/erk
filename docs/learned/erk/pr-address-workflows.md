@@ -5,6 +5,9 @@ read_when:
   - "choosing between local and remote PR addressing"
   - "understanding erk launch pr-address"
   - "understanding /erk:pr-address command"
+tripwires:
+  - action: "resolving a review thread when the comment is a discussion comment (not a review thread)"
+    warning: "Review threads and discussion comments use different GitHub APIs. resolve-review-threads only handles review threads. Discussion comments are resolved differently (or not at all)."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -161,6 +164,29 @@ The PR feedback classifier's output must align with the TUI dashboard's unresolv
 ## Bot Thread Inflation
 
 Bot-generated review threads (automated linting, CI notifications) inflate the `informational_count` but are expected behavior. The classifier categorizes bot threads as informational rather than actionable.
+
+## Operational Procedures
+
+### Batch Thread Resolution
+
+After fixing code based on review feedback, use `erk exec resolve-review-threads` to resolve all addressed threads in one operation. This avoids manually resolving threads one-by-one through the GitHub UI.
+
+### False Positive Handling
+
+Review bots (test-coverage-review, dignified-python-review, etc.) can produce false positives. To handle:
+
+1. **Identify**: Check if the review comment is from a bot (automated review system)
+2. **Batch resolve**: Use `erk exec resolve-review-threads` after confirming the comments are false positives
+3. **Verify**: Run `erk exec get-pr-review-comments` afterward to confirm all threads are resolved (expect an empty array)
+
+### Review Thread vs Discussion Comment Distinction
+
+GitHub has two distinct comment types on PRs:
+
+- **Review threads**: Created via "Start a review" or inline code comments. Have a `threadId` and can be resolved/unreresolved.
+- **Discussion comments**: General PR-level comments (the main comment stream). Do NOT have thread IDs and cannot be "resolved" in the same way.
+
+`resolve-review-threads` only operates on review threads. Discussion comments are counted in `informational_count` and handled separately.
 
 ## informational_count Field Semantics
 

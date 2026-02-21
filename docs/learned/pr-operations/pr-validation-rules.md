@@ -74,6 +74,20 @@ Common failure modes:
 - **"PR body missing issue closing reference"** — `Closes #N` was omitted from the initial PR body, or the issue number doesn't match `.impl/issue.json`
 - **Branch/issue disagreement** — Branch was renamed but `.impl/issue.json` still points to the old issue
 
+## Backend-Specific Validation
+
+Draft-PR plans skip the closing reference check entirely. This is handled at two levels:
+
+<!-- Source: src/erk/cli/commands/pr/check_cmd.py:74-75 -->
+
+**In `check_cmd.py`** (line 74-75): When the plan reference provider is `"github-draft-pr"`, the check appends a passing result with message "Draft PR plan — no closing reference needed" instead of validating for `Closes #N`.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/get_closing_text.py:86-89 -->
+
+**In `get_closing_text.py`** (lines 86-89): When the impl directory contains a plan reference with provider `"github-draft-pr"`, the function returns early with no closing text.
+
+**Rationale**: A draft PR _is_ the plan. The plan's `plan_id` is the PR's own number. Adding `Closes #N` would be self-referential — when the PR merges, it would close itself. Issue-based plans need `Closes #N` because the plan issue and implementation PR are separate entities.
+
 ## Related Documentation
 
 - [Checkout Footer Syntax](checkout-footer-syntax.md) — Two-phase create-then-update pattern, footer format details
