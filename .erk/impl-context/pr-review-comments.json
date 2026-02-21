@@ -1,0 +1,127 @@
+{
+  "success": true,
+  "pr_number": 7705,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v61yD",
+      "path": "docs/learned/ci/automated-review-system.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific values/paths that will change.\n\nSource: `.erk/reviews/dignified-python.md`, `.erk/reviews/tripwires.md`\n\nRisk: The \"Authority Level\" column claims `dignified-python-review` and `tripwires-review` are \"Enforcing (blocks merge)\", but the review spec files have no `authority_level` field or any enforcement metadata. This is knowledge not derivable from the source files \u2014 it will silently drift if the review behavior changes. Consider either: (1) removing the Authority Level column if it's not machine-readable, or (2) adding a note that this is behavioral convention rather than a spec field.",
+          "created_at": "2026-02-21T13:44:00Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit 9eda18d. Removed the Authority Level column from the table and added a note clarifying it is a behavioral convention, not a machine-readable spec field.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 13:52 UTC_",
+          "created_at": "2026-02-21T13:52:02Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v636i",
+      "path": "docs/learned/ci/test-coverage-detection.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: Tests for `packages/erk-shared/src/...` can live in `packages/erk-shared/tests/**/`\nReality: The test-coverage review spec (Step 3a) only searches `tests/**/test_<filename>.py` and `tests/**/test_<parent>_<filename>.py`. The Step 1 categorization defines `tests_added` as \"New files in `tests/`\" \u2014 so files in `packages/erk-shared/tests/` are not categorized as tests and are not searched.\n\nSource: `.erk/reviews/test-coverage.md:69-71`\n\nSuggested fix: Either verify whether `packages/erk-shared/tests/` is actually searched by the bot (and update the spec if so), or remove the second row from the Dual Test Locations table and note that package tests must live in `tests/` to be detected.",
+          "created_at": "2026-02-21T13:56:13Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in commit f8dbe6de7. Updated the test locations table to clarify that tests must always live in tests/**, not in packages/*/tests/**, to match the actual test-coverage review spec behavior.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 13:15 EST_",
+          "created_at": "2026-02-21T18:15:49Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v7l_p",
+      "path": "docs/learned/ci/test-coverage-detection.md",
+      "line": 9,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"The test-coverage-review bot only searches tests/**/ and packages/\\*/tests/**/ for corresponding test files.\"\nReality: The test-coverage review spec (Step 3a) only searches `tests/**/test_<filename>.py` and `tests/**/test_<parent>_<filename>.py`. The `tests_added` category is defined as \"New files in `tests/`\" only \u2014 files in `packages/*/tests/` are not categorized as tests and are not searched.\n\nSource: `.erk/reviews/test-coverage.md:20-23` (Step 1 categorization), `.erk/reviews/test-coverage.md:69-71` (Step 3a search)\n\nSuggested fix: Update the tripwire action and warning to say `tests/` only, matching the table below it (which was already corrected). The tripwire action should read: \"placing test files outside tests/ directory\" and the warning should drop the `packages/\\*/tests/` reference.",
+          "created_at": "2026-02-21T18:20:52Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v61wr",
+      "path": "docs/learned/erk/graphite-divergence-detection.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"If the local branch is behind remote AND `--force` was not passed, return a SubmitError with `error_type=\"remote_diverged\"`\"\nReality: The check uses `effective_force = state.force or is_plan_impl` (lines 205-206). Plan implementations (`state.issue_number is not None`) auto-force, so they never hit the divergence error \u2014 the guard only applies to non-plan submissions.\n\nSource: `src/erk/cli/commands/pr/submit_pipeline.py:205-214`\n\nSuggested fix: Add a note that plan implementations bypass this check via auto-force: \"For plan implementations (`state.issue_number is not None`), `effective_force` is always True, so the divergence error is never returned \u2014 the guard only applies to non-plan `erk pr submit` invocations.\"",
+          "created_at": "2026-02-21T13:43:51Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit 9eda18d. Added note that `effective_force = state.force or is_plan_impl`, so plan implementations auto-force and never hit the divergence guard.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 13:52 UTC_",
+          "created_at": "2026-02-21T13:52:01Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v610C",
+      "path": "docs/learned/planning/draft-pr-branch-sync.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific values/paths that will change.\n\nSource: `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:81-97`, `src/erk/cli/commands/submit.py:431-445`\n\nRisk: This table documents implementation-specific details (`ctx.` prefix differences, exact parameter forms like `create_tracking_branch(repo_root, ...) + checkout_branch()` vs `create_tracking_branch(repo.root, ...) + checkout_branch()`). These call-site details change whenever the implementations are refactored. The conceptual point (both paths use the same three-step sync) is HIGH VALUE; the per-file call syntax is DRIFT RISK.\n\nConsider replacing the table body with a prose reference: \"Both paths call the same sequence: `fetch_branch()` \u2192 `create_tracking_branch()` / `checkout_branch()` \u2192 `pull_rebase()`. See the source files for exact call signatures.\"",
+          "created_at": "2026-02-21T13:44:10Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit 9eda18d. Replaced the implementation-specific call-site details table with prose referencing the three-step sync sequence.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 13:52 UTC_",
+          "created_at": "2026-02-21T13:52:04Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v6msm",
+      "path": "docs/learned/planning/impl-context.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `src/erk/cli/commands/submit.py:448-449`\n\nThis code block copies ~2 lines from the source file and will go stale if the source changes.\n\nSuggested fix: Replace with the source pointer format from `docs/learned/documentation/source-pointers.md` (HTML comment + prose reference). The HTML comment `<!-- Source: src/erk/cli/commands/submit.py:447-450 -->` is already present above the block \u2014 remove the code block and replace with a prose reference like: \"See `worker_impl_folder_exists` / `remove_worker_impl_folder` in `src/erk/cli/commands/submit.py`.\"",
+          "created_at": "2026-02-21T12:00:09Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit 552bb75. Replaced verbatim code block with a source pointer referencing worker_impl_folder_exists() / remove_worker_impl_folder() in src/erk/cli/commands/submit.py, per source-pointers.md format.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 13:36 UTC_",
+          "created_at": "2026-02-21T13:36:12Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v6wah",
+      "path": "docs/learned/planning/next-steps-output.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `prepare` outputs `erk prepare {issue_number}`\nReality: The source returns `erk br create --for-plan {issue_number}`\n\nSource: `packages/erk-shared/src/erk_shared/output/next_steps.py:18`\n\nSuggested fix: Update both the `prepare` row (line 29) and `prepare_and_implement` row (line 31) to use the correct command: `erk br create --for-plan {issue_number}` and `source \"$(erk br create --for-plan {issue_number} --script)\" && erk implement --dangerous`",
+          "created_at": "2026-02-21T13:08:43Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit 552bb75. Updated table to show actual commands from source: erk br create --for-plan {issue_number} for prepare and source $(erk br create --for-plan {issue_number} --script) && erk implement --dangerous for prepare_and_implement.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 13:36 UTC_",
+          "created_at": "2026-02-21T13:36:13Z"
+        }
+      ]
+    }
+  ]
+}
