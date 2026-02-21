@@ -9,15 +9,19 @@ from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.types import Plan
 
 
-def compute_lifecycle_display(plan: Plan) -> str:
+def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
     """Compute lifecycle stage display string for a plan.
 
     Reads lifecycle_stage from plan header fields if present, otherwise
     infers from is_draft and pr_state in plan metadata. Returns a
     color-coded Rich markup string for table display.
 
+    When the resolved stage is "planned" and a workflow run exists,
+    upgrades to "implementing" since the plan is actively being worked on.
+
     Args:
         plan: Plan with header_fields and metadata populated
+        has_workflow_run: Whether the plan has an associated workflow run
 
     Returns:
         Display string (may contain Rich markup for color)
@@ -41,6 +45,10 @@ def compute_lifecycle_display(plan: Plan) -> str:
 
     if stage is None:
         return "-"
+
+    # Upgrade "planned" to "implementing" when a workflow run exists
+    if stage == "planned" and has_workflow_run:
+        stage = "implementing"
 
     # Color-code by stage
     if stage in ("prompted", "planning"):
