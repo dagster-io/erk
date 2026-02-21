@@ -83,7 +83,7 @@ def make_issue_info(
 def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     """Test successful PR creation and metadata update."""
     issue_number = 1234
-    branch_name = "plan-review-1234-01-15-1430"
+    branch_name = "plan/review-1234-01-15-1430"
     plan_title = "Add feature X"
     repo_root = tmp_path / "repo"
     repo_root.mkdir(parents=True, exist_ok=True)
@@ -144,7 +144,7 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
 def test_plan_create_review_pr_title_format(tmp_path: Path) -> None:
     """Test PR title contains issue reference."""
     issue_number = 5678
-    branch_name = "plan-review-5678-01-15-1430"
+    branch_name = "plan/review-5678-01-15-1430"
     plan_title = "Implement new backend"
     repo_root = tmp_path / "repo"
 
@@ -177,7 +177,7 @@ def test_plan_create_review_pr_title_format(tmp_path: Path) -> None:
 def test_plan_create_review_pr_strips_erk_plan_prefix(tmp_path: Path) -> None:
     """Test PR title strips [erk-plan] prefix from plan_title."""
     issue_number = 5679
-    branch_name = "plan-review-5679-01-15-1430"
+    branch_name = "plan/review-5679-01-15-1430"
     plan_title = "[erk-plan] Implement new backend"
     repo_root = tmp_path / "repo"
 
@@ -210,7 +210,7 @@ def test_plan_create_review_pr_strips_erk_plan_prefix(tmp_path: Path) -> None:
 def test_plan_create_review_pr_body_format(tmp_path: Path) -> None:
     """Test PR body has issue link and warning."""
     issue_number = 9999
-    branch_name = "plan-review-9999-01-15-1430"
+    branch_name = "plan/review-9999-01-15-1430"
     plan_title = "Test Plan"
     repo_root = tmp_path / "repo"
 
@@ -252,7 +252,7 @@ def test_plan_create_review_pr_body_format(tmp_path: Path) -> None:
 def test_plan_create_review_pr_draft_mode(tmp_path: Path) -> None:
     """Test PR is created in draft mode."""
     issue_number = 2222
-    branch_name = "plan-review-2222-01-15-1430"
+    branch_name = "plan/review-2222-01-15-1430"
     plan_title = "Draft PR Test"
     repo_root = tmp_path / "repo"
 
@@ -285,7 +285,7 @@ def test_plan_create_review_pr_draft_mode(tmp_path: Path) -> None:
 def test_plan_create_review_pr_metadata_updated(tmp_path: Path) -> None:
     """Test issue metadata contains review_pr field after creation."""
     issue_number = 3333
-    branch_name = "plan-review-3333-01-15-1430"
+    branch_name = "plan/review-3333-01-15-1430"
     plan_title = "Metadata Update Test"
     repo_root = tmp_path / "repo"
 
@@ -321,7 +321,7 @@ def test_plan_create_review_pr_metadata_updated(tmp_path: Path) -> None:
 def test_plan_create_review_pr_uses_dynamic_repo_url(tmp_path: Path) -> None:
     """Test PR URL uses repo identifier from context, not a hardcoded value."""
     issue_number = 7777
-    branch_name = "plan-review-7777-01-15-1430"
+    branch_name = "plan/review-7777-01-15-1430"
     plan_title = "Dynamic URL Test"
     repo_root = tmp_path / "repo"
 
@@ -390,7 +390,7 @@ def test_plan_create_review_pr_issue_not_found(tmp_path: Path) -> None:
 def test_json_output_structure_success(tmp_path: Path) -> None:
     """Test success JSON output has correct structure."""
     issue_number = 4444
-    branch_name = "plan-review-4444-01-15-1430"
+    branch_name = "plan/review-4444-01-15-1430"
     plan_title = "JSON Test"
     repo_root = tmp_path / "repo"
 
