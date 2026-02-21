@@ -116,6 +116,7 @@ Slots use a placeholder branch pattern `__erk-slot-XX-br-stub__` to mark allocat
 **Trigger:** Before removing a field from `@dataclass(frozen=True)`
 
 **Warning:** Search for 7 places before committing:
+
 1. Field definition in the dataclass
 2. Docstring attributes section
 3. `field=` keyword arguments in constructors
@@ -149,6 +150,7 @@ See session e1edea12-part2 for an example where removing `title=` exposed a miss
 **Warning:** Function is idempotent when input has timestamp suffix. The `has_timestamp_suffix()` check prevents double-sanitization by returning input unchanged if it already ends with a valid timestamp pattern.
 
 This prevents bugs like:
+
 - `my-branch-02-21-1530` becoming `my-branch-02-21-1530-02-21-1531`
 - Double-appending timestamps when sanitization is called multiple times in a pipeline
 
@@ -178,6 +180,7 @@ On Feb 21 2026, session storage underwent a same-day architectural change:
 ## Why This Document Exists
 
 This rapid reversal indicates one of:
+
 - Incomplete testing before merge of #7757
 - Missing requirements in original planning
 - Changed constraints discovered post-merge
@@ -187,11 +190,13 @@ This rapid reversal indicates one of:
 ## Trade-offs
 
 ### Gist-based Storage (Current)
+
 - Simpler: Single API call to store/retrieve
 - No branch pollution in the repository
 - Works across all repos (gists are user-scoped)
 
 ### Branch-based Storage (Reverted)
+
 - Ties session data to repository
 - Creates branch clutter
 - Requires cleanup automation
@@ -327,7 +332,7 @@ In session e1edea12-part2, removing the `title` field from `PlanRowData` exposed
 
 **Draft Content:**
 
-```markdown
+````markdown
 # Backward-Compatible Migrations
 
 ## Pattern
@@ -342,16 +347,19 @@ When migrating from `plan/` to `planned/` branch prefixes:
 # Regex supports both old and new prefixes
 pattern = r"^(plan|planned)/.*"
 ```
+````
 
 This allows existing branches to continue working while new branches use the updated prefix.
 
 ## When to Remove Backward Compatibility
 
 Remove support for the old format when:
+
 - All existing data has been migrated
 - Sufficient time has passed for caches to expire
 - No active PRs reference the old format
-```
+
+````
 
 ---
 
@@ -386,7 +394,7 @@ When refactoring code referenced in docs:
 1. Search for the file path in `docs/learned/`
 2. Update any line number references
 3. Verify symbol references still resolve
-```
+````
 
 ---
 
@@ -468,11 +476,13 @@ When removing a column from a TUI DataTable, test assertions referencing column 
 ## Scope Decision Framework
 
 **Enter plan mode when:**
+
 - Multi-file refactoring (3+ files)
 - Cascading changes across layers (dataclass -> provider -> UI -> tests)
 - Unclear scope requiring discovery
 
 **Execute directly when:**
+
 - Single-file changes
 - Comment/uncomment operations
 - Scope is fully known upfront
@@ -513,6 +523,7 @@ This clarity helps users understand where to find their learn plan.
 ## Pattern Validation
 
 The 6-step TUI column removal pattern was validated during PR #7765:
+
 1. Column definition (`add_column`)
 2. Row value extraction (`_row_to_values`)
 3. Data type field
