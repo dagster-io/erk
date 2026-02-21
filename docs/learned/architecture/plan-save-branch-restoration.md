@@ -50,7 +50,7 @@ This is race-condition-free because no branch checkout occurs.
 
 ## Testing
 
-Tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py`, including `test_draft_pr_does_not_checkout_branch` which verifies only branch_manager checkouts occur (not plan commit checkouts), and `test_draft_pr_commits_plan_file` which verifies files via `fake_git.branch_commits`.
+See the plan_save test suite in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` for checkout-count and branch-commit assertions that verify the plumbing approach.
 
 ## Related Topics
 

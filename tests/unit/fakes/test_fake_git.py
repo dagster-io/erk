@@ -495,6 +495,64 @@ def test_fake_git_get_commit_messages_since_returns_empty_for_unknown_cwd() -> N
 
 
 # ============================================================================
+# Branch Commit Tests (commit_files_to_branch)
+# ============================================================================
+
+
+def test_fake_git_commit_files_to_branch_tracks_record() -> None:
+    """Test commit_files_to_branch records a BranchCommitRecord."""
+    cwd = Path("/repo")
+    git_ops = FakeGit()
+
+    git_ops.commit.commit_files_to_branch(
+        cwd,
+        branch="planned/my-feature",
+        files={"dir/plan.md": "# Plan", "dir/ref.json": '{"key": "value"}'},
+        message="Add plan: My Feature",
+    )
+
+    assert len(git_ops.branch_commits) == 1
+    record = git_ops.branch_commits[0]
+    assert record.cwd == cwd
+    assert record.branch == "planned/my-feature"
+    assert record.files == {"dir/plan.md": "# Plan", "dir/ref.json": '{"key": "value"}'}
+    assert record.message == "Add plan: My Feature"
+
+
+def test_fake_git_commit_files_to_branch_multiple_commits() -> None:
+    """Test multiple branch commits are tracked independently."""
+    cwd = Path("/repo")
+    git_ops = FakeGit()
+
+    git_ops.commit.commit_files_to_branch(
+        cwd, branch="branch-a", files={"a.txt": "A"}, message="First"
+    )
+    git_ops.commit.commit_files_to_branch(
+        cwd, branch="branch-b", files={"b.txt": "B"}, message="Second"
+    )
+
+    assert len(git_ops.branch_commits) == 2
+    assert git_ops.branch_commits[0].branch == "branch-a"
+    assert git_ops.branch_commits[1].branch == "branch-b"
+
+
+def test_fake_git_commit_files_to_branch_does_not_affect_regular_commits() -> None:
+    """Test that branch commits and regular commits are tracked separately."""
+    cwd = Path("/repo")
+    git_ops = FakeGit()
+
+    git_ops.commit.commit_files_to_branch(
+        cwd, branch="feature", files={"f.txt": "content"}, message="Branch commit"
+    )
+    git_ops.commit.commit(cwd, "Regular commit")
+
+    assert len(git_ops.branch_commits) == 1
+    assert len(git_ops.commits) == 1
+    assert git_ops.branch_commits[0].message == "Branch commit"
+    assert git_ops.commits[0].message == "Regular commit"
+
+
+# ============================================================================
 # Branch Divergence Tests
 # ============================================================================
 
