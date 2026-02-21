@@ -5,6 +5,7 @@
 After saving a plan via `/erk:plan-save`, the "next steps" output always suggests `erk br create --for-plan <issue>` with wording implying a new worktree ("Prepare worktree"). However, `erk br create` already has built-in "stack in place" behavior — when run from within an assigned slot, it updates the slot's branch tip instead of allocating a new worktree (`create_cmd.py:211-232`). The messaging should reflect this and make "worktree per stack" the default mental model when already in a worktree.
 
 **Desired behavior:**
+
 - **On master** (not in a slot): Default = create new worktree (same as current)
 - **In a worktree** (in a slot): Default = stack branch in current worktree. "New worktree" shown as an advanced copy-pasteable option.
 
@@ -22,6 +23,7 @@ class WorktreeContext:
 ```
 
 Update `format_next_steps_plain` signature:
+
 ```python
 def format_next_steps_plain(issue_number: int, *, worktree_context: WorktreeContext | None) -> str:
 ```
@@ -57,6 +59,7 @@ Same treatment for `format_draft_pr_next_steps_plain` — add `worktree_context`
 Add a helper function to detect if cwd is in a pool slot. Import `find_assignment_by_worktree_path` from `navigation_helpers` and `load_pool_state` from `worktree_pool`. Uses `discover_repo_context` already available through the click context.
 
 At the display output (line 305):
+
 ```python
 wt_ctx = _detect_worktree_context(repo_root, repo)
 click.echo(format_next_steps_plain(result.issue_number, worktree_context=wt_ctx))
@@ -74,16 +77,19 @@ At JSON output (lines 258-268), add `is_in_slot`/`slot_name` fields.
 Update Step 4 (Display Results) to branch on `is_in_slot` from JSON output:
 
 **When `is_in_slot` is `true`:**
+
 - Use "Stack here" labeling instead of "Local"
 - Add "Advanced — new worktree" section with copy-pasteable command
 - Note that `erk br create --for-plan` will stack in the current worktree
 
 **When `is_in_slot` is absent or `false`:**
+
 - Keep existing text unchanged (create new worktree is the natural path)
 
 ### 5. Tests
 
 **`packages/erk-shared/tests/unit/output/test_next_steps.py`** and **`tests/unit/shared/test_next_steps.py`**:
+
 - Update all existing calls to pass `worktree_context=None`
 - Add tests for `WorktreeContext(is_in_slot=True, slot_name="erk-slot-01")` verifying:
   - "Stack here" appears in output
@@ -92,11 +98,11 @@ Update Step 4 (Display Results) to branch on `is_in_slot` from JSON output:
 
 ## Key Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| No `--new-slot` flag | Scope control; "run from root worktree" is sufficient for now |
-| `is_in_slot` in JSON output | Lets agent skill (plan-save.md) make display decisions |
-| `WorktreeContext` dataclass | Clean separation; format functions stay pure |
+| Decision                       | Rationale                                                           |
+| ------------------------------ | ------------------------------------------------------------------- |
+| No `--new-slot` flag           | Scope control; "run from root worktree" is sufficient for now       |
+| `is_in_slot` in JSON output    | Lets agent skill (plan-save.md) make display decisions              |
+| `WorktreeContext` dataclass    | Clean separation; format functions stay pure                        |
 | Same command, different labels | `erk br create --for-plan` already does the right thing per context |
 
 ## Files Modified
