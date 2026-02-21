@@ -27,7 +27,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
@@ -436,6 +436,13 @@ def _submit_draft_pr_plan(
         ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
 
     ctx.branch_manager.checkout_branch(repo.root, branch_name)
+
+    # Sync local branch with remote (may be behind from prior submission or CI)
+    pull_result = ctx.git.remote.pull_rebase(repo.root, "origin", branch_name)
+    if isinstance(pull_result, PullRebaseError):
+        raise UserFacingCliError(
+            f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+        )
 
     # Clean up previous .worker-impl/ if it exists (e.g., from a prior failed submission)
     if worker_impl_folder_exists(repo.root):
