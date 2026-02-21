@@ -165,6 +165,9 @@ def extract_plan_content(pr_body: str) -> str:
     separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
     if separator_index == -1:
         return pr_body
+    candidate_prefix = pr_body[:separator_index]
+    if "<!-- erk:metadata-block:" not in candidate_prefix:
+        return pr_body
     return pr_body[separator_index + len(PLAN_CONTENT_SEPARATOR) :]
 
 
@@ -183,4 +186,7 @@ def extract_metadata_prefix(pr_body: str) -> str:
     separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
     if separator_index == -1:
         return ""
-    return pr_body[: separator_index + len(PLAN_CONTENT_SEPARATOR)]
+    prefix = pr_body[: separator_index + len(PLAN_CONTENT_SEPARATOR)]
+    if "<!-- erk:metadata-block:" not in prefix:
+        return ""
+    return prefix

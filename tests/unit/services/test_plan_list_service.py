@@ -663,7 +663,12 @@ class TestDraftPRPlanListService:
 
     def test_extracts_plan_content_from_body(self) -> None:
         """PR body with metadata separator extracts only plan content."""
-        pr_body = "<!-- metadata -->\n\n---\n\n# Actual Plan\n\nThe real content"
+        pr_body = (
+            "<!-- erk:metadata-block:plan-header -->\n"
+            "metadata\n"
+            "<!-- /erk:metadata-block -->\n\n---\n\n"
+            "# Actual Plan\n\nThe real content"
+        )
         details = _make_draft_pr_details(number=80, title="Plan Title", body=pr_body)
         fake_github = FakeGitHub(
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
@@ -674,7 +679,7 @@ class TestDraftPRPlanListService:
         assert len(result.plans) == 1
         assert "Actual Plan" in result.plans[0].body
         assert "The real content" in result.plans[0].body
-        assert "<!-- metadata -->" not in result.plans[0].body
+        assert "<!-- erk:metadata-block:" not in result.plans[0].body
 
     def test_fetches_workflow_runs_from_dispatch_node_id(self) -> None:
         """Draft PR with last_dispatched_node_id in header gets workflow run fetched."""

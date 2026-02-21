@@ -80,7 +80,12 @@ def test_extract_plan_content_from_legacy_details_format() -> None:
 
 def test_extract_plan_content_backward_compat() -> None:
     """Falls back to old format (content after separator, no details tags)."""
-    body = "metadata block\n\n---\n\nplan content here"
+    body = (
+        "<!-- erk:metadata-block:plan-header -->\n"
+        "metadata\n"
+        "<!-- /erk:metadata-block -->\n\n---\n\n"
+        "plan content here"
+    )
     assert extract_plan_content(body) == "plan content here"
 
 
@@ -97,15 +102,41 @@ def test_extract_plan_content_no_separator() -> None:
 
 def test_extract_metadata_prefix() -> None:
     """Extracts metadata block + separator."""
-    body = "metadata block\n\n---\n\nrest of content"
+    body = (
+        "<!-- erk:metadata-block:plan-header -->\n"
+        "metadata\n"
+        "<!-- /erk:metadata-block -->\n\n---\n\n"
+        "rest of content"
+    )
     prefix = extract_metadata_prefix(body)
-    assert prefix == "metadata block" + PLAN_CONTENT_SEPARATOR
+    assert "<!-- erk:metadata-block:plan-header -->" in prefix
+    assert prefix.endswith(PLAN_CONTENT_SEPARATOR)
 
 
 def test_extract_metadata_prefix_no_separator() -> None:
     """Returns empty string when no separator found."""
     body = "no separator here"
     assert extract_metadata_prefix(body) == ""
+
+
+def test_extract_metadata_prefix_ignores_footer_separator() -> None:
+    """Returns empty when separator exists but no metadata block."""
+    body = (
+        "## Summary\n\nSome content\n\n"
+        "**Remotely executed:** [Run #123](url)\n\n---\n\n"
+        "To checkout..."
+    )
+    assert extract_metadata_prefix(body) == ""
+
+
+def test_extract_plan_content_ignores_footer_separator() -> None:
+    """Returns full body when separator exists but no metadata block."""
+    body = (
+        "## Summary\n\nSome content\n\n"
+        "**Remotely executed:** [Run #123](url)\n\n---\n\n"
+        "To checkout..."
+    )
+    assert extract_plan_content(body) == body
 
 
 # =============================================================================
