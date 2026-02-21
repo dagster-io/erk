@@ -30,11 +30,13 @@ Backend selection is controlled by `ERK_PLAN_BACKEND` environment variable:
 - `"draft_pr"`: Routes to `DraftPRPlanBackend`
 
 <!-- Source: packages/erk-shared/src/erk_shared/plan_store/__init__.py, get_plan_backend -->
+
 The `get_plan_backend()` function in `packages/erk-shared/src/erk_shared/plan_store/__init__.py` reads this variable.
 
 ## Label Application
 
 <!-- Source: packages/erk-shared/src/erk_shared/plan_utils.py, get_title_tag_from_labels -->
+
 All plan creation pathways apply a title tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py`:
 
 - `"erk-learn"` label → `[erk-learn]` prefix

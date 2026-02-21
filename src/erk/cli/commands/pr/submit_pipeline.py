@@ -201,13 +201,17 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     """Graphite-first flow: gt submit handles push + PR creation."""
     click.echo(click.style("Phase 1: Graphite Submit", bold=True))
 
+    # Auto-force for plan implementations (branches always diverge from remote)
+    is_plan_impl = state.issue_number is not None
+    effective_force = state.force or is_plan_impl
+
     # Pre-check: detect remote divergence before gt submit
     if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branch_name):
         ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
         divergence = ctx.git.branch.is_branch_diverged_from_remote(
             state.cwd, state.branch_name, "origin"
         )
-        if divergence.behind > 0 and not state.force:
+        if divergence.behind > 0 and not effective_force:
             ahead_msg = (
                 f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead > 0 else ""
             )
@@ -228,6 +232,8 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
                     "behind": str(divergence.behind),
                 },
             )
+        if is_plan_impl and not state.force and divergence.behind > 0:
+            click.echo(click.style("   Auto-forcing: plan implementation branch", dim=True))
 
     click.echo(click.style("   Running gt submit...", dim=True))
     try:
@@ -236,7 +242,7 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
             publish=True,
             restack=False,
             quiet=False,
-            force=state.force,
+            force=effective_force,
         )
     except RuntimeError as e:
         error_str = str(e)
