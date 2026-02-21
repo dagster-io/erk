@@ -420,7 +420,7 @@ def format_plan_commands_section(issue_number: int) -> str:
     return f"""## Commands
 
 ```bash
-erk prepare {issue_number}
+erk br create --for-plan {issue_number}
 ```
 
 ```bash

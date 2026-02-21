@@ -112,7 +112,7 @@ First, exit Claude Code:
 Now prepare a worktree for your plan:
 
 ```bash
-erk prepare 1
+erk br create --for-plan 1
 ```
 
 This creates a worktree with the plan's content. You'll see output like:
@@ -207,7 +207,7 @@ You've completed the full erk workflow:
 | Start Claude         | `claude`                                       |
 | Save plan            | `/erk:plan-save`                               |
 | Exit Claude          | `/exit`                                        |
-| Prepare worktree     | `erk prepare <issue>`                          |
+| Prepare worktree     | `erk br create --for-plan <issue>`             |
 | Activate + implement | `source .erk/bin/activate.sh && erk implement` |
 | Monitor plans        | `erk dash`                                     |
 | Submit PR            | `erk pr submit`                                |

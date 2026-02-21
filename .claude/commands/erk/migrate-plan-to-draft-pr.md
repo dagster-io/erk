@@ -63,7 +63,7 @@ Original issue #<original_issue_number> has been closed.
 
 Next steps:
   View PR:  gh pr view <pr_number> --web
-  Prepare:  erk prepare <pr_number>
+  Prepare:  erk br create --for-plan <pr_number>
   Submit:   erk plan submit <pr_number>
 ```
 

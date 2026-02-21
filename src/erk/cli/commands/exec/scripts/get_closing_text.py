@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Get closing text for PR body based on .impl/issue.json or branch name.
+"""Get closing text for PR body based on .impl/plan-ref.json or branch name.
 
-This command determines the issue number from .impl/issue.json or the branch
+This command determines the issue number from .impl/plan-ref.json or the branch
 name (P{issue_number}-... pattern) and outputs the appropriate closing text.
 
 Usage:

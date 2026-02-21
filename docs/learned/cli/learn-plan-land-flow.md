@@ -36,14 +36,14 @@ The validation pipeline's `check_learn_status()` step extracts the issue number 
 
 **Why extract from branch name instead of PR labels?**
 
-Branch names are stable identifiers (set at `erk prepare` time). PR labels can be added/removed during review. Extracting from branch name means learn plan detection is deterministic—the same branch will always trigger the same pipeline steps.
+Branch names are stable identifiers (set at `erk br create --for-plan` time). PR labels can be added/removed during review. Extracting from branch name means learn plan detection is deterministic—the same branch will always trigger the same pipeline steps.
 
 **Detection sequence**:
 
 1. `extract_leading_issue_number(state.branch)` → `123` from `P123-feature-branch`
 2. Check if issue #123 exists
 3. Optionally prompt user to trigger async learn (if not already learned)
-4. Populate `state.plan_issue_number` for execution pipeline
+4. Populate `state.plan_id` for execution pipeline
 
 ## Execution Pipeline Steps for Learn Plans
 
@@ -54,14 +54,13 @@ After the PR merges, the execution pipeline runs learn-specific steps in this or
 **Why this ordering?**
 
 1. **`merge_pr`** (standard) — Merge first; if this fails, no cleanup needed
-2. **`update_objective`** (standard) — Update objective before learn plan (objective more critical)
-3. **`update_learn_plan`** — Update parent plan's `learn_status` field
-4. **`close_review_pr`** — Close associated review PR if exists
-5. **`cleanup_and_navigate`** (standard) — Delete branches and navigate
+2. **`update_learn_plan`** — Update parent plan's `learn_status` field
+3. **`close_review_pr`** — Close associated review PR if exists
+4. **`cleanup_and_navigate`** (standard) — Delete branches and navigate
 
-Note: The pipeline previously included a 6th step for tripwire promotion (`promote_tripwires`), but this was removed. The current pipeline has 5 steps.
+Note: The pipeline previously included additional steps (`update_objective`, `promote_tripwires`), but these were removed. The current pipeline has 4 steps.
 
-**Why learn plan updates come after objective updates**: Objective tracking is higher priority than learning metadata. If execution fails partway through, we prefer to have updated the objective rather than the learn status.
+**Why learn plan updates come early**: If execution fails partway through, we prefer to have updated the learn metadata rather than leaving it stale.
 
 ## Parent Plan Metadata Update
 
@@ -104,7 +103,7 @@ Review PRs exist to discuss the plan before implementation. Once the implementat
 
 <!-- Source: src/erk/cli/commands/land_pipeline.py, LandState dataclass -->
 
-The `LandState` dataclass threads `plan_issue_number` through the validation and execution pipelines. See the `LandState` definition in `src/erk/cli/commands/land_pipeline.py`.
+The `LandState` dataclass threads `plan_id` through the validation and execution pipelines. See the `LandState` definition in `src/erk/cli/commands/land_pipeline.py`.
 
 **Why thread through state instead of re-computing in each step?**
 
@@ -112,9 +111,9 @@ Validation extracts the issue number once and validates it exists. Execution ste
 
 **Population lifecycle**:
 
-1. **Validation pipeline**: `check_learn_status()` extracts from branch name → `state.plan_issue_number`
+1. **Validation pipeline**: `check_learn_status()` extracts from branch name → `state.plan_id`
 2. **Shell script boundary**: Issue number serialized as flag (if available)
-3. **Execution pipeline**: `make_execution_state()` re-derives from branch name → `state.plan_issue_number`
+3. **Execution pipeline**: `make_execution_state()` re-derives from branch name → `state.plan_id`
 
 **Why re-derive during execution?**
 
@@ -122,7 +121,7 @@ The shell script boundary is minimal (PR number, branch name, basic flags). Re-d
 
 ## When Learn Plan Steps Are Skipped
 
-All learn-specific steps check `state.plan_issue_number` and skip execution if `None`. This happens when:
+All learn-specific steps check `state.plan_id` and skip execution if `None`. This happens when:
 
 - Branch name doesn't have an issue prefix (e.g., `feature-branch` not `P123-feature-branch`)
 - Issue doesn't exist on GitHub (deleted or never created)
@@ -130,20 +129,11 @@ All learn-specific steps check `state.plan_issue_number` and skip execution if `
 
 **Why fail-open instead of fail-closed?**
 
-Not every branch is a plan branch. Regular feature branches should land normally without triggering learn plan logic. Checking `plan_issue_number is None` makes the pipeline generic—it handles both plan and non-plan branches.
+Not every branch is a plan branch. Regular feature branches should land normally without triggering learn plan logic. Checking `plan_id is None` makes the pipeline generic—it handles both plan and non-plan branches.
 
-## Comparison to Objective Updates
+## Note on Objective Updates
 
-Both learn plans and objectives use the execution pipeline for post-merge updates, but they differ in criticality:
-
-| Aspect             | Learn Plan Updates              | Objective Updates         |
-| ------------------ | ------------------------------- | ------------------------- |
-| **Criticality**    | Advisory metadata               | High-value tracking       |
-| **Failure mode**   | Fail-open (continue if missing) | Prompt user to retry      |
-| **Update target**  | Parent plan issue               | Objective issue           |
-| **Pipeline order** | After objective updates         | Before learn plan updates |
-
-**Why objectives come first**: If execution fails partway through, we prefer to have updated the objective (which tracks high-level progress) rather than the learn metadata (which is auxiliary documentation tracking).
+Objective updates are handled separately outside the execution pipeline (via the TUI's `_on_land_success` callback), not as a pipeline step. The execution pipeline focuses on learn plan metadata and review PR cleanup.
 
 ## Menu Option: Trigger Async Learn
 

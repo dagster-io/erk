@@ -11,12 +11,14 @@ from erk.cli.activation import (
     render_activation_script,
     write_worktree_activate_script,
 )
-from erk.cli.commands.slot.common import allocate_slot_for_branch
+from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
+from erk.cli.commands.slot.common import allocate_slot_for_branch, update_slot_assignment_tip
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.issue_workflow import (
@@ -206,16 +208,39 @@ def branch_create(
             )
         return
 
-    # Allocate a slot for the branch (branch already exists, so this just assigns)
-    slot_result = allocate_slot_for_branch(
-        ctx,
-        repo,
-        branch_name,
-        force=force,
-        reuse_inactive_slots=True,
-        cleanup_artifacts=True,
-    )
-    user_output(click.style(f"✓ Assigned {branch_name} to {slot_result.slot_name}", fg="green"))
+    # Detect if running in an assigned slot (for stack-in-place)
+    state = load_pool_state(repo.pool_json_path)
+    current_assignment = None
+    if state is not None:
+        current_assignment = find_assignment_by_worktree_path(state, repo.root)
+
+    if current_assignment is not None:
+        # Stack in place — update assignment to new tip, no new slot
+        # state is guaranteed non-None since current_assignment was found in it
+        assert state is not None
+        slot_result = update_slot_assignment_tip(
+            repo.pool_json_path,
+            state,
+            current_assignment,
+            branch_name=branch_name,
+            now=ctx.time.now().isoformat(),
+        )
+        user_output(
+            click.style(
+                f"✓ Stacked {branch_name} in {slot_result.slot_name} (in place)", fg="green"
+            )
+        )
+    else:
+        # Not in a slot — allocate normally
+        slot_result = allocate_slot_for_branch(
+            ctx,
+            repo,
+            branch_name,
+            force=force,
+            reuse_inactive_slots=True,
+            cleanup_artifacts=True,
+        )
+        user_output(click.style(f"✓ Assigned {branch_name} to {slot_result.slot_name}", fg="green"))
 
     # Create .impl/ folder if --for-plan was used
     if setup is not None:
@@ -241,12 +266,12 @@ def branch_create(
                 target_subpath=None,
                 post_cd_commands=None,
                 final_message=f'echo "Prepared plan #{setup.issue_number} at $(pwd)"',
-                comment="erk prepare activation script",
+                comment="erk branch create activation script",
             )
             result = ctx.script_writer.write_activation_script(
                 activation_script,
-                command_name="prepare",
-                comment=f"prepare {setup.issue_number}",
+                command_name="branch-create",
+                comment=f"branch create --for-plan {setup.issue_number}",
             )
             result.output_for_shell_integration()
             sys.exit(0)
