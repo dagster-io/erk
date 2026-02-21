@@ -440,10 +440,7 @@ def test_implementing_draft_with_conflicts_shows_both() -> None:
 def test_planned_with_workflow_run_upgrades_to_implementing() -> None:
     """Header "planned" with workflow run upgrades to implementing."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
-    assert (
-        compute_lifecycle_display(plan, has_workflow_run=True)
-        == "[yellow]implementing[/yellow]"
-    )
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]implementing[/yellow]"
 
 
 def test_planned_without_workflow_run_stays_planned() -> None:
@@ -455,28 +452,19 @@ def test_planned_without_workflow_run_stays_planned() -> None:
 def test_inferred_planned_with_workflow_run_upgrades_to_implementing() -> None:
     """Draft + OPEN (inferred planned) with workflow run upgrades to implementing."""
     plan = _make_plan(metadata={"is_draft": True, "pr_state": "OPEN"})
-    assert (
-        compute_lifecycle_display(plan, has_workflow_run=True)
-        == "[yellow]implementing[/yellow]"
-    )
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]implementing[/yellow]"
 
 
 def test_implementing_with_workflow_run_stays_implementing() -> None:
     """Already implementing with workflow run stays implementing (no double-upgrade)."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
-    assert (
-        compute_lifecycle_display(plan, has_workflow_run=True)
-        == "[yellow]implementing[/yellow]"
-    )
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]implementing[/yellow]"
 
 
 def test_implemented_with_workflow_run_stays_implemented() -> None:
     """Past implementing stage with workflow run does not downgrade."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
-    assert (
-        compute_lifecycle_display(plan, has_workflow_run=True)
-        == "[cyan]implemented[/cyan]"
-    )
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[cyan]implemented[/cyan]"
 
 
 def test_no_stage_with_workflow_run_returns_dash() -> None:
