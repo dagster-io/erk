@@ -44,7 +44,11 @@ from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
 from erk_shared.naming import generate_issue_branch_name
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
-from erk_shared.worker_impl_folder import create_worker_impl_folder
+from erk_shared.worker_impl_folder import (
+    create_worker_impl_folder,
+    remove_worker_impl_folder,
+    worker_impl_folder_exists,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -433,6 +437,11 @@ def _submit_draft_pr_plan(
 
     ctx.branch_manager.checkout_branch(repo.root, branch_name)
 
+    # Clean up previous .worker-impl/ if it exists (e.g., from a prior failed submission)
+    if worker_impl_folder_exists(repo.root):
+        user_output("Cleaning up previous .worker-impl/ folder...")
+        remove_worker_impl_folder(repo.root)
+
     # Create .worker-impl/ with draft-PR provider
     user_output("Creating .worker-impl/ folder...")
     create_worker_impl_folder(
@@ -700,6 +709,11 @@ def _create_branch_and_pr(
         user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
         raise SystemExit(1)
     plan = result
+
+    # Clean up previous .worker-impl/ if it exists (e.g., from a prior failed submission)
+    if worker_impl_folder_exists(repo.root):
+        user_output("Cleaning up previous .worker-impl/ folder...")
+        remove_worker_impl_folder(repo.root)
 
     user_output("Creating .worker-impl/ folder...")
     create_worker_impl_folder(
