@@ -11,7 +11,7 @@ tripwires:
   - action: "Render status indicators from backend-provided display strings"
     warning: "Status indicators must derive from raw state fields via pure functions, not pre-rendered strings. See state-derivation-pattern.md."
     score: 8
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-20 00:00 PT"
 audit_result: edited
 ---
 
@@ -19,12 +19,7 @@ audit_result: edited
 
 ## Implementation Status
 
-**Not yet implemented.** An unmerged branch (`P6564-erk-plan-visual-status-in-02-01-1138`) contains a prototype, but the erkdesk plan list still renders pre-rendered display strings (`pr_display`, `checks_display`, `comments_display`) as plain text.
-
-<!-- Source: erkdesk/src/renderer/components/PlanList.tsx -->
-<!-- Source: erkdesk/src/types/erkdesk.d.ts, PlanRow -->
-
-See `PlanList` in `erkdesk/src/renderer/components/PlanList.tsx` for current rendering, and `PlanRow` in `erkdesk/src/types/erkdesk.d.ts` for the data contract (which already includes `pr_state` alongside the pre-rendered fields).
+**Live in TUI (PR #7662).** The TUI plan list renders lifecycle status with emoji indicators derived from raw state fields. `format_lifecycle_with_status()` (`lifecycle.py:61-140`) adds draft/published prefixes and review decision suffixes to lifecycle stage strings. `real.py:639,727-731` wires `review_decision` from `PullRequestInfo` into the formatter.
 
 ## Why Visual Indicators Over Text
 

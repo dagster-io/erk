@@ -14,6 +14,9 @@ tripwires:
     warning: "Extract metadata prefix on every lifecycle transition via extract_metadata_prefix() to prevent metadata loss."
   - action: "parsing plan content without backward compatibility"
     warning: "extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing."
+  - action: "adding <code> inside <summary> elements in PR bodies"
+    warning: "Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>."
+    score: 8
 ---
 
 # Draft PR Lifecycle
@@ -32,7 +35,7 @@ Body format:
 [metadata block]
 \n\n---\n\n
 <details>
-<summary><code>original-plan</code></summary>
+<summary>original-plan</summary>
 
 [plan content]
 
@@ -53,7 +56,7 @@ Body format:
 [AI-generated summary]
 
 <details>
-<summary><code>original-plan</code></summary>
+<summary>original-plan</summary>
 
 [plan content]
 
@@ -70,12 +73,12 @@ PR is marked ready for review. Standard review/merge flow. No body format change
 
 All in `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py`:
 
-| Function                                             | Purpose                                                                                                                  |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: metadata + separator + details-wrapped plan. Footer NOT included (needs PR number).                  |
-| `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary><code>original-plan</code></summary>` section. Used by both Stage 1 and Stage 2. |
-| `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format.              |
-| `extract_metadata_prefix(pr_body)`                   | Extract metadata block + content separator for preservation during stage transitions.                                    |
+| Function                                             | Purpose                                                                                                     |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: metadata + separator + details-wrapped plan. Footer NOT included (needs PR number).     |
+| `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2. |
+| `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. |
+| `extract_metadata_prefix(pr_body)`                   | Extract metadata block + content separator for preservation during stage transitions.                       |
 
 ## Separator Semantics
 
@@ -102,8 +105,11 @@ The PR footer (with checkout command) must be added AFTER `create_pr` returns, b
 
 `extract_plan_content()` handles both:
 
-- **New format**: Content wrapped in `<details><summary><code>original-plan</code></summary>` tags
-- **Old flat format**: Content after `PLAN_CONTENT_SEPARATOR` without details tags
+- **Current format**: Content wrapped in `<details><summary>original-plan</summary>` tags (plain text in summary)
+- **Old format**: Content wrapped in `<details><summary><code>original-plan</code></summary>` tags (`<code>` tags inside summary — still parsed for compatibility, but no longer written)
+- **Legacy flat format**: Content after `PLAN_CONTENT_SEPARATOR` without details tags
+
+The `<code>` tags were removed because Graphite does not render them inside `<summary>` elements (only GitHub does). New writes use plain text in `<summary>`.
 
 ## Branch Data Files
 

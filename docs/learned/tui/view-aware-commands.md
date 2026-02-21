@@ -95,6 +95,16 @@ ACTION commands that run long-running subprocess operations (land, fix-conflicts
 
 Without this helper, a streaming command started from the main list would have no visible output destination. The helper ensures the detail screen exists before streaming begins.
 
+## Backend as Third Dimension
+
+View mode and data availability are the first two filter dimensions. **Plan backend** is the third. Some commands only make sense for one backend:
+
+- `copy_prepare` and `copy_prepare_activate` are hidden when `plan_backend == "github-draft-pr"` because the "prepare" workflow uses issue numbers that don't apply to draft-PR plans.
+
+The `plan_backend` field is available on `CommandContext` (alongside `view_mode` and `row`). The `_is_github_backend(ctx)` predicate checks `ctx.plan_backend == "github"`.
+
+See [Backend-Aware Commands](backend-aware-commands.md) for the complete reference.
+
 ## Related Documentation
 
 - [TUI Command Architecture](action-inventory.md) — Data-driven availability predicates and category mapping

@@ -52,6 +52,8 @@ Rules triggered by matching actions in code.
 
 **creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
 
+**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. If set to 'draft_pr' in the environment, context_for_test() in erk-shared will use DraftPRPlanBackend instead of the default, causing widespread failures in tests that expect the issue-based backend. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures.
+
 **duplicating the \_make_state helper between test files** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each test file has its own \_make_state with step-appropriate defaults (e.g., finalize tests default pr_number=42, extract_diff tests default pr_number=None). This is intentional — different steps need different pre-conditions.
 
 **exposing a mutation tracking list directly as a property without copying** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. Return list(self.\_tracked_list) from properties, not self.\_tracked_list. Direct exposure lets test code accidentally mutate the tracking state.
