@@ -517,17 +517,17 @@ def prepare_plan_source_from_issue(
         SystemExit: If issue not found or doesn't have erk-plan label
     """
     # Output fetching diagnostic
-    ctx.console.info("Fetching issue from GitHub...")
+    ctx.console.info("Fetching plan from GitHub...")
 
     # Fetch plan from GitHub
     result = ctx.plan_store.get_plan(repo_root, issue_number)
     if isinstance(result, PlanNotFound):
-        ctx.console.error(f"Error: Issue #{issue_number} not found")
+        ctx.console.error(f"Error: Plan #{issue_number} not found")
         raise SystemExit(1)
     plan = result
 
     # Output issue title
-    ctx.console.info(f"Issue: {plan.title}")
+    ctx.console.info(f"Plan: {plan.title}")
 
     # Prepare and validate using shared helper (returns union type)
     result = prepare_plan_for_worktree(
@@ -542,7 +542,7 @@ def prepare_plan_source_from_issue(
     for warning in setup.warnings:
         user_output(click.style("Warning: ", fg="yellow") + warning)
 
-    dry_run_desc = f"Would create worktree from issue #{issue_number}\n  Title: {plan.title}"
+    dry_run_desc = f"Would create worktree from plan #{issue_number}\n  Title: {plan.title}"
 
     plan_source = PlanSource(
         plan_content=setup.plan_content,

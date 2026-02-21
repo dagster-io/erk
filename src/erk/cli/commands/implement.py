@@ -81,7 +81,7 @@ def _implement_from_issue(
     model: str | None,
     executor: PromptExecutor,
 ) -> None:
-    """Implement feature from GitHub issue in current directory.
+    """Implement feature from plan in current directory.
 
     Args:
         ctx: Erk context
@@ -95,15 +95,15 @@ def _implement_from_issue(
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Prompt executor for command execution
     """
-    # Discover repo context for issue fetch
+    # Discover repo context for plan fetch
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
     # Fetch plan from GitHub
-    ctx.console.info("Fetching issue from GitHub...")
+    ctx.console.info("Fetching plan from GitHub...")
     result = ctx.plan_store.get_plan(repo.root, issue_number)
     if isinstance(result, PlanNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+        user_output(click.style("Error: ", fg="red") + f"Plan #{issue_number} not found")
         raise SystemExit(1)
     plan = result
 
@@ -111,7 +111,7 @@ def _implement_from_issue(
     if "erk-plan" not in plan.labels:
         user_output(
             click.style("Error: ", fg="red")
-            + f"Issue #{issue_number} does not have the 'erk-plan' label.\n"
+            + f"Plan #{issue_number} does not have the 'erk-plan' label.\n"
             "Create a plan using 'erk plan create' or add the label manually."
         )
         raise SystemExit(1) from None
@@ -121,13 +121,13 @@ def _implement_from_issue(
         ctx,
         repo_root=repo.root,
         issue_number=int(issue_number),
-        reason=f"the plan (issue #{issue_number}) was submitted for implementation",
+        reason=f"the plan (plan #{issue_number}) was submitted for implementation",
     )
 
-    ctx.console.info(f"Issue: {plan.title}")
+    ctx.console.info(f"Plan: {plan.title}")
 
     # Create dry-run description
-    dry_run_desc = f"Would create .impl/ from issue #{issue_number}\n  Title: {plan.title}"
+    dry_run_desc = f"Would create .impl/ from plan #{issue_number}\n  Title: {plan.title}"
     plan_source = PlanSource(
         plan_content=plan.body,
         base_name=plan.title,
@@ -326,21 +326,21 @@ def implement(
     verbose: bool,
     model: str | None,
 ) -> None:
-    """Create .impl/ folder from GitHub issue or plan file and execute implementation.
+    """Create .impl/ folder from plan and execute implementation.
 
     By default, runs in interactive mode where you can interact with Claude
     during implementation. Use --no-interactive for automated execution.
 
     TARGET can be:
-    - GitHub issue number (e.g., #123 or 123)
+    - Plan number (e.g., #123 or 123)
     - GitHub issue URL (e.g., https://github.com/user/repo/issues/123)
     - Path to plan file (e.g., ./my-feature-plan.md)
     - Omitted (auto-detects plan number from branch name when on PXXXX-* branch)
 
-    Note: Plain numbers (e.g., 809) are always interpreted as GitHub issues.
+    Note: Plain numbers (e.g., 809) are always interpreted as plan numbers.
           For files with numeric names, use ./ prefix (e.g., ./809).
 
-    For GitHub issues, the issue must have the 'erk-plan' label.
+    The plan must have the 'erk-plan' label.
 
     Examples:
 
@@ -411,7 +411,7 @@ def implement(
 
     # Output target detection diagnostic
     if target_info.target_type in ("issue_number", "issue_url"):
-        ctx.console.info(f"Detected GitHub issue #{target_info.issue_number}")
+        ctx.console.info(f"Detected plan #{target_info.issue_number}")
     elif target_info.target_type == "file_path":
         ctx.console.info(f"Detected plan file: {target}")
 
