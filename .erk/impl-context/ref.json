@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: Add `impl-signal submitted` to transition lifecycle to \"implemented\""
-}

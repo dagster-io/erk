@@ -1,9 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "plan_id": "7729",
-  "url": "https://github.com/dagster-io/erk/pull/7729",
-  "created_at": "2026-02-21T13:55:25.256077+00:00",
-  "synced_at": "2026-02-21T13:55:25.256077+00:00",
-  "labels": [],
-  "objective_id": null
-}
