@@ -330,6 +330,7 @@ def dispatch_one_shot(
             "branch_name": branch_name,
             "pr_number": str(pr_number),
             "submitted_by": submitted_by,
+            "plan_backend": "draft_pr" if is_draft_pr else "github",
         }
         if params.model is not None:
             inputs["model_name"] = params.model
