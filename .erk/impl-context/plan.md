@@ -53,6 +53,7 @@ A convergence point is a step in procedural documentation that ALL conditional p
 ## When to Use
 
 Use convergence points when:
+
 - Multiple conditional paths exist (e.g., "if X, skip to Step 3; if Y, skip to Step 4")
 - A mandatory operation must run regardless of path (e.g., cleanup, validation, initialization)
 - The operation has side effects that later steps depend on
@@ -93,6 +94,7 @@ The directory is cleaned up via a convergence point architecture. All 5 setup pa
 
 1. **`setup_impl_from_issue.py`** (Phase 1, read-only) — Reads `plan.md` and `ref.json`, copies content into `.impl/`, but deliberately does NOT delete the directory. Deletion is deferred to the git cleanup phase.
    <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py -->
+
    See the comment near line 202: "Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push"
 
 2. **`plan-implement.md` Step 2d** (Phase 2, convergence point) — All 5 setup paths converge here. Performs the actual deletion with `git rm -rf .erk/impl-context/ && git commit && git push`. This deferred approach ensures removal is committed, not just deleted from the local filesystem. The `git rm -rf` command is idempotent — it succeeds even if the directory does not exist.
@@ -222,7 +224,7 @@ PR #7747 tripwire violation caught `.erk/impl-context/plan.md` in the PR diff. I
 
 **Draft Content:**
 
-```markdown
+````markdown
 ---
 title: erk pr submit Behavior
 read_when:
@@ -247,15 +249,17 @@ gh pr list --head <branch-name>
 # Check PR validation rules
 erk pr check
 ```
+````
 
 ## Common Scenarios
 
-| Output | Meaning | Action |
-|--------|---------|--------|
-| Empty stdout | PR exists, branch synced | No action needed |
-| PR URL | New PR created | Verify and monitor |
-| Error message | Submission failed | Debug and retry |
-```
+| Output        | Meaning                  | Action             |
+| ------------- | ------------------------ | ------------------ |
+| Empty stdout  | PR exists, branch synced | No action needed   |
+| PR URL        | New PR created           | Verify and monitor |
+| Error message | Submission failed        | Debug and retry    |
+
+````
 
 ---
 
@@ -280,7 +284,7 @@ In Step 2d, `git rm -rf .erk/impl-context/` is idempotent because:
 - If the directory exists but is untracked: exits successfully (does not fail)
 
 This is why the cleanup uses `git rm -rf` instead of checking existence first. An existence check would introduce path-specific logic that could be wrong for some paths.
-```
+````
 
 ---
 
