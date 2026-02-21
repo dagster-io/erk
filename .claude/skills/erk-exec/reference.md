@@ -32,7 +32,6 @@ Quick reference for all `erk exec` subcommands.
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                            |
-| `download-learn-materials`        | Download learn materials from a gist and split into files.                  |
 | `download-remote-session`         | Download a session from a GitHub Gist.                                      |
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                  |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                          |
@@ -107,7 +106,6 @@ Quick reference for all `erk exec` subcommands.
 | `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                  |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.          |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
-| `upload-learn-materials`          | Upload learn materials directory to a gist.                                 |
 | `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.               |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.         |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                               |
@@ -296,19 +294,6 @@ Discover code reviews matching PR changed files.
 | --------------- | ------- | -------- | -------------- | --------------------------------------------------------------- |
 | `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET | PR number to analyze                                            |
 | `--reviews-dir` | TEXT    | No       | '.erk/reviews' | Directory containing review definitions (default: .erk/reviews) |
-
-### download-learn-materials
-
-Download learn materials from a gist and split into files.
-
-**Usage:** `erk exec download-learn-materials`
-
-**Options:**
-
-| Flag           | Type | Required | Default        | Description                                |
-| -------------- | ---- | -------- | -------------- | ------------------------------------------ |
-| `--gist-url`   | TEXT | Yes      | Sentinel.UNSET | URL of the gist containing learn materials |
-| `--output-dir` | PATH | Yes      | Sentinel.UNSET | Directory to write the extracted files     |
 
 ### download-remote-session
 
@@ -1240,9 +1225,9 @@ Trigger async learn workflow for a plan.
 
 **Options:**
 
-| Flag              | Type | Required | Default | Description                                                                    |
-| ----------------- | ---- | -------- | ------- | ------------------------------------------------------------------------------ |
-| `--skip-workflow` | FLAG | No       | -       | Run preprocessing and upload gist, but skip triggering the learn.yml workflow. |
+| Flag              | Type | Required | Default | Description                                                                     |
+| ----------------- | ---- | -------- | ------- | ------------------------------------------------------------------------------- |
+| `--skip-workflow` | FLAG | No       | -       | Run preprocessing and commit to learn branch, but skip triggering the workflow. |
 
 ### tripwires-reminder-hook
 
@@ -1346,19 +1331,6 @@ Update PR title and body with AI-generated description.
 | -------------- | ---- | -------- | ------- | ------------------------------------- |
 | `--debug`      | FLAG | No       | -       | Show diagnostic output                |
 | `--session-id` | TEXT | No       | -       | Session ID for scratch file isolation |
-
-### upload-learn-materials
-
-Upload learn materials directory to a gist.
-
-**Usage:** `erk exec upload-learn-materials`
-
-**Options:**
-
-| Flag          | Type    | Required | Default        | Description                              |
-| ------------- | ------- | -------- | -------------- | ---------------------------------------- |
-| `--learn-dir` | PATH    | Yes      | Sentinel.UNSET | Path to the learn materials directory    |
-| `--issue`     | INTEGER | Yes      | Sentinel.UNSET | Plan issue number (for gist description) |
 
 ### upload-session
 

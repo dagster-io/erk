@@ -1739,9 +1739,7 @@ def test_extract_plan_header_learn_materials_branch() -> None:
     """extract_plan_header_learn_materials_branch returns the branch when set."""
     # Create a body and then update it to include the learn branch
     body = format_plan_header_body_for_test()
-    updated_body = update_plan_header_learn_materials_branch(
-        body, "learn/123"
-    )
+    updated_body = update_plan_header_learn_materials_branch(body, "learn/123")
 
     result = extract_plan_header_learn_materials_branch(updated_body)
     assert result == "learn/123"
@@ -1751,9 +1749,7 @@ def test_update_plan_header_learn_materials_branch() -> None:
     """update_plan_header_learn_materials_branch sets the field correctly."""
     body = format_plan_header_body_for_test()
 
-    updated_body = update_plan_header_learn_materials_branch(
-        body, "learn/456"
-    )
+    updated_body = update_plan_header_learn_materials_branch(body, "learn/456")
 
     # Verify by extracting the value back
     result = extract_plan_header_learn_materials_branch(updated_body)

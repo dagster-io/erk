@@ -593,8 +593,7 @@ def _store_learn_materials_branch(
             )
     except RuntimeError as e:
         user_output(
-            click.style("⚠ ", fg="yellow")
-            + f"Could not store learn branch on plan {plan_id}: {e}"
+            click.style("⚠ ", fg="yellow") + f"Could not store learn branch on plan {plan_id}: {e}"
         )
 
 

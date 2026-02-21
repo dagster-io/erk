@@ -599,7 +599,7 @@ def test_trigger_async_learn_stores_learn_branch_on_plan_header(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that _trigger_async_learn stores learn branch on plan header when subprocess returns it."""
+    """Test _trigger_async_learn stores learn branch on plan header."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 

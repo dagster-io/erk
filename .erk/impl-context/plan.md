@@ -3,6 +3,7 @@
 ## Context
 
 The learn pipeline preprocesses session logs locally, then uploads them to a GitHub gist for the CI workflow to download. This requires:
+
 - Delimiter-based packing/unpacking (fragile, custom format)
 - Gist API calls (can fail, rate-limited, size concerns)
 - Two dedicated exec scripts just for gist I/O (`upload_learn_materials.py`, `download_learn_materials.py`)
@@ -12,6 +13,7 @@ Replace the gist transport with the branch-based `.erk/impl-context/` pattern al
 ## Approach
 
 ### Current flow
+
 ```
 trigger_async_learn.py:
   preprocess sessions → write to .erk/scratch/learn-{plan_id}/
@@ -24,6 +26,7 @@ learn.yml:
 ```
 
 ### New flow
+
 ```
 trigger_async_learn.py:
   preprocess sessions → write to .erk/scratch/learn-{plan_id}/ (unchanged)
@@ -73,24 +76,29 @@ finally:
 ```
 
 **Update dataclasses:**
+
 - `TriggerSuccess`: `gist_url: str` → `learn_branch: str`
 - `PreprocessSuccess`: `gist_url: str` → `learn_branch: str`
 - `_output_success()`: update parameter
 - `_output_preprocess_success()`: update parameter
 
 **Update workflow trigger (current Step 6, lines 621-647):**
+
 - Replace `"gist_url": str(gist_url)` with `"learn_branch": learn_branch` in `workflow_inputs`
 
 **Remove imports:**
+
 - Remove `from erk_shared.gateway.github.abc import GistCreateError`
 - Remove `from erk.cli.commands.exec.scripts.upload_learn_materials import combine_learn_material_files`
 
 **Add imports:**
+
 - `import shutil`
 
 ### 2. `.github/workflows/learn.yml`
 
 **Replace `gist_url` input with `learn_branch`:**
+
 ```yaml
 inputs:
   learn_branch:
@@ -100,6 +108,7 @@ inputs:
 ```
 
 **Update checkout step to use the learn branch:**
+
 ```yaml
 - uses: actions/checkout@v4
   with:
@@ -109,6 +118,7 @@ inputs:
 ```
 
 **Update Claude invocation — no gist_url needed:**
+
 ```yaml
 - name: Run learn workflow
   env:
@@ -126,6 +136,7 @@ inputs:
 Remove `GIST_URL` env var entirely.
 
 **Add branch cleanup step (after learn completes):**
+
 ```yaml
 - name: Cleanup learn branch
   if: always()
@@ -180,6 +191,7 @@ def _get_learn_materials_branch(
 ```
 
 **Update the caller** (around line 132-148):
+
 ```python
 learn_branch = _get_learn_materials_branch(ctx, repo_root, plan_id)
 if learn_branch is not None:
@@ -229,6 +241,7 @@ def _store_learn_materials_branch(
 ```
 
 **Update the caller** (around line 470-482):
+
 - Parse `learn_branch` from trigger output instead of `gist_url`
 - Call `_store_learn_materials_branch()` instead
 
@@ -237,6 +250,7 @@ def _store_learn_materials_branch(
 ### 6. `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
 
 **Replace `learn_materials_gist_url` with `learn_materials_branch`:**
+
 - Update `VALID_PLAN_HEADER_FIELDS` list (line 346)
 - Update constant (line 396): `LEARN_MATERIALS_BRANCH: Literal["learn_materials_branch"] = "learn_materials_branch"`
 - Update docstring (line 483)
@@ -245,10 +259,12 @@ def _store_learn_materials_branch(
 ### 7. Files to Remove or Simplify
 
 **`src/erk/cli/commands/exec/scripts/upload_learn_materials.py`:**
+
 - Remove `combine_learn_material_files()` function (no longer needed)
 - CLI command may still be useful as a standalone gist uploader — evaluate if anything else uses it. If not, remove entirely.
 
 **`src/erk/cli/commands/exec/scripts/download_learn_materials.py`:**
+
 - Remove entirely (delimiter parsing no longer needed)
 - Update any exec script registration that references it
 

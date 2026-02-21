@@ -613,9 +613,7 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
         file_paths = [f".erk/impl-context/{f.name}" for f in learn_files]
         git.commit.stage_files(repo_root, file_paths)
         git.commit.commit(repo_root, f"Learn materials for plan #{plan_id}")
-        git.remote.push_to_remote(
-            repo_root, "origin", learn_branch, set_upstream=True, force=True
-        )
+        git.remote.push_to_remote(repo_root, "origin", learn_branch, set_upstream=True, force=True)
     finally:
         git.branch.checkout_branch(repo_root, start_point)
 
