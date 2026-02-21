@@ -166,6 +166,8 @@ Rules triggered by matching actions in code.
 
 **implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.
 
+**importing PlanBackendType or redeclaring it in a module other than erk_shared.context.types** → Read [erk_shared Package](erk-shared-package.md) first. PlanBackendType canonical import: import PlanBackendType only from erk_shared.context.types. Do not re-declare or shadow this type in other modules — erk_shared.context.types is the single source of truth. Shadowing creates hidden divergence that breaks isinstance checks and type narrowing.
+
 **importing time module or calling time.sleep() or datetime.now()** [pattern: `\bimport time\b|time\.sleep\(|datetime\.now\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic.
 
 **injecting Time dependency into gateway real.py for lock-waiting or retry logic** → Read [Erk Architecture Patterns](erk-architecture.md) first. Accept optional Time in **init** with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern.

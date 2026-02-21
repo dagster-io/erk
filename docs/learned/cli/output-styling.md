@@ -947,6 +947,37 @@ When using Rich tables, use Rich's link markup instead of raw OSC 8 escape seque
 
 **When to use raw OSC 8 instead:** Output goes through `click.echo()` or `user_output()` where Rich rendering is not involved.
 
+## User-Facing Terminology Guidelines
+
+Use consistent terminology in all user-facing CLI output. The backing storage mechanism is an implementation detail — users interact with "plans", not "issues" or "draft PRs".
+
+This terminology was standardized in PR #7732 (replacing "issue" with "plan" throughout CLI output).
+
+### Terminology Table
+
+| Term      | When to Use                                          | Example                                     |
+| --------- | ---------------------------------------------------- | ------------------------------------------- |
+| **plan**  | All references to erk plan items (backend-agnostic)  | `"Plan #123 created"`, `"Fetching plan..."` |
+| **PR**    | Specifically referring to a GitHub pull request      | `"Opening PR #456"`, `"PR checks passed"`   |
+| **issue** | Only in GitHub-specific contexts (labels, API calls) | `gh issue create`, internal variable names  |
+
+### Rules
+
+- **Always use "plan" in user-facing output.** Whether the backing store is a GitHub issue or draft PR, the user sees "plan". Example: `"Plan #123 not found"` not `"Issue #123 not found"`.
+- **Use "PR" only for pull requests.** When output specifically refers to a GitHub PR (not a plan), use "PR".
+- **Internal variable names may differ.** Internal code can use `issue_number`, `plan_id`, or similar — these are implementation details. Only the user-visible strings must say "plan".
+- **Column headers in tables**: Use `plan` not `issue` in headers shown to users.
+
+### Anti-Pattern
+
+```python
+# ❌ Wrong: exposes internal storage model
+click.echo(f"Issue #{issue_number} created")
+
+# ✅ Correct: backend-agnostic
+click.echo(f"Plan #{issue_number} created")
+```
+
 ## See Also
 
 - [DataTable Rich Markup Escaping](../textual/datatable-markup-escaping.md) - TUI-specific markup escaping

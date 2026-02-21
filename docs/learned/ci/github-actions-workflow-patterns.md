@@ -7,6 +7,9 @@ read_when:
 tripwires:
   - action: "composing conditions across multiple GitHub Actions workflow steps"
     warning: "Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs."
+  - action: "creating or modifying a reusable GitHub Actions workflow (workflow_call) that depends on ERK_PLAN_BACKEND or other env vars"
+    warning: "Reusable workflow input forwarding: GitHub Actions reusable workflows (via workflow_call) do NOT inherit environment variables from the caller workflow. Declare ERK_PLAN_BACKEND (and any other required env vars) as explicit inputs in the reusable workflow, and pass them explicitly from the caller workflow. Ambient env vars are NOT forwarded automatically."
+    score: 8
 last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
 ---

@@ -5,6 +5,10 @@ audit_result: edited
 read_when:
   - "deciding where to put new utilities"
   - "moving code between packages"
+tripwires:
+  - action: "importing PlanBackendType or redeclaring it in a module other than erk_shared.context.types"
+    warning: "PlanBackendType canonical import: import PlanBackendType only from erk_shared.context.types. Do not re-declare or shadow this type in other modules — erk_shared.context.types is the single source of truth. Shadowing creates hidden divergence that breaks isinstance checks and type narrowing."
+    score: 7
 ---
 
 # erk_shared Package
