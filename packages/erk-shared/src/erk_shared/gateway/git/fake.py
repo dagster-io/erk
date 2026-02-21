@@ -23,7 +23,11 @@ from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
-from erk_shared.gateway.git.commit_ops.fake import CommitRecord, FakeGitCommitOps
+from erk_shared.gateway.git.commit_ops.fake import (
+    BranchCommitRecord,
+    CommitRecord,
+    FakeGitCommitOps,
+)
 from erk_shared.gateway.git.config_ops.abc import GitConfigOps
 from erk_shared.gateway.git.config_ops.fake import ConfigSetRecord, FakeGitConfigOps
 from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
@@ -281,6 +285,7 @@ class FakeGit(Git):
         self._created_tracking_branches: list[tuple[str, str]] = []
         self._staged_files: list[str] = []
         self._commits: list[CommitRecord] = []
+        self._branch_commits: list[BranchCommitRecord] = []
         self._pushed_branches: list[PushedBranch] = []
         self._created_branches: list[
             tuple[Path, str, str, bool]
@@ -389,6 +394,7 @@ class FakeGit(Git):
         self._commit_gateway.link_mutation_tracking(
             staged_files=self._staged_files,
             commits=self._commits,
+            branch_commits=self._branch_commits,
         )
         # Link mutable state so changes propagate back to FakeGit
         self._commit_gateway.link_state(
@@ -600,6 +606,14 @@ class FakeGit(Git):
         Returns list of CommitRecord objects with cwd, message, and staged_files.
         """
         return list(self._commits)
+
+    @property
+    def branch_commits(self) -> list[BranchCommitRecord]:
+        """Read-only access to branch commits for test assertions.
+
+        Returns list of BranchCommitRecord objects with cwd, branch, files, and message.
+        """
+        return list(self._branch_commits)
 
     @property
     def pushed_branches(self) -> list[PushedBranch]:

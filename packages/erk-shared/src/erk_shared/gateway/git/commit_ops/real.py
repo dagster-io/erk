@@ -1,6 +1,8 @@
 """Production implementation of Git commit operations using subprocess."""
 
+import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
@@ -61,6 +63,78 @@ class RealGitCommitOps(GitCommitOps):
             operation_context="amend commit",
             cwd=cwd,
         )
+
+    def commit_files_to_branch(
+        self,
+        cwd: Path,
+        *,
+        branch: str,
+        files: dict[str, str],
+        message: str,
+    ) -> None:
+        """Create a commit on a branch using git plumbing (no checkout)."""
+        # Get parent commit SHA
+        parent_sha = run_subprocess_with_context(
+            cmd=["git", "rev-parse", branch],
+            operation_context=f"resolve branch {branch}",
+            cwd=cwd,
+        ).stdout.strip()
+
+        # Create temporary index file to avoid touching the real index
+        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+        os.close(tmp_fd)
+        try:
+            env = os.environ.copy()
+            env["GIT_INDEX_FILE"] = tmp_index
+
+            # Read parent tree into temp index
+            run_subprocess_with_context(
+                cmd=["git", "read-tree", parent_sha],
+                operation_context="read parent tree into temp index",
+                cwd=cwd,
+                env=env,
+            )
+
+            # Hash each file and add to temp index
+            for path, content in files.items():
+                blob_sha = run_subprocess_with_context(
+                    cmd=["git", "hash-object", "-w", "--stdin"],
+                    operation_context=f"hash content for {path}",
+                    cwd=cwd,
+                    input=content,
+                ).stdout.strip()
+
+                cacheinfo = f"100644,{blob_sha},{path}"
+                run_subprocess_with_context(
+                    cmd=["git", "update-index", "--add", "--cacheinfo", cacheinfo],
+                    operation_context=f"add {path} to temp index",
+                    cwd=cwd,
+                    env=env,
+                )
+
+            # Write tree from temp index
+            tree_sha = run_subprocess_with_context(
+                cmd=["git", "write-tree"],
+                operation_context="write tree from temp index",
+                cwd=cwd,
+                env=env,
+            ).stdout.strip()
+
+            # Create commit object
+            commit_sha = run_subprocess_with_context(
+                cmd=["git", "commit-tree", tree_sha, "-p", parent_sha, "-m", message],
+                operation_context="create commit on branch",
+                cwd=cwd,
+            ).stdout.strip()
+
+            # Update branch ref
+            run_subprocess_with_context(
+                cmd=["git", "update-ref", f"refs/heads/{branch}", commit_sha],
+                operation_context=f"update ref for {branch}",
+                cwd=cwd,
+            )
+        finally:
+            Path(tmp_index).unlink(missing_ok=True)
 
     # ============================================================================
     # Query Operations

@@ -1,17 +1,17 @@
 ---
 title: Plan Save Branch Restoration
 read_when:
-  - "modifying plan_save.py branch checkout behavior"
-  - "understanding try/finally patterns for git branch safety"
-  - "working with temporary branch checkouts in erk"
+  - "modifying plan_save.py branch commit behavior"
+  - "understanding git plumbing patterns in erk"
+  - "working with commit_files_to_branch"
 tripwires:
-  - action: "checking out a branch in plan_save without restoring the original"
-    warning: "Plan save must always restore the original branch via try/finally. See plan-save-branch-restoration.md."
+  - action: "checking out a branch in plan_save to commit files"
+    warning: "Plan save uses git plumbing (commit_files_to_branch) to commit without checkout. Do NOT add checkout_branch calls. See plan-save-branch-restoration.md."
 ---
 
 # Plan Save Branch Restoration
 
-`plan_save.py` needs to temporarily checkout a branch to commit the plan file, then restore the original branch. This uses a try/finally pattern to guarantee restoration.
+`plan_save.py` commits plan files to the plan branch using git plumbing commands (`commit_files_to_branch`), avoiding any branch checkout. This eliminates race conditions when multiple sessions share the same worktree.
 
 ## Pattern
 
@@ -19,27 +19,38 @@ Located in `src/erk/cli/commands/exec/scripts/plan_save.py`, the `_save_as_draft
 
 <!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py, _save_as_draft_pr -->
 
-See `_save_as_draft_pr()` in `src/erk/cli/commands/exec/scripts/plan_save.py` — uses try/finally to guarantee branch restoration after temporary checkout for plan commit and push.
+See `_save_as_draft_pr()` in `src/erk/cli/commands/exec/scripts/plan_save.py` — uses `git.commit.commit_files_to_branch()` to create a commit directly on the plan branch without modifying HEAD or the working tree.
 
 Key properties:
 
-- Saves current branch name before checkout
-- Creates plan branch from the same commit (no conflict with uncommitted work)
-- Commits plan to `.erk/impl-context/plan.md`
+- Creates plan branch from current branch via `branch_manager.create_branch()`
+- Commits plan files directly to the branch using git plumbing (no checkout)
 - Pushes to origin with upstream tracking
-- **Always** restores to `start_point` in the finally block, even if push fails
+- **Never checks out the plan branch** — HEAD and working tree remain untouched
+
+## Git Plumbing Approach
+
+The `commit_files_to_branch` method on `GitCommitOps` uses a temporary index file to avoid modifying the real index:
+
+1. `git rev-parse <branch>` — resolve parent commit
+2. `git read-tree <parent>` — read parent tree into temp index
+3. `git hash-object -w --stdin` — hash each file's content
+4. `git update-index --add --cacheinfo` — add blobs to temp index
+5. `git write-tree` — create tree from temp index
+6. `git commit-tree` — create commit with parent
+7. `git update-ref` — update branch ref to new commit
+
+This is race-condition-free because no branch checkout occurs.
 
 ## Evolution
 
 - PR #7491 removed checkout (plan committed without switching branches)
 - PR #7494 re-added checkout with try/finally for the plan file commit step
+- PR #7783 replaced checkout with git plumbing to eliminate race conditions
 
 ## Testing
 
-12 tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py`, including a dedicated `test_draft_pr_restores_original_branch` test that verifies:
-
-- Two checkouts occur (plan branch, then back to original)
-- The second checkout restores the exact original branch name
+Tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py`, including `test_draft_pr_does_not_checkout_branch` which verifies only branch_manager checkouts occur (not plan commit checkouts), and `test_draft_pr_commits_plan_file` which verifies files via `fake_git.branch_commits`.
 
 ## Related Topics
 

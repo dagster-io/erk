@@ -79,6 +79,33 @@ class GitCommitOps(ABC):
     # ============================================================================
 
     @abstractmethod
+    def commit_files_to_branch(
+        self,
+        cwd: Path,
+        *,
+        branch: str,
+        files: dict[str, str],
+        message: str,
+    ) -> None:
+        """Create a commit on a branch without checking it out.
+
+        Uses git plumbing commands to create a commit directly on the target
+        branch without modifying the working tree or HEAD. This avoids race
+        conditions when multiple sessions share the same worktree.
+
+        Args:
+            cwd: Repository root directory
+            branch: Target branch name (must exist)
+            files: Mapping of relative file paths to string content
+            message: Commit message
+        """
+        ...
+
+    # ============================================================================
+    # Query Operations
+    # ============================================================================
+
+    @abstractmethod
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get the commit message for a given commit SHA.
 

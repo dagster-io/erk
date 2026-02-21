@@ -159,34 +159,27 @@ def _save_as_draft_pr(
     # Detect trunk for PR base metadata
     trunk = git.branch.detect_trunk_branch(cwd)
 
-    # Temporarily checkout plan branch to commit plan file.
-    # Since the plan branch was created from the same commit as the current branch,
-    # checkout won't conflict with uncommitted work.
-    git.branch.checkout_branch(cwd, branch_name)
-    try:
-        impl_context_dir = repo_root / IMPL_CONTEXT_DIR
-        impl_context_dir.mkdir(parents=True, exist_ok=True)
-        plan_file_path = impl_context_dir / "plan.md"
-        plan_file_path.write_text(plan_content, encoding="utf-8")
+    # Build ref.json data
+    ref_data: dict[str, str | int | None] = {
+        "provider": "github-draft-pr",
+        "title": title,
+    }
+    if objective_issue is not None:
+        ref_data["objective_id"] = objective_issue
 
-        # Write ref.json with plan reference metadata
-        ref_data: dict[str, str | int | None] = {
-            "provider": "github-draft-pr",
-            "title": title,
-        }
-        if objective_issue is not None:
-            ref_data["objective_id"] = objective_issue
-        ref_file_path = impl_context_dir / "ref.json"
-        ref_file_path.write_text(json.dumps(ref_data, indent=2), encoding="utf-8")
-
-        git.commit.stage_files(
-            repo_root,
-            [f"{IMPL_CONTEXT_DIR}/plan.md", f"{IMPL_CONTEXT_DIR}/ref.json"],
-        )
-        git.commit.commit(repo_root, f"Add plan: {title}")
-        git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
-    finally:
-        git.branch.checkout_branch(cwd, start_point)
+    # Commit plan files directly to branch (no checkout needed).
+    # Uses git plumbing to avoid race conditions when multiple sessions
+    # share the same worktree.
+    git.commit.commit_files_to_branch(
+        repo_root,
+        branch=branch_name,
+        files={
+            f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
+            f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+        },
+        message=f"Add plan: {title}",
+    )
+    git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
     # Build metadata
     metadata: dict[str, object] = {"branch_name": branch_name, "trunk_branch": trunk}

@@ -23,6 +23,16 @@ class CommitRecord:
     staged_files: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class BranchCommitRecord:
+    """Record of a direct-to-branch commit (no checkout)."""
+
+    cwd: Path
+    branch: str
+    files: dict[str, str]
+    message: str
+
+
 class FakeGitCommitOps(GitCommitOps):
     """In-memory fake implementation of Git commit operations.
 
@@ -82,6 +92,7 @@ class FakeGitCommitOps(GitCommitOps):
         # Mutation tracking
         self._staged_files: list[str] = []
         self._commits: list[CommitRecord] = []
+        self._branch_commits: list[BranchCommitRecord] = []
 
     # ============================================================================
     # Mutation Operations
@@ -128,6 +139,19 @@ class FakeGitCommitOps(GitCommitOps):
         else:
             # If no commits tracked yet, create one to track the amend
             self._commits.append(CommitRecord(cwd=cwd, message=message, staged_files=()))
+
+    def commit_files_to_branch(
+        self,
+        cwd: Path,
+        *,
+        branch: str,
+        files: dict[str, str],
+        message: str,
+    ) -> None:
+        """Record a direct-to-branch commit (no checkout)."""
+        self._branch_commits.append(
+            BranchCommitRecord(cwd=cwd, branch=branch, files=dict(files), message=message)
+        )
 
     # ============================================================================
     # Query Operations
@@ -179,6 +203,11 @@ class FakeGitCommitOps(GitCommitOps):
         """Read-only access to commits for test assertions."""
         return list(self._commits)
 
+    @property
+    def branch_commits(self) -> list[BranchCommitRecord]:
+        """Read-only access to branch commits for test assertions."""
+        return list(self._branch_commits)
+
     # ============================================================================
     # Link Mutation Tracking (for integration with FakeGit)
     # ============================================================================
@@ -188,6 +217,7 @@ class FakeGitCommitOps(GitCommitOps):
         *,
         staged_files: list[str],
         commits: list[CommitRecord],
+        branch_commits: list[BranchCommitRecord],
     ) -> None:
         """Link this fake's mutation tracking to FakeGit's tracking lists.
 
@@ -197,9 +227,11 @@ class FakeGitCommitOps(GitCommitOps):
         Args:
             staged_files: FakeGit's _staged_files list
             commits: FakeGit's _commits list
+            branch_commits: FakeGit's _branch_commits list
         """
         self._staged_files = staged_files
         self._commits = commits
+        self._branch_commits = branch_commits
 
     def link_state(
         self,
