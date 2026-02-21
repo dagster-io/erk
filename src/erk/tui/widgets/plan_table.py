@@ -57,8 +57,8 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
-    class LearnClicked(Message):
-        """Posted when user clicks learn column on a row with a learn plan issue or PR."""
+    class BranchClicked(Message):
+        """Posted when user clicks branch column on a row."""
 
         def __init__(self, row_index: int) -> None:
             super().__init__()
@@ -84,9 +84,10 @@ class PlanDataTable(DataTable):
         self._view_mode: ViewMode = ViewMode.PLANS
         self._rows: list[PlanRowData] = []
         self._plan_column_index: int = 0  # Always first column
+        self._sts_column_index: int | None = None
         self._objective_column_index: int | None = None
         self._pr_column_index: int | None = None
-        self._learn_column_index: int | None = None
+        self._branch_column_index: int | None = None
         self._local_wt_column_index: int | None = None
         self._run_id_column_index: int | None = None
         self._stage_column_index: int | None = None
@@ -129,9 +130,10 @@ class PlanDataTable(DataTable):
         self._plan_backend = plan_backend
         # Reset column indices before _setup_columns rebuilds them
         self._plan_column_index = 0
+        self._sts_column_index = None
         self._objective_column_index = None
         self._pr_column_index = None
-        self._learn_column_index = None
+        self._branch_column_index = None
         self._local_wt_column_index = None
         self._run_id_column_index = None
         self._stage_column_index = None
@@ -145,76 +147,76 @@ class PlanDataTable(DataTable):
     def _setup_columns(self) -> None:
         """Add columns based on current filter settings and view mode.
 
-        Tracks the column index for local-wt to enable click detection.
-        Objectives view uses enriched columns (plan, title, progress, next, updated, author).
+        Tracks column indices for click detection on plan, branch, local-wt, etc.
+        Objectives view uses enriched columns (plan, progress, next, updated, author).
         """
         col_index = 0
         # In draft_pr mode, first column shows PR number not issue number
         plan_col_header = "pr" if self._plan_backend == "draft_pr" else "plan"
-        self.add_column(plan_col_header, key="plan")
+        self.add_column(plan_col_header, key="plan", width=6)
         col_index += 1
-        self.add_column("obj", key="objective")
+        if self._plan_backend == "draft_pr":
+            self._sts_column_index = col_index
+            self.add_column("sts", key="sts", width=5)
+            col_index += 1
+            self._stage_column_index = col_index
+            self.add_column("stage", key="stage", width=9)
+            col_index += 1
+            self.add_column("created", key="created", width=7)
+            col_index += 1
+        self.add_column("obj", key="objective", width=5)
         self._objective_column_index = col_index
         col_index += 1
 
         # Objectives view: plan, obj, prog, next step, deps, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
-            self.add_column("prog", key="progress")
+            self.add_column("prog", key="progress", width=5)
             col_index += 1
-            self.add_column("next node", key="next_node")
+            self.add_column("next node", key="next_node", width=30)
             col_index += 1
-            self.add_column("deps", key="deps")
+            self.add_column("deps", key="deps", width=12)
             col_index += 1
-            self.add_column("updated", key="updated")
+            self.add_column("updated", key="updated", width=7)
             col_index += 1
-            self.add_column("author", key="author")
+            self.add_column("author", key="author", width=9)
             col_index += 1
             return
 
-        # Plans view: plan, obj, sts, branch, ...
-        self.add_column("sts", key="status")
+        # Plans view: plan, [sts, stage, created,] obj, loc, branch,
+        # run-id, run, [created,] author, ...
+        self.add_column("loc", key="location", width=3)
         col_index += 1
-        self.add_column("branch", key="branch")
+        self._branch_column_index = col_index
+        self.add_column("branch", key="branch", width=42)
         col_index += 1
-        self.add_column("created", key="created")
+        self._run_id_column_index = col_index
+        self.add_column("run-id", key="run_id", width=10)
         col_index += 1
-        self.add_column("author", key="author")
+        self.add_column("run", key="run_state", width=3)
         col_index += 1
-
-        # Draft PR mode: add lifecycle stage column
-        if self._plan_backend == "draft_pr":
-            self._stage_column_index = col_index
-            self.add_column("stage", key="stage")
+        if self._plan_backend != "draft_pr":
+            self.add_column("created", key="created", width=7)
             col_index += 1
+        self.add_column("author", key="author", width=9)
+        col_index += 1
 
         if self._plan_filters.show_prs:
             if self._plan_filters.show_pr_column:
                 self._pr_column_index = col_index
-                self.add_column("pr", key="pr")
+                self.add_column("pr", key="pr", width=8)
                 col_index += 1
-            self.add_column("chks", key="chks")
+            self.add_column("chks", key="chks", width=8)
             col_index += 1
-            self.add_column("comments", key="comments")
-            col_index += 1
-            self.add_column("lrn", key="learn")
-            self._learn_column_index = col_index
-            col_index += 1
-        else:
-            self.add_column("lrn", key="learn")
-            self._learn_column_index = col_index
+            self.add_column("cmts", key="comments", width=5)
             col_index += 1
         self._local_wt_column_index = col_index
-        self.add_column("local-wt", key="local_wt")
+        self.add_column("local-wt", key="local_wt", width=14)
         col_index += 1
-        self.add_column("local-impl", key="local_impl")
+        self.add_column("local-impl", key="local_impl", width=10)
         col_index += 1
         if self._plan_filters.show_runs:
-            self.add_column("remote-impl", key="remote_impl")
+            self.add_column("remote-impl", key="remote_impl", width=10)
             col_index += 1
-            self.add_column("run-id", key="run_id")
-            self._run_id_column_index = col_index
-            col_index += 1
-            self.add_column("run-state", key="run_state")
 
     def populate(self, rows: list[PlanRowData]) -> None:
         """Populate table with plan data, preserving cursor position.
@@ -285,42 +287,47 @@ class PlanDataTable(DataTable):
         else:
             wt_cell = "-"
 
-        # Format learn cell - use icon-only for table, colorize if clickable
-        learn_cell: str | Text = row.learn_display_icon
-        if (
-            row.learn_plan_issue is not None
-            or row.learn_plan_pr is not None
-            or row.learn_run_url is not None
-        ):
-            learn_cell = Text(row.learn_display_icon, style="cyan underline")
-
         # Format objective cell - colorize if clickable
         objective_cell: str | Text = row.objective_display
         if row.objective_issue is not None:
             objective_cell = Text(row.objective_display, style="cyan underline")
 
-        # Compact status emoji: 💻 = local checkout, 🏃 = remote run
-        status_parts: list[str] = []
+        # Compact location emoji: 💻 = local checkout, 🌐 = remote run
+        location_parts: list[str] = []
         if row.exists_locally:
-            status_parts.append("\U0001f4bb")
+            location_parts.append("\U0001f4bb")
         if row.run_url is not None:
-            status_parts.append("\U0001f3c3")
-        status_cell = "".join(status_parts) if status_parts else "-"
+            location_parts.append("\U0001f310")
+        location_cell = "".join(location_parts) if location_parts else "-"
+
+        # run-id and run-state (always shown)
+        run_id: str | Text = _strip_rich_markup(row.run_id_display)
+        if row.run_url:
+            run_id = Text(run_id, style="cyan underline")
+        run_state_text = _strip_rich_markup(row.run_state_display)
+        run_state_emoji = run_state_text.split(" ", 1)[0] if run_state_text.strip() else "-"
 
         # Build values list based on columns
         values: list[str | Text] = [
             plan_cell,
-            objective_cell,
-            status_cell,
-            row.pr_head_branch or row.worktree_branch or "-",
-            row.created_display,
-            row.author,
         ]
-
-        # Draft PR mode: add lifecycle stage column (strip markup for plain display)
         if self._plan_backend == "draft_pr":
+            values.append(row.pr_status_display)
             stage_display = _strip_rich_markup(row.lifecycle_display)
             values.append(stage_display)
+            values.append(row.created_display)
+        values.extend(
+            [
+                objective_cell,
+                location_cell,
+                row.pr_head_branch or row.worktree_branch or "-",
+                run_id,
+                run_state_emoji,
+            ]
+        )
+        if self._plan_backend != "draft_pr":
+            values.append(row.created_display)
+        values.append(row.author)
 
         if self._plan_filters.show_prs:
             checks_display = _strip_rich_markup(row.checks_display)
@@ -330,19 +337,13 @@ class PlanDataTable(DataTable):
                 pr_display = _strip_rich_markup(row.pr_display)
                 if row.pr_url:
                     pr_display = Text(pr_display, style="cyan underline")
-                values.extend([pr_display, checks_display, comments_display, learn_cell])
+                values.extend([pr_display, checks_display, comments_display])
             else:
-                values.extend([checks_display, comments_display, learn_cell])
-        else:
-            values.extend([learn_cell])
+                values.extend([checks_display, comments_display])
         values.extend([wt_cell, row.local_impl_display])
         if self._plan_filters.show_runs:
             remote_impl = _strip_rich_markup(row.remote_impl_display)
-            run_id = _strip_rich_markup(row.run_id_display)
-            if row.run_url:
-                run_id = Text(run_id, style="cyan underline")
-            run_state = _strip_rich_markup(row.run_state_display)
-            values.extend([remote_impl, run_id, run_state])
+            values.append(remote_impl)
 
         return tuple(values)
 
@@ -397,15 +398,10 @@ class PlanDataTable(DataTable):
                 event.stop()
                 return
 
-        # Check learn column - post event if learn plan issue, PR, or run URL exists
-        if self._learn_column_index is not None and col_index == self._learn_column_index:
-            row = self._rows[row_index] if row_index < len(self._rows) else None
-            if row is not None and (
-                row.learn_plan_issue is not None
-                or row.learn_plan_pr is not None
-                or row.learn_run_url is not None
-            ):
-                self.post_message(self.LearnClicked(row_index))
+        # Check branch column - post event for clipboard copy
+        if self._branch_column_index is not None and col_index == self._branch_column_index:
+            if row_index < len(self._rows):
+                self.post_message(self.BranchClicked(row_index))
                 event.prevent_default()
                 event.stop()
                 return

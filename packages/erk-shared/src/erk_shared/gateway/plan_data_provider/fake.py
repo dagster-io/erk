@@ -245,6 +245,7 @@ def make_plan_row(
     pr_title: str | None = None,
     pr_state: str | None = None,
     pr_head_branch: str | None = None,
+    pr_has_conflicts: bool | None = None,
     pr_display: str | None = None,
     worktree_name: str = "",
     worktree_branch: str | None = None,
@@ -271,6 +272,7 @@ def make_plan_row(
     author: str = "test-user",
     is_learn_plan: bool = False,
     lifecycle_display: str = "-",
+    pr_status_display: str = "-",
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -284,6 +286,7 @@ def make_plan_row(
         pr_title: PR title
         pr_state: PR state (e.g., "OPEN", "MERGED")
         pr_head_branch: Head branch from PR metadata (for landing)
+        pr_has_conflicts: Whether the PR has merge conflicts (None if unknown or no PR)
         pr_display: Custom PR display string (overrides default "#N" format)
         worktree_name: Local worktree name
         worktree_branch: Branch name in worktree
@@ -384,6 +387,7 @@ def make_plan_row(
         pr_title=pr_title,
         pr_state=pr_state,
         pr_head_branch=pr_head_branch,
+        pr_has_conflicts=pr_has_conflicts,
         worktree_branch=worktree_branch,
         last_local_impl_at=None,
         last_remote_impl_at=None,
@@ -415,4 +419,5 @@ def make_plan_row(
         author=author,
         is_learn_plan=is_learn_plan,
         lifecycle_display=lifecycle_display,
+        pr_status_display=pr_status_display,
     )

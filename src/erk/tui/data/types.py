@@ -32,6 +32,7 @@ class PlanRowData:
         pr_title: PR title if linked
         pr_state: PR state (e.g., "OPEN", "MERGED", "CLOSED")
         pr_head_branch: Head branch from PR metadata (source branch for landing)
+        pr_has_conflicts: Whether the PR has merge conflicts (None if unknown or no PR)
         worktree_branch: Branch name in the worktree (if exists locally)
         last_local_impl_at: Raw timestamp for local impl
         last_remote_impl_at: Raw timestamp for remote impl
@@ -62,6 +63,7 @@ class PlanRowData:
         created_display: Formatted relative time string (e.g., "2d ago")
         author: GitHub login of the issue creator
         lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-")
+        pr_status_display: PR status indicators for sts column (e.g., "🚧", "👀💥", "-")
     """
 
     plan_id: int
@@ -82,6 +84,7 @@ class PlanRowData:
     pr_title: str | None
     pr_state: str | None
     pr_head_branch: str | None
+    pr_has_conflicts: bool | None
     worktree_branch: str | None
     last_local_impl_at: datetime | None
     last_remote_impl_at: datetime | None
@@ -113,6 +116,7 @@ class PlanRowData:
     author: str
     is_learn_plan: bool
     lifecycle_display: str
+    pr_status_display: str
 
 
 @dataclass(frozen=True)

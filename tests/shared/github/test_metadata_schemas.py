@@ -159,8 +159,8 @@ class TestWorktreeCreationSchema:
         with pytest.raises(ValueError, match="plan_file must not be empty"):
             schema.validate(data)
 
-    def test_unknown_fields(self) -> None:
-        """Unknown fields raise ValueError."""
+    def test_unknown_fields_warns(self) -> None:
+        """Unknown fields emit a warning instead of raising."""
         schema = WorktreeCreationSchema()
         data = {
             "worktree_name": "feature-123",
@@ -168,7 +168,7 @@ class TestWorktreeCreationSchema:
             "timestamp": "2024-01-15T10:30:00Z",
             "unknown_field": "value",
         }
-        with pytest.raises(ValueError, match="Unknown fields: unknown_field"):
+        with pytest.warns(UserWarning, match="Unknown fields.*unknown_field"):
             schema.validate(data)
 
 
@@ -362,8 +362,8 @@ class TestWorkflowStartedSchema:
         with pytest.raises(ValueError, match="branch_name must not be empty"):
             schema.validate(data)
 
-    def test_unknown_fields(self) -> None:
-        """Unknown fields raise ValueError."""
+    def test_unknown_fields_warns(self) -> None:
+        """Unknown fields emit a warning instead of raising."""
         schema = WorkflowStartedSchema()
         data = {
             "status": "started",
@@ -373,7 +373,7 @@ class TestWorkflowStartedSchema:
             "issue_number": 123,
             "unknown_field": "value",
         }
-        with pytest.raises(ValueError, match="Unknown fields: unknown_field"):
+        with pytest.warns(UserWarning, match="Unknown fields.*unknown_field"):
             schema.validate(data)
 
 
@@ -577,8 +577,8 @@ class TestPlanHeaderSchema:
         }
         schema.validate(data)  # Should not raise
 
-    def test_unknown_fields_raises(self) -> None:
-        """Unknown fields raise ValueError."""
+    def test_unknown_fields_warns(self) -> None:
+        """Unknown fields emit a warning instead of raising."""
         schema = PlanHeaderSchema()
         data = {
             "schema_version": "2",
@@ -586,7 +586,7 @@ class TestPlanHeaderSchema:
             "created_by": "testuser",
             "unknown_field": "value",
         }
-        with pytest.raises(ValueError, match="Unknown fields: unknown_field"):
+        with pytest.warns(UserWarning, match="Unknown fields.*unknown_field"):
             schema.validate(data)
 
     def test_valid_with_plan_comment_id(self) -> None:
