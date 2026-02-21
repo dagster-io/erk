@@ -113,7 +113,7 @@ def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -> None:
             "--run-id",
             "99999",
             "--pr-number",
-            "999",
+            "998",
             "--submitted-by",
             "alice",
             "--run-url",
@@ -165,3 +165,34 @@ def test_pr_not_found_others_succeed(tmp_path: Path) -> None:
     assert output["dispatch_metadata"]["success"] is True
     assert output["queued_comment"]["success"] is True
     assert output["pr_closing_ref"]["success"] is False
+
+
+def test_self_referential_closes_skipped(tmp_path: Path) -> None:
+    """When issue_number == pr_number (draft_pr mode), skip Closes #N to avoid self-close."""
+    # In draft_pr mode, the PR IS the plan entity. issue_number and pr_number are the same.
+    pr_body = _plan_header_body()
+    issues = FakeGitHubIssues(issues={42: _issue(42, pr_body)})
+    github = FakeGitHub(pr_details={42: _pr(42, pr_body)})
+    result = CliRunner().invoke(
+        register_one_shot_plan,
+        [
+            "--issue-number",
+            "42",
+            "--run-id",
+            "99999",
+            "--pr-number",
+            "42",
+            "--submitted-by",
+            "alice",
+            "--run-url",
+            RUN_URL,
+        ],
+        obj=_ctx(tmp_path, issues=issues, github=github),
+    )
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    # PR closing ref should be skipped (not attempted), marked as self-referential
+    assert output["pr_closing_ref"]["success"] is True
+    assert output["pr_closing_ref"]["skipped"] == "self-referential"
+    # PR body should NOT have been updated with Closes #N
+    assert len(github.updated_pr_bodies) == 0

@@ -40,7 +40,7 @@ on:
         type: string
         default: ""
       plan_issue_number:
-        description: "Pre-created plan issue number (for P<N>- branch naming)"
+        description: "Plan entity number: issue number (github backend) or PR number (draft_pr backend)"
         required: false
         type: string
         default: ""
