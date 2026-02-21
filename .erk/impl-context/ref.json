@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Rename \"instruction\" to \"prompt\" throughout one-shot feature"
-}
