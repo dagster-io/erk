@@ -136,7 +136,7 @@ Rules triggered by matching actions in code.
 
 **merging a plan review PR** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan review PRs are NEVER merged. They exist only for inline review comments. Close without merging when review is complete.
 
-**migrating a plan without preserving operational metadata** → Read [Plan Migration to Draft PR](plan-migrate-to-draft-pr.md) first. create_plan() only sets a subset of fields. Use update_metadata() in a second phase to carry over operational fields like lifecycle_stage, last_dispatched_at, etc. See \_FIELDS_HANDLED_BY_CREATE in plan_migrate_to_draft_pr.py:206-216.
+**migrating a plan without preserving operational metadata** → Read [Plan Migration to Draft PR](plan-migrate-to-draft-pr.md) first. create_plan() only sets a subset of fields. Use update_metadata() in a second phase to carry over operational fields like lifecycle_stage, last_dispatched_at, etc. See \_FIELDS_HANDLED_BY_CREATE in plan_migrate_to_draft_pr.py.
 
 **modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
 

@@ -20,6 +20,7 @@ The prefix is applied in three places, each serving a different submission flow:
 
 <!-- Source: src/erk/cli/commands/submit.py, _add_planned_prefix -->
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _add_planned_prefix -->
+
 | File                                         | Symbol                  | When Used                                     |
 | -------------------------------------------- | ----------------------- | --------------------------------------------- |
 | `src/erk/cli/commands/submit.py`             | `_add_planned_prefix()` | Direct `erk submit` command                   |
