@@ -14,12 +14,12 @@ https://gist.github.com/schrockn/39556c434e7c0cc6037ab29d3283aff4
 
 ## Summary
 
-| Metric                        | Count |
-| ----------------------------- | ----- |
-| Documentation items           | 7     |
-| Contradictions to resolve     | 1     |
-| Tripwire candidates (score>=4)| 0     |
-| Potential tripwires (score2-3)| 1     |
+| Metric                         | Count |
+| ------------------------------ | ----- |
+| Documentation items            | 7     |
+| Contradictions to resolve      | 1     |
+| Tripwire candidates (score>=4) | 0     |
+| Potential tripwires (score2-3) | 1     |
 
 ## Documentation Items
 
@@ -36,14 +36,14 @@ https://gist.github.com/schrockn/39556c434e7c0cc6037ab29d3283aff4
 ```markdown
 <!-- Update the Write Points table (around line 1158-1164) to add a second row for `implemented` stage -->
 
-| Stage          | Set By                     | When                                    |
-| -------------- | -------------------------- | --------------------------------------- |
-| `prompted`     | `one_shot_dispatch`        | One-shot plan issue created             |
-| `planning`     | `one-shot.yml` workflow    | Agent begins writing plan               |
-| `planned`      | `plan_save_to_issue`, ...  | Plan saved to GitHub                    |
-| `implementing` | `mark-impl-started`        | Implementation begins (local or remote) |
-| `implemented`  | `impl-signal submitted`    | PR submitted successfully               |
-| `implemented`  | `handle-no-changes`        | No-changes scenario (edge case)         |
+| Stage          | Set By                    | When                                    |
+| -------------- | ------------------------- | --------------------------------------- |
+| `prompted`     | `one_shot_dispatch`       | One-shot plan issue created             |
+| `planning`     | `one-shot.yml` workflow   | Agent begins writing plan               |
+| `planned`      | `plan_save_to_issue`, ... | Plan saved to GitHub                    |
+| `implementing` | `mark-impl-started`       | Implementation begins (local or remote) |
+| `implemented`  | `impl-signal submitted`   | PR submitted successfully               |
+| `implemented`  | `handle-no-changes`       | No-changes scenario (edge case)         |
 
 <!-- Note: Two commands can set `implemented`. The primary path is `impl-signal submitted` after normal PR submission. The `handle-no-changes` command handles the edge case where implementation produces no changes. -->
 ```
@@ -93,13 +93,14 @@ Signals lifecycle events for plan implementation tracking. Always returns JSON a
 
 **Events:**
 
-| Event       | Effect                                      | Requires `--session-id` |
-| ----------- | ------------------------------------------- | ----------------------- |
-| `started`   | Posts comment + updates metadata + cleanup  | Yes                     |
-| `ended`     | Updates metadata only                       | No                      |
-| `submitted` | Sets lifecycle_stage to "implemented"       | No                      |
+| Event       | Effect                                     | Requires `--session-id` |
+| ----------- | ------------------------------------------ | ----------------------- |
+| `started`   | Posts comment + updates metadata + cleanup | Yes                     |
+| `ended`     | Updates metadata only                      | No                      |
+| `submitted` | Sets lifecycle_stage to "implemented"      | No                      |
 
 **Key differences for `submitted`:**
+
 - Does NOT post a GitHub comment (PR visibility is sufficient)
 - Does NOT require `--session-id` flag (unlike `started`)
 - Uses LBYL guard to check plan exists before updating metadata
@@ -135,7 +136,7 @@ The submitted event does NOT post a GitHub comment because the PR creation itsel
 
 **Draft Content:**
 
-```markdown
+````markdown
 <!-- In Step 13 (Submit PR) or appropriate location -->
 
 ## Lifecycle Stage Update After Submission
@@ -145,13 +146,16 @@ After `erk pr submit` completes, the plan-implement workflow calls:
 ```bash
 erk exec impl-signal submitted --format json 2>/dev/null || true
 ```
+````
 
 The `2>/dev/null || true` pattern ensures graceful degradation:
+
 - Stderr is suppressed (avoids user confusion from non-critical warnings)
 - Exit code is always 0 (prevents workflow interruption if signal fails)
 
 This maintains symmetry with the GitHub Actions workflow where the same event is fired after successful PR submission.
-```
+
+````
 
 ---
 
@@ -173,9 +177,10 @@ if: >-
   steps.implement.outputs.implementation_success == 'true' &&
   steps.handle_outcome.outputs.has_changes == 'true' &&
   (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
-```
+````
 
 This ensures lifecycle stage only transitions to "implemented" when:
+
 1. Implementation succeeded (not a failed agent run)
 2. Changes exist (not a no-changes scenario handled by `handle-no-changes`)
 3. Submission succeeded (either direct submit or after conflict resolution)
@@ -183,7 +188,8 @@ This ensures lifecycle stage only transitions to "implemented" when:
 The `handle-no-changes` command separately sets `implemented` for zero-change scenarios.
 
 Source: `.github/workflows/plan-implement.yml`, grep for "Update lifecycle stage to implemented"
-```
+
+````
 
 ---
 
@@ -205,7 +211,7 @@ Source: `.github/workflows/plan-implement.yml`, grep for "Update lifecycle stage
 After successful PR submission, the lifecycle stage transitions from "implementing" to "implemented". This occurs via `impl-signal submitted` called after `erk pr submit` completes.
 
 See [Lifecycle Stage Tracking](../planning/lifecycle.md#lifecycle-stage-tracking) for the complete list of write points and stage meanings.
-```
+````
 
 ---
 
