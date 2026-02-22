@@ -10,6 +10,7 @@ from erk.core.context import ErkContext
 @click.argument("count", type=int, default=1, required=False)
 @script_option
 @click.option(
+    "-d",
     "--delete-current",
     is_flag=True,
     help="Delete current branch and worktree after navigating down",
