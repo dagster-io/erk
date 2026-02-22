@@ -15,7 +15,7 @@ class IssueNextSteps:
 
     @property
     def prepare(self) -> str:
-        return f"erk br create --for-plan {self.issue_number}"
+        return f"erk br co --for-plan {self.issue_number}"
 
     @property
     def submit(self) -> str:
@@ -24,7 +24,18 @@ class IssueNextSteps:
     @property
     def prepare_and_implement(self) -> str:
         return (
-            f'source "$(erk br create --for-plan {self.issue_number} --script)"'
+            f'source "$(erk br co --for-plan {self.issue_number} --script)"'
+            " && erk implement --dangerous"
+        )
+
+    @property
+    def prepare_new_slot(self) -> str:
+        return f"erk br co --new-slot --for-plan {self.issue_number}"
+
+    @property
+    def prepare_new_slot_and_implement(self) -> str:
+        return (
+            f'source "$(erk br co --new-slot --for-plan {self.issue_number} --script)"'
             " && erk implement --dangerous"
         )
 
@@ -48,6 +59,28 @@ class DraftPRNextSteps:
     def checkout_and_implement(self) -> str:
         return f'source "$(erk br co {self.branch_name} --script)" && erk implement --dangerous'
 
+    @property
+    def prepare(self) -> str:
+        return f"erk br co --for-plan {self.pr_number}"
+
+    @property
+    def prepare_and_implement(self) -> str:
+        return (
+            f'source "$(erk br co --for-plan {self.pr_number} --script)"'
+            " && erk implement --dangerous"
+        )
+
+    @property
+    def prepare_new_slot(self) -> str:
+        return f"erk br co --new-slot --for-plan {self.pr_number}"
+
+    @property
+    def prepare_new_slot_and_implement(self) -> str:
+        return (
+            f'source "$(erk br co --new-slot --for-plan {self.pr_number} --script)"'
+            " && erk implement --dangerous"
+        )
+
 
 # Slash commands (static, don't need issue number)
 SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
@@ -62,12 +95,11 @@ def format_next_steps_plain(issue_number: int) -> str:
 View Issue: {s.view}
 
 In Claude Code:
-  Prepare worktree: {PREPARE_SLASH_COMMAND}
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
   Local: {s.prepare}
-  Prepare+Implement: {s.prepare_and_implement}
+  Implement: {s.prepare_and_implement}
   Submit to Queue: {s.submit}"""
 
 
@@ -81,9 +113,10 @@ View PR: {s.view}
 In Claude Code:
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
-Outside Claude Code:
-  Local: {s.checkout_and_implement}
-  Submit to queue: {s.submit}"""
+OR exit Claude Code first, then run one of:
+  Local: {s.prepare}
+  Implement: {s.prepare_and_implement}
+  Submit to Queue: {s.submit}"""
 
 
 def format_next_steps_markdown(issue_number: int) -> str:
@@ -100,7 +133,7 @@ def format_next_steps_markdown(issue_number: int) -> str:
 
 ### Local Execution
 
-**Create branch from plan:**
+**Checkout plan branch:**
 ```bash
 {s.prepare}
 ```"""

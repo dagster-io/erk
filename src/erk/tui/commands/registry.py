@@ -101,14 +101,13 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
 
 def _display_copy_prepare(ctx: CommandContext) -> str:
     """Display name for copy_prepare command."""
-    return f"erk br create --for-plan {ctx.row.plan_id}"
+    return f"erk br co --for-plan {ctx.row.plan_id}"
 
 
 def _display_copy_prepare_activate(ctx: CommandContext) -> str:
     """Display name for copy_prepare_activate command."""
     return (
-        f'source "$(erk br create --for-plan {ctx.row.plan_id} --script)"'
-        " && erk implement --dangerous"
+        f'source "$(erk br co --for-plan {ctx.row.plan_id} --script)" && erk implement --dangerous'
     )
 
 
@@ -315,7 +314,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_prepare",
-            name="erk br create --for-plan",
+            name="erk br co --for-plan",
             description="create branch for plan",
             category=CommandCategory.COPY,
             shortcut="1",

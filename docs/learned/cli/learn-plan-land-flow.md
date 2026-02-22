@@ -36,7 +36,7 @@ The validation pipeline's `check_learn_status()` step extracts the issue number 
 
 **Why extract from branch name instead of PR labels?**
 
-Branch names are stable identifiers (set at `erk br create --for-plan` time). PR labels can be added/removed during review. Extracting from branch name means learn plan detection is deterministic—the same branch will always trigger the same pipeline steps.
+Branch names are stable identifiers (set at `erk br co --for-plan` time). PR labels can be added/removed during review. Extracting from branch name means learn plan detection is deterministic—the same branch will always trigger the same pipeline steps.
 
 **Detection sequence**:
 

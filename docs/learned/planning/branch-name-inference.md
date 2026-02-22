@@ -20,7 +20,7 @@ read_when:
 Plan metadata (`plan-header` block) intentionally omits `branch_name` at creation time because of a temporal gap in the plan lifecycle:
 
 1. **Plan saved** → GitHub issue created (no branch exists yet)
-2. **Branch created** → User runs `erk br create --for-plan {issue}` (branch now exists)
+2. **Branch created** → User runs `erk br co --for-plan {issue}` (branch now exists)
 3. **Implementation starts** → `impl-signal started` writes `branch_name` into the plan-header
 
 The gap between steps 1 and 2 is unavoidable: the plan must exist before the branch can be named after it (the branch name contains the issue number). Attempting to set `branch_name` during save would require either predicting the branch name (fragile — the user might choose a custom name) or creating the branch immediately (wrong — the user hasn't started work yet).

@@ -149,12 +149,12 @@ If **on trunk = true**:
 OR exit Claude Code first, then run one of:
 
   New slot (recommended — you're on trunk):
-    Local: erk br create --new-slot --for-plan <issue_number>
-    Implement: implement the planned pr in <<branch_name>> in new worktree
+    Local: erk br co --new-slot --for-plan <issue_number>
+    Implement: source "$(erk br co --new-slot --for-plan <issue_number> --script)" && erk implement --dangerous
 
   Same slot:
-    Local: erk br create --for-plan <issue_number>
-    Implement: implement the planned pr in <<branch_name>>
+    Local: erk br co --for-plan <issue_number>
+    Implement: source "$(erk br co --for-plan <issue_number> --script)" && erk implement --dangerous
 
   Submit to Queue: erk plan submit <issue_number>
 ```
@@ -165,12 +165,12 @@ If **on trunk = false**:
 OR exit Claude Code first, then run one of:
 
   Same slot (recommended — you're in a slot):
-    Local: erk br create --for-plan <issue_number>
-    Implement: implement the planned pr in <<branch_name>>
+    Local: erk br co --for-plan <issue_number>
+    Implement: source "$(erk br co --for-plan <issue_number> --script)" && erk implement --dangerous
 
   New slot:
-    Local: erk br create --new-slot --for-plan <issue_number>
-    Implement: implement the planned pr in <<branch_name>> in new worktree
+    Local: erk br co --new-slot --for-plan <issue_number>
+    Implement: source "$(erk br co --new-slot --for-plan <issue_number> --script)" && erk implement --dangerous
 
   Submit to Queue: erk plan submit <issue_number>
 ```

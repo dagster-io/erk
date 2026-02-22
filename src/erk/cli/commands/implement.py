@@ -399,7 +399,7 @@ def implement(
                 f"Branch does not follow PXXXX-* pattern. Either:\n"
                 f"  1. Provide TARGET explicitly: erk implement <TARGET>\n"
                 f"  2. Switch to a plan branch: erk br checkout P<num>-...\n"
-                f"  3. Create branch from plan: erk br create --for-plan <issue>"
+                f"  3. Checkout plan branch: erk br co --for-plan <issue>"
             )
 
         # Use detected plan number as target

@@ -631,7 +631,7 @@ class TestPlanDetailScreenCopyActions:
             await pilot.press("1")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk br create --for-plan 123"
+            assert clipboard.last_copied == "erk br co --for-plan 123"
 
     @pytest.mark.asyncio
     async def test_copy_submit_shortcut_3(self) -> None:
@@ -746,7 +746,7 @@ class TestCommandPaletteFromMain:
             # Execute command directly (simulates palette selection)
             app.execute_palette_command("copy_prepare")
 
-            assert clipboard.last_copied == "erk br create --for-plan 123"
+            assert clipboard.last_copied == "erk br co --for-plan 123"
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_open_pr(self) -> None:

@@ -1,6 +1,7 @@
 """Tests for erk br co (branch checkout) command."""
 
 import os
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,8 +21,14 @@ from erk.core.worktree_pool import (
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+from erk_shared.plan_store import get_plan_backend
+from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+from tests.test_utils.plan_helpers import create_plan_store
+
+# Fixed timestamp for test Plan objects
+TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
 
 
 def test_checkout_succeeds_when_graphite_not_enabled() -> None:
@@ -670,3 +677,209 @@ def test_branch_checkout_internal_state_mismatch_allocated_but_not_checked_out()
         assert "Internal state mismatch" in result.output
         assert "orphaned-branch" in result.output
         assert "no worktree has it checked out" in result.output
+
+
+# --- --for-plan tests ---
+
+
+def test_checkout_for_plan_creates_impl_folder() -> None:
+    """Test that --for-plan resolves plan, creates branch, and sets up .impl/."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        plan = Plan(
+            plan_identifier="500",
+            title="Add feature",
+            body="# Plan\nImplementation details",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/500",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={},
+            objective_id=None,
+        )
+        backend = get_plan_backend()
+        plan_store, _ = create_plan_store({"500": plan}, backend=backend)
+
+        # Draft-PR backend needs the branch to exist already
+        if backend == "draft_pr":
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                local_branches={env.cwd: ["main", "plan-500"]},
+                existing_paths={env.cwd, env.repo.worktrees_dir},
+            )
+
+        ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "--for-plan", "500"], obj=ctx)
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Created .impl/ folder from plan #500" in result.output
+
+        # Verify .impl/ folder was created in the worktree
+        worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        impl_folder = worktree_path / ".impl"
+        assert impl_folder.exists()
+        assert (impl_folder / "plan.md").exists()
+        assert (impl_folder / "plan-ref.json").exists()
+
+
+def test_checkout_for_plan_error_both_branch_and_for_plan() -> None:
+    """Test that providing both BRANCH and --for-plan fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(
+            branch_group, ["checkout", "my-branch", "--for-plan", "123"], obj=ctx
+        )
+
+        assert result.exit_code == 1
+        assert "Cannot specify both BRANCH and --for-plan" in result.output
+
+
+def test_checkout_for_plan_error_neither_branch_nor_for_plan() -> None:
+    """Test that providing neither BRANCH nor --for-plan fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(branch_group, ["checkout"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "Must provide BRANCH argument or --for-plan option" in result.output
+
+
+def test_checkout_new_slot_forces_new_allocation() -> None:
+    """Test that --new-slot forces a new slot instead of stacking in place."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "new-feature"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        # Pre-create pool state with cwd assigned to a slot
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="existing-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, existing_state)
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "--new-slot", "new-feature"], obj=ctx)
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Assigned new-feature to" in result.output
+        # Should NOT say "Stacked" or "in place"
+        assert "Stacked" not in result.output
+        assert "in place" not in result.output
+
+        # Verify two assignments exist (original + new)
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 2
+
+
+def test_checkout_new_slot_and_no_slot_fails() -> None:
+    """Test that --new-slot and --no-slot together fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "some-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(
+            branch_group, ["checkout", "--new-slot", "--no-slot", "some-branch"], obj=ctx
+        )
+
+        assert result.exit_code == 1
+        assert "--new-slot and --no-slot cannot be used together" in result.output
+
+
+def test_checkout_stacks_in_place_from_assigned_slot() -> None:
+    """Test that checkout from assigned slot stacks in place by default."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "target-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        # Pre-create pool state with cwd assigned to a slot
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="existing-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, existing_state)
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "target-branch"], obj=ctx)
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Stacked target-branch in erk-slot-01 (in place)" in result.output
+
+        # Verify assignment tip was updated
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+        assert state.assignments[0].branch_name == "target-branch"
+        assert state.assignments[0].slot_name == "erk-slot-01"

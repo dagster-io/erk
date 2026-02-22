@@ -24,11 +24,11 @@ This document covers the cross-cutting pattern of how erk ensures that closing r
 
 The submit pipeline resolves issue numbers from three sources with a strict priority hierarchy. The cross-cutting concern is that these sources live in different systems (filesystem, git, GitHub API) and must be validated against each other.
 
-| Source                    | When used                  | Why it exists                                                                      |
-| ------------------------- | -------------------------- | ---------------------------------------------------------------------------------- |
-| `.impl/plan-ref.json`     | Authoritative when present | Created by `erk br create --for-plan` or `erk plan submit` — explicit plan linkage |
-| Branch name (`P{N}-slug`) | Fallback when no `.impl/`  | Supports manually-created worktrees from plan branches                             |
-| Existing PR footer        | Last resort on re-submit   | Preserves references after worktree recreation                                     |
+| Source                    | When used                  | Why it exists                                                                  |
+| ------------------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| `.impl/plan-ref.json`     | Authoritative when present | Created by `erk br co --for-plan` or `erk plan submit` — explicit plan linkage |
+| Branch name (`P{N}-slug`) | Fallback when no `.impl/`  | Supports manually-created worktrees from plan branches                         |
+| Existing PR footer        | Last resort on re-submit   | Preserves references after worktree recreation                                 |
 
 <!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, validate_plan_linkage -->
 
@@ -38,7 +38,7 @@ The submit pipeline resolves issue numbers from three sources with a strict prio
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state -->
 
-When `.impl/` exists but lacks `plan-ref.json`, and the branch name contains a valid issue number, `prepare_state()` auto-creates the missing `plan-ref.json`. This bridges the gap when a worktree is created manually from a plan branch (e.g., `git worktree add`) without going through `erk br create --for-plan`, which would normally create the file. See `prepare_state()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
+When `.impl/` exists but lacks `plan-ref.json`, and the branch name contains a valid issue number, `prepare_state()` auto-creates the missing `plan-ref.json`. This bridges the gap when a worktree is created manually from a plan branch (e.g., `git worktree add`) without going through `erk br co --for-plan`, which would normally create the file. See `prepare_state()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
 
 ### Closing Reference Preservation on Re-Submit
 
