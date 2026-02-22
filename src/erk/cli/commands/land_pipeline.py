@@ -338,7 +338,7 @@ def check_learn_status(ctx: ErkContext, state: LandState) -> LandState | LandErr
 
     plan_id = ctx.plan_backend.resolve_plan_id_for_branch(state.main_repo_root, state.branch)
 
-    if plan_id is not None:
+    if plan_id is not None and (state.is_current_branch or state.worktree_path is not None):
         _check_learn_status_and_prompt(
             ctx,
             repo_root=state.main_repo_root,

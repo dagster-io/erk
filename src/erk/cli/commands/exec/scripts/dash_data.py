@@ -2,6 +2,7 @@
 
 Usage:
     erk exec dash-data [--state open|closed] [--label LABEL] [--limit N]
+        [--show-prs/--no-show-prs] [--show-runs/--no-show-runs]
         [--run-state STATE] [--creator USER]
 
 Output:
@@ -50,6 +51,8 @@ def _serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
 @click.option("--state", type=click.Choice(["open", "closed"]), default=None)
 @click.option("--label", multiple=True, default=("erk-plan",))
 @click.option("--limit", type=int, default=None)
+@click.option("--show-prs/--no-show-prs", default=True)
+@click.option("--show-runs/--no-show-runs", default=False)
 @click.option("--run-state", default=None)
 @click.option("--creator", default=None)
 @click.pass_context
@@ -59,6 +62,8 @@ def dash_data(
     state: str | None,
     label: tuple[str, ...],
     limit: int | None,
+    show_prs: bool,
+    show_runs: bool,
     run_state: str | None,
     creator: str | None,
 ) -> None:
@@ -92,6 +97,8 @@ def dash_data(
         state=state,
         run_state=run_state,
         limit=limit,
+        show_prs=show_prs,
+        show_runs=show_runs,
         creator=creator,
     )
 

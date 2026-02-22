@@ -56,57 +56,14 @@ def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
     if stage == "planned":
         return f"[dim]{stage}[/dim]"
     if stage == "implementing":
-        return "[yellow]impling[/yellow]"
+        return f"[yellow]{stage}[/yellow]"
     if stage == "implemented":
-        return "[cyan]impld[/cyan]"
+        return f"[cyan]{stage}[/cyan]"
     if stage == "merged":
         return f"[green]{stage}[/green]"
     if stage == "closed":
         return f"[dim red]{stage}[/dim red]"
     return stage
-
-
-def compute_pr_status_display(
-    *,
-    is_draft: bool | None,
-    has_conflicts: bool | None,
-    review_decision: str | None,
-) -> str:
-    """Compute PR status indicators for the dedicated sts column.
-
-    Returns a compact emoji string combining draft/published state,
-    conflict status, and review decision.
-
-    Args:
-        is_draft: True for draft PR, False for published PR, None if unknown
-        has_conflicts: True if PR has merge conflicts, False/None otherwise
-        review_decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
-
-    Returns:
-        Compact emoji string (e.g., "🚧", "👀💥", "👀✔", "-")
-    """
-    parts: list[str] = []
-
-    # Draft/published indicator
-    if is_draft is True:
-        parts.append("🚧")
-    elif is_draft is False:
-        parts.append("👀")
-
-    # Conflict indicator
-    if has_conflicts is True:
-        parts.append("💥")
-
-    # Review decision indicator
-    if review_decision == "APPROVED":
-        parts.append("✔")
-    elif review_decision == "CHANGES_REQUESTED":
-        parts.append("❌")
-
-    if not parts:
-        return "-"
-
-    return "".join(parts)
 
 
 def format_lifecycle_with_status(
@@ -138,8 +95,7 @@ def format_lifecycle_with_status(
     """
     # Detect stage from the display string content
     is_planned = "planned" in lifecycle_display
-    is_implementing = "impling" in lifecycle_display
-    is_implemented = "impld" in lifecycle_display
+    is_implementing = "implementing" in lifecycle_display
     is_review = "review" in lifecycle_display and "REVIEW" not in lifecycle_display
     is_active_stage = is_planned or is_implementing or is_review
 
@@ -160,8 +116,7 @@ def format_lifecycle_with_status(
         else:
             lifecycle_display = prefix + lifecycle_display
 
-    # Only implementing, implemented, and review stages show status suffixes
-    if not is_implementing and not is_implemented and not is_review:
+    if not is_implementing and not is_review:
         return lifecycle_display
 
     # Build indicator suffix

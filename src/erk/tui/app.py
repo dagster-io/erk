@@ -208,6 +208,8 @@ class ErkDashApp(App):
             state=self._plan_filters.state,
             run_state=self._plan_filters.run_state,
             limit=self._plan_filters.limit,
+            show_prs=self._plan_filters.show_prs,
+            show_runs=self._plan_filters.show_runs,
             creator=self._plan_filters.creator,
         )
 
@@ -1122,18 +1124,29 @@ class ErkDashApp(App):
                     run_id = row.run_url.rsplit("/", 1)[-1]
                     self._status_bar.set_message(f"Opened run {run_id}")
 
-    @on(PlanDataTable.BranchClicked)
-    def on_branch_clicked(self, event: PlanDataTable.BranchClicked) -> None:
-        """Handle click on branch cell - copy branch name to clipboard."""
+    @on(PlanDataTable.LearnClicked)
+    def on_learn_clicked(self, event: PlanDataTable.LearnClicked) -> None:
+        """Handle click on learn cell - open learn plan issue, PR, or workflow run in browser."""
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
-            branch = row.pr_head_branch or row.worktree_branch
-            if branch:
-                success = self._provider.clipboard.copy(branch)
-                if success:
-                    self.notify(f"Copied: {branch}", timeout=2)
-                else:
-                    self.notify("Clipboard unavailable", severity="error", timeout=2)
+            # Build URL based on which field is set
+            # PR takes priority (plan_completed state)
+            if row.learn_plan_pr is not None and row.plan_url:
+                pr_url = _build_github_url(row.plan_url, "pull", row.learn_plan_pr)
+                self._provider.browser.launch(pr_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened learn PR #{row.learn_plan_pr}")
+            elif row.learn_plan_issue is not None and row.plan_url:
+                issue_url = _build_github_url(row.plan_url, "issues", row.learn_plan_issue)
+                self._provider.browser.launch(issue_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened learn issue #{row.learn_plan_issue}")
+            elif row.learn_run_url is not None:
+                self._provider.browser.launch(row.learn_run_url)
+                if self._status_bar is not None:
+                    # Extract run ID from URL for status message
+                    run_id = row.learn_run_url.rsplit("/", 1)[-1]
+                    self._status_bar.set_message(f"Opened learn workflow run {run_id}")
 
     @on(PlanDataTable.ObjectiveClicked)
     def on_objective_clicked(self, event: PlanDataTable.ObjectiveClicked) -> None:

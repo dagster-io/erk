@@ -206,7 +206,8 @@ def test_create_branch_tracks_with_graphite() -> None:
     """create_branch() creates git branch and tracks with Graphite.
 
     This ensures branches created via BranchManager are tracked in Graphite
-    for proper stack visualization and PR enhancement.
+    for proper stack visualization and PR enhancement. No checkout is needed
+    because gt track accepts the branch name positionally.
     """
     repo_root = Path("/repo")
 
@@ -226,14 +227,10 @@ def test_create_branch_tracks_with_graphite() -> None:
     )
     manager.create_branch(repo_root, "feature-branch", "main")
 
-    # Git operations were called
-    # created_branches is list of (cwd, branch_name, start_point, force) tuples
+    # Git branch was created
     assert fake_git.created_branches == [(repo_root, "feature-branch", "main", False)]
-    # checked_out_branches is list of (cwd, branch_name) tuples
-    assert fake_git.checked_out_branches == [
-        (repo_root, "feature-branch"),
-        (repo_root, "main"),
-    ]
+    # No checkouts needed — gt track accepts branch positionally
+    assert fake_git.checked_out_branches == []
 
     # Graphite tracking was called
     assert fake_graphite.track_branch_calls == [(repo_root, "feature-branch", "main")]

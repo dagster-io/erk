@@ -234,8 +234,8 @@ def test_plan_list_empty_results() -> None:
         assert "No plans found matching the criteria" in result.output
 
 
-def test_plan_list_shows_run_columns() -> None:
-    """Test that run columns are always shown."""
+def test_plan_list_runs_flag_shows_run_columns() -> None:
+    """Test that --runs flag enables run columns."""
     from erk_shared.gateway.github.types import WorkflowRun
 
     plan_body = """<!-- erk:metadata-block:plan-header -->
@@ -281,11 +281,65 @@ last_dispatched_node_id: 'WFR_all_flag'
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
 
         assert result.exit_code == 0
         assert "#200" in result.output
         assert "99999" in result.output
+
+
+def test_plan_list_short_runs_flag() -> None:
+    """Test that -r short flag works same as --runs."""
+    from erk_shared.gateway.github.types import WorkflowRun
+
+    plan_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_run_id: '88888'
+last_dispatched_node_id: 'WFR_short_flag'
+```
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    plan = Plan(
+        plan_identifier="201",
+        title="Plan for short flag test",
+        body=plan_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/201",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 201},
+        objective_id=None,
+    )
+
+    workflow_run = WorkflowRun(
+        run_id="88888",
+        status="in_progress",
+        conclusion=None,
+        branch="master",
+        head_sha="def456",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
+        github = FakeGitHub(
+            issues_data=[plan_to_issue(plan)],
+            workflow_runs_by_node_id={"WFR_short_flag": workflow_run},
+        )
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "-r"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "#201" in result.output
+        assert "88888" in result.output
 
 
 def test_plan_list_sort_issue_default() -> None:

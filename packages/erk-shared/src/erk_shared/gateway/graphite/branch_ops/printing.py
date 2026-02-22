@@ -25,9 +25,7 @@ class PrintingGraphiteBranchOps(PrintingBase, GraphiteBranchOps):
 
     def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
         """Track branch with printed output."""
-        self._emit(
-            self._format_command(f"gt track --branch {branch_name} --parent {parent_branch}")
-        )
+        self._emit(self._format_command(f"gt track {branch_name} --parent {parent_branch}"))
         self._wrapped.track_branch(cwd, branch_name, parent_branch)
 
     def delete_branch(self, repo_root: Path, branch: str) -> None:
@@ -42,5 +40,5 @@ class PrintingGraphiteBranchOps(PrintingBase, GraphiteBranchOps):
 
     def retrack_branch(self, cwd: Path, branch_name: str) -> None:
         """Retrack branch with printed output."""
-        self._emit(self._format_command("gt track"))
+        self._emit(self._format_command(f"gt track {branch_name}"))
         self._wrapped.retrack_branch(cwd, branch_name)

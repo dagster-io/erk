@@ -33,13 +33,31 @@ def test_track_branch_calls_gt_track_correctly(
     expected = [
         "gt",
         "track",
-        "--branch",
         "feature-branch",
         "--parent",
         "main",
         "--no-interactive",
     ]
     assert called_with[0] == expected
+
+
+def test_retrack_branch_passes_branch_name_positionally(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Test that retrack_branch passes branch name as positional argument."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGraphiteBranchOps()
+        ops.retrack_branch(tmp_path, "feature-branch")
+
+    assert len(called_with) == 1
+    assert called_with[0] == ["gt", "track", "feature-branch", "--no-interactive"]
 
 
 def test_delete_branch_calls_gt_delete_with_force(

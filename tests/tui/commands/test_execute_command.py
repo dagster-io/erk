@@ -178,7 +178,6 @@ class TestExecuteCommandClosePlan:
             pr_title=None,
             pr_state=None,
             pr_head_branch=None,
-            pr_has_conflicts=None,
             worktree_branch=None,
             last_local_impl_at=None,
             last_remote_impl_at=None,
@@ -210,7 +209,6 @@ class TestExecuteCommandClosePlan:
             author="test-user",
             is_learn_plan=False,
             lifecycle_display="-",
-            pr_status_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -257,7 +255,6 @@ class TestExecuteCommandSubmitToQueue:
             pr_title=None,
             pr_state=None,
             pr_head_branch=None,
-            pr_has_conflicts=None,
             worktree_branch=None,
             last_local_impl_at=None,
             last_remote_impl_at=None,
@@ -289,7 +286,6 @@ class TestExecuteCommandSubmitToQueue:
             author="test-user",
             is_learn_plan=False,
             lifecycle_display="-",
-            pr_status_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)

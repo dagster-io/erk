@@ -1,6 +1,5 @@
 """Schema implementations for metadata blocks."""
 
-import warnings
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -74,10 +73,7 @@ class WorktreeCreationSchema(MetadataBlockSchema):
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
         if unknown_fields:
-            warnings.warn(
-                f"Unknown fields in {self.get_key()}: {', '.join(sorted(unknown_fields))}",
-                stacklevel=2,
-            )
+            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
         return "erk-worktree-creation"
@@ -124,10 +120,7 @@ class PlanSchema(MetadataBlockSchema):
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
         if unknown_fields:
-            warnings.warn(
-                f"Unknown fields in {self.get_key()}: {', '.join(sorted(unknown_fields))}",
-                stacklevel=2,
-            )
+            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
         return "erk-plan"
@@ -256,10 +249,7 @@ class WorkflowStartedSchema(MetadataBlockSchema):
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
         if unknown_fields:
-            warnings.warn(
-                f"Unknown fields in {self.get_key()}: {', '.join(sorted(unknown_fields))}",
-                stacklevel=2,
-            )
+            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
         return "workflow-started"
@@ -311,10 +301,7 @@ class PlanRetrySchema(MetadataBlockSchema):
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
         if unknown_fields:
-            warnings.warn(
-                f"Unknown fields in {self.get_key()}: {', '.join(sorted(unknown_fields))}",
-                stacklevel=2,
-            )
+            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
         return "plan-retry"
@@ -397,10 +384,6 @@ LAST_SESSION_BRANCH: Literal["last_session_branch"] = "last_session_branch"
 LAST_SESSION_ID: Literal["last_session_id"] = "last_session_id"
 LAST_SESSION_AT: Literal["last_session_at"] = "last_session_at"
 LAST_SESSION_SOURCE: Literal["last_session_source"] = "last_session_source"
-
-# Backwards compatibility: these fields may exist on older PRs
-LAST_SESSION_GIST_ID: Literal["last_session_gist_id"] = "last_session_gist_id"
-LAST_SESSION_GIST_URL: Literal["last_session_gist_url"] = "last_session_gist_url"
 
 # Learn plan tracking fields
 LEARN_PLAN_ISSUE: Literal["learn_plan_issue"] = "learn_plan_issue"
@@ -533,9 +516,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LAST_SESSION_ID,
             LAST_SESSION_AT,
             LAST_SESSION_SOURCE,
-            # Backwards compatibility: may exist on older PRs
-            LAST_SESSION_GIST_ID,
-            LAST_SESSION_GIST_URL,
             LEARN_PLAN_ISSUE,
             LEARN_PLAN_PR,
             LEARNED_FROM_ISSUE,
@@ -806,10 +786,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
         if unknown_fields:
-            warnings.warn(
-                f"Unknown fields in {self.get_key()}: {', '.join(sorted(unknown_fields))}",
-                stacklevel=2,
-            )
+            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
         return "plan-header"
@@ -857,10 +834,7 @@ class ObjectiveHeaderSchema(MetadataBlockSchema):
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
         if unknown_fields:
-            warnings.warn(
-                f"Unknown fields in {self.get_key()}: {', '.join(sorted(unknown_fields))}",
-                stacklevel=2,
-            )
+            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
         return "objective-header"
