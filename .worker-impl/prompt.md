@@ -1,0 +1,1 @@
+I want to have a command that for a given plan will list *all* the associated runs for it, including implementation, but also fix conflicts, addresses etc. You will probably need new storage in order to do this
