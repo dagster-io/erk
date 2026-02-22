@@ -1,0 +1,394 @@
+<session>
+  <meta branch="planned/fix-decouple-objectives-02-22-0356" />
+  <meta model="claude-opus-4-6" />
+  <user>column name should be issue not pr
+
+make "next node" 20 chars wider
+
+rename author to "created by"</user>
+  <thinking>The user wants me to make three changes to what appears to be a TUI dashboard screen:
+
+1. Rename column "pr" to "issue"
+2. Make "next node" column 20 chars wider
+3. Rename column "author" to "created by"
+
+This looks like it's in the objectives screen of the erk TUI. Let me find the relevant code. Given the branch name `planned/fix-decouple-objectives-02-22-0356`, this is likely related to objectives screen columns.
+
+Let me search for the relevant TUI code for the objectives screen.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11047" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11047}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find the relevant code for the objectives screen columns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11047" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11047}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XxTumDr1ac8nn3v2rmDLZX">
+    <param name="pattern">next.node|author|prog</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11047" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11047}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XxTumDr1ac8nn3v2rmDLZX">
+Found 8 files
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/app.py
+src/erk/tui/data/types.py
+src/erk/tui/filtering/logic.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/screens/unresolved_comments_screen.py
+src/erk/tui/sorting/types.py
+src/erk/tui/filtering/types.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018XeRMudJvXzaCQoPnDh4un">
+    <param name="pattern">"pr"|"author"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui</param>
+    <param name="glob">*objective*</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11047" cache_read_input_tokens="19041" output_tokens="436" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11047, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018XeRMudJvXzaCQoPnDh4un">
+No matches found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Sgccwp5y2seHAesJCnZhTj">
+    <param name="pattern">**/tui/**objective*</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="30088" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sgccwp5y2seHAesJCnZhTj">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012A4Fw2zaGfkeHGxqohzH82">
+    <param name="pattern">"pr"|"author"|next.node</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="30088" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012A4Fw2zaGfkeHGxqohzH82">
+161:        plan_col_header = "pr" if self._plan_backend == "draft_pr" else "plan"
+169:            self.add_column("next node", key="next_node", width=30)
+175:            self.add_column("author", key="author", width=9)
+207:        self.add_column("author", key="author", width=9)
+212:            self.add_column("pr", key="pr", width=8)
+286:                Text(row.objective_next_node_display),
+  </tool_result>
+  <tool_use name="Read" id="toolu_012djA5GbmRt6QDFLg3CUYi6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">155</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="416" cache_read_input_tokens="30714" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 416, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012djA5GbmRt6QDFLg3CUYi6">
+   155→
+   156→        Tracks column indices for click detection on plan, branch, local-wt, etc.
+   157→        Objectives view uses enriched columns (plan, progress, next, updated, author).
+   158→        """
+   159→        col_index = 0
+   160→        # In draft_pr mode, first column shows PR number not issue number
+   161→        plan_col_header = "pr" if self._plan_backend == "draft_pr" else "plan"
+   162→        self.add_column(plan_col_header, key="plan", width=6)
+   163→        col_index += 1
+   164→
+   165→        # Objectives view: fully independent column set, return early
+   166→        if self._view_mode == ViewMode.OBJECTIVES:
+   167→            self.add_column("prog", key="progress", width=5)
+   168→            col_index += 1
+   169→            self.add_column("next node", key="next_node", width=30)
+   170→            col_index += 1
+   171→            self.add_column("deps", key="deps", width=12)
+   172→            col_index += 1
+   173→            self.add_column("updated", key="updated", width=7)
+   174→            col_index += 1
+   175→            self.add_column("author", key="author", width=9)
+   176→            col_index += 1
+   177→            return
+   178→
+   179→        if self._plan_backend == "draft_pr":
+   180→            self._sts_column_index = col_index
+   181→            self.add_column("sts", key="sts", width=5)
+   182→            col_index += 1
+   183→            self._stage_column_index = col_index
+   184→            self.add_column("stage", key="stage", width=9)
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now I can see the three changes needed in the objectives view section. Let me make them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3074" cache_read_input_tokens="31130" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3074}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014C9KabcdZEash9WYc3BTYA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # In draft_pr mode, first column shows PR number not issue number
+        plan_col...[truncated 14 chars]...nd == "draft_pr" else "plan"
+        self.add_column(plan_col_header, key="plan", width=6)</param>
+    <param name="new_string">        # In draft_pr mode, first column shows PR number not issue number
+        if self....[truncated 157 chars]...    plan_col_header = "plan"
+        self.add_column(plan_col_header, key="plan", width=6)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3074" cache_read_input_tokens="31130" output_tokens="317" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3074, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014C9KabcdZEash9WYc3BTYA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QpHHNrSG2P6DsxfTdcoVsp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">            self.add_column("next node", key="next_node", width=30)</param>
+    <param name="new_string">            self.add_column("next node", key="next_node", width=50)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="34204" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 396, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QpHHNrSG2P6DsxfTdcoVsp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0162bmA44yUJ9Jnntdi7J5Re">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">            self.add_column("author", key="author", width=9)
+            col_index += 1
+            return</param>
+    <param name="new_string">            self.add_column("created by", key="author", width=12)
+            col_index += 1
+            return</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="34600" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 247, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0162bmA44yUJ9Jnntdi7J5Re">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Done. Three changes made to `src/erk/tui/widgets/plan_table.py`:
+
+1. **"pr" → "issue"** — objectives view now shows "issue" as the first column header (lines 164-168)
+2. **"next node" width 30 → 50** — 20 chars wider (line 172)
+3. **"author" → "created by"** — renamed with width bumped from 9 to 12 to fit (line 178)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="34847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 377}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>add title column. make it 2nd column. as wide as "next node"</user>
+  <tool_use name="Read" id="toolu_014BDfzH4FUaAV3Ew9yXbq3y">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">165</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="174" cache_read_input_tokens="35341" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 174}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014BDfzH4FUaAV3Ew9yXbq3y">
+   165→        else:
+   166→            plan_col_header = "plan"
+   167→        self.add_column(plan_col_header, key="plan", width=6)
+   168→        col_index += 1
+   169→
+   170→        # Objectives view: fully independent column set, return early
+   171→        if self._view_mode == ViewMode.OBJECTIVES:
+   172→            self.add_column("prog", key="progress", width=5)
+   173→            col_index += 1
+   174→            self.add_column("next node", key="next_node", width=50)
+   175→            col_index += 1
+   176→            self.add_column("deps", key="deps", width=12)
+   177→            col_index += 1
+   178→            self.add_column("updated", key="updated", width=7)
+   179→            col_index += 1
+   180→            self.add_column("created by", key="author", width=12)
+   181→            col_index += 1
+   182→            return
+   183→
+   184→        if self._plan_backend == "draft_pr":
+  </tool_result>
+  <assistant>Now I need to understand the data flow — how rows are populated for objectives view. Let me check `_row_to_values` and the `PlanRowData` type.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="429" cache_read_input_tokens="35515" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 429}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UNS6m26LNmwvxNqYehVh2P">
+    <param name="pattern">objective.*title|_row_to_values|OBJECTIVES</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="429" cache_read_input_tokens="35515" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 429}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UNS6m26LNmwvxNqYehVh2P">
+161:        if self._view_mode == ViewMode.OBJECTIVES:
+171:        if self._view_mode == ViewMode.OBJECTIVES:
+255:            values = self._row_to_values(row)
+272:    def _row_to_values(self, row: PlanRowData) -&gt; tuple[str | Text, ...]:
+287:        if self._view_mode == ViewMode.OBJECTIVES:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012aRWPUHnhfX9dahs1TWwn7">
+    <param name="pattern">objective.*title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="429" cache_read_input_tokens="35515" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 429}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012aRWPUHnhfX9dahs1TWwn7">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_017wyE9enW88z464vCjhdeuE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">272</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="35944" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 487}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017wyE9enW88z464vCjhdeuE">
+   272→    def _row_to_values(self, row: PlanRowData) -&gt; tuple[str | Text, ...]:
+   273→        """Convert PlanRowData to table cell values.
+   274→
+   275→        Args:
+   276→            row: Plan row data
+   277→
+   278→        Returns:
+   279→            Tuple of cell values matching column order
+   280→        """
+   281→        # Format issue number - colorize if clickable
+   282→        plan_cell: str | Text = f"#{row.plan_id}"
+   283→        if row.plan_url:
+   284→            plan_cell = Text(plan_cell, style="cyan underline")
+   285→
+   286→        # Objectives view: plan, progress, next, updated, author
+   287→        if self._view_mode == ViewMode.OBJECTIVES:
+   288→            return (
+   289→                plan_cell,
+   290→                row.objective_progress_display,
+   291→                Text(row.objective_next_node_display),
+   292→                row.objective_deps_display,
+   293→                row.updated_display,
+   294→                row.author,
+   295→            )
+   296→
+   297→        # Format worktree
+   298→        if row.exists_locally:
+   299→            wt_cell = row.worktree_name
+   300→        else:
+   301→            wt_cell = "-"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LEn9B8iHN5sT1HwP3AT35a">
+    <param name="pattern">objective_title|objective.*display</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="35944" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 487}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LEn9B8iHN5sT1HwP3AT35a">
+src/erk/tui/data/types.py:54:        objective_display: Formatted display string (e.g., "#123" or "-")
+src/erk/tui/data/types.py:57:        objective_progress_display: Progress display (e.g., "3/7" or "-")
+src/erk/tui/data/types.py:58:        objective_next_node_display: Next pending node (e.g., "1.3 Add tests" or "-")
+src/erk/tui/data/types.py:59:        objective_deps_display: Dep status of next node ("ready", "in progress", etc.)
+src/erk/tui/data/types.py:106:    objective_display: str
+src/erk/tui/data/types.py:109:    objective_progress_display: str
+src/erk/tui/data/types.py:110:    objective_next_node_display: str
+src/erk/tui/data/types.py:111:    objective_deps_display: str
+  </tool_result>
+  <assistant>I need to check if `PlanRowData` already has a title field I can use, or if I need to add one.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="36431" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 932}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A17NDNq7M9gw1bye9B2pm7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py</param>
+    <param name="offset">85</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="36431" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 932}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A17NDNq7M9gw1bye9B2pm7">
+    85→    pr_state: str | None
+    86→    pr_head_branch: str | None
+    87→    pr_has_conflicts: bool | None
+    88→    worktree_branch: str | None
+    89→    last_local_impl_at: datetime | None
+    90→    last_remote_impl_at: datetime | None
+    91→    run_id: str | None
+    92→    run_status: str | None
+    93→    run_conclusion: str | None
+    94→    log_entries: tuple[tuple[str, str, str], ...]
+    95→    resolved_comment_count: int
+    96→    total_comment_count: int
+    97→    comments_display: str
+    98→    learn_status: str | None
+    99→    learn_plan_issue: int | None
+   100→    learn_plan_issue_closed: bool | None
+   101→    learn_plan_pr: int | None
+   102→    learn_run_url: str | None
+   103→    learn_display: str
+   104→    learn_display_icon: str
+   105→    objective_issue: int | None
+   106→    objective_display: str
+   107→    objective_done_nodes: int
+   108→    objective_total_nodes: int
+   109→    objective_progress_display: str
+   110→    objective_next_node_display: str
+   111→    objective_deps_display: str
+   112→    updated_at: datetime
+   113→    updated_display: str
+   114→    created_at: datetime
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XaZaxxqbKiauxNtXfa4z9M">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/data/types.py</param>
+    <param name="offset">60</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="643" cache_read_input_tokens="37363" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 643}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XaZaxxqbKiauxNtXfa4z9M">
+    60→        updated_at: Last update datetime of the issue
+    61→        updated_display: Formatted relative time for last update (e.g., "2h ago")
+    62→        created_at: Creation datetime of the issue
+    63→        created_display: Formatted relative time string (e.g., "2d ago")
+    64→        author: GitHub login of the issue creator
+    65→        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-")
+    66→        pr_status_display: PR status indicators for sts column (e.g., "🚧", "👀💥", "-")
+    67→    """
+    68→
+    69→    plan_id: int
+    70→    plan_url: str | None
+    71→    pr_number: int | None
+    72→    pr_url: str | None
+    73→    pr_display: str
+    74→    checks_display: str
+    75→    worktree_name: str
+    76→    exists_locally: bool
+    77→    local_impl_display: str
+    78→    remote_impl_display: str
+    79→    run_id_display: str
+    80→    run_state_display: str
+    81→    run_url: str | None
+    82→    full_title: str
+    83→    plan_body: str
+    84→    pr_title: str | None
+    85→    pr_state: str | None
+    86→    pr_head_branch: str | None
+    87→    pr_has_conflicts: bool | None
+    88→    worktree_branch: str | None
+    89→    last_local_impl_at: datetime | None
+  </tool_result>
+  <assistant>There's already a `full_title` field on `PlanRowData`. Now I need to add a "title" column and include `full_title` in the objectives row values.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="38006" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 660}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018N3S3gHuopoRmzPL6WE4QX">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # Objectives view: fully independent column set, return early
+        if self._view_mode == ViewMode.OBJECTIVES:
+            self.add_column("prog", key="progress", width=5)</param>
+    <param name="new_string">        # Objectives view: fully independent column set, return early
+        if self._vie...[truncated 68 chars]...0)
+            col_index += 1
+            self.add_column("prog", key="progress", width=5)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="38006" output_tokens="287" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 660, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018N3S3gHuopoRmzPL6WE4QX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the title value to the objectives return tuple:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="38666" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 366}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MMkgR42eKrW3EtHcQ7NoW8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        if self._view_mode == ViewMode.OBJECTIVES:
+            return (
+                plan_cell,
+                row.objective_progress_display,</param>
+    <param name="new_string">        if self._view_mode == ViewMode.OBJECTIVES:
+            return (
+                plan_cell,
+                row.full_title,
+                row.objective_progress_display,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="38666" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 366, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MMkgR42eKrW3EtHcQ7NoW8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Done. Added a "title" column as the 2nd column (after "issue") with width 50, matching "next node". The column displays `full_title` from the existing `PlanRowData`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="39032" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 297}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>

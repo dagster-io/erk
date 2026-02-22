@@ -1,0 +1,632 @@
+<session>
+  <meta branch="planned/fix-decouple-objectives-02-22-0356" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Fix: Update test assertions for new 'title' column in objectives view
+
+## Context
+
+PR #7800 added `row.full_title` at index 1 in `_row_to_values()` for `ViewMode.OBJECTIVES` (src/erk/tui/widgets/plan_table.py:292). The objectives view now returns 7 values instead of 6. Two tests need their assertions updated to match.
+
+## Changes
+
+### File: `tests/tui/test_plan_table.py`
+
+**test_objectives_view_has_enriched_columns** (lines 354-360):
+- Change `assert len(values) == 6` to `assert len(values) == 7`
+- Add `assert values[1] == "Objective Plan"` (full_title from make_plan_row)
+- Shift remaining assertions: indices 1-5 become 2-6
+
+**test_objectives_view_shows_progress_and_next** (lines 379-382):
+- Shift indices: 1→2, 2→3, 3→4, 4→5
+
+## Verification
+
+Run `pytest tests/tui/test_plan_table.py` via devrun agent.
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/eb174876-58ae-4fa1-84be-1d60ef4b2dec.jsonl</user>
+  <thinking>Let me read the test file to see the current state of the assertions that need to be updated.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7012" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7012}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011jKDJDV7vgzs8RQRZH8yCF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="offset">345</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7012" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7012}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011jKDJDV7vgzs8RQRZH8yCF">
+   345→        """Objectives view produces plan, progress, next, deps, updated, author."""
+   346→        filters = PlanFilters.default()
+   347→        table = PlanDataTable(filters, plan_backend="github")
+   348→        table._view_mode = ViewMode.OBJECTIVES
+   349→        row = make_plan_row(42, "Objective Plan")
+   350→
+   351→        values = table._row_to_values(row)
+   352→
+   353→        # Objectives view: plan, progress, next, deps, updated, author
+   354→        assert len(values) == 6
+   355→        assert _text_to_str(values[0]) == "#42"
+   356→        assert values[1] == "-"  # progress_display
+   357→        assert _text_to_str(values[2]) == "-"  # next_step_display
+   358→        assert values[3] == "-"  # deps_display
+   359→        assert values[4] == "-"  # updated_display
+   360→        assert values[5] == "test-user"  # author
+   361→
+   362→    def test_objectives_view_shows_progress_and_next(self) -&gt; None:
+   363→        """Objectives view shows progress and next step from row data."""
+   364→        filters = PlanFilters.default()
+   365→        table = PlanDataTable(filters, plan_backend="github")
+   366→        table._view_mode = ViewMode.OBJECTIVES
+   367→        row = make_plan_row(
+   368→            42,
+   369→            "Objective: Build Feature",
+   370→            objective_done_nodes=3,
+   371→            objective_total_nodes=7,
+   372→            objective_progress_display="3/7",
+   373→            objective_next_node_display="1.3 Add tests",
+   374→            updated_display="2h ago",
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll make both edits.
+
+**First test: `test_objectives_view_has_enriched_columns`** — update length assertion, add title check, shift indices.
+
+**Second test: `test_objectives_view_shows_progress_and_next`** — shift indices.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6760" cache_read_input_tokens="26053" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6760}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01T27JZTu9trzmtDierJLxmt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        # Objectives view: plan, progress, next, deps, updated, author
+        assert len(...[truncated 218 chars]...sert values[4] == "-"  # updated_display
+        assert values[5] == "test-user"  # author</param>
+    <param name="new_string">        # Objectives view: plan, title, progress, next, deps, updated, author
+        asse...[truncated 284 chars]...sert values[5] == "-"  # updated_display
+        assert values[6] == "test-user"  # author</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6760" cache_read_input_tokens="26053" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6760}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T27JZTu9trzmtDierJLxmt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QVSWXKXWyV4BR5nsECsaVf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="old_string">        assert values[1] == "3/7"  # progress
+        assert _text_to_str(values[2]) == "1...[truncated 4 chars]...ep
+        assert values[3] == "-"  # deps
+        assert values[4] == "2h ago"  # updated</param>
+    <param name="new_string">        assert values[2] == "3/7"  # progress
+        assert _text_to_str(values[3]) == "1...[truncated 4 chars]...ep
+        assert values[4] == "-"  # deps
+        assert values[5] == "2h ago"  # updated</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6760" cache_read_input_tokens="26053" output_tokens="725" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6760, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QVSWXKXWyV4BR5nsECsaVf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests via the devrun agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="912" cache_read_input_tokens="32813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 912}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01RLqu5duZMcDFgoRmuy2WXM">
+    <param name="description">Run plan_table tests</param>
+    <param name="prompt">Run `uv run pytest tests/tui/test_plan_table.py -v` and report results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="912" cache_read_input_tokens="32813" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 912, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RLqu5duZMcDFgoRmuy2WXM">
+pytest passed: All 40 tests passed in 0.42s
+
+The test suite for the plan table is fully passing. All 40 tests completed successfully with no failures or skips.
+agentId: a9c0bdde4a3ef8b76 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13529
+tool_uses: 1
+duration_ms: 5210&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 40 tests pass. Here's what I changed in `tests/tui/test_plan_table.py`:
+
+**`test_objectives_view_has_enriched_columns`** (lines 353-361):
+- `len(values) == 6` → `len(values) == 7`
+- Added `assert values[1] == "Objective Plan"` for the new `full_title` column
+- Shifted remaining assertions from indices 1-5 to 2-6
+
+**`test_objectives_view_shows_progress_and_next`** (lines 379-382):
+- Shifted indices: 1→2, 2→3, 3→4, 4→5</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="33725" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 248}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="334" cache_read_input_tokens="34139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 334}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user wants me to run the pr-preview-address command. I need to invoke the pr-feedback-classifier skill first to fetch and classify PR feedback.
+
+Let me first find the current PR for this branch.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1102" cache_read_input_tokens="34484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1102}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01VTepsYse3RZbWPmWruC4A5">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1102" cache_read_input_tokens="34484" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1102, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VTepsYse3RZbWPmWruC4A5">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Based on the fetched comments, here is the classification:
+
+**Review threads**: 1 unresolved thread from `github-actions` about test failures (test coverage review pointing to specific lines in test files).
+
+**Discussion comments**: 7 comments - mostly informational CI/bot status updates and a Graphite stack comment.
+
+The one actionable review thread references changes needed in `tests/tui/test_plan_table.py` due to a new `title` column added at index 1, which shifts all index-based assertions.
+
+```json
+{
+  "success": true,
+  "pr_number": 7800,
+  "pr_title": "Fix: Decouple Objectives Screen Columns from Plans Screen",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7800",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5v-eL0",
+      "type": "review",
+      "path": "src/erk/tui/widgets/plan_table.py",
+      "line": 292,
+      "is_outdated": false,
+      "classification": "actionable",
+      "action_summary": "Bot suggestion: update test assertions in tests/tui/test_plan_table.py — change len check from 6 to 7 and shift index references by +1 in test_objectives_view_has_enriched_columns (lines 354-360) and test_objectives_view_shows_progress_and_next (lines 379-382) due to new 'title' column inserted at index 1",
+      "complexity": "single_file",
+      "original_comment": "**Test Coverage**: Added 'title' column to objectives view row tuple (now 7 values instead of 6). Tests in `tests/tui/test_plan_table.py` need updating: line 354 assertion and indices 356-360 in test_objectives_view_has_enriched_columns, and indices 379-382 in test_obje"
+    }
+  ],
+
+... [23 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <thinking>The PR feedback classifier has returned results. Let me format the preview. There's 1 actionable review thread and 6 informational discussion comments. The actionable item is about updating test assertions - which we've already done! Let me format the preview.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1017" cache_read_input_tokens="35586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1017}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>## PR #7800: "Fix: Decouple Objectives Screen Columns from Plans Screen"
+
+### Actionable Items (1 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | src/erk/tui/widgets/plan_table.py:292 | actionable | Update test assertions for new 'title' column (len 6→7, shift indices +1) | single_file |
+
+### Informational Items (0 total)
+
+No informational review threads.
+
+### Execution Plan Preview
+
+**Batch 1: Single-File Fixes** (auto-proceed)
+- Item #1: tests/tui/test_plan_table.py - Update test assertions for new 'title' column at index 1
+
+### Statistics
+- Actionable items: 1
+- Informational items: 0
+- Informational discussion comments: 6
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+**Note:** This actionable item has already been addressed in the edits made earlier in this session. The test assertions have been updated and all 40 tests pass.
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1017" cache_read_input_tokens="35586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1017}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01Q9DRGtcJwPGAtPW65S4Mq9">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick submit via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="767" cache_read_input_tokens="36603" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 767}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q9DRGtcJwPGAtPW65S4Mq9">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7800"
+}
+  </tool_result>
+  <assistant>Changes committed and submitted to Graphite. PR: https://github.com/dagster-io/erk/pull/7800</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="37370" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 210}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>if feedback addressed, resolve appropriate threads</user>
+  <thinking>The user wants me to resolve the review thread that was flagged by the bot, since we've already addressed the feedback (updated test assertions for the new 'title' column). Let me read the pr-operations skill to understand how to resolve threads properly.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="193" cache_read_input_tokens="37580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 193}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the pr-operations docs to use the correct resolution approach.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="193" cache_read_input_tokens="37580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 193}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_014vdd1je8DEuFCUk3CzTdEo">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="193" cache_read_input_tokens="37580" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 193, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014vdd1je8DEuFCUk3CzTdEo">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <assistant>
+
+The review thread `PRRT_kwDOPxC3hc5v-eL0` flagged the need to update test assertions — which we've done. Let me resolve it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1586" cache_read_input_tokens="37773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1586}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L27HEqT8Uhf5txDYRUdEpS">
+    <param name="command">erk exec resolve-review-thread --thread-id "PRRT_kwDOPxC3hc5v-eL0" --comment "Fixed: Updat...[truncated 108 chars]...has_enriched_columns and test_objectives_view_shows_progress_and_next. All 40 tests pass."</param>
+    <param name="description">Resolve review thread for test assertion updates</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1586" cache_read_input_tokens="37773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1586}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L27HEqT8Uhf5txDYRUdEpS">
+{
+  "success": true,
+  "thread_id": "PRRT_kwDOPxC3hc5v-eL0",
+  "comment_added": true
+}
+  </tool_result>
+  <assistant>Review thread resolved. The bot's feedback about updating test assertions for the new `title` column has been addressed and the thread is now marked as resolved on PR #7800.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="39359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 295}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="371" cache_read_input_tokens="39654" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 371}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="345" cache_read_input_tokens="40025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 345}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>

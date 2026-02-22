@@ -1,0 +1,1131 @@
+<session>
+  <meta branch="planned/fix-decouple-objectives-02-22-0356" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>
+
+🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11252" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11252}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="345" cache_read_input_tokens="30293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 345}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user wants me to run the `/erk:pr-preview-address` command. This is a read-only preview command that fetches and classifies PR review comments. Let me first invoke the pr-feedback-classifier skill to get the PR feedback.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1112" cache_read_input_tokens="30638" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1112}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01RRvA8CMH9AQwm3D8pq8bcN">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1112" cache_read_input_tokens="30638" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1112, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RRvA8CMH9AQwm3D8pq8bcN">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Based on the fetched comments, here is the classified output:
+
+{"success":true,"pr_number":7800,"pr_title":"Fix: Decouple Objectives Screen Columns from Plans Screen","pr_url":"https://github.com/dagster-io/erk/pull/7800","actionable_threads":[{"thread_id":"PRRT_kwDOPxC3hc5v-eL0","type":"review","path":"src/erk/tui/widgets/plan_table.py","line":292,"is_outdated":false,"classification":"actionable","action_summary":"Update tests/tui/test_plan_table.py: change len assertion from 6 to 7, shift all index references by +1 in test_objectives_view_has_enriched_columns (lines 354-360) and test_objectives_view_shows_progress_and_next (lines 379-382) due to new 'title' column inserted at index 1","complexity":"single_file","original_comment":"**Test Coverage**: Added 'title' column to objectives view row tuple (now 7 values instead of 6). Tests in `tests/tui/test_plan_table.py` need updating: line 354 assertion and indices 356-360 in test_objectives_view_has_enriched_columns, and indices 379-382 in test_objectives_view_shows_progress_and_next."}],"discussion_actions":[],"informational_count":7,"batches":[{"name":"Single-File","complexity":"single_file","auto_proceed":true,"item_indices":[0]}],"error":null}
+  </tool_result>
+  <assistant>## PR #7800: "Fix: Decouple Objectives Screen Columns from Plans Screen"
+
+### Actionable Items (1 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | src/erk/tui/widgets/plan_table.py:292 | actionable | Update tests: change len assertion from 6 to 7, shift index references by +1 in test_objectives_view_has_enriched_columns and test_objectives_view_shows_progress_and_next due to new 'title' column | single_file |
+
+### Informational Items (0 actionable, 7 informational discussion comments)
+
+No informational review threads.
+
+### Execution Plan Preview
+
+**Batch 1: Single-File Fixes** (auto-proceed)
+- Item #1: tests/tui/test_plan_table.py - Update test assertions for new 'title' column (len 6→7, shift indices +1)
+
+### Statistics
+- Actionable items: 1
+- Informational items: 0
+- Informational discussion comments: 7
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="540" cache_read_input_tokens="31750" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 540}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Plan Review Detection
+
+Before classifying feedback, determine if this is a plan review PR:
+
+1. Get the PR number:
+   - **If `--pr &lt;number&gt;` specified in ``**: Use that number
+   - **Otherwise**: Get current branch's PR: `gh pr view --json number -q .number`
+
+2. Check if the PR has the `erk-plan-review` label:
+   - **If `--pr &lt;number&gt;` specified**: `gh pr view &lt;number&gt; --json labels -q '.labels[].name'`
+   - **Otherwise**: `gh pr view --json labels -q '.labels[].name'`
+
+3. If YES: extract the plan issue number from the PR body (which contains `**Plan Issue:** #NNN`):
+   - **If `--pr &lt;number&gt;` specified**: `gh pr view &lt;number&gt; --json body -q .body`
+   - **Otherwise**: `gh pr view --json body -q .body`
+   - Parse the issue number from the `**Plan Issue:** #NNN` line
+   - Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
+
+4. If NO: proceed with standard code review flow (Phase 1)
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+**Skip this phase in Plan Review Mode** - plan PRs don't have meaningful code diffs to summarize.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "eb174876-58ae-4fa1-84be-1d60ef4b2dec"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+---
+
+## Plan Review Mode
+
+When Phase 0 detects the `erk-plan-review` label on the current PR, the entire flow switches to plan review mode. This mode edits plan text instead of source code.
+
+### Key Differences: Plan Mode vs Code Mode
+
+| Aspect            | Code Mode                    | Plan Mode                              |
+| ----------------- | ---------------------------- | -------------------------------------- |
+| File edited       | Source code files            | `PLAN-REVIEW-{issue}.md`               |
+| What changes      | Code implementation          | Plan text/structure                    |
+| CI checks         | Run tests                    | Skip (no code to test)                 |
+| Extra step        | None                         | `plan-update-issue` to sync plan issue |
+| Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
+| Thread resolution | What code change was made    | How plan was updated                   |
+
+### Plan Review Phase 1: Save Current Branch
+
+Before processing feedback, record the current branch so we can return to it later:
+
+```bash
+git branch --show-current
+```
+
+Store the result as `ORIGINAL_BRANCH`.
+
+### Plan Review Phase 2: Classify Feedback
+
+Same as standard Phase 1 — use the Task tool (NOT skill invocation, for `--print` mode isolation) to run the classifier in a subagent (see Phase 1 above for the Task tool pattern). Pass `[--pr &lt;number&gt; if specified]` as arguments.
+
+### Plan Review Phase 3: Display Batched Plan
+
+Same as standard Phase 2, but note at the top of the display:
+
+```
+**Plan Review Mode** (erk-plan-review label detected) — changes apply to plan text, not source code.
+```
+
+### Plan Review Phase 4: Execute by Batch (Plan Mode)
+
+For each batch:
+
+#### Step 1: Edit the Plan
+
+1. Read `PLAN-REVIEW-{issue}.md` from the repo root
+2. For each comment in the batch, incorporate reviewer feedback by editing the plan markdown text
+   - Restructure sections, add detail, clarify language, update design decisions as requested
+   - If feedback applies to implementation (not the plan itself), add a note to the relevant plan section rather than making structural changes
+3. Write the updated `PLAN-REVIEW-{issue}.md`
+
+#### Step 2: Commit and Push
+
+```bash
+git add PLAN-REVIEW-{issue}.md
+git commit -m "Incorporate review feedback (batch N/M)
+
+- &lt;summary of change 1&gt;
+- &lt;summary of change 2&gt;
+..."
+git push
+```
+
+#### Step 3: Sync Plan to GitHub Issue
+
+```bash
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
+```
+
+#### Step 4: Resolve Threads
+
+Resolve each thread using the appropriate command (see `pr-operations` skill):
+
+**For review threads** - use the batch command to resolve all at once:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Incorporated feedback into plan. Updated the relevant section in PLAN-REVIEW-{issue}.md.\n\nSummary of change: {brief description}"}]' | erk exec resolve-review-threads
+```
+
+**For discussion comments** (`reply-to-discussion-comment`):
+
+Use a message like:
+
+```
+Addressed in plan update. {description of how feedback was incorporated or why it was noted for implementation phase}
+```
+
+**For feedback that applies to implementation, not the plan itself:**
+
+Use a message like:
+
+```
+Noted for implementation phase. This feedback applies to the code implementation rather than the plan structure — it will be addressed when implementing the plan.
+```
+
+#### Step 5: Report Progress
+
+Same as standard Phase 4 Step 5 — report what was addressed and what remains.
+
+### Plan Review Phase 5: Final Verification
+
+Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
+
+### Return to Original Branch
+
+After all batches are complete and pushed:
+
+1. Switch back to the branch saved in Phase 1: `git checkout &lt;ORIGINAL_BRANCH&gt;`
+2. The plan-review branch work is complete — the user should not remain on it.
+</user>
+  <thinking>The user wants me to run `/erk:pr-address` to address the PR review comments. Let me follow the instructions carefully.
+
+First, I need to load the `pr-operations` skill as a prerequisite.
+
+Then Phase 0: Check if this is a plan review PR.
+
+Let me start by loading the pr-operations skill and checking the PR details.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="4722" cache_read_input_tokens="32290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4722}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me start by loading the prerequisite skill and checking the PR details.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="4722" cache_read_input_tokens="32290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4722}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01L9EHoxEVkTQWB5YMab7bV3">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4722" cache_read_input_tokens="32290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4722}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L9EHoxEVkTQWB5YMab7bV3">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <tool_use name="Bash" id="toolu_01DnDKNT4o9Pxd6ymCXiqDru">
+    <param name="command">gh pr view --json number,labels -q '{number: .number, labels: [.labels[].name]}'</param>
+    <param name="description">Get PR number and labels</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4722" cache_read_input_tokens="32290" output_tokens="246" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4722, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DnDKNT4o9Pxd6ymCXiqDru">
+{"labels":["erk-plan"],"number":7800}
+  </tool_result>
+  <assistant>
+
+Good — PR #7800 does **not** have the `erk-plan-review` label, so this is standard code review mode.
+
+I already have the classifier results from the preview. There's 1 actionable thread:
+
+- **Thread `PRRT_kwDOPxC3hc5v-eL0`** in `tests/tui/test_plan_table.py`: Update test assertions for the new 'title' column (len 6→7, shift indices +1)
+
+Let me read the test file to understand the current state and plan the fix.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1850" cache_read_input_tokens="37012" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1850}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0188WvCUrLL3WKwZbpcTJUFo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="offset">340</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1850" cache_read_input_tokens="37012" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1850}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0188WvCUrLL3WKwZbpcTJUFo">
+   340→
+   341→class TestObjectivesViewRowConversion:
+   342→    """Tests for row conversion in Objectives view."""
+   343→
+   344→    def test_objectives_view_has_enriched_columns(self) -&gt; None:
+   345→        """Objectives view produces plan, progress, next, deps, updated, author."""
+   346→        filters = PlanFilters.default()
+   347→        table = PlanDataTable(filters, plan_backend="github")
+   348→        table._view_mode = ViewMode.OBJECTIVES
+   349→        row = make_plan_row(42, "Objective Plan")
+   350→
+   351→        values = table._row_to_values(row)
+   352→
+   353→        # Objectives view: plan, progress, next, deps, updated, author
+   354→        assert len(values) == 6
+   355→        assert _text_to_str(values[0]) == "#42"
+   356→        assert values[1] == "-"  # progress_display
+   357→        assert _text_to_str(values[2]) == "-"  # next_step_display
+   358→        assert values[3] == "-"  # deps_display
+   359→        assert values[4] == "-"  # updated_display
+   360→        assert values[5] == "test-user"  # author
+   361→
+   362→    def test_objectives_view_shows_progress_and_next(self) -&gt; None:
+   363→        """Objectives view shows progress and next step from row data."""
+   364→        filters = PlanFilters.default()
+   365→        table = PlanDataTable(filters, plan_backend="github")
+   366→        table._view_mode = ViewMode.OBJECTIVES
+   367→        row = make_plan_row(
+   368→            42,
+   369→            "Objective: Build Feature",
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0187fbL2W7NTqVBqjAUZbUcp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">280</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1850" cache_read_input_tokens="37012" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1850}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0187fbL2W7NTqVBqjAUZbUcp">
+   280→        Returns:
+   281→            Tuple of cell values matching column order
+   282→        """
+   283→        # Format issue number - colorize if clickable
+   284→        plan_cell: str | Text = f"#{row.plan_id}"
+   285→        if row.plan_url:
+   286→            plan_cell = Text(plan_cell, style="cyan underline")
+   287→
+   288→        # Objectives view: plan, progress, next, updated, author
+   289→        if self._view_mode == ViewMode.OBJECTIVES:
+   290→            return (
+   291→                plan_cell,
+   292→                row.full_title,
+   293→                row.objective_progress_display,
+   294→                Text(row.objective_next_node_display),
+   295→                row.objective_deps_display,
+   296→                row.updated_display,
+   297→                row.author,
+   298→            )
+   299→
+   300→        # Format worktree
+   301→        if row.exists_locally:
+   302→            wt_cell = row.worktree_name
+   303→        else:
+   304→            wt_cell = "-"
+   305→
+   306→        # Format learn cell - use icon-only for table, colorize if clickable
+   307→        learn_cell: str | Text = row.learn_display_icon
+   308→        if (
+   309→            row.learn_plan_issue is not None
+  </tool_result>
+  <thinking>Now I can see the issue clearly. The `_row_to_values` method for `ViewMode.OBJECTIVES` now returns 7 values (with `row.full_title` added at index 1), but the tests still expect 6 values. I need to:
+
+1. In `test_objectives_view_has_enriched_columns`: Change `len(values) == 6` to `len(values) == 7`, and shift all index references by +1 (since `full_title` is now at index 1)
+2. In `test_objectives_view_shows_progress_and_next`: Shift index references by +1
+
+
+3. I should verify what `full_title` would actually be for the test's `make_plan_row` to make sure my assertions are correct.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6517" cache_read_input_tokens="38862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6517}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I can see the issue clearly. The `_row_to_values` for OBJECTIVES view now returns 7 values (line 290-298 in plan_table.py), with `row.full_title` inserted at index 1. The tests still expect 6 values.
+
+## Execution Plan
+
+### Batch 1: Single-File Fixes (auto-proceed)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | tests/tui/test_plan_table.py | Update assertions: len 6→7, shift indices +1 for new 'title' column |
+
+Let me check what `full_title` defaults to in `make_plan_row`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6517" cache_read_input_tokens="38862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6517}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016RDwJCWnyR87iFKT7Erdgf">
+    <param name="pattern">def make_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6517" cache_read_input_tokens="38862" output_tokens="457" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6517, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016RDwJCWnyR87iFKT7Erdgf">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Gx9LPCnZibT9SvDTNNXCu5">
+    <param name="pattern">def make_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="45379" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 567, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gx9LPCnZibT9SvDTNNXCu5">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0197EbGkxqNBHGBpMWdXFc9A">
+    <param name="pattern">make_plan_row|full_title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="45946" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 142, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0197EbGkxqNBHGBpMWdXFc9A">
+237:def make_plan_row(
+239:    full_title: str = "Test Plan",
+281:        full_title: Full plan title
+385:        full_title=full_title,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KiEhTRdrS4aLpwkfPgkc4T">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="offset">237</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="46088" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 205}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KiEhTRdrS4aLpwkfPgkc4T">
+   237→def make_plan_row(
+   238→    plan_id: int,
+   239→    full_title: str = "Test Plan",
+   240→    *,
+   241→    plan_url: str | None = None,
+   242→    plan_body: str = "",
+   243→    pr_number: int | None = None,
+   244→    pr_url: str | None = None,
+   245→    pr_title: str | None = None,
+   246→    pr_state: str | None = None,
+   247→    pr_head_branch: str | None = None,
+   248→    pr_has_conflicts: bool | None = None,
+   249→    pr_display: str | None = None,
+   250→    worktree_name: str = "",
+   251→    worktree_branch: str | None = None,
+   252→    exists_locally: bool = False,
+   253→    run_url: str | None = None,
+   254→    run_id: str | None = None,
+   255→    run_status: str | None = None,
+   256→    run_conclusion: str | None = None,
+  </tool_result>
+  <assistant>Good. The `full_title` defaults to `"Test Plan"`. Now let me check the test imports to confirm where `make_plan_row` is imported from.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="46293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 433}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016iZdQdAi66XKDqdMuQTS7m">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/tui/test_plan_table.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="46293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 433}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016iZdQdAi66XKDqdMuQTS7m">
+     1→"""Tests for PlanDataTable widget."""
+     2→
+     3→from rich.text import Text
+     4→
+     5→from erk.tui.data.types import PlanFilters
+     6→from erk.tui.views.types import ViewMode
+     7→from erk.tui.widgets.plan_table import PlanDataTable, _strip_rich_markup
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def _text_to_str(value: str | Text) -&gt; str:
+    12→    """Convert Text or str to plain string for assertions."""
+    13→    if isinstance(value, Text):
+    14→        return value.plain
+    15→    return value
+    16→
+    17→
+    18→class TestStripRichMarkup:
+    19→    """Tests for _strip_rich_markup utility function."""
+    20→
+  </tool_result>
+  <thinking>Now I have all the context I need. Let me understand the changes:
+
+In `plan_table.py` line 289-298, the OBJECTIVES view now returns:
+```python
+return (
+    plan_cell,           # [0] - "#42"
+    row.full_title,      # [1] - "Objective Plan" (NEW)
+    row.objective_progress_display,  # [2] - progress
+    Text(row.objective_next_node_display),  # [3] - next step
+    row.objective_deps_display,  # [4] - deps
+    row.updated_display,  # [5] - updated
+    row.author,          # [6] - author
+)
+```
+
+The tests need updating: **test_objectives_view_has_enriched_columns** should check for 7 values instead of 6, verify that `values[1]` contains the full_title, and shift all subsequent assertions down by one index. The same pattern applies to the other objectives test that's being cut off.
+
+Now I'm noticing something — I invoked `/erk:pr-address` which is an action command, but I'm in plan mode where I shouldn't be making edits yet. Let me check the system instructions on this. The reminder says plan mode is active and I shouldn't execute, but the user called an action command. I should write out a plan for these changes instead of implementing them directly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="46726" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 487}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have all the context needed. Let me write the plan and exit plan mode so we can proceed with the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="46726" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 487}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01QVNdUr4yNXJTxj9kVmRBih">
+    <param name="file_path">/Users/schrockn/.claude/plans/woolly-growing-firefly.md</param>
+    <param name="content"># Fix: Update test assertions for new 'title' column in objectives view
+
+## Context
+
+PR #7...[truncated 615 chars]...3, 3→4, 4→5
+
+## Verification
+
+Run `pytest tests/tui/test_plan_table.py` via devrun agent.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="46726" output_tokens="946" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 487, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QVNdUr4yNXJTxj9kVmRBih">
+File created successfully at: /Users/schrockn/.claude/plans/woolly-growing-firefly.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Hda61SXrSSQVSFvaPFVxHm">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for PR thread resolution'}, {'tool': 'B...[truncated 2 chars]...dd and commit changes'}, {'tool': 'Bash', 'prompt': 'run erk exec update-pr-description'}]</param>
+    <param name="plan"># Fix: Update test assertions for new 'title' column in objectives view
+
+## Context
+
+PR #7...[truncated 615 chars]...3, 3→4, 4→5
+
+## Verification
+
+Run `pytest tests/tui/test_plan_table.py` via devrun agent.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="969" cache_read_input_tokens="47213" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 969, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hda61SXrSSQVSFvaPFVxHm">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/woolly-growing-firefly.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Update test assertions for new 'title' column in objectives view
+Current context: (wt:erk-slot-35) (br:planned/fix-decouple-objectives-02-22-0356) (pr:#7800)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/f"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id eb174876-58ae-4fa1-84be-1d60ef4b2dec \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+### Fix: Update test assertions for new 'title' column in objectives view
+
+**Context**: PR #7800 added `row.full_title` at index 1 in `_row_to_values()` for `ViewMode.OBJECTIVES` (`src/erk/tui/widgets/plan_table.py:292`). The objectives view now returns 7 values instead of 6. Two tests need their assertions updated to match.
+
+**Changes** in `tests/tui/test_plan_table.py`:
+
+1. **test_objectives_view_has_enriched_columns** (lines 354-360):
+   - `assert len(values) == 6` → `assert len(values) == 7`
+   - Add `assert values[1] == "Objective Plan"` for the new full_title column
+   - Shift remaining assertions: indices 1-5 become 2-6
+
+2. **test_objectives_view_shows_progress_and_next** (lines 379-382):
+   - Shift indices: 1→2, 2→3, 3→4, 4→5
+
+**Verification**: Run `pytest tests/tui/test_plan_table.py`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="835" cache_read_input_tokens="48182" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 835}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01UFBY5ER3uiBMaH9xYKM97E">
+    <param name="questions">[{'question': "Fix: Update test assertions for new 'title' column in objectives view\nCurr...[truncated 509 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="835" cache_read_input_tokens="48182" output_tokens="543" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 835, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UFBY5ER3uiBMaH9xYKM97E">
+User has answered your questions: "Fix: Update test assertions for new 'title' column in objectives view
+Current context: (wt:erk-slot-35) (br:planned/fix-decouple-objectives-02-22-0356) (pr:#7800)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01YXhivzZQD6q9DFwMK5MNQW">
+    <param name="command">erk exec marker create --session-id eb174876-58ae-4fa1-84be-1d60ef4b2dec exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker to skip PR creation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="744" cache_read_input_tokens="49017" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 744, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YXhivzZQD6q9DFwMK5MNQW">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01FKcVM7cFVenMW79Lyd6hmP">
+    <param name="plan"># Fix: Update test assertions for new 'title' column in objectives view
+
+## Context
+
+PR #7...[truncated 615 chars]...3, 3→4, 4→5
+
+## Verification
+
+Run `pytest tests/tui/test_plan_table.py` via devrun agent.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="228" cache_read_input_tokens="49761" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 228, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FKcVM7cFVenMW79Lyd6hmP">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

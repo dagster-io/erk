@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "pr_number": 7800,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v-eL0",
+      "path": "src/erk/tui/widgets/plan_table.py",
+      "line": 292,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Test Coverage**: Added 'title' column to objectives view row tuple (now 7 values instead of 6). Tests in `tests/tui/test_plan_table.py` need updating: line 354 assertion and indices 356-360 in test_objectives_view_has_enriched_columns, and indices 379-382 in test_objectives_view_shows_progress_and_next.",
+          "created_at": "2026-02-22T09:34:45Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: Updated test assertions \u2014 len check 6\u21927, added title assertion at index 1, shifted remaining indices +1 in both test_objectives_view_has_enriched_columns and test_objectives_view_shows_progress_and_next. All 40 tests pass.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 04:49 EST_",
+          "created_at": "2026-02-22T09:49:06Z"
+        }
+      ]
+    }
+  ]
+}
