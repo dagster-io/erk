@@ -22,6 +22,7 @@ from erk.cli.commands.one_shot_dispatch import (
 )
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk_shared.output.output import user_output
 
 
 @click.command("one-shot", hidden=True)
@@ -82,6 +83,7 @@ def one_shot(
         Ensure.invariant(False, "Provide prompt as argument or --file, not both")
 
     if file_path is not None:
+        user_output(click.style(f"  Reading prompt from: {file_path}", dim=True))
         prompt = Path(file_path).read_text(encoding="utf-8")
     elif prompt is None:
         Ensure.invariant(False, "Provide a prompt argument or --file")
