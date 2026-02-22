@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Eliminate `.worker-impl/` \u2014 Consolidate on `.erk/impl-context/`"
-}
