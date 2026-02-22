@@ -161,20 +161,8 @@ class PlanDataTable(DataTable):
         plan_col_header = "pr" if self._plan_backend == "draft_pr" else "plan"
         self.add_column(plan_col_header, key="plan", width=6)
         col_index += 1
-        if self._plan_backend == "draft_pr":
-            self._sts_column_index = col_index
-            self.add_column("sts", key="sts", width=5)
-            col_index += 1
-            self._stage_column_index = col_index
-            self.add_column("stage", key="stage", width=9)
-            col_index += 1
-            self.add_column("created", key="created", width=7)
-            col_index += 1
-        self.add_column("obj", key="objective", width=5)
-        self._objective_column_index = col_index
-        col_index += 1
 
-        # Objectives view: plan, obj, prog, next step, deps, updated, author
+        # Objectives view: fully independent column set, return early
         if self._view_mode == ViewMode.OBJECTIVES:
             self.add_column("prog", key="progress", width=5)
             col_index += 1
@@ -187,6 +175,19 @@ class PlanDataTable(DataTable):
             self.add_column("author", key="author", width=9)
             col_index += 1
             return
+
+        if self._plan_backend == "draft_pr":
+            self._sts_column_index = col_index
+            self.add_column("sts", key="sts", width=5)
+            col_index += 1
+            self._stage_column_index = col_index
+            self.add_column("stage", key="stage", width=9)
+            col_index += 1
+            self.add_column("created", key="created", width=7)
+            col_index += 1
+        self.add_column("obj", key="objective", width=5)
+        self._objective_column_index = col_index
+        col_index += 1
 
         # Plans view: plan, [sts, stage, created,] obj, loc, branch,
         # run-id, run, [created,] author, ...
