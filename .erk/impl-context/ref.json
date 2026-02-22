@@ -1,5 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Delete GitHubPlanStore, PlanStore ABC, and Inline into PlanBackend",
-  "objective_id": 7911
-}
