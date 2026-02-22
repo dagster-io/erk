@@ -293,11 +293,12 @@ jobs:
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           BRANCH_NAME: ${{ inputs.branch_name }}
         run: |
-          erk exec update-plan-remote-session \
-            --plan-id "$PLAN_ID" \
-            --run-id "$RUN_ID" \
-            --session-id "$SESSION_ID" \
-            --branch-name "$BRANCH_NAME"
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
+          erk exec update-plan-header "$PLAN_ID" \
+            "last_remote_impl_at=$TIMESTAMP" \
+            "last_remote_impl_run_id=$RUN_ID" \
+            "last_remote_impl_session_id=$SESSION_ID" \
+            "branch_name=$BRANCH_NAME"
 
       - name: Handle implementation outcome
         id: handle_outcome

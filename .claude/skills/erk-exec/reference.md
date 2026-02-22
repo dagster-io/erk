@@ -100,7 +100,6 @@ Quick reference for all `erk exec` subcommands.
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
 | `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                  |
 | `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
-| `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.          |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
 | `upload-session`                  | Upload a session JSONL to a git branch and update plan header.              |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.         |
@@ -1254,21 +1253,6 @@ Update plan-header metadata fields on a plan.
 | --------- | -------- | ----------- |
 | `PLAN_ID` | Yes      | -           |
 | `FIELDS`  | No       | -           |
-
-### update-plan-remote-session
-
-Update plan-header metadata with remote session artifact location.
-
-**Usage:** `erk exec update-plan-remote-session`
-
-**Options:**
-
-| Flag            | Type    | Required | Default        | Description                                  |
-| --------------- | ------- | -------- | -------------- | -------------------------------------------- |
-| `--plan-id`     | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to update                    |
-| `--run-id`      | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID                        |
-| `--session-id`  | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                       |
-| `--branch-name` | TEXT    | No       | -              | Branch name to store in plan-header metadata |
 
 ### update-pr-description
 
