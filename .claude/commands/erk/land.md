@@ -45,11 +45,12 @@ If no branch argument provided, get current branch:
 git branch --show-current
 ```
 
-If argument is a PR number or URL, extract the branch name:
+If argument is a PR number or URL, extract the branch name using REST API (avoids GraphQL rate limits):
 
 ```bash
-# For PR number
-gh pr view <number> --json headRefName -q '.headRefName'
+# For PR number — parse head_ref_name from JSON output
+erk exec get-pr-view <number>
+# Extract head_ref_name from the JSON response
 
 # For PR URL (extract number first, then use above)
 ```

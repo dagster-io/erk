@@ -66,6 +66,7 @@ from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
+from erk.cli.commands.exec.scripts.get_pr_view import get_pr_view
 from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
@@ -222,6 +223,7 @@ exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
 exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
 exec_group.add_command(get_pr_for_plan, name="get-pr-for-plan")
+exec_group.add_command(get_pr_view, name="get-pr-view")
 exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
 exec_group.add_command(get_issue_body, name="get-issue-body")
 exec_group.add_command(get_issue_timeline_prs, name="get-issue-timeline-prs")
