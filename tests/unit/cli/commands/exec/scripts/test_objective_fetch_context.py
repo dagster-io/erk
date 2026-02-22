@@ -12,7 +12,7 @@ from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
@@ -127,6 +127,62 @@ DRAFT_PR_BODY_WITH_OBJECTIVE = textwrap.dedent("""\
 """)
 
 
+ROADMAP_BODY_WITH_COMMENT_ID = textwrap.dedent("""\
+    <!-- erk:metadata-block:objective-header -->
+
+    <details>
+    <summary><code>objective-header</code></summary>
+
+    ```yaml
+    created_at: '2026-01-01T00:00:00Z'
+    created_by: testuser
+    objective_comment_id: 55555
+    slug: null
+    ```
+
+    </details>
+
+    <!-- /erk:metadata-block:objective-header -->
+
+    <!-- erk:metadata-block:objective-roadmap -->
+
+    <details>
+    <summary><code>objective-roadmap</code></summary>
+
+    ```yaml
+    schema_version: "2"
+    steps:
+    - id: "1.1"
+      description: "Add user model"
+      status: "done"
+      plan: "#6513"
+      pr: "#6517"
+    ```
+
+    </details>
+
+    <!-- /erk:metadata-block:objective-roadmap -->
+""")
+
+OBJECTIVE_COMMENT_BODY = textwrap.dedent("""\
+    <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+    <!-- erk:metadata-block:objective-body -->
+    <details open>
+    <summary><strong>Objective</strong></summary>
+
+    ## Design Decisions
+
+    Use JWT for authentication.
+
+    ## Implementation Context
+
+    The auth module lives in src/auth/.
+
+    </details>
+    <!-- /erk:metadata-block:objective-body -->
+""")
+
+
 class TestObjectiveFetchContext:
     def test_happy_path_with_all_args(self, tmp_path: Path) -> None:
         """All three args provided, returns combined JSON with roadmap."""
@@ -153,6 +209,7 @@ class TestObjectiveFetchContext:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["objective"]["number"] == 6423
+        assert data["objective"]["objective_content"] is None
         assert data["plan"]["number"] == "6513"
         assert data["pr"]["number"] == 6517
 
@@ -670,3 +727,72 @@ class TestDraftPRBackend:
         data = json.loads(result.output)
         assert data["success"] is False
         assert "No plan found for branch" in data["error"]
+
+
+class TestObjectiveContent:
+    def test_objective_content_from_comment(self, tmp_path: Path) -> None:
+        """objective_content is populated from the first comment's objective-body block."""
+        objective = _make_issue(
+            number=6423, title="My Objective", body=ROADMAP_BODY_WITH_COMMENT_ID
+        )
+        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6513: plan},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeGitHub(pr_details={6517: pr})
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        content = data["objective"]["objective_content"]
+        assert content is not None
+        assert "Design Decisions" in content
+        assert "Use JWT for authentication" in content
+        assert "Implementation Context" in content
+
+    def test_objective_content_none_without_header(self, tmp_path: Path) -> None:
+        """objective_content is None when objective has no objective-header block."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
+
+        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
+        fake_github = FakeGitHub(pr_details={6517: pr})
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert data["objective"]["objective_content"] is None
