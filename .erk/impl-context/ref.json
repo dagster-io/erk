@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Add --oauth flag to manage dual authentication secrets in GitHub Actions"
+}
