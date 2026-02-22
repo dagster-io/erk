@@ -351,6 +351,49 @@ def test_migrate_preserves_operational_metadata(tmp_path: Path) -> None:
     assert "erk" in final_body  # worktree_name
 
 
+def test_migrate_commits_to_branch_without_checkout(tmp_path: Path) -> None:
+    """Plan file is committed via commit_files_to_branch, not checkout+write+stage+commit."""
+    issue = _make_issue()
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = context_for_test(
+        github_issues=fake_issues,
+        github=fake_github,
+        git=fake_git,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_migrate_to_draft_pr,
+        ["42", "--format", "json"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    # No checkouts should have occurred
+    assert fake_git.branch.checked_out_branches == []
+
+    # Plan should have been committed directly to branch via commit_files_to_branch
+    assert len(fake_git.commit.branch_commits) == 1
+    branch_commit = fake_git.commit.branch_commits[0]
+    assert branch_commit.branch.startswith("plnd/")
+    assert ".erk/impl-context/plan.md" in branch_commit.files
+    assert branch_commit.files[".erk/impl-context/plan.md"] == PLAN_CONTENT
+    assert "Add plan:" in branch_commit.message
+
+    # No traditional stage+commit should have been used
+    assert fake_git.commit.commits == []
+    assert fake_git.commit.staged_files == []
+
+    # Branch should have been pushed
+    assert len(fake_git.pushed_branches) == 1
+    assert fake_git.pushed_branches[0].branch == branch_commit.branch
+
+
 def test_migrate_posts_migration_comment(tmp_path: Path) -> None:
     """Migration notice comment is posted to original issue."""
     issue = _make_issue()

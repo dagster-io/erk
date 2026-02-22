@@ -162,23 +162,15 @@ def plan_migrate_to_draft_pr(
         )
         return
 
-    # Save current branch so we can restore after checkout dance
-    current_branch = git.branch.get_current_branch(cwd)
-    restore_branch = current_branch or "HEAD"
-
-    # Create branch from trunk, commit plan file, push
+    # Create branch from trunk, commit plan file directly (no checkout), push
     git.branch.create_branch(cwd, branch_name, trunk, force=False)
-    git.branch.checkout_branch(cwd, branch_name)
-    try:
-        impl_context_dir = repo_root / IMPL_CONTEXT_DIR
-        impl_context_dir.mkdir(parents=True, exist_ok=True)
-        plan_file = impl_context_dir / "plan.md"
-        plan_file.write_text(plan.body, encoding="utf-8")
-        git.commit.stage_files(repo_root, [f"{IMPL_CONTEXT_DIR}/plan.md"])
-        git.commit.commit(repo_root, f"Add plan: {plan.title}")
-        git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
-    finally:
-        git.branch.checkout_branch(cwd, restore_branch)
+    git.commit.commit_files_to_branch(
+        repo_root,
+        branch=branch_name,
+        files={f"{IMPL_CONTEXT_DIR}/plan.md": plan.body},
+        message=f"Add plan: {plan.title}",
+    )
+    git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
     # Build metadata for draft PR, preserving key fields from original issue
     created_from_session = plan.header_fields.get("created_from_session")
