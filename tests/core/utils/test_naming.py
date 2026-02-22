@@ -765,7 +765,7 @@ def test_validate_plan_title_preserves_original_in_error() -> None:
         "feature123",
         "123-fix-bug",
         "a" * 31,
-        "my-feature-01-15-1430",
+        "my-feature-01-15-1430",  # timestamp-suffixed (idempotent)
     ],
 )
 def test_validate_worktree_name_valid(name: str) -> None:
@@ -864,6 +864,13 @@ def test_validate_worktree_name_diagnostics_are_specific() -> None:
     diag_text = " ".join(result.diagnostics)
     assert "uppercase" in diag_text.lower()
     assert "underscore" in diag_text.lower()
+
+
+def test_validate_worktree_name_preserves_original_in_error() -> None:
+    """Error includes the original unmodified input."""
+    result = validate_worktree_name("  FOO_BAR  ")
+    assert isinstance(result, InvalidWorktreeName)
+    assert result.raw_name == "  FOO_BAR  "
 
 
 def test_validate_worktree_name_roundtrip_with_sanitize() -> None:
