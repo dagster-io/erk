@@ -163,23 +163,19 @@ def _create_review_branch_impl(
     branch_name = f"plnd/review-{issue_number}{timestamp_suffix}"
     file_name = f"PLAN-REVIEW-{issue_number}.md"
 
-    # Fetch origin/master, create branch, commit, and push
+    # Fetch origin/master, create branch, commit plan file directly (no checkout), push
     # These operations let exceptions escape as they represent invariant violations
     # if they fail (network/disk/auth issues are exceptional, not expected states)
     git.remote.fetch_branch(repo_root, "origin", "master")
     create_result = git.branch.create_branch(repo_root, branch_name, "origin/master", force=False)
     if isinstance(create_result, BranchAlreadyExists):
         raise UserFacingCliError(create_result.message)
-    git.branch.checkout_branch(repo_root, branch_name)
-
-    # Write plan file at repo root
-    file_path = repo_root / file_name
-    file_path.write_text(plan_content, encoding="utf-8")
-
-    # Stage, commit, and push
-    git.commit.stage_files(repo_root, [file_name])
-    commit_message = f"Add plan #{issue_number} for review"
-    git.commit.commit(repo_root, commit_message)
+    git.commit.commit_files_to_branch(
+        repo_root,
+        branch=branch_name,
+        files={file_name: plan_content},
+        message=f"Add plan #{issue_number} for review",
+    )
     push_result = git.remote.push_to_remote(
         repo_root, "origin", branch_name, set_upstream=True, force=False
     )

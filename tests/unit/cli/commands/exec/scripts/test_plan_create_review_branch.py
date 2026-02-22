@@ -105,7 +105,7 @@ def make_issue_comment(
 
 
 def test_plan_create_review_branch_success(tmp_path: Path) -> None:
-    """Test successful branch creation and file write."""
+    """Test successful branch creation and file commit."""
     plan_content = "## Implementation Plan\n\nThis is the plan content."
     comment_id = 123456789
     issue_number = 1234
@@ -163,21 +163,19 @@ def test_plan_create_review_branch_success(tmp_path: Path) -> None:
     assert created[2] == "origin/master"  # start_point
     assert created[3] is False  # force
 
-    # Verify branch was checked out
-    assert len(fake_git.branch.checked_out_branches) == 1
-    assert fake_git.branch.checked_out_branches[0] == (repo_root, expected_branch)
+    # No checkouts should have occurred
+    assert fake_git.branch.checked_out_branches == []
 
-    # Verify file was written (check via filesystem since FakeGit doesn't track file writes)
-    file_path = repo_root / f"PLAN-REVIEW-{issue_number}.md"
-    assert file_path.exists()
-    assert file_path.read_text() == plan_content
+    # Plan file committed directly to branch via commit_files_to_branch (no checkout)
+    assert len(fake_git.commit.branch_commits) == 1
+    branch_commit = fake_git.commit.branch_commits[0]
+    assert branch_commit.cwd == repo_root
+    assert branch_commit.branch == expected_branch
+    assert branch_commit.files == {f"PLAN-REVIEW-{issue_number}.md": plan_content}
+    assert branch_commit.message == f"Add plan #{issue_number} for review"
 
-    # Verify commit was created with the staged file
-    assert len(fake_git.commit.commits) == 1
-    commit = fake_git.commit.commits[0]
-    assert commit.cwd == repo_root
-    assert commit.message == f"Add plan #{issue_number} for review"
-    assert f"PLAN-REVIEW-{issue_number}.md" in commit.staged_files
+    # No traditional stage+commit should have been used
+    assert fake_git.commit.commits == []
 
     # Verify branch was pushed with upstream tracking
     assert len(fake_git.pushed_branches) == 1
@@ -239,10 +237,10 @@ All tests pass"""
 
     assert result.exit_code == 0
 
-    # Verify file contains full multi-line content
-    file_path = repo_root / f"PLAN-REVIEW-{issue_number}.md"
-    assert file_path.exists()
-    assert file_path.read_text() == plan_content
+    # Verify plan committed via commit_files_to_branch with full multi-line content
+    assert len(fake_git.commit.branch_commits) == 1
+    branch_commit = fake_git.commit.branch_commits[0]
+    assert branch_commit.files[f"PLAN-REVIEW-{issue_number}.md"] == plan_content
 
 
 # ============================================================================
