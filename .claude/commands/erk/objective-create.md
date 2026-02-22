@@ -276,8 +276,12 @@ Once approved:
 
 2. **Generate a slug** from the objective content:
    - Create a concise, descriptive slug (3-5 words, kebab-case) that captures the essence of the objective
-   - Examples: `build-authentication-system`, `refactor-gateway-facade`, `add-dark-mode`
-   - The slug will be sanitized by the backend, so don't worry about exact formatting
+   - **Pattern:** `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`
+   - **Length:** 3-40 characters
+   - **Rules:** lowercase only, must start with a letter, hyphens between words only, no consecutive hyphens, no underscores/spaces/dots
+   - **Valid:** `build-auth-system`, `refactor-gateway`, `add-dark-mode`, `fix-tui-layout`
+   - **Invalid:** `Build-Auth` (uppercase), `123-start` (starts with digit), `my--slug` (consecutive hyphens), `ab` (too short)
+   - If the backend rejects the slug, fix it according to the rules above and retry
 
 3. **Create the GitHub issue with validation:**
 

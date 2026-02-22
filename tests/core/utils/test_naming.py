@@ -5,6 +5,7 @@ import pytest
 
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
+    InvalidObjectiveSlug,
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
@@ -15,9 +16,9 @@ from erk_shared.naming import (
     generate_draft_pr_branch_name,
     generate_issue_branch_name,
     sanitize_branch_component,
-    sanitize_objective_slug,
     sanitize_worktree_name,
     strip_plan_from_filename,
+    validate_objective_slug,
 )
 
 
@@ -630,38 +631,53 @@ def test_generate_draft_pr_branch_name_with_objective_truncates() -> None:
     assert not result[:-11].endswith("-")
 
 
-# Tests for sanitize_objective_slug
+# Tests for validate_objective_slug
 @pytest.mark.parametrize(
-    ("raw_slug", "expected"),
+    "slug",
     [
-        ("Build Authentication System", "build-authentication-system"),
-        ("fix: bug #123!", "fix-bug-123"),
-        ("simple", "simple"),
-        ("UPPERCASE", "uppercase"),
-        ("with_underscores", "with-underscores"),
-        ("  spaces  around  ", "spaces-around"),
-        ("---hyphens---", "hyphens"),
-        ("", "objective"),
-        ("---", "objective"),
-        # Truncation to 40 chars
-        ("a" * 50, "a" * 40),
-        # Special characters
-        ("hello@world.com", "hello-world-com"),
-        # Emoji handling
-        ("\U0001f680 rocket feature", "rocket-feature"),
-        # Consecutive special chars collapse
-        ("foo---bar___baz", "foo-bar-baz"),
+        "build-auth-system",
+        "refactor-gateway",
+        "add-dark-mode",
+        "simple",
+        "abc",
+        "a" * 40,
+        "fix-tui-layout",
+        "add-v2-support",
+        "feature123",
     ],
 )
-def test_sanitize_objective_slug(raw_slug: str, expected: str) -> None:
-    """Test objective slug sanitization."""
-    assert sanitize_objective_slug(raw_slug) == expected
+def test_validate_objective_slug_valid(slug: str) -> None:
+    """Valid slugs return None."""
+    assert validate_objective_slug(slug) is None
 
 
-def test_sanitize_objective_slug_truncation_strips_trailing_hyphen() -> None:
-    """Truncation at 40 chars strips trailing hyphens."""
-    # Create a slug that would have a hyphen at position 40
-    slug = "a" * 39 + "-extra-stuff"
-    result = sanitize_objective_slug(slug)
-    assert len(result) <= 40
-    assert not result.endswith("-")
+@pytest.mark.parametrize(
+    ("slug", "reason_fragment"),
+    [
+        ("ab", "Too short"),
+        ("a" * 41, "Too long"),
+        ("Build-Auth", "Does not match"),
+        ("UPPERCASE", "Does not match"),
+        ("123-start", "Does not match"),
+        ("my--slug", "Does not match"),
+        ("has spaces", "Does not match"),
+        ("with_underscores", "Does not match"),
+        ("has.dots", "Does not match"),
+        ("-leading-hyphen", "Does not match"),
+        ("trailing-hyphen-", "Does not match"),
+    ],
+)
+def test_validate_objective_slug_invalid(slug: str, reason_fragment: str) -> None:
+    """Invalid slugs return InvalidObjectiveSlug with matching reason."""
+    result = validate_objective_slug(slug)
+    assert result is not None
+    assert isinstance(result, InvalidObjectiveSlug)
+    assert reason_fragment in result.reason
+
+
+def test_validate_objective_slug_error_message_includes_pattern() -> None:
+    """Error message includes the regex pattern for agent self-correction."""
+    result = validate_objective_slug("INVALID")
+    assert result is not None
+    assert "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" in result.message
+    assert "INVALID" in result.message

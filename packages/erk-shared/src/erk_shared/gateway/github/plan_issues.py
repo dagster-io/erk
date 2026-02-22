@@ -35,7 +35,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
 )
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
-from erk_shared.naming import sanitize_objective_slug
+from erk_shared.naming import validate_objective_slug
 from erk_shared.plan_utils import extract_title_from_plan
 
 # Label configurations
@@ -315,7 +315,7 @@ def create_objective_issue(
         plan_content: The full objective markdown content
         title: Optional title (extracted from H1 if None)
         extra_labels: Additional labels beyond erk-objective
-        slug: Optional short kebab-case identifier (sanitized before storing)
+        slug: Optional short kebab-case identifier (validated, not transformed)
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -323,11 +323,6 @@ def create_objective_issue(
     Note:
         Does NOT raise exceptions. All errors returned in result.
     """
-    # Sanitize slug if provided
-    sanitized_slug: str | None = None
-    if slug is not None:
-        sanitized_slug = sanitize_objective_slug(slug)
-
     # Step 1: Get GitHub username
     username = github_issues.get_current_username()
     if username is None:
@@ -342,6 +337,18 @@ def create_objective_issue(
     # Step 2: Extract or use provided title
     if title is None:
         title = extract_title_from_plan(plan_content)
+
+    # Step 2b: Validate slug if provided (gate - reject invalid, don't transform)
+    if slug is not None:
+        slug_error = validate_objective_slug(slug)
+        if slug_error is not None:
+            return CreatePlanIssueResult(
+                success=False,
+                issue_number=None,
+                issue_url=None,
+                title=title,
+                error=slug_error.message,
+            )
 
     # Step 3: Build labels - objectives only use erk-objective (NOT erk-plan)
     labels = [_LABEL_ERK_OBJECTIVE]
@@ -369,7 +376,7 @@ def create_objective_issue(
         created_at=created_at,
         created_by=username,
         objective_comment_id=None,
-        slug=sanitized_slug,
+        slug=slug,
     )
     issue_body = render_metadata_block(header_block)
 

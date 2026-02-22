@@ -578,6 +578,35 @@ This objective covers building an authentication system.
     assert "slug: build-auth-system" in created_body
 
 
+def test_objective_save_to_issue_invalid_slug_returns_error() -> None:
+    """Test that an invalid slug returns exit code 1 with error in JSON output."""
+    fake_gh = FakeGitHubIssues()
+    plan_content = """# Auth Objective
+
+This objective covers building an authentication system.
+
+- Step 1: Set up auth
+- Step 2: Add tests"""
+    fake_store = FakeClaudeInstallation.for_test(plans={"slug-test": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "json", "--slug", "INVALID SLUG"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "Invalid objective slug" in output["error"]
+    # No issue should have been created
+    assert len(fake_gh.created_issues) == 0
+
+
 def test_objective_save_to_issue_without_slug() -> None:
     """Test that omitting --slug does not include slug in metadata."""
     fake_gh = FakeGitHubIssues()

@@ -10,6 +10,7 @@ injection to maintain separation from I/O concerns.
 
 import re
 import unicodedata
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -66,42 +67,67 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
     return f"-{dt.strftime(BRANCH_TIMESTAMP_SUFFIX_FORMAT)}"
 
 
-def sanitize_objective_slug(raw_slug: str) -> str:
-    """Sanitize an LLM-generated slug for use in objective metadata.
+_OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
-    - Lowercases input
-    - Replaces non-alphanumeric characters (except hyphens) with hyphens
-    - Collapses consecutive hyphens
-    - Strips leading/trailing hyphens
-    - Truncates to 40 characters (longer than branch names since slugs aren't git-constrained)
-    Returns ``"objective"`` if the result is empty.
+
+@dataclass(frozen=True)
+class InvalidObjectiveSlug:
+    """Validation failure for an objective slug.
+
+    Attributes:
+        raw_slug: The original slug value that failed validation.
+        reason: A short description of why validation failed.
+    """
+
+    raw_slug: str
+    reason: str
+
+    @property
+    def message(self) -> str:
+        """Full error message with pattern, rules, actual value, and examples.
+
+        Designed so an agent receiving this message can self-correct.
+        """
+        return (
+            f"Invalid objective slug: {self.reason}\n"
+            f"  Actual value: {self.raw_slug!r}\n"
+            f"  Pattern: ^[a-z][a-z0-9]*(-[a-z0-9]+)*$\n"
+            f"  Rules:\n"
+            f"    - 3-40 characters\n"
+            f"    - Lowercase letters and digits only\n"
+            f"    - Must start with a letter\n"
+            f"    - Hyphens allowed between words (no consecutive hyphens)\n"
+            f"  Valid examples: build-auth-system, refactor-gateway, add-dark-mode\n"
+            f"  Invalid examples: Build-Auth, 123-start, my--slug, ab"
+        )
+
+
+def validate_objective_slug(slug: str) -> InvalidObjectiveSlug | None:
+    """Validate an objective slug against the required format.
+
+    Returns None on success, or an InvalidObjectiveSlug describing the failure.
 
     Args:
-        raw_slug: Arbitrary string to sanitize (typically LLM-generated)
+        slug: The slug string to validate.
 
     Returns:
-        Sanitized slug (max 40 chars)
+        None if valid, InvalidObjectiveSlug if invalid.
 
     Examples:
-        >>> sanitize_objective_slug("Build Authentication System")
-        "build-authentication-system"
-        >>> sanitize_objective_slug("fix: bug #123!")
-        "fix-bug-123"
-        >>> sanitize_objective_slug("")
-        "objective"
-        >>> sanitize_objective_slug("a" * 50)
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # 40 chars
+        >>> validate_objective_slug("build-auth-system")  # valid
+        None
+        >>> validate_objective_slug("AB")  # invalid
+        InvalidObjectiveSlug(raw_slug='AB', reason='...')
     """
-    lowered = raw_slug.strip().lower()
-    replaced = re.sub(r"[^a-z0-9-]+", "-", lowered)
-    collapsed = re.sub(r"-+", "-", replaced)
-    trimmed = collapsed.strip("-")
-    result = trimmed or "objective"
-
-    if len(result) > 40:
-        result = result[:40].rstrip("-")
-
-    return result
+    if len(slug) < 3:
+        return InvalidObjectiveSlug(raw_slug=slug, reason="Too short (minimum 3 characters)")
+    if len(slug) > 40:
+        return InvalidObjectiveSlug(raw_slug=slug, reason="Too long (maximum 40 characters)")
+    if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
+        return InvalidObjectiveSlug(
+            raw_slug=slug, reason="Does not match required pattern"
+        )
+    return None
 
 
 def sanitize_worktree_name(name: str) -> str:

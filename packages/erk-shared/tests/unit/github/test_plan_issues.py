@@ -794,6 +794,79 @@ class TestCreateObjectiveIssue:
         assert "schema_version: '3'" in updated_body
 
 
+class TestCreateObjectiveIssueSlugValidation:
+    """Test slug validation gate in create_objective_issue()."""
+
+    def test_invalid_slug_returns_failure_no_issue_created(self, tmp_path: Path) -> None:
+        """Invalid slug returns success=False with descriptive error, no issue created."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\nContent..."
+
+        result = create_objective_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            time=FakeTime(),
+            title=None,
+            extra_labels=None,
+            slug="INVALID SLUG",
+        )
+
+        assert result.success is False
+        assert result.issue_number is None
+        assert result.error is not None
+        assert "Invalid objective slug" in result.error
+        assert "INVALID SLUG" in result.error
+        # Title should be populated (extraction happens before validation)
+        assert result.title == "My Objective"
+        # No issue should have been created
+        assert len(fake_gh.created_issues) == 0
+
+    def test_valid_slug_passes_through_to_issue_body(self, tmp_path: Path) -> None:
+        """Valid slug passes validation and appears in issue body."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\nContent..."
+
+        result = create_objective_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            time=FakeTime(),
+            title=None,
+            extra_labels=None,
+            slug="build-auth-system",
+        )
+
+        assert result.success is True
+        assert result.issue_number is not None
+
+        # Verify slug appears in the issue body
+        _, body, _ = fake_gh.created_issues[0]
+        assert "slug: build-auth-system" in body
+
+    def test_none_slug_skips_validation(self, tmp_path: Path) -> None:
+        """None slug skips validation entirely and succeeds."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\nContent..."
+
+        result = create_objective_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            time=FakeTime(),
+            title=None,
+            extra_labels=None,
+            slug=None,
+        )
+
+        assert result.success is True
+        assert result.issue_number is not None
+
+        # Verify no slug in body
+        _, body, _ = fake_gh.created_issues[0]
+        assert "slug:" not in body
+
+
 class TestCreatePlanIssueCommandsSection:
     """Test that commands section is added correctly."""
 
