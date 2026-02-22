@@ -10,6 +10,7 @@ injection to maintain separation from I/O concerns.
 
 import re
 import unicodedata
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -64,6 +65,80 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
         "-12-31-2359"
     """
     return f"-{dt.strftime(BRANCH_TIMESTAMP_SUFFIX_FORMAT)}"
+
+
+_OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+
+
+@dataclass(frozen=True)
+class ValidObjectiveSlug:
+    """Validation success for an objective slug.
+
+    Attributes:
+        slug: The validated slug value.
+    """
+
+    slug: str
+
+
+@dataclass(frozen=True)
+class InvalidObjectiveSlug:
+    """Validation failure for an objective slug.
+
+    Attributes:
+        raw_slug: The original slug value that failed validation.
+        reason: A short description of why validation failed.
+    """
+
+    raw_slug: str
+    reason: str
+
+    @property
+    def message(self) -> str:
+        """Full error message with pattern, rules, actual value, and examples.
+
+        Designed so an agent receiving this message can self-correct.
+        """
+        return (
+            f"Invalid objective slug: {self.reason}\n"
+            f"  Actual value: {self.raw_slug!r}\n"
+            f"  Pattern: ^[a-z][a-z0-9]*(-[a-z0-9]+)*$\n"
+            f"  Rules:\n"
+            f"    - 3-40 characters\n"
+            f"    - Lowercase letters and digits only\n"
+            f"    - Must start with a letter\n"
+            f"    - Hyphens allowed between words (no consecutive hyphens)\n"
+            f"  Valid examples: build-auth-system, refactor-gateway, add-dark-mode\n"
+            f"  Invalid examples: Build-Auth, 123-start, my--slug, ab"
+        )
+
+
+def validate_objective_slug(slug: str) -> ValidObjectiveSlug | InvalidObjectiveSlug:
+    """Validate an objective slug against the required format.
+
+    Returns ValidObjectiveSlug on success, or InvalidObjectiveSlug describing the failure.
+
+    Args:
+        slug: The slug string to validate.
+
+    Returns:
+        ValidObjectiveSlug if valid, InvalidObjectiveSlug if invalid.
+
+    Examples:
+        >>> validate_objective_slug("build-auth-system")  # valid
+        ValidObjectiveSlug(slug='build-auth-system')
+        >>> validate_objective_slug("AB")  # invalid
+        InvalidObjectiveSlug(raw_slug='AB', reason='...')
+    """
+    if len(slug) < 3:
+        return InvalidObjectiveSlug(raw_slug=slug, reason="Too short (minimum 3 characters)")
+    if len(slug) > 40:
+        return InvalidObjectiveSlug(raw_slug=slug, reason="Too long (maximum 40 characters)")
+    if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
+        return InvalidObjectiveSlug(
+            raw_slug=slug, reason="Does not match required pattern"
+        )
+    return ValidObjectiveSlug(slug=slug)
 
 
 def sanitize_worktree_name(name: str) -> str:

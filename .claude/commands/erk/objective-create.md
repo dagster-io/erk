@@ -274,16 +274,25 @@ Once approved:
 
    This is the Priority 1 lookup path for `objective-save-to-issue --session-id`.
 
-2. **Create the GitHub issue with validation:**
+2. **Generate a slug** from the objective content:
+   - Create a concise, descriptive slug (3-5 words, kebab-case) that captures the essence of the objective
+   - **Pattern:** `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`
+   - **Length:** 3-40 characters
+   - **Rules:** lowercase only, must start with a letter, hyphens between words only, no consecutive hyphens, no underscores/spaces/dots
+   - **Valid:** `build-auth-system`, `refactor-gateway`, `add-dark-mode`, `fix-tui-layout`
+   - **Invalid:** `Build-Auth` (uppercase), `123-start` (starts with digit), `my--slug` (consecutive hyphens), `ab` (too short)
+   - If the backend rejects the slug, fix it according to the rules above and retry
+
+3. **Create the GitHub issue with validation:**
 
    ```bash
-   erk exec objective-save-to-issue --session-id=<session-id> --format=display --validate
+   erk exec objective-save-to-issue --session-id=<session-id> --slug=<generated-slug> --format=display --validate
    ```
 
    This creates the issue and validates the roadmap in one step.
    If validation fails, fix the objective content and re-run.
 
-3. **Report success:**
+4. **Report success:**
 
    ```
    Objective created: #<number>

@@ -674,6 +674,7 @@ def create_objective_header_block(
     created_at: str,
     created_by: str,
     objective_comment_id: int | None,
+    slug: str | None,
 ) -> MetadataBlock:
     """Create an objective-header metadata block with validation.
 
@@ -681,6 +682,7 @@ def create_objective_header_block(
         created_at: ISO 8601 timestamp of objective creation
         created_by: GitHub username of objective creator
         objective_comment_id: GitHub comment ID containing objective content (nullable)
+        slug: Short kebab-case identifier for the objective (nullable)
 
     Returns:
         MetadataBlock with objective-header schema
@@ -691,6 +693,8 @@ def create_objective_header_block(
         "created_by": created_by,
         "objective_comment_id": objective_comment_id,
     }
+    if slug is not None:
+        data["slug"] = slug
     return create_metadata_block(
         key=schema.get_key(),
         data=data,

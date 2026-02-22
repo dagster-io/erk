@@ -809,7 +809,7 @@ class ObjectiveHeaderSchema(MetadataBlockSchema):
     def validate(self, data: dict[str, Any]) -> None:
         """Validate objective-header data structure."""
         required_fields = {"created_at", "created_by"}
-        optional_fields = {"objective_comment_id"}
+        optional_fields = {"objective_comment_id", "slug"}
 
         # Check required fields exist
         missing = required_fields - set(data.keys())
@@ -829,6 +829,13 @@ class ObjectiveHeaderSchema(MetadataBlockSchema):
                 raise ValueError("objective_comment_id must be an integer or null")
             if data["objective_comment_id"] <= 0:
                 raise ValueError("objective_comment_id must be positive when provided")
+
+        # Validate optional slug field
+        if "slug" in data and data["slug"] is not None:
+            if not isinstance(data["slug"], str):
+                raise ValueError("slug must be a string")
+            if len(data["slug"]) == 0:
+                raise ValueError("slug must not be empty when provided")
 
         # Check for unexpected fields
         known_fields = required_fields | optional_fields

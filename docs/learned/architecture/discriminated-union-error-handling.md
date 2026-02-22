@@ -13,6 +13,8 @@ tripwires:
     warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
   - action: "accessing properties on a discriminated union result without isinstance() check"
     warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
+  - action: "using None as a success return value in a validation function (ErrorType | None where None = success)"
+    warning: "None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types."
 ---
 
 # Discriminated Union Error Handling
@@ -307,6 +309,43 @@ if isinstance(result, FetchError):
     return
 # result is now narrowed to T
 ```
+
+## Anti-Pattern: None-as-Success in Validation Functions
+
+**Anti-pattern:** `validate_thing() -> ErrorType | None` where `None` means success.
+
+This is counterintuitive because `None` typically signals absence or failure, not success. Callers end up writing `if result is not None:` to check for errors, which reads backwards.
+
+```python
+# ❌ Anti-pattern: None = success
+def validate_slug(slug: str) -> InvalidSlug | None:
+    if not valid:
+        return InvalidSlug(reason="bad")
+    return None  # Success... but None?
+
+# Caller: confusing
+error = validate_slug(slug)
+if error is not None:  # "if not nothing" = error?
+    handle_error(error)
+```
+
+**Correct pattern:** Both outcomes are explicit named types.
+
+```python
+# ✅ Correct: both outcomes are named types
+def validate_slug(slug: str) -> ValidSlug | InvalidSlug:
+    if not valid:
+        return InvalidSlug(reason="bad")
+    return ValidSlug(slug=slug)
+
+# Caller: clear isinstance dispatch
+result = validate_slug(slug)
+if isinstance(result, InvalidSlug):
+    handle_error(result)
+# result is now narrowed to ValidSlug
+```
+
+This pattern was corrected in `validate_objective_slug()` in `naming.py` — previously returned `InvalidObjectiveSlug | None`, now returns `ValidObjectiveSlug | InvalidObjectiveSlug`.
 
 ## Related Documentation
 

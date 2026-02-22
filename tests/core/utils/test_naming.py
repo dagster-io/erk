@@ -5,6 +5,8 @@ import pytest
 
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
+    InvalidObjectiveSlug,
+    ValidObjectiveSlug,
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
@@ -17,6 +19,7 @@ from erk_shared.naming import (
     sanitize_branch_component,
     sanitize_worktree_name,
     strip_plan_from_filename,
+    validate_objective_slug,
 )
 
 
@@ -627,3 +630,56 @@ def test_generate_draft_pr_branch_name_with_objective_truncates() -> None:
     assert result.startswith("planned/O456-")
     assert result.endswith("-01-15-1430")
     assert not result[:-11].endswith("-")
+
+
+# Tests for validate_objective_slug
+@pytest.mark.parametrize(
+    "slug",
+    [
+        "build-auth-system",
+        "refactor-gateway",
+        "add-dark-mode",
+        "simple",
+        "abc",
+        "a" * 40,
+        "fix-tui-layout",
+        "add-v2-support",
+        "feature123",
+    ],
+)
+def test_validate_objective_slug_valid(slug: str) -> None:
+    """Valid slugs return ValidObjectiveSlug."""
+    result = validate_objective_slug(slug)
+    assert isinstance(result, ValidObjectiveSlug)
+    assert result.slug == slug
+
+
+@pytest.mark.parametrize(
+    ("slug", "reason_fragment"),
+    [
+        ("ab", "Too short"),
+        ("a" * 41, "Too long"),
+        ("Build-Auth", "Does not match"),
+        ("UPPERCASE", "Does not match"),
+        ("123-start", "Does not match"),
+        ("my--slug", "Does not match"),
+        ("has spaces", "Does not match"),
+        ("with_underscores", "Does not match"),
+        ("has.dots", "Does not match"),
+        ("-leading-hyphen", "Does not match"),
+        ("trailing-hyphen-", "Does not match"),
+    ],
+)
+def test_validate_objective_slug_invalid(slug: str, reason_fragment: str) -> None:
+    """Invalid slugs return InvalidObjectiveSlug with matching reason."""
+    result = validate_objective_slug(slug)
+    assert isinstance(result, InvalidObjectiveSlug)
+    assert reason_fragment in result.reason
+
+
+def test_validate_objective_slug_error_message_includes_pattern() -> None:
+    """Error message includes the regex pattern for agent self-correction."""
+    result = validate_objective_slug("INVALID")
+    assert isinstance(result, InvalidObjectiveSlug)
+    assert "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" in result.message
+    assert "INVALID" in result.message
