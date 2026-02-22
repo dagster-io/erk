@@ -23,12 +23,14 @@ from pathlib import Path
 
 import click
 
+from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk_shared.context.helpers import (
     require_branch_manager,
     require_cwd,
     require_git,
     require_github,
     require_plan_backend,
+    require_prompt_executor,
     require_repo_root,
     require_time,
 )
@@ -292,10 +294,12 @@ def _setup_issue_plan(
         click.echo(f"Already on branch for issue #{issue_number}: {current_branch}", err=True)
         branch_name = current_branch
     else:
-        # Generate branch name from issue
+        # Generate branch name from issue with LLM-generated slug
+        executor = require_prompt_executor(ctx)
+        slug = generate_slug_or_fallback(executor, plan.title)
         timestamp = time.now()
         branch_name = generate_issue_branch_name(
-            issue_number, plan.title, timestamp, objective_id=plan.objective_id
+            issue_number, slug, timestamp, objective_id=plan.objective_id
         )
 
         # Check if branch already exists

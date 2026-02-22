@@ -23,6 +23,7 @@ from erk.cli.constants import (
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
+from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
@@ -640,8 +641,9 @@ def _validate_issue_for_submit(
         objective_id = objective_id_raw
     elif isinstance(objective_id_raw, str) and objective_id_raw.isdigit():
         objective_id = int(objective_id_raw)
+    slug = generate_slug_or_fallback(ctx.prompt_executor, issue.title)
     new_branch_name = generate_issue_branch_name(
-        issue_number, issue.title, ctx.time.now(), objective_id=objective_id
+        issue_number, slug, ctx.time.now(), objective_id=objective_id
     )
 
     if existing_branches:

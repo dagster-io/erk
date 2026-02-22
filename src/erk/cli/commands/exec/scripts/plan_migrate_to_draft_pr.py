@@ -21,11 +21,13 @@ import json
 
 import click
 
+from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
     require_issues,
+    require_prompt_executor,
     require_repo_root,
     require_time,
 )
@@ -140,10 +142,12 @@ def plan_migrate_to_draft_pr(
         )
         raise SystemExit(1)
 
-    # Generate draft-PR branch name from trunk
+    # Generate draft-PR branch name from trunk with LLM-generated slug
     trunk = git.branch.detect_trunk_branch(cwd)
+    executor = require_prompt_executor(ctx)
+    slug = generate_slug_or_fallback(executor, plan.title)
     branch_name = generate_draft_pr_branch_name(
-        plan.title,
+        slug,
         now,
         objective_id=plan.objective_id,
     )
