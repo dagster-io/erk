@@ -33,17 +33,15 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 Before classifying feedback, determine if this is a plan review PR:
 
-1. Get the PR number:
-   - **If `--pr <number>` specified in `$ARGUMENTS`**: Use that number
-   - **Otherwise**: Get current branch's PR: `gh pr view --json number -q .number`
+1. Get PR data using REST API (avoids GraphQL rate limits):
+   - **If `--pr <number>` specified in `$ARGUMENTS`**: `erk exec get-pr-view <number>`
+   - **Otherwise** (auto-detect from current branch): `erk exec get-pr-view`
 
-2. Check if the PR has the `erk-plan-review` label:
-   - **If `--pr <number>` specified**: `gh pr view <number> --json labels -q '.labels[].name'`
-   - **Otherwise**: `gh pr view --json labels -q '.labels[].name'`
+   Parse the JSON output to extract `number`, `labels`, and `body`.
 
-3. If YES: extract the plan issue number from the PR body (which contains `**Plan Issue:** #NNN`):
-   - **If `--pr <number>` specified**: `gh pr view <number> --json body -q .body`
-   - **Otherwise**: `gh pr view --json body -q .body`
+2. Check if the PR has the `erk-plan-review` label (from the `labels` array in the output).
+
+3. If YES: extract the plan issue number from the `body` field (which contains `**Plan Issue:** #NNN`):
    - Parse the issue number from the `**Plan Issue:** #NNN` line
    - Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
 

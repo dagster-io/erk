@@ -213,8 +213,8 @@ else
     footer=$(erk exec get-pr-body-footer --pr-number "$pr_number")
 fi
 
-# Get current PR body and append footer
-current_body=$(gh pr view "$pr_number" --json body --jq '.body')
+# Get current PR body using REST API (avoids GraphQL rate limits) and append footer
+current_body=$(erk exec get-pr-view "$pr_number" | jq -r '.body')
 gh pr edit "$pr_number" --body "${current_body}${footer}"
 ```
 

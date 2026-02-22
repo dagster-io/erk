@@ -23,18 +23,19 @@ Check `$ARGUMENTS` for flags.
 
 ## Steps
 
-1. **Get current branch and PR info:**
+1. **Get current branch and PR info using REST API** (avoids GraphQL rate limits):
    - **If `--pr <number>` specified in `$ARGUMENTS`**:
 
      ```bash
-     gh pr view <number> --json number,title,url -q '{number: .number, title: .title, url: .url}'
+     erk exec get-pr-view <number>
      ```
 
    - **If `--pr` not specified** (use current branch):
      ```bash
-     git rev-parse --abbrev-ref HEAD
-     gh pr view --json number,title,url -q '{number: .number, title: .title, url: .url}'
+     erk exec get-pr-view
      ```
+
+   Parse the JSON output to extract `number`, `title`, and `url`.
 
 2. **Fetch all comments:**
 

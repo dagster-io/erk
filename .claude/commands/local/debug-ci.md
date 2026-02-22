@@ -20,25 +20,17 @@ Fetch and analyze failing CI logs for the current branch's PR.
 git branch --show-current
 ```
 
-### Step 2: Check PR Status
+### Step 2: Get Failed Run IDs
 
-Get PR checks and identify failures:
-
-```bash
-gh pr view --json statusCheckRollup --jq '.statusCheckRollup[] | select(.conclusion == "FAILURE") | "\(.name): \(.conclusion)"'
-```
-
-If no failures found, report "All CI checks are passing" and stop.
-
-### Step 3: Get Failed Run IDs
-
-Find the most recent failed workflow runs for this branch:
+Find the most recent failed workflow runs for this branch (REST-based, avoids GraphQL rate limits):
 
 ```bash
 gh run list --branch <branch> --json conclusion,name,databaseId,status --jq '.[] | select(.conclusion == "failure") | "\(.databaseId) \(.name)"' | head -5
 ```
 
-### Step 4: Fetch Failed Logs
+If no failures found, report "All CI checks are passing" and stop.
+
+### Step 3: Fetch Failed Logs
 
 For each failed run, fetch the logs:
 
@@ -46,7 +38,7 @@ For each failed run, fetch the logs:
 gh run view <run_id> --log-failed | head -100
 ```
 
-### Step 5: Analyze and Report
+### Step 4: Analyze and Report
 
 Present the failure information clearly:
 

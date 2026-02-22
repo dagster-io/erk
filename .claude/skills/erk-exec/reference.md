@@ -51,6 +51,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                   |
 | `get-pr-for-plan`                 | Get PR details for a plan issue.                                            |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                       |
+| `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).               |
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                      |
 | `impl-init`                       | Initialize implementation by validating .impl/ folder.                      |
 | `impl-signal`                     | Signal implementation events to GitHub.                                     |
@@ -531,6 +532,24 @@ Fetch PR review comments for agent context injection.
 | -------------------- | ------- | -------- | ------- | ------------------------------------------- |
 | `--pr`               | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
 | `--include-resolved` | FLAG    | No       | -       | Include resolved threads                    |
+
+### get-pr-view
+
+Fetch PR details using REST API (avoids GraphQL rate limits).
+
+**Usage:** `erk exec get-pr-view` [pr_number]
+
+**Arguments:**
+
+| Name        | Required | Description |
+| ----------- | -------- | ----------- |
+| `PR_NUMBER` | No       | -           |
+
+**Options:**
+
+| Flag       | Type | Required | Default | Description                   |
+| ---------- | ---- | -------- | ------- | ----------------------------- |
+| `--branch` | TEXT | No       | -       | Branch name to look up PR for |
 
 ### handle-no-changes
 
