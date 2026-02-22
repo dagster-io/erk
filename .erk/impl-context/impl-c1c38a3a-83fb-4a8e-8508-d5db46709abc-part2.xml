@@ -1,0 +1,1102 @@
+<session>
+  <meta branch="planned/add-slug-to-objective-m-02-22-0443" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01X6TJQCwbDLEoLqWwsfSNT6">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+{"success":true,"pr_number":7806,"pr_title":"Add slug field to objective metadata for UI identification","pr_url":"https://github.com/dagster-io/erk/pull/7806","actionable_threads":[{"thread_id":"PRRT_kwDOPxC3hc5v-wU_","type":"review","path":"docs/learned/architecture/agent-backpressure-gates.md","line":67,"is_outdated":false,"classification":"actionable","action_summary":"Fix inaccurate claim: `sanitize_objective_slug()` does not exist in the codebase; only `validate_objective_slug()` is present. Clarify whether this is historical context or remove/correct the reference.","complexity":"single_file","original_comment":"**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `sanitize_objective_slug()` accepted any string, lowercased it, replaced special characters, collapsed hyphens, and returned a valid slug.\nReality: This function does not exist anywhere in the codebase. It is not in `naming.py` or any other file. The only slug-related function present is `validate_objective_slug()`."},{"thread_id":"PRRT_kwDOPxC3hc5v-wXc","type":"review","path":"docs/learned/architecture/agent-backpressure-gates.md","line":68,"is_outdated":false,"classification":"actionable","action_summary":"Replace inline regex `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` with a source pointer to `_OBJECTIVE_SLUG_PATTERN` in `naming.py` to avoid drift if the pattern changes.","complexity":"single_file","original_comment":"**Audit PR Docs**: Drift risk — documents specific values/paths that will change.\n\nSource: `packages/erk-shared/src/erk_shared/naming.py:70`\n\nRisk: The regex `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` is reproduced inline here. If the pattern changes in `_OBJECTIVE_SLUG_PATTERN` in `naming.py`, this doc will silently show an outdated value."},{"thread_id":"PRRT_kwDOPxC3hc5v-wmJ","type":"review","path":"packages/erk-shared/src/erk_shared/naming.py","line":130,"is_outdated":false,"classification":"actionable","action_summary":"Refactor success case to return a valid object instead of relying on truthy/falsey behavior, which is counterintuitive.","complexity":"local","original_comment":"the success case should return a valid object. the truthy falsey behavior here is very counterintuitive."}],"discussion_actions":[],"informational_count":7,"batches":[{"name":"Local Fixes","complexity":"local","auto_proceed":true,"item_indices":[2]},{"name":"Single-File","complexity":"single_file","auto_proceed":true,"item_indices":[0,1]}],"error":null}
+  </tool_result>
+  <thinking>The PR feedback classifier returned 3 actionable threads. All of them have already been addressed by the changes I made. Let me display the preview.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="842" cache_read_input_tokens="83719" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>## PR #7806: "Add slug field to objective metadata for UI identification"
+
+### Actionable Items (3 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | `agent-backpressure-gates.md:67` | actionable | Fix inaccurate claim: `sanitize_objective_slug()` doesn't exist — clarify as historical | single_file |
+| 2 | review | `agent-backpressure-gates.md:68` | actionable | Replace inline regex with source pointer to `_OBJECTIVE_SLUG_PATTERN` | single_file |
+| 3 | review | `naming.py:130` | actionable | Return a valid object on success instead of None (counterintuitive truthy/falsey) | local |
+
+### Informational Items (0 actionable, 7 informational discussion)
+
+No informational review threads.
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #3: `naming.py:130` - Return valid object instead of None
+
+**Batch 2: Single-File** (auto-proceed)
+- Item #1: `agent-backpressure-gates.md:67` - Fix inaccurate claim about removed function
+- Item #2: `agent-backpressure-gates.md:68` - Replace inline regex with source pointer
+
+### Statistics
+- Actionable items: 3
+- Informational items: 0
+- Informational discussion comments: 7
+- Estimated batches: 2
+- Auto-proceed batches: 2
+- User confirmation batches: 0
+
+---
+
+**All 3 actionable items have already been addressed** by the changes made earlier in this session:
+
+1. `sanitize_objective_slug()` reference → past-tense framing added
+2. Inline regex → replaced with `_OBJECTIVE_SLUG_PATTERN` source pointer
+3. `None`-as-success → `ValidObjectiveSlug | InvalidObjectiveSlug` discriminated union
+
+To resolve the threads on GitHub, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="842" cache_read_input_tokens="83719" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Plan Review Detection
+
+Before classifying feedback, determine if this is a plan review PR:
+
+1. Get PR data using REST API (avoids GraphQL rate limits):
+   - **If `--pr &lt;number&gt;` specified in ``**: `erk exec get-pr-view &lt;number&gt;`
+   - **Otherwise** (auto-detect from current branch): `erk exec get-pr-view`
+
+   Parse the JSON output to extract `number`, `labels`, and `body`.
+
+2. Check if the PR has the `erk-plan-review` label (from the `labels` array in the output).
+
+3. If YES: extract the plan issue number from the `body` field (which contains `**Plan Issue:** #NNN`):
+   - Parse the issue number from the `**Plan Issue:** #NNN` line
+   - Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
+
+4. If NO: proceed with standard code review flow (Phase 1)
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+**Skip this phase in Plan Review Mode** - plan PRs don't have meaningful code diffs to summarize.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "c1c38a3a-83fb-4a8e-8508-d5db46709abc"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+---
+
+## Plan Review Mode
+
+When Phase 0 detects the `erk-plan-review` label on the current PR, the entire flow switches to plan review mode. This mode edits plan text instead of source code.
+
+### Key Differences: Plan Mode vs Code Mode
+
+| Aspect            | Code Mode                    | Plan Mode                              |
+| ----------------- | ---------------------------- | -------------------------------------- |
+| File edited       | Source code files            | `PLAN-REVIEW-{issue}.md`               |
+| What changes      | Code implementation          | Plan text/structure                    |
+| CI checks         | Run tests                    | Skip (no code to test)                 |
+| Extra step        | None                         | `plan-update-issue` to sync plan issue |
+| Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
+| Thread resolution | What code change was made    | How plan was updated                   |
+
+### Plan Review Phase 1: Save Current Branch
+
+Before processing feedback, record the current branch so we can return to it later:
+
+```bash
+git branch --show-current
+```
+
+Store the result as `ORIGINAL_BRANCH`.
+
+### Plan Review Phase 2: Classify Feedback
+
+Same as standard Phase 1 — use the Task tool (NOT skill invocation, for `--print` mode isolation) to run the classifier in a subagent (see Phase 1 above for the Task tool pattern). Pass `[--pr &lt;number&gt; if specified]` as arguments.
+
+### Plan Review Phase 3: Display Batched Plan
+
+Same as standard Phase 2, but note at the top of the display:
+
+```
+**Plan Review Mode** (erk-plan-review label detected) — changes apply to plan text, not source code.
+```
+
+### Plan Review Phase 4: Execute by Batch (Plan Mode)
+
+For each batch:
+
+#### Step 1: Edit the Plan
+
+1. Read `PLAN-REVIEW-{issue}.md` from the repo root
+2. For each comment in the batch, incorporate reviewer feedback by editing the plan markdown text
+   - Restructure sections, add detail, clarify language, update design decisions as requested
+   - If feedback applies to implementation (not the plan itself), add a note to the relevant plan section rather than making structural changes
+3. Write the updated `PLAN-REVIEW-{issue}.md`
+
+#### Step 2: Commit and Push
+
+```bash
+git add PLAN-REVIEW-{issue}.md
+git commit -m "Incorporate review feedback (batch N/M)
+
+- &lt;summary of change 1&gt;
+- &lt;summary of change 2&gt;
+..."
+git push
+```
+
+#### Step 3: Sync Plan to GitHub Issue
+
+```bash
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
+```
+
+#### Step 4: Resolve Threads
+
+Resolve each thread using the appropriate command (see `pr-operations` skill):
+
+**For review threads** - use the batch command to resolve all at once:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Incorporated feedback into plan. Updated the relevant section in PLAN-REVIEW-{issue}.md.\n\nSummary of change: {brief description}"}]' | erk exec resolve-review-threads
+```
+
+**For discussion comments** (`reply-to-discussion-comment`):
+
+Use a message like:
+
+```
+Addressed in plan update. {description of how feedback was incorporated or why it was noted for implementation phase}
+```
+
+**For feedback that applies to implementation, not the plan itself:**
+
+Use a message like:
+
+```
+Noted for implementation phase. This feedback applies to the code implementation rather than the plan structure — it will be addressed when implementing the plan.
+```
+
+#### Step 5: Report Progress
+
+Same as standard Phase 4 Step 5 — report what was addressed and what remains.
+
+### Plan Review Phase 5: Final Verification
+
+Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
+
+### Return to Original Branch
+
+After all batches are complete and pushed:
+
+1. Switch back to the branch saved in Phase 1: `git checkout &lt;ORIGINAL_BRANCH&gt;`
+2. The plan-review branch work is complete — the user should not remain on it.
+</user>
+  <thinking>The user invoked `/erk:pr-address`. Let me follow the instructions. First, I need to load the `pr-operations` skill as a prerequisite, then proceed with the phases.
+
+Phase 0: Plan Review Detection - I need to check if this is a plan review PR.
+
+Let me start by loading the pr-operations skill and getting the PR data.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="4914" cache_read_input_tokens="84561" cache_creation="{'ephemeral_5m_input_tokens': 4914, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me load the prerequisite skill and get PR data.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="4914" cache_read_input_tokens="84561" cache_creation="{'ephemeral_5m_input_tokens': 4914, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01KWkPbinHyhongc48VHeSb4">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4914" cache_read_input_tokens="84561" cache_creation="{'ephemeral_5m_input_tokens': 4914, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KWkPbinHyhongc48VHeSb4">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <tool_use name="Bash" id="toolu_01TuCmZsNR4Dbbsd4V3S5anR">
+    <param name="command">erk exec get-pr-view 2&gt;/dev/null || echo "FALLBACK" </param>
+    <param name="description">Get PR view for current branch</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4914" cache_read_input_tokens="84561" cache_creation="{'ephemeral_5m_input_tokens': 4914, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TuCmZsNR4Dbbsd4V3S5anR">
+{"success": true, "number": 7806, "title": "Add slug field to objective metadata for UI identification", "url": "https://github.com/dagster-io/erk/pull/7806", "body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-22T04:43:12.644309+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22275082312'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFL7LISA\nlast_dispatched_at: '2026-02-22T05:08:25.370996'\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: '2026-02-22T09:56:02.226504+00:00'\nlast_remote_impl_run_id: '22274758660'\nlast_remote_impl_session_id: 77b7efcc-38ca-452e-8e38-55e161108c56\nbranch_name: planned/add-slug-to-objective-m-02-22-0443\ncreated_from_session: 959ceab9-f021-4c67-8967-ff525b747e11\nlifecycle_stage: implemented\nlast_session_branch: session/7806\nlast_session_id: 77b7efcc-38ca-452e-8e38-55e161108c56\nlast_session_at: '2026-02-22T09:55:59.957446+00:00'\nlast_session_source: remote\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n\n\n---\n\n## Summary\n\nAdd slug field to objective metadata for UI identification\n\nThis change adds an optional `slug` field to objective metadata, enabling concise kebab-case identifiers for objectives that can be used by UI systems for identification and filtering. The slug is generated by users during objective creation, sanitized by the backend, and stored in the objective-header metadata block.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Added (1 file)\n- `packages/erk-shared/src/erk_shared/naming.py:sanitize_objective_slug()` - Sanitization function for LLM-generated slugs\n\n### Modified (8 files)\n- `.claude/commands/erk/objective-create.md` - Updated objective creation workflow to include slug generation step\n- `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py` - Added slug parameter to `create_objective_header_block()`\n- `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` - Added slug to optional fields with validation\n- `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py` - Integrated slug sanitization into objective issue creation\n- `src/erk/cli/commands/exec/scripts/objective_save_to_issue.py` - Added `--slug` CLI option\n- `packages/erk-shared/tests/unit/github/metadata/test_objective_functions.py` - Added slug field tests (4 new tests)\n- `packages/erk-shared/tests/unit/github/metadata/test_objective_header_schema.py` - Added slug validation tests (4 new tests)\n- `packages/erk-shared/tests/unit/github/test_plan_issues.py` - Updated existing test calls with slug parameter\n\n### Test additions (2 files)\n- `tests/core/utils/test_naming.py` - Added 13 tests for `sanitize_objective_slug()` with edge cases\n- `tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py` - Added 2 integration tests for `--slug` option\n\n&lt;/details&gt;\n\n## Key Changes\n\n- **Slug sanitization**: New `sanitize_objective_slug()` function handles LLM-generated slugs (40-char limit, kebab-case normalization, handles empty/special character cases)\n- **Metadata schema extension**: ObjectiveHeaderSchema now accepts optional `slug` field with validation (string type, non-empty when provided)\n- **CLI integration**: `objective-save-to-issue` command accepts `--slug` parameter and passes it through to issue creation\n- **Objective creation workflow**: Updated command documentation to include slug generation as a prerequisite step before issue creation\n- **Comprehensive test coverage**: 19 new tests covering slug generation, validation, metadata rendering, and CLI integration\n\n**Remotely executed:** [Run #22274758660](https://github.com/dagster-io/erk/actions/runs/22274758660)\n\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 7806 --script)\" &amp;&amp; erk pr sync --dangerous\n```\n\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Add Slug to Objective Metadata\n\n## Context\n\nObjectives currently have no short identifier beyond their issue number. A slug derived via LLM inference from the full objective body (e.g., `build-authentication-system`) would be useful for identifying objectives in UIs like `erk dash`. The slug is generated by Claude during the `/erk:objective-create` skill flow (where it has full context of the objective), then sanitized in Python before storing in the `objective-header` metadata block.\n\n## Changes\n\n### 1. Add `sanitize_objective_slug()` to naming module\n\n**File:** `packages/erk-shared/src/erk_shared/naming.py`\n\nAdd a new function that sanitizes LLM-generated slugs:\n\n```python\ndef sanitize_objective_slug(raw_slug: str) -&gt; str:\n```\n\n- Lowercase, replace non-alphanumeric (except hyphens) with hyphens\n- Collapse consecutive hyphens, strip leading/trailing hyphens\n- Truncate to 40 chars (longer than branch names since slugs aren't constrained by git)\n- Return `\"objective\"` if result is empty\n\nSimilar to `sanitize_worktree_name()` but as a separate function with its own constraints.\n\n### 2. Add `slug` to `ObjectiveHeaderSchema` validation\n\n**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` (~line 822)\n\n- Add `slug` to `optional_fields` (backward compat with existing objectives)\n- Validate: if present, must be a non-empty string\n\n### 3. Add `slug` parameter to `create_objective_header_block()`\n\n**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py` (~line 672)\n\n- Add `slug: str | None` keyword parameter\n- Include `\"slug\": slug` in the data dict when not None\n\n### 4. Thread `slug` through `create_objective_issue()`\n\n**File:** `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py` (~line 293)\n\n- Add `slug: str | None` keyword parameter to `create_objective_issue()`\n- If slug is provided, sanitize it: `slug = sanitize_objective_slug(slug)`\n- Pass `slug=slug` to `create_objective_header_block()`\n\n### 5. Add `--slug` option to `objective-save-to-issue` command\n\n**File:** `src/erk/cli/commands/exec/scripts/objective_save_to_issue.py`\n\n- Add `--slug` Click option (optional string)\n- Pass `slug=slug` to `create_objective_issue()`\n\n### 6. Update `/erk:objective-create` skill to generate and pass slug\n\n**File:** `.claude/commands/erk/objective-create.md`\n\nIn Step 6, after writing the objective body to scratch storage:\n- Add instruction for Claude to generate a concise, descriptive slug (3-5 words, kebab-case) from the full objective content\n- Pass `--slug=&lt;generated-slug&gt;` to the `erk exec objective-save-to-issue` command\n\n### 7. Tests\n\n**File:** `packages/erk-shared/tests/unit/github/metadata/test_objective_header_schema.py`\n- Test valid data with slug field\n- Test empty slug string (should warn as unknown field behavior or validate)\n- Test non-string slug rejection\n\n**File:** `tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py`\n- Update `test_objective_save_to_issue_success` to pass `--slug` and assert it appears in body\n\n**File:** `packages/erk-shared/tests/unit/github/metadata/test_objective_functions.py`\n- Update `create_objective_header_block` tests if they exist to pass slug\n\n**File:** `packages/erk-shared/src/erk_shared/naming.py` (tests in appropriate naming test file)\n- Test `sanitize_objective_slug` with various inputs (normal, special chars, emoji, empty, long)\n\n## Verification\n\n1. Run naming tests: `uv run pytest` on the naming test file\n2. Run schema tests: `uv run pytest packages/erk-shared/tests/unit/github/metadata/test_objective_header_schema.py`\n3. Run save-to-issue tests: `uv run pytest tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py`\n4. Run objective function tests: `uv run pytest packages/erk-shared/tests/unit/github/metadata/test_objective_functions.py`\n5. Run ty type checker on modified files\n\n\n&lt;/details&gt;", "state": "OPEN", "is_draft": false, "head_ref_name": "planned/add-slug-to-objective-m-02-22-0443", "base_ref_name": "master", "labels": ["erk-plan"], "author": "schrockn", "mergeable": "UNKNOWN", "merge_state_status": "UNKNOWN", "is_cross_repository": false, "created_at": "2026-02-22T09:43:13+00:00", "updated_at": "2026-02-22T10:36:21+00:00"}
+  </tool_result>
+  <thinking>Phase 0: This is NOT a plan review PR (no `erk-plan-review` label, only `erk-plan`). Proceed with standard code review flow.
+
+Phase 1: I already have the classifier results from the preview command earlier. But per the instructions, I need to run it again using a Task tool. However, I already have the results from the preview and I've already made all the code changes. Let me re-run the classifier to get fresh results.
+
+Actually, looking at this more carefully - the changes have already been made in this session. The pr-address flow expects to make changes, commit, and resolve threads. Since changes are already made but not committed, I should:
+
+
+1. Show the batched plan
+2. Execute the batches by committing the existing code changes and resolving threads
+3. Re-run the classifier to get fresh thread IDs</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="4631" cache_read_input_tokens="89475" cache_creation="{'ephemeral_5m_input_tokens': 4631, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>PR #7806 is not a plan review PR — proceeding with standard code review flow.
+
+### Phase 1: Classify Feedback</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="4631" cache_read_input_tokens="89475" cache_creation="{'ephemeral_5m_input_tokens': 4631, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_016uXStGzzmuCqnYbN3qhZEk">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 7806
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4631" cache_read_input_tokens="89475" cache_creation="{'ephemeral_5m_input_tokens': 4631, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016uXStGzzmuCqnYbN3qhZEk">
+Now I'll classify each comment according to the skill's classification model and create the structured JSON output.
+
+Based on the PR information and comments I've fetched, I'll now classify them and organize them into batches:
+
+**Review Comments Analysis:**
+
+1. **PRRT_kwDOPxC3hc5v-wU_** (line 67, agent-backpressure-gates.md) - Bot audit comment about `sanitize_objective_slug()` function not existing. This is actionable feedback requesting documentation correction.
+
+2. **PRRT_kwDOPxC3hc5v-wXc** (line 68, agent-backpressure-gates.md) - Bot audit comment about drift risk with inline regex pattern. This is actionable feedback requesting documentation improvement.
+
+3. **PRRT_kwDOPxC3hc5v-wmJ** (line 130, naming.py) - Human comment from schrockn about return value behavior being counterintuitive. This is actionable feedback requesting code changes.
+
+**Discussion Comments Analysis:**
+
+- Most are informational bot messages (workflow started, dignified-python review passed, tripwires review passed, test coverage review passed, code simplifier review passed, remote rebase completed, Graphite stack comment) - these don't require action.
+- The one actionable discussion comment is from schrockn with a specific code concern.
+
+Now I'll generate the complete JSON output:
+
+```json
+{
+  "success": true,
+  "pr_number": 7806,
+  "pr_title": "Add slug field to objective metadata for UI identification",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7806",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5v-wU_",
+      "type": "review",
+      "path": "docs/learned/architecture/agent-backpressure-gates.md",
+
+... [53 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>### Phase 2: Execution Plan
+
+## Execution Plan
+
+**Batch 1: Local Fixes** (1 comment, auto-proceed)
+| # | Location | Summary |
+|---|----------|---------|
+| 3 | `naming.py:130` | Return valid object on success instead of None |
+
+**Batch 2: Single-File** (2 comments, auto-proceed)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | `agent-backpressure-gates.md:67` | Fix inaccurate claim about removed function |
+| 2 | `agent-backpressure-gates.md:68` | Replace inline regex with source pointer |
+
+All changes have already been made earlier in this session. Proceeding to commit and resolve.
+
+### Phase 3: Execute Batches
+
+All code/doc changes are already in place. Let me verify the current state and commit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1644" cache_read_input_tokens="94106" cache_creation="{'ephemeral_5m_input_tokens': 1644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018dPEnDw1iqQUtMAA4etjfD">
+    <param name="command">git diff --stat</param>
+    <param name="description">Show changed files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1644" cache_read_input_tokens="94106" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1644}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018dPEnDw1iqQUtMAA4etjfD">
+ .../architecture/agent-backpressure-gates.md       |  4 +--
+ .../discriminated-union-error-handling.md          | 39 ++++++++++++++++++++++
+ .../src/erk_shared/gateway/github/plan_issues.py   |  8 ++---
+ packages/erk-shared/src/erk_shared/naming.py       | 21 +++++++++---
+ tests/core/utils/test_naming.py                    | 10 +++---
+ 5 files changed, 67 insertions(+), 15 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016tx5ZuH3yXQdQCnT5ghzey">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Show recent commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="95750" cache_creation="{'ephemeral_5m_input_tokens': 559, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016tx5ZuH3yXQdQCnT5ghzey">
+185b1799c update
+e3c62becf Add slug field to objective metadata for UI identification
+f44fd5c11 Unify plan checkout with `erk br co --for-plan` and `--new-slot` (#7795)
+dedcb0d1f Fix ci-update-pr-body plan-header metadata preservation on draft PR plans (#7815)
+29a811918 planned/ Eliminate checkout from gt track operations (#7790)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MidSSpT9HX1JK2DJZZvWVa">
+    <param name="command">git add packages/erk-shared/src/erk_shared/naming.py packages/erk-shared/src/erk_shared/ga...[truncated 552 chars]... tests for new return type
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit all review feedback changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="96309" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 193}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MidSSpT9HX1JK2DJZZvWVa">
+[planned/add-slug-to-objective-m-02-22-0443 64f6b0e01] Address PR review comments
+ 5 files changed, 67 insertions(+), 15 deletions(-)
+  </tool_result>
+  <assistant>Now resolve all 3 review threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="96502" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WzHXxX8oXsmWSeXDmUzEts">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5v-wmJ", "comment": "Fixed in 64f6b0e. Added `ValidOb...[truncated 800 chars]...g.py`)\" instead of duplicating the literal pattern."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Batch resolve all 3 review threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="96502" output_tokens="410" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 359}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WzHXxX8oXsmWSeXDmUzEts">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5v-wmJ",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5v-wU_",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5v-wXc",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>All 3 threads resolved. 
+
+### Phase 4: Final Verification</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="585" cache_read_input_tokens="96861" cache_creation="{'ephemeral_5m_input_tokens': 585, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_013MeSWeuoAbi9Uk4kjMn6tc">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Verify PR feedback resolved</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 7806
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="585" cache_read_input_tokens="96861" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 585}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013MeSWeuoAbi9Uk4kjMn6tc">
+Perfect. Now I have the complete analysis. Let me generate the final JSON output:
+
+```json
+{
+  "success": true,
+  "pr_number": 7806,
+  "pr_title": "Add slug field to objective metadata for UI identification",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7806",
+  "actionable_threads": [
+    {
+      "thread_id": "PRDT_3940676386",
+      "type": "discussion",
+      "classification": "actionable",
+      "action_summary": "Fix 2 documentation violations: missing function reference (sanitize_objective_slug) and drift risk from inline regex pattern",
+      "complexity": "single_file",
+      "original_comment": "Found 2 violations: 1 inaccurate claim (missing function reference), 1 drift risk (inline regex copied from source)"
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 8,
+  "batches": [
+    {
+      "name": "Documentation Fixes",
+      "complexity": "single_file",
+      "auto_proceed": true,
+      "item_indices": [0]
+    }
+  ],
+  "error": null
+}
+
+... [19 lines omitted] ...
+  </tool_result>
+  <thinking>The classifier found 1 remaining actionable item - a discussion comment (not a review thread) about the same documentation issues. Since those issues have already been fixed in the code, this is a discussion comment that was posted before the review threads. Let me check if this discussion comment needs to be replied to.
+
+Actually, looking at the result more carefully: the classifier found `PRDT_3940676386` as a discussion comment. This is likely the bot's discussion comment that posted the audit findings. Since the review threads (which were the actual actionable items) have all been resolved, this discussion comment just needs a reply acknowledging the fixes were made.
+
+Let me reply to this discussion comment to acknowledge the fixes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="97446" cache_creation="{'ephemeral_5m_input_tokens': 791, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The 3 review threads are all resolved. There's 1 remaining discussion comment from the audit bot that references the same issues. Let me reply to acknowledge the fixes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="97446" cache_creation="{'ephemeral_5m_input_tokens': 791, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Lag5qXWxGzmrcvuBQXWEpS">
+    <param name="command">erk exec reply-to-discussion-comment --comment-id 3940676386 --reply "Both violations addr...[truncated 62 chars]...tive_slug()\`, (2) Replaced inline regex with \`_OBJECTIVE_SLUG_PATTERN\` source pointer."</param>
+    <param name="description">Reply to audit bot discussion comment</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="97446" cache_creation="{'ephemeral_5m_input_tokens': 791, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lag5qXWxGzmrcvuBQXWEpS">
+{
+  "success": true,
+  "comment_id": 3940676386,
+  "reply_id": 3940693844,
+  "pr_number": 7806
+}
+  </tool_result>
+  <assistant>### Phase 5: Update PR Description</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="98237" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01APzUZX4JCARFXTtvHp8D3x">
+    <param name="command">erk exec update-pr-description --session-id "c1c38a3a-83fb-4a8e-8508-d5db46709abc"</param>
+    <param name="description">Update PR title and body from full diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="98237" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01APzUZX4JCARFXTtvHp8D3x">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ASiHZNQjc18dEo8ptir4d5">
+    <param name="command">erk exec update-pr-description --session-id "c1c38a3a-83fb-4a8e-8508-d5db46709abc" 2&gt;&amp;1</param>
+    <param name="description">Update PR title and body from full diff</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="98650" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ASiHZNQjc18dEo8ptir4d5">
+
+  </tool_result>
+  <assistant>## All PR Comments Addressed
+
+**Total comments:** 3 review threads + 1 discussion comment
+**Batches:** 1 (all changes committed together)
+**Commit:** `64f6b0e` "Address PR review comments"
+
+All review threads resolved. Discussion comment replied to.
+
+### Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve
+2. Wait for CI to pass
+3. Request re-review if needed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="98893" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01SjjgqZaPodgUPX7Jh9fR3B">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick commit and submit to Graphite</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="437" cache_read_input_tokens="99055" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SjjgqZaPodgUPX7Jh9fR3B">
+  Staging all changes...
+  Checking for staged changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": false,
+  "committed": false,
+  "message": "No new changes, submitted existing commits",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7806"
+}
+  </tool_result>
+  <assistant>Submitted. No new changes to commit — the existing commit was pushed.
+
+PR: https://github.com/dagster-io/erk/pull/7806</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="99492" cache_creation="{'ephemeral_5m_input_tokens': 210, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="373" cache_read_input_tokens="99702" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>Unknown skill: rer</user>
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="405" cache_read_input_tokens="100075" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/7806&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>what other workflows in this system (erk) would benefit from a gate pattern</user>
+  <thinking>The user is asking a research/brainstorming question about where else in the erk codebase the "gate pattern" (agent back pressure via validation gates) could be applied. Let me think about this based on what I know about erk from the AGENTS.md and the codebase.
+
+The gate pattern is: instead of silently transforming agent output, validate it and reject invalid input with actionable feedback so the agent can self-correct.
+
+Let me search the codebase for places where silent transformation happens (sanitize/normalize functions) that agents produce, or places where agent output is accepted without validation.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="288" cache_read_input_tokens="100480" cache_creation="{'ephemeral_5m_input_tokens': 288, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good question. Let me explore the codebase for places where agent output is currently silently transformed or accepted without validation.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="288" cache_read_input_tokens="100480" cache_creation="{'ephemeral_5m_input_tokens': 288, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_015Bz8aqC94tcbvR1b2wxhJg">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find gate pattern candidates</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1270 chars]... file paths and brief descriptions of what each does and why it might benefit from a gate.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="288" cache_read_input_tokens="100480" output_tokens="599" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 288}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015Bz8aqC94tcbvR1b2wxhJg">
+Perfect! Now I have a comprehensive understanding of the codebase. Let me compile my findings into a clear report:
+
+## Agent Back Pressure Gate Pattern: Candidates for Application
+
+Based on my analysis of the erk codebase, here are the places where the agent back pressure gate pattern could be applied. These are functions that currently silently transform agent-generated output (sanitize/normalize) instead of validating and rejecting invalid input with actionable feedback.
+
+### 1. **Worktree and Branch Name Sanitization**
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/naming.py`
+
+**Functions:**
+- `sanitize_worktree_name()` (lines 144-192) - Accepts arbitrary strings, lowercases, replaces underscores with hyphens, removes special chars, collapses hyphens, truncates to 31 chars
+- `sanitize_branch_component()` (lines 195-231) - Similar silent transformation of branch names
+- `generate_filename_from_title()` (lines 234-298) - Accepts any title, lowercases, normalizes Unicode, removes emojis, collapses hyphens, truncates
+
+**Why it needs a gate:** Agents frequently generate worktree/branch names and filenames. When `erk wt create my-feature-123!!!` is called with special characters, the sanitizer silently converts it to `my-feature-123`. The agent doesn't learn that its input was invalid.
+
+**Candidate gate pattern:** Replace with validation that rejects invalid names (e.g., names with consecutive hyphens, excessive punctuation, or that would truncate excessively). Return structured validation error with the pattern, actual value, and examples, similar to `InvalidObjectiveSlug`.
+
+---
+
+### 2. **Filename Generation from Plan Title**
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/src/erk/cli/commands/exec/scripts/issue_title_to_filename.py`
+
+**Function:** `issue_title_to_filename()` command (lines 22-34)
+
+**Calling chain:** Calls `generate_filename_from_title()` from naming.py (lines 234-298)
+
+**Why it needs a gate:** When agents call `/erk:plan-save`, the skill generates a plan filename from the plan's title. If the agent provides only emoji or special chars ("🚀🎉"), the function returns `"plan.md"` as a fallback. The agent never knows its title was rejected.
+
+... [160 lines omitted] ...
+
+- Remapping field names: `description` → `warning`, `title`/`name` → `action`
+**Candidate gate pattern:** Validate that the JSON conforms to the schema BEFORE normalizing. Return structured error showing:
+- Expected schema (root key `candidates`, fields `action`/`warning`/`target_doc_path`)
+**Why it needs a gate:** This function is more sophisticated—it **does** validate and reject. However, it's mentioned because it shows the CORRECT pattern: expanding aliases (`h` → `haiku`), validating against `_VALID_MODELS`, and raising `click.ClickException` with actionable feedback on invalid input.
+**Status:** ✓ Already implements gate pattern. Returns structured validation errors (JSON with `valid`, `error`, `details`) so agents can self-correct if plans are too short, lack structure, etc.
+**Candidate gate pattern:** Validate the name BEFORE sanitization, reject with actionable error if it's not already kebab-case and alphanumeric.
+**Status:** ✓ Reference implementation. This function correctly rejects invalid model names with actionable error message instead of silently transforming.
+| `validate_plan_content()` | validate_plan_content.py | CLI command | **Returns validation errors** | ✓ Reference |
+  </tool_result>
+  <thinking>Great research. Let me synthesize this into a concise, thoughtful answer. The key distinction is: which of these functions process agent output vs human output? The gate pattern specifically applies when the agent is the producer — for human-produced input, silent transformation (good UX) is often preferred.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3721" cache_read_input_tokens="100768" cache_creation="{'ephemeral_5m_input_tokens': 3721, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great question. The key filter is: **is an agent the producer?** Gates are for agent output. Silent transformation is fine for human UX.
+
+Here are the strongest candidates, ranked by impact:
+
+### High Value
+
+**1. `normalize_tripwire_candidates()`** — `src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py`
+
+Silently remaps agent-produced JSON schema (renames root keys, remaps field names). The agent never learns its output drifted from the canonical schema. This is the most clear-cut case — it's exclusively agent-facing and the normalization masks schema drift.
+
+**2. `generate_filename_from_title()`** — `naming.py`
+
+When an agent provides a plan title that's all emoji or special chars, the function silently returns `"plan.md"` as a fallback. The agent should know its title was rejected.
+
+### Medium Value
+
+**3. `sanitize_worktree_name()` / `sanitize_branch_component()`** — `naming.py`
+
+These are trickier because they serve **both** agents and humans. When `erk wt create` is invoked interactively, silent transformation is good UX. But when the `erk implement` workflow derives names from agent-provided plan titles, the agent should learn if its title would produce a degenerate name (e.g., truncated to near-nothing).
+
+The fix here isn't replacing the sanitizers — it's adding a **validation layer upstream** in agent-facing paths, similar to how `validate_objective_slug()` sits above `sanitize_worktree_name()`.
+
+### Lower Value (already partially gated)
+
+**4. `erk plan create --title`** — Falls back to H1 extraction if title is empty, but this is reasonable behavior since plans always have an H1. The agent isn't really "wrong" here.
+
+**5. `objective-save-to-issue --slug`** — Already gated now via `validate_objective_slug()` after our changes.
+
+### Already Correct (reference implementations)
+
+- `normalize_model_name()` — validates and rejects with actionable error
+- `validate_plan_content()` — returns structured validation errors
+
+### The Pattern That Emerges
+
+The best candidates share a signature: **a sanitize/normalize function whose sole consumers are agents**, where the transformation masks mistakes. The worktree/branch sanitizers are dual-use (human + agent), so they need a validation layer in front rather than replacement.
+
+Would you want me to create an objective to systematically apply gates to these candidates?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3721" cache_read_input_tokens="100768" cache_creation="{'ephemeral_5m_input_tokens': 3721, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>yes create an objective</user>
+  <tool_use name="Skill" id="toolu_01W9cvBJYupUcCXamLmYg5R3">
+    <param name="skill">objective</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="834" cache_read_input_tokens="104489" output_tokens="53" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 834}" inference_geo="" iterations="[]" speed="standard" />
+</session>

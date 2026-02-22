@@ -1,0 +1,1019 @@
+<session>
+  <meta branch="planned/add-slug-to-objective-m-02-22-0443" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Plan: Address PR #7806 Review Comments
+
+## Context
+
+PR #7806 (slug validation gate) received 3 actionable review comments. This plan addresses all of them.
+
+## Review Comments
+
+### Thread 1 (schrockn): Return type is counterintuitive — `naming.py:130`
+&gt; "the success case should return a valid object. the truthy falsey behavior here is very counterintuitive."
+
+`validate_objective_slug()` currently returns `InvalidObjectiveSlug | None` where `None` = success. This violates erk's discriminated union error handling pattern where both success and failure are proper types.
+
+### Thread 2 (bot): Inaccurate claim in docs — `agent-backpressure-gates.md:67`
+&gt; `sanitize_objective_slug()` is referenced as if it currently exists. It was removed in this PR.
+
+The "Before" example needs past-tense framing that makes clear it was removed.
+
+### Thread 3 (bot): Drift risk — `agent-backpressure-gates.md:68`
+&gt; Inline regex `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` is duplicated. If `_OBJECTIVE_SLUG_PATTERN` changes, this doc silently goes stale.
+
+Replace inline regex with a source pointer.
+
+## Implementation
+
+### 1. Add `ValidObjectiveSlug` and change return type to discriminated union
+
+**File:** `packages/erk-shared/src/erk_shared/naming.py`
+
+- Add `ValidObjectiveSlug` frozen dataclass with field `slug: str`
+- Change `validate_objective_slug` return type: `InvalidObjectiveSlug | None` → `ValidObjectiveSlug | InvalidObjectiveSlug`
+- Return `ValidObjectiveSlug(slug=slug)` on success instead of `None`
+
+### 2. Update caller to use `isinstance()` dispatch
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`
+
+- Import `InvalidObjectiveSlug` from naming
+- Replace `if slug_error is not None:` with `isinstance(result, InvalidObjectiveSlug)` check
+- Extract validated slug from `ValidObjectiveSlug.slug` (though the value is the same, it makes the data flow explicit)
+
+### 3. Fix doc: past-tense framing for removed function
+
+**File:** `docs/learned/architecture/agent-backpressure-gates.md` (line 67)
+
+Change from present-tense "accepted any string..." to explicitly past-tense: "The *previous* implementation, `sanitize_objective_slug()` (now removed), accepted any string..."
+
+### 4. Fix doc: replace inline regex with source pointer
+
+**File:** `docs/learned/architecture/agent-backpressure-gates.md` (line 68)
+
+Replace the inline regex with a reference: "checks the slug against `_OBJECTIVE_SLUG_PATTERN` (defined in `naming.py`)" instead of duplicating the literal pattern.
+
+### 5. Add anti-pattern to discriminated union doc
+
+**File:** `docs/learned/architecture/discriminated-union-error-handling.md`
+
+Add a new section (or extend the existing "When isinstance() Is NOT Required: Plain Optionals" section at line 293) documenting the anti-pattern of using `ErrorType | None` where `None` = success:
+
+- **Anti-pattern:** `validate_thing() -&gt; ErrorType | None` — returning `None` for success is counterintuitive because `None` typically signals absence/failure, not success
+- **Correct pattern:** `validate_thing() -&gt; ValidThing | InvalidThing` — both outcomes are explicit named types
+- Add a tripwire about this to the frontmatter: using `None` as a success return value in a validation function
+
+This captures the lesson from Thread 1 as permanent documentation so future code doesn't repeat the mistake.
+
+### 6. Update tests for new return type
+
+**File:** `tests/core/utils/test_naming.py`
+
+- Import `ValidObjectiveSlug`
+- Change valid slug tests: `assert result is None` → `assert isinstance(result, ValidObjectiveSlug)`
+- Invalid slug tests are unchanged (already check `isinstance(result, InvalidObjectiveSlug)`)
+
+**File:** `packages/erk-shared/tests/unit/github/test_plan_issues.py`
+
+- No changes needed (tests check `result.success` not the internal validation types)
+
+## Verification
+
+1. Run slug validation tests: `uv run pytest tests/core/utils/test_naming.py -k "objective_slug"`
+2. Run plan_issues tests: `uv run pytest packages/erk-shared/tests/unit/github/test_plan_issues.py`
+3. Run save-to-issue tests: `uv run pytest tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py`
+4. Run ty on modified files
+5. Run ruff on modified files
+6. Resolve all 3 review threads via `erk exec resolve-review-threads`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-21/75414cf8-78b9-4db6-aab5-1536ddc043e1.jsonl</user>
+  <thinking>Let me start by reading the relevant files to understand the current state of the code before making changes.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7954, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by reading all the files that need to be modified in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7954, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012Hj5vRgDpmnEDchuJjbW5b">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/naming.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7954, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Hj5vRgDpmnEDchuJjbW5b">
+     1→"""Naming utilities for filenames and worktree names.
+     2→
+     3→This module provides pure utility functions for transforming titles and names
+     4→into sanitized, filesystem-safe identifiers. All functions are pure (no I/O)
+     5→and follow LBYL patterns.
+     6→
+     7→Functions that require git operations accept a git_ops parameter via dependency
+     8→injection to maintain separation from I/O concerns.
+     9→"""
+    10→
+    11→import re
+    12→import unicodedata
+    13→from dataclasses import dataclass
+    14→from datetime import datetime
+    15→from pathlib import Path
+    16→
+    17→_SAFE_COMPONENT_RE = re.compile(r"[^A-Za-z0-9_/-]+")
+    18→
+    19→# Date suffix format for plan-derived worktree names: -YY-MM-DD-HHMM
+    20→WORKTREE_DATE_SUFFIX_FORMAT = "%y-%m-%d-%H%M"
+    21→
+    22→# Branch timestamp suffix format: -MM-DD-HHMM (appended after truncation)
+    23→BRANCH_TIMESTAMP_SUFFIX_FORMAT = "%m-%d-%H%M"
+    24→
+    25→# Regex pattern to detect existing timestamp suffix (MM-DD-HHMM)
+    26→_TIMESTAMP_SUFFIX_PATTERN = re.compile(r"-\d{2}-\d{2}-\d{4}$")
+    27→
+    28→
+    29→def has_timestamp_suffix(name: str) -&gt; bool:
+    30→    """Check if a name already ends with a timestamp suffix (-MM-DD-HHMM).
+
+... [729 lines omitted] ...
+
+    75→    """Validation failure for an objective slug.
+    78→        raw_slug: The original slug value that failed validation.
+    79→        reason: A short description of why validation failed.
+    87→        """Full error message with pattern, rules, actual value, and examples.
+   108→    Returns None on success, or an InvalidObjectiveSlug describing the failure.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HtZ5P1MhMizUKZRptw62m5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7954, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HtZ5P1MhMizUKZRptw62m5">
+     1→"""Create Schema v2 plan issues with metadata-only body and plan content comment.
+     2→
+     3→This module consolidates the 6-step workflow for creating plan issues:
+     4→1. Get GitHub username (fail if not authenticated)
+     5→2. Extract title from plan H1 (or use provided)
+     6→3. Ensure all required labels exist
+     7→4. Create issue with metadata-only body
+     8→5. Add first comment with plan content
+     9→6. Handle partial failures (issue created but comment failed)
+    10→
+    11→All callers should use create_plan_issue() instead of duplicating this logic.
+    12→"""
+    13→
+    14→from dataclasses import dataclass
+    15→from datetime import UTC, datetime
+    16→from pathlib import Path
+    17→
+    18→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    19→from erk_shared.gateway.github.metadata.core import (
+    20→    create_objective_header_block,
+    21→    extract_raw_metadata_blocks,
+    22→    format_objective_content_comment,
+    23→    format_plan_commands_section,
+    24→    render_metadata_block,
+    25→    update_objective_header_comment_id,
+    26→)
+    27→from erk_shared.gateway.github.metadata.plan_header import (
+    28→    format_plan_content_comment,
+    29→    format_plan_header_body,
+    30→    update_plan_header_comment_id,
+
+... [514 lines omitted] ...
+
+    65→        issue_number: Issue number if created (may be set even on failure if
+    66→            partial success - issue created but comment failed)
+    69→        error: Error message if failed, None if success
+    76→    error: str | None
+   122→        Does NOT raise exceptions. All errors returned in result.
+   123→        Partial success (issue created, comment failed) is possible.
+   133→            error="Could not get GitHub username (gh CLI not authenticated?)",
+   154→    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
+   155→    if label_errors:
+   161→            error=label_errors,
+   213→    except RuntimeError as e:
+   219→            error=f"Failed to create GitHub issue: {e}",
+   226→    except RuntimeError as e:
+   227→        # Partial success - issue created but comment failed
+   233→            error=f"Issue #{result.number} created but failed to add plan comment: {e}",
+   251→        error=None,
+   287→        "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n"
+   324→        Does NOT raise exceptions. All errors returned in result.
+   334→            error="Could not get GitHub username (gh CLI not authenticated?)",
+   343→        slug_error = validate_objective_slug(slug)
+   344→        if slug_error is not None:
+   350→                error=slug_error.message,
+   363→    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
+   364→    if label_errors:
+   370→            error=label_errors,
+   396→    except RuntimeError as e:
+   402→            error=f"Failed to create GitHub issue: {e}",
+   409→    except RuntimeError as e:
+   410→        # Partial success - issue created but comment failed
+   416→            error=f"Issue #{result.number} created but failed to add objective comment: {e}",
+   428→        error=None,
+   445→        Error message if failed, None if success
+   478→    except RuntimeError as e:
+   479→        return f"Failed to ensure labels exist: {e}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_019QBdjwc54W5PcfPmJDULSf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/agent-backpressure-gates.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7954, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019QBdjwc54W5PcfPmJDULSf">
+     1→---
+     2→title: Agent Back Pressure via Gates
+     3→read_when:
+     4→  - "designing validation for agent-generated output"
+     5→  - "choosing between silent transformation and rejection of invalid input"
+     6→  - "implementing retry loops for agent-produced values"
+     7→  - "adding validation to agent-facing APIs"
+     8→tripwires:
+     9→  - action: "silently transforming agent output (sanitize/normalize) instead of rejecting invalid values"
+    10→    warning: "Silent transformation masks mistakes and prevents the agent from learning. Use a validation gate that rejects invalid input with actionable feedback so the agent can self-correct."
+    11→  - action: "adding a validation gate without actionable feedback in the error message"
+    12→    warning: "Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern."
+    13→  - action: "adding guidance to the agent without a programmatic gate to enforce it"
+    14→    warning: "Guidance without enforcement is optional compliance. The gate is the hard boundary. The agent should have guidance to help it succeed on the first try, but the gate is what enforces correctness."
+    15→last_audited: "2026-02-22"
+    16→---
+    17→
+    18→# Agent Back Pressure via Gates
+    19→
+    20→## Core Concept
+    21→
+    22→A **gate** is any programmatic invariant check that an agent's output must pass through. The agent has maximum flexibility in *how* it produces its output, but the gate enforces *what* the output must look like. If the agent's output fails the gate, the workflow loops: the agent receives the failure feedback and retries until it passes.
+    23→
+    24→## The Pattern is General
+    25→
+    26→A gate can be:
+    27→
+    28→- A regex check on a generated slug (simple)
+    29→- A type checker run on generated code (complex)
+    30→- A test suite that must pass (sophisticated)
+
+... [41 lines omitted] ...
+
+    38→2. **Gate** — The programmatic check that enforces the invariant. This is the hard boundary. The agent cannot bypass it. The gate produces actionable feedback on failure so the agent can self-correct.
+    47→| Type checker (ty) | Type correctness | Type errors with locations |
+    48→| Test suite (pytest) | Behavioral correctness | Test failures with assertions |
+    59→- **Gates without actionable feedback**: The agent can't self-correct if the error message just says "invalid". Include the pattern, the actual value, and examples.
+    68→- **After (validation gate):** `validate_objective_slug()` checks the slug against `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` and 3-40 character length. On failure, it returns an `InvalidObjectiveSlug` with the pattern, rules, actual value, and examples. The agent receives this feedback and retries.
+  </tool_result>
+  <tool_use name="Read" id="toolu_014cc2sweKMb4GmxS6ZHLsyC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/discriminated-union-error-handling.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 7954, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014cc2sweKMb4GmxS6ZHLsyC">
+     1→---
+     2→title: Discriminated Union Error Handling
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing return types for operations that may fail"
+     7→  - "implementing T | ErrorType patterns"
+     8→  - "handling errors without exceptions"
+     9→tripwires:
+    10→  - action: "choosing between exceptions and discriminated unions for operation failures"
+    11→    warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
+    12→  - action: "migrating a gateway method to return discriminated union"
+    13→    warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
+    14→  - action: "accessing properties on a discriminated union result without isinstance() check"
+    15→    warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
+    16→---
+    17→
+    18→# Discriminated Union Error Handling
+    19→
+    20→Erk uses discriminated unions (`SuccessType | ErrorType`) for LBYL-compliant error handling at gateway and pipeline boundaries. This pattern makes failure modes explicit in type signatures and enables callers to branch on specific error types.
+    21→
+    22→## The Core Trade-off: Unions vs Exceptions
+    23→
+    24→**Use discriminated unions when the caller continues after failure** — branching logic, multiple error types, or inspection of error fields (like `pr_number`, `branch_name`).
+    25→
+    26→**Use exceptions when all callers terminate identically** — error just surfaces as a message, no branching logic, no meaningful field inspection.
+    27→
+    28→### When Exceptions Are Better: The Worktree Operations Case
+    29→
+    30→Worktree add/remove failures are _expected_ (path collisions, missing branches), but they're still better as exceptions because no caller does anything beyond extracting the message and terminating:
+
+... [285 lines omitted] ...
+
+    36→except RuntimeError as e:
+    37→    raise UserFacingCliError(str(e))
+    40→The exception pattern is simpler here: no caller branches on error content, no caller inspects error structure, and every call site terminates identically. A discriminated union would add ceremony without value.
+    44→Contrast with `create_branch` and `submit_branch`, where callers _do_ branch on error types:
+    62→1. **Branching logic** — different handling for "already exists" vs other failures
+    64→3. **Type-safe continuation** — caller keeps running after handling the error
+    68→Gateway methods return `SuccessType | ErrorType` where:
+    71→- **Error types** are frozen dataclasses with `message: str` and `error_type` property
+    73→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushResult, PushError --&gt;
+    75→See `PushResult` and `PushError` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`.
+    80→if isinstance(push_result, PushError):
+    81→    raise UserFacingCliError(push_result.message)
+    89→&lt;!-- Source: src/erk/cli/ensure.py, UserFacingCliError --&gt;
+    91→CLI commands use `UserFacingCliError` for error propagation. See `UserFacingCliError` in `src/erk/cli/ensure.py`.
+    94→# Check error case first and raise
+    96→if isinstance(result, PushError):
+    97→    raise UserFacingCliError(result.message)
+   101→**Why `UserFacingCliError`:**
+   103→- Caught at CLI entry point (`main()`) with consistent error styling
+   105→- One-line pattern replaces verbose `user_output(error) + raise SystemExit(1)`
+   107→## Pipeline Discriminated Unions: Structured Error Propagation
+   109→Both submit and land pipelines use discriminated unions to thread errors through multi-step operations:
+   111→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, SubmitState, SubmitError --&gt;
+   112→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, LandState, LandError --&gt;
+   114→See `SubmitError` in `src/erk/cli/commands/pr/submit_pipeline.py` and `LandError` in `src/erk/cli/commands/land_pipeline.py`.
+   119→PipelineStep = Callable[[ErkContext, State], State | Error]
+   125→- `Error` to short-circuit pipeline
+   127→**Why structured error types?**
+   129→1. **Phase tracking** — caller knows if error occurred in validation vs execution
+   130→2. **Machine-readable `error_type`** — enables specific error handling (e.g., "pr-checks-failing" vs "merge-conflict")
+   134→**Why `dict[str, str]` for details?** Not `dict[str, Any]` or `dict[str, str] | None`. Every error has details (even if empty `{}`), and string values enable consistent serialization/logging without type uncertainty.
+   138→def run_validation_pipeline(ctx: ErkContext, state: State) -&gt; State | Error:
+   139→    """Run all validation steps, short-circuit on first error."""
+   142→        if isinstance(result, Error):
+   156→    """Returns True on success, error message string on failure."""
+   161→    error_detail = merge_result if isinstance(merge_result, str) else "Unknown"
+   162→    return f"Failed to merge: {error_detail}"
+   167→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py, MergeResult, MergeError --&gt;
+   169→See `MergeResult` and `MergeError` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
+   172→def merge_pr(self, repo_root: Path, pr_number: int, ...) -&gt; MergeResult | MergeError:
+   173→    """Returns MergeResult on success, MergeError on failure."""
+   177→if isinstance(merge_result, MergeError):
+   178→    return LandError(
+   180→        error_type="merge-failed",
+   181→        message=f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
+   193→5. Update tests to check `isinstance(result, ErrorType)`
+   201→Error types implement the `NonIdealState` protocol. See `packages/erk-shared/src/erk_shared/non_ideal_state.py`.
+   205→- `error_type` property (read-only, machine-readable classification)
+   208→This enables generic error handling without coupling to specific error types:
+   211→def handle_error(result: Any) -&gt; str:
+   219→### Error Types Are Frozen Dataclasses
+   221→All error types use `@dataclass(frozen=True)` for immutability:
+   225→class PushError:
+   229→    def error_type(self) -&gt; str:
+   230→        return "push-failed"
+   235→Error types should carry domain-meaningful fields for caller inspection:
+   248→The caller can inspect these fields to construct better error messages or branch on specific failure modes.
+   254→| `&lt;Operation&gt;Error`   | `SubmitError`, `MergeError`   | Operation failed               |
+   262→### vs. Exceptions
+   264→| Discriminated Unions        | Exceptions              |
+   269→| IDE shows possible failures | Requires doc reading    |
+   275→| Preserves error context       | Loses information    |
+   277→| Multiple error types possible | Single failure state |
+   285→def fetch() -&gt; Data | Error: ...
+   288→def fetch() -&gt; Result[Data, Error]: ...
+   303→# T | ErrorType: isinstance() required for type narrowing
+   305→if isinstance(result, FetchError):
+   306→    handle_error(result.message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SFyz8A3TyNRHK1EnrdEPWp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7954" cache_read_input_tokens="19041" output_tokens="463" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 7954}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SFyz8A3TyNRHK1EnrdEPWp">
+     1→from datetime import datetime
+     2→from pathlib import Path
+     3→
+     4→import pytest
+     5→
+     6→from erk_shared.naming import (
+     7→    WORKTREE_DATE_SUFFIX_FORMAT,
+     8→    InvalidObjectiveSlug,
+     9→    default_branch_for_worktree,
+    10→    derive_branch_name_from_title,
+    11→    ensure_unique_worktree_name,
+    12→    extract_leading_issue_number,
+    13→    extract_objective_number,
+    14→    extract_plan_review_issue_number,
+    15→    extract_trailing_number,
+    16→    generate_draft_pr_branch_name,
+    17→    generate_issue_branch_name,
+    18→    sanitize_branch_component,
+    19→    sanitize_worktree_name,
+    20→    strip_plan_from_filename,
+    21→    validate_objective_slug,
+    22→)
+    23→
+    24→
+    25→def _get_current_date_suffix() -&gt; str:
+    26→    """Get the current date suffix for plan-derived worktrees."""
+    27→    return datetime.now().strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+    28→
+    29→
+    30→@pytest.mark.parametrize(
+
+... [654 lines omitted] ...
+
+   678→def test_validate_objective_slug_error_message_includes_pattern() -&gt; None:
+   679→    """Error message includes the regex pattern for agent self-correction."""
+  </tool_result>
+  <thinking>Now I have a clear picture of all the files. Let me create tasks and start implementing.
+
+Let me plan the changes:
+
+1. **naming.py**: Add `ValidObjectiveSlug` dataclass, change return type of `validate_objective_slug`
+2. **plan_issues.py**: Update caller to use `isinstance()` dispatch
+3. **agent-backpressure-gates.md**: Fix past-tense framing and replace inline regex
+4. **discriminated-union-error-handling.md**: Add anti-pattern section
+5. **test_naming.py**: Update tests for new return type
+
+Let me implement all of these.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="41429" cache_read_input_tokens="26995" cache_creation="{'ephemeral_5m_input_tokens': 41429, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have all the context. Let me create tasks and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="41429" cache_read_input_tokens="26995" cache_creation="{'ephemeral_5m_input_tokens': 41429, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_014rruFNB7D2NATBX8dfssKm">
+    <param name="subject">Add ValidObjectiveSlug and change return type</param>
+    <param name="description">Add ValidObjectiveSlug frozen dataclass to naming.py and change validate_objective_slug return type from InvalidObjectiveSlug | None to ValidObjectiveSlug | InvalidObjectiveSlug</param>
+    <param name="activeForm">Adding ValidObjectiveSlug type</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="41429" cache_read_input_tokens="26995" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 41429}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014rruFNB7D2NATBX8dfssKm">
+Task #1 created successfully: Add ValidObjectiveSlug and change return type
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01L5wCMQvze8YDJttTP2KiHb">
+    <param name="subject">Update plan_issues.py caller to use isinstance dispatch</param>
+    <param name="description">Import InvalidObjectiveSlug, replace `if slug_error is not None:` with isinstance check, extract slug from ValidObjectiveSlug</param>
+    <param name="activeForm">Updating plan_issues.py caller</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3446" cache_read_input_tokens="68424" cache_creation="{'ephemeral_5m_input_tokens': 3446, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L5wCMQvze8YDJttTP2KiHb">
+Task #2 created successfully: Update plan_issues.py caller to use isinstance dispatch
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01H1nSd9JazZXKyNES7PYQoE">
+    <param name="subject">Fix doc: past-tense framing and inline regex</param>
+    <param name="description">Fix agent-backpressure-gates.md: past-tense framing for removed sanitize_objective_slug, replace inline regex with source pointer</param>
+    <param name="activeForm">Fixing backpressure gates doc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3446" cache_read_input_tokens="68424" cache_creation="{'ephemeral_5m_input_tokens': 3446, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H1nSd9JazZXKyNES7PYQoE">
+Task #3 created successfully: Fix doc: past-tense framing and inline regex
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01EUpEqFLZKBq8VKJmbbfVh5">
+    <param name="subject">Add anti-pattern to discriminated union doc</param>
+    <param name="description">Add anti-pattern section about ErrorType | None where None = success to discriminated-union-error-handling.md</param>
+    <param name="activeForm">Adding anti-pattern documentation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3446" cache_read_input_tokens="68424" cache_creation="{'ephemeral_5m_input_tokens': 3446, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EUpEqFLZKBq8VKJmbbfVh5">
+Task #4 created successfully: Add anti-pattern to discriminated union doc
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014udE9DQSpiuyUi9CaeZruo">
+    <param name="subject">Update tests for new return type</param>
+    <param name="description">Update test_naming.py: import ValidObjectiveSlug, change valid slug assertions from `is None` to isinstance(ValidObjectiveSlug)</param>
+    <param name="activeForm">Updating tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3446" cache_read_input_tokens="68424" cache_creation="{'ephemeral_5m_input_tokens': 3446, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014udE9DQSpiuyUi9CaeZruo">
+Task #5 created successfully: Update tests for new return type
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01FS16TEdtPYPgaxvyaRJyyE">
+    <param name="subject">Run verification tests and linting</param>
+    <param name="description">Run pytest on naming tests, plan_issues tests, save-to-issue tests. Run ty and ruff on modified files.</param>
+    <param name="activeForm">Running verification</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3446" cache_read_input_tokens="68424" cache_creation="{'ephemeral_5m_input_tokens': 3446, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FS16TEdtPYPgaxvyaRJyyE">
+Task #6 created successfully: Run verification tests and linting
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01QwhJy9pUw7McibvZCEyaU8">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="779" cache_read_input_tokens="71870" cache_creation="{'ephemeral_5m_input_tokens': 779, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QwhJy9pUw7McibvZCEyaU8">
+Updated task #1 status
+  </tool_result>
+  <assistant>### Step 1: Add `ValidObjectiveSlug` and change return type in `naming.py`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="72649" cache_creation="{'ephemeral_5m_input_tokens': 90, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Lzc7B442vznDbtxYFUkFCA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class InvalidObjectiveSlug:
+    """Validation failure for an objec...[truncated 1861 chars]...         raw_slug=slug, reason="Does not match required pattern"
+        )
+    return None</param>
+    <param name="new_string">@dataclass(frozen=True)
+class ValidObjectiveSlug:
+    """Validation success for an objecti...[truncated 2146 chars]...eason="Does not match required pattern"
+        )
+    return ValidObjectiveSlug(slug=slug)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="72649" cache_creation="{'ephemeral_5m_input_tokens': 90, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lzc7B442vznDbtxYFUkFCA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/naming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01P9pXu957qv4xxkUPk1Yq9C">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1505" cache_read_input_tokens="72739" cache_creation="{'ephemeral_5m_input_tokens': 1505, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P9pXu957qv4xxkUPk1Yq9C">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01YKcc2jeqVw8S4xxSdhogiK">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1505" cache_read_input_tokens="72739" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1505}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YKcc2jeqVw8S4xxSdhogiK">
+Updated task #2 status
+  </tool_result>
+  <assistant>### Step 2: Update `plan_issues.py` caller to use `isinstance()` dispatch</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="74244" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013yCq9Sng2ondJZ58u1vcGG">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+    <param name="old_string">from erk_shared.naming import validate_objective_slug</param>
+    <param name="new_string">from erk_shared.naming import InvalidObjectiveSlug, validate_objective_slug</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="74244" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 198}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013yCq9Sng2ondJZ58u1vcGG">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016gtkGUs6nhGFoTQvUYJ78o">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+    <param name="old_string">    # Step 2b: Validate slug if provided (gate - reject invalid, don't transform)
+    if s...[truncated 217 chars]...None,
+                title=title,
+                error=slug_error.message,
+            )</param>
+    <param name="new_string">    # Step 2b: Validate slug if provided (gate - reject invalid, don't transform)
+    if s...[truncated 242 chars]...one,
+                title=title,
+                error=slug_result.message,
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="74442" output_tokens="374" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 279}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016gtkGUs6nhGFoTQvUYJ78o">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01CtF1D2MnQPve841B5bBixb">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="74721" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CtF1D2MnQPve841B5bBixb">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_011yfBnrZrBjpJBsN1qfvW6q">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="74721" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011yfBnrZrBjpJBsN1qfvW6q">
+Updated task #3 status
+  </tool_result>
+  <assistant>### Step 3: Fix doc — past-tense framing and replace inline regex</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="75163" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014uUYE8qPwXKhhiJbThmWDH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/agent-backpressure-gates.md</param>
+    <param name="old_string">- **Before (silent transformation):** `sanitize_objective_slug()` accepted any string, low...[truncated 311 chars]... pattern, rules, actual value, and examples. The agent receives this feedback and retries.</param>
+    <param name="new_string">- **Before (silent transformation):** The previous implementation, `sanitize_objective_slu...[truncated 374 chars]... pattern, rules, actual value, and examples. The agent receives this feedback and retries.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="75163" output_tokens="450" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 198}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014uUYE8qPwXKhhiJbThmWDH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/agent-backpressure-gates.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01PVUZw7of2kp2gx4DiJi2Zy">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="511" cache_read_input_tokens="75361" cache_creation="{'ephemeral_5m_input_tokens': 511, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PVUZw7of2kp2gx4DiJi2Zy">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01N6SkNTKmWt4cJBRYYN3X1m">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="511" cache_read_input_tokens="75361" cache_creation="{'ephemeral_5m_input_tokens': 511, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N6SkNTKmWt4cJBRYYN3X1m">
+Updated task #4 status
+  </tool_result>
+  <assistant>### Step 4: Add anti-pattern to discriminated union doc</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="75872" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Bc4oBCT9czdAooWtjxXuTL">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/discriminated-union-error-handling.md</param>
+    <param name="old_string">tripwires:
+  - action: "choosing between exceptions and discriminated unions for operation...[truncated 616 chars]...hout type narrowing, you may access .message on a success type or .data on an error type."</param>
+    <param name="new_string">tripwires:
+  - action: "choosing between exceptions and discriminated unions for operation...[truncated 911 chars]...re, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="75872" output_tokens="602" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 198}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bc4oBCT9czdAooWtjxXuTL">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/discriminated-union-error-handling.md has been updated successfully.
+  </tool_result>
+  <assistant>Now add the anti-pattern section after the "When isinstance() Is NOT Required" section.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="663" cache_read_input_tokens="76070" cache_creation="{'ephemeral_5m_input_tokens': 663, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015rgDmmuERnvp4eWU9ymYjQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/discriminated-union-error-handling.md</param>
+    <param name="old_string">## Related Documentation
+
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - ...[truncated 40 chars]...chitecture Patterns](erk-architecture.md) - Broader architectural context for this pattern</param>
+    <param name="new_string">## Anti-Pattern: None-as-Success in Validation Functions
+
+**Anti-pattern:** `validate_thin...[truncated 1308 chars]...chitecture Patterns](erk-architecture.md) - Broader architectural context for this pattern</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="663" cache_read_input_tokens="76070" output_tokens="635" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 663}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015rgDmmuERnvp4eWU9ymYjQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/discriminated-union-error-handling.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01S4EunPgarHnR1FG75Nyxze">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="76733" cache_creation="{'ephemeral_5m_input_tokens': 696, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S4EunPgarHnR1FG75Nyxze">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01DhA9tnm36CWgoYnp1dkL7V">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="76733" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 696}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DhA9tnm36CWgoYnp1dkL7V">
+Updated task #5 status
+  </tool_result>
+  <assistant>### Step 5: Update tests for new return type</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="77429" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Gmz37Vd5GYjDq9yWapsVvZ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py</param>
+    <param name="old_string">from erk_shared.naming import (
+    WORKTREE_DATE_SUFFIX_FORMAT,
+    InvalidObjectiveSlug,...[truncated 309 chars]...,
+    sanitize_worktree_name,
+    strip_plan_from_filename,
+    validate_objective_slug,
+)</param>
+    <param name="new_string">from erk_shared.naming import (
+    WORKTREE_DATE_SUFFIX_FORMAT,
+    InvalidObjectiveSlug,...[truncated 333 chars]...,
+    sanitize_worktree_name,
+    strip_plan_from_filename,
+    validate_objective_slug,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="77429" output_tokens="497" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 198}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gmz37Vd5GYjDq9yWapsVvZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017zvmjfn7ijmBqy6K4iARtr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py</param>
+    <param name="old_string">def test_validate_objective_slug_valid(slug: str) -&gt; None:
+    """Valid slugs return None."""
+    assert validate_objective_slug(slug) is None</param>
+    <param name="new_string">def test_validate_objective_slug_valid(slug: str) -&gt; None:
+    """Valid slugs return Valid...[truncated 31 chars]...lug(slug)
+    assert isinstance(result, ValidObjectiveSlug)
+    assert result.slug == slug</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="553" cache_read_input_tokens="77627" cache_creation="{'ephemeral_5m_input_tokens': 553, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017zvmjfn7ijmBqy6K4iARtr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the invalid slug test — currently it checks `result is not None` which is no longer necessary since result is always non-None.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="78180" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YS7xyAV9A25WzGihN7EmJL">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py</param>
+    <param name="old_string">def test_validate_objective_slug_invalid(slug: str, reason_fragment: str) -&gt; None:
+    """...[truncated 125 chars]...ssert isinstance(result, InvalidObjectiveSlug)
+    assert reason_fragment in result.reason</param>
+    <param name="new_string">def test_validate_objective_slug_invalid(slug: str, reason_fragment: str) -&gt; None:
+    """...[truncated 95 chars]...ssert isinstance(result, InvalidObjectiveSlug)
+    assert reason_fragment in result.reason</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="78180" output_tokens="332" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 305}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YS7xyAV9A25WzGihN7EmJL">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the error message test which also checks `result is not None`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="78485" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QHGwoM1a8fPsuYT3u8QuGr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py</param>
+    <param name="old_string">def test_validate_objective_slug_error_message_includes_pattern() -&gt; None:
+    """Error me...[truncated 130 chars]...t "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" in result.message
+    assert "INVALID" in result.message</param>
+    <param name="new_string">def test_validate_objective_slug_error_message_includes_pattern() -&gt; None:
+    """Error me...[truncated 152 chars]...t "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" in result.message
+    assert "INVALID" in result.message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="78485" output_tokens="365" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 388}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QHGwoM1a8fPsuYT3u8QuGr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Kr9irDBwKaC7k3JFtL6G2k">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="78873" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kr9irDBwKaC7k3JFtL6G2k">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01URsgZdRaeJdvwbPjKDRNik">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="78873" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01URsgZdRaeJdvwbPjKDRNik">
+Updated task #6 status
+  </tool_result>
+  <assistant>### Step 6: Check for other callers and run verification
+
+Let me first check if there are other callers of `validate_objective_slug` that need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="79294" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EpbRjN9YXDgwfi4oyJZHza">
+    <param name="pattern">validate_objective_slug</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="79294" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EpbRjN9YXDgwfi4oyJZHza">
+Found 5 files
+tests/core/utils/test_naming.py
+docs/learned/architecture/discriminated-union-error-handling.md
+docs/learned/architecture/agent-backpressure-gates.md
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py
+packages/erk-shared/src/erk_shared/naming.py
+  </tool_result>
+  <assistant>Good — only the files we've already updated. Now let me also check for any imports of `ValidObjectiveSlug` or references to `InvalidObjectiveSlug` that might need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="79492" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XGPiC7QfXSdcwJJvg1vgkW">
+    <param name="pattern">InvalidObjectiveSlug</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="79492" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XGPiC7QfXSdcwJJvg1vgkW">
+Found 5 files
+tests/core/utils/test_naming.py
+docs/learned/architecture/discriminated-union-error-handling.md
+docs/learned/architecture/agent-backpressure-gates.md
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py
+packages/erk-shared/src/erk_shared/naming.py
+  </tool_result>
+  <assistant>All accounted for. Now run the verification tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="79755" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01BqyC7AZDWHGeSrZnHgrepj">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run naming tests</param>
+    <param name="prompt">Run `uv run pytest tests/core/utils/test_naming.py -k "objective_slug" -v` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21 and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="79755" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SDV6j34aRQMMenbG2kjSPK">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run plan_issues tests</param>
+    <param name="prompt">Run `uv run pytest packages/erk-shared/tests/unit/github/test_plan_issues.py -v` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21 and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="79755" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_016WEBZLeuHNASpM9Ey8DArE">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run save-to-issue tests</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py -v` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21 and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="79755" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BqyC7AZDWHGeSrZnHgrepj">
+pytest passed: 21 passed in 0.04s
+
+All objective_slug related tests in `tests/core/utils/test_naming.py` passed successfully.
+agentId: af8570afdb1e471ea (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13584
+tool_uses: 1
+duration_ms: 3288&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01SDV6j34aRQMMenbG2kjSPK">
+pytest passed: All 34 tests passed in 0.10s
+agentId: af10c717470176ae8 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13571
+tool_uses: 1
+duration_ms: 3690&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_016WEBZLeuHNASpM9Ey8DArE">
+**pytest passed: 15 tests passed in 0.41s**
+
+All tests in the objective save to issue test file are passing.
+agentId: a2ad1b744a610e3c4 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13592
+tool_uses: 1
+duration_ms: 2899&lt;/usage&gt;
+  </tool_result>
+  <assistant>All tests pass. Now run ty and ruff on the modified Python files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="787" cache_read_input_tokens="80023" cache_creation="{'ephemeral_5m_input_tokens': 787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01LCyyiPzbGkF5EFKW3MPKwQ">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run ty on modified files</param>
+    <param name="prompt">Run `uv run ty check packages/erk-shared/src/erk_shared/naming.py packages/erk-shared/src/...[truncated 7 chars]...lan_issues.py` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21 and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="787" cache_read_input_tokens="80023" cache_creation="{'ephemeral_5m_input_tokens': 787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Twgt2nBV9VJTkMS5ySUpxF">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run ruff on modified files</param>
+    <param name="prompt">Run `uv run ruff check packages/erk-shared/src/erk_shared/naming.py packages/erk-shared/sr...[truncated 41 chars]...est_naming.py` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21 and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="787" cache_read_input_tokens="80023" output_tokens="357" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 787}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LCyyiPzbGkF5EFKW3MPKwQ">
+ty passed: All checks passed for the specified files.
+agentId: a58dd8e30137a4bde (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13387
+tool_uses: 1
+duration_ms: 3042&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Twgt2nBV9VJTkMS5ySUpxF">
+ruff check passed: All checks passed!
+
+The specified files have no linting violations:
+- `packages/erk-shared/src/erk_shared/naming.py`
+- `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`
+- `tests/core/utils/test_naming.py`
+agentId: a9eb661254ce0d791 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13483
+tool_uses: 1
+duration_ms: 2989&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+All checks pass. Let me complete the task tracking and summarize.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="851" cache_read_input_tokens="80810" cache_creation="{'ephemeral_5m_input_tokens': 851, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01NRFB9QHTWNzYgTt7v6cgTW">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="851" cache_read_input_tokens="80810" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 851}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NRFB9QHTWNzYgTt7v6cgTW">
+Updated task #6 status
+  </tool_result>
+  <assistant>All 6 steps are complete. Here's a summary of the changes:
+
+### Changes Made
+
+1. **`packages/erk-shared/src/erk_shared/naming.py`** — Added `ValidObjectiveSlug` frozen dataclass, changed `validate_objective_slug` return type from `InvalidObjectiveSlug | None` to `ValidObjectiveSlug | InvalidObjectiveSlug`, returns `ValidObjectiveSlug(slug=slug)` on success
+
+2. **`packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`** — Imported `InvalidObjectiveSlug`, replaced `if slug_error is not None:` with `isinstance(slug_result, InvalidObjectiveSlug)` check
+
+3. **`docs/learned/architecture/agent-backpressure-gates.md`** — Past-tense framing for removed `sanitize_objective_slug()`, replaced inline regex with reference to `_OBJECTIVE_SLUG_PATTERN`
+
+4. **`docs/learned/architecture/discriminated-union-error-handling.md`** — Added tripwire for None-as-success anti-pattern, added "Anti-Pattern: None-as-Success in Validation Functions" section with before/after code examples
+
+5. **`tests/core/utils/test_naming.py`** — Imported `ValidObjectiveSlug`, changed valid slug assertions to `isinstance(result, ValidObjectiveSlug)` with `result.slug == slug` check, removed redundant `result is not None` checks from invalid tests
+
+### Verification
+
+- 21 objective_slug tests: **all pass**
+- 34 plan_issues tests: **all pass**
+- 15 save-to-issue tests: **all pass**
+- ty type checking: **clean**
+- ruff linting: **clean**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="81661" cache_creation="{'ephemeral_5m_input_tokens': 107, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="764" cache_read_input_tokens="81768" cache_creation="{'ephemeral_5m_input_tokens': 764, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_01X6TJQCwbDLEoLqWwsfSNT6">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1187" cache_read_input_tokens="82532" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1187}" inference_geo="" iterations="[]" speed="standard" />
+</session>

@@ -1,0 +1,993 @@
+<session>
+  <meta branch="planned/add-slug-to-objective-m-02-22-0443" />
+  <meta model="claude-opus-4-6" />
+  <user>Instead of the pattern in here, what I want to do is provide guidance about the regular expression that is expected of the slug and then add a function to verify that the rules were fired. In general I'm calling this applying back pressure to an agent via a gate, meaning the gate is check. The agent must figure out a way to get the work into the gate through the gate. Before that they can use maximum flexibility to accomplish what they are currently trying to do.
+
+This is a very simple case of that where we instruct the agent to build a name that abides by certain rules but then we have Python code which verifies it in a hard way to ensure that there is compliance. We structure the workflow such that the agent will keep trying until it passes through the gate .
+
+So I went to both a plan and implementation of this on this branch, as well as a document describing the pattern </user>
+  <thinking>The user is describing a pattern they want to implement on the current branch. Let me understand:
+
+1. They want to provide guidance (regex rules) for what a "slug" should look like
+2. They want a Python function that validates the slug against those rules (the "gate")
+3. The idea is that an agent tries to create a slug, and if it doesn't pass validation, keeps trying until it does
+4. They call this "back pressure via a gate" - the gate is a hard check, the agent has flexibility before it but must pass through
+
+They want:
+- A plan and implementation on this branch
+- A document describing the pattern
+
+
+- 
+Now I need to explore the current branch to see what's already in place—specifically what commit introduced the slug field, how it's being used throughout the codebase, and where in the objectives code this validation pattern would fit best.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11287" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11287}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the current branch state and understand the existing slug implementation, plus look at relevant docs for the pattern.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11287" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11287}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01XSnvzqNNzwMNYaH59dFj55">
+    <param name="description">Explore current slug implementation</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 629 chars]...erk/ files related to objectives, any slug-related code, and the objective metadata model.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11287" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11287}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_017T1EaVQAx4dE5CiSRQUXek">
+    <param name="description">Explore objectives tripwires and docs</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 600 chars]...ting validation/gate patterns in the codebase
+- What documentation exists about objectives</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11287" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11287}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_011b2tfx4322hMXwVsQoTcb2">
+    <param name="description">Explore agent guidance patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 811 chars]...hon code)
+- How the feedback loop works (agent creates → validation fails → agent retries)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11287" cache_read_input_tokens="19041" output_tokens="1100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11287, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XSnvzqNNzwMNYaH59dFj55">
+Perfect! I have enough information. Let me compile a comprehensive summary of my findings:
+
+## Comprehensive Exploration: Slug Implementation for Objectives
+
+Based on my exploration of the branch `planned/add-slug-to-objective-m-02-22-0443`, here's a detailed analysis of the slug implementation:
+
+---
+
+### 1. What Was Added in the Commit (289715d89)
+
+The commit "Add slug field to objective metadata for UI identification" introduces:
+
+**Files Modified:**
+- `.claude/commands/erk/objective-create.md` - Updated workflow documentation
+- `packages/erk-shared/src/erk_shared/naming.py` - New `sanitize_objective_slug()` function
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py` - Updated `create_objective_header_block()` signature
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` - Updated `ObjectiveHeaderSchema` validation
+- `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py` - Updated `create_objective_issue()` signature
+- `src/erk/cli/commands/exec/scripts/objective_save_to_issue.py` - Added `--slug` CLI option
+- Multiple test files with comprehensive test coverage
+
+---
+
+### 2. Slug Definition and Sanitization
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/naming.py` (lines 69-104)
+
+The `sanitize_objective_slug()` function:
+- **Input:** Arbitrary LLM-generated string
+- **Output:** Kebab-case string (max 40 characters)
+
+... [239 lines omitted] ...
+
+        raise ValueError("slug must be a string")
+        raise ValueError("slug must not be empty when provided")
+  </tool_result>
+  <tool_result tool="toolu_017T1EaVQAx4dE5CiSRQUXek">
+Perfect! Now I have a comprehensive understanding. Let me create a thorough summary report:
+
+## Summary: Objective Creation Workflow and Validation Patterns
+
+Based on my exploration of the codebase, documentation, and implementation files, here is a comprehensive overview of the objective creation workflow and validation/gate patterns:
+
+### 1. OBJECTIVE CREATION WORKFLOW
+
+#### Three-Layer Pipeline Architecture
+
+The objective creation flow is structured as a **3-layer template pipeline** with clear separation of concerns:
+
+**Layer 1: Skill Template** (`.claude/commands/erk/objective-create.md`)
+- Guides user through interactive conversation
+- Prompts for description, analyzes scope, asks for structure preference (steelthread, linear, single, custom)
+- Proposes structured objective with phases and steps
+- Does NOT manually write YAML or roadmap blocks (anti-pattern)
+
+**Layer 2: Exec Commands** (render and save)
+- `erk exec objective-render-roadmap` — Takes JSON describing phases/steps via stdin, generates complete `## Roadmap` section with:
+  - Phase headers (`### Phase N: Name`)
+  - Markdown tables (5-column or 6-column with depends_on)
+  - Test sections per phase
+  - YAML metadata block (guaranteed in sync with tables)
+- `erk exec objective-save-to-issue` — Creates the GitHub issue, validates roadmap
+
+**Layer 3: Gateway Function** (`create_objective_issue()` in `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`)
+- Assembles GitHub issue in 7-step flow:
+  1. Get GitHub username (authentication gate)
+  2. Extract/validate title
+
+... [256 lines omitted] ...
+
+- Returns `(phases, warnings)` tuple — warnings don't block data extraction
+- Lenient: continues past malformed phases and collects errors
+- Step IDs in preferred format (warning only, doesn't block)
+- Sequential phase numbering (catches copy-paste errors)
+- Short-circuit on first error
+Used to capture three-state outcomes that exceptions can't model:
+1. **Validation couldn't run** (`ObjectiveValidationError`) — issue not found, API failure
+**Key characteristic**: Never raises exceptions. Core logic returns result types; only CLI presentation layer (`_output_json`, `_output_human`) raises `SystemExit`.
+This enables programmatic use and keeps failure-handling decisions in the presentation layer.
+  ↓ No → return error
+  ↓ No → return error
+  ↓ No → return error
+  ↓ Violations → return failures
+Each check returns early on failure, so later checks can assume earlier preconditions hold.
+- If no plan found → return error with helpful message
+- If None → return error (gh CLI not authenticated)
+- Returns error if label creation fails
+  - `issue_number: int | None` (set even on partial failure)
+  - `error: str | None`
+Output results (success/error/validation)
+  </tool_result>
+  <tool_result tool="toolu_011b2tfx4322hMXwVsQoTcb2">
+Perfect! Now I have a comprehensive understanding. Let me create a summary document with all my findings. Since I'm in read-only mode, I'll just provide you with a comprehensive report:
+
+## Comprehensive Analysis: How Erk Provides Guidance to Agents and Validates Output
+
+Based on my exploration of the erk codebase, here's how the system guides agents and validates their output:
+
+### 1. **Agent Guidance Layer**
+
+#### Skills &amp; Commands (Primary Guidance)
+- **Location**: `.claude/commands/erk/` and `.claude/skills/`
+- **Key Entry Point**: `/erk:objective-create` command (at `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.claude/commands/erk/objective-create.md`)
+- **Structure**: Step-by-step instructions for agents with:
+  - Explicit prompts to show to users
+  - JSON-based input/output patterns (e.g., `erk exec objective-render-roadmap`)
+  - Clear error handling guidance
+  - Validation hooks before creating issues
+
+#### Documentation Hub
+- **Location**: `docs/learned/` with category-specific guidance
+- **Objectives docs**: `/docs/learned/objectives/` containing 19 markdown files covering:
+  - `objective-create-workflow.md` - guided creation process
+  - `objective-lifecycle.md` - mutation paths and states
+  - `roadmap-validation.md` - validation rules
+  - `tripwires.md` - 41 critical do's and don'ts for objectives work
+
+### 2. **Hard Validation in Python Code**
+
+#### Validation Commands
+**File**: `/src/erk/cli/commands/objective/check_cmd.py`
+
+
+... [173 lines omitted] ...
+
+    failed_count: int
+Returns discriminated union: `ObjectiveValidationSuccess | ObjectiveValidationError`
+   [FAIL] Roadmap parses successfully (error: duplicate phase numbers)
+3. **Failure Handling**:
+   - Agent sees failure message in stdout
+#### Example Error Paths:
+- **No plan found**: "Error: No plan found in ~/.claude/plans/"
+- **Roadmap parsing fails**: Returns validation_errors list from parser
+6. **Error Recovery**: Show user failed checks, ask for fixes, iterate until valid
+  </tool_result>
+  <thinking>Now I have a thorough understanding. Let me read the key files to understand the current implementation before designing the plan.
+
+The user's key insight is:
+1. **Current approach**: `sanitize_objective_slug()` silently transforms whatever the agent provides into a valid slug (defensive sanitization)
+2. **Desired approach**: Instead, provide the agent with clear rules (regex pattern) about what a valid slug looks like, then have a **validation function** (gate) that checks compliance. If the agent's slug doesn't pass, the agent retries.
+
+This is the "back pressure via gate" pattern:
+- Give the agent guidance (regex rules in the skill/command)
+
+
+- Have a hard validation check that verifies compliance
+- Structure the workflow so the agent keeps trying until it passes
+
+They also want a document describing this pattern in docs/learned/. Let me examine the current implementation files to see what needs to change.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10004" cache_read_input_tokens="30328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10004}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a solid understanding. Let me now read the key files directly to understand the exact current implementation before designing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10004" cache_read_input_tokens="30328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10004}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CEFn1APE8A44KavDTKQdFJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/naming.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10004" cache_read_input_tokens="30328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10004}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CEFn1APE8A44KavDTKQdFJ">
+     1→"""Naming utilities for filenames and worktree names.
+     2→
+     3→This module provides pure utility functions for transforming titles and names
+     4→into sanitized, filesystem-safe identifiers. All functions are pure (no I/O)
+     5→and follow LBYL patterns.
+     6→
+     7→Functions that require git operations accept a git_ops parameter via dependency
+     8→injection to maintain separation from I/O concerns.
+     9→"""
+    10→
+    11→import re
+    12→import unicodedata
+    13→from datetime import datetime
+    14→from pathlib import Path
+    15→
+    16→_SAFE_COMPONENT_RE = re.compile(r"[^A-Za-z0-9_/-]+")
+    17→
+    18→# Date suffix format for plan-derived worktree names: -YY-MM-DD-HHMM
+    19→WORKTREE_DATE_SUFFIX_FORMAT = "%y-%m-%d-%H%M"
+    20→
+    21→# Branch timestamp suffix format: -MM-DD-HHMM (appended after truncation)
+    22→BRANCH_TIMESTAMP_SUFFIX_FORMAT = "%m-%d-%H%M"
+    23→
+    24→# Regex pattern to detect existing timestamp suffix (MM-DD-HHMM)
+    25→_TIMESTAMP_SUFFIX_PATTERN = re.compile(r"-\d{2}-\d{2}-\d{4}$")
+    26→
+    27→
+    28→def has_timestamp_suffix(name: str) -&gt; bool:
+    29→    """Check if a name already ends with a timestamp suffix (-MM-DD-HHMM).
+    30→
+
+... [703 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_015SYpP1YYbRBrbunoCqgF41">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.claude/commands/erk/objective-create.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10004" cache_read_input_tokens="30328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10004}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015SYpP1YYbRBrbunoCqgF41">
+     1→---
+     2→description: Create a structured objective through guided conversation
+     3→---
+     4→
+     5→# /erk:objective-create
+     6→
+     7→Create a new objective through an interactive, guided process. You describe what you want to accomplish, and Claude proposes a structured objective for your approval.
+     8→
+     9→## Usage
+    10→
+    11→```bash
+    12→/erk:objective-create
+    13→```
+    14→
+    15→---
+    16→
+    17→## Agent Instructions
+    18→
+    19→### Step 1: Prompt for Description
+    20→
+    21→Ask the user to describe what they want to accomplish:
+    22→
+    23→```
+    24→What do you want to accomplish? Describe it however makes sense to you - goals,
+    25→constraints, design decisions you've already made, context about the codebase, etc.
+    26→
+    27→I'll structure it into a formal objective for your review.
+    28→```
+    29→
+    30→Wait for the user's response. They may provide:
+
+... [325 lines omitted] ...
+
+   347→## Error Cases
+   352→| Not authenticated            | Report GitHub auth error         |
+   353→| Issue creation fails         | Report API error, offer to retry |
+   354→| Plan file write fails        | Report error with path           |
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HSJp8pjG23d8hEo2PYx6k1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">800</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10004" cache_read_input_tokens="30328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10004}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HSJp8pjG23d8hEo2PYx6k1">
+   800→class ObjectiveHeaderSchema(MetadataBlockSchema):
+   801→    """Schema for objective-header blocks.
+   802→
+   803→    Fields:
+   804→        created_at: ISO 8601 timestamp of objective creation
+   805→        created_by: GitHub username of objective creator
+   806→        objective_comment_id: GitHub comment ID containing the objective content (nullable)
+   807→    """
+   808→
+   809→    def validate(self, data: dict[str, Any]) -&gt; None:
+   810→        """Validate objective-header data structure."""
+   811→        required_fields = {"created_at", "created_by"}
+   812→        optional_fields = {"objective_comment_id", "slug"}
+   813→
+   814→        # Check required fields exist
+   815→        missing = required_fields - set(data.keys())
+   816→        if missing:
+   817→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   818→
+   819→        # Validate required string fields
+   820→        for field in required_fields:
+   821→            if not isinstance(data[field], str):
+   822→                raise ValueError(f"{field} must be a string")
+   823→            if len(data[field]) == 0:
+   824→                raise ValueError(f"{field} must not be empty")
+   825→
+   826→        # Validate optional objective_comment_id field
+   827→        if "objective_comment_id" in data and data["objective_comment_id"] is not None:
+   828→            if not isinstance(data["objective_comment_id"], int):
+   829→                raise ValueError("objective_comment_id must be an integer or null")
+
+... [19 lines omitted] ...
+
+   831→                raise ValueError("objective_comment_id must be positive when provided")
+   836→                raise ValueError("slug must be a string")
+   838→                raise ValueError("slug must not be empty when provided")
+   844→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+  </tool_result>
+  <thinking>Now let me also read the relevant test files and the `objective_save_to_issue.py` to understand the current slug flow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="15375" cache_read_input_tokens="40332" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15375}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also read the save-to-issue script and the existing slug tests to understand the current flow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15375" cache_read_input_tokens="40332" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15375}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015iPjtjVZgrkuSgEDFjE5tq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15375" cache_read_input_tokens="40332" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15375}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015iPjtjVZgrkuSgEDFjE5tq">
+     1→"""Save plan as objective GitHub issue.
+     2→
+     3→Usage:
+     4→    erk exec objective-save-to-issue [OPTIONS]
+     5→
+     6→This command extracts a plan and creates a GitHub issue with:
+     7→- erk-objective label only (NOT erk-plan - objectives are not plans)
+     8→- No title suffix
+     9→- Plan content directly in body (no metadata block)
+    10→- No commands section
+    11→
+    12→Options:
+    13→    --session-id ID: Session ID for scoped plan lookup
+    14→    --format: json (default) or display
+    15→    --validate: Run objective validation after creation
+    16→
+    17→Exit Codes:
+    18→    0: Success - objective issue created
+    19→    1: Error - no plan found, gh failure, etc.
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→from typing import Any, cast
+    25→
+    26→import click
+    27→
+    28→from erk.cli.commands.objective.check_cmd import (
+    29→    ObjectiveValidationError,
+    30→    ObjectiveValidationSuccess,
+
+... [227 lines omitted] ...
+
+   176→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   182→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   198→            click.echo(f"Error: {result.error}", err=True)
+   200→            click.echo(json.dumps({"success": False, "error": result.error}))
+   205→        raise RuntimeError("Unexpected: issue_number is None after success")
+   215→        if isinstance(validation_result, ObjectiveValidationError):
+   218→                "error": validation_result.error,
+   228→                "errors": validation_result.validation_errors,
+   239→                click.echo("Validation: FAILED")
+  </tool_result>
+  <tool_use name="Read" id="toolu_017u5qpgNCd3TSSbKSjjgwK8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15375" cache_read_input_tokens="40332" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15375}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017u5qpgNCd3TSSbKSjjgwK8">
+     1→from datetime import datetime
+     2→from pathlib import Path
+     3→
+     4→import pytest
+     5→
+     6→from erk_shared.naming import (
+     7→    WORKTREE_DATE_SUFFIX_FORMAT,
+     8→    default_branch_for_worktree,
+     9→    derive_branch_name_from_title,
+    10→    ensure_unique_worktree_name,
+    11→    extract_leading_issue_number,
+    12→    extract_objective_number,
+    13→    extract_plan_review_issue_number,
+    14→    extract_trailing_number,
+    15→    generate_draft_pr_branch_name,
+    16→    generate_issue_branch_name,
+    17→    sanitize_branch_component,
+    18→    sanitize_objective_slug,
+    19→    sanitize_worktree_name,
+    20→    strip_plan_from_filename,
+    21→)
+    22→
+    23→
+    24→def _get_current_date_suffix() -&gt; str:
+    25→    """Get the current date suffix for plan-derived worktrees."""
+    26→    return datetime.now().strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+    27→
+    28→
+    29→@pytest.mark.parametrize(
+    30→    ("value", "expected"),
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01936mDJ5v7iFNvqgKeJZdYM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+    <param name="offset">290</param>
+    <param name="limit">140</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15375" cache_read_input_tokens="40332" output_tokens="394" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15375, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01936mDJ5v7iFNvqgKeJZdYM">
+   290→        "&lt;!-- /erk:metadata-block:objective-roadmap --&gt;"
+   291→    )
+   292→
+   293→
+   294→def create_objective_issue(
+   295→    github_issues: GitHubIssues,
+   296→    repo_root: Path,
+   297→    plan_content: str,
+   298→    *,
+   299→    time: Time,
+   300→    title: str | None,
+   301→    extra_labels: list[str] | None,
+   302→    slug: str | None,
+   303→) -&gt; CreatePlanIssueResult:
+   304→    """Create objective issue with v2 format: metadata body + content comment.
+   305→
+   306→    Objectives use the same pattern as plans:
+   307→    - Body: objective-header metadata block + objective-roadmap block (if roadmap exists)
+   308→    - First comment: objective content wrapped in objective-body metadata block
+   309→    - Labels: erk-objective (NOT erk-plan)
+   310→    - No title suffix, no commands section
+   311→
+   312→    Args:
+   313→        github_issues: GitHubIssues interface (real, fake, or dry-run)
+   314→        repo_root: Repository root directory
+   315→        plan_content: The full objective markdown content
+   316→        title: Optional title (extracted from H1 if None)
+   317→        extra_labels: Additional labels beyond erk-objective
+   318→        slug: Optional short kebab-case identifier (sanitized before storing)
+   319→
+
+... [110 lines omitted] ...
+
+   324→        Does NOT raise exceptions. All errors returned in result.
+   339→            error="Could not get GitHub username (gh CLI not authenticated?)",
+   356→    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
+   357→    if label_errors:
+   363→            error=label_errors,
+   389→    except RuntimeError as e:
+   395→            error=f"Failed to create GitHub issue: {e}",
+   402→    except RuntimeError as e:
+   403→        # Partial success - issue created but comment failed
+   409→            error=f"Issue #{result.number} created but failed to add objective comment: {e}",
+   421→        error=None,
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the codebase. Let me also check for the slug tests to see what's there.
+
+Let me also read the test file for objective slug tests.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12298" cache_read_input_tokens="55707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12298}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the slug-specific test section and also check the existing docs for any "gate" or "back pressure" patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12298" cache_read_input_tokens="55707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12298}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XvNyPuR64sKe17J6Q1fhgT">
+    <param name="pattern">sanitize_objective_slug</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12298" cache_read_input_tokens="55707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12298}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XvNyPuR64sKe17J6Q1fhgT">
+Found 1 file
+tests/core/utils/test_naming.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013AwNvJnEH4s1SW7KW8qrEP">
+    <param name="pattern">gate|back.?pressure</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned</param>
+    <param name="-i">True</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12298" cache_read_input_tokens="55707" output_tokens="334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013AwNvJnEH4s1SW7KW8qrEP">
+Found 271 files
+docs/learned/workflows/commit-messages.md
+docs/learned/workflows/one-shot-workflow.md
+docs/learned/tui/tripwires.md
+docs/learned/tui/view-switching.md
+docs/learned/uncategorized/tripwires.md
+docs/learned/universal-tripwires.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/dual-handler-pattern.md
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/plan-title-rendering-pipeline.md
+docs/learned/tui/action-inventory.md
+docs/learned/tui/architecture.md
+docs/learned/tui/column-addition-pattern.md
+docs/learned/tripwires-index.md
+docs/learned/testing/submit-pipeline-tests.md
+docs/learned/testing/subprocess-testing.md
+docs/learned/testing/testing.md
+docs/learned/testing/tripwires.md
+docs/learned/testing/tui-subprocess-testing.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/monkeypatch-vs-fakes-decision.md
+docs/learned/testing/fake-github-testing.md
+docs/learned/testing/frozen-dataclass-test-doubles.md
+docs/learned/testing/gateway-fake-testing-exemplar.md
+docs/learned/testing/hook-testing.md
+docs/learned/testing/import-conflict-resolution.md
+docs/learned/testing/index.md
+docs/learned/testing/integration-test-speed.md
+docs/learned/testing/exec-script-batch-testing.md
+
+... [242 lines omitted] ...
+
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/architecture/gateway-error-boundaries.md
+docs/learned/architecture/discriminated-union-error-handling.md
+  </tool_result>
+  <thinking>That grep was too broad - "gate" matches tons of "gateway" files. Let me search more specifically for the concept of "back pressure" or "agent gate" patterns.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4331" cache_read_input_tokens="68005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4331}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me search more specifically for the pattern concept and also read the slug test section.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4331" cache_read_input_tokens="68005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4331}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014DJ72FZ8FXh74TCoTHHJYf">
+    <param name="pattern">back.?pressure|agent.*gate|validate.*retry|validation.*gate</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned</param>
+    <param name="-i">True</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4331" cache_read_input_tokens="68005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4331}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014DJ72FZ8FXh74TCoTHHJYf">
+Found 41 files
+docs/learned/workflows/commit-messages.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/exec-script-batch-testing.md
+docs/learned/sessions/session-hierarchy.md
+docs/learned/sessions/context-optimization.md
+docs/learned/reference/objective-summary-format.md
+docs/learned/pr-operations/pr-submission-workflow.md
+docs/learned/pr-operations/pr-validation-rules.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/sub-agent-context-limitations.md
+docs/learned/planning/index.md
+docs/learned/planning/context-preservation-in-replan.md
+docs/learned/planning/context-preservation-patterns.md
+docs/learned/planning/context-preservation-prompting.md
+docs/learned/planning/debugging-patterns.md
+docs/learned/planning/exploration-strategies.md
+docs/learned/planning/gateway-consolidation-checklist.md
+docs/learned/planning/agent-orchestration.md
+docs/learned/objectives/roadmap-validation.md
+docs/learned/planning/agent-delegation.md
+docs/learned/integrations/linear-primitives.md
+docs/learned/integrations/codex/codex-cli-reference.md
+docs/learned/hooks/hooks.md
+docs/learned/erk/tripwires.md
+docs/learned/gateway/codespace-gateway.md
+docs/learned/documentation/source-pointers.md
+docs/learned/documentation/stale-code-blocks-are-silent-bugs.md
+docs/learned/documentation/audit-methodology.md
+docs/learned/commands/tripwires.md
+
+... [12 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QMUkDpFfaMNwcLDVcWfHgK">
+    <param name="pattern">test_sanitize_objective_slug</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4331" cache_read_input_tokens="68005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4331}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QMUkDpFfaMNwcLDVcWfHgK">
+656:def test_sanitize_objective_slug(raw_slug: str, expected: str) -&gt; None:
+657-    """Test objective slug sanitization."""
+658-    assert sanitize_objective_slug(raw_slug) == expected
+659-
+660-
+661:def test_sanitize_objective_slug_truncation_strips_trailing_hyphen() -&gt; None:
+662-    """Truncation at 40 chars strips trailing hyphens."""
+663-    # Create a slug that would have a hyphen at position 40
+664-    slug = "a" * 39 + "-extra-stuff"
+665-    result = sanitize_objective_slug(slug)
+666-    assert len(result) &lt;= 40
+667-    assert not result.endswith("-")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JnuV3Wj9MeBTY3eoSuoQE5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py</param>
+    <param name="offset">625</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1167" cache_read_input_tokens="72336" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1167}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JnuV3Wj9MeBTY3eoSuoQE5">
+   625→    result = generate_draft_pr_branch_name(long_title, timestamp, objective_id=456)
+   626→
+   627→    assert len(result) &lt;= 42
+   628→    assert result.startswith("planned/O456-")
+   629→    assert result.endswith("-01-15-1430")
+   630→    assert not result[:-11].endswith("-")
+   631→
+   632→
+   633→# Tests for sanitize_objective_slug
+   634→@pytest.mark.parametrize(
+   635→    ("raw_slug", "expected"),
+   636→    [
+   637→        ("Build Authentication System", "build-authentication-system"),
+   638→        ("fix: bug #123!", "fix-bug-123"),
+   639→        ("simple", "simple"),
+   640→        ("UPPERCASE", "uppercase"),
+   641→        ("with_underscores", "with-underscores"),
+   642→        ("  spaces  around  ", "spaces-around"),
+   643→        ("---hyphens---", "hyphens"),
+   644→        ("", "objective"),
+   645→        ("---", "objective"),
+   646→        # Truncation to 40 chars
+   647→        ("a" * 50, "a" * 40),
+   648→        # Special characters
+   649→        ("hello@world.com", "hello-world-com"),
+   650→        # Emoji handling
+   651→        ("\U0001f680 rocket feature", "rocket-feature"),
+   652→        # Consecutive special chars collapse
+   653→        ("foo---bar___baz", "foo-bar-baz"),
+   654→    ],
+
+... [14 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a thorough understanding. Let me also look at `docs/learned/architecture/validation-patterns.md` and `docs/learned/cli/two-phase-validation-model.md` since they were mentioned as relevant validation pattern docs.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="73503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 749}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the existing validation pattern docs that are closest to what the user wants.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="73503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 749}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018fuXnD1AdgxCpw9Zpb2LsN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/validation-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="73503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 749}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018fuXnD1AdgxCpw9Zpb2LsN">
+     1→---
+     2→title: Validation Patterns
+     3→read_when:
+     4→  - "adding regex validation to a field or input"
+     5→  - "implementing input validation with error messages"
+     6→  - "understanding module-level regex compilation"
+     7→tripwires:
+     8→  - action: "adding regex validation inline instead of module-level compilation"
+     9→    warning: "Compile regex patterns at module level as named constants. See LAST_AUDITED_PATTERN in operations.py:30 for the canonical example."
+    10→last_audited: "2026-02-16 14:15 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Validation Patterns
+    15→
+    16→Erk uses module-level compiled regex patterns for input validation. This document captures the pattern and its rationale.
+    17→
+    18→## Module-Level Regex Compilation
+    19→
+    20→All regex patterns used for validation are compiled once at module level as named constants:
+    21→
+    22→```python
+    23→# CORRECT: Compile once at module level
+    24→LAST_AUDITED_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2} PT$")
+    25→
+    26→# WRONG: Compile inside function (repeated compilation)
+    27→def validate(value):
+    28→    pattern = re.compile(r"^\d{4}-\d{2}-\d{2}")  # recompiled every call
+    29→```
+    30→
+
+... [41 lines omitted] ...
+
+    49→## Error Message Pattern
+    51→Validation error messages must show both the expected format AND the actual value received:
+    55→errors.append(
+    61→errors.append("Field 'last_audited' must match format 'YYYY-MM-DD HH:MM PT'")
+    66→This pattern helps agents debug validation failures without needing to re-read the invalid input.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01APCfiVEpEbXXcMGURQc7HD">
+    <param name="pattern">two-phase-validation</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="73503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 749}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01APCfiVEpEbXXcMGURQc7HD">
+Found 5 files
+docs/learned/cli/tripwires.md
+docs/learned/cli/index.md
+docs/learned/cli/ensure-ideal-pattern.md
+docs/learned/architecture/linear-pipelines.md
+docs/learned/architecture/cli-to-pipeline-boundary.md
+  </tool_result>
+  <assistant>Now I have a thorough understanding. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1766" cache_read_input_tokens="74252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1766}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_018XmWbTxRnw6n1EKEn3E1Ta">
+    <param name="description">Design slug gate pattern plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">I need to design an implementation plan for changing how objective slugs work in erk. Here...[truncated 3887 chars]...he agent enough information to self-correct
+
+Please design a detailed implementation plan.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1766" cache_read_input_tokens="74252" output_tokens="1192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1766, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018XmWbTxRnw6n1EKEn3E1Ta">
+I now have a thorough understanding of the codebase. Let me compile the implementation plan.
+
+---
+
+## Implementation Plan: Replace Objective Slug Sanitization with Validation Gate
+
+### Background and Philosophy
+
+The current implementation uses a **sanitization** approach where `sanitize_objective_slug()` silently transforms any input into a valid slug. This masks agent mistakes and prevents the agent from learning what a valid slug looks like. The desired approach is a **back pressure via gate** pattern: provide the agent with clear rules, then enforce compliance through a hard validation gate. If the slug fails, the agent receives an error with enough information to self-correct and retry.
+
+### Design Decisions
+
+**1. Slug Regex and Rules**
+
+The regex pattern:
+```
+^[a-z][a-z0-9]*(-[a-z0-9]+)*$
+```
+
+Constraints:
+- Lowercase letters (`a-z`), digits (`0-9`), and hyphens (`-`) only
+- Must start with a lowercase letter (not a digit, not a hyphen)
+- Must end with an alphanumeric character (no trailing hyphens)
+- No consecutive hyphens (the regex inherently prevents this by requiring `[a-z0-9]+` between hyphens)
+- Length: 3 to 40 characters (inclusive)
+- Must contain at least one letter (satisfied by the start-with-letter rule)
+
+This regex is stricter than "must start with alphanumeric" because starting with a letter ensures at least one letter exists. Starting with a digit would allow all-digit-looking slugs like `123`, which read poorly as identifiers.
+
+**2. Return Type Design**
+
+... [416 lines omitted] ...
+
+Following the project's discriminated union error handling pattern (from `docs/learned/architecture/discriminated-union-error-handling.md`) and the existing `ParentNotTrunkError | None` pattern in `stack/validation.py`:
+The validation function returns `InvalidObjectiveSlug | None` (None means valid -- following the `ParentNotTrunkError | None` convention already established in `stack/validation.py`).
+The validation gate fires in `create_objective_issue()` in `plan_issues.py`. If the slug fails validation, the function returns a `CreatePlanIssueResult` with `success=False` and the validation error message -- before any GitHub API calls happen. This is early-return LBYL.
+The exec script `objective_save_to_issue.py` already handles `result.success is False` correctly and outputs the error in both JSON and display formats. The agent sees the error and can retry with a corrected slug.
+       slug_error = validate_objective_slug(slug)
+       if slug_error is not None:
+               error=slug_error.message,
+**Note on ordering:** The slug validation currently happens before the GitHub username check (Step 1 vs current line 332). This is actually fine -- we should validate the slug as early as possible, before any I/O. However, there is a subtle issue: `title` is not yet resolved when slug validation fires (it is resolved at line 343-344). The error result uses `title or ""` to handle this. This is acceptable because the error is about the slug, not the title.
+Actually, looking more carefully at the code, I should move slug validation to after the title extraction (after line 344) but before label operations. This way `title` is populated for the error result. The reordering would be:
+This is better because it means the error result has a proper title, and all the cheap validation happens before the GitHub API calls for labels.
+   - If the backend rejects the slug, it will return an error with the exact reason. Fix the slug and retry.
+    """Valid slugs return None (no error)."""
+    assert slug in result.message  # error message shows the actual value
+def test_validate_objective_slug_error_message_includes_pattern() -&gt; None:
+    """Error message includes the regex pattern for agent self-correction."""
+        """Invalid slug returns error without creating issue."""
+        assert result.error is not None
+        assert "Invalid objective slug" in result.error
+    """Test --slug with invalid value returns error without creating issue."""
+    assert "Invalid objective slug" in output["error"]
+    warning: "Consider a validation gate instead. Sanitization masks agent mistakes and prevents learning. Validation gates give agents clear rules and immediate feedback when they fail. See the slug validation example."
+  - action: "implementing a validation gate without including the regex pattern in the error message"
+    warning: "Gate error messages must include the pattern/rules AND the actual invalid value. Without both, the agent cannot self-correct."
+- **The Pattern:** Validation gate = clear rules in prompt + hard validation at the boundary + descriptive error messages for retry.
+- **Three components:** (1) Agent guidance with explicit rules/regex, (2) Pure validation function returning pass/error, (3) Error messages showing pattern + actual value + examples.
+- **Anti-patterns:** Gates without clear error messages. Gates without the pattern in the prompt. Sanitization at agent boundaries.
+2. **The `title` ordering issue in `create_objective_issue`:** Slug validation needs to happen after title extraction so the error result has a meaningful title. The plan above addresses this by placing validation between title extraction and label setup.
+3. **Agent compliance:** The agent might initially struggle to produce valid slugs. The error message is designed to be self-correcting (shows pattern, rules, and examples). The prompt guidance in the skill also provides clear rules. If the agent consistently fails, the error message will guide it.
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py` - Replace sanitize tests with validate tests, covers valid/invalid/error-message cases
+  </tool_result>
+  <thinking>The Plan agent provided an excellent, detailed implementation plan. Let me now review the critical files, synthesize the plan, and write it to the plan file.
+
+Let me also check one thing - whether there are any other callers of `sanitize_objective_slug` besides the one in `plan_issues.py`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7031" cache_read_input_tokens="76018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7031}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify there are no other callers of `sanitize_objective_slug` before finalizing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7031" cache_read_input_tokens="76018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7031}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YFRRwZgHvPoJym88dNu1os">
+    <param name="pattern">sanitize_objective_slug</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7031" cache_read_input_tokens="76018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7031}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YFRRwZgHvPoJym88dNu1os">
+packages/erk-shared/src/erk_shared/naming.py:69:def sanitize_objective_slug(raw_slug: str) -&gt; str:
+packages/erk-shared/src/erk_shared/naming.py:86:        &gt;&gt;&gt; sanitize_objective_slug("Build Authentication System")
+packages/erk-shared/src/erk_shared/naming.py:88:        &gt;&gt;&gt; sanitize_objective_slug("fix: bug #123!")
+packages/erk-shared/src/erk_shared/naming.py:90:        &gt;&gt;&gt; sanitize_objective_slug("")
+packages/erk-shared/src/erk_shared/naming.py:92:        &gt;&gt;&gt; sanitize_objective_slug("a" * 50)
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py:38:from erk_shared.naming import sanitize_objective_slug
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py:329:        sanitized_slug = sanitize_objective_slug(slug)
+tests/core/utils/test_naming.py:18:    sanitize_objective_slug,
+tests/core/utils/test_naming.py:633:# Tests for sanitize_objective_slug
+tests/core/utils/test_naming.py:656:def test_sanitize_objective_slug(raw_slug: str, expected: str) -&gt; None:
+tests/core/utils/test_naming.py:658:    assert sanitize_objective_slug(raw_slug) == expected
+tests/core/utils/test_naming.py:661:def test_sanitize_objective_slug_truncation_strips_trailing_hyphen() -&gt; None:
+tests/core/utils/test_naming.py:665:    result = sanitize_objective_slug(slug)
+  </tool_result>
+  <assistant>Good - only two call sites: `plan_issues.py` and the test file. Now let me also check what the existing `test_plan_issues.py` tests look like for slug handling.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="83049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PUMuNvgrgLyDJNpSBVnuCL">
+    <param name="pattern">slug</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/tests/unit/github/test_plan_issues.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="83049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PUMuNvgrgLyDJNpSBVnuCL">
+600-            time=FakeTime(),
+601-            title=None,
+602-            extra_labels=None,
+603:            slug=None,
+604-        )
+605-
+606-        assert result.success is True
+--
+627-            time=FakeTime(),
+628-            title=None,
+629-            extra_labels=None,
+630:            slug=None,
+631-        )
+632-
+633-        assert result.success is True
+--
+650-            time=FakeTime(),
+651-            title=None,
+652-            extra_labels=None,
+653:            slug=None,
+654-        )
+655-
+656-        assert result.success is True
+--
+679-            time=FakeTime(),
+680-            title=None,
+681-            extra_labels=None,
+682:            slug=None,
+683-        )
+684-
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014Lwow6vM5snbDj3YavnmRk">
+    <param name="pattern">slug</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="695" cache_read_input_tokens="83737" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 695}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Lwow6vM5snbDj3YavnmRk">
+153-- Step 1: Do something from Claude plans
+154-- Step 2: More Claude plans steps"""
+155-
+156-    fake_store = FakeClaudeInstallation.for_test(
+157-        plans={"session-plan": claude_plan_content},
+158:        session_slugs={test_session_id: ["session-plan"]},
+159-    )
+160-
+161-    runner = CliRunner()
+162-
+163-    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+--
+205-- Step 1: Fallback step
+206-- Step 2: More fallback steps"""
+207-
+208-    fake_store = FakeClaudeInstallation.for_test(
+209-        plans={"fallback-plan": claude_plan_content},
+210:        session_slugs={test_session_id: ["fallback-plan"]},
+211-    )
+212-
+213-    runner = CliRunner()
+214-
+215-    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+--
+288-- Step 1: Do something
+289-- Step 2: More steps"""
+290-
+291-    fake_store = FakeClaudeInstallation.for_test(
+292-        plans={"idempotent-plan": plan_content},
+293:        session_slugs={test_session_id: ["idempotent-plan"]},
+
+... [80 lines omitted] ...
+
+572-    assert result.exit_code == 0, f"Failed: {result.output}"
+602-    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1383" cache_read_input_tokens="84432" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1383}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01MimDnPNfja3tt3myWbjoAf">
+    <param name="file_path">/Users/schrockn/.claude/plans/cryptic-wondering-map.md</param>
+    <param name="content"># Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+
+## Cont...[truncated 4827 chars]...o_issue.py`
+4. Run ty type checker on modified files
+5. Run ruff linter on modified files
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1383" cache_read_input_tokens="84432" output_tokens="1494" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MimDnPNfja3tt3myWbjoAf">
+File created successfully at: /Users/schrockn/.claude/plans/cryptic-wondering-map.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01PSEvQyP8jR7h4Ci1h7ZQPL">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}, {'tool': 'Bash', 'prompt': 'run ty type checker via devrun agent'}, {'tool': 'Bash', 'prompt': 'run ruff linter via devrun agent'}]</param>
+    <param name="plan"># Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+
+## Cont...[truncated 4827 chars]...o_issue.py`
+4. Run ty type checker on modified files
+5. Run ruff linter on modified files
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1531" cache_read_input_tokens="85815" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1531, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PSEvQyP8jR7h4Ci1h7ZQPL">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/cryptic-wondering-map.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+Current context: (wt:erk-slot-21) (br:planned/add-slug-to-objective-m-02-22-0443) (pr:#7806)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/a"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 5319d881-bf4c-4ac2-8bb7-b85a9c31494a \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+
+## Context
+
+The current branch adds a `slug` field to objective metadata. The existing implementation uses **silent sanitization**: `sanitize_objective_slug()` transforms any LLM-generated string into a valid slug. The plan is to replace this with a **validation gate** pattern where the agent receives clear rules, must produce a compliant slug, and the system rejects (not transforms) invalid input. The agent retries until it passes the gate.
+
+This also introduces a new docs/learned/ document describing the general "back pressure via gate" pattern.
+
+## Implementation
+
+### 1. Replace `sanitize_objective_slug()` with `validate_objective_slug()` in naming.py
+- Add module-level compiled regex: `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`
+- Add frozen dataclass `InvalidObjectiveSlug` with descriptive `message` property
+- Add `validate_objective_slug()` returning `InvalidObjectiveSlug | None`
+- Remove `sanitize_objective_slug()` entirely
+
+### 2. Wire validation gate into `create_objective_issue()` in plan_issues.py
+- Return `CreatePlanIssueResult(success=False)` on invalid slug (before any GitHub API calls)
+
+### 3. Update objective-create skill with explicit slug rules
+- Replace "don't worry about formatting" with exact regex, constraints, valid/invalid examples
+
+### 4-6. Update tests (naming, plan_issues, save-to-issue)
+- Replace sanitize tests with validate tests (valid/invalid parametrized)
+- Add gate test in plan_issues (invalid slug = no issue created)
+- Add CLI test (invalid slug = exit code 1)
+
+### 7. Create "Back Pressure via Gate" documentation
+- New `docs/learned/architecture/agent-backpressure-gates.md`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="843" cache_read_input_tokens="87346" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 843}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01FCZmrMdfDEubXBkATYtbci">
+    <param name="questions">[{'question': 'Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Ga...[truncated 511 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="843" cache_read_input_tokens="87346" output_tokens="715" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 843, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FCZmrMdfDEubXBkATYtbci">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

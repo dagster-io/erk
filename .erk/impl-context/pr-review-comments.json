@@ -1,0 +1,60 @@
+{
+  "success": true,
+  "pr_number": 7806,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v-wU_",
+      "path": "docs/learned/architecture/agent-backpressure-gates.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `sanitize_objective_slug()` accepted any string, lowercased it, replaced special characters, collapsed hyphens, and returned a valid slug.\nReality: This function does not exist anywhere in the codebase. It is not in `naming.py` or any other file. The only slug-related function present is `validate_objective_slug()`.\n\nSource: `packages/erk-shared/src/erk_shared/naming.py`\n\nThis is likely a reference to a function that was removed before this PR, but agents reading this doc will not be able to find or verify it. If this is purely historical context, clarify that the function was deleted. Otherwise, correct or remove the reference.",
+          "created_at": "2026-02-22T10:35:15Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 64f6b0e. Changed to past-tense framing: \"The *previous* implementation, `sanitize_objective_slug()` (now removed), accepted any string...\" to make clear this function was removed in this PR.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 05:48 EST_",
+          "created_at": "2026-02-22T10:48:16Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-wXc",
+      "path": "docs/learned/architecture/agent-backpressure-gates.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific values/paths that will change.\n\nSource: `packages/erk-shared/src/erk_shared/naming.py:70`\n\nRisk: The regex `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` is reproduced inline here. If the pattern changes in `_OBJECTIVE_SLUG_PATTERN` in `naming.py`, this doc will silently show an outdated value. Consider replacing with a source pointer:\n\n```\n<!-- Source: packages/erk-shared/src/erk_shared/naming.py, _OBJECTIVE_SLUG_PATTERN -->\nSee `_OBJECTIVE_SLUG_PATTERN` in `packages/erk-shared/src/erk_shared/naming.py` for the current pattern.\n```\n\nOr keep as inline prose if treated as conceptual illustration rather than authoritative specification \u2014 but add a note that the source is authoritative.",
+          "created_at": "2026-02-22T10:35:25Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 64f6b0e. Replaced inline regex with source pointer: \"checks the slug against `_OBJECTIVE_SLUG_PATTERN` (defined in `naming.py`)\" instead of duplicating the literal pattern.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 05:48 EST_",
+          "created_at": "2026-02-22T10:48:17Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-wmJ",
+      "path": "packages/erk-shared/src/erk_shared/naming.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "schrockn",
+          "body": "the success case should return a valid object. the truthy falsey behavior here is very counterintuitive.",
+          "created_at": "2026-02-22T10:36:19Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 64f6b0e. Added `ValidObjectiveSlug` frozen dataclass and changed `validate_objective_slug` return type from `InvalidObjectiveSlug | None` to `ValidObjectiveSlug | InvalidObjectiveSlug`. Updated the caller in `plan_issues.py` to use `isinstance(result, InvalidObjectiveSlug)` dispatch. Also added a None-as-success anti-pattern section to `discriminated-union-error-handling.md` to capture this lesson.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 05:48 EST_",
+          "created_at": "2026-02-22T10:48:14Z"
+        }
+      ]
+    }
+  ]
+}

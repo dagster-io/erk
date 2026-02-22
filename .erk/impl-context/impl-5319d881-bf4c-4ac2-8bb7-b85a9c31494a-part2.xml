@@ -1,0 +1,195 @@
+<session>
+  <meta branch="planned/add-slug-to-objective-m-02-22-0443" />
+  <meta model="claude-opus-4-6" />
+  <user>    75
+      76 Document the reusable pattern:
+      77 - **Problem**: Sanitization silently transforms agent output, masking mistakes
+      78 - **Pattern**: Clear rules in prompt + hard validation at boundary + descriptive error for retry
+      79 - **Three components**: (1) Agent guidance with explicit rules/regex, (2) Pure validation function returning pass/error, (3) Error messages showing pattern
+         + actual value + examples
+      80 - **When to use**: Agent-facing boundaries where compliance matters. Use sanitization for human-facing input where UX matters.
+      81 - **Example**: The objective slug migration
+      82 - **Anti-patterns**: Gates without error messages showing the pattern; sanitization at agent boundaries
+
+this pattern is much more general and reusable than that. not just sanitization. consider a type checker. the type checking step could be consider a gate. it's generalized to any invariant, and it can be complex/sophiticated</user>
+  <assistant>
+
+Good point. The pattern is much broader than just sanitization vs. validation. Let me update the plan to reflect this.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2616" cache_read_input_tokens="88189" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2616}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017X4A9F6tJXCw3osGdupvbb">
+    <param name="file_path">/Users/schrockn/.claude/plans/cryptic-wondering-map.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2616" cache_read_input_tokens="88189" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2616}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017X4A9F6tJXCw3osGdupvbb">
+     1→# Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+     2→
+     3→## Context
+     4→
+     5→The current branch (`planned/add-slug-to-objective-m-02-22-0443`) adds a `slug` field to objective metadata. The existing implementation uses **silent sanitization**: `sanitize_objective_slug()` transforms any LLM-generated string into a valid slug. The user wants to replace this with a **validation gate** pattern where the agent receives clear rules, must produce a compliant slug, and the system rejects (not transforms) invalid input. The agent retries until it passes the gate.
+     6→
+     7→This also introduces a new docs/learned/ document describing the general "back pressure via gate" pattern.
+     8→
+     9→## Implementation
+    10→
+    11→### 1. Replace `sanitize_objective_slug()` with `validate_objective_slug()` in naming.py
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/naming.py`
+    14→
+    15→- Add `from dataclasses import dataclass` import
+    16→- Add module-level compiled regex (per validation-patterns.md):
+    17→  ```python
+    18→  _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+    19→  ```
+    20→- Add frozen dataclass `InvalidObjectiveSlug` with fields `raw_slug: str`, `reason: str`, and a `message` property that includes the pattern, rules, actual value, and examples
+    21→- Add `validate_objective_slug(slug: str) -&gt; InvalidObjectiveSlug | None` (returns `None` on success)
+    22→  - Check length: 3-40 chars
+    23→  - Check regex match
+    24→  - Return descriptive `InvalidObjectiveSlug` on failure
+    25→- Remove `sanitize_objective_slug()` entirely (only 2 callers: `plan_issues.py` and test file)
+    26→
+    27→### 2. Wire validation gate into `create_objective_issue()` in plan_issues.py
+    28→
+    29→**File:** `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`
+    30→
+
+... [63 lines omitted] ...
+
+    32→- Replace the sanitize call (lines 326-329) with validation that returns `CreatePlanIssueResult(success=False, ...)` on failure
+    33→- Place validation after title extraction (line 344) but before label operations (line 347), so error results have a populated title
+    55→- Add test that error message includes the regex pattern for agent self-correction
+    62→- Invalid slug returns `success=False` with "Invalid objective slug" in error, no issue created
+    70→Add test: `--slug "INVALID SLUG"` returns exit code 1, JSON output with `success: false` and "Invalid objective slug" in error, no issue created.
+    78→- **Pattern**: Clear rules in prompt + hard validation at boundary + descriptive error for retry
+    79→- **Three components**: (1) Agent guidance with explicit rules/regex, (2) Pure validation function returning pass/error, (3) Error messages showing pattern + actual value + examples
+    82→- **Anti-patterns**: Gates without error messages showing the pattern; sanitization at agent boundaries
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Nx4SQdsgAS2mKVwHEA9jYb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/cryptic-wondering-map.md</param>
+    <param name="old_string">### 7. Create "Back Pressure via Gate" documentation
+
+**File (NEW):** `docs/learned/archit...[truncated 670 chars]...boundaries
+
+Include appropriate frontmatter with `read_when`, `tripwires`, `last_audited`.</param>
+    <param name="new_string">### 7. Create "Agent Back Pressure via Gates" documentation
+
+**File (NEW):** `docs/learned...[truncated 2480 chars]...feedback).
+
+Include appropriate frontmatter with `read_when`, `tripwires`, `last_audited`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1813" cache_read_input_tokens="90805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1813}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nx4SQdsgAS2mKVwHEA9jYb">
+The file /Users/schrockn/.claude/plans/cryptic-wondering-map.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_015NULthxpGwybVu37ftAijU">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}, {'tool': 'Bash', 'prompt': 'run ty type checker via devrun agent'}, {'tool': 'Bash', 'prompt': 'run ruff linter via devrun agent'}]</param>
+    <param name="plan"># Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+
+## Cont...[truncated 6637 chars]...o_issue.py`
+4. Run ty type checker on modified files
+5. Run ruff linter on modified files
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="996" cache_read_input_tokens="92618" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 996}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015NULthxpGwybVu37ftAijU">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/cryptic-wondering-map.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+Current context: (wt:erk-slot-21) (br:planned/add-slug-to-objective-m-02-22-0443) (pr:#7806)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/a"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 5319d881-bf4c-4ac2-8bb7-b85a9c31494a \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the updated plan:
+
+---
+
+# Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+
+## Context
+
+The current branch adds a `slug` field to objective metadata using silent sanitization. Replace this with a validation gate pattern, and document the general "back pressure via gate" concept.
+
+## Implementation (Steps 1-6: slug-specific changes)
+
+1. **naming.py** — Replace `sanitize_objective_slug()` with `validate_objective_slug()` + `InvalidObjectiveSlug` dataclass
+2. **plan_issues.py** — Wire validation gate, return error on invalid slug before any GitHub API calls
+3. **objective-create.md** — Replace "don't worry about formatting" with explicit regex rules
+4. **test_naming.py** — Replace sanitize tests with validate tests (valid/invalid parametrized)
+5. **test_plan_issues.py** — Add gate test (invalid slug = no issue created)
+6. **test_objective_save_to_issue.py** — Add CLI test (invalid slug = exit code 1)
+
+## Step 7: "Agent Back Pressure via Gates" documentation
+
+The pattern is **general** — a gate is any programmatic invariant check an agent's output must pass. The agent has maximum flexibility in *how* it produces output, but the gate enforces *what* it must look like. Spectrum:
+
+| Gate | Invariant | Feedback |
+|------|-----------|----------|
+| Regex validation | String format | Pattern + actual value |
+| Type checker (ty) | Type correctness | Type errors with locations |
+| Test suite (pytest) | Behavioral correctness | Test failures with assertions |
+| Linter (ruff) | Style/convention | Rule violations with fixes |
+| Schema validator | Structural correctness | Missing/invalid fields |
+
+Two components: (1) **Guidance** — hints to help the agent succeed on first try, (2) **Gate** — the hard programmatic check with actionable failure feedback. The workflow loops until the gate passes.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="734" cache_read_input_tokens="93614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 734}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01F5TshfqWkrMxDn3yWRKcKm">
+    <param name="questions">[{'question': 'Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Ga...[truncated 511 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="734" cache_read_input_tokens="93614" output_tokens="727" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 734, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F5TshfqWkrMxDn3yWRKcKm">
+User has answered your questions: "Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+Context: (wt:erk-slot-21) (br:planned/add-slug-to-objective-m-02-22-0443) (pr:#7806)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012QfyhqGNZELgCiJH3X43Qv">
+    <param name="command">erk exec marker create --session-id 5319d881-bf4c-4ac2-8bb7-b85a9c31494a exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker to skip PR creation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="94348" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 932, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012QfyhqGNZELgCiJH3X43Qv">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01WPC2U4S9hSvBGRqfyZUq9J">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}, {'tool': 'Bash', 'prompt': 'run ty type checker via devrun agent'}, {'tool': 'Bash', 'prompt': 'run ruff linter via devrun agent'}]</param>
+    <param name="plan"># Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+
+## Cont...[truncated 6637 chars]...o_issue.py`
+4. Run ty type checker on modified files
+5. Run ruff linter on modified files
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="231" cache_read_input_tokens="95280" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 231, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WPC2U4S9hSvBGRqfyZUq9J">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

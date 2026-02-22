@@ -1,0 +1,454 @@
+<session>
+  <meta branch="planned/add-slug-to-objective-m-02-22-0443" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01W9cvBJYupUcCXamLmYg5R3">
+Launching skill: objective
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.claude/skills/objective
+
+# Objective Skill
+
+## Overview
+
+Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
+erk-plans (single executable implementations), objectives track progress across related work and
+capture lessons learned along the way.
+
+**Scope range:**
+
+- Small: Feature requiring 2-3 related PRs
+- Medium: Refactor spanning several plans
+- Large: Long-running strategic direction emitting many plans
+
+## Objective vs Erk-Plan
+
+| Aspect   | Erk-Plan                         | Objective                           |
+| -------- | -------------------------------- | ----------------------------------- |
+| Purpose  | Single executable implementation | Coordinate 2+ related plans/PRs     |
+| Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
+| Body     | Machine-parseable metadata       | Human-readable markdown             |
+| Comments | Session context dumps            | Action logs + lessons               |
+| Label    | `erk-plan`                       | `erk-objective`                     |
+| Tooling  | `erk plan submit/implement`      | Manual updates via comments         |
+
+## Key Design Principles
+
+1. **Human-first** - Plain markdown, no machine-generated metadata
+2. **Incremental capture** - Each action gets its own comment
+3. **Lessons as first-class** - Every action comment includes lessons learned
+4. **Clear roadmap** - Status visible at a glance in the body
+5. **Body stays current via reconciliation** - After every PR landing, agents audit prose sections against what was actually implemented and correct stale information
+6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
+7. **One PR per phase** - Each phase is sized for a coherent single PR
+8. **Always shippable** - System remains functional after each merged PR
+9. **Body is source of truth** - Body always contains complete current state; comments are the changelog
+10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
+11. **Context over code** - Provide references to patterns, not prescriptive implementations
+12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
+
+## Quick Reference
+
+### Creating an Objective
+
+```bash
+gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat &lt;&lt;'EOF'
+# Objective: [Title]
+
+&gt; [1-2 sentence summary]
+
+## Goal
+
+[What success looks like - concrete end state]
+
+## Design Decisions
+
+1. **[Decision name]**: [What was decided]
+
+## Roadmap
+
+### Phase 1: [Name] Steelthread (1 PR)
+
+Minimal vertical slice proving the concept works.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | [Minimal infrastructure] | pending | |
+| 1.2 | [Wire into one command] | pending | |
+
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 2: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | [Extend to remaining commands] | pending | |
+| 2.2 | [Full test coverage] | pending | |
+
+**Test:** [Full acceptance criteria]
+
+EOF
+)"
+```
+
+### Logging an Action
+
+Post an action comment after completing work. See [format.md](references/format.md#action-comment-template) for full template.
+
+```bash
+gh issue comment &lt;issue-number&gt; --body "$(cat &lt;&lt;'EOF'
+## Action: [Brief title]
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Node:** 1.2
+### What Was Done
+### Lessons Learned
+### Roadmap Updates
+EOF
+)"
+```
+
+After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
+
+### Viewing an Objective
+
+View an objective's dependency graph, dependencies, and next node:
+
+```bash
+# CLI
+erk objective view &lt;issue-number&gt;
+
+# Slash command (in-session)
+/local:objective-view &lt;issue-number&gt;
+```
+
+### Spawning an Erk-Plan
+
+To implement a specific roadmap node, create an erk-plan that references the objective:
+
+```bash
+erk plan create --title "Implement [node description]" --body "Part of Objective #123, Node 1.2"
+```
+
+## Workflow Summary
+
+1. **Create objective** - When starting multi-plan work
+2. **Inspect progress** - View dependency graph and next node
+3. **Log actions** - After completing each significant piece of work
+4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
+5. **Spawn erk-plans** - For individual implementation nodes
+6. **Close** - When goal achieved or abandoned (proactively ask when all nodes done)
+
+## Resources
+
+### references/
+
+- `format.md` - Complete templates, examples, and update patterns
+- `workflow.md` - Creating objectives, spawning plans, steelthread structuring
+- `updating.md` - Quick reference for the two-step update workflow
+- `closing.md` - Closing triggers and procedures
+</user>
+  <thinking>The user wants me to create an objective for systematically applying agent back pressure gates across the erk codebase. Let me follow the objective skill's workflow.
+
+I need to:
+1. Create the objective issue with a clear roadmap
+2. Use the `erk exec objective-save-to-issue` command or `gh issue create`
+
+Let me first read the referenced format and workflow docs to make sure I follow the correct patterns.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1483" cache_read_input_tokens="105323" cache_creation="{'ephemeral_5m_input_tokens': 1483, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the objective reference docs to follow the correct format.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1483" cache_read_input_tokens="105323" cache_creation="{'ephemeral_5m_input_tokens': 1483, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019ZYqhPVPSvK4KFDXWWYiZZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.claude/skills/objective/references/format.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1483" cache_read_input_tokens="105323" cache_creation="{'ephemeral_5m_input_tokens': 1483, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ZYqhPVPSvK4KFDXWWYiZZ">
+     1→# Objective Format Reference
+     2→
+     3→Complete templates and examples for objective issues.
+     4→
+     5→## Contents
+     6→
+     7→- [Issue Body Template](#issue-body-template)
+     8→- [Action Comment Template](#action-comment-template)
+     9→  - [When to Update](#when-to-update)
+    10→  - [What to Update in Issue Body](#what-to-update-in-issue-body)
+    11→- [Example: Steelthread-Structured Objective](#example-steelthread-structured-objective)
+    12→- [Common Patterns](#common-patterns)
+    13→- [Update Examples](#update-examples)
+    14→- [Programmatic Roadmap Operations](#programmatic-roadmap-operations)
+    15→
+    16→## Issue Body Template
+    17→
+    18→The issue body represents the **current state** of the objective. Update it as progress is made.
+    19→
+    20→```markdown
+    21→# Objective: [Title]
+    22→
+    23→&gt; [1-2 sentence summary of what this objective achieves]
+    24→
+    25→## Goal
+    26→
+    27→[What success looks like - concrete end state. Be specific about deliverables.]
+    28→
+    29→## Design Decisions
+    30→
+
+... [548 lines omitted] ...
+
+    72→[What methods/components need what behavior, error message requirements]
+   139→- ✅ "Action: Refined error message requirements"
+   188→- Added error message requirements
+   571→| `validation_errors` | array        | List of parsing or format issues                                  |
+  </tool_result>
+  <tool_use name="Read" id="toolu_01F6rR1V2zayKmJy41xcHc84">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.claude/skills/objective/references/workflow.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1483" cache_read_input_tokens="105323" output_tokens="286" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1483}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F6rR1V2zayKmJy41xcHc84">
+     1→# Objective Workflow Reference
+     2→
+     3→Detailed procedures for creating objectives, spawning plans, and resuming work.
+     4→
+     5→## Contents
+     6→
+     7→- [Creating a New Objective](#creating-a-new-objective)
+     8→- [Spawning Erk-Plans](#spawning-erk-plans)
+     9→- [Resuming Work on an Objective](#resuming-work-on-an-objective)
+    10→- [Structuring for Steelthread Development](#structuring-for-steelthread-development)
+    11→- [Best Practices](#best-practices)
+    12→
+    13→For updating and closing objectives, see:
+    14→
+    15→- [updating.md](updating.md) - Two-step update workflow
+    16→- [closing.md](closing.md) - Closing triggers and procedures
+    17→
+    18→## Creating a New Objective
+    19→
+    20→### When to Create
+    21→
+    22→Create an objective when:
+    23→
+    24→- A goal requires 2+ related PRs to complete
+    25→- Work spans multiple sessions or days
+    26→- Lessons learned should be captured for future reference
+    27→- Coordination across related changes is needed
+    28→
+    29→Do NOT create an objective for:
+    30→
+
+... [244 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the objective-create skill to use the proper creation flow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9396" cache_read_input_tokens="106806" cache_creation="{'ephemeral_5m_input_tokens': 9396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013XsXYJT9TugNsJGnQs3hS3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.claude/commands/erk/objective-create.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9396" cache_read_input_tokens="106806" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 9396}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013XsXYJT9TugNsJGnQs3hS3">
+     1→---
+     2→description: Create a structured objective through guided conversation
+     3→---
+     4→
+     5→# /erk:objective-create
+     6→
+     7→Create a new objective through an interactive, guided process. You describe what you want to accomplish, and Claude proposes a structured objective for your approval.
+     8→
+     9→## Usage
+    10→
+    11→```bash
+    12→/erk:objective-create
+    13→```
+    14→
+    15→---
+    16→
+    17→## Agent Instructions
+    18→
+    19→### Step 1: Prompt for Description
+    20→
+    21→Ask the user to describe what they want to accomplish:
+    22→
+    23→```
+    24→What do you want to accomplish? Describe it however makes sense to you - goals,
+    25→constraints, design decisions you've already made, context about the codebase, etc.
+    26→
+    27→I'll structure it into a formal objective for your review.
+    28→```
+    29→
+    30→Wait for the user's response. They may provide:
+
+... [329 lines omitted] ...
+
+   351→## Error Cases
+   356→| Not authenticated            | Report GitHub auth error         |
+   357→| Issue creation fails         | Report API error, offer to retry |
+   358→| Plan file write fails        | Report error with path           |
+  </tool_result>
+  <thinking>Now I have a good understanding of the objective creation workflow. Let me create the objective. Since the user already has context from our conversation, I don't need to interview them — they've already told me what they want.
+
+Let me structure this as a steelthread objective since the slug validation gate was the steelthread (already done in this PR), and the remaining gates would be the completion phases.
+
+Let me draft the objective and present it to the user for approval.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4392" cache_read_input_tokens="116202" cache_creation="{'ephemeral_5m_input_tokens': 4392, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Based on our earlier research, here's my proposed objective. I'll use the **Linear** structure since each gate is independent (no steelthread needed — we already proved the pattern with objective slug validation).
+
+---
+
+# Objective: Apply Agent Back Pressure Gates Across Erk
+
+&gt; Replace silent transformation of agent-generated output with validation gates that reject invalid input and provide actionable feedback for self-correction.
+
+## Goal
+
+All agent-facing input paths in erk either (a) validate and reject invalid input with actionable error messages, or (b) are explicitly documented as human-facing (where silent transformation is appropriate UX). No agent output is silently normalized without the agent knowing its input was wrong.
+
+## Design Decisions
+
+- **Gates for agents, transforms for humans**: When the producer is an agent, reject invalid input. When the producer is a human, silent transformation is acceptable UX.
+- **Dual-use functions get an upstream validation layer**: Functions like `sanitize_worktree_name()` serve both humans and agents. Don't replace the sanitizer — add a validation gate in agent-facing paths that calls the validator before the sanitizer.
+- **Follow the ValidX | InvalidX pattern**: Use discriminated unions (not `ErrorType | None`) per the lesson from `validate_objective_slug()`.
+- **Actionable feedback is mandatory**: Every rejection must include the expected pattern, actual value, and valid/invalid examples so the agent can self-correct.
+
+## Roadmap
+
+Let me generate this properly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4392" cache_read_input_tokens="116202" cache_creation="{'ephemeral_5m_input_tokens': 4392, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M9tA3stv6wxXiczAKcCpPG">
+    <param name="command">echo '{
+  "phases": [
+    {
+      "name": "Tripwire Candidate Schema Gate",
+      "descrip...[truncated 2388 chars]...actionable feedback showing naming rules"
+    }
+  ]
+}' | erk exec objective-render-roadmap</param>
+    <param name="description">Generate roadmap section from JSON</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4392" cache_read_input_tokens="116202" output_tokens="1173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4392}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M9tA3stv6wxXiczAKcCpPG">
+## Roadmap
+
+### Phase 1: Tripwire Candidate Schema Gate (1 PR)
+
+Replace silent JSON schema normalization in normalize_tripwire_candidates with a validation gate. This is the highest-value target because it exclusively processes agent output and the normalization masks schema drift.
+
+| Node | Description | Status | Plan | PR |
+|------|-------------|--------|------|----|
+| 1.1 | Add schema validation function that returns ValidTripwireCandidates | InvalidTripwireCandidates with actionable feedback | pending | - | - |
+| 1.2 | Wire validation into normalize_tripwire_candidates.py — reject malformed JSON before normalizing | pending | - | - |
+| 1.3 | Update agent guidance (skill/command docs) to include the expected schema | pending | - | - |
+
+**Test:** Agent-produced JSON with wrong root key or missing fields is rejected with structured error showing expected schema, not silently remapped
+
+### Phase 2: Plan Title Validation Gate (1 PR)
+
+Add validation for agent-provided plan titles in generate_filename_from_title() path. Currently falls back to plan.md silently when title is empty or all special chars.
+
+| Node | Description | Status | Plan | PR |
+|------|-------------|--------|------|----|
+| 2.1 | Add validate_plan_title() returning ValidPlanTitle | InvalidPlanTitle with minimum content requirements | pending | - | - |
+| 2.2 | Wire validation into agent-facing paths (plan-save, plan-create) upstream of generate_filename_from_title() | pending | - | - |
+| 2.3 | Keep generate_filename_from_title() as-is for human-facing paths | pending | - | - |
+
+**Test:** Agent providing an empty or emoji-only title gets a rejection with rules and examples instead of a silent fallback to plan.md
+
+### Phase 3: Worktree Name Validation Layer (1 PR)
+
+Add upstream validation in agent-facing worktree creation paths. The sanitize_worktree_name() function stays for human UX, but agent paths validate first.
+
+
+... [72 lines omitted] ...
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Here's the full proposed objective:
+
+---
+
+# Objective: Apply Agent Back Pressure Gates Across Erk
+
+&gt; Replace silent transformation of agent-generated output with validation gates that reject invalid input and provide actionable feedback for self-correction.
+
+## Goal
+
+All agent-facing input paths in erk either (a) validate and reject invalid input with actionable error messages, or (b) are explicitly documented as human-facing (where silent transformation is appropriate UX). No agent output is silently normalized without the agent knowing its input was wrong.
+
+## Design Decisions
+
+- **Gates for agents, transforms for humans**: When the producer is an agent, reject invalid input. When the producer is a human, silent transformation is acceptable UX.
+- **Dual-use functions get an upstream validation layer**: Functions like `sanitize_worktree_name()` serve both humans and agents. Don't replace the sanitizer — add a validation gate in agent-facing paths that calls the validator before the sanitizer.
+- **Follow the ValidX | InvalidX pattern**: Use discriminated unions (not `ErrorType | None`) per the lesson from `validate_objective_slug()`.
+- **Actionable feedback is mandatory**: Every rejection must include the expected pattern, actual value, and valid/invalid examples so the agent can self-correct.
+
+## Roadmap
+
+*(3 phases, 9 nodes — generated above)*
+
+## Implementation Context
+
+### Proven Pattern
+
+`validate_objective_slug()` in `naming.py` is the reference implementation (PR #7806). It demonstrates:
+- `ValidObjectiveSlug | InvalidObjectiveSlug` discriminated union return type
+- `InvalidObjectiveSlug.message` property with pattern, rules, actual value, and examples
+- Caller uses `isinstance()` dispatch
+
+### Key Files
+
+- `packages/erk-shared/src/erk_shared/naming.py` — validation functions live here
+- `src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py` — Phase 1 target
+- `src/erk/cli/commands/exec/scripts/issue_title_to_filename.py` — Phase 2 downstream
+- `src/erk/cli/commands/wt/create_cmd.py` — Phase 3 target
+
+### Related Documentation
+
+- `docs/learned/architecture/agent-backpressure-gates.md` — the gate pattern itself
+- `docs/learned/architecture/discriminated-union-error-handling.md` — ValidX | InvalidX pattern (including new None-as-success anti-pattern section)
+
+---
+
+Does this capture what you're thinking? I can adjust any section, add more detail to the roadmap, or restructure the phases.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2363" cache_read_input_tokens="120594" cache_creation="{'ephemeral_5m_input_tokens': 2363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>yes</user>
+  <tool_use name="Bash" id="toolu_01E45TZFRqYTa2foyM94DD6j">
+    <param name="command">mkdir -p /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.erk/scratch/sessions/c1c38a3a-83fb-4a8e-8508-d5db46709abc/</param>
+    <param name="description">Create scratch directory for session</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="774" cache_read_input_tokens="122957" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 774}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E45TZFRqYTa2foyM94DD6j">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01HgBRCTnqbALz6Rhe43VhHy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.erk/scratch/sessions/c1c38a3a-83fb-4a8e-8508-d5db46709abc/objective-body.md</param>
+    <param name="content"># Objective: Apply Agent Back Pressure Gates Across Erk
+
+&gt; Replace silent transformation o...[truncated 6294 chars]...ing.md` -- ValidX | InvalidX pattern (including new None-as-success anti-pattern section)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="164" cache_read_input_tokens="123731" cache_creation="{'ephemeral_5m_input_tokens': 164, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HgBRCTnqbALz6Rhe43VhHy">
+File created successfully at: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.erk/scratch/sessions/c1c38a3a-83fb-4a8e-8508-d5db46709abc/objective-body.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TUXQNKgDKT5ArbzoP5jc3h">
+    <param name="command">erk exec objective-save-to-issue --session-id=c1c38a3a-83fb-4a8e-8508-d5db46709abc --slug=agent-backpressure-gates --format=display --validate</param>
+    <param name="description">Create objective issue with validation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2135" cache_read_input_tokens="123895" cache_creation="{'ephemeral_5m_input_tokens': 2135, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TUXQNKgDKT5ArbzoP5jc3h">
+Objective saved to GitHub issue #7823
+Title: Objective: Apply Agent Back Pressure Gates Across Erk
+URL: https://github.com/dagster-io/erk/issues/7823
+Validation: passed
+  </tool_result>
+  <assistant>Objective created: **#7823**
+URL: https://github.com/dagster-io/erk/issues/7823
+Roadmap validation: clean
+
+Next steps:
+- Use `/local:objective-view 7823` to view the dependency graph
+- Use `/erk:objective-plan 7823` to create plans for specific nodes
+- Track progress by updating node status in the issue</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="126030" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+</session>

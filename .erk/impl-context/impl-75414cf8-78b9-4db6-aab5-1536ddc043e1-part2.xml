@@ -1,0 +1,1099 @@
+<session>
+  <meta branch="planned/add-slug-to-objective-m-02-22-0443" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Task" id="toolu_01MWQt6MzYi1sbdTHw3WXszh">
+    <param name="description">Run naming tests</param>
+    <param name="prompt">Run the following command and report the results: `uv run pytest tests/core/utils/test_naming.py -k "objective_slug" -v` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="102" cache_read_input_tokens="112113" cache_creation="{'ephemeral_5m_input_tokens': 102, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_013MWfYMoZ3cQn8AxScSt5b7">
+    <param name="description">Run plan_issues tests</param>
+    <param name="prompt">Run the following command and report the results: `uv run pytest packages/erk-shared/tests/unit/github/test_plan_issues.py -v` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="102" cache_read_input_tokens="112113" cache_creation="{'ephemeral_5m_input_tokens': 102, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01B1hjJXS3BViGGwaqpuX6by">
+    <param name="description">Run save-to-issue tests</param>
+    <param name="prompt">Run the following command and report the results: `uv run pytest tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py -v` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="102" cache_read_input_tokens="112113" output_tokens="438" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 102}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013MWfYMoZ3cQn8AxScSt5b7">
+pytest passed: 34 tests passed in 0.10s
+
+All tests in `test_plan_issues.py` are passing successfully.
+agentId: a62643ad125be8e12 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13606
+tool_uses: 1
+duration_ms: 3568&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01MWQt6MzYi1sbdTHw3WXszh">
+pytest passed: 21 tests for objective_slug passed in 0.04s
+
+All objective_slug tests are passing. The test file includes 21 selected tests related to objective slug functionality, and they all completed successfully.
+agentId: a3b07945a275e5e1c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13724
+tool_uses: 1
+duration_ms: 4952&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01B1hjJXS3BViGGwaqpuX6by">
+pytest passed: 15 tests passed in 0.57s
+
+All tests in the objective_save_to_issue test file passed successfully.
+agentId: a7513e7fe3b5ad8d5 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13615
+tool_uses: 1
+duration_ms: 3347&lt;/usage&gt;
+  </tool_result>
+  <assistant>All tests pass. Now let me run the type checker and linter on the modified files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="819" cache_read_input_tokens="112215" cache_creation="{'ephemeral_5m_input_tokens': 819, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Cawq8TMB9CvmfXS4UwqhJD">
+    <param name="description">Run ty and ruff checks</param>
+    <param name="prompt">Run the following commands in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21 and rep...[truncated 448 chars].../test_plan_issues.py tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py`</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="819" cache_read_input_tokens="112215" output_tokens="349" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 819}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cawq8TMB9CvmfXS4UwqhJD">
+Perfect! Both checks passed:
+
+**ty (Type Checking)**: passed
+- All type annotations are correct across the three implementation files
+
+**ruff (Linting)**: passed
+- All code style and quality checks passed across six files (3 implementation + 3 test files)
+
+The following files passed all checks:
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/naming.py`
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py`
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/core/utils/test_naming.py`
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/packages/erk-shared/tests/unit/github/test_plan_issues.py`
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py`
+agentId: a720312fac1500e5c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14175
+tool_uses: 2
+duration_ms: 5562&lt;/usage&gt;
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01APehx64BbwL7EaQWQ8GyPY">
+    <param name="taskId">8</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="782" cache_read_input_tokens="113034" cache_creation="{'ephemeral_5m_input_tokens': 782, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01APehx64BbwL7EaQWQ8GyPY">
+Updated task #8 status
+  </tool_result>
+  <assistant>All 8 tasks complete. Here's a summary of all changes:
+
+## Summary
+
+**1. `packages/erk-shared/src/erk_shared/naming.py`** — Replaced `sanitize_objective_slug()` with:
+- `_OBJECTIVE_SLUG_PATTERN` compiled regex
+- `InvalidObjectiveSlug` frozen dataclass with `message` property containing pattern, rules, actual value, and examples for agent self-correction
+- `validate_objective_slug()` returning `None` on success, `InvalidObjectiveSlug` on failure (checks 3-40 length + regex)
+
+**2. `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`** — Replaced sanitize call with validation gate: invalid slug now returns `CreatePlanIssueResult(success=False, ...)` with the full error message. Validation happens after title extraction so the error result has a populated title.
+
+**3. `.claude/commands/erk/objective-create.md`** — Replaced "don't worry about exact formatting" with the exact regex pattern, length constraints, rules, valid/invalid examples, and retry instructions.
+
+**4. `tests/core/utils/test_naming.py`** — Replaced ~25 lines of sanitize tests with parametrized tests for valid slugs (returns `None`), invalid slugs (returns `InvalidObjectiveSlug` with reason fragments), and error message content (includes regex pattern).
+
+**5. `packages/erk-shared/tests/unit/github/test_plan_issues.py`** — Added `TestCreateObjectiveIssueSlugValidation` class with 3 tests: invalid slug returns failure with no issue created, valid slug passes through to body, `None` slug skips validation.
+
+**6. `tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py`** — Added test for `--slug "INVALID SLUG"` returning exit code 1 with JSON error.
+
+**7. `docs/learned/architecture/agent-backpressure-gates.md`** — New doc describing the general "back pressure via gate" pattern with the spectrum of gate complexity, when to use gates vs. silent transformation, anti-patterns, and the slug example.
+
+**Verification:** All 70 tests pass (21 naming + 34 plan_issues + 15 save-to-issue), ty type checks clean, ruff lint clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="113816" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01FKZUfxtLhnYa848erszbQd">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Run erk exec quick-submit to commit and submit</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="855" cache_read_input_tokens="113904" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 855}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FKZUfxtLhnYa848erszbQd">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7806"
+}
+  </tool_result>
+  <assistant>Submitted: https://github.com/dagster-io/erk/pull/7806</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="114759" cache_creation="{'ephemeral_5m_input_tokens': 216, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Plan Review Detection
+
+Before classifying feedback, determine if this is a plan review PR:
+
+1. Get PR data using REST API (avoids GraphQL rate limits):
+   - **If `--pr &lt;number&gt;` specified in ``**: `erk exec get-pr-view &lt;number&gt;`
+   - **Otherwise** (auto-detect from current branch): `erk exec get-pr-view`
+
+   Parse the JSON output to extract `number`, `labels`, and `body`.
+
+2. Check if the PR has the `erk-plan-review` label (from the `labels` array in the output).
+
+3. If YES: extract the plan issue number from the `body` field (which contains `**Plan Issue:** #NNN`):
+   - Parse the issue number from the `**Plan Issue:** #NNN` line
+   - Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
+
+4. If NO: proceed with standard code review flow (Phase 1)
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+**Skip this phase in Plan Review Mode** - plan PRs don't have meaningful code diffs to summarize.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "75414cf8-78b9-4db6-aab5-1536ddc043e1"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+---
+
+## Plan Review Mode
+
+When Phase 0 detects the `erk-plan-review` label on the current PR, the entire flow switches to plan review mode. This mode edits plan text instead of source code.
+
+### Key Differences: Plan Mode vs Code Mode
+
+| Aspect            | Code Mode                    | Plan Mode                              |
+| ----------------- | ---------------------------- | -------------------------------------- |
+| File edited       | Source code files            | `PLAN-REVIEW-{issue}.md`               |
+| What changes      | Code implementation          | Plan text/structure                    |
+| CI checks         | Run tests                    | Skip (no code to test)                 |
+| Extra step        | None                         | `plan-update-issue` to sync plan issue |
+| Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
+| Thread resolution | What code change was made    | How plan was updated                   |
+
+### Plan Review Phase 1: Save Current Branch
+
+Before processing feedback, record the current branch so we can return to it later:
+
+```bash
+git branch --show-current
+```
+
+Store the result as `ORIGINAL_BRANCH`.
+
+### Plan Review Phase 2: Classify Feedback
+
+Same as standard Phase 1 — use the Task tool (NOT skill invocation, for `--print` mode isolation) to run the classifier in a subagent (see Phase 1 above for the Task tool pattern). Pass `[--pr &lt;number&gt; if specified]` as arguments.
+
+### Plan Review Phase 3: Display Batched Plan
+
+Same as standard Phase 2, but note at the top of the display:
+
+```
+**Plan Review Mode** (erk-plan-review label detected) — changes apply to plan text, not source code.
+```
+
+### Plan Review Phase 4: Execute by Batch (Plan Mode)
+
+For each batch:
+
+#### Step 1: Edit the Plan
+
+1. Read `PLAN-REVIEW-{issue}.md` from the repo root
+2. For each comment in the batch, incorporate reviewer feedback by editing the plan markdown text
+   - Restructure sections, add detail, clarify language, update design decisions as requested
+   - If feedback applies to implementation (not the plan itself), add a note to the relevant plan section rather than making structural changes
+3. Write the updated `PLAN-REVIEW-{issue}.md`
+
+#### Step 2: Commit and Push
+
+```bash
+git add PLAN-REVIEW-{issue}.md
+git commit -m "Incorporate review feedback (batch N/M)
+
+- &lt;summary of change 1&gt;
+- &lt;summary of change 2&gt;
+..."
+git push
+```
+
+#### Step 3: Sync Plan to GitHub Issue
+
+```bash
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
+```
+
+#### Step 4: Resolve Threads
+
+Resolve each thread using the appropriate command (see `pr-operations` skill):
+
+**For review threads** - use the batch command to resolve all at once:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Incorporated feedback into plan. Updated the relevant section in PLAN-REVIEW-{issue}.md.\n\nSummary of change: {brief description}"}]' | erk exec resolve-review-threads
+```
+
+**For discussion comments** (`reply-to-discussion-comment`):
+
+Use a message like:
+
+```
+Addressed in plan update. {description of how feedback was incorporated or why it was noted for implementation phase}
+```
+
+**For feedback that applies to implementation, not the plan itself:**
+
+Use a message like:
+
+```
+Noted for implementation phase. This feedback applies to the code implementation rather than the plan structure — it will be addressed when implementing the plan.
+```
+
+#### Step 5: Report Progress
+
+Same as standard Phase 4 Step 5 — report what was addressed and what remains.
+
+### Plan Review Phase 5: Final Verification
+
+Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
+
+### Return to Original Branch
+
+After all batches are complete and pushed:
+
+1. Switch back to the branch saved in Phase 1: `git checkout &lt;ORIGINAL_BRANCH&gt;`
+2. The plan-review branch work is complete — the user should not remain on it.
+</user>
+  <thinking>The user wants me to address PR review comments. Let me first read the existing plan file, then follow the pr-address workflow.
+
+Actually, I'm in plan mode. The /erk:pr-address command was loaded, but I'm in plan mode where I can't make edits. Let me think about this...
+
+The user invoked `/erk:pr-address` which is a skill that addresses PR review comments. But I'm in plan mode. The skill instructions say to fetch and address PR comments. Since I'm in plan mode, I should plan out how to address the PR comments, then exit plan mode to execute.
+
+Wait, re-reading the system reminder: "Plan mode is active. 
+
+The user indicated that they do not want me to execute yet -- I MUST NOT make any edits (with the exception of the plan file mentioned below), run any non-readonly tools..."
+
+So I need to plan the PR address work. Let me first read the existing plan file and then classify the PR feedback using read-only operations, then create a plan for addressing the comments.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="5807" cache_read_input_tokens="114975" cache_creation="{'ephemeral_5m_input_tokens': 5807, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the existing plan file and classify the PR feedback to understand what needs to be addressed.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="5807" cache_read_input_tokens="114975" cache_creation="{'ephemeral_5m_input_tokens': 5807, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SJRyP6aQ9Hs6BBsbuCdnwb">
+    <param name="file_path">/Users/schrockn/.claude/plans/cryptic-wondering-map.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="5807" cache_read_input_tokens="114975" cache_creation="{'ephemeral_5m_input_tokens': 5807, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SJRyP6aQ9Hs6BBsbuCdnwb">
+     1→# Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+     2→
+     3→## Context
+     4→
+     5→The current branch (`planned/add-slug-to-objective-m-02-22-0443`) adds a `slug` field to objective metadata. The existing implementation uses **silent sanitization**: `sanitize_objective_slug()` transforms any LLM-generated string into a valid slug. The user wants to replace this with a **validation gate** pattern where the agent receives clear rules, must produce a compliant slug, and the system rejects (not transforms) invalid input. The agent retries until it passes the gate.
+     6→
+     7→This also introduces a new docs/learned/ document describing the general "back pressure via gate" pattern.
+     8→
+     9→## Implementation
+    10→
+    11→### 1. Replace `sanitize_objective_slug()` with `validate_objective_slug()` in naming.py
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/naming.py`
+    14→
+    15→- Add `from dataclasses import dataclass` import
+    16→- Add module-level compiled regex (per validation-patterns.md):
+    17→  ```python
+    18→  _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+    19→  ```
+    20→- Add frozen dataclass `InvalidObjectiveSlug` with fields `raw_slug: str`, `reason: str`, and a `message` property that includes the pattern, rules, actual value, and examples
+    21→- Add `validate_objective_slug(slug: str) -&gt; InvalidObjectiveSlug | None` (returns `None` on success)
+    22→  - Check length: 3-40 chars
+    23→  - Check regex match
+    24→  - Return descriptive `InvalidObjectiveSlug` on failure
+    25→- Remove `sanitize_objective_slug()` entirely (only 2 callers: `plan_issues.py` and test file)
+    26→
+    27→### 2. Wire validation gate into `create_objective_issue()` in plan_issues.py
+    28→
+    29→**File:** `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`
+    30→
+
+... [93 lines omitted] ...
+
+    32→- Replace the sanitize call (lines 326-329) with validation that returns `CreatePlanIssueResult(success=False, ...)` on failure
+    33→- Place validation after title extraction (line 344) but before label operations (line 347), so error results have a populated title
+    55→- Add test that error message includes the regex pattern for agent self-correction
+    62→- Invalid slug returns `success=False` with "Invalid objective slug" in error, no issue created
+    70→Add test: `--slug "INVALID SLUG"` returns exit code 1, JSON output with `success: false` and "Invalid objective slug" in error, no issue created.
+    78→**Core concept:** A gate is any programmatic invariant check that an agent's output must pass through. The agent has maximum flexibility in *how* it produces its output, but the gate enforces *what* the output must look like. If the agent's output fails the gate, the workflow loops: the agent receives the failure feedback and retries until it passes.
+    90→2. **Gate** — The programmatic check that enforces the invariant. This is the hard boundary. The agent cannot bypass it. The gate produces actionable feedback on failure so the agent can self-correct.
+    98→| Type checker (ty) | Type correctness | Type errors with locations |
+    99→| Test suite (pytest) | Behavioral correctness | Test failures with assertions |
+  </tool_result>
+  <tool_use name="Task" id="toolu_017nGNmqLA5uPqF7Fac6kvrn">
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+A...[truncated 7 chars]...auto-detect PR from current branch)
+Return the complete JSON output as your final message.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="5807" cache_read_input_tokens="114975" cache_creation="{'ephemeral_5m_input_tokens': 5807, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017nGNmqLA5uPqF7Fac6kvrn">
+Now I'll classify the feedback according to the skill instructions. Let me analyze the comments:
+
+**Review Comments (3 threads):**
+
+1. **Thread ID: PRRT_kwDOPxC3hc5v-wU_** (docs/learned/architecture/agent-backpressure-gates.md:67)
+   - Author: github-actions (bot)
+   - Classification: Actionable (inaccurate claim to fix)
+   - Complexity: single_file
+   - Issue: Claims `sanitize_objective_slug()` exists but it doesn't
+
+2. **Thread ID: PRRT_kwDOPxC3hc5v-wXc** (docs/learned/architecture/agent-backpressure-gates.md:68)
+   - Author: github-actions (bot)
+   - Classification: Actionable (documentation drift risk)
+   - Complexity: single_file
+   - Issue: Inline regex needs source pointer to prevent drift
+
+3. **Thread ID: PRRT_kwDOPxC3hc5v-wmJ** (packages/erk-shared/src/erk_shared/naming.py:130)
+   - Author: schrockn
+   - Classification: Actionable (code improvement)
+   - Complexity: local
+   - Issue: Return type clarification - success case should return valid object, not truthy/falsey
+
+**Discussion Comments (7 total):**
+- 3940600052: Plan queued (informational - workflow status)
+- 3940600520: GitHub Action started (informational - workflow status)
+- 3940617670: Dignified Python Review (informational - passing review)
+- 3940618086: Tripwires Review (informational - passing review)
+- 3940618112: Test Coverage Review (informational - passing review)
+- 3940618791: Dignified Code Simplifier Review (informational - passing review)
+- 3940635593: Remote rebase completed (informational - workflow status)
+
+... [69 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <thinking>Good, I have 3 actionable review threads:
+
+1. **PRRT_kwDOPxC3hc5v-wmJ** (naming.py:130) - schrockn says "the success case should return a valid object. the truthy falsey behavior here is very counterintuitive." This is about `validate_objective_slug` returning `None` on success. The user wants it to return a valid object on success instead.
+
+2. **PRRT_kwDOPxC3hc5v-wU_** (agent-backpressure-gates.md:67) - Bot flags that `sanitize_objective_slug()` is referenced as if it exists, but it was removed. 
+
+I need to update the doc wording to clarify this was the *before* state that's now removed.
+
+3. **PRRT_kwDOPxC3hc5v-wXc** (agent-backpressure-gates.md:68) - Bot flags drift risk - inline regex duplicated in doc. Should add a source pointer.
+
+Let me look at the actual review comments to understand the first one better. For the naming.py issue, the user wants the success case to return a valid object rather than None, so I need to change the pattern from `validate_objective_slug(slug) -&gt; InvalidObjectiveSlug | None` to something that returns a valid object on success.
+
+The user's concern is that returning None for success is counterintuitive since None is falsey. I'm considering using a discriminated union approach where both success and failure return proper objects—either a `ValidObjectiveSlug` on success or `InvalidObjectiveSlug` on failure. This aligns with the error handling pattern mentioned in the docs, so I should check that documentation first to understand the approach better.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4252" cache_read_input_tokens="120782" cache_creation="{'ephemeral_5m_input_tokens': 4252, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. I have 3 actionable review threads. Let me read the actual comments and explore the discriminated union pattern before planning.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4252" cache_read_input_tokens="120782" cache_creation="{'ephemeral_5m_input_tokens': 4252, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Gk6zxWQmLJSnWGUfeP6CrV">
+    <param name="description">Explore discriminated union patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 618 chars]...s/erk-shared/src/erk_shared/naming.py around line 70-130 to see the current implementation</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4252" cache_read_input_tokens="120782" cache_creation="{'ephemeral_5m_input_tokens': 4252, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017wRfdyN92v5iDeTEzFMK8s">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/agent-backpressure-gates.md</param>
+    <param name="offset">55</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4252" cache_read_input_tokens="120782" cache_creation="{'ephemeral_5m_input_tokens': 4252, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017wRfdyN92v5iDeTEzFMK8s">
+    55→- **Silent transformation**: When a human is the producer and UX matters more than compliance signals
+    56→
+    57→## Anti-Patterns
+    58→
+    59→- **Gates without actionable feedback**: The agent can't self-correct if the error message just says "invalid". Include the pattern, the actual value, and examples.
+    60→- **Guidance without a gate**: No enforcement means compliance is optional. The agent may drift over time.
+    61→- **Transforming agent output silently**: Masks mistakes, prevents learning. The agent never discovers that its output was wrong.
+    62→
+    63→## Example: Objective Slug Validation
+    64→
+    65→The objective slug migration demonstrates this pattern:
+    66→
+    67→- **Before (silent transformation):** `sanitize_objective_slug()` accepted any string, lowercased it, replaced special characters, collapsed hyphens, and returned a valid slug. The agent never knew if its input was wrong.
+    68→- **After (validation gate):** `validate_objective_slug()` checks the slug against `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` and 3-40 character length. On failure, it returns an `InvalidObjectiveSlug` with the pattern, rules, actual value, and examples. The agent receives this feedback and retries.
+    69→- **Guidance:** The `objective-create` skill includes the exact regex pattern, length constraints, rules, and valid/invalid examples.
+    70→- **Gate:** `validate_objective_slug()` in `naming.py` enforces the invariant programmatically.
+    71→
+  </tool_result>
+  <tool_result tool="toolu_01Gk6zxWQmLJSnWGUfeP6CrV">
+Perfect. Now I have all the information I need. Let me create a comprehensive analysis document.
+
+## Summary of Findings
+
+Based on my analysis of the discriminated union error handling pattern in erk and the current implementation of `validate_objective_slug()`, here's what I found:
+
+### 1. **The Core Problem (PR Comment at Line 130)**
+
+The PR review comment states: **"the success case should return a valid object. the truthy falsey behavior here is very counterintuitive."**
+
+This refers to the current implementation (lines 105-130 in naming.py):
+
+```python
+def validate_objective_slug(slug: str) -&gt; InvalidObjectiveSlug | None:
+    """Validate an objective slug against the required format.
+    
+    Returns None on success, or an InvalidObjectiveSlug describing the failure.
+    """
+    # ... validation logic ...
+    if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
+        return InvalidObjectiveSlug(...)
+    return None  # &lt;-- SUCCESS case returns None (falsy!)
+```
+
+**The problem:** Returning `None` for success is counterintuitive because:
+- Callers check `if slug_error is not None:` (lines 343-344 in plan_issues.py)
+- This inverts the logic: success is "no object", failure is "an object"
+- It violates LBYL (Look Before You Leap) pattern - you can't meaningfully inspect a success case
+
+### 2. **The Discriminated Union Pattern (from the documentation)**
+
+... [141 lines omitted] ...
+
+The erk codebase uses discriminated unions consistently for error handling. The pattern has:
+**Error Type** (frozen dataclass with message and error_type):
+class PushError:
+    """Error result from pushing to remote. Implements NonIdealState."""
+    def error_type(self) -&gt; str:
+        return "push-failed"
+if isinstance(result, PushError):
+    raise UserFacingCliError(result.message)
+- `BranchAlreadyExists` (error, has `branch_name` and `message`)
+- `PushError` (error, has `message`)
+- `MergeError` (error, has `pr_number` and `message`)
+All error types implement the `NonIdealState` protocol (requiring `message` and `error_type` properties).
+    slug_error = validate_objective_slug(slug)
+    if slug_error is not None:  # &lt;-- Checking for presence of error
+            error=slug_error.message,  # &lt;-- Using error object's message
+    """Validation failure for an objective slug."""
+    Returns ValidObjectiveSlug on success, or InvalidObjectiveSlug on failure.
+            error=validation_result.message,
+- **message property on error**: Provides human-readable error description
+This change aligns `validate_objective_slug()` with the **discriminated union error handling pattern** that is the standard across erk for all gateway and validation operations.
+  </tool_result>
+  <assistant>
+
+Now I have a clear picture of all 3 review comments and the right approach. Let me write the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3264" cache_read_input_tokens="125034" cache_creation="{'ephemeral_5m_input_tokens': 3264, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014wm7D3dDZkSYzwee5QghFT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/cryptic-wondering-map.md</param>
+    <param name="old_string"># Plan: Replace Slug Sanitization with Validation Gate ("Back Pressure via Gate")
+
+## Cont...[truncated 6636 chars]...to_issue.py`
+4. Run ty type checker on modified files
+5. Run ruff linter on modified files</param>
+    <param name="new_string"># Plan: Address PR #7806 Review Comments
+
+## Context
+
+PR #7806 (slug validation gate) rece...[truncated 3220 chars]...ff on modified files
+6. Resolve all 3 review threads via `erk exec resolve-review-threads`</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3264" cache_read_input_tokens="125034" cache_creation="{'ephemeral_5m_input_tokens': 3264, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014wm7D3dDZkSYzwee5QghFT">
+The file /Users/schrockn/.claude/plans/cryptic-wondering-map.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01VuSbDdzo53osTv5UqbpTsp">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec resolve-review-threads to resolve PR threads'}, {'tool': 'Bash', 'prompt': 'run erk exec quick-submit to commit and push changes'}]</param>
+    <param name="plan"># Plan: Address PR #7806 Review Comments
+
+## Context
+
+PR #7806 (slug validation gate) rece...[truncated 3221 chars]...f on modified files
+6. Resolve all 3 review threads via `erk exec resolve-review-threads`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3125" cache_read_input_tokens="128298" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3125}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VuSbDdzo53osTv5UqbpTsp">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/cryptic-wondering-map.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Address PR #7806 Review Comments
+Current context: (wt:erk-slot-21) (br:planned/add-slug-to-objective-m-02-22-0443) (pr:#7806)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/a"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 75414cf8-78b9-4db6-aab5-1536ddc043e1 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KUrrMmpppUdDsRC6taEodP">
+    <param name="file_path">/Users/schrockn/.claude/plans/cryptic-wondering-map.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="131423" cache_creation="{'ephemeral_5m_input_tokens': 714, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KUrrMmpppUdDsRC6taEodP">
+     1→# Plan: Address PR #7806 Review Comments
+     2→
+     3→## Context
+     4→
+     5→PR #7806 (slug validation gate) received 3 actionable review comments. This plan addresses all of them.
+     6→
+     7→## Review Comments
+     8→
+     9→### Thread 1 (schrockn): Return type is counterintuitive — `naming.py:130`
+    10→&gt; "the success case should return a valid object. the truthy falsey behavior here is very counterintuitive."
+    11→
+    12→`validate_objective_slug()` currently returns `InvalidObjectiveSlug | None` where `None` = success. This violates erk's discriminated union error handling pattern where both success and failure are proper types.
+    13→
+    14→### Thread 2 (bot): Inaccurate claim in docs — `agent-backpressure-gates.md:67`
+    15→&gt; `sanitize_objective_slug()` is referenced as if it currently exists. It was removed in this PR.
+    16→
+    17→The "Before" example needs past-tense framing that makes clear it was removed.
+    18→
+    19→### Thread 3 (bot): Drift risk — `agent-backpressure-gates.md:68`
+    20→&gt; Inline regex `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` is duplicated. If `_OBJECTIVE_SLUG_PATTERN` changes, this doc silently goes stale.
+    21→
+    22→Replace inline regex with a source pointer.
+    23→
+    24→## Implementation
+    25→
+    26→### 1. Add `ValidObjectiveSlug` and change return type to discriminated union
+    27→
+    28→**File:** `packages/erk-shared/src/erk_shared/naming.py`
+    29→
+    30→- Add `ValidObjectiveSlug` frozen dataclass with field `slug: str`
+
+... [44 lines omitted] ...
+
+    39→- Replace `if slug_error is not None:` with `isinstance(result, InvalidObjectiveSlug)` check
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Plan: Address PR #7806 Review Comments
+
+PR #7806 (slug validation gate) received 3 actionable review comments:
+
+**Thread 1 (schrockn):** Return type is counterintuitive — `naming.py:130`
+&gt; "the success case should return a valid object. the truthy falsey behavior here is very counterintuitive."
+
+Fix: Add `ValidObjectiveSlug` dataclass, change return type to `ValidObjectiveSlug | InvalidObjectiveSlug` (discriminated union pattern).
+
+**Thread 2 (bot):** Inaccurate claim — `agent-backpressure-gates.md:67`
+Fix: Add past-tense framing clarifying the function was removed in this PR.
+
+**Thread 3 (bot):** Drift risk — `agent-backpressure-gates.md:68`
+Fix: Replace inline regex with source pointer to `_OBJECTIVE_SLUG_PATTERN` in `naming.py`.
+
+Changes touch: `naming.py`, `plan_issues.py`, `agent-backpressure-gates.md`, `test_naming.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1340" cache_read_input_tokens="132137" cache_creation="{'ephemeral_5m_input_tokens': 1340, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Njs6NW9HVDsWkjmDWiUyto">
+    <param name="questions">[{'question': '📋 Plan: Address PR #7806 Review Comments\nCurrent context: (wt:erk-slot-21)...[truncated 339 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1340" cache_read_input_tokens="132137" output_tokens="492" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1340}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Njs6NW9HVDsWkjmDWiUyto">
+User has answered your questions: "📋 Plan: Address PR #7806 Review Comments
+Current context: (wt:erk-slot-21) (br:planned/add-slug-to-objective-m-02-22-0443) (pr:#7806)
+
+What would you like to do with this plan?"="we should add this guidance to docs 
+
+  Thread 1 (schrockn): Return type is counterintuitive — naming.py:130
+  "the success case should return a valid object. the truthy falsey behavior here is very counterintuitive."
+
+  Fix: Add ValidObjectiveSlug dataclass, change return type to ValidObjectiveSlug | InvalidObjectiveSlug (discriminated union pattern
+
+to docs around non ideal states and discriminated union pattern" user notes: we should add this guidance to docs 
+
+  Thread 1 (schrockn): Return type is counterintuitive — naming.py:130
+  "the success case should return a valid object. the truthy falsey behavior here is very counterintuitive."
+
+  Fix: Add ValidObjectiveSlug dataclass, change return type to ValidObjectiveSlug | InvalidObjectiveSlug (discriminated union pattern
+
+to docs around non ideal states and discriminated union pattern. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants me to also add guidance about this discriminated union pattern to the existing docs about non-ideal states. Let me find the relevant doc and add a step to the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="133477" cache_creation="{'ephemeral_5m_input_tokens': 899, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find the relevant existing doc to understand what to add.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="133477" cache_creation="{'ephemeral_5m_input_tokens': 899, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X5txokigkuLo1qgoduTXxw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/docs/learned/architecture/discriminated-union-error-handling.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="133477" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 899}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X5txokigkuLo1qgoduTXxw">
+     1→---
+     2→title: Discriminated Union Error Handling
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing return types for operations that may fail"
+     7→  - "implementing T | ErrorType patterns"
+     8→  - "handling errors without exceptions"
+     9→tripwires:
+    10→  - action: "choosing between exceptions and discriminated unions for operation failures"
+    11→    warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
+    12→  - action: "migrating a gateway method to return discriminated union"
+    13→    warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
+    14→  - action: "accessing properties on a discriminated union result without isinstance() check"
+    15→    warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
+    16→---
+    17→
+    18→# Discriminated Union Error Handling
+    19→
+    20→Erk uses discriminated unions (`SuccessType | ErrorType`) for LBYL-compliant error handling at gateway and pipeline boundaries. This pattern makes failure modes explicit in type signatures and enables callers to branch on specific error types.
+    21→
+    22→## The Core Trade-off: Unions vs Exceptions
+    23→
+    24→**Use discriminated unions when the caller continues after failure** — branching logic, multiple error types, or inspection of error fields (like `pr_number`, `branch_name`).
+    25→
+    26→**Use exceptions when all callers terminate identically** — error just surfaces as a message, no branching logic, no meaningful field inspection.
+    27→
+    28→### When Exceptions Are Better: The Worktree Operations Case
+    29→
+    30→Worktree add/remove failures are _expected_ (path collisions, missing branches), but they're still better as exceptions because no caller does anything beyond extracting the message and terminating:
+
+... [285 lines omitted] ...
+
+    36→except RuntimeError as e:
+    37→    raise UserFacingCliError(str(e))
+    40→The exception pattern is simpler here: no caller branches on error content, no caller inspects error structure, and every call site terminates identically. A discriminated union would add ceremony without value.
+    44→Contrast with `create_branch` and `submit_branch`, where callers _do_ branch on error types:
+    62→1. **Branching logic** — different handling for "already exists" vs other failures
+    64→3. **Type-safe continuation** — caller keeps running after handling the error
+    68→Gateway methods return `SuccessType | ErrorType` where:
+    71→- **Error types** are frozen dataclasses with `message: str` and `error_type` property
+    73→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushResult, PushError --&gt;
+    75→See `PushResult` and `PushError` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`.
+    80→if isinstance(push_result, PushError):
+    81→    raise UserFacingCliError(push_result.message)
+    89→&lt;!-- Source: src/erk/cli/ensure.py, UserFacingCliError --&gt;
+    91→CLI commands use `UserFacingCliError` for error propagation. See `UserFacingCliError` in `src/erk/cli/ensure.py`.
+    94→# Check error case first and raise
+    96→if isinstance(result, PushError):
+    97→    raise UserFacingCliError(result.message)
+   101→**Why `UserFacingCliError`:**
+   103→- Caught at CLI entry point (`main()`) with consistent error styling
+   105→- One-line pattern replaces verbose `user_output(error) + raise SystemExit(1)`
+   107→## Pipeline Discriminated Unions: Structured Error Propagation
+   109→Both submit and land pipelines use discriminated unions to thread errors through multi-step operations:
+   111→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, SubmitState, SubmitError --&gt;
+   112→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, LandState, LandError --&gt;
+   114→See `SubmitError` in `src/erk/cli/commands/pr/submit_pipeline.py` and `LandError` in `src/erk/cli/commands/land_pipeline.py`.
+   119→PipelineStep = Callable[[ErkContext, State], State | Error]
+   125→- `Error` to short-circuit pipeline
+   127→**Why structured error types?**
+   129→1. **Phase tracking** — caller knows if error occurred in validation vs execution
+   130→2. **Machine-readable `error_type`** — enables specific error handling (e.g., "pr-checks-failing" vs "merge-conflict")
+   134→**Why `dict[str, str]` for details?** Not `dict[str, Any]` or `dict[str, str] | None`. Every error has details (even if empty `{}`), and string values enable consistent serialization/logging without type uncertainty.
+   138→def run_validation_pipeline(ctx: ErkContext, state: State) -&gt; State | Error:
+   139→    """Run all validation steps, short-circuit on first error."""
+   142→        if isinstance(result, Error):
+   156→    """Returns True on success, error message string on failure."""
+   161→    error_detail = merge_result if isinstance(merge_result, str) else "Unknown"
+   162→    return f"Failed to merge: {error_detail}"
+   167→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py, MergeResult, MergeError --&gt;
+   169→See `MergeResult` and `MergeError` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
+   172→def merge_pr(self, repo_root: Path, pr_number: int, ...) -&gt; MergeResult | MergeError:
+   173→    """Returns MergeResult on success, MergeError on failure."""
+   177→if isinstance(merge_result, MergeError):
+   178→    return LandError(
+   180→        error_type="merge-failed",
+   181→        message=f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
+   193→5. Update tests to check `isinstance(result, ErrorType)`
+   201→Error types implement the `NonIdealState` protocol. See `packages/erk-shared/src/erk_shared/non_ideal_state.py`.
+   205→- `error_type` property (read-only, machine-readable classification)
+   208→This enables generic error handling without coupling to specific error types:
+   211→def handle_error(result: Any) -&gt; str:
+   219→### Error Types Are Frozen Dataclasses
+   221→All error types use `@dataclass(frozen=True)` for immutability:
+   225→class PushError:
+   229→    def error_type(self) -&gt; str:
+   230→        return "push-failed"
+   235→Error types should carry domain-meaningful fields for caller inspection:
+   248→The caller can inspect these fields to construct better error messages or branch on specific failure modes.
+   254→| `&lt;Operation&gt;Error`   | `SubmitError`, `MergeError`   | Operation failed               |
+   262→### vs. Exceptions
+   264→| Discriminated Unions        | Exceptions              |
+   269→| IDE shows possible failures | Requires doc reading    |
+   275→| Preserves error context       | Loses information    |
+   277→| Multiple error types possible | Single failure state |
+   285→def fetch() -&gt; Data | Error: ...
+   288→def fetch() -&gt; Result[Data, Error]: ...
+   303→# T | ErrorType: isinstance() required for type narrowing
+   305→if isinstance(result, FetchError):
+   306→    handle_error(result.message)
+  </tool_result>
+  <thinking>The user wants me to add guidance to this discriminated union doc about not using `T | None` when the None is the success case (which is counterintuitive). They want a specific anti-pattern documented: don't return `ErrorType | None` where None means success - instead use `SuccessType | ErrorType` discriminated union.
+
+Let me also look at the specific section "When isinstance() Is NOT Required: Plain Optionals" - it already talks about `T | None`. But the anti-pattern the user is concerned about is the inverse: `ErrorType | None` where None = success. That's counterintuitive because you'd expect None to mean "nothing/failure" not "success".
+
+
+I'll add this anti-pattern to the documentation and then wrap up the planning phase.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4644" cache_read_input_tokens="134376" cache_creation="{'ephemeral_5m_input_tokens': 4644, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good - I can see the doc already has a "When isinstance() Is NOT Required: Plain Optionals" section (line 293) that discusses `T | None`. The user wants to add guidance about the anti-pattern where `None` is used as the *success* case (as in `ErrorType | None`). Let me update the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4644" cache_read_input_tokens="134376" cache_creation="{'ephemeral_5m_input_tokens': 4644, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TebHKXMw25rnCUg7LWyQHT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/cryptic-wondering-map.md</param>
+    <param name="old_string">### 5. Update tests for new return type</param>
+    <param name="new_string">### 5. Add anti-pattern to discriminated union doc
+
+**File:** `docs/learned/architecture/d...[truncated 673 chars]...tation so future code doesn't repeat the mistake.
+
+### 6. Update tests for new return type</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4644" cache_read_input_tokens="134376" cache_creation="{'ephemeral_5m_input_tokens': 4644, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TebHKXMw25rnCUg7LWyQHT">
+The file /Users/schrockn/.claude/plans/cryptic-wondering-map.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me create the implement-now marker and exit plan mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="139020" cache_creation="{'ephemeral_5m_input_tokens': 653, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NvJgHMxrCq3t7wF5xdXAKT">
+    <param name="command">erk exec marker create --session-id 75414cf8-78b9-4db6-aab5-1536ddc043e1 exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker to skip PR creation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="139020" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 653}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NvJgHMxrCq3t7wF5xdXAKT">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_013yf7geCHsUCYa7pMYaK2LW">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec resolve-review-threads to resolve PR threads'}, ...[truncated 77 chars]...h', 'prompt': 'run erk exec reply-to-discussion-comment to reply to discussion comments'}]</param>
+    <param name="plan"># Plan: Address PR #7806 Review Comments
+
+## Context
+
+PR #7806 (slug validation gate) rece...[truncated 4055 chars]...f on modified files
+6. Resolve all 3 review threads via `erk exec resolve-review-threads`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="139673" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013yf7geCHsUCYa7pMYaK2LW">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>
