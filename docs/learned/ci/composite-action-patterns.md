@@ -21,15 +21,15 @@ GitHub Actions composite actions encapsulate reusable setup steps. Erk uses them
 
 ## Available Composite Actions
 
-| Action              | Purpose                                     | Inputs                                                    |
-| ------------------- | ------------------------------------------- | --------------------------------------------------------- |
-| `erk-remote-setup`  | Full remote workflow environment setup      | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
-| `setup-claude-code` | Install Claude Code CLI with caching        | None                                                      |
-| `setup-python-uv`   | Install Python and uv, sync dependencies    | `python-version` (default: "3.12")                        |
-| `setup-graphite`    | Install Graphite CLI for stack management   | None                                                      |
-| `setup-claude-erk`  | Install erk tools (assumes uv/claude exist) | None                                                      |
-| `setup-prettier`    | Install Node.js and Prettier                | None                                                      |
-| `check-worker-impl` | Check if `.worker-impl/` folder exists      | None (outputs: `skip`)                                    |
+| Action               | Purpose                                     | Inputs                                                    |
+| -------------------- | ------------------------------------------- | --------------------------------------------------------- |
+| `erk-remote-setup`   | Full remote workflow environment setup      | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
+| `setup-claude-code`  | Install Claude Code CLI with caching        | None                                                      |
+| `setup-python-uv`    | Install Python and uv, sync dependencies    | `python-version` (default: "3.12")                        |
+| `setup-graphite`     | Install Graphite CLI for stack management   | None                                                      |
+| `setup-claude-erk`   | Install erk tools (assumes uv/claude exist) | None                                                      |
+| `setup-prettier`     | Install Node.js and Prettier                | None                                                      |
+| `check-impl-context` | Check if `.erk/impl-context/` folder exists | None (outputs: `skip`)                                    |
 
 ## Why Composite Actions Over Repeated Steps
 
@@ -128,9 +128,9 @@ The cache key includes:
 
 **Why not version in key**: Claude Code's "stable" version changes frequently. Using a static `-v1` suffix means the cache stays warm across version bumps. When a breaking change requires cache invalidation, bump the suffix to `-v2`.
 
-## Worker Implementation Check: CI Skip Pattern
+## Implementation Context Check: CI Skip Pattern
 
-Erk's remote workflows create `.worker-impl/` folders during AI implementation. CI should skip these branches until implementation completes.
+Erk's remote workflows create `.erk/impl-context/` folders during AI implementation. CI should skip these branches until implementation completes.
 
 **Pattern**: Composite action with conditional output.
 
@@ -139,29 +139,29 @@ Erk's remote workflows create `.worker-impl/` folders during AI implementation. 
   id: check
   shell: bash
   run: |
-    if [ -d ".worker-impl" ]; then
+    if [ -d ".erk/impl-context" ]; then
       echo "skip=true" >> $GITHUB_OUTPUT
     else
       echo "skip=false" >> $GITHUB_OUTPUT
     fi
 ```
 
-<!-- Source: .github/actions/check-worker-impl/action.yml, Check for worker implementation folder step -->
+<!-- Source: .github/actions/check-impl-context/action.yml, Check for implementation context folder step -->
 
 Workflow usage:
 
 ```yaml
-- uses: ./.github/actions/check-worker-impl
-  id: worker-check
+- uses: ./.github/actions/check-impl-context
+  id: impl-context-check
 
 - name: Run tests
-  if: steps.worker-check.outputs.skip != 'true'
+  if: steps.impl-context-check.outputs.skip != 'true'
   run: pytest
 ```
 
 **Why this works**: The output is a string (`"true"` or `"false"`), not a boolean. GitHub Actions requires string comparison for step outputs.
 
-**Why not a single workflow-level condition**: Some steps (git operations, metadata collection) should run even when `.worker-impl/` exists. The granular `if:` conditions let workflows choose which steps to skip.
+**Why not a single workflow-level condition**: Some steps (git operations, metadata collection) should run even when `.erk/impl-context/` exists. The granular `if:` conditions let workflows choose which steps to skip.
 
 ## Conditional Erk Installation: Package vs Tool Mode
 

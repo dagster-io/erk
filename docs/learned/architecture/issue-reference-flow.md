@@ -25,8 +25,9 @@ for the full signature. Key points: all parameters after `impl_dir` are keyword-
 
 Called by:
 
-- `create_worker_impl_folder()` - For remote implementation
 - `setup-impl-from-issue` exec command - For local implementation
+
+**Note:** `create_impl_context()` writes `ref.json` directly (not via `save_plan_ref()`). It uses a lighter format than `plan-ref.json`.
 
 ## Reading
 
@@ -85,7 +86,7 @@ This creates unnecessary coupling between callers and the issue reference system
 
 ```
 ┌─────────────────────┐
-│ create_worker_impl  │
+│ create_impl_context │
 │ or setup-impl       │
 └─────────┬───────────┘
           │

@@ -26,20 +26,20 @@ This document covers critical patterns for the erk-impl GitHub Actions workflow,
 
 `git reset --hard` discards all staged but uncommitted changes. In the erk-impl workflow, this manifests as:
 
-1. Workflow stages `.worker-impl/` deletion with `git add`
+1. Workflow stages `.erk/impl-context/` deletion with `git add`
 2. Later step runs `git reset --hard` (e.g., for conflict resolution)
 3. The staged deletion is silently discarded
-4. `.worker-impl/` artifacts appear in the final PR
+4. `.erk/impl-context/` artifacts appear in the final PR
 
 ### Correct Pattern
 
 ```yaml
 # 1. First: Commit and push cleanup
-- name: Clean up .worker-impl/
+- name: Clean up .erk/impl-context/
   run: |
-    if [ -d .worker-impl/ ]; then
-      git rm -rf .worker-impl/
-      git commit -m "Remove .worker-impl/ after implementation"
+    if [ -d .erk/impl-context/ ]; then
+      git rm -rf .erk/impl-context/
+      git commit -m "Remove .erk/impl-context/ after implementation"
       git push
     fi
 
@@ -55,7 +55,7 @@ This document covers critical patterns for the erk-impl GitHub Actions workflow,
 ```yaml
 # WRONG: Staging without commit before reset
 - name: Stage cleanup
-  run: git rm -rf .worker-impl/ && git add -A
+  run: git rm -rf .erk/impl-context/ && git add -A
 
 - name: Sync with remote
   run: git reset --hard origin/$BRANCH # Discards the staged cleanup!
@@ -116,7 +116,7 @@ Critical ordering dependencies in erk-impl:
 2. Find/create PR
 3. Implementation (Claude)
 4. Commit implementation changes  ← Must happen before cleanup
-5. Clean up .worker-impl/         ← Must commit before any reset
+5. Clean up .erk/impl-context/   ← Must commit before any reset
 6. Push changes
 7. Mark PR ready
 ```

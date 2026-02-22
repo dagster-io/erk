@@ -544,9 +544,9 @@ def test_sync_actions_copies_bundled_actions(tmp_path: Path) -> None:
     (action_code / "action.yml").write_text("name: Setup Claude Code", encoding="utf-8")
 
     # Create a non-bundled action (should NOT be synced)
-    non_bundled = actions_dir / "check-worker-impl"
+    non_bundled = actions_dir / "check-impl-context"
     non_bundled.mkdir(parents=True)
-    (non_bundled / "action.yml").write_text("name: Check Worker", encoding="utf-8")
+    (non_bundled / "action.yml").write_text("name: Check Impl Context", encoding="utf-8")
 
     target_dir = tmp_path / "target" / "actions"
 
@@ -566,7 +566,7 @@ def test_sync_actions_copies_bundled_actions(tmp_path: Path) -> None:
     assert (target_dir / "setup-claude-code" / "action.yml").exists()
 
     # Non-bundled action should NOT exist
-    assert not (target_dir / "check-worker-impl").exists()
+    assert not (target_dir / "check-impl-context").exists()
 
     # Verify synced artifacts have correct keys
     assert len(synced) == 2

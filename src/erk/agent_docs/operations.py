@@ -90,7 +90,7 @@ CATEGORY_ROUTING_HINTS: dict[str, str] = {
     "testing": "`tests/`",
     "ci": "`.github/workflows/`, `.github/actions/`",
     "tui": "`src/erk/tui/`",
-    "planning": "`.impl/`, `.worker-impl/`, planning workflows",
+    "planning": "`.impl/`, `.erk/impl-context/`, planning workflows",
     "sessions": "`~/.claude/projects/`, session analysis",
     "textual": "Textual framework code",
     "hooks": "`.claude/hooks/`, hook development",

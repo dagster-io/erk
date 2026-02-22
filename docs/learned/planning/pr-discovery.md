@@ -61,7 +61,7 @@ See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_as
 
 **Using git history search as a discovery strategy**: The current codebase does not use `git log --grep` for PR discovery. Earlier designs considered it, but it was never implemented because branch naming conventions make branch-based lookup reliable.
 
-**Skipping PR validation after discovery**: A PR existing for a branch doesn't mean it contains the implementation. A queued plan has a PR with only `.worker-impl/` files. Check for changes outside `.worker-impl/` to confirm actual implementation (see lifecycle.md, "Detecting Queued vs Implemented Plans").
+**Skipping PR validation after discovery**: A PR existing for a branch doesn't mean it contains the implementation. A queued plan has a PR with only `.erk/impl-context/` files. Check for changes outside `.erk/impl-context/` to confirm actual implementation (see lifecycle.md, "Detecting Queued vs Implemented Plans").
 
 ## Related Documentation
 

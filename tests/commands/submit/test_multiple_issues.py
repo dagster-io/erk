@@ -22,9 +22,9 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     plan_123 = create_plan("123", "Feature A", body=make_plan_body("Implementation for A..."))
     plan_456 = create_plan("456", "Feature B", body=make_plan_body("Implementation for B..."))
 
-    # Create a custom FakeGit subclass that cleans up .worker-impl/ on checkout
+    # Create a custom FakeGit subclass that cleans up .erk/impl-context/ on checkout
     # This simulates the real behavior where checking out a branch without
-    # .worker-impl/ removes the folder from the working directory
+    # .erk/impl-context/ removes the folder from the working directory
     from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
     from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 
@@ -36,10 +36,10 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         def checkout_branch(self, cwd: Path, branch: str) -> None:
             super().checkout_branch(cwd, branch)
             # Simulate git checkout: when switching to original branch,
-            # files from the feature branch (like .worker-impl/) are removed
-            worker_impl = self._fs_repo_root / ".worker-impl"
-            if worker_impl.exists():
-                shutil.rmtree(worker_impl)
+            # files from the feature branch (like .erk/impl-context/) are removed
+            impl_context = self._fs_repo_root / ".erk" / "impl-context"
+            if impl_context.exists():
+                shutil.rmtree(impl_context)
 
     class FakeGitWithCheckoutCleanup(FakeGit):
         def __init__(self, fs_repo_root: Path, **kwargs):

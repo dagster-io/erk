@@ -24,6 +24,9 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
 from erk_shared.naming import extract_leading_issue_number
 
+_REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
+"""Fields required in plan-ref.json and ref.json for valid PlanRef construction."""
+
 
 def create_impl_folder(
     worktree_path: Path,
@@ -164,6 +167,33 @@ def save_plan_ref(
     plan_ref_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+def _parse_ref_json(ref_file: Path) -> PlanRef | None:
+    """Parse a ref JSON file (plan-ref.json or ref.json) into a PlanRef.
+
+    Returns None if the file contains invalid JSON or is missing required fields.
+    """
+    try:
+        data = json.loads(ref_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+    if any(f not in data for f in _REQUIRED_REF_FIELDS):
+        return None
+
+    labels_list = data.get("labels", [])
+    labels = tuple(labels_list) if isinstance(labels_list, list) else ()
+
+    return PlanRef(
+        provider=data["provider"],
+        plan_id=data["plan_id"],
+        url=data["url"],
+        created_at=data["created_at"],
+        synced_at=data["synced_at"],
+        labels=labels,
+        objective_id=data.get("objective_id"),
+    )
+
+
 def read_plan_ref(impl_dir: Path) -> PlanRef | None:
     """Read plan reference from .impl/plan-ref.json, with legacy fallback.
 
@@ -177,30 +207,15 @@ def read_plan_ref(impl_dir: Path) -> PlanRef | None:
     Returns:
         PlanRef if file exists and is valid, None otherwise
     """
-    # Try new format first
-    plan_ref_file = impl_dir / "plan-ref.json"
-    if plan_ref_file.exists():
-        try:
-            data = json.loads(plan_ref_file.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            return None
+    # Try plan-ref.json, then ref.json (same schema, different filenames)
+    for filename in ("plan-ref.json", "ref.json"):
+        ref_file = impl_dir / filename
+        if not ref_file.exists():
+            continue
 
-        required_fields = ["provider", "plan_id", "url", "created_at", "synced_at"]
-        if any(f not in data for f in required_fields):
-            return None
-
-        labels_list = data.get("labels", [])
-        labels = tuple(labels_list) if isinstance(labels_list, list) else ()
-
-        return PlanRef(
-            provider=data["provider"],
-            plan_id=data["plan_id"],
-            url=data["url"],
-            created_at=data["created_at"],
-            synced_at=data["synced_at"],
-            labels=labels,
-            objective_id=data.get("objective_id"),
-        )
+        result = _parse_ref_json(ref_file)
+        if result is not None:
+            return result
 
     # Fall back to legacy issue.json
     issue_file = impl_dir / "issue.json"
@@ -239,7 +254,11 @@ def has_plan_ref(impl_dir: Path) -> bool:
     Returns:
         True if either plan-ref.json or issue.json exists, False otherwise
     """
-    return (impl_dir / "plan-ref.json").exists() or (impl_dir / "issue.json").exists()
+    return (
+        (impl_dir / "plan-ref.json").exists()
+        or (impl_dir / "ref.json").exists()
+        or (impl_dir / "issue.json").exists()
+    )
 
 
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
@@ -256,7 +275,7 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
     None, so the function falls through to returning ``plan_id`` from plan-ref.json.
 
     Args:
-        impl_dir: Path to .impl/ or .worker-impl/ directory
+        impl_dir: Path to .impl/ or .erk/impl-context/ directory
         branch_name: Current git branch name
 
     Returns:
