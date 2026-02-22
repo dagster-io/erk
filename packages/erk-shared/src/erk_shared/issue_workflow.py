@@ -10,7 +10,12 @@ from datetime import datetime
 from typing import Literal
 
 from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
-from erk_shared.naming import generate_issue_branch_name, sanitize_worktree_name
+from erk_shared.naming import (
+    InvalidWorktreeName,
+    generate_issue_branch_name,
+    sanitize_worktree_name,
+    validate_worktree_name,
+)
 from erk_shared.plan_store.types import Plan, PlanState
 
 
@@ -118,7 +123,16 @@ def prepare_plan_for_worktree(
             timestamp,
             objective_id=plan.objective_id,
         )
+    # Validate worktree name — agent-facing backpressure gate.
+    # sanitize_worktree_name() produces the candidate name from the branch;
+    # validate_worktree_name() confirms it is already clean.
     worktree_name = sanitize_worktree_name(branch_name)
+    wt_validation = validate_worktree_name(worktree_name)
+    if isinstance(wt_validation, InvalidWorktreeName):
+        return IssueValidationFailed(
+            f"Generated worktree name failed validation.\n{wt_validation.format_message()}"
+        )
+    worktree_name = wt_validation.name
 
     return IssueBranchSetup(
         branch_name=branch_name,
