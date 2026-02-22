@@ -24,14 +24,14 @@ The direct PR lookup logic lives in `src/erk/cli/commands/exec/scripts/trigger_a
 
 For issue-based plans, the function falls back to branch-name lookup via `plan_backend.get_metadata_field(repo_root, plan_id, "branch_name")`.
 
-## Metadata Fallback for Gist URL
+## Metadata Fallback for Learn Materials Branch
 
-For draft-PR plans, the gist URL (learn materials location) is stored as a comment on the PR rather than in a metadata block. The land command (`land_cmd.py`) has a comment-based fallback to retrieve this URL when the metadata block lookup returns nothing.
+For draft-PR plans, the learn materials location (session branch) is stored as a comment on the PR rather than in a metadata block. The land command (`land_cmd.py`) has a comment-based fallback to retrieve this information when the metadata block lookup returns nothing.
 
 ## Affected Files
 
 - `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` — short-circuit for draft-PR plan ID discovery
-- `src/erk/cli/commands/pr/land_cmd.py` — comment-based fallback for gist URL retrieval
+- `src/erk/cli/commands/land_cmd.py` — comment-based fallback for learn materials retrieval
 - `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` — PR lookup utilities used by the pipeline
 
 ## Related Documentation

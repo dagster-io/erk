@@ -11,6 +11,9 @@ tripwires:
   - action: "Add branches-ignore for ephemeral branch patterns"
     warning: "Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing"
     score: 4
+  - action: "using branches-ignore for planned/* branches"
+    warning: "planned/ branches contain both metadata AND code. Use paths-ignore instead to skip CI only when commits touch exclusively metadata paths (.erk/impl-context/**, .worker-impl/**)."
+    score: 4
 last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
 ---
@@ -157,38 +160,44 @@ The guard pattern `(event != X || check_that_only_works_for_X)` creates safe eva
 
 **Why `always()`**: Autofix must evaluate its condition even when upstream jobs fail (that's the point — fix the failures). Without `always()`, a failed format job would prevent autofix from even considering whether to run.
 
-## Branch-Name Filtering for Plan-Review Branches
+## Path-Based Filtering (paths-ignore)
 
-<!-- Source: .github/workflows/ci.yml, on: push: branches-ignore -->
+<!-- Source: .github/workflows/ci.yml, on: push: paths-ignore -->
 
-Plan-review branches (`plan-review-*`) contain only a single markdown file for GitHub's inline review UI. CI is meaningless for them.
-
-The label-based gating (`!contains(..., 'erk-plan-review')`) only works for `pull_request` events. On `push` events, `github.event.pull_request` is empty, so the label check can't gate the workflow — jobs run unconditionally.
-
-**Solution**: Add `branches-ignore` to the push trigger:
+The CI workflow uses `paths-ignore` on push events to skip CI when commits only touch ephemeral metadata directories:
 
 ```yaml
 on:
   push:
-    branches-ignore:
-      - "plan-review-*"
+    paths-ignore:
+      - ".erk/impl-context/**"
+      - ".worker-impl/**"
 ```
 
-This prevents the workflow from even being queued for push events on plan-review branches. GitHub evaluates `branches-ignore` before runner allocation (zero cost).
+**Why paths-ignore instead of branches-ignore**: Branches like `planned/*` contain both metadata commits AND code commits. Using `branches-ignore` would skip CI for ALL pushes to those branches, including code changes. `paths-ignore` only skips CI when the push exclusively modifies the listed paths.
 
-**Defense-in-depth**: Plan-review branches now have three gating layers:
+| Directory            | Purpose                                   |
+| -------------------- | ----------------------------------------- |
+| `.erk/impl-context/` | Plan content committed during plan-save   |
+| `.worker-impl/`      | Worker implementation submission metadata |
 
-1. **Branch-name filtering** (`branches-ignore`) — blocks push events at trigger level
-2. **Label-based job conditions** (`!contains(...)`) — blocks pull_request events at job level
-3. **Step-level API queries** — blocks push events at step level in the autofix job
+**When both metadata and code change in the same push**: `paths-ignore` allows CI to run because the push touches paths outside the ignore list.
 
-The first layer is the most efficient since it prevents the workflow from being queued entirely.
+## Plan-Review Branch Gating
+
+Plan-review branches are gated via the `erk-plan-review` **label** on their PRs, not via `branches-ignore`. The label-based gating is handled by the `!contains()` pattern described above.
+
+**Defense-in-depth** for plan-review PRs:
+
+1. **Label-based job conditions** (`!contains(...)`) — blocks pull_request events at job level
+2. **Step-level API queries** — blocks push events at step level in the autofix job
 
 ## Decision Table: Which Layer to Use
 
 | What you're checking                            | Use this layer                        | Why                                                   |
 | ----------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
 | Known ephemeral branch patterns (push events)   | Trigger filtering (`branches-ignore`) | Prevents workflow from queuing — zero cost            |
+| Branches with both metadata AND code            | Trigger filtering (`paths-ignore`)    | Skips CI only when push is metadata-only              |
 | Event type (PR opened, push, workflow_dispatch) | Trigger filtering (`on:`)             | No point queuing workflow for irrelevant events       |
 | PR draft state                                  | Job-level `if:`                       | Fast path — no runner allocation for drafts           |
 | PR labels (pull_request events)                 | Job-level `if:`                       | Fast path — no runner allocation for plan reviews     |

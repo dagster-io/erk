@@ -26,24 +26,31 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 | ------------ | ------------- | ----------------------------- | ----------------------------- |
 | `plan_id`    | `int`         | Plan identifier               | Never                         |
 | `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
-| `title`      | `str`         | Plan title (may be truncated) | Never (empty string possible) |
-| `full_title` | `str`         | Complete untruncated title    | Never (empty string possible) |
+| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
 | `plan_body`  | `str`         | Raw plan body text (markdown) | Never (empty string possible) |
 
 ### PR Info
 
-| Field                    | Type          | Description                                | Nullable?                   |
-| ------------------------ | ------------- | ------------------------------------------ | --------------------------- |
-| `pr_number`              | `int \| None` | PR number if linked                        | Yes                         |
-| `pr_url`                 | `str \| None` | URL to PR (GitHub or Graphite)             | Yes                         |
-| `pr_display`             | `str`         | Formatted PR cell (e.g., "#123 👀")        | Never (empty/dash possible) |
-| `pr_title`               | `str \| None` | PR title if different from issue           | Yes                         |
-| `pr_state`               | `str \| None` | PR state: "OPEN", "MERGED", "CLOSED"       | Yes                         |
-| `pr_head_branch`         | `str \| None` | Head branch from PR metadata (for landing) | Yes                         |
-| `checks_display`         | `str`         | Formatted checks cell (e.g., "✓", "✗")     | Never (dash possible)       |
-| `resolved_comment_count` | `int`         | Count of resolved PR review comments       | Never (0 if no PR)          |
-| `total_comment_count`    | `int`         | Total count of PR review comments          | Never (0 if no PR)          |
-| `comments_display`       | `str`         | Formatted comments (e.g., "3/5", "-")      | Never (dash if no PR)       |
+| Field                    | Type           | Description                                | Nullable?                   |
+| ------------------------ | -------------- | ------------------------------------------ | --------------------------- |
+| `pr_number`              | `int \| None`  | PR number if linked                        | Yes                         |
+| `pr_url`                 | `str \| None`  | URL to PR (GitHub or Graphite)             | Yes                         |
+| `pr_display`             | `str`          | Formatted PR cell (e.g., "#123 👀")        | Never (empty/dash possible) |
+| `pr_title`               | `str \| None`  | PR title if different from issue           | Yes                         |
+| `pr_state`               | `str \| None`  | PR state: "OPEN", "MERGED", "CLOSED"       | Yes                         |
+| `pr_head_branch`         | `str \| None`  | Head branch from PR metadata (for landing) | Yes                         |
+| `checks_display`         | `str`          | Formatted checks cell (e.g., "✓", "✗")     | Never (dash possible)       |
+| `resolved_comment_count` | `int`          | Count of resolved PR review comments       | Never (0 if no PR)          |
+| `total_comment_count`    | `int`          | Total count of PR review comments          | Never (0 if no PR)          |
+| `pr_has_conflicts`       | `bool \| None` | Whether the PR has merge conflicts         | Yes (None if unknown/no PR) |
+| `comments_display`       | `str`          | Formatted comments (e.g., "3/5", "-")      | Never (dash if no PR)       |
+
+### Lifecycle & Status
+
+| Field               | Type  | Description                                            | Nullable?             |
+| ------------------- | ----- | ------------------------------------------------------ | --------------------- |
+| `lifecycle_display` | `str` | Formatted lifecycle stage (e.g., "[cyan]impld[/cyan]") | Never (dash possible) |
+| `pr_status_display` | `str` | PR status emoji indicators (e.g., "👀💥", "-")         | Never (dash possible) |
 
 ### Worktree Info
 
@@ -167,8 +174,7 @@ Many pieces of data have both a raw value and a display value:
 | `resolved_comment_count`/`total_comment_count` | `comments_display`                   | Comment counts (X/Y)    |
 | `run_id`                                       | `run_id_display`                     | Run ID formatted        |
 | `run_status`/`run_conclusion`                  | `run_state_display`                  | Human-readable state    |
-| `title`                                        | (is already display)                 | Truncated title         |
-| `full_title`                                   | (is raw)                             | Full title for modals   |
+| `full_title`                                   | (used directly in display)           | Full plan title         |
 | `learn_status`                                 | `learn_display`/`learn_display_icon` | Learn workflow state    |
 | `objective_issue`                              | `objective_display`                  | Objective link          |
 | `objective_done_nodes`/`objective_total_nodes` | `objective_progress_display`         | Objective progress      |

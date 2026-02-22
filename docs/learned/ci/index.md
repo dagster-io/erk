@@ -13,6 +13,7 @@
 - **[composite-action-patterns.md](composite-action-patterns.md)** — creating reusable GitHub Actions setup steps, using erk-remote-setup composite action, understanding GitHub Actions composite patterns
 - **[containerless-ci.md](containerless-ci.md)** — Setting up Claude Code in GitHub Actions without containers, Comparing container vs container-less CI approaches, Choosing between container and container-less CI approaches
 - **[convention-based-reviews.md](convention-based-reviews.md)** — adding a new code review to CI, understanding how code reviews work, modifying code review behavior
+- **[dual-secret-auth-model.md](dual-secret-auth-model.md)** — configuring GitHub Actions authentication for Claude Code, using erk admin gh-actions-api-key, debugging authentication failures in CI
 - **[edit-tool-formatting.md](edit-tool-formatting.md)** — using the Edit tool to modify Python code, encountering formatting issues after edits, CI failing on formatting checks after using Edit tool
 - **[exec-script-environment-requirements.md](exec-script-environment-requirements.md)** — adding or modifying exec scripts that call Claude, debugging missing API key errors in CI workflows, adding new workflow steps that run exec scripts
 - **[formatter-tools.md](formatter-tools.md)** — formatting code, choosing a formatter, fixing format errors

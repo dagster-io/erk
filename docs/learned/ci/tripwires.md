@@ -74,6 +74,8 @@ Rules triggered by matching actions in code.
 
 **reading statusCheckRollup results immediately after push** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. After push, results show completed runs only, not in-progress. Wait for new check suite to appear before reading CI status.
 
+**referencing \_enable_secret(), \_disable_secret(), or \_display_auth_status() functions** → Read [GitHub Actions API Key Management](dual-secret-auth-model.md) first. These private functions do not exist. The logic is inline within gh_actions_api_key() in src/erk/cli/commands/admin.py.
+
 **resolving git rebase modify/delete conflicts using merge-style terminology** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. In rebase, 'them' = upstream (opposite to merge). For modify/delete conflicts where the file was deleted upstream, use `git rm <file>` on the conflicted staged files, then `git rebase --continue`. Do not use `git checkout --theirs` which has inverted semantics during rebase.
 
 **running `git reset --hard` in workflows after staging cleanup** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. Verify all cleanup changes are committed BEFORE reset; staged changes without commit will be silently discarded.
@@ -85,6 +87,8 @@ Rules triggered by matching actions in code.
 **running prettier programmatically on content containing underscore emphasis** → Read [Formatter Tools](formatter-tools.md) first. Prettier converts `__text__` to `**text**` on first pass, then escapes asterisks on second pass. If programmatically applying prettier, run twice to reach stable output.
 
 **using Edit tool on Python files** → Read [Edit Tool Formatting Behavior](edit-tool-formatting.md) first. Edit tool preserves exact indentation without auto-formatting. Always run 'make format' after editing Python code.
+
+**using branches-ignore for planned/\* branches** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. planned/ branches contain both metadata AND code. Use paths-ignore instead to skip CI only when commits touch exclusively metadata paths (.erk/impl-context/**, .worker-impl/**).
 
 **using echo with multi-line content to GITHUB_OUTPUT** → Read [GitHub Actions Output Patterns](github-actions-output-patterns.md) first. Multi-line content requires heredoc syntax with EOF delimiter. Simple echo only works for single-line values.
 
