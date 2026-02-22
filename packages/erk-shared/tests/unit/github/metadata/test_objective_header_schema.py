@@ -134,6 +134,48 @@ class TestObjectiveHeaderSchemaValidation:
         with pytest.raises(ValueError, match="objective_comment_id must be positive"):
             schema.validate(data)
 
+    def test_valid_data_with_slug(self) -> None:
+        """Valid data with slug field passes validation."""
+        schema = ObjectiveHeaderSchema()
+        data = {
+            "created_at": "2025-11-25T14:37:43+00:00",
+            "created_by": "testuser",
+            "slug": "build-auth-system",
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_valid_data_with_null_slug(self) -> None:
+        """Valid data with null slug passes validation."""
+        schema = ObjectiveHeaderSchema()
+        data = {
+            "created_at": "2025-11-25T14:37:43+00:00",
+            "created_by": "testuser",
+            "slug": None,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_empty_slug_rejected(self) -> None:
+        """Empty string slug raises ValueError."""
+        schema = ObjectiveHeaderSchema()
+        data = {
+            "created_at": "2025-11-25T14:37:43+00:00",
+            "created_by": "testuser",
+            "slug": "",
+        }
+        with pytest.raises(ValueError, match="slug must not be empty"):
+            schema.validate(data)
+
+    def test_non_string_slug_rejected(self) -> None:
+        """Non-string slug raises ValueError."""
+        schema = ObjectiveHeaderSchema()
+        data = {
+            "created_at": "2025-11-25T14:37:43+00:00",
+            "created_by": "testuser",
+            "slug": 42,
+        }
+        with pytest.raises(ValueError, match="slug must be a string"):
+            schema.validate(data)
+
     def test_unknown_fields_rejected(self) -> None:
         """Unknown fields raise ValueError."""
         schema = ObjectiveHeaderSchema()

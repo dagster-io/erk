@@ -99,6 +99,11 @@ def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | Non
     help="Session ID for scoped plan lookup",
 )
 @click.option(
+    "--slug",
+    default=None,
+    help="Short kebab-case identifier for the objective (e.g., 'build-auth-system')",
+)
+@click.option(
     "--validate",
     "run_validate",
     is_flag=True,
@@ -106,7 +111,12 @@ def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | Non
 )
 @click.pass_context
 def objective_save_to_issue(
-    ctx: click.Context, output_format: str, session_id: str | None, *, run_validate: bool
+    ctx: click.Context,
+    output_format: str,
+    session_id: str | None,
+    slug: str | None,
+    *,
+    run_validate: bool,
 ) -> None:
     """Save plan as objective GitHub issue.
 
@@ -180,6 +190,7 @@ def objective_save_to_issue(
         time=time,
         title=None,
         extra_labels=None,
+        slug=slug,
     )
 
     if not result.success:

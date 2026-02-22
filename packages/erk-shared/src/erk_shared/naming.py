@@ -66,6 +66,44 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
     return f"-{dt.strftime(BRANCH_TIMESTAMP_SUFFIX_FORMAT)}"
 
 
+def sanitize_objective_slug(raw_slug: str) -> str:
+    """Sanitize an LLM-generated slug for use in objective metadata.
+
+    - Lowercases input
+    - Replaces non-alphanumeric characters (except hyphens) with hyphens
+    - Collapses consecutive hyphens
+    - Strips leading/trailing hyphens
+    - Truncates to 40 characters (longer than branch names since slugs aren't git-constrained)
+    Returns ``"objective"`` if the result is empty.
+
+    Args:
+        raw_slug: Arbitrary string to sanitize (typically LLM-generated)
+
+    Returns:
+        Sanitized slug (max 40 chars)
+
+    Examples:
+        >>> sanitize_objective_slug("Build Authentication System")
+        "build-authentication-system"
+        >>> sanitize_objective_slug("fix: bug #123!")
+        "fix-bug-123"
+        >>> sanitize_objective_slug("")
+        "objective"
+        >>> sanitize_objective_slug("a" * 50)
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # 40 chars
+    """
+    lowered = raw_slug.strip().lower()
+    replaced = re.sub(r"[^a-z0-9-]+", "-", lowered)
+    collapsed = re.sub(r"-+", "-", replaced)
+    trimmed = collapsed.strip("-")
+    result = trimmed or "objective"
+
+    if len(result) > 40:
+        result = result[:40].rstrip("-")
+
+    return result
+
+
 def sanitize_worktree_name(name: str) -> str:
     """Sanitize a worktree name for use as a directory name.
 

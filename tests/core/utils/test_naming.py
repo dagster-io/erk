@@ -15,6 +15,7 @@ from erk_shared.naming import (
     generate_draft_pr_branch_name,
     generate_issue_branch_name,
     sanitize_branch_component,
+    sanitize_objective_slug,
     sanitize_worktree_name,
     strip_plan_from_filename,
 )
@@ -627,3 +628,40 @@ def test_generate_draft_pr_branch_name_with_objective_truncates() -> None:
     assert result.startswith("planned/O456-")
     assert result.endswith("-01-15-1430")
     assert not result[:-11].endswith("-")
+
+
+# Tests for sanitize_objective_slug
+@pytest.mark.parametrize(
+    ("raw_slug", "expected"),
+    [
+        ("Build Authentication System", "build-authentication-system"),
+        ("fix: bug #123!", "fix-bug-123"),
+        ("simple", "simple"),
+        ("UPPERCASE", "uppercase"),
+        ("with_underscores", "with-underscores"),
+        ("  spaces  around  ", "spaces-around"),
+        ("---hyphens---", "hyphens"),
+        ("", "objective"),
+        ("---", "objective"),
+        # Truncation to 40 chars
+        ("a" * 50, "a" * 40),
+        # Special characters
+        ("hello@world.com", "hello-world-com"),
+        # Emoji handling
+        ("\U0001f680 rocket feature", "rocket-feature"),
+        # Consecutive special chars collapse
+        ("foo---bar___baz", "foo-bar-baz"),
+    ],
+)
+def test_sanitize_objective_slug(raw_slug: str, expected: str) -> None:
+    """Test objective slug sanitization."""
+    assert sanitize_objective_slug(raw_slug) == expected
+
+
+def test_sanitize_objective_slug_truncation_strips_trailing_hyphen() -> None:
+    """Truncation at 40 chars strips trailing hyphens."""
+    # Create a slug that would have a hyphen at position 40
+    slug = "a" * 39 + "-extra-stuff"
+    result = sanitize_objective_slug(slug)
+    assert len(result) <= 40
+    assert not result.endswith("-")

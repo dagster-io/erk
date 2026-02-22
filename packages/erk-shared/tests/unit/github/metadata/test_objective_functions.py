@@ -27,12 +27,14 @@ class TestCreateObjectiveHeaderBlock:
             created_at="2025-11-25T14:37:43+00:00",
             created_by="testuser",
             objective_comment_id=None,
+            slug=None,
         )
 
         assert block.key == "objective-header"
         assert block.data["created_at"] == "2025-11-25T14:37:43+00:00"
         assert block.data["created_by"] == "testuser"
         assert block.data["objective_comment_id"] is None
+        assert "slug" not in block.data
 
     def test_creates_block_with_comment_id(self) -> None:
         """Creates block with non-null objective_comment_id."""
@@ -40,9 +42,33 @@ class TestCreateObjectiveHeaderBlock:
             created_at="2025-11-25T14:37:43+00:00",
             created_by="testuser",
             objective_comment_id=12345,
+            slug=None,
         )
 
         assert block.data["objective_comment_id"] == 12345
+
+    def test_creates_block_with_slug(self) -> None:
+        """Creates block with slug field when provided."""
+        block = create_objective_header_block(
+            created_at="2025-11-25T14:37:43+00:00",
+            created_by="testuser",
+            objective_comment_id=None,
+            slug="build-auth-system",
+        )
+
+        assert block.data["slug"] == "build-auth-system"
+
+    def test_creates_block_with_slug_renders_to_metadata(self) -> None:
+        """Block with slug renders slug into metadata block string."""
+        block = create_objective_header_block(
+            created_at="2025-11-25T14:37:43+00:00",
+            created_by="testuser",
+            objective_comment_id=None,
+            slug="refactor-gateway",
+        )
+
+        rendered = render_metadata_block(block)
+        assert "slug: refactor-gateway" in rendered
 
     def test_block_renders_to_valid_metadata(self) -> None:
         """Block can be rendered into a valid metadata block string."""
@@ -50,6 +76,7 @@ class TestCreateObjectiveHeaderBlock:
             created_at="2025-11-25T14:37:43+00:00",
             created_by="testuser",
             objective_comment_id=None,
+            slug=None,
         )
 
         rendered = render_metadata_block(block)
@@ -64,6 +91,7 @@ class TestCreateObjectiveHeaderBlock:
                 created_at="",
                 created_by="testuser",
                 objective_comment_id=None,
+                slug=None,
             )
 
     def test_rejects_empty_created_by(self) -> None:
@@ -73,6 +101,7 @@ class TestCreateObjectiveHeaderBlock:
                 created_at="2025-11-25T14:37:43+00:00",
                 created_by="",
                 objective_comment_id=None,
+                slug=None,
             )
 
 
@@ -140,6 +169,7 @@ class TestUpdateObjectiveHeaderCommentId:
             created_at="2025-11-25T14:37:43+00:00",
             created_by="testuser",
             objective_comment_id=comment_id,
+            slug=None,
         )
         return render_metadata_block(block)
 

@@ -600,6 +600,7 @@ class TestCreateObjectiveIssue:
             time=FakeTime(),
             title=None,
             extra_labels=None,
+            slug=None,
         )
 
         assert result.success is True
@@ -626,6 +627,7 @@ class TestCreateObjectiveIssue:
             time=FakeTime(),
             title=None,
             extra_labels=None,
+            slug=None,
         )
 
         assert result.success is True
@@ -648,6 +650,7 @@ class TestCreateObjectiveIssue:
             time=FakeTime(),
             title=None,
             extra_labels=None,
+            slug=None,
         )
 
         assert result.success is True
@@ -676,6 +679,7 @@ class TestCreateObjectiveIssue:
             time=FakeTime(),
             title=None,
             extra_labels=None,
+            slug=None,
         )
 
         assert result.success is True
@@ -698,6 +702,7 @@ class TestCreateObjectiveIssue:
             time=FakeTime(),
             title=None,
             extra_labels=None,
+            slug=None,
         )
 
         assert result.success is True
@@ -720,6 +725,7 @@ class TestCreateObjectiveIssue:
             time=FakeTime(),
             title=None,
             extra_labels=["priority-high"],
+            slug=None,
         )
 
         assert result.success is True
@@ -774,6 +780,7 @@ class TestCreateObjectiveIssue:
             time=FakeTime(),
             title=None,
             extra_labels=None,
+            slug=None,
         )
 
         assert result.success is True

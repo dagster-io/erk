@@ -35,6 +35,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
 )
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
+from erk_shared.naming import sanitize_objective_slug
 from erk_shared.plan_utils import extract_title_from_plan
 
 # Label configurations
@@ -298,6 +299,7 @@ def create_objective_issue(
     time: Time,
     title: str | None,
     extra_labels: list[str] | None,
+    slug: str | None,
 ) -> CreatePlanIssueResult:
     """Create objective issue with v2 format: metadata body + content comment.
 
@@ -313,6 +315,7 @@ def create_objective_issue(
         plan_content: The full objective markdown content
         title: Optional title (extracted from H1 if None)
         extra_labels: Additional labels beyond erk-objective
+        slug: Optional short kebab-case identifier (sanitized before storing)
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -320,6 +323,11 @@ def create_objective_issue(
     Note:
         Does NOT raise exceptions. All errors returned in result.
     """
+    # Sanitize slug if provided
+    sanitized_slug: str | None = None
+    if slug is not None:
+        sanitized_slug = sanitize_objective_slug(slug)
+
     # Step 1: Get GitHub username
     username = github_issues.get_current_username()
     if username is None:
@@ -361,6 +369,7 @@ def create_objective_issue(
         created_at=created_at,
         created_by=username,
         objective_comment_id=None,
+        slug=sanitized_slug,
     )
     issue_body = render_metadata_block(header_block)
 

@@ -543,3 +543,64 @@ def test_objective_save_to_issue_without_validate_flag_no_validation() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert "validation" not in output
+
+
+# --- --slug option tests ---
+
+
+def test_objective_save_to_issue_with_slug() -> None:
+    """Test --slug option passes slug to issue creation and appears in body."""
+    fake_gh = FakeGitHubIssues()
+    plan_content = """# Auth Objective
+
+This objective covers building an authentication system.
+
+- Step 1: Set up auth
+- Step 2: Add tests"""
+    fake_store = FakeClaudeInstallation.for_test(plans={"slug-test": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "json", "--slug", "build-auth-system"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Verify slug appears in the issue body metadata
+    created_body = fake_gh.created_issues[0][1]
+    assert "slug: build-auth-system" in created_body
+
+
+def test_objective_save_to_issue_without_slug() -> None:
+    """Test that omitting --slug does not include slug in metadata."""
+    fake_gh = FakeGitHubIssues()
+    plan_content = """# No Slug Objective
+
+This objective has no slug.
+
+- Step 1: Do something
+- Step 2: More steps"""
+    fake_store = FakeClaudeInstallation.for_test(plans={"no-slug-test": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    # Verify slug does NOT appear in the issue body metadata
+    created_body = fake_gh.created_issues[0][1]
+    assert "slug:" not in created_body
