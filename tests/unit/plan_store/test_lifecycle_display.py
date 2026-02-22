@@ -10,6 +10,26 @@ from erk_shared.gateway.plan_data_provider.lifecycle import (
 from erk_shared.plan_store.types import Plan, PlanState
 
 
+def _format_lifecycle(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+    checks_passing: bool | None = None,
+    has_unresolved_comments: bool | None = None,
+) -> str:
+    """Test helper: wraps format_lifecycle_with_status with None defaults for check params."""
+    return format_lifecycle_with_status(
+        lifecycle_display,
+        is_draft=is_draft,
+        has_conflicts=has_conflicts,
+        review_decision=review_decision,
+        checks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )
+
+
 def _make_plan(
     *,
     header_fields: dict[str, object] | None = None,
@@ -147,7 +167,7 @@ def test_header_field_takes_precedence_over_metadata() -> None:
 
 def test_review_no_indicators() -> None:
     """Review stage with no issues returns unchanged."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -158,7 +178,7 @@ def test_review_no_indicators() -> None:
 
 def test_review_with_conflicts() -> None:
     """Review stage with conflicts shows explosion emoji."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=True,
@@ -169,7 +189,7 @@ def test_review_with_conflicts() -> None:
 
 def test_review_approved() -> None:
     """Review stage with approval shows checkmark."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -180,7 +200,7 @@ def test_review_approved() -> None:
 
 def test_review_changes_requested() -> None:
     """Review stage with changes requested shows X."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -191,7 +211,7 @@ def test_review_changes_requested() -> None:
 
 def test_review_conflicts_and_changes_requested() -> None:
     """Review stage with both conflicts and changes requested shows both."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=True,
@@ -202,7 +222,7 @@ def test_review_conflicts_and_changes_requested() -> None:
 
 def test_review_conflicts_and_approved() -> None:
     """Review stage with conflicts and approval shows both."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=True,
@@ -213,7 +233,7 @@ def test_review_conflicts_and_approved() -> None:
 
 def test_implementing_with_conflicts() -> None:
     """Implementing stage with conflicts shows explosion emoji."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[yellow]impling[/yellow]",
         is_draft=None,
         has_conflicts=True,
@@ -224,7 +244,7 @@ def test_implementing_with_conflicts() -> None:
 
 def test_implementing_no_conflicts() -> None:
     """Implementing stage without conflicts returns unchanged."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[yellow]impling[/yellow]",
         is_draft=None,
         has_conflicts=False,
@@ -235,7 +255,7 @@ def test_implementing_no_conflicts() -> None:
 
 def test_implementing_ignores_review_decision() -> None:
     """Implementing stage does not show review decision indicators."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[yellow]impling[/yellow]",
         is_draft=None,
         has_conflicts=False,
@@ -246,7 +266,7 @@ def test_implementing_ignores_review_decision() -> None:
 
 def test_planned_stage_no_indicators() -> None:
     """Planned stage never shows indicators regardless of status."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[dim]planned[/dim]",
         is_draft=None,
         has_conflicts=True,
@@ -257,7 +277,7 @@ def test_planned_stage_no_indicators() -> None:
 
 def test_merged_stage_no_indicators() -> None:
     """Merged stage never shows indicators."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[green]merged[/green]",
         is_draft=None,
         has_conflicts=True,
@@ -268,7 +288,7 @@ def test_merged_stage_no_indicators() -> None:
 
 def test_dash_stage_no_indicators() -> None:
     """Dash (no stage) never shows indicators."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "-",
         is_draft=None,
         has_conflicts=True,
@@ -279,7 +299,7 @@ def test_dash_stage_no_indicators() -> None:
 
 def test_review_with_none_conflicts() -> None:
     """Review stage with None conflicts (unknown) shows no conflict indicator."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=None,
@@ -290,7 +310,7 @@ def test_review_with_none_conflicts() -> None:
 
 def test_review_required_shows_no_indicator() -> None:
     """REVIEW_REQUIRED does not show any indicator (not actionable)."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -301,7 +321,7 @@ def test_review_required_shows_no_indicator() -> None:
 
 def test_plain_text_stage_appends_suffix() -> None:
     """Plain text stage (no Rich markup) appends suffix directly."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "review",
         is_draft=None,
         has_conflicts=True,
@@ -315,7 +335,7 @@ def test_plain_text_stage_appends_suffix() -> None:
 
 def test_planned_draft_shows_construction_emoji() -> None:
     """Planned stage with draft PR shows construction emoji prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[dim]planned[/dim]",
         is_draft=True,
         has_conflicts=None,
@@ -326,7 +346,7 @@ def test_planned_draft_shows_construction_emoji() -> None:
 
 def test_planned_published_shows_eyes_emoji() -> None:
     """Planned stage with published PR shows eyes emoji prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[dim]planned[/dim]",
         is_draft=False,
         has_conflicts=None,
@@ -337,7 +357,7 @@ def test_planned_published_shows_eyes_emoji() -> None:
 
 def test_implementing_draft_shows_construction_emoji() -> None:
     """Implementing stage with draft PR shows construction emoji prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[yellow]impling[/yellow]",
         is_draft=True,
         has_conflicts=None,
@@ -348,7 +368,7 @@ def test_implementing_draft_shows_construction_emoji() -> None:
 
 def test_implementing_published_shows_eyes_emoji() -> None:
     """Implementing stage with published PR shows eyes emoji prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[yellow]impling[/yellow]",
         is_draft=False,
         has_conflicts=None,
@@ -359,7 +379,7 @@ def test_implementing_published_shows_eyes_emoji() -> None:
 
 def test_review_published_shows_eyes_emoji() -> None:
     """Review stage with published PR shows eyes emoji prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=False,
         has_conflicts=False,
@@ -370,7 +390,7 @@ def test_review_published_shows_eyes_emoji() -> None:
 
 def test_review_published_with_conflicts_shows_both() -> None:
     """Review stage with published PR and conflicts shows prefix and suffix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=False,
         has_conflicts=True,
@@ -381,7 +401,7 @@ def test_review_published_with_conflicts_shows_both() -> None:
 
 def test_review_published_with_approved_shows_both() -> None:
     """Review stage with published PR and approval shows prefix and suffix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=False,
         has_conflicts=False,
@@ -392,7 +412,7 @@ def test_review_published_with_approved_shows_both() -> None:
 
 def test_merged_draft_false_no_prefix() -> None:
     """Merged stage does not show draft/published prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[green]merged[/green]",
         is_draft=False,
         has_conflicts=None,
@@ -403,7 +423,7 @@ def test_merged_draft_false_no_prefix() -> None:
 
 def test_closed_draft_false_no_prefix() -> None:
     """Closed stage does not show draft/published prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[dim red]closed[/dim red]",
         is_draft=False,
         has_conflicts=None,
@@ -414,7 +434,7 @@ def test_closed_draft_false_no_prefix() -> None:
 
 def test_plain_text_stage_with_draft_prefix() -> None:
     """Plain text stage (no Rich markup) prepends draft prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "review",
         is_draft=False,
         has_conflicts=False,
@@ -425,7 +445,7 @@ def test_plain_text_stage_with_draft_prefix() -> None:
 
 def test_implementing_draft_with_conflicts_shows_both() -> None:
     """Implementing draft with conflicts shows prefix and suffix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[yellow]impling[/yellow]",
         is_draft=True,
         has_conflicts=True,
@@ -439,7 +459,7 @@ def test_implementing_draft_with_conflicts_shows_both() -> None:
 
 def test_implemented_checks_passing_no_comments_shows_rocket() -> None:
     """Implemented with passing checks and no unresolved comments shows rocket."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]impld[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -452,7 +472,7 @@ def test_implemented_checks_passing_no_comments_shows_rocket() -> None:
 
 def test_implemented_checks_failing_no_rocket() -> None:
     """Implemented with failing checks does not show rocket."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]impld[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -465,7 +485,7 @@ def test_implemented_checks_failing_no_rocket() -> None:
 
 def test_implemented_checks_none_no_rocket() -> None:
     """Implemented with unknown checks does not show rocket."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]impld[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -478,7 +498,7 @@ def test_implemented_checks_none_no_rocket() -> None:
 
 def test_implemented_unresolved_comments_no_rocket() -> None:
     """Implemented with unresolved comments does not show rocket."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]impld[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -491,7 +511,7 @@ def test_implemented_unresolved_comments_no_rocket() -> None:
 
 def test_implemented_conflicts_no_rocket() -> None:
     """Implemented with conflicts shows conflict emoji, not rocket."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]impld[/cyan]",
         is_draft=None,
         has_conflicts=True,
@@ -504,7 +524,7 @@ def test_implemented_conflicts_no_rocket() -> None:
 
 def test_implementing_checks_passing_no_rocket() -> None:
     """Implementing stage does not show rocket even with passing checks."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[yellow]impling[/yellow]",
         is_draft=None,
         has_conflicts=False,

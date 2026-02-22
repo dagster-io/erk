@@ -72,8 +72,8 @@ def format_lifecycle_with_status(
     is_draft: bool | None,
     has_conflicts: bool | None,
     review_decision: str | None,
-    checks_passing: bool | None = None,
-    has_unresolved_comments: bool | None = None,
+    checks_passing: bool | None,
+    has_unresolved_comments: bool | None,
 ) -> str:
     """Add draft/published prefix and status suffix to a lifecycle stage display.
 
