@@ -14,6 +14,7 @@ Exit Codes:
 
 import json
 from dataclasses import asdict, dataclass
+from typing import NoReturn
 
 import click
 
@@ -39,7 +40,14 @@ class UpdateError:
     message: str
 
 
-def _coerce_value(raw: str) -> object:
+def _fail(*, error: str, message: str) -> NoReturn:
+    """Emit a JSON error to stderr and exit with code 1."""
+    payload = UpdateError(success=False, error=error, message=message)
+    click.echo(json.dumps(asdict(payload)), err=True)
+    raise SystemExit(1)
+
+
+def _coerce_value(raw: str) -> str | None | int:
     """Coerce a string value to the appropriate Python type.
 
     Rules:
@@ -55,20 +63,21 @@ def _coerce_value(raw: str) -> object:
     return raw
 
 
-def _parse_fields(fields: tuple[str, ...]) -> dict[str, object]:
+def _parse_fields(fields: tuple[str, ...]) -> dict[str, str | None | int]:
     """Parse key=value field pairs into a dictionary.
 
     Raises:
         ValueError: If any field lacks an '=' separator.
     """
-    parsed: dict[str, object] = {}
     for field in fields:
         if "=" not in field:
             msg = f"Invalid field format: '{field}'. Expected key=value."
             raise ValueError(msg)
-        key, raw_value = field.split("=", 1)
-        parsed[key] = _coerce_value(raw_value)
-    return parsed
+    return {
+        key: _coerce_value(raw_value)
+        for field in fields
+        for key, raw_value in [field.split("=", 1)]
+    }
 
 
 @click.command(name="update-plan-header")
@@ -89,25 +98,16 @@ def update_plan_header(
     """
     # LBYL: reject if zero fields provided
     if not fields:
-        error = UpdateError(
-            success=False,
+        _fail(
             error="no_fields",
             message="No fields provided. Usage: update-plan-header <plan_id> key=value ...",
         )
-        click.echo(json.dumps(asdict(error)), err=True)
-        raise SystemExit(1)
 
     # Parse key=value pairs
     try:
         parsed = _parse_fields(fields)
     except ValueError as e:
-        error = UpdateError(
-            success=False,
-            error="invalid_field_format",
-            message=str(e),
-        )
-        click.echo(json.dumps(asdict(error)), err=True)
-        raise SystemExit(1) from None
+        _fail(error="invalid_field_format", message=str(e))
 
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
@@ -115,29 +115,14 @@ def update_plan_header(
     try:
         backend.update_metadata(repo_root, plan_id, metadata=parsed)
     except PlanHeaderNotFoundError:
-        error = UpdateError(
-            success=False,
+        _fail(
             error="no_plan_header",
             message=f"Plan {plan_id} has no plan-header metadata block.",
         )
-        click.echo(json.dumps(asdict(error)), err=True)
-        raise SystemExit(1) from None
     except RuntimeError as e:
-        error = UpdateError(
-            success=False,
-            error="update_failed",
-            message=f"Failed to update plan header: {e}",
-        )
-        click.echo(json.dumps(asdict(error)), err=True)
-        raise SystemExit(1) from None
+        _fail(error="update_failed", message=f"Failed to update plan header: {e}")
     except ValueError as e:
-        error = UpdateError(
-            success=False,
-            error="schema_validation_failed",
-            message=f"Schema validation failed: {e}",
-        )
-        click.echo(json.dumps(asdict(error)), err=True)
-        raise SystemExit(1) from None
+        _fail(error="schema_validation_failed", message=f"Schema validation failed: {e}")
 
     result = UpdateSuccess(
         success=True,
