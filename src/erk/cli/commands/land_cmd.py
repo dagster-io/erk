@@ -35,6 +35,7 @@ from erk.cli.commands.navigation_helpers import (
 )
 from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
+    run_objective_update_after_land,
 )
 from erk.cli.commands.slot.common import (
     extract_slot_number,
@@ -1263,6 +1264,104 @@ def _resolve_land_target_branch(
     )
 
 
+def _execute_land_directly(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    target: LandTarget,
+    script: bool,
+    pull_flag: bool,
+    no_delete: bool,
+    cleanup_confirmed: bool,
+) -> None:
+    """Execute land directly without generating a deferred script.
+
+    This is the default path when neither --up nor --down is passed.
+    Merges the PR and cleans up the branch inline without navigation.
+
+    Args:
+        ctx: ErkContext
+        repo: Repository context
+        target: Resolved landing target
+        script: Whether running in script mode
+        pull_flag: Whether to pull after landing
+        no_delete: Preserve branch after landing
+        cleanup_confirmed: Whether user confirmed cleanup during validation
+    """
+    branch = target.branch
+    pr_number = target.pr_details.number
+
+    # Handle dry-run mode
+    if ctx.dry_run:
+        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
+        user_output(f"Would delete branch '{branch}'")
+        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+        raise SystemExit(0)
+
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    # Build execution state and run the pipeline directly
+    state = make_execution_state(
+        cwd=ctx.cwd,
+        pr_number=pr_number,
+        branch=branch,
+        worktree_path=target.worktree_path,
+        is_current_branch=target.is_current_branch,
+        use_graphite=target.use_graphite,
+        pull_flag=pull_flag,
+        no_delete=no_delete,
+        no_cleanup=not cleanup_confirmed,
+        script=script,
+        target_child_branch=None,
+    )
+
+    # Re-derive main_repo_root from discovery
+    state = replace(state, main_repo_root=main_repo_root)
+
+    # Run execution pipeline (merge + cleanup)
+    exit_after: SystemExit | None = None
+    try:
+        result = run_execution_pipeline(ctx, state)
+        if isinstance(result, LandError):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+    except SystemExit as exc:
+        if exc.code != 0:
+            raise
+        exit_after = exc
+
+    # Objective update (fail-open — merge already succeeded)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
+    if objective_number is not None:
+        run_objective_update_after_land(
+            ctx,
+            objective=objective_number,
+            pr=pr_number,
+            branch=branch,
+        )
+
+    # In script mode, output no-op script path for shell wrapper compatibility
+    if script:
+        script_content = render_activation_script(
+            worktree_path=ctx.cwd,
+            target_subpath=None,
+            post_cd_commands=None,
+            final_message='echo "Land complete"',
+            comment="land complete (direct execution, no navigation)",
+        )
+        script_result = ctx.script_writer.write_activation_script(
+            script_content,
+            command_name="land",
+            comment="no-op",
+        )
+        machine_output(str(script_result.path), nl=False)
+
+    if exit_after is not None:
+        raise exit_after
+
+    raise SystemExit(0)
+
+
 def _land_target(
     ctx: ErkContext,
     *,
@@ -1273,8 +1372,12 @@ def _land_target(
     pull_flag: bool,
     no_delete: bool,
     cleanup_confirmed: bool,
+    down_flag: bool,
 ) -> None:
     """Generate execution script after validation pipeline has completed.
+
+    Called when --up or --down is passed (navigation mode). Produces a deferred
+    execution script that must be sourced to navigate the shell.
 
     Validation and confirmation gathering are done by run_validation_pipeline()
     before this function is called. This function handles:
@@ -1293,6 +1396,7 @@ def _land_target(
         pull_flag: Whether to pull after landing
         no_delete: Preserve branch after landing
         cleanup_confirmed: Whether user confirmed cleanup during validation
+        down_flag: Whether --down flag was passed
 
     Raises:
         SystemExit(0) after outputting script instructions
@@ -1366,6 +1470,8 @@ def _land_target(
         display_flags.append("-f")
     if target.target_child_branch is not None:
         display_flags.append("--up")
+    elif down_flag:
+        display_flags.append("--down")
     if not pull_flag:
         display_flags.append("--no-pull")
     if no_delete:
@@ -1746,6 +1852,12 @@ def _execute_land(
     help="Navigate to child branch instead of trunk after landing",
 )
 @click.option(
+    "--down",
+    "down_flag",
+    is_flag=True,
+    help="Navigate to trunk after landing (produces source command)",
+)
+@click.option(
     "-f",
     "--force",
     is_flag=True,
@@ -1775,19 +1887,24 @@ def land(
     script: bool,
     target: str | None,
     up_flag: bool,
+    down_flag: bool,
     force: bool,
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
 ) -> None:
-    """Merge PR and delete worktree.
+    """Merge PR and clean up branch.
 
-    Can land the current branch's PR, a specific PR by number/URL,
-    or a PR for a specific branch.
+    By default, merges the PR and cleans up the branch directly (no source
+    command needed). Use --down to navigate to trunk after landing, or --up
+    to navigate to a child branch. Both --down and --up produce a source
+    command for shell navigation.
 
     \b
     Usage:
-      erk land              # Land current branch's PR
+      erk land              # Merge + cleanup directly (no navigation)
+      erk land --down       # Merge + cleanup + navigate to trunk
+      erk land --up         # Merge + cleanup + navigate to child branch
       erk land 123          # Land PR #123
       erk land <url>        # Land PR by GitHub URL
       erk land <branch>     # Land PR for branch
@@ -1796,7 +1913,7 @@ def land(
     - PR must be open and ready to merge
     - PR's base branch must be trunk
 
-    Note: The --up flag requires Graphite for child branch tracking.
+    Note: --up and --down are mutually exclusive. --up requires Graphite.
     """
     # Replace context with appropriate wrappers based on flags.
     #
@@ -1815,7 +1932,12 @@ def land(
         # Only recreate when InteractiveConsole - preserve FakeConsole for tests.
         ctx = create_context(dry_run=False, script=True)
 
-    # Validate prerequisites
+    Ensure.invariant(
+        not (up_flag and down_flag),
+        "--up and --down are mutually exclusive.\n"
+        "--up navigates to child branch, --down navigates to trunk.",
+    )
+
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -1842,7 +1964,6 @@ def land(
     assert not isinstance(result, LandError)
     assert result.pr_details is not None
 
-    # Build LandTarget for _land_target (bridge to existing script generation)
     land_target = LandTarget(
         branch=result.branch,
         pr_details=result.pr_details,
@@ -1852,14 +1973,27 @@ def land(
         target_child_branch=result.target_child_branch,
     )
 
-    # Phase 2: Generate execution script (side effects stay in CLI layer)
-    _land_target(
-        ctx,
-        repo=repo,
-        target=land_target,
-        script=script,
-        force=force,
-        pull_flag=pull_flag,
-        no_delete=no_delete,
-        cleanup_confirmed=result.cleanup_confirmed,
-    )
+    if up_flag or down_flag:
+        # Navigation mode: generate deferred execution script (requires source command)
+        _land_target(
+            ctx,
+            repo=repo,
+            target=land_target,
+            script=script,
+            force=force,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            cleanup_confirmed=result.cleanup_confirmed,
+            down_flag=down_flag,
+        )
+    else:
+        # Direct execution mode: merge + cleanup inline (no navigation, no source command)
+        _execute_land_directly(
+            ctx,
+            repo=repo,
+            target=land_target,
+            script=script,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            cleanup_confirmed=result.cleanup_confirmed,
+        )

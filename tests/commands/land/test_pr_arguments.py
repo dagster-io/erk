@@ -97,8 +97,12 @@ def test_land_by_number() -> None:
         )
 
         # Pass "123" as the PR number argument with --force to skip confirmation
+        # --down to test deferred script path (default is now direct execution)
         result = runner.invoke(
-            cli, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["land", "123", "--script", "--force", "--down"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -197,9 +201,10 @@ def test_land_by_url() -> None:
         )
 
         # Pass URL as the argument
+        # --down to test deferred script path (default is now direct execution)
         result = runner.invoke(
             cli,
-            ["land", "https://github.com/owner/repo/pull/456", "--script", "--force"],
+            ["land", "https://github.com/owner/repo/pull/456", "--script", "--force", "--down"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -299,9 +304,10 @@ def test_land_by_branch_name() -> None:
             issues=issues_ops,
         )
 
+        # --down to test deferred script path (default is now direct execution)
         result = runner.invoke(
             cli,
-            ["land", "feature-1", "--script", "--force"],
+            ["land", "feature-1", "--script", "--force", "--down"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -388,8 +394,12 @@ def test_land_fork_pr() -> None:
             issues=issues_ops,
         )
 
+        # --down to test deferred script path (default is now direct execution)
         result = runner.invoke(
-            cli, ["land", "789", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["land", "789", "--script", "--force", "--down"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0

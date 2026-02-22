@@ -110,8 +110,9 @@ def test_land_outputs_deferred_execution_script() -> None:
         )
 
         # Phase 1: Validation - outputs script, does NOT merge
+        # --down produces deferred script (new default executes directly without navigation)
         result = runner.invoke(
-            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--force", "--down"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -551,9 +552,9 @@ def test_land_does_not_call_safe_chdir() -> None:
             issues=issues_ops,
         )
 
-        # Use --force to skip cleanup confirmation
+        # Use --force to skip cleanup confirmation, --down to test deferred script path
         result = runner.invoke(
-            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--force", "--down"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -562,6 +563,144 @@ def test_land_does_not_call_safe_chdir() -> None:
         assert len(git_ops.chdir_history) == 0, (
             "Should NOT call safe_chdir (activation script handles cd)"
         )
+
+
+def test_land_default_executes_directly() -> None:
+    """Test that `erk land` without --up/--down merges directly without a deferred script.
+
+    The default behavior (no navigation flags) should execute the merge and cleanup
+    inline, without generating a shell script to source.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",
+            },
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
+        )
+
+        # Default: no --up or --down — should execute directly
+        result = runner.invoke(
+            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # PR should have been merged directly (not deferred to a script)
+        assert 123 in github_ops.merged_prs
+
+        # Output should contain the merge confirmation
+        assert "Merged PR #123" in result.output
+
+
+def test_land_up_and_down_mutually_exclusive() -> None:
+    """Test that --up and --down cannot be used together."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        github_ops = FakeGitHub()
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            github=github_ops,
+            repo=repo,
+            issues=issues_ops,
+        )
+
+        result = runner.invoke(
+            cli, ["land", "--up", "--down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert_cli_error(result, 1, "--up and --down are mutually exclusive")
 
 
 def test_land_updates_upstack_pr_base_branches() -> None:

@@ -93,6 +93,12 @@ from erk_shared.context.helpers import require_context
     is_flag=True,
     help="Accept flag for compatibility (execute mode always skips confirmations)",
 )
+@click.option(
+    "--down",
+    "down_flag",
+    is_flag=True,
+    help="Accept flag for compatibility (navigate-to-trunk is the default when --up is not passed)",
+)
 @click.pass_context
 def land_execute(
     ctx: click.Context,
@@ -110,6 +116,7 @@ def land_execute(
     script: bool,
     up_flag: bool,
     force_flag: bool,
+    down_flag: bool,
 ) -> None:
     """Execute deferred land operations.
 
