@@ -111,7 +111,7 @@ class LaunchScreen(ModalScreen[str | None]):
                     if cmd.get_display_name is not None:
                         display_name = cmd.get_display_name(self._ctx)
                     yield Label(
-                        f"  [{key}]  {emoji} {cmd.description}: {display_name}",
+                        f"  \\[{key}]  {emoji} {cmd.description}: {display_name}",
                         classes="launch-row",
                     )
             else:
