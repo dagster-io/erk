@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Prefer `erk br co <name>` over `--for-plan` in Draft PR Copy"
+}
