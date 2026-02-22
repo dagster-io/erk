@@ -22,7 +22,7 @@ Rules triggered by matching actions in code.
 
 **constructing session file paths manually** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change.
 
-**failing a workflow because a session file is missing** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → gist → local scan → skip.
+**failing a workflow because a session file is missing** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → branch → local scan → skip.
 
 **looking up session files from metadata** → Read [Session Preprocessing](preprocessing.md) first. Session IDs in metadata may not match available local files. Verify session paths exist before preprocessing. Use LBYL checks and provide clear error messages when sessions are missing.
 

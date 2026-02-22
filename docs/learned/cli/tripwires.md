@@ -126,6 +126,8 @@ Rules triggered by matching actions in code.
 
 **using erk exec commands in scripts** → Read [erk exec Commands](erk-exec-commands.md) first. Some erk exec subcommands don't support `--format json`. Always check with `erk exec <command> -h` first.
 
+**using gh issue view on a plan without checking plan backend type** → Read [CLI Backend-Aware Display Patterns](backend-aware-display.md) first. Draft-PR plan IDs are PR numbers, not issue numbers. Using gh issue view on a draft-PR plan produces a confusing 404. Route to gh pr view based on backend type.
+
 **using ls -t or mtime to find the current session** → Read [Session ID Availability and Propagation](session-management.md) first. Use the ClaudeInstallation gateway or the session-id-injector-hook's scratch file instead. Mtime-based discovery is racy in parallel sessions.
 
 **using os.environ to read CLAUDE_SESSION_ID** → Read [Session ID Availability and Propagation](session-management.md) first. CLAUDE_SESSION_ID is NOT an environment variable. It's a Claude Code string substitution in commands/skills, and arrives via stdin JSON in hooks.

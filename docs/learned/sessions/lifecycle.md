@@ -8,7 +8,7 @@ tripwires:
   - action: "accessing a session by ID without checking existence first"
     warning: "Session files are session-scoped — Claude Code may clean them up at any time. Always use LBYL discovery (ClaudeInstallation.find_session_globally) before reading."
   - action: "failing a workflow because a session file is missing"
-    warning: "Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → gist → local scan → skip."
+    warning: "Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → branch → local scan → skip."
   - action: "constructing session file paths manually"
     warning: "Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change."
 last_audited: "2026-02-16 14:20 PT"
@@ -32,11 +32,11 @@ This constraint drives two architectural decisions:
 
 Session data lives in three places with different persistence guarantees. Understanding which tier you're working with determines how you handle availability.
 
-| Tier               | Location                                 | Persistence                                  | Purpose                                                                     |
-| ------------------ | ---------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
-| **Claude-managed** | `~/.claude/projects/<project>/sessions/` | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |
-| **Gist-uploaded**  | GitHub secret gist (URL in plan-header)  | Durable until manually deleted               | Cross-session persistence for learn workflows                               |
-| **Scratch**        | `.erk/scratch/sessions/<session-id>/`    | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |
+| Tier                | Location                                 | Persistence                                  | Purpose                                                                     |
+| ------------------- | ---------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
+| **Claude-managed**  | `~/.claude/projects/<project>/sessions/` | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |
+| **Branch-uploaded** | `session/{plan_id}` branch on origin     | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |
+| **Scratch**         | `.erk/scratch/sessions/<session-id>/`    | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |
 
 The key insight: scratch storage is _not_ a session archive — it exists for transient artifacts like preprocessed XML files that a hook produces for Claude to read. The 1-hour TTL is deliberately aggressive because scratch files become stale once the producing session ends.
 
@@ -44,13 +44,13 @@ The key insight: scratch storage is _not_ a session archive — it exists for tr
 
 See `cleanup_stale_scratch()` in `packages/erk-shared/src/erk_shared/scratch/scratch.py` for the TTL-based cleanup logic.
 
-## Why Gist-Based Persistence Exists
+## Why Branch-Based Persistence Exists
 
-The gist upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Uploading to a gist and recording the URL in the plan-header creates a durable reference that survives session cleanup.
+The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Uploading to a `session/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.
 
 <!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
 
-See `upload_session()` in `src/erk/cli/commands/exec/scripts/upload_session.py` for how gist creation and plan-header updates are coordinated.
+See `upload_session()` in `src/erk/cli/commands/exec/scripts/upload_session.py` for how branch-based storage and plan-header updates are coordinated. The upload creates a branch from `origin/master`, commits the session JSONL to `.erk/session/{session_id}.jsonl`, force-pushes the branch, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.
 
 ## Discovery Architecture
 
@@ -63,7 +63,7 @@ Session discovery has two distinct paths because plan-aware and plan-unaware wor
 
 ### Why two paths matter
 
-`list-sessions` can never find sessions from other machines or prior Claude Code lifecycles — it only sees the local project directory. `get-learn-sessions` starts from GitHub metadata and checks readability, so it can identify gist-based remote sessions that `list-sessions` would never discover. It also provides the categorization (planning vs. implementation vs. learn) that analysis workflows need.
+`list-sessions` can never find sessions from other machines or prior Claude Code lifecycles — it only sees the local project directory. `get-learn-sessions` starts from GitHub metadata and checks readability, so it can identify branch-based remote sessions that `list-sessions` would never discover. It also provides the categorization (planning vs. implementation vs. learn) that analysis workflows need.
 
 <!-- Source: packages/erk-shared/src/erk_shared/sessions/discovery.py, find_sessions_for_plan -->
 
@@ -85,7 +85,7 @@ When a workflow needs session data, it walks a priority-ordered hierarchy. Each 
 | -------- | ---------------------------------------------------- | ---------------------------------------------------------------------- |
 | 1        | Planning session (from plan-header)                  | Created in a prior Claude Code session, since cleaned up               |
 | 2        | Implementation session (from plan-header + comments) | Same lifecycle issue                                                   |
-| 3        | Remote gist session                                  | Gist deleted; requires download step                                   |
+| 3        | Remote branch session                                | Branch deleted; requires checkout step                                 |
 | 4        | Legacy artifact session (GitHub Actions run)         | Artifacts expire after 90 days                                         |
 | 5        | Local fallback scan                                  | No metadata link to plan — recent sessions may still be relevant       |
 | 6        | Skip analysis                                        | Always available — produces no session insights but workflow continues |

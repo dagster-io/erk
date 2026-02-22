@@ -62,6 +62,8 @@ Rules triggered by matching actions in code.
 
 **calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
+**calling allocate_slot_for_branch without sync_pool_assignments running first** → Read [Slot Pool State Sync](slot-pool-state-sync.md) first. Pool sync must run BEFORE find_branch_assignment call. Without it, stale pool.json entries cause silent misassignment — a slot may appear free when it's actually occupied by a different branch.
+
 **calling assemble_pr_body without metadata_prefix for draft-PR plans** → Read [PR Body Assembly](pr-body-assembly.md) first. Draft-PR plans require metadata_prefix from extract_metadata_prefix(). Without it, plan-header metadata is lost on every PR rewrite.
 
 **calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
@@ -264,11 +266,15 @@ Rules triggered by matching actions in code.
 
 **using git pull or git pull --rebase on a Graphite-managed branch** [pattern: `git\s+pull`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
 
+**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+
 **using mutable list fields directly for mutation tracking in fakes** → Read [Fake Mutation Tracking](fake-mutation-tracking.md) first. Expose mutation tracking via @property returning tuple or .copy(). Internal lists should be private. See fake-mutation-tracking.md.
 
 **using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** [pattern: `os\.environ.*CLAUDE_CODE_SESSION_ID`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
 
 **using run_ssh_command() for interactive commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Interactive commands need exec_ssh_interactive(), not run_ssh_command()
+
+**using sed -i in scripts that run on both macOS and Linux** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. macOS sed requires `sed -i ''` (empty string argument) while Linux sed uses `sed -i` (no argument). Scripts that use sed -i without handling this difference will fail silently on one platform.
 
 **using subprocess.run with git command outside of a gateway** [pattern: `subprocess\.run\(\s*\[.*["']git`] → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
 

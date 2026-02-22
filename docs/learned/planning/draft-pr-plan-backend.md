@@ -17,6 +17,12 @@ tripwires:
   - action: "spawning a GitHub Actions workflow from erk without passing plan_backend as an explicit input"
     warning: "Draft-PR backend propagation: GitHub Actions reusable workflows (workflow_call) do NOT inherit environment variables from the caller. ERK_PLAN_BACKEND must be declared as an explicit workflow input and passed by the caller. Ambient env vars are invisible to reusable workflows."
     score: 9
+  - action: "implementing RealPlanListService or DraftPRPlanListService without checking the other for parity"
+    warning: "Both plan list services must handle parameters identically. Interface contracts are not enforced by the type system — behavioral divergence between the two services causes subtle bugs when switching backends."
+    score: 6
+  - action: "using gh issue view on a plan ID without checking plan backend type"
+    warning: "Draft-PR plan IDs are PR numbers. Using gh issue view on a draft-PR plan produces a confusing 404. Route to gh pr view based on backend type."
+    score: 7
 ---
 
 # Draft PR Plan Backend
@@ -99,8 +105,23 @@ The plan data provider fetches PRs via a single GraphQL query (`list_plan_prs_wi
 
 The single query uses `GET_PLAN_PRS_WITH_DETAILS_QUERY` from `graphql_queries.py` and fetches review decision, conflict status, and CI checks in one round-trip, replacing the previous approach of fetching each PR individually.
 
+## Implementation Setup and .erk/impl-context/ Cleanup
+
+When implementing a draft-PR plan, the `.erk/impl-context/` staging directory must be cleaned up before implementation begins. This directory contains `plan.md` and `ref.json` committed during plan-save to give the draft PR a non-empty diff.
+
+**Cleanup pattern:**
+
+1. `setup_impl_from_issue.py` reads the files into `.impl/` but does NOT delete them (deferred cleanup)
+2. `plan-implement.md` Step 2d performs the actual `git rm -rf .erk/impl-context/ && git commit && git push`
+3. The step is **idempotent** — safe to run when the directory doesn't exist
+
+**Rebase conflict handling:** After cleanup commits on the plan branch, a `git pull --rebase` may be needed before pushing further implementation commits. Skipping this can cause non-fast-forward push failures when the remote branch has diverged.
+
+For full details, see [Impl-Context Staging Directory](impl-context.md).
+
 ## Related Topics
 
 - [Branch Plan Resolution](branch-plan-resolution.md) - How branches resolve to plans
 - [Plan Save Branch Restoration](../architecture/plan-save-branch-restoration.md) - Try/finally pattern for branch safety
 - [Dual Backend Testing](../testing/dual-backend-testing.md) - Testing across both backends
+- [Impl-Context Staging Directory](impl-context.md) - Staging directory lifecycle and cleanup

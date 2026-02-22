@@ -7,6 +7,9 @@ read_when:
 tripwires:
   - action: "running `git reset --hard` in workflows after staging cleanup"
     warning: "Verify all cleanup changes are committed BEFORE reset; staged changes without commit will be silently discarded."
+  - action: "resolving git rebase modify/delete conflicts using merge-style terminology"
+    warning: "In rebase, 'them' = upstream (opposite to merge). For modify/delete conflicts where the file was deleted upstream, use `git rm <file>` on the conflicted staged files, then `git rebase --continue`. Do not use `git checkout --theirs` which has inverted semantics during rebase."
+    score: 5
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 ---

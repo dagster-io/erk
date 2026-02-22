@@ -74,6 +74,8 @@ Rules triggered by matching actions in code.
 
 **reading statusCheckRollup results immediately after push** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. After push, results show completed runs only, not in-progress. Wait for new check suite to appear before reading CI status.
 
+**resolving git rebase modify/delete conflicts using merge-style terminology** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. In rebase, 'them' = upstream (opposite to merge). For modify/delete conflicts where the file was deleted upstream, use `git rm <file>` on the conflicted staged files, then `git rebase --continue`. Do not use `git checkout --theirs` which has inverted semantics during rebase.
+
 **running `git reset --hard` in workflows after staging cleanup** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. Verify all cleanup changes are committed BEFORE reset; staged changes without commit will be silently discarded.
 
 **running only prettier after editing Python files** → Read [Formatting Workflow Decision Tree](formatting-workflow.md) first. Prettier silently skips Python files. Always use 'make format' for .py files.

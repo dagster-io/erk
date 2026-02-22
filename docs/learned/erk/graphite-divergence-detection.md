@@ -10,6 +10,9 @@ tripwires:
     warning: "All gt commands MUST use --no-interactive. Without it, gt may prompt for input and hang indefinitely."
   - action: "pushing to a branch that may have been updated remotely without checking for divergence"
     warning: "The Graphite-first flow pre-checks for divergence before gt submit. Check with branch_exists_on_remote -> fetch_branch -> is_branch_diverged_from_remote."
+  - action: "running raw git commands (checkout, branch) without gt track on a Graphite-managed branch"
+    warning: "Raw git commands (checkout, branch) without `gt track` cause Graphite's cache to diverge from actual branch state. Use BranchManager which handles Graphite tracking automatically, or call `gt track` after raw git operations."
+    score: 7
 ---
 
 # Graphite Divergence Detection

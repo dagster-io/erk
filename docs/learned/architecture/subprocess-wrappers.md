@@ -12,6 +12,9 @@ tripwires:
     pattern: "subprocess\\.run\\("
   - action: "adding a Claude subprocess call with --print mode"
     warning: "Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section."
+  - action: "using sed -i in scripts that run on both macOS and Linux"
+    warning: "macOS sed requires `sed -i ''` (empty string argument) while Linux sed uses `sed -i` (no argument). Scripts that use sed -i without handling this difference will fail silently on one platform."
+    score: 4
 ---
 
 # Subprocess Execution Wrappers

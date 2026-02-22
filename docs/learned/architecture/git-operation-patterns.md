@@ -11,6 +11,9 @@ tripwires:
     action: "parsing CalledProcessError messages for git operations"
     warning: "Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly."
     context: "Git error message parsing is fragile (messages can change across versions, localization issues). LBYL with git show-ref is more reliable. For operations with multiple failure modes, use discriminated unions based on returncode patterns."
+  - action: "using git stash in scripts that have running processes dependent on working tree state"
+    warning: "git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process."
+    score: 4
 ---
 
 # Git Operation Patterns
