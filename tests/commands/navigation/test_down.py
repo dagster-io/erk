@@ -448,7 +448,7 @@ def test_down_delete_current_success() -> None:
 
         # Assert: Script contains deferred deletion commands
         assert "git worktree remove --force" in script_content
-        assert "gt delete -f feature-2" in script_content
+        assert "gt delete -f --no-interactive feature-2" in script_content
 
 
 def test_down_delete_current_uncommitted_changes() -> None:
@@ -593,8 +593,8 @@ def test_down_delete_current_pr_open() -> None:
         assert len(git_ops.deleted_branches) == 0
 
 
-def test_down_delete_current_force_with_open_pr_confirmed() -> None:
-    """Test --delete-current -f allows deletion with open PR after confirmation."""
+def test_down_delete_current_force_with_open_pr() -> None:
+    """Test --delete-current -f auto-closes open PR without prompts and proceeds."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -668,7 +668,6 @@ def test_down_delete_current_force_with_open_pr_confirmed() -> None:
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[True, False],  # Confirm delete, decline close PR
         )
 
         result = runner.invoke(
@@ -678,212 +677,15 @@ def test_down_delete_current_force_with_open_pr_confirmed() -> None:
             catch_exceptions=False,
         )
 
-        # Assert: Command succeeded
+        # Assert: Command succeeded (no prompts with --force)
         assert result.exit_code == 0
 
         # Assert: Warning was shown about open PR
         assert "Warning:" in result.output
         assert "is still open" in result.output
 
-        # Assert: Navigated to feature-1
-        script_path = Path(result.stdout.strip().split("\n")[-1])
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
-        assert str(repo_dir / "worktrees" / "feature-1") in script_content
-
-        # Assert: Deletion is DEFERRED - no immediate removal
-        feature_2_path = repo_dir / "worktrees" / "feature-2"
-        assert feature_2_path not in git_ops.removed_worktrees, "Deletion should be deferred"
-        assert len(graphite_ops.delete_branch_calls) == 0, "Deletion should be deferred"
-
-        # Assert: Script contains deferred deletion commands
-        assert "git worktree remove --force" in script_content
-        assert "gt delete -f feature-2" in script_content
-
-
-def test_down_delete_current_force_with_open_pr_declined() -> None:
-    """Test --delete-current -f aborts when user declines confirmation."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            file_statuses={env.cwd: ([], [], [])},
-        )
-
-        graphite_ops = FakeGraphite(
-            branches={
-                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
-                "feature-1": BranchMetadata.branch(
-                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
-                ),
-                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
-            }
-        )
-
-        # PR for feature-2 is OPEN
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-
-        github_ops = FakeGitHub(
-            prs={
-                "feature-2": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Feature 2",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                ),
-            },
-            pr_details={
-                123: PRDetails(
-                    number=123,
-                    url="https://github.com/owner/repo/pull/123",
-                    title="Feature 2",
-                    body="",
-                    state="OPEN",
-                    is_draft=False,
-                    base_ref_name="feature-1",
-                    head_ref_name="feature-2",
-                    is_cross_repository=False,
-                    mergeable="MERGEABLE",
-                    merge_state_status="CLEAN",
-                    owner="owner",
-                    repo="repo",
-                ),
-            },
-        )
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            graphite=graphite_ops,
-            github=github_ops,
-            repo=repo,
-            use_graphite=True,
-            confirm_responses=[False],  # Decline delete
-        )
-
-        result = runner.invoke(
-            cli,
-            ["down", "--delete-current", "-f", "--script"],
-            obj=test_ctx,
-            catch_exceptions=False,
-        )
-
-        # Assert: Command exited with code 1 (user declined)
-        assert result.exit_code == 1
-
-        # Assert: No worktrees or branches were deleted
-        assert len(git_ops.removed_worktrees) == 0
-        assert len(git_ops.deleted_branches) == 0
-
-
-def test_down_delete_current_force_with_open_pr_close_confirmed() -> None:
-    """Test --delete-current -f with open PR: user confirms delete AND close PR."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            file_statuses={env.cwd: ([], [], [])},
-        )
-
-        graphite_ops = FakeGraphite(
-            branches={
-                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
-                "feature-1": BranchMetadata.branch(
-                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
-                ),
-                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
-            }
-        )
-
-        # PR for feature-2 is OPEN
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-
-        github_ops = FakeGitHub(
-            prs={
-                "feature-2": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Feature 2",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                ),
-            },
-            pr_details={
-                123: PRDetails(
-                    number=123,
-                    url="https://github.com/owner/repo/pull/123",
-                    title="Feature 2",
-                    body="",
-                    state="OPEN",
-                    is_draft=False,
-                    base_ref_name="feature-1",
-                    head_ref_name="feature-2",
-                    is_cross_repository=False,
-                    mergeable="MERGEABLE",
-                    merge_state_status="CLEAN",
-                    owner="owner",
-                    repo="repo",
-                ),
-            },
-        )
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            graphite=graphite_ops,
-            github=github_ops,
-            repo=repo,
-            use_graphite=True,
-            confirm_responses=[True, True],  # Confirm delete, confirm close PR
-        )
-
-        result = runner.invoke(
-            cli,
-            ["down", "--delete-current", "-f", "--script"],
-            obj=test_ctx,
-            catch_exceptions=False,
-        )
-
-        # Assert: Command succeeded
-        assert result.exit_code == 0
-
-        # Assert: PR was closed
-        assert 123 in github_ops.closed_prs, "PR #123 should have been closed"
+        # Assert: PR was auto-closed (--force skips prompts and auto-closes)
+        assert 123 in github_ops.closed_prs, "PR #123 should have been auto-closed"
         assert "Closed PR #123" in result.output
 
         # Assert: Navigated to feature-1
@@ -899,115 +701,7 @@ def test_down_delete_current_force_with_open_pr_close_confirmed() -> None:
 
         # Assert: Script contains deferred deletion commands
         assert "git worktree remove --force" in script_content
-        assert "gt delete -f feature-2" in script_content
-
-
-def test_down_delete_current_force_with_open_pr_close_declined() -> None:
-    """Test --delete-current -f with open PR: user confirms delete but declines close PR."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            file_statuses={env.cwd: ([], [], [])},
-        )
-
-        graphite_ops = FakeGraphite(
-            branches={
-                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
-                "feature-1": BranchMetadata.branch(
-                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
-                ),
-                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
-            }
-        )
-
-        # PR for feature-2 is OPEN
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-
-        github_ops = FakeGitHub(
-            prs={
-                "feature-2": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Feature 2",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                ),
-            },
-            pr_details={
-                123: PRDetails(
-                    number=123,
-                    url="https://github.com/owner/repo/pull/123",
-                    title="Feature 2",
-                    body="",
-                    state="OPEN",
-                    is_draft=False,
-                    base_ref_name="feature-1",
-                    head_ref_name="feature-2",
-                    is_cross_repository=False,
-                    mergeable="MERGEABLE",
-                    merge_state_status="CLEAN",
-                    owner="owner",
-                    repo="repo",
-                ),
-            },
-        )
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            graphite=graphite_ops,
-            github=github_ops,
-            repo=repo,
-            use_graphite=True,
-            confirm_responses=[True, False],  # Confirm delete, decline close PR
-        )
-
-        result = runner.invoke(
-            cli,
-            ["down", "--delete-current", "-f", "--script"],
-            obj=test_ctx,
-            catch_exceptions=False,
-        )
-
-        # Assert: Command succeeded
-        assert result.exit_code == 0
-
-        # Assert: PR was NOT closed
-        assert 123 not in github_ops.closed_prs, "PR #123 should NOT have been closed"
-        assert "Closed PR #123" not in result.output
-
-        # Assert: Navigated to feature-1
-        script_path = Path(result.stdout.strip().split("\n")[-1])
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
-        assert str(repo_dir / "worktrees" / "feature-1") in script_content
-
-        # Assert: Deletion is DEFERRED - no immediate removal
-        feature_2_path = repo_dir / "worktrees" / "feature-2"
-        assert feature_2_path not in git_ops.removed_worktrees, "Deletion should be deferred"
-        assert len(graphite_ops.delete_branch_calls) == 0, "Deletion should be deferred"
-
-        # Assert: Script contains deferred deletion commands
-        assert "git worktree remove --force" in script_content
-        assert "gt delete -f feature-2" in script_content
+        assert "gt delete -f --no-interactive feature-2" in script_content
 
 
 def test_down_delete_current_pr_closed() -> None:
@@ -1086,7 +780,7 @@ def test_down_delete_current_pr_closed() -> None:
 
         # Assert: Script contains deferred deletion commands
         assert "git worktree remove --force" in script_content
-        assert "gt delete -f feature-2" in script_content
+        assert "gt delete -f --no-interactive feature-2" in script_content
 
 
 def test_down_delete_current_no_pr() -> None:
@@ -1147,7 +841,7 @@ def test_down_delete_current_no_pr() -> None:
         assert script_content is not None
         assert len(git_ops.removed_worktrees) == 0, "Deletion should be deferred"
         assert "git worktree remove --force" in script_content
-        assert "gt delete -f feature-2" in script_content
+        assert "gt delete -f --no-interactive feature-2" in script_content
 
 
 def test_down_delete_current_trunk_in_root() -> None:
@@ -1223,7 +917,7 @@ def test_down_delete_current_trunk_in_root() -> None:
 
         # Assert: Script contains deferred deletion commands
         assert "git worktree remove --force" in script_content
-        assert "gt delete -f feature-1" in script_content
+        assert "gt delete -f --no-interactive feature-1" in script_content
 
 
 def test_down_count_moves_multiple_levels() -> None:
@@ -1607,7 +1301,7 @@ def test_down_delete_current_slot_aware_unassigns_slot() -> None:
         # Read from filesystem since erk_isolated_fs_env uses RealScriptWriter
         script_content = script_path.read_text()
         assert "erk slot unassign erk-slot-01" in script_content
-        assert "gt delete -f feature-2" in script_content
+        assert "gt delete -f --no-interactive feature-2" in script_content
 
         # Assert: Pool state is unchanged (deferred)
         state = load_pool_state(repo.pool_json_path)

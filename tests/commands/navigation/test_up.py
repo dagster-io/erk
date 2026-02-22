@@ -697,8 +697,8 @@ def test_up_delete_current_pr_open() -> None:
         assert len(git_ops.deleted_branches) == 0
 
 
-def test_up_delete_current_force_with_open_pr_confirmed() -> None:
-    """Test --delete-current -f allows deletion with open PR after confirmation."""
+def test_up_delete_current_force_with_open_pr() -> None:
+    """Test --delete-current -f auto-closes open PR without prompts and proceeds."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -773,7 +773,6 @@ def test_up_delete_current_force_with_open_pr_confirmed() -> None:
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[True, False],  # Confirm delete, decline close PR
         )
 
         result = runner.invoke(
@@ -783,12 +782,16 @@ def test_up_delete_current_force_with_open_pr_confirmed() -> None:
             catch_exceptions=False,
         )
 
-        # Assert: Command succeeded
+        # Assert: Command succeeded (no prompts with --force)
         assert result.exit_code == 0
 
         # Assert: Warning was shown about open PR
         assert "Warning:" in result.output
         assert "is still open" in result.output
+
+        # Assert: PR was auto-closed (--force skips prompts and auto-closes)
+        assert 123 in github_ops.closed_prs, "PR #123 should have been auto-closed"
+        assert "Closed PR #123" in result.output
 
         # Assert: Navigated to feature-2
         script_path = Path(result.stdout.strip().split("\n")[-1])
@@ -804,101 +807,7 @@ def test_up_delete_current_force_with_open_pr_confirmed() -> None:
         # Assert: Script contains deferred deletion commands
         assert "git worktree remove --force" in script_content
         assert str(feature_1_path) in script_content
-        assert "gt delete -f feature-1" in script_content
-
-
-def test_up_delete_current_force_with_open_pr_declined() -> None:
-    """Test --delete-current -f aborts when user declines confirmation."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            file_statuses={env.cwd: ([], [], [])},
-        )
-
-        # Set up stack: main -> feature-1 -> feature-2
-        graphite_ops = FakeGraphite(
-            branches={
-                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
-                "feature-1": BranchMetadata.branch(
-                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
-                ),
-                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
-            }
-        )
-
-        # PR for feature-1 is OPEN
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-
-        github_ops = FakeGitHub(
-            prs={
-                "feature-1": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Feature 1",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                ),
-            },
-            pr_details={
-                123: PRDetails(
-                    number=123,
-                    url="https://github.com/owner/repo/pull/123",
-                    title="Feature 1",
-                    body="",
-                    state="OPEN",
-                    is_draft=False,
-                    base_ref_name="main",
-                    head_ref_name="feature-1",
-                    is_cross_repository=False,
-                    mergeable="MERGEABLE",
-                    merge_state_status="CLEAN",
-                    owner="owner",
-                    repo="repo",
-                ),
-            },
-        )
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            graphite=graphite_ops,
-            github=github_ops,
-            repo=repo,
-            use_graphite=True,
-            confirm_responses=[False],  # Decline delete
-        )
-
-        result = runner.invoke(
-            cli,
-            ["up", "--delete-current", "-f", "--script"],
-            obj=test_ctx,
-            catch_exceptions=False,
-        )
-
-        # Assert: Command exited with code 1 (user declined)
-        assert result.exit_code == 1
-
-        # Assert: No worktrees or branches were deleted
-        assert len(git_ops.removed_worktrees) == 0
-        assert len(git_ops.deleted_branches) == 0
+        assert "gt delete -f --no-interactive feature-1" in script_content
 
 
 def test_up_delete_current_pr_closed() -> None:
@@ -979,7 +888,7 @@ def test_up_delete_current_pr_closed() -> None:
         # Assert: Script contains deferred deletion commands
         assert "git worktree remove --force" in script_content
         assert str(feature_1_path) in script_content
-        assert "gt delete -f feature-1" in script_content
+        assert "gt delete -f --no-interactive feature-1" in script_content
 
 
 def test_up_delete_current_no_pr() -> None:
@@ -1049,7 +958,7 @@ def test_up_delete_current_no_pr() -> None:
         # Assert: Script contains deferred deletion commands
         assert "git worktree remove --force" in script_content
         assert str(feature_1_path) in script_content
-        assert "gt delete -f feature-1" in script_content
+        assert "gt delete -f --no-interactive feature-1" in script_content
 
 
 def test_up_delete_current_success() -> None:
@@ -1132,7 +1041,7 @@ def test_up_delete_current_success() -> None:
         # Assert: Script contains deferred deletion commands
         assert "git worktree remove --force" in script_content
         assert str(feature_1_path) in script_content
-        assert "gt delete -f feature-1" in script_content
+        assert "gt delete -f --no-interactive feature-1" in script_content
 
 
 def test_up_count_moves_multiple_levels() -> None:
@@ -1468,6 +1377,6 @@ def test_up_delete_current_slot_aware_unassigns_slot() -> None:
 
         # Assert: Script contains SLOT-AWARE deferred deletion commands
         assert "erk slot unassign erk-slot-01" in script_content
-        assert "gt delete -f feature-1" in script_content
+        assert "gt delete -f --no-interactive feature-1" in script_content
         # Should NOT contain git worktree remove for slots
         assert "git worktree remove" not in script_content
