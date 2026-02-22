@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "pr_number": 7807,
+  "comments": [
+    {
+      "id": 3940606076,
+      "author": "schrockn",
+      "body": "\ud83d\udd04 Plan Queued for Implementation\n\n<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n<!-- erk:metadata-block:submission-queued -->\n<details>\n<summary>submission-queued</summary>\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-02-22T09:49:35.249365+00:00'\nsubmitted_by: schrockn\nissue_number: 7807\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n</details>\n<!-- /erk:metadata-block:submission-queued -->\n\n---\n\nPlan submitted by **schrockn** at 2026-02-22T09:49:35.249365+00:00.\n\nThe `plan-implement` workflow has been triggered via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22274805347",
+      "url": "https://github.com/dagster-io/erk/pull/7807#issuecomment-3940606076"
+    },
+    {
+      "id": 3940606850,
+      "author": "github-actions[bot]",
+      "body": "\u2699\ufe0f GitHub Action Started\n\n<details>\n<summary>\ud83d\udccb Metadata</summary>\n\n<!-- erk:metadata-block:workflow-started -->\n```yaml\nschema: workflow-started\nstatus: started\nstarted_at: 2026-02-22T09:50:09Z\nworkflow_run_id: \"22274805347\"\nworkflow_run_url: https://github.com/dagster-io/erk/actions/runs/22274805347\nbranch_name: planned/plan-add-worker-impl-cl-02-22-0447\nplan_id: 7807\n```\n<!-- /erk:metadata-block:workflow-started -->\n\n</details>\n\n---\n\nSetup completed successfully.\n\n**Branch:** `planned/plan-add-worker-impl-cl-02-22-0447`\n**PR:** [#7807](https://github.com/dagster-io/erk/pull/7807)\n**Status:** Ready for implementation\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22274805347)\n",
+      "url": "https://github.com/dagster-io/erk/pull/7807#issuecomment-3940606850"
+    },
+    {
+      "id": 3940614594,
+      "author": "schrockn",
+      "body": "* **#7807** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7807?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7807?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7807#issuecomment-3940614594"
+    },
+    {
+      "id": 3940614642,
+      "author": "github-actions[bot]",
+      "body": "<!-- audit-pr-docs -->\n\n## \u2705 Audit PR Docs\n\n**Last updated:** 2026-02-22 01:57:40 PT\n\nFound 0 violations across 1 file. No inline comments needed.\n\n### Patterns Checked\n\u2705 Verbatim code blocks \u2014 None found\n\u2705 Inaccurate claims \u2014 None found\n\u2705 Duplicative sections \u2014 None found\n\u2705 Drift risk sections \u2014 None found\n\n### Files Reviewed\n- `docs/learned/planning/worktree-cleanup.md`: 0 violations\n\n### Verdict\n| File | Verdict | Duplicative % | High Value % | Issues |\n|------|---------|---------------|-------------|--------|\n| `docs/learned/planning/worktree-cleanup.md` | KEEP | 0% | 85% | 0 |\n\n---\n\n### Activity Log\n- **2026-02-22 01:57:40 PT**: No violations detected. New paragraph + source pointer accurately document the pr-address.yml cleanup step; all claims verified against actual workflow code.\n- **2026-02-22 01:56:14 PT**: No violations detected. New paragraph accurately describes pr-address.yml cleanup step; source pointer format is correct.",
+      "url": "https://github.com/dagster-io/erk/pull/7807#issuecomment-3940614642"
+    }
+  ]
+}
