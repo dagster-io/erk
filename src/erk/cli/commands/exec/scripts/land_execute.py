@@ -19,6 +19,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.land_cmd import _execute_land
+from erk.cli.commands.objective_helpers import run_objective_update_after_land
 from erk_shared.context.helpers import require_context
 
 
@@ -139,20 +140,36 @@ def land_execute(
             )
         resolved_target_child = children[0]
 
-    # Objective update is now handled by a separate command
-    # (erk exec objective-update-after-land) emitted in the land script.
-    # --objective-number is still accepted for backwards compatibility with
-    # ephemeral scripts that may already exist, but the value is ignored.
-    _execute_land(
-        erk_ctx,
-        pr_number=pr_number,
-        branch=branch,
-        worktree_path=Path(worktree_path) if worktree_path else None,
-        is_current_branch=is_current_branch,
-        target_child_branch=resolved_target_child,
-        use_graphite=use_graphite,
-        pull_flag=pull_flag,
-        no_delete=no_delete,
-        no_cleanup=no_cleanup,
-        script=script,
-    )
+    # _execute_land may raise SystemExit(0) after successful merge+cleanup.
+    # We catch it to run the objective update before re-raising.
+    exit_after: SystemExit | None = None
+    try:
+        _execute_land(
+            erk_ctx,
+            pr_number=pr_number,
+            branch=branch,
+            worktree_path=Path(worktree_path) if worktree_path else None,
+            is_current_branch=is_current_branch,
+            target_child_branch=resolved_target_child,
+            use_graphite=use_graphite,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            no_cleanup=no_cleanup,
+            script=script,
+        )
+    except SystemExit as exc:
+        if exc.code != 0:
+            raise
+        exit_after = exc
+
+    # Objective update (fail-open — merge already succeeded)
+    if objective_number is not None:
+        run_objective_update_after_land(
+            erk_ctx,
+            objective=objective_number,
+            pr=pr_number,
+            branch=branch,
+        )
+
+    if exit_after is not None:
+        raise exit_after

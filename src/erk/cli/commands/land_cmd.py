@@ -1648,21 +1648,13 @@ def render_land_execution_script(
         cmd_parts.append("--use-graphite")
     if not cleanup_confirmed:
         cmd_parts.append("--no-cleanup")
+    if objective_number is not None:
+        cmd_parts.append(f"--objective-number={objective_number}")
     # User-controllable flags passed through "$@"
     cmd_parts.append('"$@"')
 
     erk_cmd = " ".join(cmd_parts)
     target_path_str = str(target_path)
-
-    # Build objective update command (separate, fail-open - no || return 1)
-    objective_line = ""
-    if objective_number is not None:
-        objective_line = (
-            f"\nerk exec objective-update-after-land"
-            f" --objective {objective_number}"
-            f' --pr "$PR_NUMBER"'
-            f' --branch "$BRANCH"'
-        )
 
     return f"""# erk land deferred execution
 # Usage: source land.sh <pr_number> <branch> [flags...]
@@ -1670,7 +1662,7 @@ PR_NUMBER="${{1:?Error: PR number required}}"
 BRANCH="${{2:?Error: Branch name required}}"
 shift 2
 
-{erk_cmd} || return 1{objective_line}
+{erk_cmd} || return 1
 cd {target_path_str}
 """
 
