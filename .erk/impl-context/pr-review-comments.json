@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "pr_number": 7768,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v7rAU",
+      "path": "src/erk/cli/commands/admin.py",
+      "line": 246,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Silent exception swallowing - use logging to diagnose failures. See exception-handling.md: never swallow exceptions silently even in optional operations.",
+          "created_at": "2026-02-21T18:45:50Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit ce83209. Replaced bare `pass` with `logger.debug()` to log the exception at debug level, making failures diagnosable while keeping the behavior non-fatal.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 19:10 UTC_",
+          "created_at": "2026-02-21T19:10:26Z"
+        }
+      ]
+    }
+  ]
+}
