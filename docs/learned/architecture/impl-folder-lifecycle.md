@@ -24,13 +24,13 @@ The erk system uses two distinct folders for implementation plans, each with dif
 
 ## .impl/ (Local, Never Committed)
 
-| Property   | Value                                                   |
-| ---------- | ------------------------------------------------------- |
-| Created by | Copy of .erk/impl-context/ OR local `erk implement`     |
-| Purpose    | Working directory for implementation                    |
-| Contains   | plan.md, plan-ref.json, plus run-info.json              |
-| Lifecycle  | Exists during implementation only                       |
-| Committed  | Never (in .gitignore)                                   |
+| Property   | Value                                               |
+| ---------- | --------------------------------------------------- |
+| Created by | Copy of .erk/impl-context/ OR local `erk implement` |
+| Purpose    | Working directory for implementation                |
+| Contains   | plan.md, plan-ref.json, plus run-info.json          |
+| Lifecycle  | Exists during implementation only                   |
+| Committed  | Never (in .gitignore)                               |
 
 ## Copy Step (Remote Only)
 

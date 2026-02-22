@@ -24,7 +24,6 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
 from erk_shared.naming import extract_leading_issue_number
 
-
 _REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
 """Fields required in plan-ref.json and ref.json for valid PlanRef construction."""
 
