@@ -338,7 +338,7 @@ class TestObjectivesViewRowConversion:
     """Tests for row conversion in Objectives view."""
 
     def test_objectives_view_has_enriched_columns(self) -> None:
-        """Objectives view produces plan, title, progress, fly, next, deps, updated, author."""
+        """Objectives view produces plan, slug, progress, state, updated, author."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
@@ -346,19 +346,17 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        # Objectives view: plan, title, progress, fly, next, deps, updated, author
-        assert len(values) == 8
+        # Objectives view: plan, slug, progress, state, updated, author
+        assert len(values) == 6
         assert _text_to_str(values[0]) == "#42"
-        assert values[1] == "Objective Plan"  # full_title
+        assert values[1] == "-"  # slug_display
         assert values[2] == "-"  # progress_display
-        assert values[3] == "-"  # in_flight_display
-        assert _text_to_str(values[4]) == "-"  # next_step_display
-        assert values[5] == "-"  # deps_display
-        assert values[6] == "-"  # updated_display
-        assert values[7] == "test-user"  # author
+        assert _text_to_str(values[3]) == "-"  # state_display
+        assert values[4] == "-"  # updated_display
+        assert values[5] == "test-user"  # author
 
-    def test_objectives_view_shows_progress_and_next(self) -> None:
-        """Objectives view shows progress and next step from row data."""
+    def test_objectives_view_shows_slug_and_sparkline(self) -> None:
+        """Objectives view shows slug and state sparkline from row data."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
@@ -368,18 +366,17 @@ class TestObjectivesViewRowConversion:
             objective_done_nodes=3,
             objective_total_nodes=7,
             objective_progress_display="3/7",
-            objective_next_node_display="1.3 Add tests",
-            objective_in_flight_display="2",
+            objective_slug_display="build-feature",
+            objective_state_display="✓✓✓▶▶○○",
             updated_display="2h ago",
         )
 
         values = table._row_to_values(row)
 
+        assert values[1] == "build-feature"  # slug
         assert values[2] == "3/7"  # progress
-        assert values[3] == "2"  # in_flight
-        assert _text_to_str(values[4]) == "1.3 Add tests"  # next step
-        assert values[5] == "-"  # deps
-        assert values[6] == "2h ago"  # updated
+        assert _text_to_str(values[3]) == "✓✓✓▶▶○○"  # state sparkline
+        assert values[4] == "2h ago"  # updated
 
 
 class TestShowPrColumnFalse:

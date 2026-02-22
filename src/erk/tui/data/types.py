@@ -54,8 +54,8 @@ class PlanRowData:
         objective_done_nodes: Count of done nodes in objective roadmap
         objective_total_nodes: Total nodes in objective roadmap
         objective_progress_display: Progress display (e.g., "3/7" or "-")
-        objective_next_node_display: Next pending node (e.g., "1.3 Add tests" or "-")
-        objective_deps_display: Dep status of next node ("ready", "in progress", etc.)
+        objective_slug_display: Slug or stripped title fallback (max 25 chars)
+        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
         updated_at: Last update datetime of the issue
         updated_display: Formatted relative time for last update (e.g., "2h ago")
         created_at: Creation datetime of the issue
@@ -105,9 +105,8 @@ class PlanRowData:
     objective_done_nodes: int
     objective_total_nodes: int
     objective_progress_display: str
-    objective_next_node_display: str
-    objective_deps_display: str
-    objective_in_flight_display: str
+    objective_slug_display: str
+    objective_state_display: str
     updated_at: datetime
     updated_display: str
     created_at: datetime

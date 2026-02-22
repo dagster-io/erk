@@ -238,9 +238,8 @@ def make_plan_row(
     objective_done_nodes: int = 0,
     objective_total_nodes: int = 0,
     objective_progress_display: str = "-",
-    objective_next_node_display: str = "-",
-    objective_deps_display: str = "-",
-    objective_in_flight_display: str = "-",
+    objective_slug_display: str = "-",
+    objective_state_display: str = "-",
     updated_at: datetime | None = None,
     updated_display: str = "-",
     created_at: datetime | None = None,
@@ -279,7 +278,8 @@ def make_plan_row(
         objective_done_nodes: Count of done nodes in objective roadmap
         objective_total_nodes: Total nodes in objective roadmap
         objective_progress_display: Progress display (e.g., "3/7" or "-")
-        objective_next_node_display: Next pending node display (e.g., "1.3 Add tests" or "-")
+        objective_slug_display: Slug or stripped title fallback (max 25 chars)
+        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
         updated_at: Last update datetime (defaults to same as created_at)
         updated_display: Formatted relative time for last update
         created_at: Creation datetime (defaults to 2025-01-01T00:00:00Z)
@@ -383,9 +383,8 @@ def make_plan_row(
         objective_done_nodes=objective_done_nodes,
         objective_total_nodes=objective_total_nodes,
         objective_progress_display=objective_progress_display,
-        objective_next_node_display=objective_next_node_display,
-        objective_deps_display=objective_deps_display,
-        objective_in_flight_display=objective_in_flight_display,
+        objective_slug_display=objective_slug_display,
+        objective_state_display=objective_state_display,
         updated_at=effective_updated_at,
         updated_display=updated_display,
         created_at=effective_created_at,
