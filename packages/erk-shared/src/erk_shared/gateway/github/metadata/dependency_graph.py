@@ -27,6 +27,15 @@ _STATUS_ORDER: dict[RoadmapNodeStatus, int] = {
     "skipped": 4,
 }
 
+_STATUS_SYMBOLS: dict[RoadmapNodeStatus, str] = {
+    "done": "✓",
+    "in_progress": "▶",
+    "planning": "▶",
+    "pending": "○",
+    "blocked": "⊘",
+    "skipped": "-",
+}
+
 
 @dataclass(frozen=True)
 class ObjectiveNode:
@@ -206,6 +215,20 @@ def compute_graph_summary(graph: DependencyGraph) -> dict[str, int]:
         "blocked": counts.get("blocked", 0),
         "skipped": counts.get("skipped", 0),
     }
+
+
+def build_state_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
+    """Build a compact sparkline showing each node's status in position order.
+
+    Symbols: ✓ done, ▶ active (in_progress/planning), ○ pending, ⊘ blocked, - skipped.
+
+    Args:
+        nodes: Objective nodes in graph order
+
+    Returns:
+        Sparkline string like "✓✓✓▶▶○○○○"
+    """
+    return "".join(_STATUS_SYMBOLS.get(node.status, "?") for node in nodes)
 
 
 def _find_node_by_status(

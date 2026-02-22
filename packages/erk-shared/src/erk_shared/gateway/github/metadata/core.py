@@ -762,6 +762,18 @@ def extract_objective_header_comment_id(issue_body: str) -> int | None:
     return block.data.get("objective_comment_id")
 
 
+def extract_objective_slug(issue_body: str) -> str | None:
+    """Extract slug from objective-header metadata block.
+
+    Args:
+        issue_body: Issue body containing objective-header block
+
+    Returns:
+        slug value if found, None if block is missing or field is unset
+    """
+    return extract_metadata_value(issue_body, "objective-header", "slug")
+
+
 def extract_objective_from_comment(comment_body: str) -> str | None:
     """Extract objective content from a comment with objective-body metadata block.
 
