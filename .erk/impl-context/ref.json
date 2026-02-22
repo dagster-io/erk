@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add separate \"sts\" column for status indicators in TUI dashboard"
+}
