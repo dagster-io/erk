@@ -54,11 +54,9 @@ from erk_shared.context.helpers import (
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
-from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
-from erk_shared.impl_folder import read_plan_ref
 from erk_shared.plan_store.draft_pr_lifecycle import (
     build_original_plan_section,
     extract_metadata_prefix,
@@ -255,11 +253,6 @@ def _update_pr_body_impl(
             stderr=stderr_preview,
         )
 
-    # Fallback: detect draft-PR plan from PR body metadata block
-    # .impl/plan-ref.json may not survive CI cleanup steps
-    if not is_draft_pr and find_metadata_block(pr_result.body, "plan-header") is not None:
-        is_draft_pr = True
-
     # Build full PR body
     if is_draft_pr:
         # For draft-PR plans: preserve metadata prefix, include original plan section
@@ -304,12 +297,14 @@ def _update_pr_body_impl(
 @click.option("--plan-id", type=int, required=True, help="Plan identifier to close on merge")
 @click.option("--run-id", type=str, default=None, help="Optional workflow run ID")
 @click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
+@click.option("--draft-pr", is_flag=True, default=False, help="Draft-PR plan (no Closes #N)")
 @click.pass_context
 def ci_update_pr_body(
     ctx: click.Context,
     plan_id: int,
     run_id: str | None,
     run_url: str | None,
+    draft_pr: bool,
 ) -> None:
     """Update PR body with AI-generated summary and footer.
 
@@ -326,11 +321,6 @@ def ci_update_pr_body(
     config = load_config(repo_root)
     plans_repo = config.plans_repo
 
-    # Detect draft-PR plan from .impl/plan-ref.json
-    impl_dir = repo_root / ".impl"
-    plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
-    is_draft_pr = plan_ref is not None and plan_ref.provider == "github-draft-pr"
-
     result = _update_pr_body_impl(
         git=git,
         github=github,
@@ -340,7 +330,7 @@ def ci_update_pr_body(
         run_id=run_id,
         run_url=run_url,
         plans_repo=plans_repo,
-        is_draft_pr=is_draft_pr,
+        is_draft_pr=draft_pr,
     )
 
     # Output JSON result

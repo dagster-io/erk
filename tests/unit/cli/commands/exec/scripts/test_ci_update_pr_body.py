@@ -786,16 +786,14 @@ def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) 
     assert "My Plan" in updated_body
 
 
-def test_impl_fallback_detects_draft_pr_from_body_metadata(tmp_path: Path) -> None:
-    """Test that is_draft_pr=False is overridden when PR body contains plan-header metadata."""
+def test_cli_draft_pr_flag(tmp_path: Path) -> None:
+    """Test CLI command with --draft-pr flag takes the draft-PR body path."""
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
-    # Build a PR body with valid metadata block (details/yaml format) and plan content
+    # Build a PR body with metadata prefix and plan content (draft-PR format)
     metadata_prefix = (
         "<!-- erk:metadata-block:plan-header -->\n"
-        "<details>\n<summary>plan-header</summary>\n\n"
-        "```yaml\nbranch: plan-test-01-01\n```\n"
-        "</details>\n"
+        "plan-header metadata\n"
         "<!-- /erk:metadata-block -->\n\n---\n\n"
     )
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
@@ -839,32 +837,30 @@ def test_impl_fallback_detects_draft_pr_from_body_metadata(tmp_path: Path) -> No
         prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
     )
 
-    # Pass is_draft_pr=False to simulate .impl/plan-ref.json missing in CI
-    result = _update_pr_body_impl(
-        git=git,
-        github=github,
-        executor=executor,
-        repo_root=tmp_path,
-        issue_number=42,
-        run_id=None,
-        run_url=None,
-        plans_repo=None,
-        is_draft_pr=False,
+    ctx = ErkContext.for_test(
+        git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path
     )
 
-    assert isinstance(result, UpdateSuccess)
-    assert result.pr_number == 42
+    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "42", "--draft-pr"],
+        obj=ctx,
+    )
 
-    # Verify the updated body preserves metadata (draft-PR path was taken)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr_number"] == 42
+
+    # Verify the draft-PR body path was taken
     updated_bodies = github.updated_pr_bodies
     assert len(updated_bodies) == 1
     _pr_num, updated_body = updated_bodies[0]
 
-    # Should have metadata prefix preserved (fallback detection triggered draft-PR path)
+    # Should have metadata prefix preserved
     assert updated_body.startswith(metadata_prefix)
-    # Should have summary
-    assert "Generated summary" in updated_body
-    # Should NOT have Closes #N (draft-PR path passes issue_number=None)
+    # Should NOT have Closes #N (draft-PR path)
     assert "Closes #42" not in updated_body
     # Should have original plan section
     assert "original-plan" in updated_body
