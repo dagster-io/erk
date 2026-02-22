@@ -1,0 +1,58 @@
+{
+  "success": true,
+  "pr_number": 7779,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v8rc8",
+      "path": ".claude/commands/erk/plan-save.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "schrockn",
+          "body": "prepare+implement is not the right copy\n\n\"implement the planned pr in <\\<branch_name>> in new worktree\"",
+          "created_at": "2026-02-21T23:32:11Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v8rmT",
+      "path": ".claude/commands/erk/plan-save.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "schrockn",
+          "body": "\"implement the planned pr in <\\<branch_name>>\"",
+          "created_at": "2026-02-21T23:32:44Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v8rsP",
+      "path": ".claude/commands/erk/plan-save.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "schrockn",
+          "body": "simiilar language updates here. no prepare+implement language",
+          "created_at": "2026-02-21T23:33:08Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v8xLA",
+      "path": ".claude/commands/erk/plan-save.md",
+      "line": 128,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: Direct git command usage detected - violates cli/slash-command-exec-migration.md\n\nThe command instructs Claude to run `git branch --show-current` directly. Per erk's architecture guidelines, git operations in slash commands should be extracted to `erk exec` scripts that use gateway abstractions.\n\n**Why this matters:**\n- Direct git calls bypass gateways, making the logic untestable\n- Can't use fake implementations in tests\n- Not reusable by other commands, hooks, or CI\n\n**Recommended fix:**\nCreate an `erk exec get-trunk-status` command that:\n1. Uses the git gateway to get current branch\n2. Returns structured JSON: `{\"on_trunk\": true/false, \"branch_name\": \"...\"}\n3. Can be tested with fake git gateway\n\nThen update this slash command to call: `erk exec get-trunk-status --json` and parse the result.\n\nSee [Slash Command to Exec Migration](https://github.com/dagster-io/erk/blob/master/docs/learned/cli/slash-command-exec-migration.md) for the full pattern.",
+          "created_at": "2026-02-21T23:57:09Z"
+        }
+      ]
+    }
+  ]
+}
