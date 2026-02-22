@@ -71,7 +71,7 @@ def test_cli_missing_session_id() -> None:
 
     result = runner.invoke(
         download_remote_session_command,
-        ["--session-branch", "session/42"],
+        ["--session-branch", "async-learn/42"],
         obj=ErkContext.for_test(),
     )
 
@@ -94,7 +94,7 @@ def test_error_download_fails_when_branch_not_found(tmp_path: Path) -> None:
 
     exit_code, output = _execute_download(
         repo_root=tmp_path,
-        session_branch="session/42",
+        session_branch="async-learn/42",
         session_id="test-session-123",
         git=fake_git,
     )
@@ -104,7 +104,7 @@ def test_error_download_fails_when_branch_not_found(tmp_path: Path) -> None:
     assert "Failed to extract session from branch" in str(output["error"])
 
     # Verify fetch was attempted via FakeGit
-    assert ("origin", "session/42") in fake_git.fetched_branches
+    assert ("origin", "async-learn/42") in fake_git.fetched_branches
 
 
 def test_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
@@ -121,7 +121,7 @@ def test_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     # Download attempt (will fail since tmp_path is not a git repo)
     exit_code, _output = _execute_download(
         repo_root=tmp_path,
-        session_branch="session/42",
+        session_branch="async-learn/42",
         session_id=session_id,
         git=fake_git,
     )

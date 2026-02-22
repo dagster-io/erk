@@ -4,7 +4,7 @@ This exec command downloads a session and stores it in the
 .erk/scratch/remote-sessions/ directory for learn workflow processing.
 
 Usage:
-    erk exec download-remote-session --session-branch session/123 --session-id abc-123
+    erk exec download-remote-session --session-branch async-learn/123 --session-id abc-123
 
 Output:
     Structured JSON output with success status and session file path
@@ -14,7 +14,7 @@ Exit Codes:
     1: Error (download failed)
 
 Examples:
-    $ erk exec download-remote-session --session-branch session/123 --session-id abc-123
+    $ erk exec download-remote-session --session-branch async-learn/123 --session-id abc-123
     {
       "success": true,
       "session_id": "abc-123",
@@ -137,7 +137,7 @@ def _execute_download(
 @click.option(
     "--session-branch",
     required=True,
-    help="Git branch containing the session (e.g., session/123)",
+    help="Git branch containing the session (e.g., async-learn/123)",
 )
 @click.option(
     "--session-id",

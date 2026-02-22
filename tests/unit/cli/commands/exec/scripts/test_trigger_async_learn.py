@@ -850,7 +850,7 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
 
     planning_id = "plan-sess-1"
     remote_id = "remote-impl-sess-2"
-    session_branch = "session/123"
+    session_branch = "async-learn/123"
 
     # Create a real JSONL session file for the planning session
     session_dir = tmp_path / ".claude" / "projects" / "test-project"
@@ -924,7 +924,7 @@ def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> 
     (session_dir / f"{planning_id}.jsonl").write_text(planning_content, encoding="utf-8")
 
     # Use a nonexistent session branch to simulate download failure (git show will fail)
-    session_branch = "session/nonexistent-999"
+    session_branch = "async-learn/nonexistent-999"
 
     body = _make_plan_issue_body_with_remote_session(
         branch_name=None,
