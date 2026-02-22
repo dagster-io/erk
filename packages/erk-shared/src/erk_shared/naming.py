@@ -250,6 +250,126 @@ def validate_objective_slug(slug: str) -> ValidObjectiveSlug | InvalidObjectiveS
     return ValidObjectiveSlug(slug=slug)
 
 
+@dataclass(frozen=True)
+class ValidWorktreeName:
+    """Validation success for a worktree name.
+
+    Attributes:
+        name: The validated worktree name.
+    """
+
+    name: str
+
+
+@dataclass(frozen=True)
+class InvalidWorktreeName:
+    """Validation failure for a worktree name.
+
+    Attributes:
+        raw_name: The original name that failed validation.
+        reason: A short description of why validation failed.
+        sanitized: What sanitize_worktree_name() would produce from this input.
+    """
+
+    raw_name: str
+    reason: str
+    sanitized: str
+
+    def format_message(self) -> str:
+        """Full error message with rules, actual value, and examples.
+
+        Designed so an agent receiving this message can self-correct.
+        """
+        return (
+            f"Invalid worktree name: {self.reason}\n"
+            f"  Actual value: {self.raw_name!r}\n"
+            f"  Sanitized form: {self.sanitized!r}\n"
+            f"  Rules:\n"
+            f"    - 1-31 characters\n"
+            f"    - Lowercase letters, digits, and hyphens only\n"
+            f"    - No leading or trailing hyphens\n"
+            f"    - No consecutive hyphens\n"
+            f"    - No underscores (use hyphens instead)\n"
+            f"    - No uppercase letters\n"
+            f"    - No spaces or special characters\n"
+            f"  Valid examples: my-feature, fix-auth-bug, add-v2-support\n"
+            f"  Invalid examples: My_Feature (uppercase+underscores), "
+            f"feature--name (consecutive hyphens), -leading (leading hyphen)"
+        )
+
+
+def validate_worktree_name(name: str) -> ValidWorktreeName | InvalidWorktreeName:
+    """Validate that a worktree name would survive sanitization without significant change.
+
+    This is a backpressure gate for agent-provided names. It checks whether the
+    name is already in a form that sanitize_worktree_name() would accept unchanged,
+    rather than silently transforming bad input.
+
+    Names with existing timestamp suffixes (-MM-DD-HHMM) are accepted as-is since
+    sanitize_worktree_name() treats them as idempotent.
+
+    Args:
+        name: The worktree name to validate.
+
+    Returns:
+        ValidWorktreeName if the name is already clean,
+        InvalidWorktreeName if it would be significantly transformed.
+
+    Examples:
+        >>> validate_worktree_name("my-feature")
+        ValidWorktreeName(name='my-feature')
+        >>> validate_worktree_name("My_Feature")
+        InvalidWorktreeName(raw_name='My_Feature', reason='...', sanitized='my-feature')
+    """
+    stripped = name.strip()
+    if not stripped:
+        return InvalidWorktreeName(
+            raw_name=name,
+            reason="Empty name",
+            sanitized=sanitize_worktree_name(name),
+        )
+
+    # Names with timestamp suffixes are accepted as-is (idempotent in sanitize)
+    if has_timestamp_suffix(stripped):
+        return ValidWorktreeName(name=stripped)
+
+    sanitized = sanitize_worktree_name(stripped)
+    if sanitized != stripped:
+        reason = _diagnose_worktree_name(stripped)
+        return InvalidWorktreeName(
+            raw_name=name,
+            reason=reason,
+            sanitized=sanitized,
+        )
+
+    return ValidWorktreeName(name=stripped)
+
+
+def _diagnose_worktree_name(name: str) -> str:
+    """Identify why a worktree name would not survive sanitization.
+
+    Checks conditions in order of specificity to return the most helpful reason.
+
+    Args:
+        name: The worktree name to diagnose (should be stripped).
+
+    Returns:
+        A human-readable reason string.
+    """
+    checks: list[tuple[bool, str]] = [
+        (any(c.isupper() for c in name), "Contains uppercase letters (must be lowercase)"),
+        ("_" in name, "Contains underscores (use hyphens instead)"),
+        (re.search(r"[^a-z0-9-]", name) is not None, "Contains characters outside [a-z0-9-]"),
+        ("--" in name, "Contains consecutive hyphens"),
+        (name.startswith("-") or name.endswith("-"), "Has leading or trailing hyphens"),
+        (len(name) > 31, f"Too long ({len(name)} characters, maximum 31)"),
+    ]
+    for failed, reason in checks:
+        if failed:
+            return reason
+    return "Name would be transformed by sanitization"
+
+
 def sanitize_worktree_name(name: str) -> str:
     """Sanitize a worktree name for use as a directory name.
 

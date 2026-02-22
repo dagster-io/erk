@@ -42,7 +42,12 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_folder import create_impl_folder, read_plan_ref, save_plan_ref
-from erk_shared.naming import generate_issue_branch_name
+from erk_shared.naming import (
+    InvalidWorktreeName,
+    generate_issue_branch_name,
+    sanitize_worktree_name,
+    validate_worktree_name,
+)
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR, extract_plan_content
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -301,6 +306,18 @@ def _setup_issue_plan(
         branch_name = generate_issue_branch_name(
             issue_number, slug, timestamp, objective_id=plan.objective_id
         )
+
+        # Validate worktree name derived from branch — agent-facing backpressure gate
+        wt_validation = validate_worktree_name(sanitize_worktree_name(branch_name))
+        if isinstance(wt_validation, InvalidWorktreeName):
+            error_output = {
+                "success": False,
+                "error": "invalid_worktree_name",
+                "message": f"Generated worktree name failed validation.\n"
+                f"{wt_validation.format_message()}",
+            }
+            click.echo(json.dumps(error_output), err=True)
+            raise SystemExit(1)
 
         # Check if branch already exists
         local_branches = git.branch.list_local_branches(repo_root)

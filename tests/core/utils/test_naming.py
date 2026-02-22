@@ -7,8 +7,10 @@ from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     InvalidObjectiveSlug,
     InvalidPlanTitle,
+    InvalidWorktreeName,
     ValidObjectiveSlug,
     ValidPlanTitle,
+    ValidWorktreeName,
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
@@ -23,6 +25,7 @@ from erk_shared.naming import (
     strip_plan_from_filename,
     validate_objective_slug,
     validate_plan_title,
+    validate_worktree_name,
 )
 
 
@@ -773,3 +776,99 @@ def test_validate_plan_title_preserves_original_in_error() -> None:
     result = validate_plan_title("   ab   ")
     assert isinstance(result, InvalidPlanTitle)
     assert result.raw_title == "   ab   "
+
+
+# Tests for validate_worktree_name
+@pytest.mark.parametrize(
+    "name",
+    [
+        "my-feature",
+        "fix-auth-bug",
+        "add-v2-support",
+        "simple",
+        "a",
+        "work",
+        "feature123",
+        "123-fix-bug",
+        "a" * 31,
+    ],
+)
+def test_validate_worktree_name_valid(name: str) -> None:
+    """Valid worktree names return ValidWorktreeName."""
+    result = validate_worktree_name(name)
+    assert isinstance(result, ValidWorktreeName)
+    assert result.name == name
+
+
+def test_validate_worktree_name_valid_with_timestamp_suffix() -> None:
+    """Names with timestamp suffixes are accepted as-is."""
+    result = validate_worktree_name("42-feature-01-15-1430")
+    assert isinstance(result, ValidWorktreeName)
+    assert result.name == "42-feature-01-15-1430"
+
+
+def test_validate_worktree_name_strips_whitespace() -> None:
+    """Leading/trailing whitespace is stripped before validation."""
+    result = validate_worktree_name("  my-feature  ")
+    assert isinstance(result, ValidWorktreeName)
+    assert result.name == "my-feature"
+
+
+@pytest.mark.parametrize(
+    ("name", "reason_fragment"),
+    [
+        ("My_Feature", "uppercase"),
+        ("UPPERCASE", "uppercase"),
+        ("camelCase", "uppercase"),
+        ("has_underscores", "underscores"),
+        ("my feature", "outside [a-z0-9-]"),
+        ("name!with@special", "outside [a-z0-9-]"),
+        ("name.with.dots", "outside [a-z0-9-]"),
+        ("double--hyphen", "consecutive hyphens"),
+        ("-leading-hyphen", "leading or trailing"),
+        ("trailing-hyphen-", "leading or trailing"),
+        ("a" * 32, "Too long"),
+        ("a" * 50, "Too long"),
+    ],
+)
+def test_validate_worktree_name_invalid(name: str, reason_fragment: str) -> None:
+    """Invalid worktree names return InvalidWorktreeName with matching reason."""
+    result = validate_worktree_name(name)
+    assert isinstance(result, InvalidWorktreeName)
+    assert reason_fragment in result.reason
+
+
+def test_validate_worktree_name_empty() -> None:
+    """Empty names return InvalidWorktreeName."""
+    result = validate_worktree_name("")
+    assert isinstance(result, InvalidWorktreeName)
+    assert "Empty" in result.reason
+
+    result_spaces = validate_worktree_name("   ")
+    assert isinstance(result_spaces, InvalidWorktreeName)
+    assert "Empty" in result_spaces.reason
+
+
+def test_validate_worktree_name_includes_sanitized_form() -> None:
+    """InvalidWorktreeName includes what sanitize would produce."""
+    result = validate_worktree_name("My_Feature")
+    assert isinstance(result, InvalidWorktreeName)
+    assert result.sanitized == "my-feature"
+
+
+def test_validate_worktree_name_error_message_has_rules() -> None:
+    """Error message includes rules for agent self-correction."""
+    result = validate_worktree_name("INVALID_NAME")
+    assert isinstance(result, InvalidWorktreeName)
+    msg = result.format_message()
+    assert "INVALID_NAME" in msg
+    assert "lowercase" in msg.lower()
+    assert "Valid examples" in msg
+    assert "Invalid examples" in msg
+
+
+def test_validate_worktree_name_roundtrip_with_sanitize() -> None:
+    """Valid names are exactly what sanitize_worktree_name produces."""
+    valid_names = ["my-feature", "fix-bug", "add-v2-support", "work", "a" * 31]
+    for name in valid_names:
+        assert sanitize_worktree_name(name) == name, f"Valid name {name!r} changed by sanitize"
