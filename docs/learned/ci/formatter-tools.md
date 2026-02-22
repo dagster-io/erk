@@ -54,32 +54,32 @@ make format
 
 ## Transient Artifact Detection
 
-Prettier failures on `.worker-impl/` markdown files serve as cleanup detection:
+Prettier failures on `.erk/impl-context/` markdown files serve as cleanup detection:
 
 ### The Pattern
 
-When `.worker-impl/` isn't properly cleaned up:
+When `.erk/impl-context/` isn't properly cleaned up:
 
 1. Prettier runs during CI
-2. Prettier finds unformatted markdown in `.worker-impl/*.md`
+2. Prettier finds unformatted markdown in `.erk/impl-context/*.md`
 3. CI fails with formatting errors
 
 ### Interpreting the Failure
 
-| Files in Error           | Meaning                                   |
-| ------------------------ | ----------------------------------------- |
-| `.worker-impl/plan.md`   | Remote implementation didn't clean up     |
-| `.worker-impl/README.md` | Same - cleanup step failed or was skipped |
+| Files in Error                | Meaning                                   |
+| ----------------------------- | ----------------------------------------- |
+| `.erk/impl-context/plan.md`   | Remote implementation didn't clean up     |
+| `.erk/impl-context/ref.json`  | Same - cleanup step failed or was skipped |
 
 ### Recovery
 
 ```bash
 # Clean up the transient artifacts
-git rm -rf .worker-impl/
-git commit -m "Remove .worker-impl/ after implementation"
+git rm -rf .erk/impl-context/
+git commit -m "Remove .erk/impl-context/ after implementation"
 git push
 ```
 
 ### Root Cause
 
-See [erk-impl Workflow Patterns](erk-impl-workflow-patterns.md) for why `.worker-impl/` cleanup fails (usually: staged deletion discarded by `git reset --hard`).
+See [erk-impl Workflow Patterns](erk-impl-workflow-patterns.md) for why `.erk/impl-context/` cleanup fails (usually: staged deletion discarded by `git reset --hard`).

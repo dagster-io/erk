@@ -95,7 +95,7 @@ def _build_prompt(
     """Build prompt for PR summary generation.
 
     Note: We deliberately do NOT include commit messages here. The commit messages
-    may contain info about .worker-impl/ deletions that don't appear in the final PR diff.
+    may contain info about .erk/impl-context/ deletions that don't appear in the final PR diff.
     """
     context_section = f"""## Context
 

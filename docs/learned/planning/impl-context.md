@@ -14,8 +14,8 @@ tripwires:
   - action: "adding a new setup path to plan-implement without routing through Step 2d"
     warning: "Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff."
     score: 9
-  - action: "calling `create_worker_impl_folder()` without checking `worker_impl_folder_exists()` first"
-    warning: "Both submit paths use LBYL: `if worker_impl_folder_exists(): remove_worker_impl_folder()` before creating. Stale .worker-impl/ from a prior failed submission causes errors."
+  - action: "calling `create_impl_context()` without checking `impl_context_exists()` first"
+    warning: "Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors."
   - action: "pushing implementation commits after impl-context cleanup without git pull --rebase"
     warning: "After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures."
     score: 4
@@ -59,13 +59,13 @@ The key failure mode was confusing "delete from disk" (shutil.rmtree) with "remo
 
 ## Prevention Strategies
 
-### Worker-Impl Cleanup
+### Impl-Context Cleanup
 
-Both submit paths use the LBYL pattern to clean up stale `.worker-impl/` before creating a new one:
+Both submit paths use the LBYL pattern to clean up stale `.erk/impl-context/` before creating a new one:
 
-<!-- Source: src/erk/cli/commands/submit.py, worker_impl_folder_exists -->
+<!-- Source: src/erk/cli/commands/submit.py, impl_context_exists -->
 
-See the `worker_impl_folder_exists()` / `remove_worker_impl_folder()` LBYL guard in `src/erk/cli/commands/submit.py`. Both submit paths use this pattern to prevent errors from a prior failed submission leaving a stale `.worker-impl/` directory behind (fixed in PR #7687).
+See the `impl_context_exists()` / `remove_impl_context()` LBYL guard in `src/erk/cli/commands/submit.py`. Both submit paths use this pattern to prevent errors from a prior failed submission leaving a stale `.erk/impl-context/` directory behind (fixed in PR #7687).
 
 ### Deferred Impl-Context Deletion
 

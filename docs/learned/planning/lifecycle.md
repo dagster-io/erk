@@ -14,7 +14,7 @@ tripwires:
   - action: "implementing custom PR/plan relevance assessment logic"
     warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
   - action: "after plan-implement execution completes"
-    warning: "Always clean .worker-impl/ with `git rm -rf .worker-impl/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
+    warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
   - action: "implementing PR body generation with checkout footers"
     warning: "HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``"
   - action: "calling commands that depend on `.impl/plan-ref.json` metadata"
@@ -72,7 +72,7 @@ The erk plan lifecycle manages implementation plans from creation through automa
 | `.impl/progress.md`    | Mutable progress tracking                                      |
 | `.impl/plan-ref.json`  | Plan reference (provider-agnostic, replaces legacy issue.json) |
 | `.impl/run-info.json`  | GitHub Actions run reference (remote only)                     |
-| `.worker-impl/`        | Remote implementation folder (GitHub Actions)                  |
+| `.erk/impl-context/`   | Remote implementation folder (GitHub Actions)                  |
 
 ### Which Phase Am I In?
 
@@ -331,12 +331,12 @@ trunk (main)
 
 **Implementation**: See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py`.
 
-### `.worker-impl/` Folder Creation
+### `.erk/impl-context/` Folder Creation
 
-The submit command creates the `.worker-impl/` folder structure:
+The submit command creates the `.erk/impl-context/` folder structure:
 
 ```
-.worker-impl/
+.erk/impl-context/
 ├── plan.md         # Full plan content from issue
 ├── progress.md     # Initial progress tracking (all unchecked)
 ├── plan-ref.json   # Plan reference (provider-agnostic)
@@ -428,7 +428,7 @@ This ensures only one implementation runs per issue at a time.
 
 - Find existing PR via `gh pr list --head <branch_name>` (by branch, not body search)
 - Checkout the implementation branch
-- Update `.worker-impl/` with fresh plan content (for reruns)
+- Update `.erk/impl-context/` with fresh plan content (for reruns)
 
 #### Phase 3: Use Existing PR
 
@@ -438,15 +438,15 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 4: Implementation
 
-- Copy `.worker-impl/` to `.impl/` (Claude reads `.impl/`)
+- Copy `.erk/impl-context/` to `.impl/` (Claude reads `.impl/`)
 - Create `.impl/run-info.json` with workflow run details
 - Execute `/erk:plan-implement` with Claude
 
 #### Phase 5: Submission
 
-- Stage implementation changes (NOT `.worker-impl/` deletion)
+- Stage implementation changes (NOT `.erk/impl-context/` deletion)
 - Run `/erk:git-pr-push` to create proper commit message
-- Clean up `.worker-impl/` in separate commit
+- Clean up `.erk/impl-context/` in separate commit
 - Mark PR ready for review
 - Update PR body with implementation summary
 - Trigger CI via empty commit
@@ -457,14 +457,14 @@ This ensures only one implementation runs per issue at a time.
 
 Implementation executes the plan, whether locally or via GitHub Actions.
 
-### `.worker-impl/` vs `.impl/`
+### `.erk/impl-context/` vs `.impl/`
 
-| Folder          | Purpose                                      | Git Status                       |
-| --------------- | -------------------------------------------- | -------------------------------- |
-| `.worker-impl/` | Remote implementation (GitHub Actions)       | Committed, then deleted          |
-| `.impl/`        | Local implementation + Claude's working copy | In `.gitignore`, never committed |
+| Folder               | Purpose                                      | Git Status                       |
+| -------------------- | -------------------------------------------- | -------------------------------- |
+| `.erk/impl-context/` | Remote implementation (GitHub Actions)       | Committed, then deleted          |
+| `.impl/`             | Local implementation + Claude's working copy | In `.gitignore`, never committed |
 
-In GitHub Actions, `.worker-impl/` is copied to `.impl/` before Claude runs.
+In GitHub Actions, `.erk/impl-context/` is copied to `.impl/` before Claude runs.
 
 ### `.impl/run-info.json`
 
@@ -525,16 +525,16 @@ Progress tracking is done via the TodoWrite tool in the Claude Code session.
 
 A PR associated with a plan may exist but not contain the actual implementation:
 
-- **Queued Plan**: PR contains only `.worker-impl/` folder with plan files
+- **Queued Plan**: PR contains only `.erk/impl-context/` folder with plan files
 - **Implemented Plan**: PR contains actual source code changes
 
 To verify implementation status:
 
-1. Check if PR diff includes changes outside `.worker-impl/`
+1. Check if PR diff includes changes outside `.erk/impl-context/`
 2. Use `gh pr diff <number>` and look for actual implementation files
 3. Don't rely solely on PR state (OPEN/MERGED) - a PR can be open with only plan files
 
-This pattern was discovered when verifying prerequisite PR #5577: the PR existed and was open, but only contained `.worker-impl/` plan files, not the actual PlanSynthesizer agent.
+This pattern was discovered when verifying prerequisite PR #5577: the PR existed and was open, but only contained `.erk/impl-context/` plan files, not the actual PlanSynthesizer agent.
 
 ### No-Changes Error Scenario
 
@@ -571,13 +571,13 @@ The pure git submission flow:
 4. Push to remote
 5. Update PR body with summary
 
-### `.worker-impl/` Cleanup
+### `.erk/impl-context/` Cleanup
 
-In GitHub Actions, `.worker-impl/` is removed in a separate commit after CI passes:
+In GitHub Actions, `.erk/impl-context/` is removed in a separate commit after CI passes:
 
 ```bash
-git rm -rf .worker-impl/
-git commit -m "Remove .worker-impl/ folder after implementation"
+git rm -rf .erk/impl-context/
+git commit -m "Remove .erk/impl-context/ folder after implementation"
 git push
 ```
 
@@ -589,18 +589,18 @@ The cleanup happens in a specific sequence:
 
 1. **Implementation commit** - Contains the actual code changes
 2. **CI validation** - Tests, formatting, type checking must pass
-3. **Remove `.worker-impl/`** - Cleanup commit (this step)
+3. **Remove `.erk/impl-context/`** - Cleanup commit (this step)
 4. **Push changes** - Both commits pushed to PR
 
 **Key distinction:**
 
-- **`.worker-impl/`**: CI automatically removes this after validation passes. This is the ephemeral working copy used during remote implementation. It's safe to delete because it's already been copied to `.impl/` for Claude's use.
+- **`.erk/impl-context/`**: CI automatically removes this after validation passes. This is the ephemeral working copy used during remote implementation. It's safe to delete because it's already been copied to `.impl/` for Claude's use.
 
 - **`.impl/`**: Requires user review and manual deletion. This is the original plan that should be preserved until the user confirms completion. Never auto-delete this folder - it serves as documentation of what was planned vs. what was implemented.
 
-**Clear sequence**: CI passes → remove `.worker-impl/` → commit → push
+**Clear sequence**: CI passes → remove `.erk/impl-context/` → commit → push
 
-This pattern ensures that transient artifacts (`.worker-impl/`) are cleaned up automatically while permanent artifacts (`.impl/`) remain for user review.
+This pattern ensures that transient artifacts (`.erk/impl-context/`) are cleaned up automatically while permanent artifacts (`.impl/`) remain for user review.
 
 ### PR Ready for Review
 
@@ -845,8 +845,8 @@ git log origin/123-add-user-authentic-11-30-1430 --oneline -5
 # Find PR
 gh pr view 123-add-user-authentic-11-30-1430
 
-# Check for .worker-impl/
-git ls-tree origin/123-add-user-authentic-11-30-1430 | grep worker-impl
+# Check for .erk/impl-context/
+git ls-tree origin/123-add-user-authentic-11-30-1430 | grep impl-context
 ```
 
 ### From PR Number

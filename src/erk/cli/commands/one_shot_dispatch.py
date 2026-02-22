@@ -236,13 +236,13 @@ def dispatch_one_shot(
     user_output("Creating branch...")
     ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
 
-    # Write prompt to .worker-impl/prompt.md directly on the branch (no checkout).
-    # (.impl/ is in .gitignore; .worker-impl/ is the committable counterpart
+    # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout).
+    # (.impl/ is in .gitignore; .erk/impl-context/ is the committable counterpart
     # that the remote workflow copies into .impl/)
     ctx.git.commit.commit_files_to_branch(
         repo.root,
         branch=branch_name,
-        files={".worker-impl/prompt.md": params.prompt + "\n"},
+        files={".erk/impl-context/prompt.md": params.prompt + "\n"},
         message=f"One-shot: {params.prompt[:60]}",
     )
 
@@ -332,11 +332,11 @@ def dispatch_one_shot(
     user_output(f"Created draft PR #{pr_number}")
 
     # Build workflow inputs
-    # Truncate prompt for workflow input (full text is in .worker-impl/prompt.md)
+    # Truncate prompt for workflow input (full text is in .erk/impl-context/prompt.md)
     max_input_len = 500
     truncated_prompt = params.prompt[:max_input_len]
     if len(params.prompt) > max_input_len:
-        truncated_prompt += "... (full prompt committed to .worker-impl/prompt.md)"
+        truncated_prompt += "... (full prompt committed to .erk/impl-context/prompt.md)"
 
     inputs: dict[str, str] = {
         "prompt": truncated_prompt,

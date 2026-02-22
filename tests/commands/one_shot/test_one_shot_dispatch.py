@@ -57,10 +57,10 @@ def test_dispatch_happy_path() -> None:
         assert len(git.created_branches) == 1
         assert git.created_branches[0][2] == "main"  # start_point is trunk
 
-        # Verify .worker-impl/prompt.md was committed directly to branch (no checkout)
+        # Verify .erk/impl-context/prompt.md was committed directly to branch (no checkout)
         assert len(git.branch_commits) == 1
         assert git.branch_commits[0].files == {
-            ".worker-impl/prompt.md": "fix the import in config.py\n",
+            ".erk/impl-context/prompt.md": "fix the import in config.py\n",
         }
         assert git.branch_commits[0].branch.startswith("P1-")
 
@@ -439,8 +439,10 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
         # Verify workflow input was truncated
         _workflow, inputs = github.triggered_workflows[0]
         assert len(inputs["prompt"]) < len(long_prompt)
-        assert inputs["prompt"].endswith("... (full prompt committed to .worker-impl/prompt.md)")
+        assert inputs["prompt"].endswith(
+            "... (full prompt committed to .erk/impl-context/prompt.md)"
+        )
 
         # Verify full prompt was committed directly to branch via branch_commits
         assert len(git.branch_commits) == 1
-        assert git.branch_commits[0].files == {".worker-impl/prompt.md": long_prompt + "\n"}
+        assert git.branch_commits[0].files == {".erk/impl-context/prompt.md": long_prompt + "\n"}

@@ -3,7 +3,7 @@
 This exec command generates a PR summary by analyzing the PR diff
 using Claude. It uses the same prompt as commit message generation but
 does NOT include commit messages (which may contain misleading info
-about .worker-impl/ deletions).
+about .erk/impl-context/ deletions).
 
 This is used by the GitHub Actions workflow when updating PR bodies
 after implementation.
@@ -46,7 +46,7 @@ def _build_prompt(
 
     Note: We deliberately do NOT include commit messages here, unlike
     CommitMessageGenerator. The commit messages may contain info about
-    .worker-impl/ deletions that don't appear in the final PR diff.
+    .erk/impl-context/ deletions that don't appear in the final PR diff.
     """
     context_section = f"""## Context
 

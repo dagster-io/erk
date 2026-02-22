@@ -98,13 +98,13 @@ When using Graphite for stacked PRs, draft status does **not** cascade:
 
 **Resolution**: Run `erk pr sync-divergence --dangerous` to fetch, rebase, and resolve conflicts. Or use `erk pr submit -f` to force push (overrides remote). See [Graphite Divergence Detection](../erk/graphite-divergence-detection.md).
 
-### .worker-impl/ Already Exists
+### .erk/impl-context/ Already Exists
 
-**Cause**: Stale `.worker-impl/` from a prior failed submission was not cleaned up.
+**Cause**: Stale `.erk/impl-context/` from a prior failed submission was not cleaned up.
 
-**Symptoms**: `create_worker_impl_folder()` fails because the directory already exists.
+**Symptoms**: `create_impl_context()` fails because the directory already exists.
 
-**Resolution**: Fixed in PR #7687 by adding LBYL cleanup: `if worker_impl_folder_exists(): remove_worker_impl_folder()` before creation in both submit paths.
+**Resolution**: Fixed in PR #7687 by adding LBYL cleanup: `if impl_context_exists(): remove_impl_context()` before creation in both submit paths.
 
 ### Footer Separator False Match
 

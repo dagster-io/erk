@@ -202,6 +202,31 @@ def read_plan_ref(impl_dir: Path) -> PlanRef | None:
             objective_id=data.get("objective_id"),
         )
 
+    # Fall back to ref.json (used by .erk/impl-context/)
+    ref_file = impl_dir / "ref.json"
+    if ref_file.exists():
+        try:
+            data = json.loads(ref_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+
+        required_fields = ["provider", "plan_id", "url", "created_at", "synced_at"]
+        if any(f not in data for f in required_fields):
+            return None
+
+        labels_list = data.get("labels", [])
+        labels = tuple(labels_list) if isinstance(labels_list, list) else ()
+
+        return PlanRef(
+            provider=data["provider"],
+            plan_id=data["plan_id"],
+            url=data["url"],
+            created_at=data["created_at"],
+            synced_at=data["synced_at"],
+            labels=labels,
+            objective_id=data.get("objective_id"),
+        )
+
     # Fall back to legacy issue.json
     issue_file = impl_dir / "issue.json"
     if not issue_file.exists():
@@ -239,7 +264,11 @@ def has_plan_ref(impl_dir: Path) -> bool:
     Returns:
         True if either plan-ref.json or issue.json exists, False otherwise
     """
-    return (impl_dir / "plan-ref.json").exists() or (impl_dir / "issue.json").exists()
+    return (
+        (impl_dir / "plan-ref.json").exists()
+        or (impl_dir / "ref.json").exists()
+        or (impl_dir / "issue.json").exists()
+    )
 
 
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
@@ -256,7 +285,7 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
     None, so the function falls through to returning ``plan_id`` from plan-ref.json.
 
     Args:
-        impl_dir: Path to .impl/ or .worker-impl/ directory
+        impl_dir: Path to .impl/ or .erk/impl-context/ directory
         branch_name: Current git branch name
 
     Returns:

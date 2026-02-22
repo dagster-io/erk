@@ -301,7 +301,7 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
     Draft-PR plans already have a branch and PR. Submit should:
     - Validate the PR has the erk-plan label and is OPEN
     - Fetch and checkout the existing branch
-    - Create .worker-impl/ with provider="github-draft-pr"
+    - Create .erk/impl-context/ with provider="github-draft-pr"
     - Trigger workflow with plan_backend="draft_pr" in inputs
     - NOT create a new branch or PR
     """
@@ -405,7 +405,7 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
 
         # Verify: expected output messages
         assert "Checking out existing plan branch" in result.output
-        assert "Creating .worker-impl/ folder" in result.output
+        assert "Creating .erk/impl-context/ folder" in result.output
         assert "Workflow triggered" in result.output
 
         # Verify: no warnings, dispatch metadata written successfully
@@ -415,10 +415,10 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
         assert "Traceback" not in result.output
 
 
-def test_submit_draft_pr_plan_cleans_up_stale_worker_impl_folder() -> None:
-    """Test that _submit_draft_pr_plan cleans up stale .worker-impl/ before creating new one.
+def test_submit_draft_pr_plan_cleans_up_stale_impl_context_folder() -> None:
+    """Test that _submit_draft_pr_plan cleans up stale .erk/impl-context/ before creating new one.
 
-    When a previous submission failed and left behind a .worker-impl/ folder,
+    When a previous submission failed and left behind a .erk/impl-context/ folder,
     the draft-PR submit path should remove it before creating the new one.
     This tests the cleanup logic at submit.py:440-443.
     """
@@ -494,10 +494,10 @@ def test_submit_draft_pr_plan_cleans_up_stale_worker_impl_folder() -> None:
             },
         )
 
-        # Pre-create a stale .worker-impl/ folder (simulating a prior failed submission)
-        stale_worker_impl = env.cwd / ".worker-impl"
-        stale_worker_impl.mkdir()
-        stale_marker = stale_worker_impl / "stale-marker.txt"
+        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed submission)
+        stale_impl_context = env.cwd / ".erk" / "impl-context"
+        stale_impl_context.mkdir(parents=True)
+        stale_marker = stale_impl_context / "stale-marker.txt"
         stale_marker.write_text("leftover from previous run")
 
         ctx = build_workspace_test_context(
@@ -513,18 +513,18 @@ def test_submit_draft_pr_plan_cleans_up_stale_worker_impl_folder() -> None:
         result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
 
         # Verify cleanup message was printed
-        assert "Cleaning up previous .worker-impl/ folder" in result.output
+        assert "Cleaning up previous .erk/impl-context/ folder" in result.output
 
         # Verify stale marker file no longer exists
         assert not stale_marker.exists()
 
-        # Verify new .worker-impl/ was created with correct files
-        worker_impl = env.cwd / ".worker-impl"
-        assert (worker_impl / "plan.md").exists()
-        assert (worker_impl / "plan-ref.json").exists()
+        # Verify new .erk/impl-context/ was created with correct files
+        impl_context = env.cwd / ".erk" / "impl-context"
+        assert (impl_context / "plan.md").exists()
+        assert (impl_context / "ref.json").exists()
 
-        # Verify plan-ref.json has correct provider
-        plan_ref = json.loads((worker_impl / "plan-ref.json").read_text())
+        # Verify ref.json has correct provider
+        plan_ref = json.loads((impl_context / "ref.json").read_text())
         assert plan_ref["provider"] == "github-draft-pr"
 
         # Verify: no warnings, dispatch metadata written successfully
@@ -534,10 +534,10 @@ def test_submit_draft_pr_plan_cleans_up_stale_worker_impl_folder() -> None:
         assert "Traceback" not in result.output
 
 
-def test_submit_issue_plan_cleans_up_stale_worker_impl_folder() -> None:
-    """Test that _create_branch_and_pr cleans up stale .worker-impl/ before creating new one.
+def test_submit_issue_plan_cleans_up_stale_impl_context_folder() -> None:
+    """Test that _create_branch_and_pr cleans up stale .erk/impl-context/ before creating new one.
 
-    When a previous submission failed and left behind a .worker-impl/ folder,
+    When a previous submission failed and left behind a .erk/impl-context/ folder,
     the issue-based submit path should remove it before creating the new one.
     This tests the cleanup logic at submit.py:713-716.
     """
@@ -585,10 +585,10 @@ def test_submit_issue_plan_cleans_up_stale_worker_impl_folder() -> None:
             polled_run_id="12345",
         )
 
-        # Pre-create a stale .worker-impl/ folder (simulating a prior failed submission)
-        stale_worker_impl = env.cwd / ".worker-impl"
-        stale_worker_impl.mkdir()
-        stale_marker = stale_worker_impl / "stale-marker.txt"
+        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed submission)
+        stale_impl_context = env.cwd / ".erk" / "impl-context"
+        stale_impl_context.mkdir(parents=True)
+        stale_marker = stale_impl_context / "stale-marker.txt"
         stale_marker.write_text("leftover from previous run")
 
         ctx = build_workspace_test_context(
@@ -603,18 +603,18 @@ def test_submit_issue_plan_cleans_up_stale_worker_impl_folder() -> None:
         result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
 
         # Verify cleanup message was printed
-        assert "Cleaning up previous .worker-impl/ folder" in result.output
+        assert "Cleaning up previous .erk/impl-context/ folder" in result.output
 
         # Verify stale marker file no longer exists
         assert not stale_marker.exists()
 
-        # Verify new .worker-impl/ was created with correct files
-        worker_impl = env.cwd / ".worker-impl"
-        assert (worker_impl / "plan.md").exists()
-        assert (worker_impl / "plan-ref.json").exists()
+        # Verify new .erk/impl-context/ was created with correct files
+        impl_context = env.cwd / ".erk" / "impl-context"
+        assert (impl_context / "plan.md").exists()
+        assert (impl_context / "ref.json").exists()
 
-        # Verify plan-ref.json has correct provider
-        plan_ref = json.loads((worker_impl / "plan-ref.json").read_text())
+        # Verify ref.json has correct provider
+        plan_ref = json.loads((impl_context / "ref.json").read_text())
         assert plan_ref["provider"] == "github"
 
         assert "Traceback" not in result.output

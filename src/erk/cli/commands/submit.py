@@ -42,14 +42,15 @@ from erk_shared.gateway.github.parsing import (
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
+from erk_shared.impl_context import (
+    create_impl_context,
+    impl_context_exists,
+    remove_impl_context,
+)
 from erk_shared.naming import generate_issue_branch_name
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
-from erk_shared.worker_impl_folder import (
-    create_worker_impl_folder,
-    remove_worker_impl_folder,
-    worker_impl_folder_exists,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -401,8 +402,8 @@ def _submit_draft_pr_plan(
 
     For draft-PR plans, the branch and PR already exist. This function:
     - Fetches and checks out the existing plan branch
-    - Creates .worker-impl/ with provider="github-draft-pr"
-    - Commits and pushes .worker-impl/ to existing branch
+    - Creates .erk/impl-context/ with provider="github-draft-pr"
+    - Commits and pushes .erk/impl-context/ to existing branch
     - Triggers the workflow with plan_backend="draft_pr"
 
     Args:
@@ -445,14 +446,14 @@ def _submit_draft_pr_plan(
             f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
         )
 
-    # Clean up previous .worker-impl/ if it exists (e.g., from a prior failed submission)
-    if worker_impl_folder_exists(repo.root):
-        user_output("Cleaning up previous .worker-impl/ folder...")
-        remove_worker_impl_folder(repo.root)
+    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
+    if impl_context_exists(repo.root):
+        user_output("Cleaning up previous .erk/impl-context/ folder...")
+        remove_impl_context(repo.root)
 
-    # Create .worker-impl/ with draft-PR provider
-    user_output("Creating .worker-impl/ folder...")
-    create_worker_impl_folder(
+    # Create .erk/impl-context/ with draft-PR provider
+    user_output("Creating .erk/impl-context/ folder...")
+    create_impl_context(
         plan_content=plan.body,
         plan_id=str(plan_number),
         url=validated.url,
@@ -462,7 +463,7 @@ def _submit_draft_pr_plan(
     )
 
     # Stage, commit, and push
-    ctx.git.commit.stage_files(repo.root, [".worker-impl"])
+    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR])
     ctx.git.commit.commit(repo.root, f"Add plan for PR #{plan_number}")
     push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", branch_name, set_upstream=False, force=False
@@ -712,7 +713,7 @@ def _create_branch_and_pr(
 
     ctx.branch_manager.checkout_branch(repo.root, branch_name)
 
-    # Get plan content and create .worker-impl/ folder
+    # Get plan content and create .erk/impl-context/ folder
     user_output("Fetching plan content...")
     result = ctx.plan_store.get_plan(repo.root, str(issue_number))
     if isinstance(result, PlanNotFound):
@@ -720,13 +721,13 @@ def _create_branch_and_pr(
         raise SystemExit(1)
     plan = result
 
-    # Clean up previous .worker-impl/ if it exists (e.g., from a prior failed submission)
-    if worker_impl_folder_exists(repo.root):
-        user_output("Cleaning up previous .worker-impl/ folder...")
-        remove_worker_impl_folder(repo.root)
+    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
+    if impl_context_exists(repo.root):
+        user_output("Cleaning up previous .erk/impl-context/ folder...")
+        remove_impl_context(repo.root)
 
-    user_output("Creating .worker-impl/ folder...")
-    create_worker_impl_folder(
+    user_output("Creating .erk/impl-context/ folder...")
+    create_impl_context(
         plan_content=plan.body,
         plan_id=str(issue_number),
         url=issue.url,
@@ -736,7 +737,7 @@ def _create_branch_and_pr(
     )
 
     # Stage, commit, and push
-    ctx.git.commit.stage_files(repo.root, [".worker-impl"])
+    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR])
     ctx.git.commit.commit(repo.root, f"Add plan for issue #{issue_number}")
     push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", branch_name, set_upstream=True, force=False

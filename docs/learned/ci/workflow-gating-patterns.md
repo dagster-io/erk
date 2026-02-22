@@ -130,9 +130,9 @@ format:
   if: needs.check-submission.outputs.skip == 'false'
 ```
 
-**Why this exists**: The `.worker-impl/` folder detection can't happen until after checkout, so it can't be a job-level condition based on event context. The check-submission job performs checkout, checks for the folder, and publishes a decision that later jobs consume.
+**Why this exists**: The `.erk/impl-context/` folder detection can't happen until after checkout, so it can't be a job-level condition based on event context. The check-submission job performs checkout, checks for the folder, and publishes a decision that later jobs consume.
 
-This pattern separates "should this workflow run?" (event-based, job-level) from "should this job run?" (state-based, after checkout). For full context on why `.worker-impl/` folders are special, see [Plan Implement Customization](plan-implement-customization.md).
+This pattern separates "should this workflow run?" (event-based, job-level) from "should this job run?" (state-based, after checkout). For full context on why `.erk/impl-context/` folders are special, see [Plan Implement Customization](plan-implement-customization.md).
 
 ## Autofix Safety Pattern
 
@@ -209,7 +209,7 @@ The defense-in-depth approach uses the fast path when available (job-level for p
 ## Related Documentation
 
 - [GitHub Actions Label Queries](github-actions-label-queries.md) — Deep dive on the push event asymmetry
-- [Plan Implement Customization](plan-implement-customization.md) — Why `.worker-impl/` detection uses output-based gating
+- [Plan Implement Customization](plan-implement-customization.md) — Why `.erk/impl-context/` detection uses output-based gating
 - [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) — General workflow design patterns
 
 ## Attribution

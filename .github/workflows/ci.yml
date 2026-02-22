@@ -4,7 +4,6 @@ on:
   push:
     paths-ignore:
       - '.erk/impl-context/**'
-      - '.worker-impl/**'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
@@ -29,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check for submission folder
         id: check
-        uses: ./.github/actions/check-worker-impl
+        uses: ./.github/actions/check-impl-context
 
   # === Style Checks (parallel) ===
   format:
