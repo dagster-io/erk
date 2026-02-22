@@ -471,9 +471,9 @@ def test_row_to_values_draft_pr_includes_stage() -> None:
 
     values = table._row_to_values(row)
 
-    # draft_pr: plan, stage, created, obj, loc, branch, run-id, run, author,
+    # draft_pr: plan, stage, sts, created, obj, loc, branch, run-id, run, author,
     # pr, chks, cmts, local-wt, local-impl, remote-impl
-    assert len(values) == 15
+    assert len(values) == 16
     # Stage at index 1 (right after plan in draft_pr mode) - markup stripped
     assert _text_to_str(values[1]) == "review"
 
@@ -566,7 +566,7 @@ def test_row_to_values_status_remote_only() -> None:
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\U0001f310"
+    assert values[2] == "\u2601"
 
 
 def test_row_to_values_status_both() -> None:
@@ -577,4 +577,4 @@ def test_row_to_values_status_both() -> None:
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\U0001f4bb\U0001f310"
+    assert values[2] == "\U0001f4bb\u2601"

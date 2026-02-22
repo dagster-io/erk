@@ -212,6 +212,7 @@ class TestExecuteCommandClosePlan:
             author="test-user",
             is_learn_plan=False,
             lifecycle_display="-",
+            status_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -290,6 +291,7 @@ class TestExecuteCommandSubmitToQueue:
             author="test-user",
             is_learn_plan=False,
             lifecycle_display="-",
+            status_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
