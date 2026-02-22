@@ -118,7 +118,7 @@
 
 - [ ] Lines 373-375: Replace .exists() check with `Ensure.path_exists(ctx, plan_file, ...)`
 - [ ] Lines 632: Use `Ensure.not_none()` for wt_path
-- [ ] Lines 708: Use `Ensure.not_none()` for target_info.issue_number
+- [ ] Lines 708: Use `Ensure.not_none()` for target_info.plan_number
 - [ ] Lines 866: Use `Ensure.not_none()` for wt_path
 - [ ] Audit all None checks for conversion opportunities
 - [ ] Run tests: `uv run pytest tests/commands/test_implement.py` (if exists)
