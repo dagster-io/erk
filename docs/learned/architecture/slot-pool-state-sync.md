@@ -42,12 +42,7 @@ The `assigned_at` timestamp is deliberately preserved when a branch changes. It 
 
 If no assignments were corrected (`synced_count == 0`), the function returns early without calling `save_pool_state()`. This avoids unnecessary disk writes and preserves the file's modification time, which matters for tools that watch `pool.json` for changes.
 
-```python
-if synced_count == 0:
-    return PoolSyncResult(state=state, synced_count=0)
-```
-
-Only when at least one assignment was corrected does the function write the updated state to disk.
+When `synced_count == 0`, the function returns early with the original state, skipping `save_pool_state()` entirely. Only when at least one assignment was corrected does the function write the updated state to disk. See `sync_pool_assignments()` in [`common.py`](../../../src/erk/cli/commands/slot/common.py) for the implementation.
 
 ## State-of-Truth Hierarchy
 

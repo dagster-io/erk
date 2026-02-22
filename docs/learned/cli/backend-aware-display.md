@@ -35,14 +35,9 @@ Use this when the operation is the same regardless of backend — the abstractio
 
 ### Pattern 2: Provider Name Check (Exec Scripts)
 
-<!-- Source: src/erk/cli/commands/exec/scripts/handle_no_changes.py:79 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/handle_no_changes.py:195 -->
 
-Exec scripts that need different behavior use the provider name:
-
-```python
-backend = require_plan_backend(ctx)
-is_draft_pr = backend.get_provider_name() == "github-draft-pr"
-```
+Exec scripts that need different behavior call `get_provider_name()` on the backend and compare against the provider string `"github-draft-pr"`. See [`handle_no_changes.py`](../../../src/erk/cli/commands/exec/scripts/handle_no_changes.py) around line 195 for an example.
 
 Use this in exec scripts where `require_plan_backend()` is already in scope.
 
@@ -50,14 +45,7 @@ Use this in exec scripts where `require_plan_backend()` is already in scope.
 
 <!-- Source: src/erk/tui/commands/registry.py:31-33, _is_github_backend -->
 
-The TUI command palette uses a simple predicate:
-
-```python
-def _is_github_backend(ctx: CommandContext) -> bool:
-    return ctx.plan_backend == "github"
-```
-
-Use this for availability filtering where you need a boolean check.
+The TUI command palette uses the `_is_github_backend()` predicate in [`registry.py`](../../../src/erk/tui/commands/registry.py), which compares `ctx.plan_backend` directly against the `"github"` string. Use this for availability filtering where you need a boolean check.
 
 ## Terminology Routing
 
