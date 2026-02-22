@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Add erk exec get-pr-view command to avoid GraphQL rate limits"
+}
