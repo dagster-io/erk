@@ -1,0 +1,294 @@
+{
+  "success": true,
+  "pr_number": 7901,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wBk9Y",
+      "path": "docs/learned/architecture/impl-folder-lifecycle.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `Contains | Same structure as .erk/impl-context/ plus run-info.json`\nReality: `.erk/impl-context/` only contains `plan.md` and `ref.json` (not `issue.json`, `progress.md`, or `README.md`). So `.impl/` contains `plan.md`, `ref.json`, plus `run-info.json` (remote only).\n\nSource: `packages/erk-shared/src/erk_shared/impl_context.py:65-83`\n\nSuggested fix: Update both Contains rows to reflect actual file contents: `.erk/impl-context/` \u2192 `plan.md, ref.json`; `.impl/` \u2192 `plan.md, ref.json, plus run-info.json (remote)`",
+          "created_at": "2026-02-22T21:56:38Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Updated Contains row for .impl/ to reflect actual files (plan.md, plan-ref.json, plus run-info.json) in 8c486b4\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:12 UTC_",
+          "created_at": "2026-02-22T22:12:59Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBk_S",
+      "path": "docs/learned/architecture/impl-folder-lifecycle.md",
+      "line": 15,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: The `.erk/impl-context/` Contains row (line 21) says `plan.md, issue.json, progress.md, README.md`\nReality: `create_impl_context()` only creates `plan.md` and `ref.json`. No `issue.json`, `progress.md`, or `README.md` are written.\n\nSource: `packages/erk-shared/src/erk_shared/impl_context.py:65-83`\n\nSuggested fix: Update the Contains row to `plan.md, ref.json`",
+          "created_at": "2026-02-22T21:56:48Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Updated Contains row to reflect actual files (plan.md, ref.json) in 8c486b4\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:12 UTC_",
+          "created_at": "2026-02-22T22:12:57Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBpPM",
+      "path": "docs/learned/architecture/issue-reference-flow.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `create_impl_context()` calls `save_plan_ref()` to write `plan-ref.json`\nReality: `create_impl_context()` in `impl_context.py` writes `ref.json` directly (lines 72-83) \u2014 it does NOT call `save_plan_ref()`. The file is named `ref.json` (not `plan-ref.json`) when inside `.erk/impl-context/`.\n\nSource: `packages/erk-shared/src/erk_shared/impl_context.py:72-83`\n\nSuggested fix: Remove `create_impl_context()` from the 'Called by' list for `save_plan_ref()`, or add a note that `.erk/impl-context/` uses `ref.json` (written directly) while `.impl/` uses `plan-ref.json` (written by `save_plan_ref()`).",
+          "created_at": "2026-02-22T22:18:41Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: removed create_impl_context() from the callers list and added a note that it writes ref.json directly (not via save_plan_ref()). Fixed in e21549e.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:24 UTC_",
+          "created_at": "2026-02-22T22:24:10Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wB27H",
+      "path": "docs/learned/ci/formatter-tools.md",
+      "line": 72,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `ref.json` appears in the 'Files in Error' table as a file that causes Prettier failures\nReality: Two problems: (1) `.erk/impl-context/` is in `.prettierignore` (see root `.prettierignore:3`), so Prettier never checks any files in this folder. (2) `ref.json` is a JSON file, not markdown, so Prettier would not format it regardless.\n\nSource: `.prettierignore:1-3`\n\nSuggested fix: Either remove this row (Prettier doesn't check `.erk/impl-context/` files at all), or update the section to note that the Prettier cleanup detection pattern no longer applies after adding `.erk/impl-context/` to `.prettierignore`.",
+          "created_at": "2026-02-22T23:26:41Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 2bd3fabaf: removed the ref.json row from the Prettier failures table. The .erk/impl-context/ directory is in .prettierignore so Prettier never checks it, and the row was inaccurate.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 15:39 PST_",
+          "created_at": "2026-02-22T23:39:52Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBkS2",
+      "path": "docs/learned/erk/issue-pr-linkage-storage.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"Creates `.erk/impl-context/` folder with `issue.json` containing issue reference\"\nReality: `impl_context.py`'s `create_impl_context()` creates `ref.json`, not `issue.json`. The legacy `issue.json` format is no longer created by this code path.\n\nSource: `packages/erk-shared/src/erk_shared/impl_context.py:65-83`\n\nSuggested fix: Change to \"Creates `.erk/impl-context/` folder with `ref.json` containing plan reference\"",
+          "created_at": "2026-02-22T21:53:02Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Corrected issue.json reference to ref.json/plan-ref.json in 8c486b4\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:13 UTC_",
+          "created_at": "2026-02-22T22:13:01Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBkUh",
+      "path": "docs/learned/erk/issue-pr-linkage-storage.md",
+      "line": 40,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"Check for `.impl/issue.json` or `.erk/impl-context/issue.json`\"\nReality: `get_closing_text.py` calls `validate_plan_linkage()` \u2192 `read_plan_ref()`, which reads `plan-ref.json` first, then `ref.json`, then falls back to legacy `issue.json`. The primary file is `plan-ref.json`, not `issue.json`.\n\nSource: `src/erk/cli/commands/exec/scripts/get_closing_text.py:69-76`\n\nSuggested fix: Change to \"Check for `.impl/plan-ref.json` (or legacy `.impl/issue.json`) for plan reference\"",
+          "created_at": "2026-02-22T21:53:10Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Corrected issue.json references to plan-ref.json/ref.json with legacy fallback in 8c486b4\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:13 UTC_",
+          "created_at": "2026-02-22T22:13:02Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBrbF",
+      "path": "docs/learned/erk/issue-pr-linkage-storage.md",
+      "line": 62,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate section context.\n\nThe surrounding section (\"Local Worktree: `.impl/issue.json`\") implies `issue.json` is the current format, but `erk plan submit` now creates `.erk/impl-context/ref.json` (not `issue.json`). The JSON block in this section documents the legacy fallback format only.\n\nSource: `packages/erk-shared/src/erk_shared/impl_context.py:69-83` (creates `ref.json`)\nSource: `packages/erk-shared/src/erk_shared/impl_folder.py:200-243` (`read_plan_ref()` tries plan-ref.json \u2192 ref.json \u2192 issue.json)\n\nSuggested fix: Retitle section to 'Legacy Format: `.impl/issue.json`' and add a note that the primary format is now `plan-ref.json` / `ref.json`.",
+          "created_at": "2026-02-22T22:28:56Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 2bd3fabaf: retitled section from \"Local Worktree: .impl/issue.json\" to \"Legacy Format: .impl/issue.json\" and added a note clarifying that the primary formats are now .erk/impl-context/ref.json and .impl/plan-ref.json.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 15:39 PST_",
+          "created_at": "2026-02-22T23:39:56Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBpNT",
+      "path": "docs/learned/planning/lifecycle.md",
+      "line": 339,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `.erk/impl-context/` folder contains `plan.md`, `progress.md`, `plan-ref.json`, and `README.md`\nReality: `create_impl_context()` in `impl_context.py` only creates two files: `plan.md` (line 70) and `ref.json` (lines 73-83). No `progress.md`, `README.md`, or `plan-ref.json` are created.\n\nSource: `packages/erk-shared/src/erk_shared/impl_context.py:68-83`\n\nSuggested fix: Update the folder structure to:\n```\n.erk/impl-context/\n\u251c\u2500\u2500 plan.md    # Full plan content from issue\n\u2514\u2500\u2500 ref.json   # Plan reference metadata (provider, plan_id, url, etc.)\n```\nAlso update the following JSON block label from `plan-ref.json` to `ref.json`.",
+          "created_at": "2026-02-22T22:18:32Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: updated folder structure to show only plan.md and ref.json. Also corrected the JSON example from plan-ref.json to ref.json with empty labels. Fixed in e21549e.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:24 UTC_",
+          "created_at": "2026-02-22T22:24:11Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBrcs",
+      "path": "docs/learned/planning/workflow.md",
+      "line": 301,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 `.impl/` folder description in this doc (line ~27) says it 'Contains `plan.md`, `progress.md`, and optional `issue.json`' but `issue.json` is legacy (replaced by `plan-ref.json`). Since this file was touched, flagging for update.\n\nSource: `packages/erk-shared/src/erk_shared/impl_folder.py:1-9` (module docstring lists `plan.md` and `plan-ref.json`)\n\nRisk: Future agents may create `issue.json` instead of `plan-ref.json` based on this doc.",
+          "created_at": "2026-02-22T22:29:05Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 2bd3fabaf: updated .impl/ folder description to reference plan-ref.json instead of issue.json (\"optional plan-ref.json (links to source plan issue)\").\n\n_Addressed via `/erk:pr-address` at 2026-02-22 15:39 PST_",
+          "created_at": "2026-02-22T23:40:01Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBkm6",
+      "path": "packages/erk-shared/src/erk_shared/impl_context.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: `datetime.now(UTC)` detected - use `context.time.now()` for testability instead. Direct `datetime.now()` makes tests non-deterministic. This violates the erk architecture pattern for time abstraction.",
+          "created_at": "2026-02-22T21:54:45Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Replaced datetime.now(UTC) with injected now_iso parameter for testability. Commit 8c486b4\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:13 UTC_",
+          "created_at": "2026-02-22T22:13:06Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBkKu",
+      "path": "packages/erk-shared/src/erk_shared/impl_context.py",
+      "line": 72,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: `datetime.now(UTC)` detected - violates architecture tripwire: \"importing time module or calling time.sleep() or datetime.now()\". Use `context.time.now()` for testability instead. Direct `datetime.now()` makes tests non-deterministic. See [Erk Architecture Patterns](https://github.com/dagster-io/erk/blob/master/docs/learned/architecture/erk-architecture.md).",
+          "created_at": "2026-02-22T21:52:26Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Replaced datetime.now(UTC) with injected now_iso parameter. Callers in submit.py use ctx.time.now().isoformat(), exec script uses datetime.now(UTC) at CLI boundary. Commit 8c486b4\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:13 UTC_",
+          "created_at": "2026-02-22T22:13:04Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBkGx",
+      "path": "packages/erk-shared/src/erk_shared/impl_folder.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Lines 213 and 189 have duplicate field validation logic - consider extracting to a constant. Example: `REQUIRED_REF_FIELDS = {'provider', 'plan_id', 'url', 'created_at', 'synced_at'}` followed by `if not REQUIRED_REF_FIELDS.issubset(data.keys()):` for cleaner reuse across the three JSON format fallbacks (plan-ref.json, ref.json, issue.json)",
+          "created_at": "2026-02-22T21:52:03Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Extracted _REQUIRED_REF_FIELDS module constant and _parse_ref_json helper to deduplicate validation logic across plan-ref.json and ref.json parsing. Commit 8c486b4\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:13 UTC_",
+          "created_at": "2026-02-22T22:13:07Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBko0",
+      "path": "packages/erk-shared/src/erk_shared/impl_folder.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Duplicate field validation logic detected. Lines 189 and 213 both validate the same `required_fields`. Consider extracting `REQUIRED_REF_FIELDS = {'provider', 'plan_id', 'url', 'created_at', 'synced_at'}` as a module constant to reduce duplication across all three JSON format fallbacks (plan-ref.json, ref.json, issue.json).",
+          "created_at": "2026-02-22T21:54:55Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Same as above \u2014 extracted _REQUIRED_REF_FIELDS constant and _parse_ref_json helper. Commit 8c486b4\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:13 UTC_",
+          "created_at": "2026-02-22T22:13:09Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBouS",
+      "path": "src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Direct datetime.now() call violates time abstraction pattern - use ctx.time.now() for testability instead. This ensures time can be injected in tests.",
+          "created_at": "2026-02-22T22:15:58Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Replaced datetime.now(UTC) with require_time(ctx).now() \u2014 uses the erk time abstraction for testability. Fixed in e21549e.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:24 UTC_",
+          "created_at": "2026-02-22T22:24:08Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBkNn",
+      "path": "src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py",
+      "line": 1,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Test Coverage**: Renamed from `create_worker_impl_from_issue.py` with significant changes. Original test was deleted but no new test added. Requires tests for the new implementation.",
+          "created_at": "2026-02-22T21:52:40Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Added unit tests in tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py covering success path, plan-not-found error, and objective_id preservation. Commit b3ac23b\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:13 UTC_",
+          "created_at": "2026-02-22T22:13:10Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wBkrp",
+      "path": "src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py",
+      "line": 1,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Test Coverage**: Renamed from `create_worker_impl_from_issue.py` with functional changes (~36% modified), but original test file was deleted and no new test was added. This script contains business logic for fetching plans and creating implementation context folders. Requires unit tests covering success/error cases.",
+          "created_at": "2026-02-22T21:55:10Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Added 3 unit tests covering success, error, and metadata preservation. Commit b3ac23b\n\n_Addressed via `/erk:pr-address` at 2026-02-22 22:13 UTC_",
+          "created_at": "2026-02-22T22:13:12Z"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,940 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;local:objective-reevaluate&lt;/command-message&gt;
+&lt;command-name&gt;/local:objective-reevaluate&lt;/command-name&gt;
+&lt;command-args&gt;7775&lt;/command-args&gt;</user>
+  <user># /local:objective-reevaluate
+
+Audits an open objective against the current codebase state, identifies stale references, already-done work, and outdated prose, then proposes and applies updates with user confirmation.
+
+## Usage
+
+```bash
+/local:objective-reevaluate &lt;issue-number&gt;
+```
+
+---
+
+## Agent Instructions
+
+### Phase 1: Validate Input and Fetch Objective Context
+
+Parse `7775` for the issue number. If no issue number provided:
+
+```
+Error: Issue number required.
+Usage: /local:objective-reevaluate &lt;issue_number&gt;
+```
+
+Fetch the full objective context:
+
+```bash
+erk exec objective-fetch-context --objective &lt;NUMBER&gt;
+```
+
+Parse the JSON output to get:
+
+- `objective.body`: Full issue body text
+- `objective.title`: Issue title
+- `objective.state`: OPEN or CLOSED
+- `objective.labels`: Labels list
+- `roadmap.phases`: Serialized roadmap phases with node statuses, descriptions, and metadata
+
+Verify the issue has the `erk-objective` label. If not:
+
+```
+Error: Issue #&lt;number&gt; is not an erk-objective issue (missing erk-objective label).
+```
+
+If the objective is CLOSED, warn:
+
+```
+Warning: Objective #&lt;number&gt; is CLOSED. Proceeding with audit anyway.
+```
+
+### Phase 2: Extract Auditable References
+
+Systematically extract concrete references from the objective body that can be verified against the codebase. Build a checklist of items to audit.
+
+**From roadmap node descriptions:**
+
+- File paths (e.g., `src/erk/foo.py`, `tests/test_bar.py`)
+- Command names (e.g., `erk inspect`, `/local:some-command`, `erk exec script-name`)
+- Function/class/module names mentioned as implementation targets
+- CLI subcommand references
+
+**From Implementation Context section:**
+
+- Key Files list entries
+- Architecture descriptions referencing specific modules or patterns
+- Technology or library references
+
+**From Design Decisions section:**
+
+- Pattern references (e.g., "uses the gateway ABC pattern")
+- Technology choices that may have changed
+
+**From pending node descriptions:**
+
+- Descriptions of work that may already be done via other PRs
+
+Build a structured checklist:
+
+```
+Reference Type | Source Location | Reference Value | Verification Method
+file_path      | Node 1.4 desc  | src/erk/foo.py  | Glob for existence
+command        | Node 2.1 desc  | erk inspect     | Grep for CLI registration
+function       | Key Files       | do_thing()      | Grep for definition
+pending_work   | Node 3.2       | "Add caching"   | Search for implementation
+```
+
+### Phase 3: Verify References Against Codebase
+
+For each reference in the checklist, verify it against the current codebase:
+
+**File paths:** Check existence via Glob tool.
+
+**Command names:**
+
+- For CLI commands (`erk &lt;cmd&gt;`): Search for Click command registration in `src/erk/cli/`
+- For slash commands (`/local:&lt;cmd&gt;` or `/erk:&lt;cmd&gt;`): Check `.claude/commands/` for the file
+- For exec scripts (`erk exec &lt;script&gt;`): Check `src/erk/cli/commands/exec/scripts/` for the file
+
+**Function/class names:** Search via Grep in `src/erk/` for definitions.
+
+**Pending node work:** For each pending node, search the codebase for evidence the work was already accomplished:
+
+- Search for key terms from the node description
+- Check git log for related merged PRs:
+  ```bash
+  gh pr list --state merged --search "&lt;keywords from node description&gt;" --json number,title,mergedAt --limit 5
+  ```
+
+Classify each reference:
+
+| Status  | Meaning                                                   |
+| ------- | --------------------------------------------------------- |
+| CURRENT | Reference is accurate, exists as described                |
+| STALE   | Reference points to something renamed, moved, or deleted  |
+| DONE    | Pending node whose work was accomplished elsewhere        |
+| UNCLEAR | Cannot determine status automatically, needs human review |
+
+### Phase 4: Build Findings Report
+
+Present a structured findings table to the user:
+
+```markdown
+## Reevaluation Findings for Objective #&lt;number&gt;
+
+### Summary
+
+- **References audited:** &lt;total&gt;
+- **Current (no action needed):** &lt;count&gt;
+- **Stale (needs update):** &lt;count&gt;
+- **Done elsewhere (node completed):** &lt;count&gt;
+- **Unclear (needs review):** &lt;count&gt;
+
+### Findings
+
+| Location             | Reference                    | Status  | Finding                                          |
+| -------------------- | ---------------------------- | ------- | ------------------------------------------------ |
+| Node 1.4 description | `inspect` command            | STALE   | Command merged into `view` (PR #7385)            |
+| Key Files            | `src/erk/inspect_cmd.py`     | STALE   | File deleted, now `src/erk/cli/commands/view.py` |
+| Node 2.3             | pending: "Add caching layer" | DONE    | Implemented in PR #7401                          |
+| Node 3.1             | pending: "Refactor gateway"  | CURRENT | No evidence of implementation                    |
+| Design Decisions     | "Uses polling for updates"   | UNCLEAR | Found both polling and WebSocket code            |
+```
+
+If all references are CURRENT:
+
+```
+All references are current. No updates needed for objective #&lt;number&gt;.
+```
+
+Stop here (skip Phases 5-6).
+
+### Phase 5: Propose Updates
+
+For each non-CURRENT finding, propose a specific update:
+
+**For STALE references:**
+
+- Propose the exact text replacement (old text -&gt; new text)
+- Identify which section of the objective body needs editing
+- If a command was renamed, find the new name
+
+**For DONE nodes:**
+
+- Propose changing the node status to `done`
+- Include evidence (PR number, commit, or code location)
+- Propose adding a `pr` reference to the node metadata
+
+**For UNCLEAR items:**
+
+- Present the ambiguity and ask the user to decide
+
+Format proposals as a numbered list:
+
+```markdown
+### Proposed Updates
+
+1. **[STALE] Node 1.4 description**: Replace `inspect` with `view`
+   - Old: "Run `erk inspect` to examine the objective"
+   - New: "Run `erk objective view` to examine the objective"
+
+2. **[STALE] Key Files**: Update file path
+   - Old: `src/erk/inspect_cmd.py`
+   - New: `src/erk/cli/commands/view.py`
+
+3. **[DONE] Node 2.3**: Mark as done
+   - Evidence: PR #7401 implemented the caching layer
+   - Action: Set status to `done`, add `pr: "#7401"`
+
+4. **[UNCLEAR] Design Decisions**: Polling vs WebSocket
+   - Found both patterns in codebase. Which is the current approach?
+```
+
+### Phase 6: Execute Updates (with confirmation)
+
+Use AskUserQuestion to let the user approve, reject, or modify proposals:
+
+```
+I've identified &lt;N&gt; proposed updates for objective #&lt;number&gt;. Would you like me to:
+1. Apply all proposed updates
+2. Let me pick which ones to apply
+3. Skip all updates (just informational)
+```
+
+**If user approves (all or selected):**
+
+**For DONE nodes** — update node status via exec script.
+
+&gt; **CRITICAL: `--plan` is required when `--pr` is set.** The CLI rejects `--pr` without `--plan` (see `docs/learned/objectives/plan-reference-preservation.md`). For each DONE node, check its current `plan` field from the Phase 1 roadmap data:
+&gt;
+&gt; - If the node already has a `plan` reference in the roadmap YAML, pass `--plan "#&lt;existing-plan&gt;"` to preserve it
+&gt; - If the node has no plan reference, pass `--plan ""` to explicitly indicate no plan
+&gt; - **Never omit `--plan` when `--pr` is set** — the CLI will reject it
+
+```bash
+erk exec update-objective-node &lt;objective-number&gt; --node &lt;node-id&gt; --status done --pr "#&lt;pr-number&gt;" --plan "#&lt;existing-plan-or-empty&gt;" --include-body
+```
+
+Pass all completed nodes as multiple `--node` flags in ONE command if multiple nodes are being marked done.
+
+**For STALE references and outdated prose** — update the objective body:
+
+After all node status updates, if prose changes are needed:
+
+1. Use the `updated_body` from the last `update-objective-node` call (if one was made with `--include-body`), OR fetch the current body:
+   ```bash
+   erk exec get-issue-body &lt;objective-number&gt;
+   ```
+2. Apply the approved text replacements to the body
+3. Write the updated body:
+   ```bash
+   erk exec update-issue-body &lt;objective-number&gt; --body-file /tmp/updated-objective-body.md
+   ```
+   (Write the updated body to a temp file first via Write tool to avoid shell quoting issues)
+
+**Post an action comment** summarizing what was reconciled:
+
+```bash
+echo '&lt;json&gt;' | erk exec objective-post-action-comment
+```
+
+With JSON structure:
+
+```json
+{
+  "issue_number": &lt;N&gt;,
+  "date": "&lt;YYYY-MM-DD&gt;",
+  "pr_number": null,
+  "phase_step": "&lt;affected node IDs, comma-separated&gt;",
+  "title": "Objective reevaluation",
+  "what_was_done": ["Audited objective against current codebase", "Updated stale references: ...", "Marked nodes as done: ..."],
+  "lessons_learned": ["&lt;any insights discovered&gt;"],
+  "roadmap_updates": ["Node X.Y: pending -&gt; done", ...],
+  "body_reconciliation": [{"section": "Node 1.4 description", "change": "Updated inspect -&gt; view"}]
+}
+```
+
+Set `pr_number` to `null` (or `0`) since this is an audit action, not a PR landing.
+
+**Report completion:**
+
+```
+Reevaluation complete for objective #&lt;number&gt;:
+- &lt;N&gt; stale references updated
+- &lt;N&gt; nodes marked as done
+- &lt;N&gt; items flagged for manual review
+- Action comment posted
+
+View objective: &lt;objective URL&gt;
+```
+
+---
+
+## Error Handling
+
+- **Issue not found:** Display "Error: Issue #&lt;number&gt; not found." and stop.
+- **Not an objective:** Display label requirement error and stop.
+- **GitHub API rate limited:** Display "Error: GitHub API rate limited. Try again later." and stop.
+- **No references found to audit:** Report "No auditable references found in objective body" and stop.
+- **Exec script failure:** Display the error JSON and continue with remaining updates if possible.
+
+## Notes
+
+- This is a judgment-heavy skill: interpreting whether a reference is stale requires codebase understanding. Use Grep and Glob liberally.
+- Never auto-mutate. Always present findings and get user approval before making changes.
+- Updates both the issue body (prose/metadata) AND node statuses (via exec scripts).
+- For `pr_number` in the action comment: use `null` or `0` when the reevaluation is not tied to a specific PR.
+- Reuses existing exec scripts: `objective-fetch-context`, `update-objective-node`, `update-issue-body`, `get-issue-body`, `objective-post-action-comment`.
+</user>
+  <thinking>The user wants to run the `/local:objective-reevaluate` skill on objective issue #7775. Let me follow the instructions in the skill.
+
+### Phase 1: Validate Input and Fetch Objective Context
+
+Let me start by fetching the objective context using the exec script.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="11807" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11807}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FkbpCyJwZmdZuKh3USPAtE">
+    <param name="command">erk exec objective-fetch-context --objective 7775 2&gt;&amp;1</param>
+    <param name="description">Fetch objective #7775 context</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11807" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11807}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FkbpCyJwZmdZuKh3USPAtE">
+Exit code 1
+{"success": false, "error": "No plan found for branch 'master'"}
+
+{"success": false, "error": "No plan found for branch 'master'"}
+  </tool_result>
+  <thinking>The error says "No plan found for branch 'master'". Let me try a different approach to get the objective data using `gh issue view`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="30805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 235}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MuHgtkVrbm9NVspiLqX6FK">
+    <param name="command">gh issue view 7775 --json number,title,state,labels,body 2&gt;&amp;1</param>
+    <param name="description">Fetch issue #7775 from GitHub</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="30805" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 235, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MuHgtkVrbm9NVspiLqX6FK">
+{"body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-02-21T14:02:12.036549+00:00'\ncreated_by: schrockn\nobjective_comment_id: 3939258671\nslug: legacy-plan-cleanup\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '3'\nnodes:\n- id: '1.1'\n  description: Change PLAN_BACKEND default to \"draft_pr\", remove all \"issues\" conditional\n    branches\n  status: in_progress\n  plan: '#7871'\n  pr: '#7871'\n- id: '1.2'\n  description: Delete GitHubPlanStore, RealPlanListService (issue-based), get_plan_backend()\n    function, and ERK_PLAN_BACKEND env var\n  status: in_progress\n  plan: '#7885'\n  pr: null\n- id: '1.3'\n  description: Remove `extract_leading_issue_number` from `erk_shared/naming.py` and\n    all callers (`land_pipeline.py`, `checkout_cmd.py`, `pr/shared.py`), update all\n    documentation\n  status: in_progress\n  plan: '#7885'\n  pr: null\n- id: '2.1'\n  description: Impl-context staging system (.erk/impl-context/ with plan.md + ref.json).\n    Plan-implement reads from worktree via setup_impl_from_issue.py. Step 2d cleans\n    up via git rm.\n  status: done\n  plan: null\n  pr: null\n- id: '3.1'\n  description: 'Delete plan-review special case: remove plan_create_review_branch,\n    plan_create_review_pr, plan_review_complete, run_review exec scripts; review_pr_cleanup\n    command; /erk:plan-review slash command; and all callers'\n  status: planning\n  plan: '#7834'\n  pr: null\n- id: '3.2'\n  description: Consolidate update-dispatch-info, update-lifecycle-stage, and update-plan-remote-session\n    pattern into generic update-plan-header command\n  status: done\n  plan: null\n  pr: '#7842'\n- id: '3.3'\n  description: Delete update-plan-remote-session exec script — remaining artifact\n    from the consolidation into update-plan-header (PR\n  status: done\n  plan: '#7907'\n  pr: '#7907'\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;\n","labels":[{"id":"LA_kwDOPxC3hc8AAAACTsevgQ","name":"erk-objective","description":"Multi-plan coordination tracking","color":"0E8A16"}],"number":7775,"state":"OPEN","title":"Objective: Clean Up Legacy Plan Infrastructure"}
+  </tool_result>
+  <thinking>Good, I now have the full objective data. Let me parse it:
+
+**Objective #7775: "Objective: Clean Up Legacy Plan Infrastructure"**
+- State: OPEN
+- Labels: `erk-objective` ✓
+- Slug: `legacy-plan-cleanup`
+
+**Roadmap nodes:**
+1. **Node 1.1**: Change PLAN_BACKEND default to "draft_pr", remove all "issues" conditional branches
+   - Status: `in_progress`
+   - Plan: #7871, PR: #7871
+
+2. **Node 1.2**: Delete GitHubPlanStore, RealPlanListService (issue-based), get_plan_backend() function, and ERK_PLAN_BACKEND env var
+   - Status: `in_progress`
+   - Plan: #7885, PR: null
+
+3. **Node 1.3**: Remove `extract_leading_issue_number` from `erk_shared/naming.py` and all callers, update all documentation
+   - Status: `in_progress`
+   - Plan: #7885, PR: null
+
+4. **Node 2.1**: Implement a staging system for impl-context (.erk/impl-context/ with plan.md + ref.json), where plan-implement reads from the worktree via setup_impl_from_issue.py and step 2d cleans up via git rm
+   - Status: `done`
+   - Plan: null, PR: null
+
+5. **Node 3.1**: Remove the plan-review special case by deleting plan_create_review_branch, plan_create_review_pr, plan_review_complete, and their run_review exec scripts, along with the review_pr_cleanup command and /erk:plan-review slash command
+   - Status: `planning`
+   - Plan: #7834, PR: null
+
+6. **Node 3.2**: Merge update-dispatch-info, update-lifecycle-stage, and update-plan-remote-session into a single generic update-plan-header command
+   - Status: `done`
+   - Plan: null, PR: #7842
+
+7. **Node 3.3**: Clean up the update-plan-remote-session exec script that's no longer needed after consolidating into update-plan-header
+   - Status: `done`
+   - Plan: #7834, PR: null
+
+Now I'm going through the auditable references to verify them against the codebase. I'm checking the PLAN_BACKEND environment variable and draft_pr backend type from PR #7871, then looking at GitHubPlanStore, RealPlanListService, get_plan_backend(), and ERK_PLAN_BACKEND references from plan #7885, and starting to trace through the extract_leading_issue references. Now I'm looking at the next phase: removing the plan-review special case entirely by deleting the associated exec scripts and slash command, then consolidating several update commands into a single generic update-plan-header command—both of which are already done with a PR submitted for the consolidation work.
+
+I need to verify all the references across the codebase to ensure nothing's been missed, so I'm running parallel checks on the PR status, backend references, issue extraction logic, implementation context setup, and the review-related commands that need to be removed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1350" cache_read_input_tokens="31040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1350}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. The objective has the `erk-objective` label and is OPEN. Now let me verify the references in the codebase in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1350" cache_read_input_tokens="31040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1350}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01C25QTLwLPbKRJgTLDk7nCX">
+    <param name="command">gh pr view 7871 --json number,title,state,mergedAt 2&gt;&amp;1</param>
+    <param name="description">Check PR #7871 status (Node 1.1)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1350" cache_read_input_tokens="31040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1350}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JCuCwdm1vFtThnDNkUanrY">
+    <param name="command">gh pr view 7885 --json number,title,state,mergedAt 2&gt;&amp;1</param>
+    <param name="description">Check PR #7885 status (Node 1.2 plan)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1350" cache_read_input_tokens="31040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1350}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019Zvd7kR9X9934Sz3KHtgEp">
+    <param name="command">gh issue view 7834 --json number,title,state 2&gt;&amp;1</param>
+    <param name="description">Check issue #7834 status (Node 3.1 plan)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1350" cache_read_input_tokens="31040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1350}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C25QTLwLPbKRJgTLDk7nCX">
+{"mergedAt":null,"number":7871,"state":"CLOSED","title":"[erk-plan] Change PLAN_BACKEND default to \"draft_pr\", remove all \"issues\" conditional branches"}
+  </tool_result>
+  <tool_result tool="toolu_01JCuCwdm1vFtThnDNkUanrY">
+Exit code 1
+GraphQL: Could not resolve to a PullRequest with the number of 7885. (repository.pullRequest)
+
+GraphQL: Could not resolve to a PullRequest with the number of 7885. (repository.pullRequest)
+  </tool_result>
+  <tool_result tool="toolu_019Zvd7kR9X9934Sz3KHtgEp">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <thinking>PR #7871 is CLOSED (not merged, since `mergedAt` is null). This suggests the PR was closed without merging. This is interesting for node 1.1 which is marked as `in_progress`. Let me check if #7885 is an issue (not a PR) and also look at what happened with #7871.
+
+Let me also check:
+1. Whether #7885 is an issue
+2. Whether plan-review related scripts still exist
+3. Whether update-plan-remote-session still exists
+4. Whether GitHubPlanStore, etc. still exist
+5. Whether extract_leading_issue_number still exists</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1882" cache_read_input_tokens="32390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RnJYoNAnmhCzM7pgxVXdz8">
+    <param name="command">gh issue view 7885 --json number,title,state 2&gt;&amp;1</param>
+    <param name="description">Check issue #7885 (plan for nodes 1.2, 1.3)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1882" cache_read_input_tokens="32390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JWnPmf8CKgdPwit9Yqahsf">
+    <param name="command">gh issue view 7834 --json number,title,state 2&gt;&amp;1</param>
+    <param name="description">Check issue #7834 (plan for node 3.1)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1882" cache_read_input_tokens="32390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PPBa7Q4PkN8QsYZYDN5f13">
+    <param name="pattern">GitHubPlanStore|RealPlanListService|get_plan_backend|ERK_PLAN_BACKEND</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1882" cache_read_input_tokens="32390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RnJYoNAnmhCzM7pgxVXdz8">
+{"number":7885,"state":"OPEN","title":"[erk-plan] Delete Legacy Issue-Based Plan Infrastructure (Nodes 1.2 + 1.3)"}
+  </tool_result>
+  <tool_result tool="toolu_01JWnPmf8CKgdPwit9Yqahsf">
+{"number":7834,"state":"CLOSED","title":"[erk-plan] Remove Plan Review Subsystem"}
+  </tool_result>
+  <tool_result tool="toolu_01PPBa7Q4PkN8QsYZYDN5f13">
+Found 11 files
+src/erk/cli/commands/exec/scripts/plan_migrate_to_draft_pr.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/plan/list_cmd.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/cli/commands/implement_shared.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/core/context.py
+src/erk/cli/commands/branch/create_cmd.py
+src/erk/core/services/plan_list_service.py
+src/erk/core/services/objective_list_service.py
+  </tool_result>
+  <thinking>So:
+- Issue #7885 is OPEN (this is the plan for nodes 1.2 + 1.3, which are marked `in_progress`)
+- Issue #7834 is CLOSED - this is significant! Node 3.1 is `planning` with plan #7834, but the plan issue is closed. We need to check if the work was done.
+- `GitHubPlanStore`, `RealPlanListService`, `get_plan_backend`, `ERK_PLAN_BACKEND` still exist in the codebase - so node 1.2 work is NOT done.
+
+Also PR #7871 is CLOSED with `mergedAt: null` - it was closed without merging. This means node 1.1 might not be done yet. 
+
+Now I need to dig deeper into the specific components tied to each node - checking whether `extract_leading_issue_number`, the plan-review scripts, `update-plan-remote-session`, `setup_impl_from_issue.py`, and the PLAN_BACKEND environment variable are still present in the codebase to determine what's actually been completed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="810" cache_read_input_tokens="34272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 810}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017r9xnp5adBZgjnYa1nYYT9">
+    <param name="pattern">extract_leading_issue_number</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="810" cache_read_input_tokens="34272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 810}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017r9xnp5adBZgjnYa1nYYT9">
+Found 3 files
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/plan/checkout_cmd.py
+src/erk/cli/commands/pr/shared.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QFv3Mqo8BWqcRRu9YKfLHH">
+    <param name="command">find /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts -name "plan_create_review*...[truncated 39 chars]...review_pr*" 2&gt;&amp;1; find /Users/schrockn/code/erk/.claude/commands -name "plan-review*" 2&gt;&amp;1</param>
+    <param name="description">Check for plan-review related scripts and commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="810" cache_read_input_tokens="34272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 810}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QFv3Mqo8BWqcRRu9YKfLHH">
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/plan_create_review_branch.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/plan_review_complete.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/run_review.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/plan_create_review_pr.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/run_review.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QLiZtJxBKb6H2GcZkEyhWN">
+    <param name="pattern">update-plan-remote-session|update_plan_remote_session</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="810" cache_read_input_tokens="34272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 810}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QLiZtJxBKb6H2GcZkEyhWN">
+Found 2 files
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/exec/scripts/update_plan_remote_session.py
+  </tool_result>
+  <thinking>Let me interpret the findings:
+
+1. **Node 1.1** (in_progress, Plan #7871, PR #7871): PR #7871 was CLOSED without merging (`mergedAt: null`). The plan issue might have been closed too. Let me check issue #7871.
+
+2. **Node 1.2** (in_progress, Plan #7885): `GitHubPlanStore`, `RealPlanListService`, `get_plan_backend`, `ERK_PLAN_BACKEND` still exist. Plan #7885 is OPEN. Status seems accurate - still in progress.
+
+
+3. **Node 1.3** (in_progress, Plan #7885): `extract_leading_issue_number` is still present across multiple files including `land_pipeline.py`, `checkout_cmd.py`, and `pr/shared.py`. Plan #7885 remains OPEN, so the status checks out. The node description references `plan/checkout_cmd.py` but the actual file path is `src/erk/cli/commands/plan/checkout_cmd.py` - I need to verify if this path discrepancy matters for the removal task.
+
+4. **Node 2.1** (done): I should verify whether `setup_impl_from_issue.py` still exists in the codebase.
+
+5. **Node 3.1** (planning, Plan #7834): This plan is marked CLOSED, but I'm finding only compiled Python cache files for `plan_create_review_branch` and `plan_review_complete` rather than actual source files, which suggests these may have already been removed or the .py files are missing while only the bytecode remains.
+
+6. **Node 3.3** (done, Plan #7907, PR #7907): The `update_plan_remote_session.py` file is still present and actively registered in `group.py`, which is problematic given that this node should be completed.
+
+I need to verify several things: whether those missing .py files actually exist, if `update_plan_remote_session.py` is still there, what PR #7907 actually changed, whether the `plan_review.md` command is functional, and what the status of issues #7834 and #7871 are. I should also look at how `PLAN_BACKEND` is structured in the codebase.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1165" cache_read_input_tokens="35082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RzNostSxM7gbXvxJUudGjZ">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/plan_create_review*.py</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1165" cache_read_input_tokens="35082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_011oaTok4pXz8byt4ARF3kF5">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/plan_review*.py</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1165" cache_read_input_tokens="35082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01JjfGPjViWzvDEHrRuHFsQp">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/review_pr*.py</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1165" cache_read_input_tokens="35082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01UhLPBMw1YTBwcVWvxwPNKf">
+    <param name="pattern">.claude/commands/*plan-review*</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1165" cache_read_input_tokens="35082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RzNostSxM7gbXvxJUudGjZ">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_011oaTok4pXz8byt4ARF3kF5">
+No files found
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SrhGbiwCcJysWENaMaLdbG">
+    <param name="command">gh pr view 7907 --json number,title,state,mergedAt 2&gt;&amp;1</param>
+    <param name="description">Check PR #7907 (Node 3.3)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1165" cache_read_input_tokens="35082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JjfGPjViWzvDEHrRuHFsQp">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01UhLPBMw1YTBwcVWvxwPNKf">
+No files found
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012gFbS8yx9ShGbG8UNKt8Ro">
+    <param name="command">gh pr view 7871 --json number,title,state,mergedAt,closedAt 2&gt;&amp;1; gh issue view 7871 --json number,title,state 2&gt;&amp;1 || echo "7871 is not an issue"</param>
+    <param name="description">Check status of 7871 (PR and issue)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1165" cache_read_input_tokens="35082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SrhGbiwCcJysWENaMaLdbG">
+{"mergedAt":"2026-02-22T22:14:27Z","number":7907,"state":"MERGED","title":"Delete update-plan-remote-session exec script and migrate CI caller to update-plan-header"}
+  </tool_result>
+  <tool_result tool="toolu_012gFbS8yx9ShGbG8UNKt8Ro">
+{"closedAt":"2026-02-22T20:04:17Z","mergedAt":null,"number":7871,"state":"CLOSED","title":"[erk-plan] Change PLAN_BACKEND default to \"draft_pr\", remove all \"issues\" conditional branches"}
+{"number":7871,"state":"CLOSED","title":"[erk-plan] Change PLAN_BACKEND default to \"draft_pr\", remove all \"issues\" conditional branches"}
+  </tool_result>
+  <thinking>Now I'm getting clearer picture:
+
+1. **PR #7907 is MERGED** - this means Node 3.3 should be done. But `update_plan_remote_session.py` still shows up in grep. Let me verify by looking at the file.
+
+2. **PR #7871 is CLOSED without merge** - and the issue #7871 is also CLOSED. Node 1.1 is marked as `in_progress` with plan #7871 and pr #7871. But PR #7871 was closed without merging. This means the plan was abandoned or the work was done a different way. This needs investigation.
+
+
+3. I need to verify the review-related scripts—the grep results showed .pyc files for the plan creation and review scripts but actual .py files for run_review.py, which is inconsistent. I should also check whether issue #7834 was actually resolved or if the work was abandoned like #7871.
+
+4. PR #7907 merged today with the stated goal of deleting `update_plan_remote_session.py` and migrating the CI caller, so the local filesystem might not reflect that change yet—I should verify what's actually present on disk right now.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1749" cache_read_input_tokens="36247" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MUVG9tE8zjfnr7R6JdFk7G">
+    <param name="command">ls /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/update_plan_remote_session.py 2&gt;&amp;1; ls /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/run_review.py 2&gt;&amp;1</param>
+    <param name="description">Check if these files actually exist</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1749" cache_read_input_tokens="36247" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MUVG9tE8zjfnr7R6JdFk7G">
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/update_plan_remote_session.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/run_review.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HLcWddkr6sGUGqdKmxpEJJ">
+    <param name="command">git -C /Users/schrockn/code/erk log --oneline -10 2&gt;&amp;1</param>
+    <param name="description">Check recent git log to see if PR #7907 is in local master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1749" cache_read_input_tokens="36247" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HLcWddkr6sGUGqdKmxpEJJ">
+23575c835 Add `--plan-only` flag to `erk one-shot` and standardize plan/issue naming (#7902)
+6197f4db7 Clean up stale branch-restoration remnants in one_shot_dispatch.py (#7906)
+4525805c1 Fix plan_result.json field name in one-shot workflow (#7903)
+bf5c49e06 Wrap review comment details in collapsible blocks (#7880)
+980fdb7f8 Rename issue_number to plan_number in plan_* exec scripts and documentation (#7896)
+0ae4d2080 Add validate_worktree_name() backpressure gate (#7892)
+3d164cd8a Wire validation into erk implement and plan-derived worktree creation paths (#7866)
+a7692b41e Switch default plan backend to draft_pr (#7891)
+259820f23 Remove plan review PR feature (#7838)
+9fc1dab99 Remove run_url gate from land PR command (#7876)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011XhT6m87sezfRvsMCUGrFb">
+    <param name="command">gh issue view 7834 --json number,title,state,closedAt,body 2&gt;&amp;1 | head -50</param>
+    <param name="description">Check issue #7834 (Node 3.1 plan) body for context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1749" cache_read_input_tokens="36247" output_tokens="802" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1749, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011XhT6m87sezfRvsMCUGrFb">
+{"body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-22T12:12:23.324793+00:00'\ncreated_by: schrockn\nplan_comment_id: 3940825091\nlast_dispatched_run_id: null\nlast_dispatched_node_id: null\nlast_dispatched_at: null\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: null\nlast_remote_impl_run_id: null\nlast_remote_impl_session_id: null\ncreated_from_session: fa989068-8ab9-4cb6-ae90-1f963d32e130\nlifecycle_stage: planned\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n\n## Commands\n\n```bash\nerk br co --for-plan 7834\n```\n\n```bash\nerk plan submit 7834\n```","closedAt":"2026-02-22T20:39:48Z","number":7834,"state":"CLOSED","title":"[erk-plan] Remove Plan Review Subsystem"}
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <thinking>Now I have a much clearer picture:
+
+**Git log analysis:**
+- Commit `259820f23 Remove plan review PR feature (#7838)` - THIS is the commit that removed plan review!
+- Commit `a7692b41e Switch default plan backend to draft_pr (#7891)` - THIS is the commit that changed PLAN_BACKEND default!
+
+This helps me understand what happened to the nodes:
+
+**Node 1.1** (in_progress, PR #7871 CLOSED):
+- The git log shows commit `a7692b41e Switch default plan backend to draft_pr (#7891)` - a DIFFERENT PR (#7891) accomplished this work
+
+
+- PR #7871 was abandoned and never merged, while PR #7891 did the actual work instead, so this node should be marked done with the reference updated to #7891
+
+**Node 3.1** (planning, Plan #7834 CLOSED):
+- Commit `259820f23 Remove plan review PR feature (#7838)` shows the work was completed through a different plan
+- Even though `run_review.py` still exists as a file, the plan is closed and the feature removal was accomplished via plan #7838 instead
+- The slash command and related scripts were removed, so this node is essentially done despite the orphaned file
+
+**Node 3.3** (done, PR #7907 MERGED):
+- PR #7907 merged today but hasn't reached the local master branch yet, which still shows earlier commits
+- The `update_plan_remote_session.py` file persists locally even though the PR that should have removed it is already merged upstream
+- This is just a sync issue—the remote has the changes but my local copy hasn't pulled them yet
+
+Let me check the remote git history to confirm what's actually on master.
+
+Actually, I should focus on what I can verify now: whether `run_review.py` still exists and is functional, whether PR #7891 actually completed node 1.1's work, and whether node 3.1 is truly done given that #7838 removed most scripts but `run_review.py` apparently remains. I need to look more carefully at what #7838 removed and whether `run_review.py` should have been included in that cleanup. Also, I should double-check node 1.1's requirements—it says to change the PLAN_BACKEND default to "draft_pr" and remove all "issues" conditional branches.
+
+The git log confirms that commit a7692b4 switched the default plan backend to draft_pr via PR #7891, but node 1.1's metadata points to PR #7871, which is closed and unmerged—so the node's tracking information is outdated. I need to verify whether the "issues" conditional branches have actually been removed from the codebase and check the current state of `run_review.py`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="39590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017veyjUdX2Vg66JMFxZahkj">
+    <param name="command">grep -r "PLAN_BACKEND\|plan_backend.*issues\|issues.*plan_backend" /Users/schrockn/code/erk/src --include="*.py" -l 2&gt;&amp;1</param>
+    <param name="description">Check for PLAN_BACKEND references and "issues" branch code</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="39590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017veyjUdX2Vg66JMFxZahkj">
+/Users/schrockn/code/erk/src/erk/core/context.py
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/create_cmd.py
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Rnfs6ddgqn4QQoHZYA4BMX">
+    <param name="command">head -30 /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/run_review.py 2&gt;&amp;1</param>
+    <param name="description">Check what run_review.py contains</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="39590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rnfs6ddgqn4QQoHZYA4BMX">
+"""Run a code review using Claude.
+
+This exec command loads a review definition file, assembles the prompt
+with boilerplate, and either runs Claude or prints the assembled prompt.
+
+Supports two modes:
+- PR mode (--pr-number): Reviews an existing PR, posts comments to GitHub
+- Local mode (--local): Reviews local changes vs base branch, outputs to stdout
+
+Usage:
+    # CI mode (has PR number)
+    erk exec run-review --name tripwires --pr-number 123
+
+    # Local mode (before PR exists)
+    erk exec run-review --name tripwires --local
+
+    # Local mode with specific base branch
+    erk exec run-review --name tripwires --local --base develop
+
+    # Print assembled prompt without running Claude
+    erk exec run-review --name tripwires --pr-number 123 --dry-run
+
+Output:
+    In dry-run mode: prints the assembled prompt
+    In run mode: invokes Claude CLI with the assembled prompt
+
+Exit Codes:
+    0: Success
+    1: Review file not found or validation failed
+    2: Invalid flag combination
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013NypdaCCuUAq2gEsfxh98B">
+    <param name="command">gh pr view 7838 --json number,title,state,mergedAt 2&gt;&amp;1</param>
+    <param name="description">Check PR #7838 (removed plan review feature)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="39590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EGV23rx9rnoh7XK5AVGvsg">
+    <param name="command">gh pr view 7891 --json number,title,state,mergedAt 2&gt;&amp;1</param>
+    <param name="description">Check PR #7891 (switched default plan backend)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="39590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013NypdaCCuUAq2gEsfxh98B">
+{"mergedAt":"2026-02-22T19:53:33Z","number":7838,"state":"MERGED","title":"Remove plan review PR feature"}
+  </tool_result>
+  <tool_result tool="toolu_01EGV23rx9rnoh7XK5AVGvsg">
+{"mergedAt":"2026-02-22T20:12:59Z","number":7891,"state":"MERGED","title":"Switch default plan backend to draft_pr"}
+  </tool_result>
+  <thinking>Now I have a much clearer picture. Let me interpret the findings:
+
+**Node 1.1** (marked `in_progress`, Plan: #7871, PR: #7871):
+- PR #7871 was CLOSED without merging (closed 2026-02-22T20:04:17Z)
+- But PR #7891 "Switch default plan backend to draft_pr" was MERGED (2026-02-22T20:12:59Z)
+- The git log shows `a7692b41e Switch default plan backend to draft_pr (#7891)`
+- PLAN_BACKEND references still exist in code, but the work of changing the default is done
+
+
+- The real question is whether the "issues" conditional branches were also removed, so I'm checking if those still exist in the codebase.
+
+**Node 1.2** (marked `in_progress`, Plan: #7885):
+- Plan #7885 is OPEN with GitHubPlanStore, RealPlanListService, get_plan_backend, and ERK_PLAN_BACKEND still present in the code, confirming the `in_progress` status is accurate.
+
+**Node 1.3** (marked `in_progress`, Plan: #7885):
+- Plan #7885 remains OPEN and extract_leading_issue_number is still being used in land_pipeline.
+
+Looking at the remaining files in checkout_cmd.py and pr/shared.py, the `in_progress` status still holds. For **Node 2.1** (marked `done`), I need to verify whether Setup_impl_from_issue.py actually exists. **Node 3.1** (marked `planning`, Plan: #7834) shows that Plan #7834 is CLOSED as of February 22, 2026, with the "Remove plan review PR feature" PR merged and the commit already in local master—the /erk:plan-review slash command and related scripts like plan_create_review_branch and plan_create_review_pr are no longer present.
+
+The run_review.py file that still exists is for code reviews using Claude, not the plan review subsystem, so the work is actually complete and Node 3.1 should be marked `done` with PR #7838. For **Node 3.3** (marked `done`, Plan: #7907, PR: #7907), the "Delete update-plan-remote-session exec script and migrate CI caller to update-plan-header" PR was merged today, though the local git log hasn't caught up yet and the file still exists locally—but the node status is correctly marked `done`.
+
+Now I'm checking whether Node 1.1's work was fully completed by PR #7891 or if only the default change was done. The node description says "Change PLAN_BACKEND default to 'draft_pr', remove all 'issues' conditional branches," but PR #7891 is titled "Switch default plan backend to draft_pr"—so it's unclear if the conditional branch removal was included. I'm seeing PLAN_BACKEND references still scattered across context.py, plan_context_provider.py, and branch/create_cmd, which suggests the full cleanup might not have been done.
+
+Actually, looking at the node structure more carefully, nodes 1.2 and 1.3 are still in_progress and specifically cover deleting issue-based code. That means Node 1.1 was probably just about changing the default, which PR #7891 did accomplish. The original plan PR #7871 was closed and replaced by #7891, so the work shifted but the node's core objective appears to have been completed.
+
+Now I'm reviewing the status of each node: Node 1.1 looks done but has a stale PR reference that should point to #7891 instead. Nodes 1.2 and 1.3 are accurately marked in_progress since the code still exists. Node 3.1 is marked planning but the associated plan #7834 is closed and PR #7838 is already merged, so that should be marked done. I need to verify Node 2.1's status and finish checking Node 3.2.
+
+The critical thing to confirm for Node 1.1 is whether PR #7891 completed all the conditional branch removal work or just the default change, since both the plan and PR references are pointing to the wrong closed issue #7871.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2952" cache_read_input_tokens="39590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2952}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Y2PD5u9svjy4mvknCjNxA6">
+    <param name="command">gh pr view 7891 --json files,body 2&gt;&amp;1 | python3 -c "import json,sys; d=json.load(sys.stdi...[truncated 34 chars]...or f in d.get('files', [])]; print('\nBody preview:'); print(d.get('body','')[:500])" 2&gt;&amp;1</param>
+    <param name="description">Check what files PR #7891 modified</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2952" cache_read_input_tokens="39590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2952}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LqwCE5CkV9WvpBP1VW1k5z">
+    <param name="command">grep -r '"issues"\|== "issues"\|plan_backend.*issues' /Users/schrockn/code/erk/src --include="*.py" -l 2&gt;&amp;1</param>
+    <param name="description">Check if "issues" conditional branches still exist</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2952" cache_read_input_tokens="39590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2952}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01VDxNf6vtcHzmvTbAK2KfDj">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2952" cache_read_input_tokens="39590" output_tokens="1869" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2952, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y2PD5u9svjy4mvknCjNxA6">
+Files changed:
+ - packages/erk-shared/src/erk_shared/plan_store/__init__.py
+ - packages/erk-statusline/tests/test_statusline.py
+ - tests/unit/cli/commands/exec/scripts/test_plan_save.py
+ - tests/unit/plan_store/test_get_plan_backend.py
+
+Body preview:
+This change updates the default plan storage backend from "github" (issue-based plans) to "draft_pr" (draft PR-based plans). The plan_store module now returns "draft_pr" as the fallback when no ERK_PLAN_BACKEND environment variable is set, reflecting a shift in the default planning workflow.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Modified (4 files)
+- `packages/erk-shared/src/erk_shared/plan_store/__init__.py` - Default backend return value
+- `packages/erk-statusline/t
+  </tool_result>
+  <tool_result tool="toolu_01LqwCE5CkV9WvpBP1VW1k5z">
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py
+/Users/schrockn/code/erk/src/erk/tui/app.py
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py
+  </tool_result>
+  <tool_result tool="toolu_01VDxNf6vtcHzmvTbAK2KfDj">
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py
+  </tool_result>
+  <thinking>Now I have a clearer picture:
+
+**Node 1.1** (`in_progress`, Plan #7871, PR #7871):
+- PR #7891 "Switch default plan backend to draft_pr" was merged, which changed the default backend
+- PR #7891 only changed 4 files (mainly in erk_shared/plan_store/) - it changed the DEFAULT but did NOT remove "issues" conditional branches
+- The "issues" conditional branches still exist: in plan_context_provider.py, tui/app.py, submit_pipeline.py, rewrite_cmd.py, update_pr_description.py
+
+
+- So the node is only partially complete - PR #7891 handled the default change, but the conditional branches removal is still pending
+- The original node description calls for both changes, so either the work needs to be split or the node status needs updating since PR #7871 was closed but the full scope wasn't finished
+- The "issues" branches scattered across those files might actually be addressed as a side effect of the planned deletions in nodes 1.2 and 1.3, so there's some dependency or overlap to consider
+- I need to clarify whether "remove all 'issues' conditional branches" means stripping out the code paths that check `if plan_backend == "issues"`
+
+—these would become unreachable once the default changes and no one sets the environment variable.
+- For my audit: Node 1.1 is `in_progress` with a stale PR reference (#7891 is the correct one), the default change is done but branch removal is still pending; Node 3.1 should be marked `done` since plan #7834 is closed and PR #7838 completed the work.
+- Now I'm checking Node 2.1, which is marked `done` with no references, but the description mentions `setup_impl_from_issue.py` still exists—I need to understand if this file should remain or if it's leftover code.
+
+Looking at the node description more carefully, it's describing the implementation of the impl-context staging system itself, not the deletion of that script. The work is about building the `.erk/impl-context/` system with plan.md and ref.json, where the script is used as part of the workflow. Since it's marked `done`, I should verify whether the `.erk/impl-context/` system actually exists.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2343" cache_read_input_tokens="42542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2343}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Rs4NT9u2oE6WEFdiqPArNY">
+    <param name="command">ls /Users/schrockn/code/erk/.erk/impl-context/ 2&gt;&amp;1</param>
+    <param name="description">Check if .erk/impl-context/ directory exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2343" cache_read_input_tokens="42542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2343}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rs4NT9u2oE6WEFdiqPArNY">
+Exit code 1
+ls: /Users/schrockn/code/erk/.erk/impl-context/: No such file or directory
+
+ls: /Users/schrockn/code/erk/.erk/impl-context/: No such file or directory
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EoyXFstb5Hz5Y99cEfQqdD">
+    <param name="command">grep -r 'impl.context\|impl_context' /Users/schrockn/code/erk/src --include="*.py" -l 2&gt;&amp;1 | head -10</param>
+    <param name="description">Check for impl-context references in code</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2343" cache_read_input_tokens="42542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2343}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EoyXFstb5Hz5Y99cEfQqdD">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BCcJifVAfjjiTWWqZLAszr">
+    <param name="command">gh pr view 7838 --json files 2&gt;&amp;1 | python3 -c "import json,sys; d=json.load(sys.stdin); [print(f['path']) for f in d.get('files',[])]" 2&gt;&amp;1</param>
+    <param name="description">Check what files PR #7838 removed (plan review)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2343" cache_read_input_tokens="42542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2343}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BCcJifVAfjjiTWWqZLAszr">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <thinking>Let me check Node 2.1's work in the codebase to see if the impl-context staging was actually implemented, and check what PR #7838 removed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5679" cache_read_input_tokens="44885" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5679}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014VaQdz2UvHfkozCgTqRK4Z">
+    <param name="command">grep -r 'impl.context\|impl_context' /Users/schrockn/code/erk/src --include="*.py" -l 2&gt;&amp;1</param>
+    <param name="description">Check for impl-context references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5679" cache_read_input_tokens="44885" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5679}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014VaQdz2UvHfkozCgTqRK4Z">
+/Users/schrockn/code/erk/src/erk/cli/commands/learn/learn_cmd.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/trigger_async_learn.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01S4RpQpCdNcMu5xpQcbWdnn">
+    <param name="command">gh pr view 7838 --json files 2&gt;&amp;1 | python3 -c "import json,sys; d=json.load(sys.stdin); [print(f['path']) for f in d.get('files',[])]" 2&gt;&amp;1</param>
+    <param name="description">Check files removed by PR #7838</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5679" cache_read_input_tokens="44885" output_tokens="283" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5679, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S4RpQpCdNcMu5xpQcbWdnn">
+.claude/commands/erk/plan-review.md
+.claude/commands/erk/pr-address.md
+.claude/skills/erk-exec/SKILL.md
+.claude/skills/erk-exec/reference.md
+docs/learned/cli/erk-exec-commands.md
+docs/learned/planning/index.md
+docs/learned/planning/lifecycle.md
+docs/learned/planning/pr-review-workflow.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/workflow-markers.md
+docs/learned/planning/workflow.md
+docs/learned/tripwires-index.md
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/src/erk_shared/naming.py
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/cli/commands/exec/scripts/plan_create_review_branch.py
+src/erk/cli/commands/exec/scripts/plan_create_review_pr.py
+src/erk/cli/commands/exec/scripts/plan_review_complete.py
+src/erk/cli/commands/exec/scripts/plan_submit_for_review.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/plan/close_cmd.py
+src/erk/cli/commands/plan/list_cmd.py
+src/erk/cli/commands/review_pr_cleanup.py
+src/erk/cli/constants.py
+src/erk/core/pr_utils.py
+tests/commands/implement/test_issue_mode.py
+tests/commands/plan/test_close.py
+
+... [9 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a comprehensive picture. Let me piece together all the findings:**Node 1.1** (`in_progress`, Plan: #7871, PR: #7871):
+- PR #7871 "Change PLAN_BACKEND default to 'draft_pr', remove all 'issues' conditional branches" was CLOSED without merging
+- But PR #7891 "Switch default plan backend to draft_pr" was MERGED - this did the default change only
+- "Issues" conditional branches still exist in 5 files (plan_context_provider.py, tui/app.py, submit_pipeline.py, rewrite_cmd.py, update_pr_description.py)
+
+
+- The original PR reference is stale since the work got split—the default change was completed via #7891, but the branch removal work either got folded into later nodes or is still pending. I need to determine whether node 1.1 should be marked complete or if the remaining cleanup should be tracked separately.
+
+Looking at the scope more carefully, the "issues" branches that still exist in the code reference `get_plan_backend()`, which is slated for deletion in node 1.2. So removing those branches is actually part of that later work, not node 1.1—the default change from #7891 appears to be the actual completion of node 1.1.
+
+For node 3.1, the plan issue #7834 closed today along with PR #7838 which removed the plan review PR feature, so that work is done. I'm looking at a status table tracking different nodes across the project, and I can see that most items are either done or currently in progress. The key findings show that node 1.1 should be marked complete with the correct PR reference, while nodes 1.2 and 1.3 still have open work that needs to be tracked, and nodes 3.1 through 3.3 are either done or just waiting for local sync to catch up.
+
+Now I'm checking the actual YAML structure for node 1.1 and noticing that both the plan and PR fields reference #7871, but that issue was closed without implementation. The real work that completed this task was done in PR #7891, so I need to update both fields to point to the correct PR instead of the stale reference. Ah, I see—GitHub shares the number space between issues and PRs, so #7871 was a plan issue that got converted to a draft PR through the migration workflow, but that PR was closed without merging. The actual work ended up in PR #7891 instead. So node 1.1 should reference both the plan issue #7871 and the completed PR #7891. But wait, looking back at the description—it's supposed to remove all the "issues" conditional branches, and those haven't actually been cleaned up yet across the codebase. So this task might only be partially complete, not fully done.
+
+Let me think through this more carefully. Node 1.1 had two parts: changing the default to draft_pr and removing the "issues" branches. PR #7891 only handled the first part, and the branch cleanup is actually part of node 1.2's scope since those branches reference GitHubPlanStore. So the most honest representation is that node 1.1 is partially done—the default got changed, but the full cleanup will happen as part of 1.2. The user should probably decide how to mark this, since the plan issue is closed but the work isn't entirely finished.
+
+Now looking at node 3.1, I'm checking what was supposed to be removed: the plan_create_review_branch, plan_create_review_pr, and plan_review_complete exec scripts were all removed by #7838, and review_pr_cleanup command is gone too. But run_review.py still exists, though it's doing something different now than the original run_review exec script did.
+
+The node description explicitly says to remove run_review, but since #7838 is about removing the plan review PR feature and run_review.py is still there, I'm wondering if this is a case where the script was repurposed for general code review rather than deleted entirely, or if it should have been removed and wasn't.
+
+Looking at what run_review.py actually does—it's a general code review tool that uses Claude to review PRs and loads review definitions—it seems distinct from the plan-review subsystem, so it was probably kept intentionally.
+
+Based on this, node 3.1 appears to be complete since #7838 handled the plan-review specific removal work, and the remaining run_review.py serves a different purpose.
+
+Now I'm compiling my final assessment across all the nodes to present the findings.
+
+Generating markdown table...
+
+Looking at the results, I can see that node 1.1 should be marked done with PR #7891, and node 3.1 should be marked done with PR #7838 based on the work that's already been completed.</thinking>
+  <assistant>Now I have enough data. Let me compile the findings.
+
+## Reevaluation Findings for Objective #7775
+
+**"Objective: Clean Up Legacy Plan Infrastructure"** — OPEN
+
+### Summary
+
+- **References audited:** 12
+- **Current (no action needed):** 8
+- **Done elsewhere (node completed):** 2 — nodes 1.1 and 3.1
+- **Stale (wrong PR reference):** 1 — node 1.1's PR ref
+- **Unclear:** 0
+
+### Findings
+
+| Node | Status | Reference | Finding |
+|------|--------|-----------|---------|
+| **1.1** | `in_progress` | Plan #7871 / PR #7871 | **STALE + DONE**: PR #7871 was closed without merging. Work was done by PR #7891 "Switch default plan backend to draft_pr" (merged 2026-02-22). The "remove issues conditional branches" portion will be cleaned up as part of node 1.2 work (deleting `get_plan_backend()` removes all callers). Plan issue #7871 is also CLOSED. |
+| **1.2** | `in_progress` | Plan #7885 (open) | **CURRENT**: `GitHubPlanStore`, `RealPlanListService`, `get_plan_backend`, `ERK_PLAN_BACKEND` all still exist in code. Plan open, work genuinely in progress. |
+| **1.3** | `in_progress` | Plan #7885 (open) | **CURRENT**: `extract_leading_issue_number` still in `land_pipeline.py`, `checkout_cmd.py`, `pr/shared.py`. Correct. |
+| **2.1** | `done` | `setup_impl_from_issue.py`, `.erk/impl-context/` | **CURRENT**: `setup_impl_from_issue.py` exists, `impl-context` references exist in codebase. Node correctly marked done. |
+| **3.1** | `planning` | Plan #7834 (CLOSED) | **DONE**: PR #7838 "Remove plan review PR feature" merged 2026-02-22. Removed `plan_create_review_branch.py`, `plan_create_review_pr.py`, `plan_review_complete.py`, `review_pr_cleanup.py`, `/erk:plan-review` command, and all callers. `run_review.py` remains but serves a different purpose (general code review tool, not plan-review subsystem). |
+| **3.2** | `done` | PR #7842 | **CURRENT** |
+| **3.3** | `done` | Plan #7907 / PR #7907 | **CURRENT**: PR #7907 merged today (2026-02-22). Local git is just behind remote. |
+
+---
+
+### Proposed Updates
+
+1. **[DONE] Node 1.1**: Mark `done`, update PR reference to `#7891`
+   - Current: `status: in_progress, plan: '#7871', pr: '#7871'`
+   - New: `status: done, plan: '#7871', pr: '#7891'`
+   - Evidence: PR #7891 "Switch default plan backend to draft_pr" merged 2026-02-22. Remaining "issues" branch cleanup is handled naturally by node 1.2's deletion of `get_plan_backend()` and related code.
+
+2. **[DONE] Node 3.1**: Mark `done`, add PR reference `#7838`
+   - Current: `status: planning, plan: '#7834', pr: null`
+   - New: `status: done, plan: '#7834', pr: '#7838'`
+   - Evidence: PR #7838 "Remove plan review PR feature" merged 2026-02-22. Plan issue #7834 also closed same day.</assistant>
+  <tool_use name="AskUserQuestion" id="toolu_01TdoigEUfDS3esLhfJ59hU8">
+    <param name="questions">[{'question': 'Apply these 2 proposed updates?', 'header': 'Updates', 'multiSelect': False...[truncated 175 chars]...te separately'}, {'label': 'Skip all', 'description': 'Just informational, no changes'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="51669" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="4248" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TdoigEUfDS3esLhfJ59hU8">
+User has answered your questions: "Apply these 2 proposed updates?"="Apply all 2 updates". You can now continue with the user's answers in mind.
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>

@@ -1,0 +1,722 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <user>update this objective (as you can see an attempt to do errored)</user>
+  <thinking>The user wants me to update objective #7724 with the landed PR #7896. The automated attempt failed with "Invalid API key". I should invoke the `/erk:objective-update-with-landed-pr` skill manually.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="14650" cache_read_input_tokens="16783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14650}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01DtNGXVQT6UNuVpPN4VJRcn">
+    <param name="skill">erk:objective-update-with-landed-pr</param>
+    <param name="args">--pr 7896 --objective 7724 --branch plnd/07724-replan-rename-issue-02-22-2022</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14650" cache_read_input_tokens="16783" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14650, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DtNGXVQT6UNuVpPN4VJRcn">
+Launching skill: erk:objective-update-with-landed-pr
+  </tool_result>
+  <user># /erk:objective-update-with-landed-pr
+
+Update an objective issue after landing a PR from a plan branch.
+
+## Usage
+
+Run after landing a PR:
+
+```bash
+/erk:objective-update-with-landed-pr
+```
+
+---
+
+## Agent Instructions
+
+&gt; **Design note:** All steps run inline in the caller's context (no subagent delegation).
+&gt; This is deliberate — Step 3 (prose reconciliation) requires judgment that benefits from
+&gt; the caller's model quality, and Step 7 (closing prompt) requires direct user interaction.
+
+### Step 1: Fetch All Context
+
+Check `--pr 7896 --objective 7724 --branch plnd/07724-replan-rename-issue-02-22-2022` for optional overrides:
+
+- `--pr &lt;number&gt;`: PR number that was just landed
+- `--objective &lt;number&gt;`: Objective issue number to update
+- `--branch &lt;name&gt;`: Original branch name
+- `--auto-close`: If set and all nodes are complete, close objective without asking
+
+Run a single command to fetch and parse everything (all options are auto-discovered if omitted):
+
+```bash
+erk exec objective-fetch-context [--pr &lt;number&gt;] [--objective &lt;number&gt;] [--branch &lt;name&gt;]
+```
+
+This returns JSON with:
+
+- `objective`: Issue body, title, labels, URL
+- `plan`: Plan issue body and title
+- `pr`: PR title, body, URL
+- `roadmap.matched_steps`: Node IDs where `plan == #&lt;plan_number&gt;` (deterministic match)
+- `roadmap.phases`: Serialized roadmap phases
+- `roadmap.summary`: Node counts (done, pending, etc.)
+- `roadmap.next_step`: First pending node or null
+- `roadmap.all_complete`: True if every node is done or skipped
+
+If this returns `success: false`, display the error and stop.
+
+### Step 2: Update Roadmap Nodes
+
+Read `matched_steps` from the context blob. These are the nodes this plan completed — no analysis needed. If `matched_steps` is empty, the plan may not have been linked to specific nodes; fall back to comparing the plan body against the roadmap to identify which nodes were completed.
+
+**CRITICAL: Pass ALL completed nodes as multiple `--node` flags in ONE command. Do NOT run separate commands per node — sequential calls cause race conditions and duplicate API calls.**
+
+Before running update-objective-node, extract the existing plan reference for each completed node from the objective roadmap YAML (available in the context blob). Pass `--plan "#&lt;plan-number&gt;"` to preserve it, or `--plan ""` if the node had no plan.
+
+```bash
+erk exec update-objective-node &lt;objective-number&gt; --node &lt;node-id-1&gt; --node &lt;node-id-2&gt; ... --pr "#&lt;pr-number&gt;" --plan "#&lt;plan-number&gt;" --status done --include-body
+```
+
+Preserve the existing plan reference for each node (available in `roadmap.phases`). The `--include-body` flag returns the fully-mutated body as `updated_body` — use this for prose reconciliation (do NOT re-fetch via `gh issue view`).
+
+### Step 3: Perform Prose Reconciliation
+
+Compare `objective.objective_content` (the prose from the first comment's `objective-body` block) against what the PR actually did. Note: `updated_body` from Step 2 contains only metadata (roadmap); prose lives in `objective_content`.
+
+If `objective_content` is null, skip prose reconciliation entirely (objective has no prose comment).
+
+- Read each Design Decision. Did the PR override or refine any?
+- Read Implementation Context. Does the architecture description still match?
+- Read upcoming node descriptions. Did this PR change the landscape?
+- If nothing is stale, skip prose update entirely.
+
+| Contradiction Type          | Example                                                      | Section to Update                             |
+| --------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
+| **Decision override**       | Objective says "Use polling", PR implemented WebSockets      | Design Decisions                              |
+| **Scope change**            | Node says "Add 3 methods", PR only needed 2                  | Node description in roadmap                   |
+| **Architecture drift**      | Context says "config in config.py", PR moved it to settings/ | Implementation Context                        |
+| **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                        |
+| **New discovery**           | PR revealed a caching bug affecting future nodes             | Implementation Context or new Design Decision |
+
+### Step 4: Post Action Comment
+
+Post the action comment via the exec script. Provide structured JSON on stdin:
+
+```bash
+echo '{"issue_number": &lt;N&gt;, "date": "YYYY-MM-DD", "pr_number": &lt;N&gt;, "phase_step": "X.Y, X.Z", "title": "Brief title", "what_was_done": ["..."], "lessons_learned": ["..."], "roadmap_updates": ["Node X.Y: status -&gt; done"], "body_reconciliation": [{"section": "...", "change": "..."}]}' | erk exec objective-post-action-comment
+```
+
+**Inferring content (DO NOT ask the user):**
+
+- **What Was Done:** Infer from PR title, description, and plan body.
+- **Lessons Learned:** Infer from implementation patterns. If straightforward, note what worked well.
+- **Body Reconciliation:** Only include if prose sections needed updating. Omit entirely if nothing is stale.
+
+### Step 5: Update Objective Prose (First Comment)
+
+**Only if prose reconciliation found stale sections**, update the objective's first comment (where prose lives). Use `extract_objective_header_comment_id` from the objective body to get the comment ID, then update the comment with reconciled prose wrapped in the `objective-body` metadata block.
+
+To get the comment ID, parse it from `objective.body`'s `objective-header` metadata block (the `objective_comment_id` field).
+
+```bash
+# Update the first comment (not the issue body) with reconciled prose
+gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="&lt;updated comment body&gt;"
+```
+
+If nothing is stale, skip this step entirely. The issue body (`updated_body`) contains only metadata and should NOT be the target of prose updates.
+
+### Step 6: Validate Objective
+
+```bash
+erk objective check &lt;issue-number&gt; --json-output
+```
+
+If checks fail, report failures and attempt to fix. The JSON output now includes `all_complete`.
+
+### Step 7: Check Closing Triggers
+
+Use `all_complete` from the validation output to determine next action.
+
+**If `all_complete` is `true`:**
+
+- **If `--auto-close` was provided:** Post "Action: Objective Complete" comment, close the issue (`gh issue close &lt;issue-number&gt;`), report: "All nodes complete - objective closed automatically"
+- **Otherwise:** Ask the user directly:
+  ```
+  All roadmap nodes are complete. Should I close objective #&lt;number&gt; now?
+  - Yes, close with final summary
+  - Not yet, there may be follow-up work
+  - I'll close it manually later
+  ```
+  If yes: post final comment and close. Otherwise: acknowledge and report complete.
+
+**If `all_complete` is `false`:**
+
+- Report the update is complete. Use `roadmap.next_step` to describe next focus.
+
+---
+
+## Output Format
+
+- **Start:** "Updating objective #&lt;number&gt; after landing PR #&lt;pr-number&gt;"
+- **After writes:** "Posted action comment and updated objective body for #&lt;number&gt;"
+- **End:** Either "Objective #&lt;number&gt; closed" or "Objective updated. Next focus: [next action]"
+- **Always:** Display the objective URL
+
+---
+
+## Error Cases
+
+| Scenario                           | Action                                       |
+| ---------------------------------- | -------------------------------------------- |
+| `objective-fetch-context` fails    | Display error from JSON and stop             |
+| Issue not found                    | Report error and exit                        |
+| Issue has no `erk-objective` label | Warn user this may not be an objective issue |
+</user>
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <thinking>I need to update objective #7724 after landing PR #7896. Let me follow the steps in the skill:
+
+1. First, fetch all context using `erk exec objective-fetch-context`
+2. Update roadmap nodes
+3. Prose reconciliation
+4. Post action comment
+5. Update objective prose if needed
+6. Validate
+7. Check closing triggers
+
+Let me start with Step 1.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2133" cache_read_input_tokens="31433" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2133}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <assistant>Updating objective #7724 after landing PR #7896.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2133" cache_read_input_tokens="31433" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2133}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0151xEf994t4yvXuedrFSkQR">
+    <param name="command">erk exec objective-fetch-context --pr 7896 --objective 7724 --branch plnd/07724-replan-rename-issue-02-22-2022 2&gt;&amp;1</param>
+    <param name="description">Fetch all context for objective update</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2133" cache_read_input_tokens="31433" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2133}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0151xEf994t4yvXuedrFSkQR">
+Exit code 1
+{"success": false, "error": "No plan found for branch 'plnd/07724-replan-rename-issue-02-22-2022'"}
+
+{"success": false, "error": "No plan found for branch 'plnd/07724-replan-rename-issue-02-22-2022'"}
+  </tool_result>
+  <thinking>The branch has been deleted. Let me try with just the PR and objective numbers, without the branch.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="33566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 337}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The branch was deleted after landing. Let me try without it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="33566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 337}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Bu4A789QdnBF5hYfRme3Pz">
+    <param name="command">erk exec objective-fetch-context --pr 7896 --objective 7724 2&gt;&amp;1</param>
+    <param name="description">Fetch context without branch name</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="33566" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bu4A789QdnBF5hYfRme3Pz">
+Exit code 1
+{"success": false, "error": "No plan found for branch 'master'"}
+
+{"success": false, "error": "No plan found for branch 'master'"}
+  </tool_result>
+  <thinking>The `objective-fetch-context` command is having trouble finding the plan. The plan number is #7896 (it's both the plan and PR). Let me try with explicit plan number if there's an option for that, or fetch the context manually.
+
+Let me look at the help for this command.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="33903" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 209}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Jcr6zPipUmpVitnhH8xqR1">
+    <param name="command">erk exec objective-fetch-context --help 2&gt;&amp;1</param>
+    <param name="description">Check available options</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="33903" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 209}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jcr6zPipUmpVitnhH8xqR1">
+Usage: erk exec objective-fetch-context [OPTIONS]
+
+  Fetch all context for objective update in a single call.
+
+Options:
+  --pr INTEGER         PR number (auto-discovered if omitted)
+  --objective INTEGER  Objective issue (auto-discovered if omitted)
+  --branch TEXT        Branch name (auto-discovered if omitted)
+  -h, --help           Show this message and exit.
+  </tool_result>
+  <thinking>The command is having trouble finding the plan. The branch was deleted. The PR #7896 is also the plan issue #7896. Let me try to fetch everything manually using `gh`.
+
+Let me look at what the objective-fetch-context does - it tries to find the plan from the branch. Since the branch was deleted, I need to fetch things manually.
+
+Let me fetch:
+1. The objective issue #7724
+2. The PR #7896
+3. The plan issue #7896 (same number as PR)</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="34112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 267}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Need to fetch context manually since branch was deleted.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="34112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 267}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012GdGLz2oKtzpojV7rhy8d4">
+    <param name="command">gh issue view 7724 --json body,title,labels,url 2&gt;&amp;1</param>
+    <param name="description">Fetch objective issue #7724</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="34112" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 267, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012GdGLz2oKtzpojV7rhy8d4">
+{"body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-02-21T13:43:06.368518+00:00'\ncreated_by: schrockn\nobjective_comment_id: 3938799197\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '3'\nnodes:\n- id: '1.1'\n  description: Rename TargetInfo.issue_number → plan_number and target_type values\n    (issue_number → plan_number, issue_url → plan_url) in implement_shared.py\n  status: done\n  plan: null\n  pr: '#7849'\n- id: '1.2'\n  description: Update implement.py to use the new TargetInfo field and target type\n    names\n  status: done\n  plan: null\n  pr: '#7849'\n- id: '1.3'\n  description: Update tests for implement.py and implement_shared.py\n  status: done\n  plan: null\n  pr: '#7849'\n- id: '2.1'\n  description: Rename in plan_save.py, plan_save_to_issue.py, plan_create_review_pr.py,\n    plan_review_complete.py, plan_submit_for_review.py, plan_update_issue.py, plan_update_from_feedback.py,\n    plan_create_review_branch.py, plan_migrate_to_draft_pr.py\n  status: in_progress\n  plan: '#7882'\n  pr: null\n- id: '2.2'\n  description: Update tests for all renamed plan_* scripts\n  status: in_progress\n  plan: '#7882'\n  pr: null\n- id: '3.1'\n  description: Rename in impl_init.py, impl_signal.py, check_impl.py, mark_impl_started.py,\n    mark_impl_ended.py, setup_impl_from_issue.py\n  status: pending\n  plan: null\n  pr: null\n- id: '3.2'\n  description: Update tests for all renamed impl_* scripts\n  status: pending\n  plan: null\n  pr: null\n- id: '4.1'\n  description: Rename in update_dispatch_info.py, get_plan_metadata.py, get_pr_for_plan.py,\n    register_one_shot_plan.py, create_plan_from_context.py, store_tripwire_candidates.py,\n    exit_plan_mode_hook.py, close_issue_with_comment.py, track_learn_evaluation.py,\n    get_closing_text.py, get_pr_body_footer.py, ci_update_pr_body.py, update_pr_description.py\n  status: pending\n  plan: null\n  pr: null\n- id: '4.2'\n  description: Update tests for all renamed scripts\n  status: pending\n  plan: null\n  pr: null\n- id: '5.1'\n  description: Rename in checkout_cmd.py, create_cmd.py, list_cmd.py, close_cmd.py,\n    check_cmd.py, view.py, log_cmd.py, learn/complete_cmd.py, docs/extract_cmd.py,\n    docs/unextract_cmd.py\n  status: pending\n  plan: null\n  pr: null\n- id: '5.2'\n  description: Update tests for all renamed plan/* files\n  status: pending\n  plan: null\n  pr: null\n- id: '6.1'\n  description: Rename in pr/submit_pipeline.py, pr/shared.py, pr/check_cmd.py, pr/rewrite_cmd.py,\n    pr/metadata_helpers.py\n  status: pending\n  plan: null\n  pr: null\n- id: '6.2'\n  description: Update tests for all renamed pr/* files\n  status: pending\n  plan: null\n  pr: null\n- id: '7.1'\n  description: Rename in output_filter.py, prompt_executor.py, codex_output_parser.py,\n    github_parsing.py (plan-related parts only), cli/output.py\n  status: pending\n  plan: null\n  pr: null\n- id: '7.2'\n  description: Update tests for all renamed core modules\n  status: pending\n  plan: null\n  pr: null\n- id: '8.1'\n  description: Rename in submit.py, land_cmd.py, land_pipeline.py, launch_cmd.py,\n    branch/create_cmd.py, one_shot_dispatch.py, review_pr_cleanup.py\n  status: pending\n  plan: null\n  pr: null\n- id: '8.2'\n  description: Rename in run/list_cmd.py, run/shared.py, wt/create_cmd.py, admin.py,\n    learn/learn_cmd.py\n  status: pending\n  plan: null\n  pr: null\n- id: '8.3'\n  description: Rename in status/models/status_data.py, status/collectors/impl.py,\n    status/renderers/simple.py, core/services/plan_list_service.py\n  status: pending\n  plan: null\n  pr: null\n- id: '8.4'\n  description: Update all remaining tests and verify full test suite passes\n  status: pending\n  plan: null\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;","labels":[{"id":"LA_kwDOPxC3hc8AAAACTsevgQ","name":"erk-objective","description":"Multi-plan coordination tracking","color":"0E8A16"}],"title":"Objective: Rename issue_number to plan_number in plan-related code","url":"https://github.com/dagster-io/erk/issues/7724"}
+  </tool_result>
+  <thinking>Now I can see the objective. Nodes 2.1 and 2.2 are `in_progress` with plan `#7882`. But the PR that just landed is #7896, which is plan #7896 titled "Rename issue_number to plan_number in plan_* exec scripts and documentation".
+
+Let me fetch the PR details to understand what it did.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2094" cache_read_input_tokens="34379" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2094}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U2earwYHUwaASBWnRecCaN">
+    <param name="command">gh pr view 7896 --json title,body,url 2&gt;&amp;1</param>
+    <param name="description">Fetch PR #7896 details</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2094" cache_read_input_tokens="34379" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2094, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U2earwYHUwaASBWnRecCaN">
+{"body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-22T20:22:15.634444+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22285049618'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFMErfEg\nlast_dispatched_at: '2026-02-22T20:48:58.829432'\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: '2026-02-22T20:35:03.608995+00:00'\nlast_remote_impl_run_id: '22284693591'\nlast_remote_impl_session_id: 14827cc4-6778-416a-a396-ff3b2db738ad\nbranch_name: plnd/O7724-replan-rename-issue-02-22-2022\nobjective_issue: 7724\ncreated_from_session: e840675b-2c2f-4c69-bbc8-d3669003c50a\nlifecycle_stage: implemented\nlast_session_branch: async-learn/7896\nlast_session_id: 14827cc4-6778-416a-a396-ff3b2db738ad\nlast_session_at: '2026-02-22T20:35:01.456540+00:00'\nlast_session_source: remote\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n\n\n---\n\nThis change renames issue-related identifiers to plan-related terminology across exec scripts, commands, skills, and tests to align plan-related code with consistent naming conventions.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified (18 files)\n\n**Exec Scripts (5):**\n- `src/erk/cli/commands/exec/scripts/plan_save.py` - JSON output keys renamed\n- `src/erk/cli/commands/exec/scripts/plan_update_issue.py` - CLI option and JSON keys renamed\n- `src/erk/cli/commands/exec/scripts/plan_migrate_to_draft_pr.py` - Click argument and JSON keys renamed\n- `src/erk/cli/commands/exec/scripts/plan_save_to_issue.py` - JSON output keys renamed\n- `src/erk/cli/commands/exec/scripts/plan_update_from_feedback.py` - Dataclass field and Click argument renamed\n\n**Tests (5):**\n- `tests/unit/cli/commands/exec/scripts/test_plan_save.py` - Updated output assertions\n- `tests/unit/cli/commands/exec/scripts/test_plan_update_issue.py` - Updated CLI flag and assertions\n- `tests/unit/cli/commands/exec/scripts/test_plan_migrate_to_draft_pr.py` - Updated JSON assertions\n- `tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py` - Updated output assertions\n- `tests/unit/cli/commands/exec/scripts/test_plan_update_from_feedback.py` - Updated output assertions\n\n**Commands &amp; Skills (8):**\n- `.claude/commands/erk/migrate-plan-to-draft-pr.md` - Argument hint and examples\n- `.claude/commands/erk/one-shot-plan.md` - CLI flag and JSON key references\n- `.claude/commands/local/plan-update.md` - Argument hint and CLI flag\n- `.claude/commands/erk/plan-save.md` - All placeholder references updated\n- `.claude/skills/erk-exec/reference.md` - CLI reference documentation\n- `.claude/skills/erk-planning/SKILL.md` - Usage examples\n- `.claude/skills/erk-planning/references/workflow.md` - JSON structure documentation\n- `packages/erk-shared/src/erk_shared/naming.py` - Refactored worktree validation for clarity\n\n&lt;/details&gt;\n\n## Key Changes\n\n- **Exec script JSON keys**: `\"issue_number\"` → `\"plan_number\"`, `\"issue_url\"` → `\"plan_url\"` across 5 scripts\n- **CLI interfaces**: `--issue-number` → `--plan-number` flag; Click arguments renamed in `plan_migrate_to_draft_pr.py` and `plan_update_from_feedback.py`\n- **Dataclass fields**: `issue_number` → `plan_number` in `PlanUpdateFromFeedbackSuccess`\n- **Documentation &amp; commands**: Updated all references in skills, command hints, and CLI usage examples to use plan-related terminology\n- **Naming validation**: Refactored `validate_worktree_name()` to simplify error reporting (replaced diagnostics list with single reason string, added sanitized form to error)\n\nPart of Objective #7724\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Replan: Rename issue_number to plan_number in plan_* exec scripts\n\nPart of Objective #7724\n\n## Context\n\nOriginal plan (#7882) targeted 9 plan_* exec scripts. Since then, PR #7838 removed the plan review PR feature, deleting 4 scripts:\n- plan_create_review_pr.py\n- plan_review_complete.py\n- plan_submit_for_review.py\n- plan_create_review_branch.py\n\nThe remaining 5 scripts still have `issue_number` identifiers and JSON keys that need renaming.\n\n## Scope\n\n**5 scripts + 5 test files:**\n\n| # | Script | Test | Key Changes |\n|---|--------|------|-------------|\n| 1 | `plan_save.py` | `test_plan_save.py` | JSON keys `\"issue_number\"` → `\"plan_number\"`, `\"issue_url\"` → `\"plan_url\"` (variable already renamed) |\n| 2 | `plan_update_issue.py` | `test_plan_update_issue.py` | `--issue-number` CLI option → `--plan-number`, parameter + JSON keys |\n| 3 | `plan_migrate_to_draft_pr.py` | `test_plan_migrate_to_draft_pr.py` | Click argument, `\"original_issue_number\"` → `\"original_plan_number\"`, all Python identifiers |\n| 4 | `plan_save_to_issue.py` | `test_plan_save_to_issue.py` | Bridges `result.issue_number` from shared type (shared field stays, JSON keys renamed) |\n| 5 | `plan_update_from_feedback.py` | `test_plan_update_from_feedback.py` | Dataclass field, Click argument, all Python identifiers |\n\n## Rename Rules\n\n### Python identifiers\n- Local variables, parameters, function args: `issue_number` → `plan_number`\n- Dataclass fields: `issue_number: int` → `plan_number: int`\n\n### JSON output keys\n- `\"issue_number\"` → `\"plan_number\"`\n- `\"issue_url\"` → `\"plan_url\"`\n- `\"original_issue_number\"` → `\"original_plan_number\"` (plan_migrate_to_draft_pr.py only)\n\n### Click CLI interface\n- Positional arguments: `@click.argument(\"issue_number\", type=int)` → `@click.argument(\"plan_number\", type=int)`\n- Named option (plan_update_issue.py only): `--issue-number` → `--plan-number`\n\n### Bridging shared type (plan_save_to_issue.py)\n`CreatePlanIssueResult.issue_number` is NOT renamed in this phase. Where accessed:\n```python\n# shared type field stays as-is\nif result.issue_number is not None:\n    output[\"plan_number\"] = result.issue_number  # JSON key renamed\n```\n\n### Docstrings/comments\n- Update references to `issue_number` in docstrings and comments within the target files only\n\n## Implementation Order\n\n1. **plan_save.py** + test — simplest (2 JSON key renames, variable already `plan_number`)\n2. **plan_update_issue.py** + test — `--issue-number` CLI option rename + parameter + JSON keys\n3. **plan_migrate_to_draft_pr.py** + test — Click argument + `original_issue_number` + all identifiers\n4. **plan_save_to_issue.py** + test — bridges shared type, most occurrences (15+)\n5. **plan_update_from_feedback.py** + test — dataclass field + Click argument + identifiers\n\nAfter each pair, run the corresponding unit test to verify.\n\n## Files to Modify\n\n**Source files** (`src/erk/cli/commands/exec/scripts/`):\n- `plan_save.py`\n- `plan_update_issue.py`\n- `plan_migrate_to_draft_pr.py`\n- `plan_save_to_issue.py`\n- `plan_update_from_feedback.py`\n\n**Test files** (`tests/unit/cli/commands/exec/scripts/`):\n- `test_plan_save.py`\n- `test_plan_update_issue.py`\n- `test_plan_migrate_to_draft_pr.py`\n- `test_plan_save_to_issue.py`\n- `test_plan_update_from_feedback.py`\n\n## Verification\n\n1. Run unit tests for each file pair after rename\n2. Run full test suite: `pytest tests/unit/cli/commands/exec/scripts/test_plan_*.py`\n3. Run type checker on modified files\n4. Run linter/formatter\n\n\n&lt;/details&gt;\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 7896 --script)\" &amp;&amp; erk pr sync --dangerous\n```\n","title":"Rename issue_number to plan_number in plan_* exec scripts and documentation","url":"https://github.com/dagster-io/erk/pull/7896"}
+  </tool_result>
+  <thinking>Now I understand the situation:
+
+1. The PR #7896 is a replan of plan #7882
+2. PR #7896 covered exec scripts (plan_save.py, plan_update_issue.py, plan_migrate_to_draft_pr.py, plan_save_to_issue.py, plan_update_from_feedback.py) + tests + commands/skills
+
+This PR was a replan of #7882, covering nodes 2.1 and 2.2 in the objective roadmap. Currently those nodes are `in_progress` with plan `#7882`.
+
+I need to update nodes 2.1 and 2.2 to `done` with PR `#7896`. 
+
+The PR is linked to objective #7724, and the branch name uses an uppercase 'O' in the prefix, which explains why the lowercase variant didn't match. Regardless, I need to mark nodes 2.1 and 2.2 as complete.
+
+Looking at the objective nodes, both 2.1 and 2.2 are currently in_progress with plan #7882, but PR #7896 (the replan) actually covers the work described in both nodes—renaming the plan scripts and updating their tests. I'll run the update command to mark both as done and link them to PR #7896.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3068" cache_read_input_tokens="36473" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3068}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The PR covered nodes 2.1 and 2.2 (currently `in_progress` with plan `#7882`). Updating them to done.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3068" cache_read_input_tokens="36473" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3068}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019uw41G2Z3tu4HZR78o46ev">
+    <param name="command">erk exec update-objective-node 7724 --node 2.1 --node 2.2 --pr "#7896" --plan "#7882" --status done --include-body 2&gt;&amp;1</param>
+    <param name="description">Mark nodes 2.1 and 2.2 as done</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3068" cache_read_input_tokens="36473" output_tokens="694" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3068, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019uw41G2Z3tu4HZR78o46ev">
+{"success": true, "issue_number": 7724, "new_plan": "#7882", "new_pr": "#7896", "url": "https://github.com/dagster-io/erk/issues/7724", "nodes": [{"node_id": "2.1", "success": true, "previous_plan": "#7882", "previous_pr": null}, {"node_id": "2.2", "success": true, "previous_plan": "#7882", "previous_pr": null}], "updated_body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-02-21T13:43:06.368518+00:00'\ncreated_by: schrockn\nobjective_comment_id: 3938799197\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '3'\nnodes:\n- id: '1.1'\n  description: Rename TargetInfo.issue_number \u2192 plan_number and target_type values\n    (issue_number \u2192 plan_number, issue_url \u2192 plan_url) in implement_shared.py\n  status: done\n  plan: null\n  pr: '#7849'\n- id: '1.2'\n  description: Update implement.py to use the new TargetInfo field and target type\n    names\n  status: done\n  plan: null\n  pr: '#7849'\n- id: '1.3'\n  description: Update tests for implement.py and implement_shared.py\n  status: done\n  plan: null\n  pr: '#7849'\n- id: '2.1'\n  description: Rename in plan_save.py, plan_save_to_issue.py, plan_create_review_pr.py,\n    plan_review_complete.py, plan_submit_for_review.py, plan_update_issue.py, plan_update_from_feedback.py,\n    plan_create_review_branch.py, plan_migrate_to_draft_pr.py\n  status: done\n  plan: '#7882'\n  pr: '#7896'\n- id: '2.2'\n  description: Update tests for all renamed plan_* scripts\n  status: done\n  plan: '#7882'\n  pr: '#7896'\n- id: '3.1'\n  description: Rename in impl_init.py, impl_signal.py, check_impl.py, mark_impl_started.py,\n    mark_impl_ended.py, setup_impl_from_issue.py\n  status: pending\n  plan: null\n  pr: null\n- id: '3.2'\n  description: Update tests for all renamed impl_* scripts\n  status: pending\n  plan: null\n  pr: null\n- id: '4.1'\n  description: Rename in update_dispatch_info.py, get_plan_metadata.py, get_pr_for_plan.py,\n    register_one_shot_plan.py, create_plan_from_context.py, store_tripwire_candidates.py,\n    exit_plan_mode_hook.py, close_issue_with_comment.py, track_learn_evaluation.py,\n    get_closing_text.py, get_pr_body_footer.py, ci_update_pr_body.py, update_pr_description.py\n  status: pending\n  plan: null\n  pr: null\n- id: '4.2'\n  description: Update tests for all renamed scripts\n  status: pending\n  plan: null\n  pr: null\n- id: '5.1'\n  description: Rename in checkout_cmd.py, create_cmd.py, list_cmd.py, close_cmd.py,\n    check_cmd.py, view.py, log_cmd.py, learn/complete_cmd.py, docs/extract_cmd.py,\n    docs/unextract_cmd.py\n  status: pending\n  plan: null\n  pr: null\n- id: '5.2'\n  description: Update tests for all renamed plan/* files\n  status: pending\n  plan: null\n  pr: null\n- id: '6.1'\n  description: Rename in pr/submit_pipeline.py, pr/shared.py, pr/check_cmd.py, pr/rewrite_cmd.py,\n    pr/metadata_helpers.py\n  status: pending\n  plan: null\n  pr: null\n- id: '6.2'\n  description: Update tests for all renamed pr/* files\n  status: pending\n  plan: null\n  pr: null\n- id: '7.1'\n  description: Rename in output_filter.py, prompt_executor.py, codex_output_parser.py,\n    github_parsing.py (plan-related parts only), cli/output.py\n  status: pending\n  plan: null\n  pr: null\n- id: '7.2'\n  description: Update tests for all renamed core modules\n  status: pending\n  plan: null\n  pr: null\n- id: '8.1'\n  description: Rename in submit.py, land_cmd.py, land_pipeline.py, launch_cmd.py,\n    branch/create_cmd.py, one_shot_dispatch.py, review_pr_cleanup.py\n  status: pending\n  plan: null\n  pr: null\n- id: '8.2'\n  description: Rename in run/list_cmd.py, run/shared.py, wt/create_cmd.py, admin.py,\n    learn/learn_cmd.py\n  status: pending\n  plan: null\n  pr: null\n- id: '8.3'\n  description: Rename in status/models/status_data.py, status/collectors/impl.py,\n    status/renderers/simple.py, core/services/plan_list_service.py\n  status: pending\n  plan: null\n  pr: null\n- id: '8.4'\n  description: Update all remaining tests and verify full test suite passes\n  status: pending\n  plan: null\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;"}
+  </tool_result>
+  <thinking>Nodes 2.1 and 2.2 have been marked as done. Now let me do prose reconciliation by fetching the objective's first comment (ID: 3938799197).</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7636" cache_read_input_tokens="39541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7636}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Nodes 2.1 and 2.2 marked as done. Now let me check the prose for reconciliation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7636" cache_read_input_tokens="39541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7636}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Fp7n6Es8dw9HUbDqTVA5QE">
+    <param name="command">gh api repos/dagster-io/erk/issues/comments/3938799197 --jq '.body' 2&gt;&amp;1</param>
+    <param name="description">Fetch objective prose comment</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7636" cache_read_input_tokens="39541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7636}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Fp7n6Es8dw9HUbDqTVA5QE">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-body --&gt;
+&lt;details open&gt;
+&lt;summary&gt;&lt;strong&gt;Objective&lt;/strong&gt;&lt;/summary&gt;
+
+# Objective: Rename `issue_number` to `plan_number` in plan-related code
+
+Plans can be backed by either GitHub issues or draft PRs, but internal code pervasively uses `issue_number` to mean "plan identifier." This is misleading now that the draft_pr backend exists and will get worse as adoption grows. Rename to `plan_number` wherever the concept is "plan identifier," keeping `issue_number` only where code genuinely operates on GitHub issues (objectives, generic issue operations).
+
+## Goal
+
+After completion, `issue_number` in the codebase exclusively means "GitHub issue number" (objectives, generic issue operations). All plan-related identifiers use `plan_number` — in variable names, Click arguments, JSON output keys, and internal data structures.
+
+## Design Decisions
+
+- **`plan_number` not `plan_id`**: Consistent with the existing naming pattern (`issue_number` → `plan_number`), and `plan_id` could be confused with a UUID or string identifier
+- **Keep `issue_number` for objectives and generic issue ops**: Objectives are always GitHub issues; scripts like `get_issue_body`, `update_issue_body`, `get_issue_timeline_prs`, `create_issue_from_session`, and all `objective_*` scripts keep `issue_number`
+- **No backwards compatibility shims**: Per erk conventions, break and migrate immediately
+- **JSON output keys rename too**: Keys like `"issue_number"` in JSON output from exec scripts become `"plan_number"` — callers (hooks, skills, other scripts) must be updated in the same PR
+- **One module/directory per PR**: Each PR renames within a natural module boundary and includes its own tests. Use `libcst-refactor` agent for mechanical batch renames. Tests travel with source — never a separate "update tests" PR
+- **Each PR must leave the system working**: Intermediate states where some code says `issue_number` and some says `plan_number` are fine as long as tests pass. Cross-module boundaries (function signatures called from other modules) may require temporary compatibility in the same PR
+
+## Roadmap
+
+&lt;!-- erk:roadmap-table --&gt;
+### Phase 1: Steelthread: Implement Commands (1 PR)
+
+Rename in the implement entry points — the most user-visible area where the naming confusion is worst.
+
+| Node | Description | Status | Plan | PR |
+
+... [234 lines omitted] ...
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <thinking>I see that the prose comment has an embedded `objective-roadmap` metadata block with stale data. But importantly, I notice:
+
+1. The prose roadmap table in the comment already shows nodes 2.1 and 2.2 as `done` - wait, that seems already updated? Let me re-read...
+
+Actually, looking at the comment output more carefully - the roadmap table in the prose section shows:
+- 2.1: done, #7882, #7896
+- 2.2: done, #7882, #7896
+
+But the embedded `objective-roadmap` YAML in the comment has all nodes as `pending`. 
+
+So there's a mismatch here - the rendered table between the `&lt;!-- erk:roadmap-table --&gt;` markers is up-to-date, but the embedded YAML metadata block is stale from when the objective was first created. The rendered table in the comment is already showing the correct updated statuses, so it seems like a previous operation already refreshed it. The stale YAML metadata block in the comment is just an old artifact—the issue body holds the canonical version. So the design approach is still sound, I just need to make sure I'm updating the right source of truth going forward. The comment body includes a stale YAML block with all pending statuses that was likely added early on, but the issue body is the actual source of truth for the roadmap state, so I don't need to update that embedded block. the embedded YAML in the comment is just an old artifact that never gets refreshed after it's created. The rendered table is what actually matters since that's managed by the update command.
+
+The prose looks solid—no stale sections to fix. The only thing worth noting is that 2.1 and 2.2 were a replan following #7882 (some scripts got deleted in #7838), but the node descriptions accurately capture what was targeted and completed. The PR did include some extra work around skills and commands, which fits the replan scope.
+
+I don't need to reconcile anything in the prose. Let me move forward with posting the action comment. I'll construct the JSON for it, documenting what was actually done: renamed `issue_number` to `plan_number` across five exec scripts.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3970" cache_read_input_tokens="47177" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3970}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>The rendered roadmap table in the comment already shows 2.1 and 2.2 as done (the `update-objective-node` command handles this). Prose is in good shape — no stale sections. Now posting the action comment.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3970" cache_read_input_tokens="47177" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3970}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019i3YssZ4LExNgwSJL3miDh">
+    <param name="command">echo '{"issue_number": 7724, "date": "2026-02-22", "pr_number": 7896, "phase_step": "2.1, ...[truncated 1277 chars]...e JSON consumers reference old key names"]}' | erk exec objective-post-action-comment 2&gt;&amp;1</param>
+    <param name="description">Post action comment to objective #7724</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3970" cache_read_input_tokens="47177" output_tokens="2272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3970, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019i3YssZ4LExNgwSJL3miDh">
+{"success": true, "comment_id": 3941708396}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BZQUB5KHcuVBawe7aCCxbu">
+    <param name="command">erk objective check 7724 --json-output 2&gt;&amp;1</param>
+    <param name="description">Validate objective #7724</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2277" cache_read_input_tokens="51147" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BZQUB5KHcuVBawe7aCCxbu">
+{"success": true, "issue_number": 7724, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": true, "description": "No orphaned done statuses (done steps have PR references)"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "objective-header has objective_comment_id"}, {"passed": true, "description": "Plan/PR references use '#' prefix"}], "phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "description": "Rename TargetInfo.issue_number \u2192 plan_number and target_type values (issue_number \u2192 plan_number, issue_url \u2192 plan_url) in implement_shared.py", "status": "done", "plan": null, "pr": "#7849", "depends_on": []}, {"id": "1.2", "description": "Update implement.py to use the new TargetInfo field and target type names", "status": "done", "plan": null, "pr": "#7849", "depends_on": ["1.1"]}, {"id": "1.3", "description": "Update tests for implement.py and implement_shared.py", "status": "done", "plan": null, "pr": "#7849", "depends_on": ["1.2"]}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "description": "Rename in plan_save.py, plan_save_to_issue.py, plan_create_review_pr.py, plan_review_complete.py, plan_submit_for_review.py, plan_update_issue.py, plan_update_from_feedback.py, plan_create_review_branch.py, plan_migrate_to_draft_pr.py", "status": "done", "plan": "#7882", "pr": "#7896", "depends_on": ["1.3"]}, {"id": "2.2", "description": "Update tests for all renamed plan_* scripts", "status": "done", "plan": "#7882", "pr": "#7896", "depends_on": ["2.1"]}]}, {"number": 3, "suffix": "", "name": "Phase 3", "nodes": [{"id": "3.1", "description": "Rename in impl_init.py, impl_signal.py, check_impl.py, mark_impl_started.py, mark_impl_ended.py, setup_impl_from_issue.py", "status": "pending", "plan": null, "pr": null, "depends_on": ["2.2"]}, {"id": "3.2", "description": "Update tests for all renamed impl_* scripts", "status": "pending", "plan": null, "pr": null, "depends_on": ["3.1"]}]}, {"number": 4, "suffix": "", "name": "Phase 4", "nodes": [{"id": "4.1", "description": "Rename in update_dispatch_info.py, get_plan_metadata.py, get_pr_for_plan.py, register_one_shot_plan.py, create_plan_from_context.py, store_tripwire_candidates.py, exit_plan_mode_hook.py, close_issue_with_comment.py, track_learn_evaluation.py, get_closing_text.py, get_pr_body_footer.py, ci_update_pr_body.py, update_pr_description.py", "status": "pending", "plan": null, "pr": null, "depends_on": ["3.2"]}, {"id": "4.2", "description": "Update tests for all renamed scripts", "status": "pending", "plan": null, "pr": null, "depends_on": ["4.1"]}]}, {"number": 5, "suffix": "", "name": "Phase 5", "nodes": [{"id": "5.1", "description": "Rename in checkout_cmd.py, create_cmd.py, list_cmd.py, close_cmd.py, check_cmd.py, view.py, log_cmd.py, learn/complete_cmd.py, docs/extract_cmd.py, docs/unextract_cmd.py", "status": "pending", "plan": null, "pr": null, "depends_on": ["4.2"]}, {"id": "5.2", "description": "Update tests for all renamed plan/* files", "status": "pending", "plan": null, "pr": null, "depends_on": ["5.1"]}]}, {"number": 6, "suffix": "", "name": "Phase 6", "nodes": [{"id": "6.1", "description": "Rename in pr/submit_pipeline.py, pr/shared.py, pr/check_cmd.py, pr/rewrite_cmd.py, pr/metadata_helpers.py", "status": "pending", "plan": null, "pr": null, "depends_on": ["5.2"]}, {"id": "6.2", "description": "Update tests for all renamed pr/* files", "status": "pending", "plan": null, "pr": null, "depends_on": ["6.1"]}]}, {"number": 7, "suffix": "", "name": "Phase 7", "nodes": [{"id": "7.1", "description": "Rename in output_filter.py, prompt_executor.py, codex_output_parser.py, github_parsing.py (plan-related parts only), cli/output.py", "status": "pending", "plan": null, "pr": null, "depends_on": ["6.2"]}, {"id": "7.2", "description": "Update tests for all renamed core modules", "status": "pending", "plan": null, "pr": null, "depends_on": ["7.1"]}]}, {"number": 8, "suffix": "", "name": "Phase 8", "nodes": [{"id": "8.1", "description": "Rename in submit.py, land_cmd.py, land_pipeline.py, launch_cmd.py, branch/create_cmd.py, one_shot_dispatch.py, review_pr_cleanup.py", "status": "pending", "plan": null, "pr": null, "depends_on": ["7.2"]}, {"id": "8.2", "description": "Rename in run/list_cmd.py, run/shared.py, wt/create_cmd.py, admin.py, learn/learn_cmd.py", "status": "pending", "plan": null, "pr": null, "depends_on": ["8.1"]}, {"id": "8.3", "description": "Rename in status/models/status_data.py, status/collectors/impl.py, status/renderers/simple.py, core/services/plan_list_service.py", "status": "pending", "plan": null, "pr": null, "depends_on": ["8.2"]}, {"id": "8.4", "description": "Update all remaining tests and verify full test suite passes", "status": "pending", "plan": null, "pr": null, "depends_on": ["8.3"]}]}], "summary": {"total_nodes": 19, "pending": 14, "planning": 0, "done": 5, "in_progress": 0, "blocked": 0, "skipped": 0}, "next_node": {"id": "3.1", "description": "Rename in impl_init.py, impl_signal.py, check_impl.py, mark_impl_started.py, mark_impl_ended.py, setup_impl_from_issue.py", "phase": "Phase 3"}, "validation_errors": [], "all_complete": false}
+  </tool_result>
+  <assistant>All checks pass. Objective #7724 is updated.
+
+**Summary:**
+- Nodes 2.1 and 2.2 → `done` (plan `#7882`, PR `#7896`)
+- 5 of 19 nodes now complete
+- Action comment posted
+- Validation: 7/7 checks passed
+
+**Next focus:** Node 3.1 — rename `issue_number` in `impl_init.py`, `impl_signal.py`, `check_impl.py`, `mark_impl_started.py`, `mark_impl_ended.py`, `setup_impl_from_issue.py`
+
+Objective: https://github.com/dagster-io/erk/issues/7724</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2018" cache_read_input_tokens="53424" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2018}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>what does @.claude/commands/erk/one-shot-plan.md do</user>
+  <thinking>The user is asking about the content of `.claude/commands/erk/one-shot-plan.md`. Let me read it.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="178" cache_read_input_tokens="55612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 178}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QmWZ4y9Ws6bw8p1iQab97Z">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/one-shot-plan.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="178" cache_read_input_tokens="55612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 178}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QmWZ4y9Ws6bw8p1iQab97Z">
+     1→---
+     2→description: Create a plan from a one-shot prompt, save it as a GitHub issue, and write results to .impl/ (used by CI workflow)
+     3→---
+     4→
+     5→# One-Shot Plan
+     6→
+     7→You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a GitHub issue.
+     8→
+     9→**Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
+    10→
+    11→## Step 1: Read the Prompt
+    12→
+    13→Read `.impl/prompt.md` to understand what you need to do.
+    14→
+    15→## Step 2: Read Objective Context (if present)
+    16→
+    17→If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
+    18→
+    19→## Step 3: Load Context
+    20→
+    21→Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
+    22→
+    23→## Step 4: Explore the Codebase
+    24→
+    25→Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
+    26→
+    27→- Search for files, patterns, and existing implementations related to the prompt
+    28→- Identify which files need to be created or modified
+    29→- Understand existing architecture and patterns
+    30→- Find relevant tests and test patterns
+
+... [62 lines omitted] ...
+
+    56→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `issue_number`. To get the `title`, extract the first `# ` heading from `.impl/plan.md`.
+    68→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `issue_number` and `title` from the output.
+  </tool_result>
+  <assistant>`/erk:one-shot-plan` is a CI-focused planning command that runs autonomously (no user interaction). It:
+
+1. **Reads** `.impl/prompt.md` as its task description
+2. **Loads objective context** if `$OBJECTIVE_ISSUE` is set — fetches the roadmap and understands how this plan fits into the broader goal
+3. **Explores the codebase** — scans docs, runs Explore agents, greps to understand relevant files and patterns
+4. **Writes a plan** to `.impl/plan.md` — self-contained enough for a *separate* Claude session to implement with no shared context
+5. **Saves the plan to GitHub** — either updates a pre-created skeleton issue (`$PLAN_ISSUE_NUMBER`) or creates a new one via `plan-save`
+6. **Writes `.impl/plan-result.json`** — `{"issue_number": N, "title": "..."}` for downstream CI steps to consume
+
+The key constraint: **planning only, no code changes**. It's designed to be the "think" half of the `erk one-shot` workflow, with a separate session handling the "implement" half.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1566" cache_read_input_tokens="55790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>I want to have a command that launches a github action but ONLY goes from prompt to plan</user>
+  <thinking>The user wants a command that launches a GitHub Action but only does the "prompt to plan" phase (not the full one-shot which goes prompt → plan → implement). Let me explore how the existing one-shot workflow works to understand the CI/GitHub Actions infrastructure before designing this.
+
+Let me launch Explore agents to understand:
+1. The existing one-shot GitHub Action workflow
+2. The existing commands related to one-shot and planning
+3. How the plan-submit command works</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="1370" cache_read_input_tokens="57630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1370}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Ne9ufrzFoTyp1trqc6dB7x">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore one-shot GitHub Actions workflow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 1020 chars]...ub issue" - what steps run, what Claude commands are invoked, what artifacts are produced.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1370" cache_read_input_tokens="57630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1370}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ne9ufrzFoTyp1trqc6dB7x">
+Perfect! Now I have enough information to provide a comprehensive report. Let me compile everything:
+
+## One-Shot GitHub Actions Workflow - Complete End-to-End Documentation
+
+Based on my exploration of the erk codebase, here's a comprehensive guide to how the one-shot GitHub Actions workflow works end-to-end:
+
+---
+
+## 1. The GitHub Actions Workflow Files
+
+### Two-Workflow System
+
+The one-shot execution uses **two interdependent GitHub Actions workflows**:
+
+#### **`.github/workflows/one-shot.yml`** - Planning Phase
+- **Purpose**: Autonomous planning and plan issue creation
+- **Trigger**: `workflow_dispatch` with user-provided inputs
+- **Jobs**: 
+  - **`plan` job** - Creates implementation plan
+  - **`implement` job** - Reuses `plan-implement.yml` (conditional on plan success)
+
+#### **`.github/workflows/plan-implement.yml`** - Implementation Phase  
+- **Purpose**: Executes the plan and commits code
+- **Trigger**: Both `workflow_dispatch` and `workflow_call` (called by one-shot.yml)
+- **Inputs**: Takes plan ID, branch name, PR number, and execution parameters
+
+---
+
+## 2. CLI Dispatch Path (`erk one-shot`)
+
+
+... [486 lines omitted] ...
+
+   - **Best-effort**: Failures logged but non-blocking
+Each operation returns `{"success": true/false, "error": "..."}`
+- Plan failed to save to issue
+  </tool_result>
+  <thinking>Now I have a deep understanding of the one-shot workflow. Let me also look at the existing CLI command for `erk one-shot` to understand the exact interface and then design the "plan only" variant.
+
+The user wants a command that:
+1. Launches a GitHub Action
+2. Only goes from prompt to plan (no implementation)
+
+So I need to create something like `erk plan-only` or `erk one-shot --plan-only` that:
+- Takes a prompt
+- Dispatches to GitHub Actions
+- Only runs the planning phase (not the implement phase)
+
+Let me think about the two approaches:
+
+**Approach 1: Add `--plan-only` flag to `erk one-shot`**
+
+
+- Simplest approach
+- Passes a flag to the workflow that skips the implement job
+
+**Approach 2: Create a separate CLI command (e.g., `erk plan one-shot` or `erk plan remote`)**
+- Cleaner UX separation
+- But adds more surface area
+
+The user said "a command" suggesting they want a new CLI command. Looking at the architecture, the `one-shot.yml` workflow has a `plan` job followed by a conditional `implement` job that only runs if `plan_id` is set. I could add a workflow input that controls whether the implement job runs, or create a separate workflow entirely.
+
+The minimal path forward is adding a `--plan-only` flag to the existing `erk one-shot` command that passes through to the workflow, then conditionally skip the implement job based on that input. Now I need to check the actual implementation in those three files to understand the current structure and plan the exact changes required.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5546" cache_read_input_tokens="59000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. Now let me read the specific files I'll need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5546" cache_read_input_tokens="59000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01EyLX48Q6TkcBn2vomAwUTg">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Read one-shot CLI and workflow files</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 459 chars]...k/cli/commands/plan/submit.py` or similar.
+
+Return the full content of each file verbatim.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5546" cache_read_input_tokens="59000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EyLX48Q6TkcBn2vomAwUTg">
+Perfect! I found that the `submit.py` file I just read is the main "erk plan submit" command. Let me provide you with a complete summary of the three files you requested:
+
+## Summary
+
+I've successfully read the three files you requested. Here's what I found:
+
+### 1. `/Users/schrockn/code/erk/src/erk/cli/commands/one_shot.py` (Complete Content Above)
+
+This is a Click command that dispatches a task for fully autonomous remote execution. Key features:
+- Takes a prompt as either a CLI argument or `--file` option
+- Supports model selection (`--model opus`, etc.)
+- Has a `--dry-run` mode
+- Calls `dispatch_one_shot()` from the dispatch module
+
+### 2. `/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py` (Complete Content Above)
+
+This is the core dispatch logic shared between `erk one-shot` and `erk objective plan --one-shot`. Key functions:
+- `dispatch_one_shot()` - Main dispatch sequence that:
+  - Creates a branch from trunk
+  - Writes the prompt to `.worker-impl/prompt.md` (not checkout needed)
+  - Pushes to remote
+  - Creates a draft PR
+  - Triggers the `one-shot.yml` workflow
+- Handles both GitHub backend (creates skeleton issue) and draft-PR backend (skips skeleton issue, uses PR as plan)
+- `generate_branch_name()` - Generates branch names with LLM-powered slug generation
+
+### 3. `/Users/schrockn/code/erk/.github/workflows/one-shot.yml` (Complete Content Above)
+
+GitHub Actions workflow for one-shot execution:
+- **Plan job**: Runs Claude to create a plan
+
+... [26 lines omitted] ...
+  </tool_result>
+  <thinking>The agent summaries didn't include the full file contents. Let me read the key files directly to get precise content for planning.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="2089" cache_read_input_tokens="64546" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2089}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the actual files directly to get precise content.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2089" cache_read_input_tokens="64546" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2089}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W7xRC9csRj2V93wAgG49F9">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2089" cache_read_input_tokens="64546" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2089}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W7xRC9csRj2V93wAgG49F9">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→"""
+    12→
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.commands.implement_shared import normalize_model_name
+    18→from erk.cli.commands.one_shot_dispatch import (
+    19→    OneShotDispatchParams,
+    20→    dispatch_one_shot,
+    21→)
+    22→from erk.cli.ensure import Ensure
+    23→from erk.core.context import ErkContext
+    24→
+    25→
+    26→@click.command("one-shot", hidden=True)
+    27→@click.argument("prompt", required=False, default=None)
+    28→@click.option(
+    29→    "-f",
+    30→    "--file",
+
+... [74 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Sgcq8wJS4BNLLL83DZBAYV">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2089" cache_read_input_tokens="64546" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2089}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sgcq8wJS4BNLLL83DZBAYV">
+     1→"""Shared dispatch logic for one-shot autonomous execution.
+     2→
+     3→Extracts the branch-create/push/PR/workflow-trigger sequence into reusable
+     4→pieces so both `erk one-shot` and `erk objective plan --one-shot` can
+     5→dispatch tasks through the same CI workflow.
+     6→"""
+     7→
+     8→import logging
+     9→from dataclasses import dataclass
+    10→from datetime import UTC
+    11→
+    12→import click
+    13→
+    14→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    15→from erk.cli.ensure import Ensure
+    16→from erk.core.branch_slug_generator import generate_slug_or_fallback
+    17→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    18→from erk_shared.core.prompt_executor import PromptExecutor
+    19→from erk_shared.gateway.git.remote_ops.types import PushError
+    20→from erk_shared.gateway.github.metadata.core import (
+    21→    create_submission_queued_block,
+    22→    render_erk_issue_event,
+    23→)
+    24→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    25→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    26→from erk_shared.gateway.github.plan_issues import create_plan_issue
+    27→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    28→from erk_shared.gateway.time.abc import Time
+    29→from erk_shared.naming import (
+    30→    format_branch_timestamp_suffix,
+
+... [425 lines omitted] ...
+
+   230→            click.style("Error: ", fg="red")
+   254→    if isinstance(push_result, PushError):
+   255→        Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   389→        except Exception as e:
+   390→            logger.warning("Failed to update stub PR body with workflow run link: %s", e)
+   405→        except Exception as e:
+   407→                click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   430→        except Exception as e:
+   432→                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LE5bRf7aeJD2qUUzg8SMbg">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/one-shot.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7985" cache_read_input_tokens="66635" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7985, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LE5bRf7aeJD2qUUzg8SMbg">
+     1→name: one-shot
+     2→run-name: "one-shot:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      prompt:
+     8→        description: "Task description for autonomous execution"
+     9→        required: true
+    10→        type: string
+    11→      branch_name:
+    12→        description: "Branch to work on (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "Draft PR number (created by CLI command)"
+    17→        required: true
+    18→        type: string
+    19→      submitted_by:
+    20→        description: "GitHub username of the person who submitted"
+    21→        required: true
+    22→        type: string
+    23→      distinct_id:
+    24→        description: "Unique identifier for run discovery (base36)"
+    25→        required: true
+    26→        type: string
+    27→      model_name:
+    28→        description: "Claude model to use for execution"
+    29→        required: false
+    30→        type: string
+
+... [213 lines omitted] ...
+
+    77→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings &gt; Secrets and variables &gt; Actions"
+   161→            echo "::error::Planning succeeded but .impl/plan.md not found"
+   165→            echo "::error::Planning succeeded but .impl/plan-result.json not found"
+   189→        continue-on-error: true
+   217→      - name: Fail workflow if planning failed
+   220→          echo "One-shot planning failed with exit code: ${{ steps.plan.outputs.exit_code }}"
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <thinking>Now I have everything I need. Let me design the plan.
+
+The user wants a command that:
+1. Launches a GitHub Action
+2. Only goes from prompt to plan (no implementation)
+
+**The cleanest approach:**
+
+Add a `--plan-only` flag to `erk one-shot` that:
+1. Passes `plan_only=true` as a workflow input
+2. The `one-shot.yml` workflow has a new `plan_only` boolean input
+3. The `implement` job gets an extra condition: `&amp;&amp; !inputs.plan_only`
+
+This is the minimum change needed:
+- **`one_shot.py`**: Add `--plan-only` flag option
+
+
+- **`one_shot_dispatch.py`**: Pass it through `extra_workflow_inputs` to the workflow
+- **`.github/workflows/one-shot.yml`**: Add the `plan_only` input and conditionally skip the `implement` job
+
+I can pass `plan_only: "true"` directly through `extra_workflow_inputs` in the dispatch params, and GitHub Actions will handle it as a string input that I can check in the workflow condition.
+
+The cleanest approach is adding a `--plan-only` flag to the `erk one-shot` command that sets this in the workflow inputs, then updating the implement job to skip when that flag is set. That's just two files to modify and keeps the interface simple.
+
+Adding the flag to the CLI... The condition for the implement job needs to check that we have a valid plan and that plan_only mode isn't enabled. For dry-run mode, the plan_only flag will just be displayed in the extra inputs since they're already printed out. I'm wondering if I should add an explicit plan_only field to the OneShotDispatchParams dataclass instead of relying on extra_workflow_inputs, but looking at how it's currently structured with fields like objective_issue and node_id, using extra_workflow_inputs seems consistent with the existing pattern.
+
+So my approach is straightforward: add the --plan-only flag to the CLI command and pass it through extra_workflow_inputs as plan_only=true, then update the workflow to accept a plan_only input and adjust the implement job condition accordingly. Just two files to modify.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="78090" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+</session>

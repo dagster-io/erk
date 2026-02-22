@@ -1,0 +1,295 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <user>this obj udpate failed. do it here</user>
+  <thinking>The user wants me to run the `/erk:objective-update-with-landed-pr` skill with the parameters from the failed command: `--pr 7919 --objective 7823 --branch plnd/07823-plan-im` (the branch name is truncated but that's likely `plnd/07823-plan-im...` something).
+
+Let me invoke the skill with those parameters.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12794" cache_read_input_tokens="16783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12794}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01UqxVdE4dedBY5EfpfJ8w3b">
+    <param name="skill">erk:objective-update-with-landed-pr</param>
+    <param name="args">--pr 7919 --objective 7823 --branch plnd/07823-plan-im</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12794" cache_read_input_tokens="16783" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12794, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UqxVdE4dedBY5EfpfJ8w3b">
+Launching skill: erk:objective-update-with-landed-pr
+  </tool_result>
+  <user># /erk:objective-update-with-landed-pr
+
+Update an objective issue after landing a PR from a plan branch.
+
+## Usage
+
+Run after landing a PR:
+
+```bash
+/erk:objective-update-with-landed-pr
+```
+
+---
+
+## Agent Instructions
+
+&gt; **Design note:** All steps run inline in the caller's context (no subagent delegation).
+&gt; This is deliberate — Step 3 (prose reconciliation) requires judgment that benefits from
+&gt; the caller's model quality, and Step 7 (closing prompt) requires direct user interaction.
+
+### Step 1: Fetch All Context
+
+Check `--pr 7919 --objective 7823 --branch plnd/07823-plan-im` for optional overrides:
+
+- `--pr &lt;number&gt;`: PR number that was just landed
+- `--objective &lt;number&gt;`: Objective issue number to update
+- `--branch &lt;name&gt;`: Original branch name
+- `--auto-close`: If set and all nodes are complete, close objective without asking
+
+Run a single command to fetch and parse everything (all options are auto-discovered if omitted):
+
+```bash
+erk exec objective-fetch-context [--pr &lt;number&gt;] [--objective &lt;number&gt;] [--branch &lt;name&gt;]
+```
+
+This returns JSON with:
+
+- `objective`: Issue body, title, labels, URL
+- `plan`: Plan issue body and title
+- `pr`: PR title, body, URL
+- `roadmap.matched_steps`: Node IDs where `plan == #&lt;plan_number&gt;` (deterministic match)
+- `roadmap.phases`: Serialized roadmap phases
+- `roadmap.summary`: Node counts (done, pending, etc.)
+- `roadmap.next_step`: First pending node or null
+- `roadmap.all_complete`: True if every node is done or skipped
+
+If this returns `success: false`, display the error and stop.
+
+### Step 2: Update Roadmap Nodes
+
+Read `matched_steps` from the context blob. These are the nodes this plan completed — no analysis needed. If `matched_steps` is empty, the plan may not have been linked to specific nodes; fall back to comparing the plan body against the roadmap to identify which nodes were completed.
+
+**CRITICAL: Pass ALL completed nodes as multiple `--node` flags in ONE command. Do NOT run separate commands per node — sequential calls cause race conditions and duplicate API calls.**
+
+Before running update-objective-node, extract the existing plan reference for each completed node from the objective roadmap YAML (available in the context blob). Pass `--plan "#&lt;plan-number&gt;"` to preserve it, or `--plan ""` if the node had no plan.
+
+```bash
+erk exec update-objective-node &lt;objective-number&gt; --node &lt;node-id-1&gt; --node &lt;node-id-2&gt; ... --pr "#&lt;pr-number&gt;" --plan "#&lt;plan-number&gt;" --status done --include-body
+```
+
+Preserve the existing plan reference for each node (available in `roadmap.phases`). The `--include-body` flag returns the fully-mutated body as `updated_body` — use this for prose reconciliation (do NOT re-fetch via `gh issue view`).
+
+### Step 3: Perform Prose Reconciliation
+
+Compare `objective.objective_content` (the prose from the first comment's `objective-body` block) against what the PR actually did. Note: `updated_body` from Step 2 contains only metadata (roadmap); prose lives in `objective_content`.
+
+If `objective_content` is null, skip prose reconciliation entirely (objective has no prose comment).
+
+- Read each Design Decision. Did the PR override or refine any?
+- Read Implementation Context. Does the architecture description still match?
+- Read upcoming node descriptions. Did this PR change the landscape?
+- If nothing is stale, skip prose update entirely.
+
+| Contradiction Type          | Example                                                      | Section to Update                             |
+| --------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
+| **Decision override**       | Objective says "Use polling", PR implemented WebSockets      | Design Decisions                              |
+| **Scope change**            | Node says "Add 3 methods", PR only needed 2                  | Node description in roadmap                   |
+| **Architecture drift**      | Context says "config in config.py", PR moved it to settings/ | Implementation Context                        |
+| **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                        |
+| **New discovery**           | PR revealed a caching bug affecting future nodes             | Implementation Context or new Design Decision |
+
+### Step 4: Post Action Comment
+
+Post the action comment via the exec script. Provide structured JSON on stdin:
+
+```bash
+echo '{"issue_number": &lt;N&gt;, "date": "YYYY-MM-DD", "pr_number": &lt;N&gt;, "phase_step": "X.Y, X.Z", "title": "Brief title", "what_was_done": ["..."], "lessons_learned": ["..."], "roadmap_updates": ["Node X.Y: status -&gt; done"], "body_reconciliation": [{"section": "...", "change": "..."}]}' | erk exec objective-post-action-comment
+```
+
+**Inferring content (DO NOT ask the user):**
+
+- **What Was Done:** Infer from PR title, description, and plan body.
+- **Lessons Learned:** Infer from implementation patterns. If straightforward, note what worked well.
+- **Body Reconciliation:** Only include if prose sections needed updating. Omit entirely if nothing is stale.
+
+### Step 5: Update Objective Prose (First Comment)
+
+**Only if prose reconciliation found stale sections**, update the objective's first comment (where prose lives). Use `extract_objective_header_comment_id` from the objective body to get the comment ID, then update the comment with reconciled prose wrapped in the `objective-body` metadata block.
+
+To get the comment ID, parse it from `objective.body`'s `objective-header` metadata block (the `objective_comment_id` field).
+
+```bash
+# Update the first comment (not the issue body) with reconciled prose
+gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="&lt;updated comment body&gt;"
+```
+
+If nothing is stale, skip this step entirely. The issue body (`updated_body`) contains only metadata and should NOT be the target of prose updates.
+
+### Step 6: Validate Objective
+
+```bash
+erk objective check &lt;issue-number&gt; --json-output
+```
+
+If checks fail, report failures and attempt to fix. The JSON output now includes `all_complete`.
+
+### Step 7: Check Closing Triggers
+
+Use `all_complete` from the validation output to determine next action.
+
+**If `all_complete` is `true`:**
+
+- **If `--auto-close` was provided:** Post "Action: Objective Complete" comment, close the issue (`gh issue close &lt;issue-number&gt;`), report: "All nodes complete - objective closed automatically"
+- **Otherwise:** Ask the user directly:
+  ```
+  All roadmap nodes are complete. Should I close objective #&lt;number&gt; now?
+  - Yes, close with final summary
+  - Not yet, there may be follow-up work
+  - I'll close it manually later
+  ```
+  If yes: post final comment and close. Otherwise: acknowledge and report complete.
+
+**If `all_complete` is `false`:**
+
+- Report the update is complete. Use `roadmap.next_step` to describe next focus.
+
+---
+
+## Output Format
+
+- **Start:** "Updating objective #&lt;number&gt; after landing PR #&lt;pr-number&gt;"
+- **After writes:** "Posted action comment and updated objective body for #&lt;number&gt;"
+- **End:** Either "Objective #&lt;number&gt; closed" or "Objective updated. Next focus: [next action]"
+- **Always:** Display the objective URL
+
+---
+
+## Error Cases
+
+| Scenario                           | Action                                       |
+| ---------------------------------- | -------------------------------------------- |
+| `objective-fetch-context` fails    | Display error from JSON and stop             |
+| Issue not found                    | Report error and exit                        |
+| Issue has no `erk-objective` label | Warn user this may not be an objective issue |
+</user>
+  <thinking>The user wants me to run the objective update for PR #7919, objective #7823, branch plnd/07823-plan-im. Let me follow the skill instructions step by step.
+
+### Step 1: Fetch All Context</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2153" cache_read_input_tokens="29577" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2153}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <assistant>Updating objective #7823 after landing PR #7919.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2153" cache_read_input_tokens="29577" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2153}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GhEXPF11krfLuCxS4gBjqA">
+    <param name="command">erk exec objective-fetch-context --pr 7919 --objective 7823 --branch plnd/07823-plan-im 2&gt;&amp;1</param>
+    <param name="description">Fetch objective context for PR 7919, objective 7823</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2153" cache_read_input_tokens="29577" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2153, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GhEXPF11krfLuCxS4gBjqA">
+Exit code 1
+{"success": false, "error": "No plan found for branch 'plnd/07823-plan-im'"}
+
+{"success": false, "error": "No plan found for branch 'plnd/07823-plan-im'"}
+  </tool_result>
+  <thinking>The branch name is truncated in the screenshot. Let me look for the full branch name. The branch shown is `plnd/07823-plan-im` which is truncated. Let me search for the actual branch name or plan issue number using gh.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="31730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 277}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The branch name was truncated in the screenshot. Let me find the full branch name.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="31730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 277}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EBF22rWuHqvJdQob3hxaSy">
+    <param name="command">gh pr view 7919 --json headRefName,title,body,url 2&gt;&amp;1</param>
+    <param name="description">Get PR 7919 details including branch name</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="31730" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EBF22rWuHqvJdQob3hxaSy">
+{"body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-22T23:15:08.911178+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22287543551'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFMHDs_w\nlast_dispatched_at: '2026-02-22T23:17:31.560632+00:00'\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: '2026-02-22T23:22:54.918004+00:00'\nlast_remote_impl_run_id: null\nlast_remote_impl_session_id: null\nbranch_name: plnd/O7823-plan-improve-code-le-02-22-2315\nobjective_issue: 7823\ncreated_from_session: dee89d6c-22cf-4099-931e-3b50225d748a\nlifecycle_stage: implemented\nlast_session_branch: async-learn/7919\nlast_session_id: 0821153b-43b3-45bb-a720-fd57d97c7fd8\nlast_session_at: '2026-02-22T23:23:55.583421+00:00'\nlast_session_source: remote\nworktree_name: erk\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n\n\n---\n\n## Summary\n\nImprove code-level documentation for backpressure gates\n\nEnhanced docstrings across gate and human-facing functions to clarify the agent backpressure pattern, caller relationships, and schema details. Updated `agent-backpressure-gates.md` to replace a detailed example with a gate inventory table, making it easier for agents to locate gate implementations and their counterparts. All changes are documentation-only with no behavioral modifications.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified (3 files)\n- `docs/learned/architecture/agent-backpressure-gates.md` - Replaced example section with gate inventory table, updated audit timestamp\n- `packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py` - Enhanced docstrings for `validate_candidates_data` and `validate_candidates_json`\n- `packages/erk-shared/src/erk_shared/naming.py` - Added gate pattern section header and expanded docstrings for all gate and human-facing functions\n\n&lt;/details&gt;\n\n## Key Changes\n\n- Replaced narrative example with gate inventory table in `agent-backpressure-gates.md` linking validation gates to human-facing counterparts and source locations\n- Enhanced `validate_plan_title`, `validate_worktree_name`, and `validate_objective_slug` docstrings with agent-facing caller lists and human-facing counterpart relationships\n- Clarified pre-gate recovery layer in `validate_candidates_data` docstring to document the two-stage validation approach\n- Added header comment in `naming.py` to document the gate/counterpart pattern across the module\n- Improved `generate_filename_from_title` and `sanitize_worktree_name` docstrings to explain their role as silent transformations that bypass gates\n\n**Remotely executed:** [Run #22287543551](https://github.com/dagster-io/erk/actions/runs/22287543551)\n\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 7919 --script)\" &amp;&amp; erk pr sync --dangerous\n```\n\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Plan: Improve Code-Level Documentation for Backpressure Gates\n\n## Context\n\nObjective #7823 is closed with all code landed. The remaining gap (node 3.3) is documenting agent-facing vs human-facing path distinction. Rather than adding a learned doc, improve the code-level documentation directly and have `agent-backpressure-gates.md` point readers to the code.\n\n## Files to Modify\n\n1. **`packages/erk-shared/src/erk_shared/naming.py`** — Improve module-level and function docstrings for `validate_plan_title`, `validate_worktree_name`, `generate_filename_from_title`, `sanitize_worktree_name`\n2. **`packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py`** — Improve docstrings for `validate_candidates_data`, `validate_candidates_json`\n3. **`docs/learned/architecture/agent-backpressure-gates.md`** — Replace the single example with a brief \"see the code\" pointer listing the four gate functions and their locations\n\n## Changes\n\n### naming.py\n\n- Add a section comment grouping the gate functions (e.g., `# --- Agent Backpressure Gates ---`)\n- Enhance `validate_plan_title` docstring: list the agent-facing callers (`plan_save_to_issue`, `plan_save`, `issue_title_to_filename`) and note the human-facing bypass (`generate_filename_from_title`)\n- Enhance `validate_worktree_name` docstring: note it's an internal consistency check (validates system-generated names, not direct agent input), list callers via `prepare_plan_for_worktree` and `setup_impl_from_issue`, note human bypass is `sanitize_worktree_name`\n- Enhance `generate_filename_from_title` and `sanitize_worktree_name` docstrings: note these are human-facing silent transformation counterparts to the gates above\n\n### tripwire_candidates.py\n\n- Enhance `validate_candidates_data` docstring: list agent-facing callers (`normalize_tripwire_candidates`, `store_tripwire_candidates`), note the pre-gate recovery layer (`normalize_candidates_data`)\n\n### agent-backpressure-gates.md\n\n- Replace the \"Example: Objective Slug Validation\" section with a \"Gate Inventory\" section that simply lists the four gate functions with file paths and a one-line description, directing readers to the code docstrings for details\n- Update `last_audited` in frontmatter\n\n## Verification\n\n1. Run `make fast-ci` to ensure no formatting/lint issues\n\n\n&lt;/details&gt;","headRefName":"plnd/O7823-plan-improve-code-le-02-22-2315","title":"Improve code-level documentation for backpressure gates","url":"https://github.com/dagster-io/erk/pull/7919"}
+  </tool_result>
+  <thinking>The full branch name is `plnd/O7823-plan-improve-code-le-02-22-2315`. Note the branch uses `O` (capital letter O) not `0` (zero). Let me now run the fetch context again with the correct branch name.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2159" cache_read_input_tokens="32007" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2159}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Full branch name is `plnd/O7823-plan-improve-code-le-02-22-2315`. Now fetching context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2159" cache_read_input_tokens="32007" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2159}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VGMthyKhGbJwgUK1coqH1H">
+    <param name="command">erk exec objective-fetch-context --pr 7919 --objective 7823 --branch plnd/O7823-plan-improve-code-le-02-22-2315 2&gt;&amp;1</param>
+    <param name="description">Fetch objective context with correct branch name</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2159" cache_read_input_tokens="32007" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2159, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VGMthyKhGbJwgUK1coqH1H">
+{"success": true, "objective": {"number": 7823, "title": "Objective: Apply Agent Back Pressure Gates Across Erk", "body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-02-22T06:01:45.531065+00:00'\ncreated_by: schrockn\nobjective_comment_id: 3940710509\nslug: agent-backpressure-gates\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '3'\nnodes:\n- id: '1.1'\n  description: Add schema validation function that returns ValidTripwireCandidates\n    | InvalidTripwireCandidates with actionable feedback\n  status: in_progress\n  plan: '#7836'\n  pr: null\n- id: '1.2'\n  description: Wire validation into normalize_tripwire_candidates.py \u2014 reject malformed\n    JSON before normalizing\n  status: in_progress\n  plan: '#7836'\n  pr: null\n- id: '1.3'\n  description: Update agent guidance (skill/command docs) to include the expected\n    schema\n  status: in_progress\n  plan: '#7836'\n  pr: null\n- id: '2.1'\n  description: Add validate_plan_title() returning ValidPlanTitle | InvalidPlanTitle\n    with minimum content requirements\n  status: done\n  plan: '#7845'\n  pr: '#7845'\n- id: '2.2'\n  description: Wire validation into agent-facing paths (plan-save, plan-create) upstream\n    of generate_filename_from_title()\n  status: in_progress\n  plan: '#7846'\n  pr: null\n- id: '2.3'\n  description: Keep generate_filename_from_title() as-is for human-facing paths\n  status: in_progress\n  plan: '#7846'\n  pr: null\n- id: '3.1'\n  description: Add validate_worktree_name() that checks if a name would survive sanitization\n    without significant transformation\n  status: in_progress\n  plan: '#7889'\n  pr: '#7850'\n- id: '3.2'\n  description: Wire validation into erk implement and plan-derived worktree creation\n    paths\n  status: done\n  plan: '#7866'\n  pr: '#7866'\n- id: '3.3'\n  description: Document which paths are agent-facing (gated) vs human-facing (transformed)\n  status: planning\n  plan: null\n  pr: '#7897'\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;", "state": "CLOSED", "labels": ["erk-objective"], "url": "https://github.com/dagster-io/erk/issues/7823", "objective_content": "# Objective: Apply Agent Back Pressure Gates Across Erk\n\n&gt; Replace silent transformation of agent-generated output with validation gates that reject invalid input and provide actionable feedback for self-correction.\n\n## Goal\n\nAll agent-facing input paths in erk either (a) validate and reject invalid input with actionable error messages, or (b) are explicitly documented as human-facing (where silent transformation is appropriate UX). No agent output is silently normalized without the agent knowing its input was wrong.\n\n## Design Decisions\n\n- **Gates for agents, transforms for humans**: When the producer is an agent, reject invalid input. When the producer is a human, silent transformation is acceptable UX.\n- **Dual-use functions get an upstream validation layer**: Functions like `sanitize_worktree_name()` serve both humans and agents. Don't replace the sanitizer -- add a validation gate in agent-facing paths that calls the validator before the sanitizer.\n- **Follow the ValidX | InvalidX pattern**: Use discriminated unions (not `ErrorType | None`) per the lesson from `validate_objective_slug()`.\n- **Actionable feedback is mandatory**: Every rejection must include the expected pattern, actual value, and valid/invalid examples so the agent can self-correct.\n\n## Roadmap\n\n&lt;!-- erk:roadmap-table --&gt;\n### Phase 1: Tripwire Candidate Schema Gate (1 PR)\n\nReplace silent JSON schema normalization in normalize_tripwire_candidates with a validation gate. This is the highest-value target because it exclusively processes agent output and the normalization masks schema drift.\n\n| Node | Description | Status | Plan | PR |\n|------|-------------|--------|------|----|\n| 1.1 | Add schema validation function that returns ValidTripwireCandidates | in-progress | #7836 | - | - |\n| 1.2 | Wire validation into normalize_tripwire_candidates.py -- reject malformed JSON before normalizing | in-progress | #7836 | - |\n| 1.3 | Update agent guidance (skill/command docs) to include the expected schema | in-progress | #7836 | - |\n\n**Test:** Agent-produced JSON with wrong root key or missing fields is rejected with structured error showing expected schema, not silently remapped\n\n### Phase 2: Plan Title Validation Gate (1 PR)\n\nAdd validation for agent-provided plan titles in generate_filename_from_title() path. Currently falls back to plan.md silently when title is empty or all special chars.\n\n| Node | Description | Status | Plan | PR |\n|------|-------------|--------|------|----|\n| 2.1 | Add validate_plan_title() returning ValidPlanTitle | done | #7845 | #7845 |\n| 2.2 | Wire validation into agent-facing paths (plan-save, plan-create) upstream of generate_filename_from_title() | in-progress | #7846 | - |\n| 2.3 | Keep generate_filename_from_title() as-is for human-facing paths | in-progress | #7846 | - |\n\n**Test:** Agent providing an empty or emoji-only title gets a rejection with rules and examples instead of a silent fallback to plan.md\n\n### Phase 3: Worktree Name Validation Layer (1 PR)\n\nAdd upstream validation in agent-facing worktree creation paths. The sanitize_worktree_name() function stays for human UX, but agent paths validate first.\n\n| Node | Description | Status | Plan | PR |\n|------|-------------|--------|------|----|\n| 3.1 | Add validate_worktree_name() that checks if a name would survive sanitization without significant transformation | in-progress | #7889 | #7850 |\n| 3.2 | Wire validation into erk implement and plan-derived worktree creation paths | done | #7866 | #7866 |\n| 3.3 | Document which paths are agent-facing (gated) vs human-facing (transformed) | planning | - | #7897 |\n&lt;!-- /erk:roadmap-table --&gt;\n\n**Test:** Agent-provided worktree name that would be significantly truncated or transformed is rejected with actionable feedback showing naming rules\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '3'\nnodes:\n- id: '1.1'\n  description: Add schema validation function that returns ValidTripwireCandidates\n    | InvalidTripwireCandidates with actionable feedback\n  status: pending\n  plan: null\n  pr: null\n- id: '1.2'\n  description: Wire validation into normalize_tripwire_candidates.py \u2014 reject malformed\n    JSON before normalizing\n  status: pending\n  plan: null\n  pr: null\n- id: '1.3'\n  description: Update agent guidance (skill/command docs) to include the expected\n    schema\n  status: pending\n  plan: null\n  pr: null\n- id: '2.1'\n  description: Add validate_plan_title() returning ValidPlanTitle | InvalidPlanTitle\n    with minimum content requirements\n  status: pending\n  plan: null\n  pr: null\n- id: '2.2'\n  description: Wire validation into agent-facing paths (plan-save, plan-create) upstream\n    of generate_filename_from_title()\n  status: pending\n  plan: null\n  pr: null\n- id: '2.3'\n  description: Keep generate_filename_from_title() as-is for human-facing paths\n  status: pending\n  plan: null\n  pr: null\n- id: '3.1'\n  description: Add validate_worktree_name() that checks if a name would survive sanitization\n    without significant transformation\n  status: pending\n  plan: null\n  pr: null\n- id: '3.2'\n  description: Wire validation into erk implement and plan-derived worktree creation\n    paths\n  status: pending\n  plan: null\n  pr: null\n- id: '3.3'\n  description: Document which paths are agent-facing (gated) vs human-facing (transformed)\n  status: pending\n  plan: null\n  pr: null\n```"}, "plan": {"number": "7919", "title": "Improve code-level documentation for backpressure gates", "body": "# Plan: Improve Code-Level Documentation for Backpressure Gates\n\n## Context\n\nObjective #7823 is closed with all code landed. The remaining gap (node 3.3) is documenting agent-facing vs human-facing path distinction. Rather than adding a learned doc, improve the code-level documentation directly and have `agent-backpressure-gates.md` point readers to the code.\n\n## Files to Modify\n\n1. **`packages/erk-shared/src/erk_shared/naming.py`** \u2014 Improve module-level and function docstrings for `validate_plan_title`, `validate_worktree_name`, `generate_filename_from_title`, `sanitize_worktree_name`\n2. **`packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py`** \u2014 Improve docstrings for `validate_candidates_data`, `validate_candidates_json`\n3. **`docs/learned/architecture/agent-backpressure-gates.md`** \u2014 Replace the single example with a brief \"see the code\" pointer listing the four gate functions and their locations\n\n## Changes\n\n### naming.py\n\n- Add a section comment grouping the gate functions (e.g., `# --- Agent Backpressure Gates ---`)\n- Enhance `validate_plan_title` docstring: list the agent-facing callers (`plan_save_to_issue`, `plan_save`, `issue_title_to_filename`) and note the human-facing bypass (`generate_filename_from_title`)\n- Enhance `validate_worktree_name` docstring: note it's an internal consistency check (validates system-generated names, not direct agent input), list callers via `prepare_plan_for_worktree` and `setup_impl_from_issue`, note human bypass is `sanitize_worktree_name`\n- Enhance `generate_filename_from_title` and `sanitize_worktree_name` docstrings: note these are human-facing silent transformation counterparts to the gates above\n\n### tripwire_candidates.py\n\n- Enhance `validate_candidates_data` docstring: list agent-facing callers (`normalize_tripwire_candidates`, `store_tripwire_candidates`), note the pre-gate recovery layer (`normalize_candidates_data`)\n\n### agent-backpressure-gates.md\n\n- Replace the \"Example: Objective Slug Validation\" section with a \"Gate Inventory\" section that simply lists the four gate functions with file paths and a one-line description, directing readers to the code docstrings for details\n- Update `last_audited` in frontmatter\n\n## Verification\n\n1. Run `make fast-ci` to ensure no formatting/lint issues\n"}, "pr": {"number": 7919, "title": "Improve code-level documentation for backpressure gates", "body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-22T23:15:08.911178+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22287543551'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFMHDs_w\nlast_dispatched_at: '2026-02-22T23:17:31.560632+00:00'\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: '2026-02-22T23:22:54.918004+00:00'\nlast_remote_impl_run_id: null\nlast_remote_impl_session_id: null\nbranch_name: plnd/O7823-plan-improve-code-le-02-22-2315\nobjective_issue: 7823\ncreated_from_session: dee89d6c-22cf-4099-931e-3b50225d748a\nlifecycle_stage: implemented\nlast_session_branch: async-learn/7919\nlast_session_id: 0821153b-43b3-45bb-a720-fd57d97c7fd8\nlast_session_at: '2026-02-22T23:23:55.583421+00:00'\nlast_session_source: remote\nworktree_name: erk\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n\n\n---\n\n## Summary\n\nImprove code-level documentation for backpressure gates\n\nEnhanced docstrings across gate and human-facing functions to clarify the agent backpressure pattern, caller relationships, and schema details. Updated `agent-backpressure-gates.md` to replace a detailed example with a gate inventory table, making it easier for agents to locate gate implementations and their counterparts. All changes are documentation-only with no behavioral modifications.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified (3 files)\n- `docs/learned/architecture/agent-backpressure-gates.md` - Replaced example section with gate inventory table, updated audit timestamp\n- `packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py` - Enhanced docstrings for `validate_candidates_data` and `validate_candidates_json`\n- `packages/erk-shared/src/erk_shared/naming.py` - Added gate pattern section header and expanded docstrings for all gate and human-facing functions\n\n&lt;/details&gt;\n\n## Key Changes\n\n- Replaced narrative example with gate inventory table in `agent-backpressure-gates.md` linking validation gates to human-facing counterparts and source locations\n- Enhanced `validate_plan_title`, `validate_worktree_name`, and `validate_objective_slug` docstrings with agent-facing caller lists and human-facing counterpart relationships\n- Clarified pre-gate recovery layer in `validate_candidates_data` docstring to document the two-stage validation approach\n- Added header comment in `naming.py` to document the gate/counterpart pattern across the module\n- Improved `generate_filename_from_title` and `sanitize_worktree_name` docstrings to explain their role as silent transformations that bypass gates\n\n**Remotely executed:** [Run #22287543551](https://github.com/dagster-io/erk/actions/runs/22287543551)\n\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 7919 --script)\" &amp;&amp; erk pr sync --dangerous\n```\n\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Plan: Improve Code-Level Documentation for Backpressure Gates\n\n## Context\n\nObjective #7823 is closed with all code landed. The remaining gap (node 3.3) is documenting agent-facing vs human-facing path distinction. Rather than adding a learned doc, improve the code-level documentation directly and have `agent-backpressure-gates.md` point readers to the code.\n\n## Files to Modify\n\n1. **`packages/erk-shared/src/erk_shared/naming.py`** \u2014 Improve module-level and function docstrings for `validate_plan_title`, `validate_worktree_name`, `generate_filename_from_title`, `sanitize_worktree_name`\n2. **`packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py`** \u2014 Improve docstrings for `validate_candidates_data`, `validate_candidates_json`\n3. **`docs/learned/architecture/agent-backpressure-gates.md`** \u2014 Replace the single example with a brief \"see the code\" pointer listing the four gate functions and their locations\n\n## Changes\n\n### naming.py\n\n- Add a section comment grouping the gate functions (e.g., `# --- Agent Backpressure Gates ---`)\n- Enhance `validate_plan_title` docstring: list the agent-facing callers (`plan_save_to_issue`, `plan_save`, `issue_title_to_filename`) and note the human-facing bypass (`generate_filename_from_title`)\n- Enhance `validate_worktree_name` docstring: note it's an internal consistency check (validates system-generated names, not direct agent input), list callers via `prepare_plan_for_worktree` and `setup_impl_from_issue`, note human bypass is `sanitize_worktree_name`\n- Enhance `generate_filename_from_title` and `sanitize_worktree_name` docstrings: note these are human-facing silent transformation counterparts to the gates above\n\n### tripwire_candidates.py\n\n- Enhance `validate_candidates_data` docstring: list agent-facing callers (`normalize_tripwire_candidates`, `store_tripwire_candidates`), note the pre-gate recovery layer (`normalize_candidates_data`)\n\n### agent-backpressure-gates.md\n\n- Replace the \"Example: Objective Slug Validation\" section with a \"Gate Inventory\" section that simply lists the four gate functions with file paths and a one-line description, directing readers to the code docstrings for details\n- Update `last_audited` in frontmatter\n\n## Verification\n\n1. Run `make fast-ci` to ensure no formatting/lint issues\n\n\n&lt;/details&gt;", "url": "https://github.com/dagster-io/erk/pull/7919"}, "roadmap": {"phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "description": "Add schema validation function that returns ValidTripwireCandidates | InvalidTripwireCandidates with actionable feedback", "status": "in_progress", "plan": "#7836", "pr": null, "depends_on": null}, {"id": "1.2", "description": "Wire validation into normalize_tripwire_candidates.py \u2014 reject malformed JSON before normalizing", "status": "in_progress", "plan": "#7836", "pr": null, "depends_on": null}, {"id": "1.3", "description": "Update agent guidance (skill/command docs) to include the expected schema", "status": "in_progress", "plan": "#7836", "pr": null, "depends_on": null}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "description": "Add validate_plan_title() returning ValidPlanTitle | InvalidPlanTitle with minimum content requirements", "status": "done", "plan": "#7845", "pr": "#7845", "depends_on": null}, {"id": "2.2", "description": "Wire validation into agent-facing paths (plan-save, plan-create) upstream of generate_filename_from_title()", "status": "in_progress", "plan": "#7846", "pr": null, "depends_on": null}, {"id": "2.3", "description": "Keep generate_filename_from_title() as-is for human-facing paths", "status": "in_progress", "plan": "#7846", "pr": null, "depends_on": null}]}, {"number": 3, "suffix": "", "name": "Phase 3", "nodes": [{"id": "3.1", "description": "Add validate_worktree_name() that checks if a name would survive sanitization without significant transformation", "status": "in_progress", "plan": "#7889", "pr": "#7850", "depends_on": null}, {"id": "3.2", "description": "Wire validation into erk implement and plan-derived worktree creation paths", "status": "done", "plan": "#7866", "pr": "#7866", "depends_on": null}, {"id": "3.3", "description": "Document which paths are agent-facing (gated) vs human-facing (transformed)", "status": "planning", "plan": null, "pr": "#7897", "depends_on": null}]}], "matched_steps": [], "summary": {"total_nodes": 9, "pending": 0, "planning": 1, "done": 2, "in_progress": 6, "blocked": 0, "skipped": 0}, "next_node": {"id": "1.1", "description": "Add schema validation function that returns ValidTripwireCandidates | InvalidTripwireCandidates with actionable feedback", "phase": "Phase 1"}, "all_complete": false}}
+  </tool_result>
+  <thinking>The context was fetched successfully. Now let me analyze:
+
+1. `matched_steps` is empty - no nodes were deterministically matched. I need to compare the plan body against the roadmap to identify which nodes were completed.
+
+Looking at the plan context:
+- The plan (PR #7919) was about node 3.3: "Document which paths are agent-facing (gated) vs human-facing (transformed)"
+- The plan explicitly says: "Objective #7823 is closed with all code landed. The remaining gap (node 3.3) is documenting agent-facing vs human-facing path distinction."
+
+So node 3.3 should be marked as `done` with `pr: "#7919"`. The current status of 3.3 is `planning` with `plan: null` and `pr: "#7897"`.
+ 
+I see the roadmap already has node 3.3 linked to PR #7897, but PR #7919 is the one that actually completed the work. Looking at the PR's metadata, I need to check what plan it was created from to understand the relationship correctly. I need to check the existing PR reference in the node definition—it's `#7897`, not the new one. Since the node had no plan attached, I'll pass an empty plan parameter and update the PR to `#7919` when running the update command.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6658" cache_read_input_tokens="34166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6658}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>`matched_steps` is empty, but the plan clearly addresses node 3.3 ("Document which paths are agent-facing (gated) vs human-facing (transformed)"). Marking it done.
+
+### Step 2: Update Roadmap Node</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6658" cache_read_input_tokens="34166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6658}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019T965ReF5vm1Jnv6VQvZ3Y">
+    <param name="command">erk exec update-objective-node 7823 --node 3.3 --pr "#7919" --plan "" --status done --include-body 2&gt;&amp;1</param>
+    <param name="description">Mark node 3.3 as done with PR #7919</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6658" cache_read_input_tokens="34166" output_tokens="926" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6658, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019T965ReF5vm1Jnv6VQvZ3Y">
+{"success": true, "issue_number": 7823, "node_id": "3.3", "previous_plan": null, "new_plan": null, "previous_pr": "#7897", "new_pr": "#7919", "url": "https://github.com/dagster-io/erk/issues/7823", "updated_body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-02-22T06:01:45.531065+00:00'\ncreated_by: schrockn\nobjective_comment_id: 3940710509\nslug: agent-backpressure-gates\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '3'\nnodes:\n- id: '1.1'\n  description: Add schema validation function that returns ValidTripwireCandidates\n    | InvalidTripwireCandidates with actionable feedback\n  status: in_progress\n  plan: '#7836'\n  pr: null\n- id: '1.2'\n  description: Wire validation into normalize_tripwire_candidates.py \u2014 reject malformed\n    JSON before normalizing\n  status: in_progress\n  plan: '#7836'\n  pr: null\n- id: '1.3'\n  description: Update agent guidance (skill/command docs) to include the expected\n    schema\n  status: in_progress\n  plan: '#7836'\n  pr: null\n- id: '2.1'\n  description: Add validate_plan_title() returning ValidPlanTitle | InvalidPlanTitle\n    with minimum content requirements\n  status: done\n  plan: '#7845'\n  pr: '#7845'\n- id: '2.2'\n  description: Wire validation into agent-facing paths (plan-save, plan-create) upstream\n    of generate_filename_from_title()\n  status: in_progress\n  plan: '#7846'\n  pr: null\n- id: '2.3'\n  description: Keep generate_filename_from_title() as-is for human-facing paths\n  status: in_progress\n  plan: '#7846'\n  pr: null\n- id: '3.1'\n  description: Add validate_worktree_name() that checks if a name would survive sanitization\n    without significant transformation\n  status: in_progress\n  plan: '#7889'\n  pr: '#7850'\n- id: '3.2'\n  description: Wire validation into erk implement and plan-derived worktree creation\n    paths\n  status: done\n  plan: '#7866'\n  pr: '#7866'\n- id: '3.3'\n  description: Document which paths are agent-facing (gated) vs human-facing (transformed)\n  status: done\n  plan: null\n  pr: '#7919'\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;"}
+  </tool_result>
+  <thinking>Node 3.3 is now marked as done. 
+
+### Step 3: Prose Reconciliation
+
+The `objective_content` contains:
+- The goal text - still accurate
+- Design Decisions - still accurate (gates for agents, transforms for humans - this is what the PR documented!)
+- Roadmap table - this is auto-generated and shouldn't be manually edited
+
+Looking at the prose sections:
+- "Gates for agents, transforms for humans" - this is exactly what the PR documented via code docstrings and the gate inventory table. The prose still accurately describes the pattern.
+- "Dual-use functions get an upstream validation layer" - still accurate
+
+
+- "Follow the ValidX | InvalidX pattern" - still accurate
+- "Actionable feedback is mandatory" - still accurate
+
+The PR was purely documentation - it didn't change any behavior or architectural decisions. The prose sections are still accurate, so no updates needed.</thinking>
+  <assistant>Node 3.3 updated. 
+
+### Step 3: Prose Reconciliation
+
+The PR was purely documentation-only (docstrings + gate inventory table). All prose sections remain accurate — design decisions and implementation context are unchanged. Skipping prose update.
+
+### Step 4: Post Action Comment</assistant>
+  <tool_use name="Bash" id="toolu_019tZgGR9DjfDyVbySxs46Sf">
+    <param name="command">echo '{"issue_number": 7823, "date": "2026-02-22", "pr_number": 7919, "phase_step": "3.3",...[truncated 952 chars]... ["Node 3.3: planning -&gt; done (PR #7919)"]}' | erk exec objective-post-action-comment 2&gt;&amp;1</param>
+    <param name="description">Post action comment to objective #7823</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="43192" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="656" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019tZgGR9DjfDyVbySxs46Sf">
+{"success": true, "comment_id": 3941918924}
+  </tool_result>
+  <assistant>### Step 5: Prose Update
+
+Skipping — no stale sections found.
+
+### Step 6: Validate Objective</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="794" cache_read_input_tokens="43192" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 794}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cbs46LVnAZ9wb8XZoKpuFH">
+    <param name="command">erk objective check 7823 --json-output 2&gt;&amp;1</param>
+    <param name="description">Validate objective #7823</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="794" cache_read_input_tokens="43192" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 794}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cbs46LVnAZ9wb8XZoKpuFH">
+{"success": true, "issue_number": 7823, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": true, "description": "No orphaned done statuses (done steps have PR references)"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "objective-header has objective_comment_id"}, {"passed": true, "description": "Plan/PR references use '#' prefix"}], "phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "description": "Add schema validation function that returns ValidTripwireCandidates | InvalidTripwireCandidates with actionable feedback", "status": "in_progress", "plan": "#7836", "pr": null, "depends_on": []}, {"id": "1.2", "description": "Wire validation into normalize_tripwire_candidates.py \u2014 reject malformed JSON before normalizing", "status": "in_progress", "plan": "#7836", "pr": null, "depends_on": ["1.1"]}, {"id": "1.3", "description": "Update agent guidance (skill/command docs) to include the expected schema", "status": "in_progress", "plan": "#7836", "pr": null, "depends_on": ["1.2"]}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "description": "Add validate_plan_title() returning ValidPlanTitle | InvalidPlanTitle with minimum content requirements", "status": "done", "plan": "#7845", "pr": "#7845", "depends_on": ["1.3"]}, {"id": "2.2", "description": "Wire validation into agent-facing paths (plan-save, plan-create) upstream of generate_filename_from_title()", "status": "in_progress", "plan": "#7846", "pr": null, "depends_on": ["2.1"]}, {"id": "2.3", "description": "Keep generate_filename_from_title() as-is for human-facing paths", "status": "in_progress", "plan": "#7846", "pr": null, "depends_on": ["2.2"]}]}, {"number": 3, "suffix": "", "name": "Phase 3", "nodes": [{"id": "3.1", "description": "Add validate_worktree_name() that checks if a name would survive sanitization without significant transformation", "status": "in_progress", "plan": "#7889", "pr": "#7850", "depends_on": ["2.3"]}, {"id": "3.2", "description": "Wire validation into erk implement and plan-derived worktree creation paths", "status": "done", "plan": "#7866", "pr": "#7866", "depends_on": ["3.1"]}, {"id": "3.3", "description": "Document which paths are agent-facing (gated) vs human-facing (transformed)", "status": "done", "plan": null, "pr": "#7919", "depends_on": ["3.2"]}]}], "summary": {"total_nodes": 9, "pending": 0, "planning": 0, "done": 3, "in_progress": 6, "blocked": 0, "skipped": 0}, "next_node": {"id": "1.1", "description": "Add schema validation function that returns ValidTripwireCandidates | InvalidTripwireCandidates with actionable feedback", "phase": "Phase 1"}, "validation_errors": [], "all_complete": false}
+  </tool_result>
+  <assistant>All checks passed. `all_complete` is false (6 nodes still in progress across phases 1-3).
+
+---
+
+Posted action comment and updated objective body for #7823.
+
+**Objective updated.** Next focus: Node 1.1 — Add schema validation function returning `ValidTripwireCandidates | InvalidTripwireCandidates` with actionable feedback (Phase 1, plan #7836).
+
+https://github.com/dagster-io/erk/issues/7823</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="43986" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1047}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+</session>

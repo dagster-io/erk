@@ -1,0 +1,896 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <user>i'm not happy with the info density here. title is too long (we should jsut do slugs, which i believe are in metadata now) and next node doesn't help. what i really want to have a sense of is the "state" of the graph, especially where progress ishappening. all the plans and their state is what I would really want, but that is difficult on a single line.  do you have any ideas here</user>
+  <thinking>The user is asking about improving the info density of the objectives TUI view. Let me look at the screenshot and understand what they're seeing:
+
+Current columns: issue, title, prog, fly, next node, deps, updated, created by
+
+Issues:
+1. Title is too long - shows full "Objective: Apply Agent Back Pressure Gates Across" - should use slugs
+2. "next node" column doesn't help much
+3. They want to see the "state" of the graph, especially where progress is happening
+4. They want to see plans and their state
+
+Let me think about what would be better here. The user wants:
+1. Shorter title (use slug from metadata)
+
+
+2. Replace "next node" with something more useful - I could show a compact state summary instead, like `done:2 rdy:3 blk:1` or a mini progress indicator with colored blocks representing plan states
+3. Show plan states somehow - either as a sparkline-style visualization, a count summary, or colored dots to give a quick visual sense of where things stand
+
+Since slugs are already in the metadata, I can pull those for the title column to save space.
+
+Now I need to look at the TUI code to see how it's currently structured.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="9887" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9887}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the objectives TUI code to understand the current implementation before suggesting changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="9887" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9887}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01JQASDMhXHBnju1hkhLUBx9">
+    <param name="pattern">src/erk/tui/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9887" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9887}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013ZrKaL8FvsMsDPtkFfEke4">
+    <param name="pattern">next.node|next_node|slug</param>
+    <param name="path">src/erk/tui</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9887" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9887}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JQASDMhXHBnju1hkhLUBx9">
+/Users/schrockn/code/erk/src/erk/tui/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/data/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/filtering/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/commands/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/command_output.py
+/Users/schrockn/code/erk/src/erk/tui/jsonl_viewer/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/jsonl_viewer/app.py
+/Users/schrockn/code/erk/src/erk/tui/jsonl_viewer/models.py
+/Users/schrockn/code/erk/src/erk/tui/jsonl_viewer/widgets.py
+/Users/schrockn/code/erk/src/erk/tui/filtering/types.py
+/Users/schrockn/code/erk/src/erk/tui/screens/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/clickable_link.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/copyable_label.py
+/Users/schrockn/code/erk/src/erk/tui/sorting/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/views/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/status_bar.py
+/Users/schrockn/code/erk/src/erk/tui/views/types.py
+/Users/schrockn/code/erk/src/erk/tui/screens/unresolved_comments_screen.py
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_body_screen.py
+/Users/schrockn/code/erk/src/erk/tui/sorting/logic.py
+/Users/schrockn/code/erk/src/erk/tui/sorting/types.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/view_bar.py
+/Users/schrockn/code/erk/src/erk/tui/commands/provider.py
+/Users/schrockn/code/erk/src/erk/tui/filtering/logic.py
+/Users/schrockn/code/erk/src/erk/tui/screens/help_screen.py
+/Users/schrockn/code/erk/src/erk/tui/screens/launch_screen.py
+/Users/schrockn/code/erk/src/erk/tui/commands/types.py
+/Users/schrockn/code/erk/src/erk/tui/data/types.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013ZrKaL8FvsMsDPtkFfEke4">
+Found 2 files
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/data/types.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FPGR6b7heqFrJzqTUdqY89">
+    <param name="pattern">objective|Objective</param>
+    <param name="path">src/erk/tui</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1552" cache_read_input_tokens="28885" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1552, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FPGR6b7heqFrJzqTUdqY89">
+Found 12 files
+src/erk/tui/commands/registry.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/app.py
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/data/types.py
+src/erk/tui/commands/types.py
+src/erk/tui/screens/help_screen.py
+src/erk/tui/screens/launch_screen.py
+src/erk/tui/widgets/view_bar.py
+src/erk/tui/screens/plan_body_screen.py
+src/erk/tui/views/types.py
+src/erk/tui/widgets/status_bar.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KEAyknBpWZ3M4iNqoUeQxM">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="30437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 319}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KEAyknBpWZ3M4iNqoUeQxM">
+     1→"""Plan table widget for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from rich.text import Text
+     8→from textual.events import Click
+     9→from textual.message import Message
+    10→from textual.widgets import DataTable
+    11→
+    12→from erk.tui.data.types import PlanFilters, PlanRowData
+    13→from erk.tui.views.types import ViewMode
+    14→from erk_shared.context.types import PlanBackendType
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk.tui.app import ErkDashApp
+    18→
+    19→
+    20→class PlanDataTable(DataTable):
+    21→    """DataTable subclass for displaying plans.
+    22→
+    23→    Manages column configuration and row population from PlanRowData.
+    24→    Uses row selection mode (not cell selection) for simpler navigation.
+    25→    """
+    26→
+    27→    class LocalWtClicked(Message):
+    28→        """Posted when user clicks local-wt column on a row with existing worktree."""
+    29→
+    30→        def __init__(self, row_index: int) -&gt; None:
+
+... [424 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KqZphLswyzkwXmufvmCrDX">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="30437" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 319, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KqZphLswyzkwXmufvmCrDX">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class PlanRowData:
+    11→    """Row data for displaying a plan in the TUI table.
+    12→
+    13→    Contains pre-formatted display strings and raw data needed for actions.
+    14→    Immutable to ensure table state consistency.
+    15→
+    16→    Attributes:
+    17→        plan_id: GitHub issue number (e.g., 123)
+    18→        plan_url: Full URL to the GitHub issue
+    19→        pr_number: PR number if linked, None otherwise
+    20→        pr_url: URL to PR (GitHub or Graphite), None if no PR
+    21→        pr_display: Formatted PR cell content (e.g., "#123 👀")
+    22→        checks_display: Formatted checks cell (e.g., "✓" or "✗")
+    23→        worktree_name: Name of local worktree, empty string if none
+    24→        exists_locally: Whether worktree exists on local machine
+    25→        local_impl_display: Relative time since last local impl (e.g., "2h ago")
+    26→        remote_impl_display: Relative time since last remote impl
+    27→        run_id_display: Formatted workflow run ID
+    28→        run_state_display: Formatted workflow run state
+    29→        run_url: URL to the GitHub Actions run page
+    30→        full_title: Complete untruncated plan title
+
+... [133 lines omitted] ...
+
+    40→        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+  </tool_result>
+  <thinking>Now let me look at where objective data is loaded to understand what fields are available and what "slug" refers to.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10641" cache_read_input_tokens="30756" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10641}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at how objective data is loaded and what fields are available from the objective schema, including the slug.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10641" cache_read_input_tokens="30756" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10641}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SoedGcRjy4FQSH5BDcmCiy">
+    <param name="pattern">slug|objective_next_node|objective_deps|in_flight|objective_progress</param>
+    <param name="path">src/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10641" cache_read_input_tokens="30756" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10641}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SoedGcRjy4FQSH5BDcmCiy">
+Found 19 files
+src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/commands/exec/scripts/plan_migrate_to_draft_pr.py
+src/erk/cli/commands/exec/scripts/plan_save_to_issue.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/data/types.py
+src/erk/cli/commands/submit.py
+src/erk/core/branch_slug_generator.py
+src/erk/cli/commands/objective/view_cmd.py
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+src/erk/cli/commands/plan/checkout_cmd.py
+src/erk/cli/commands/admin.py
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/register_one_shot_plan.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/launch_cmd.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01KKyKj5RHtdZsnorSB87QwD">
+    <param name="pattern">objective_next_node|objective_in_flight|objective_deps|objective_progress</param>
+    <param name="path">src/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="41397" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 559}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SMhe1zdzhXsErqK9U6zqJv">
+    <param name="pattern">slug</param>
+    <param name="path">src/erk/core</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="41397" output_tokens="223" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 559, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KKyKj5RHtdZsnorSB87QwD">
+src/erk/tui/widgets/plan_table.py:280:                row.objective_progress_display,
+src/erk/tui/widgets/plan_table.py:281:                row.objective_in_flight_display,
+src/erk/tui/widgets/plan_table.py:282:                Text(row.objective_next_node_display),
+src/erk/tui/widgets/plan_table.py:283:                row.objective_deps_display,
+src/erk/tui/data/types.py:56:        objective_progress_display: Progress display (e.g., "3/7" or "-")
+src/erk/tui/data/types.py:57:        objective_next_node_display: Next pending node (e.g., "1.3 Add tests" or "-")
+src/erk/tui/data/types.py:58:        objective_deps_display: Dep status of next node ("ready", "in progress", etc.)
+src/erk/tui/data/types.py:107:    objective_progress_display: str
+src/erk/tui/data/types.py:108:    objective_next_node_display: str
+src/erk/tui/data/types.py:109:    objective_deps_display: str
+src/erk/tui/data/types.py:110:    objective_in_flight_display: str
+src/erk/tui/screens/plan_detail_screen.py:804:                        f"{self._row.objective_display} ({self._row.objective_progress_display})"
+src/erk/tui/screens/plan_detail_screen.py:805:                        if self._row.objective_progress_display != "-"
+  </tool_result>
+  <tool_result tool="toolu_01SMhe1zdzhXsErqK9U6zqJv">
+Found 1 file
+src/erk/core/branch_slug_generator.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Lxhufsm2sTcds4B1tL7FFJ">
+    <param name="pattern">slug|objective.*slug</param>
+    <param name="path">src/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*objective*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="41956" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 839}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Pr9vP9GSyxFx7YtGUi35yf">
+    <param name="pattern">src/erk/**/*objective*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="41956" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 839}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lxhufsm2sTcds4B1tL7FFJ">
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:102:    "--slug",
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:117:    slug: str | None,
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:193:        slug=slug,
+  </tool_result>
+  <tool_result tool="toolu_01Pr9vP9GSyxFx7YtGUi35yf">
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_post_action_comment.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/migrate_objective_schema.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_render_roadmap.py
+/Users/schrockn/code/erk/src/erk/core/services/objective_list_service.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+/Users/schrockn/code/erk/src/erk/core/services/__pycache__/objective_list_service.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/get_plans_for_objective.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/migrate_objective_schema.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/objective_fetch_context.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/objective_post_action_comment.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/objective_render_roadmap.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/objective_save_to_issue.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/update_objective_node.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_update_after_land.py
+/Users/schrockn/code/erk/src/erk/cli/commands/objective_helpers.py
+/Users/schrockn/code/erk/src/erk/cli/commands/__pycache__/objective_helpers.cpython-313.pyc
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/__pycache__/objective_update_after_land.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LcDKKrPL98yhxRcKfyZg5Q">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/services/objective_list_service.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1113" cache_read_input_tokens="42795" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1113}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LcDKKrPL98yhxRcKfyZg5Q">
+     1→"""Real implementation of ObjectiveListService.
+     2→
+     3→Wraps RealPlanListService with hardcoded labels=["erk-objective"] so that
+     4→objectives are always fetched via the issue-based path regardless of the
+     5→configured plan backend (draft PR vs issue).
+     6→"""
+     7→
+     8→from erk.core.services.plan_list_service import RealPlanListService
+     9→from erk_shared.core.objective_list_service import ObjectiveListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.github.abc import GitHub
+    12→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    13→from erk_shared.gateway.github.types import GitHubRepoLocation
+    14→
+    15→_OBJECTIVE_LABEL = "erk-objective"
+    16→
+    17→
+    18→class RealObjectiveListService(ObjectiveListService):
+    19→    """Fetches objectives via RealPlanListService with hardcoded objective label.
+    20→
+    21→    Always uses the issue-based RealPlanListService, not DraftPRPlanListService,
+    22→    because objectives are GitHub issues regardless of the plan backend.
+    23→    """
+    24→
+    25→    def __init__(self, github: GitHub, github_issues: GitHubIssues) -&gt; None:
+    26→        self._plan_list_service = RealPlanListService(github, github_issues)
+    27→
+    28→    def get_objective_list_data(
+    29→        self,
+    30→        *,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01823eAbFxoiPLQCCpoXGj5g">
+    <param name="pattern">objective_next_node_display|objective_deps_display|_build_row|objective.*slug</param>
+    <param name="path">src/erk/tui/data</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="781" cache_read_input_tokens="43908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 781}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01VhmeMHaN7YGSi3EdcJHEpn">
+    <param name="pattern">src/erk/tui/data/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="781" cache_read_input_tokens="43908" output_tokens="183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 781, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01823eAbFxoiPLQCCpoXGj5g">
+Found 1 file
+src/erk/tui/data/types.py
+  </tool_result>
+  <tool_result tool="toolu_01VhmeMHaN7YGSi3EdcJHEpn">
+/Users/schrockn/code/erk/src/erk/tui/data/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/data/types.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01ARi1o1nFe2Gmub2UT4YQNV">
+    <param name="pattern">objective_next_node_display|_build_row|objective_in_flight</param>
+    <param name="path">src/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="44689" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 315, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ARi1o1nFe2Gmub2UT4YQNV">
+Found 2 files
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/data/types.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01WYudqJ4ZbYN28GbqvtG26Q">
+    <param name="pattern">objective_next_node_display|objective_in_flight|objective_deps</param>
+    <param name="path">src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="45004" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 176}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WYudqJ4ZbYN28GbqvtG26Q">
+Found 2 files
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/data/types.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01N7z9vsWjXsvcyn5hYzPuu5">
+    <param name="command">find /Users/schrockn/code/erk -name "*.py" | xargs grep -l "objective_next_node_display\|objective_in_flight_display" 2&gt;/dev/null</param>
+    <param name="description">Find files containing objective display fields</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="45180" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 155, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N7z9vsWjXsvcyn5hYzPuu5">
+/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py
+/Users/schrockn/code/erk/tests/tui/test_plan_table.py
+/Users/schrockn/code/erk/tests/tui/commands/test_execute_command.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+/Users/schrockn/code/erk/src/erk/tui/data/types.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HrEJJz1vMPLH2vJSQq45Zi">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="45335" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 353}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HrEJJz1vMPLH2vJSQq45Zi">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.issues.types import IssueNotFound
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    find_metadata_block,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [839 lines omitted] ...
+
+   656→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me understand what the user is asking:
+
+1. In the Objectives tab, the current columns are: `issue | title | prog | fly | next node | deps | updated | created by`
+2. Issues:
+   - Title is too long ("Objective: Apply Agent Back Pressure Gates Across") - should use slugs
+   - "next node" column doesn't help
+   - The user wants to see "state" of the graph - where progress is happening
+   - All plans and their state would be ideal, but difficult on a single line
+
+Let me look at what summary data is available from `compute_graph_summary`:
+
+
+- `done`, `total_nodes`, `planning`, `in_progress`, `pending_unblocked` 
+
+Looking at the roadmap parsing code, `compute_graph_summary` returns a dict with these status counts. For a single-line state display, I could either show a sparkline with per-node status characters (though that gets unwieldy with 14-node objectives), or use a compact summary like `2✓ 1▶ 3□` to show the distribution of statuses at a glance.
+
+I could also replace the "next node" field with a visual histogram like `5✓ 2▶ 4○ 3⊘`, or go with a colored sparkline where each plan node appears as a tiny block character colored by its status—that would actually look pretty clean in a terminal.
+
+For the slug, I need to check where it's stored. The `plan.title` has "Objective: " prepended, but the slug would come from metadata. Looking at `objective_save_to_issue.py`, slugs are passed as a command-line option and stored in the issue body metadata.
+
+Now I'm checking the metadata schemas to see how slugs are structured.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="16407" cache_read_input_tokens="45688" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16407}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check what metadata fields objectives have (especially slug) and what graph statuses look like:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16407" cache_read_input_tokens="45688" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16407}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012MtQv1nqxwR742zDWifFSz">
+    <param name="pattern">packages/erk-shared/src/erk_shared/gateway/github/metadata/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16407" cache_read_input_tokens="45688" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16407}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0122fcxDU9Jn7Q9ZQocnXxQ9">
+    <param name="pattern">slug|SLUG</param>
+    <param name="path">packages/erk-shared/src/erk_shared/gateway/github/metadata</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16407" cache_read_input_tokens="45688" output_tokens="722" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16407, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012MtQv1nqxwR742zDWifFSz">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/__init__.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/constants.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/session.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+  </tool_result>
+  <tool_result tool="toolu_0122fcxDU9Jn7Q9ZQocnXxQ9">
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:812:        optional_fields = {"objective_comment_id", "slug"}
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:833:        # Validate optional slug field
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:834:        if "slug" in data and data["slug"] is not None:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:835:            if not isinstance(data["slug"], str):
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:836:                raise ValueError("slug must be a string")
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:837:            if len(data["slug"]) == 0:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:838:                raise ValueError("slug must not be empty when provided")
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:677:    slug: str | None,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:685:        slug: Short kebab-case identifier for the objective (nullable)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:696:    if slug is not None:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:697:        data["slug"] = slug
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RroGNUKUhisTZHwo5MmYt7">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1678" cache_read_input_tokens="62095" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1678}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RroGNUKUhisTZHwo5MmYt7">
+     1→"""Dependency graph representation for objective roadmaps.
+     2→
+     3→Provides ObjectiveNode and DependencyGraph types that model node dependencies
+     4→explicitly, plus a graph_from_phases() parser that infers sequential dependencies
+     5→from existing RoadmapPhase/RoadmapNode data.
+     6→"""
+     7→
+     8→from collections import Counter
+     9→from dataclasses import dataclass
+    10→
+    11→from erk_shared.gateway.github.metadata.roadmap import (
+    12→    RoadmapNode,
+    13→    RoadmapNodeStatus,
+    14→    RoadmapPhase,
+    15→    group_nodes_by_phase,
+    16→    parse_v2_roadmap,
+    17→)
+    18→
+    19→_TERMINAL_STATUSES: set[RoadmapNodeStatus] = {"done", "skipped"}
+    20→
+    21→_STATUS_ORDER: dict[RoadmapNodeStatus, int] = {
+    22→    "pending": 0,
+    23→    "blocked": 1,
+    24→    "planning": 2,
+    25→    "in_progress": 3,
+    26→    "done": 4,
+    27→    "skipped": 4,
+    28→}
+    29→
+    30→
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LqvAu9L1H8VWrAKh6U4Ter">
+    <param name="pattern">extract_objective.*metadata|objective.*body.*slug|slug.*objective|extract_objective_from_comment</param>
+    <param name="path">packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1678" cache_read_input_tokens="62095" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1678, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LqvAu9L1H8VWrAKh6U4Ter">
+685:        slug: Short kebab-case identifier for the objective (nullable)
+765:def extract_objective_from_comment(comment_body: str) -&gt; str | None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FL5YyJX77sD2gfiKNxfpUH">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py</param>
+    <param name="offset">80</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1360" cache_read_input_tokens="63773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1360}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FL5YyJX77sD2gfiKNxfpUH">
+    80→            return None
+    81→        statuses = [node_map[dep_id].status for dep_id in deps if dep_id in node_map]
+    82→        if not statuses:
+    83→            return None
+    84→        return min(statuses, key=lambda s: _STATUS_ORDER.get(s, 0))
+    85→
+    86→    def next_node(self) -&gt; ObjectiveNode | None:
+    87→        """First unblocked pending node by position order. None if no pending nodes."""
+    88→        nodes = self.pending_unblocked_nodes()
+    89→        if nodes:
+    90→            return nodes[0]
+    91→        return None
+    92→
+    93→    def is_complete(self) -&gt; bool:
+    94→        """True if every node is done or skipped."""
+    95→        return all(node.status in _TERMINAL_STATUSES for node in self.nodes)
+    96→
+    97→
+    98→def graph_from_phases(phases: list[RoadmapPhase]) -&gt; DependencyGraph:
+    99→    """Convert phases into a DependencyGraph, inferring sequential dependencies.
+   100→
+   101→    Dependency rules:
+   102→    - First node in a phase: depends on last node of previous phase (if any)
+   103→    - Subsequent nodes in a phase: depends on previous node in same phase
+   104→    """
+   105→    nodes: list[ObjectiveNode] = []
+   106→    last_node_id_of_prev_phase: str | None = None
+   107→
+   108→    for phase in phases:
+   109→        prev_node_id: str | None = None
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JwtzroVcWmDSeW4ntPTPpQ">
+    <param name="pattern">extract_objective_header|parse_objective_header|slug.*from.*body|objective.*metadata.*slug</param>
+    <param name="path">packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1360" cache_read_input_tokens="63773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1360}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JwtzroVcWmDSeW4ntPTPpQ">
+746-    return render_objective_body_block(marked_content)
+747-
+748-
+749:def extract_objective_header_comment_id(issue_body: str) -&gt; int | None:
+750-    """Extract objective_comment_id from objective-header block.
+751-
+752-    Args:
+  </tool_result>
+  <thinking>Now let me look at how the slug is extracted from the objective body. The slug is stored in the `objective-header` metadata block in the issue body.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1499" cache_read_input_tokens="65133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1499}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VSRyebg9JVWC5jhe34UAfK">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">800</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1499" cache_read_input_tokens="65133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1499}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VSRyebg9JVWC5jhe34UAfK">
+   800→class ObjectiveHeaderSchema(MetadataBlockSchema):
+   801→    """Schema for objective-header blocks.
+   802→
+   803→    Fields:
+   804→        created_at: ISO 8601 timestamp of objective creation
+   805→        created_by: GitHub username of objective creator
+   806→        objective_comment_id: GitHub comment ID containing the objective content (nullable)
+   807→    """
+   808→
+   809→    def validate(self, data: dict[str, Any]) -&gt; None:
+   810→        """Validate objective-header data structure."""
+   811→        required_fields = {"created_at", "created_by"}
+   812→        optional_fields = {"objective_comment_id", "slug"}
+   813→
+   814→        # Check required fields exist
+   815→        missing = required_fields - set(data.keys())
+   816→        if missing:
+   817→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   818→
+   819→        # Validate required string fields
+   820→        for field in required_fields:
+   821→            if not isinstance(data[field], str):
+   822→                raise ValueError(f"{field} must be a string")
+   823→            if len(data[field]) == 0:
+   824→                raise ValueError(f"{field} must not be empty")
+   825→
+   826→        # Validate optional objective_comment_id field
+   827→        if "objective_comment_id" in data and data["objective_comment_id"] is not None:
+   828→            if not isinstance(data["objective_comment_id"], int):
+   829→                raise ValueError("objective_comment_id must be an integer or null")
+
+... [24 lines omitted] ...
+
+   831→                raise ValueError("objective_comment_id must be positive when provided")
+   836→                raise ValueError("slug must be a string")
+   838→                raise ValueError("slug must not be empty when provided")
+   844→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+  </tool_result>
+  <thinking>Now I understand the full picture. The slug is stored in the `objective-header` metadata block in the issue body. Currently, the code extracts `objective_comment_id` from the objective body, but not the slug.
+
+Looking at the current columns in the Objectives view:
+- `issue | title | prog | fly | next node | deps | updated | created by`
+
+The user wants to:
+1. Replace "title" with "slug" (shorter, more useful)
+2. Replace "next node" with something more useful - specifically, state of the graph
+
+For the "state" column, what would be most valuable:
+- The user wants to understand where progress is happening
+
+
+- They need to see all the plans and their state at a glance
+
+I'm considering a few approaches for displaying the state compactly: a sparkline showing each node's status with symbols like `✓✓▶□□□□□□`, a simple count summary like `5✓ 2▶ 6□`, or colored block characters. The sparkline approach seems most powerful since it shows both the distribution and shape of progress in a single line.
+
+For objectives with 7-19 nodes, a sparkline could work but needs consistent width. A status bar like `5✓ 1▶ 3○` is more compact at 9 characters and gives a clear picture of where things stand.
+
+I also need to extract the slug from the objective-header metadata block in the issue body, parsing that field and falling back to a default if it's missing.
+
+Looking at the data flow, `_build_row_data` already parses `plan.body`, so I can extract the slug the same way `extract_objective_header_comment_id` does. I'm planning two changes: first, swap the title column for a slug column (25-30 chars wide) with fallback to a truncated title, and second, replace the "next node" display with a state summary showing counts of completed, in-progress, and pending nodes.
+
+The user wants to see where progress is happening at a glance, so something like `5✓ 2▶ 3○` would be more useful than showing the next node title. I'm leaning toward a compact status count format that gives immediate visibility into the graph's progress distribution. they said "all the plans and their state" is what they'd really want. So they want to know which specific plans in the objective are in which state. That's what `objective_in_flight_display` tries to get at (the "fly" column), but it's just a count.
+
+One option: replace "next node" + "deps" with a single "state" column that shows a compact status distribution: `5✓ 2▶ 3○ 1⊘` where:
+- ✓ = done
+- ▶ = in_progress/planning  
+- ○ = pending/ready
+- ⊘ = blocked
+
+This saves space and tells you the distribution at a glance.
+
+**Option for slug**: Extract from objective-header block. If not present, strip "Objective: " prefix from title and truncate.
+
+I should probably present these ideas to the user first rather than diving straight into implementation. Let me think through what I'd propose: for the slug issue, I can extract it from the metadata block in the plan body, fall back to stripping the "Objective: " prefix, and use a narrower column width. For the state summary, I'd replace both the "next node" and "deps" columns with a single compact status distribution that shows at a glance how many plans are in each state.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="930" cache_read_input_tokens="66632" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 930}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015TLLUwX6HGbVz1zdFPn1h2">
+    <param name="pattern">compute_graph_summary|def compute_graph_summary</param>
+    <param name="path">packages/erk-shared/src/erk_shared/gateway/github/metadata</param>
+    <param name="output_mode">content</param>
+    <param name="context">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="930" cache_read_input_tokens="66632" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 930}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015TLLUwX6HGbVz1zdFPn1h2">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-189-    Phase names are placeholders — use enrich_phase_names() to restore from body text.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-190-    """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-191-    return group_nodes_by_phase(nodes_from_graph(graph))
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-192-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-193-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py:194:def compute_graph_summary(graph: DependencyGraph) -&gt; dict[str, int]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-195-    """Compute summary statistics from graph nodes directly.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-196-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-197-    Returns the same dict format as compute_summary(phases).
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-198-    """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py-199-    counts = Counter(node.status for node in graph.nodes)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KBDF5YdQdHCJD4J9rq3fjH">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py</param>
+    <param name="offset">194</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2163" cache_read_input_tokens="67562" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KBDF5YdQdHCJD4J9rq3fjH">
+   194→def compute_graph_summary(graph: DependencyGraph) -&gt; dict[str, int]:
+   195→    """Compute summary statistics from graph nodes directly.
+   196→
+   197→    Returns the same dict format as compute_summary(phases).
+   198→    """
+   199→    counts = Counter(node.status for node in graph.nodes)
+   200→    return {
+   201→        "total_nodes": len(graph.nodes),
+   202→        "pending": counts.get("pending", 0),
+   203→        "planning": counts.get("planning", 0),
+   204→        "done": counts.get("done", 0),
+   205→        "in_progress": counts.get("in_progress", 0),
+   206→        "blocked": counts.get("blocked", 0),
+   207→        "skipped": counts.get("skipped", 0),
+   208→    }
+   209→
+   210→
+   211→def _find_node_by_status(
+   212→    nodes: tuple[ObjectiveNode, ...], status: RoadmapNodeStatus
+   213→) -&gt; ObjectiveNode | None:
+   214→    """Find the first node with the given status, or None."""
+   215→    return next((node for node in nodes if node.status == status), None)
+   216→
+   217→
+   218→def find_graph_next_node(
+   219→    graph: DependencyGraph, phases: list[RoadmapPhase]
+   220→) -&gt; dict[str, str] | None:
+   221→    """Find the next actionable node by graph order, returning the dict format needed by JSON APIs.
+   222→
+   223→    Tries pending nodes first, then falls back to in_progress nodes. This ensures
+
+... [15 lines omitted] ...
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <thinking>Now I have a clear picture. Here's what I know:
+
+1. **Slug**: Available in the `objective-header` metadata block in the issue body. Need to extract it from `plan.body` using `find_metadata_block(plan.body, "objective-header")`.
+
+2. **Graph state data**: `compute_graph_summary` returns `{total_nodes, pending, planning, done, in_progress, blocked, skipped}`. All this is already computed in `_build_row_data`.
+
+3. **Current columns**: `issue | title (50) | prog (5) | fly (3) | next node (50) | deps (12) | updated (7) | created by (12)`
+   
+I'm thinking through two main changes: replacing the title column with a slug extracted from the objective-header metadata (with a fallback to strip the "Objective: " prefix if needed), and consolidating the "next node" and "deps" columns into a single state column that shows graph progress. For the state display, I could either show compact status counts like `5✓ 2▶ 3○` to represent done, in-flight, and pending nodes, or use a sparkline visualization where each node is represented visually. a single character in order through the graph - shows the "shape" of progress. With 9 nodes: `███▶▶○○○○` where █=done, ▶=active, ○=pending. But ordering can be tricky with graphs.
+c. **Tiered summary**: `done:5 fly:2 rdy:3 blk:0` - more verbose but clearer
+d. **Just counts as colored numbers**: `5/2/3` (done/active/pending)
+
+I think option (a) with status counts is the most elegant. Something like:
+`5✓ 2▶ 3○` 
+
+This requires only ~12 chars and is immediately readable.
+
+Alternatively, they could have two separate but very narrow columns:
+- `done` (3 wide): just the count 
+- `fly` (already exists in-flight count)
+- `rdy` (3 wide): ready/pending count
+
+The key insight is that the existing `prog` and `fly` columns already show how far along an objective is and what's actively happening, so what's really missing is visibility into how many tasks are ready to start versus blocked. A compact visual like `3○ 1⊘` would give that missing context without taking up much space. I'm consolidating the column redesign into a clear recommendation: swap the verbose "title" and "next node + deps" fields for a compact "slug" and "state" sparkline, which saves roughly 57 characters of table width while preserving the essential information about progress and dependencies at a glance.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="70483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, now I have the full picture. Let me summarize what I found and share ideas.
+
+---
+
+**What I know:**
+
+- `slug` is stored in the `objective-header` metadata block in the issue body (`plan.body`) — it's already saved there but not extracted for display. Fallback would be stripping `"Objective: "` prefix from `full_title`.
+- `compute_graph_summary` already returns `{done, pending, planning, in_progress, blocked, skipped, total_nodes}` — all statuses are available.
+- Current objectives columns: `issue | title(50) | prog(5) | fly(3) | next node(50) | deps(12) | updated(7) | created by(12)`
+
+**Two changes I'd propose:**
+
+### 1. Title → Slug (easy win)
+Parse the `objective-header` metadata block from `plan.body`, extract the `slug` field, fall back to stripped+truncated title. Column width drops from 50 to ~25.
+
+### 2. Replace "next node" + "deps" with a state sparkline
+
+The 62 chars currently used by those two columns could become a single compact **state summary**. Two options:
+
+**Option A — Status counts** (most compact, ~18 chars):
+```
+5✓ 2▶ 3○ 1⊘
+```
+Where ✓=done, ▶=in-flight, ○=pending, ⊘=blocked
+
+**Option B — Node sparkline** (most visual, shows *shape* of progress):
+```
+✓✓✓▶▶○○○○
+```
+Each char = one node in graph order. You immediately see the "wavefront" — where done ends and work begins. Width scales with node count but could be capped.
+
+**Option C — Both columns narrowed**:  
+Keep `prog` + `fly` as-is, add a `rdy` (count of unblocked pending) and `blk` (count of blocked), drop `next node` and `deps`. Four small numeric columns instead of two large text ones.
+
+---
+
+**My recommendation**: Slug + Option B sparkline. The sparkline gives you something no other column can: the *shape* of progress across the graph. For a 9-node objective, `✓✓✓▶▶○○○○` instantly tells you "3 done, 2 active, 4 pending, sequential". For a 14-node one with some blocked: `✓✓✓▶▶○⊘⊘○○○○○○`.
+
+What direction appeals to you?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="70483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>i don't even know what fly means</user>
+  <thinking>The user is pointing out that the "fly" column label is cryptic - they don't know what "fly" means. Looking at the code, `fly` is short for "in-flight" which shows the count of nodes that are `planning` or `in_progress`. It's just a bad abbreviation.
+
+Let me think about the full picture of what they want:
+
+1. Title too long → use slug
+2. "next node" doesn't help
+3. "fly" label is unclear
+
+So the columns are: `issue | title | prog | fly | next node | deps | updated | created by`
+
+The user wants better info density showing graph state. The "fly" column shows in-flight count, but the label is opaque.
+
+
+This is a design conversation, not yet an implementation request. I should give them a concrete proposal for the full objectives view redesign. Looking at what columns would actually be useful and clear, I can replace the verbose title with a compact slug, keep the progress indicator, and swap out the cryptic "fly" label for explicit status counts that show the breakdown of nodes in different states.
+
+The user's comment about not understanding what "fly" means confirms the labeling is confusing—it's short for "in-flight" but that's too opaque. I should propose a clearer alternative like showing counts for in-progress, pending, and blocked states, either as simple symbols or a sparkline visualization. This would save significant space while being much more readable.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="2279" cache_read_input_tokens="72166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2279}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <assistant>Yeah, "fly" = "in-flight" (planning + in_progress count) — that's not obvious at all.
+
+Looking at all three problems together (`title` too long, `fly` opaque, `next node` unhelpful), I think the real issue is that the columns are treating the graph state as three separate pieces (`fly`, `next node`, `deps`) when they should be one.
+
+Here's a concrete proposal for the full redesign:
+
+**Current** (total ~149 chars of column space):
+```
+issue | title(50) | prog(5) | fly(3) | next node(50) | deps(12) | updated(7) | created by(12)
+```
+
+**Proposed** (~90 chars):
+```
+issue | slug(25) | prog(5) | state(20) | updated(7) | created by(12)
+```
+
+Where `state` replaces `fly` + `next node` + `deps` with a sparkline of node statuses in graph order:
+
+```
+✓✓✓▶▶○○○○     ← 3 done, 2 active, 4 pending
+✓✓✓✓✓✓▶○○    ← nearly there
+✓✓✓✓✓✓✓✓✓    ← done
+```
+
+Symbols: `✓`=done, `▶`=in_progress/planning, `○`=pending, `⊘`=blocked, `-`=skipped
+
+Benefits:
+- You instantly see the "wavefront" of progress 
+- Position in the sequence is visible (all done on the left, work to do on the right)
+- No cryptic abbreviations
+- Frees up ~60 chars of width
+
+The slug extraction is also straightforward — the `objective-header` block in `plan.body` already has the `slug` field.
+
+Want me to implement this?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2279" cache_read_input_tokens="72166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2279}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>  ---
+  My recommendation: Slug + Option B sparkline. The sparkline gives you something no other column can: the shape of progress across the graph. For a 9-node
+  objective, ✓✓✓▶▶○○○○ instantly tells you "3 done, 2 active, 4 pending, sequential". For a 14-node one with some blocked: ✓✓✓▶▶○⊘⊘○○○○○○.
+
+your recommendation is great. make a plan</user>
+  <thinking>The user wants me to plan the implementation of:
+1. Replace "title" column with "slug" (extract from objective-header metadata, fallback to stripped title)
+2. Replace "fly" + "next node" + "deps" columns with a "state" sparkline showing node statuses in graph order
+
+Let me explore the codebase in parallel to understand what needs to change. I already have good context from the previous exploration, but I need to:
+1. Understand how to extract slug from the objective-header metadata block
+2. Understand the node ordering in the graph for the sparkline
+3. Find all the places that need to change (PlanRowData fields, _build_row_data, plan_table columns)
+
+
+4. Check the test infrastructure to see what test data and mocks I'll need to update.
+
+Let me spin up some explore agents to fill in the remaining gaps.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="1476" cache_read_input_tokens="75453" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1476}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <user>[Request interrupted by user]</user>
+  <user>continue</user>
+  <thinking>The user wants me to make a plan for implementing the redesigned objectives view. Let me explore the codebase to understand all the pieces I need to change, then write a comprehensive plan.
+
+I already have good context from my earlier exploration:
+1. `src/erk/tui/widgets/plan_table.py` - Column setup and row rendering for objectives view
+2. `src/erk/tui/data/types.py` - `PlanRowData` dataclass
+3. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` - Data building including objective fields
+
+
+4. `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py` - Graph computation
+5. `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` - ObjectiveHeaderSchema with slug
+
+Now I need to dig into how the slug gets extracted from the objective-header metadata block, understand how to build the sparkline using the node order from the graph, identify which test files need updating, and check what the fake implementation requires.
+
+Let me start exploring the codebase to fill in these gaps.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="161" cache_read_input_tokens="76929" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 161}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_019q7zZjVFxdqMUKWnK4PbBF">
+    <param name="description">Explore slug extraction and test fakes</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 1400 chars]...es.
+
+Report file paths, key function signatures, and relevant code snippets for each item.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="161" cache_read_input_tokens="76929" output_tokens="837" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 161, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019q7zZjVFxdqMUKWnK4PbBF">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

@@ -1,0 +1,420 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <assistant>Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="78090" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01AgHgYXFzSjpmn4b7H3bXxv">
+    <param name="file_path">/Users/schrockn/.claude/plans/sprightly-munching-whale.md</param>
+    <param name="content"># Add `--plan-only` flag to `erk one-shot`
+
+## Context
+
+`erk one-shot` dispatches a GitHub...[truncated 2567 chars]...ag" --plan-only
+# Then check the GitHub Actions run — implement job should be skipped
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="78090" output_tokens="2273" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AgHgYXFzSjpmn4b7H3bXxv">
+File created successfully at: /Users/schrockn/.claude/plans/sprightly-munching-whale.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01NhUDF1Qu9hLYn7KR6AKDmz">
+    <param name="plan"># Add `--plan-only` flag to `erk one-shot`
+
+## Context
+
+`erk one-shot` dispatches a GitHub...[truncated 2567 chars]...ag" --plan-only
+# Then check the GitHub Actions run — implement job should be skipped
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2277" cache_read_input_tokens="78090" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NhUDF1Qu9hLYn7KR6AKDmz">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/sprightly-munching-whale.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add `--plan-only` flag to `erk one-shot`
+Current context: (wt:erk) (br:master) (plan:#7759)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 5b5f19e0-1391-4f60-8a07-c1a839931689 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant># Add `--plan-only` flag to `erk one-shot`
+
+## Context
+
+`erk one-shot` dispatches a GitHub Actions workflow (`one-shot.yml`) that runs two jobs:
+1. **plan** — Claude explores the codebase and saves a plan to a GitHub issue
+2. **implement** — Claude implements the plan and commits the code
+
+There's currently no way to run only the planning phase remotely. The user wants a command that goes from prompt → plan without triggering implementation.
+
+## Approach
+
+Add `--plan-only` to `erk one-shot`. When set, it passes `plan_only=true` as a workflow input. The `one-shot.yml` implement job gains a condition that skips it when `plan_only` is true.
+
+This is a 2-file change that follows the existing `extra_workflow_inputs` pattern (same mechanism used by `erk objective plan --one-shot` to pass `objective_issue` and `node_id`).
+
+## Changes
+
+### 1. `src/erk/cli/commands/one_shot.py`
+
+Add `--plan-only` Click option and pass it via `extra_workflow_inputs`:
+
+```python
+extra: dict[str, str] = {}
+if plan_only:
+    extra["plan_only"] = "true"
+```
+
+### 2. `.github/workflows/one-shot.yml`
+
+Add `plan_only` boolean input, update the `implement` job condition:
+
+```yaml
+# Before:
+if: needs.plan.outputs.plan_id != ''
+
+# After:
+if: needs.plan.outputs.plan_id != '' &amp;&amp; !inputs.plan_only
+```
+
+## Files to Modify
+
+- `src/erk/cli/commands/one_shot.py`
+- `.github/workflows/one-shot.yml`
+
+## Files NOT Changing
+
+- `one_shot_dispatch.py` — `extra_workflow_inputs` already passes arbitrary keys through; no changes needed
+- `plan-implement.yml` — unchanged; just won't be called</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="668" cache_read_input_tokens="80367" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 668}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_014iMR4MqWze5TvX4HMbT9sK">
+    <param name="questions">[{'question': '📋 Add `--plan-only` flag to `erk one-shot`\nCurrent context: (wt:erk) (br:m...[truncated 437 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="668" cache_read_input_tokens="80367" output_tokens="711" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 668, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014iMR4MqWze5TvX4HMbT9sK">
+User has answered your questions: "📋 Add `--plan-only` flag to `erk one-shot`
+Current context: (wt:erk) (br:master) (plan:#7759)
+
+What would you like to do with this plan?"="Create a plan PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_017d3cQf4gwaYaByBw6MWo5m">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1141" cache_read_input_tokens="81035" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1141}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017d3cQf4gwaYaByBw6MWo5m">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --objective-issue=3679    # Plan linked to objective
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+```
+
+When creating a plan from an objective (via `/erk:objective-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
+
+The JSON output contract is the same for both backends (`issue_number`, `issue_url`, `title`, `branch_name`, `plan_backend`).
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--objective-issue` and `--plan-type` flags:
+
+```
+If  contains "--objective-issue=&lt;number&gt;":
+  - Extract the number
+  - Store as OBJECTIVE_ISSUE variable
+  - Set OBJECTIVE_FLAG to "--objective-issue=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+```
+
+### Step 2: Run Save Command
+
+Run this command with the session ID and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="5b5f19e0-1391-4f60-8a07-c1a839931689" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
+```
+
+Parse the JSON output to extract `issue_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `--objective-issue` was provided in arguments.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;issue_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;issue_number&gt; and re-run:
+  /erk:plan-save --objective-issue=&lt;expected&gt;
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `--objective-issue` was provided and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "5b5f19e0-1391-4f60-8a07-c1a839931689" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --plan "#&lt;issue_number&gt;"
+```
+
+This atomically fetches the issue body, finds the matching node row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;issue_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+On success, display based on `plan_backend` from JSON output:
+
+**Header (both backends):**
+
+```
+Plan "&lt;title&gt;" saved as &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;issue_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot &lt;branch_name&gt;
+    Implement: source "$(erk br co --new-slot &lt;branch_name&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co &lt;branch_name&gt;
+    Implement: source "$(erk br co &lt;branch_name&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Submit to Queue: erk plan submit &lt;issue_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co &lt;branch_name&gt;
+    Implement: source "$(erk br co &lt;branch_name&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot &lt;branch_name&gt;
+    Implement: source "$(erk br co --new-slot &lt;branch_name&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Submit to Queue: erk plan submit &lt;issue_number&gt;
+```
+
+**If `plan_backend` is `"draft_pr"`:**
+
+```
+Next steps:
+
+View PR: gh pr view &lt;issue_number&gt; --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk br co &lt;branch_name&gt;
+  Prepare+Implement: source "$(erk br co &lt;branch_name&gt; --script)" &amp;&amp; erk implement --dangerous
+  Submit to Queue: erk plan submit &lt;issue_number&gt;
+```
+
+**If `plan_backend` is `"github"` (or absent):**
+
+```
+Next steps:
+
+View Issue: gh issue view &lt;issue_number&gt; --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk br co &lt;branch_name&gt;
+  Prepare+Implement: source "$(erk br co &lt;branch_name&gt; --script)" &amp;&amp; erk implement --dangerous
+  Submit to Queue: erk plan submit &lt;issue_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved issue number:**
+
+```bash
+erk exec marker read --session-id "5b5f19e0-1391-4f60-8a07-c1a839931689" plan-saved-issue
+```
+
+This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose "Create a plan PR", so I need to follow the plan-save skill instructions. Let me execute the steps:
+
+1. Parse arguments - no `--objective-issue` or `--plan-type` flags
+2. Run: `erk exec plan-save --format json --session-id="5b5f19e0-1391-4f60-8a07-c1a839931689"`
+3. Display results
+
+Let me do this.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2258" cache_read_input_tokens="82176" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2258}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013MJgPYiKbEUCGLjseJDcd9">
+    <param name="command">erk exec plan-save --format json --session-id="5b5f19e0-1391-4f60-8a07-c1a839931689" 2&gt;&amp;1</param>
+    <param name="description">Save plan to GitHub</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2258" cache_read_input_tokens="82176" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2258, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013MJgPYiKbEUCGLjseJDcd9">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AsMWuHauR8VyoeYxttGAV7">
+    <param name="command">erk exec plan-save --format json --session-id="5b5f19e0-1391-4f60-8a07-c1a839931689" 2&gt;&amp;1; echo "EXIT: $?"</param>
+    <param name="description">Run plan-save with exit code capture</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="84434" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AsMWuHauR8VyoeYxttGAV7">
+{"success": true, "issue_number": 7902, "skipped_duplicate": true, "message": "Session already saved plan #7902"}
+EXIT: 0
+  </tool_result>
+  <thinking>The plan was already saved as #7902 earlier in this session. Let me get the details of that plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="84694" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The plan was already saved as PR #7902 in this session. Let me get the details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="84694" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CsXq1RD4CCfmyDZaVcT2t4">
+    <param name="command">gh pr view 7902 --json url,title,headRefName 2&gt;&amp;1</param>
+    <param name="description">Get PR details for plan #7902</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="84694" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CsXq1RD4CCfmyDZaVcT2t4">
+{"headRefName":"plnd/add-plan-only-02-22-1324","title":"[erk-plan] Add `--plan-only` flag to `erk one-shot`","url":"https://github.com/dagster-io/erk/pull/7902"}
+  </tool_result>
+  <assistant>Plan **"Add `--plan-only` flag to `erk one-shot`"** saved as draft PR #7902.
+URL: https://github.com/dagster-io/erk/pull/7902
+
+**Next steps:**
+
+View PR: `gh pr view 7902 --web`
+
+In Claude Code:
+- Submit to queue: `/erk:plan-submit` — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+```
+Same slot (recommended — you're in a slot):
+  Local: erk br co plnd/add-plan-only-02-22-1324
+  Implement: source "$(erk br co plnd/add-plan-only-02-22-1324 --script)" &amp;&amp; erk implement --dangerous
+
+New slot:
+  Local: erk br co --new-slot plnd/add-plan-only-02-22-1324
+  Implement: source "$(erk br co --new-slot plnd/add-plan-only-02-22-1324 --script)" &amp;&amp; erk implement --dangerous
+
+Submit to Queue: erk plan submit 7902
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="84871" output_tokens="271" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 331, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+</session>
