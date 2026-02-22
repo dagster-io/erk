@@ -61,6 +61,7 @@ from erk_shared.impl_folder import read_plan_ref
 from erk_shared.plan_store import get_plan_backend
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
+from erk_shared.scratch.session_markers import read_objective_context_marker
 
 # Known terminal-based editors that cannot run inside Claude Code
 TERMINAL_EDITORS = frozenset(
@@ -608,6 +609,8 @@ def _get_objective_context_marker_path(session_id: str, repo_root: Path) -> Path
 def _read_objective_context(session_id: str, repo_root: Path) -> int | None:
     """Read objective issue number from marker, if present.
 
+    Delegates to shared implementation in erk_shared.scratch.session_markers.
+
     Args:
         session_id: The session ID to look up
         repo_root: Path to the git repository root
@@ -615,13 +618,7 @@ def _read_objective_context(session_id: str, repo_root: Path) -> int | None:
     Returns:
         Objective issue number, or None if marker doesn't exist or is invalid.
     """
-    marker_path = _get_objective_context_marker_path(session_id, repo_root)
-    if not marker_path.exists():
-        return None
-    content = marker_path.read_text(encoding="utf-8").strip()
-    if not content.isdigit():
-        return None
-    return int(content)
+    return read_objective_context_marker(session_id, repo_root)
 
 
 def _find_session_plan(

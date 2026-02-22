@@ -130,6 +130,19 @@ Replace `<issue-number>` with the issue number from Step 1.
 
 **Important:** The Task agent handles all JSON parsing and marker creation. The main conversation only receives the formatted summary.
 
+### Step 2.5: Verify Objective Context Marker
+
+Verify the marker was created by the Task agent:
+
+```bash
+erk exec marker read --session-id "${CLAUDE_SESSION_ID}" objective-context
+```
+
+If this returns a value matching the objective issue number, proceed.
+If it fails or returns wrong value, STOP and report:
+"ERROR: objective-context marker not created. Re-run the marker command manually:
+erk exec marker create --session-id '${CLAUDE_SESSION_ID}' --associated-objective <issue-number> objective-context"
+
 ### Step 3: Load Objective Skill
 
 Load the `objective` skill for format templates and guidance.
