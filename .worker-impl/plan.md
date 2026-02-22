@@ -13,12 +13,14 @@ Modify the summary format inside `REVIEW_PROMPT_TEMPLATE` (lines 103–130) so C
 ## New Summary Format
 
 The visible portion (outside `<details>`) should remain:
+
 - The HTML marker comment
 - The `## ✅/❌ {review_name}` header
 - `**Last updated:**` line
 - One-liner count: "Found X violations across Y files."
 
 Everything below that goes inside `<details><summary>Details</summary>`:
+
 - `### Patterns Checked`
 - `### Violations Summary`
 - `### Files Reviewed`
@@ -57,3 +59,4 @@ Found X violations across Y files. Inline comments posted for each.
 ### Activity Log
 - **YYYY-MM-DD HH:MM:SS PT**: [Brief description of this review's findings]
 - [Previous log entries preserved here...]
+```
