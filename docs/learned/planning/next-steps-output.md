@@ -23,12 +23,12 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 For issue-based plans. Takes `issue_number: int`.
 
-| Property                | Output                                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| `view`                  | `gh issue view {issue_number} --web`                                                        |
-| `prepare`               | `erk br create --for-plan {issue_number}`                                                   |
-| `submit`                | `erk plan submit {issue_number}`                                                            |
-| `prepare_and_implement` | `source "$(erk br create --for-plan {issue_number} --script)" && erk implement --dangerous` |
+| Property                | Output                                                                                  |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| `view`                  | `gh issue view {issue_number} --web`                                                    |
+| `prepare`               | `erk br co --for-plan {issue_number}`                                                   |
+| `submit`                | `erk plan submit {issue_number}`                                                        |
+| `prepare_and_implement` | `source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous` |
 
 ### `DraftPRNextSteps`
 

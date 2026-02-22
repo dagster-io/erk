@@ -24,7 +24,7 @@ Plan branches follow the pattern `P<issue-number>-<slug>`:
 
 Each plan implementation runs in an isolated worktree:
 
-1. `erk br create --for-plan <issue-number>` creates a new worktree from the plan issue
+1. `erk br co --for-plan <issue-number>` creates a new worktree from the plan issue
 2. The worktree gets its own `.impl/` folder with the plan content
 3. Implementation happens entirely within the worktree
 4. After PR lands, the worktree is cleaned up

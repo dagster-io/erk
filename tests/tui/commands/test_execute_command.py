@@ -135,8 +135,8 @@ class TestExecuteCommandCopyCommands:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_prepare")
-        assert executor.copied_texts == ["erk br create --for-plan 123"]
-        assert "Copied: erk br create --for-plan 123" in executor.notifications
+        assert executor.copied_texts == ["erk br co --for-plan 123"]
+        assert "Copied: erk br co --for-plan 123" in executor.notifications
 
     def test_copy_submit_copies_command(self) -> None:
         """copy_submit copies the submit command."""

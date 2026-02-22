@@ -134,6 +134,43 @@ Plan "<title>" saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #
 URL: <issue_url>
 ```
 
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan <issue_number>
+    Implement: source "$(erk br co --new-slot --for-plan <issue_number> --script)" && erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan <issue_number>
+    Implement: source "$(erk br co --for-plan <issue_number> --script)" && erk implement --dangerous
+
+  Submit to Queue: erk plan submit <issue_number>
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan <issue_number>
+    Implement: source "$(erk br co --for-plan <issue_number> --script)" && erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan <issue_number>
+    Implement: source "$(erk br co --new-slot --for-plan <issue_number> --script)" && erk implement --dangerous
+
+  Submit to Queue: erk plan submit <issue_number>
+```
+
+
 **If `plan_backend` is `"draft_pr"`:**
 
 ```

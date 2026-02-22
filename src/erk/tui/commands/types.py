@@ -47,7 +47,7 @@ class CommandDefinition:
         is_available: Predicate function to check if command is available
         get_display_name: Optional function to generate context-aware display name.
             If provided, returns the name to show in the palette
-            (e.g., "erk br create --for-plan 123").
+            (e.g., "erk br co --for-plan 123").
             If None, falls back to the static `name` field.
     """
 

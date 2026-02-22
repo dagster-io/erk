@@ -706,7 +706,7 @@ class TestCreateObjectiveIssue:
         assert len(fake_gh.updated_bodies) == 1
         _issue_num, updated_body = fake_gh.updated_bodies[0]
         assert "## Commands" not in updated_body
-        assert "erk br create --for-plan" not in updated_body
+        assert "erk br co --for-plan" not in updated_body
 
     def test_objective_with_extra_labels(self, tmp_path: Path) -> None:
         """Objective issues can have extra labels."""
@@ -820,7 +820,7 @@ class TestCreatePlanIssueCommandsSection:
 
         # Check for commands section with correct issue number
         assert "## Commands" in updated_body
-        assert "erk br create --for-plan 1" in updated_body
+        assert "erk br co --for-plan 1" in updated_body
         assert "erk plan submit 1" in updated_body
 
     def test_learn_plan_does_not_include_commands_section(self, tmp_path: Path) -> None:
@@ -853,7 +853,7 @@ class TestCreatePlanIssueCommandsSection:
 
         # Commands section should NOT be present
         assert "## Commands" not in updated_body
-        assert "erk br create --for-plan" not in updated_body
+        assert "erk br co --for-plan" not in updated_body
 
     def test_commands_section_uses_correct_issue_number(self, tmp_path: Path) -> None:
         """Commands section should reference the actual issue number."""
@@ -880,5 +880,5 @@ class TestCreatePlanIssueCommandsSection:
 
         # Verify commands reference issue 42, not 1
         _, updated_body = fake_gh.updated_bodies[0]
-        assert "erk br create --for-plan 42" in updated_body
+        assert "erk br co --for-plan 42" in updated_body
         assert "erk plan submit 42" in updated_body
