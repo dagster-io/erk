@@ -158,15 +158,11 @@ class PlanDataTable(DataTable):
 
         # Objectives view: fully independent column set, return early
         if self._view_mode == ViewMode.OBJECTIVES:
-            self.add_column("title", key="title", width=50)
+            self.add_column("slug", key="slug", width=25)
             col_index += 1
             self.add_column("prog", key="progress", width=5)
             col_index += 1
-            self.add_column("fly", key="in_flight", width=3)
-            col_index += 1
-            self.add_column("next node", key="next_node", width=50)
-            col_index += 1
-            self.add_column("deps", key="deps", width=12)
+            self.add_column("state", key="state", width=20)
             col_index += 1
             self.add_column("updated", key="updated", width=7)
             col_index += 1
@@ -272,15 +268,13 @@ class PlanDataTable(DataTable):
         if row.plan_url:
             plan_cell = Text(plan_cell, style="cyan underline")
 
-        # Objectives view: plan, progress, fly, next, updated, author
+        # Objectives view: plan, slug, progress, state, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
             return (
                 plan_cell,
-                row.full_title,
+                row.objective_slug_display,
                 row.objective_progress_display,
-                row.objective_in_flight_display,
-                Text(row.objective_next_node_display),
-                row.objective_deps_display,
+                Text(row.objective_state_display),
                 row.updated_display,
                 row.author,
             )
