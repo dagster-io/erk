@@ -44,6 +44,31 @@ class RestackError:
 
 
 # =============================================================================
+# Sync Operation Types
+# =============================================================================
+
+
+SyncErrorType = Literal["sync-unstaged-changes", "sync-failed"]
+
+
+@dataclass(frozen=True)
+class SyncSuccess:
+    """Success result from idempotent sync."""
+
+    success: Literal[True]
+    message: str
+
+
+@dataclass(frozen=True)
+class SyncError:
+    """Error result from idempotent sync."""
+
+    success: Literal[False]
+    error_type: SyncErrorType
+    message: str
+
+
+# =============================================================================
 # Squash Operation Types
 # =============================================================================
 

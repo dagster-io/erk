@@ -11,7 +11,14 @@ from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.gateway.graphite.types import BranchMetadata
 
 if TYPE_CHECKING:
-    from erk_shared.gateway.gt.types import RestackError, RestackSuccess, SquashError, SquashSuccess
+    from erk_shared.gateway.gt.types import (
+        RestackError,
+        RestackSuccess,
+        SquashError,
+        SquashSuccess,
+        SyncError,
+        SyncSuccess,
+    )
 
 
 class Graphite(ABC):
@@ -407,6 +414,51 @@ class Graphite(ABC):
                 success=False,
                 error="squash-failed",
                 message=f"Failed to squash: {e}",
+            )
+
+    def sync_idempotent(
+        self, repo_root: Path, *, force: bool, quiet: bool
+    ) -> SyncSuccess | SyncError:
+        """Sync with remote with structured result handling.
+
+        This method wraps sync() and handles exceptions to return a typed
+        result instead of raising. It encapsulates the exception-to-result
+        conversion at the gateway boundary, keeping CLI code LBYL-compliant.
+
+        The gt sync command is all-or-nothing: it exits 1 if ANY branch has
+        problems, even if the current branch synced fine. This method converts
+        that hard failure into a warning-level result so callers can continue.
+
+        Args:
+            repo_root: Repository root directory
+            force: If True, pass --force flag to gt sync
+            quiet: If True, pass --quiet flag to gt sync for minimal output
+
+        Returns:
+            SyncSuccess if sync succeeded
+            SyncError if sync failed (with error_type distinguishing unstaged changes)
+        """
+        from erk_shared.gateway.gt.types import SyncError, SyncSuccess
+
+        try:
+            self.sync(repo_root, force=force, quiet=quiet)
+            return SyncSuccess(
+                success=True,
+                message="Synced with remote.",
+            )
+        except RuntimeError as e:
+            error_msg = str(e).lower()
+
+            if "unstaged changes" in error_msg or "conflicting unstaged" in error_msg:
+                return SyncError(
+                    success=False,
+                    error_type="sync-unstaged-changes",
+                    message=str(e),
+                )
+            return SyncError(
+                success=False,
+                error_type="sync-failed",
+                message=f"Failed to sync: {e}",
             )
 
     def restack_idempotent(self, repo_root: Path, *, quiet: bool) -> RestackSuccess | RestackError:

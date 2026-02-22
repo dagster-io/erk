@@ -39,7 +39,7 @@ from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations.squash import execute_squash
-from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess
+from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess, SyncError
 from erk_shared.output.output import user_output
 
 
@@ -228,8 +228,11 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
         # Sync with remote to pull any new commits
         user_output("Syncing with remote...")
-        ctx.graphite.sync(repo.root, force=True, quiet=False)
-        user_output(click.style("✓", fg="green") + " Synced with remote")
+        sync_result = ctx.graphite.sync_idempotent(repo.root, force=True, quiet=False)
+        if isinstance(sync_result, SyncError):
+            user_output(click.style("⚠", fg="yellow") + f" Sync warning: {sync_result.message}")
+        else:
+            user_output(click.style("✓", fg="green") + " Synced with remote")
 
         # Restack to incorporate parent branch changes
         user_output("Restacking branch...")
