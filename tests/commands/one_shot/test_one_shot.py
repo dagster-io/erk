@@ -344,6 +344,37 @@ def test_one_shot_file_and_argument_rejected() -> None:
         assert "not both" in result.output
 
 
+def test_one_shot_plan_only_flag() -> None:
+    """Test --plan-only flag is passed through to workflow inputs."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        github = FakeGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "create a plan for refactoring", "--plan-only"],
+            obj=ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        # Verify plan_only was passed to workflow inputs
+        assert len(github.triggered_workflows) == 1
+        _workflow, inputs = github.triggered_workflows[0]
+        assert inputs["plan_only"] == "true"
+
+
 def test_one_shot_no_prompt_rejected() -> None:
     """Test that providing neither argument nor --file is rejected."""
     runner = CliRunner()

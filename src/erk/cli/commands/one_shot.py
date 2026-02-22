@@ -97,9 +97,7 @@ def one_shot(
     # Normalize model name
     model = normalize_model_name(model)
 
-    extra: dict[str, str] = {}
-    if plan_only:
-        extra["plan_only"] = "true"
+    extra = {"plan_only": "true"} if plan_only else {}
 
     params = OneShotDispatchParams(
         prompt=prompt,
