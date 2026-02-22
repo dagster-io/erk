@@ -127,7 +127,7 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     assert pr[1] == f"[erk-plan-review] {plan_title} (#{issue_number})"  # title
     assert f"issue #{issue_number}" in pr[2]  # body contains issue reference
     assert "Quick Start" in pr[2]  # body contains Quick Start section
-    assert f"erk br create --for-plan {issue_number}" in pr[2]  # body contains prepare command
+    assert f"erk br co --for-plan {issue_number}" in pr[2]  # body contains prepare command
     assert pr[3] == "master"  # base
     assert pr[4] is True  # draft=True
 
@@ -242,9 +242,9 @@ def test_plan_create_review_pr_body_format(tmp_path: Path) -> None:
     assert "will not be merged" in pr_body
     assert "inline review comments" in pr_body
     assert "Quick Start" in pr_body
-    assert f"erk br create --for-plan {issue_number}" in pr_body
+    assert f"erk br co --for-plan {issue_number}" in pr_body
     prepare_and_implement_cmd = (
-        f'source "$(erk br create --for-plan {issue_number} --script)" && erk implement --dangerous'
+        f'source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous'
     )
     assert prepare_and_implement_cmd in pr_body
 

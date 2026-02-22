@@ -132,7 +132,7 @@ def checkout_plan(
         user_output(
             f"No local branch or open PR found for plan #{issue_number}\n\n"
             "This plan has not been implemented yet. To prepare it:\n"
-            f"  • Run: erk br create --for-plan {issue_number}"
+            f"  • Run: erk br co --for-plan {issue_number}"
         )
         raise SystemExit(1)
 

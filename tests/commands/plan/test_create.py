@@ -30,7 +30,7 @@ def test_create_from_file(tmp_path) -> None:
         assert "Created plan #1" in result.output
         assert "https://github.com/test-owner/test-repo/issues/1" in result.output
         assert "View:       erk get 1" in result.output
-        assert "Prepare:    erk br create --for-plan 1" in result.output
+        assert "Prepare:    erk br co --for-plan 1" in result.output
         assert "Submit:     erk plan submit 1" in result.output
 
         # Verify issue was created with correct data

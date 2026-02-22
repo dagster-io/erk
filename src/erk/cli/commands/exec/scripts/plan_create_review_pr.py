@@ -78,12 +78,12 @@ This PR is for reviewing the plan in issue #{issue_number}.
 
 Prepare worktree only:
 ```
-erk br create --for-plan {issue_number}
+erk br co --for-plan {issue_number}
 ```
 
 Prepare and implement:
 ```
-source "$(erk br create --for-plan {issue_number} --script)" && erk implement --dangerous
+source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous
 ```
 
 ## Important
