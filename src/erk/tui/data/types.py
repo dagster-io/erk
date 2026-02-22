@@ -130,17 +130,14 @@ class PlanFilters:
         state: Filter by state ("open", "closed", or None for all)
         run_state: Filter by workflow run state (e.g., "in_progress")
         limit: Maximum number of results (None for no limit)
-        show_prs: Whether to include PR data
-        show_runs: Whether to include workflow run data
         creator: Filter by creator username (None for all users)
+        show_pr_column: Whether to show the separate "pr" column (suppressed in draft_pr mode)
     """
 
     labels: tuple[str, ...]
     state: str | None
     run_state: str | None
     limit: int | None
-    show_prs: bool
-    show_runs: bool
     creator: str | None = None
     show_pr_column: bool = True
 
@@ -152,7 +149,5 @@ class PlanFilters:
             state=None,
             run_state=None,
             limit=None,
-            show_prs=False,
-            show_runs=False,
             creator=None,
         )

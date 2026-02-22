@@ -113,10 +113,10 @@ Implementation details"""
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
-        # Verify workflow run ID appears
+        # Verify workflow run ID appears (run columns always shown)
         output = strip_ansi(result.output)
         assert "12345678" in output, "Expected run ID in output"
 
@@ -203,10 +203,10 @@ last_dispatched_node_id: 'WFR_def456'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
-        # Verify run ID and OSC 8 link present
+        # Verify run ID and OSC 8 link present (run columns always shown)
         assert "87654321" in result.output, "Expected run ID"
         # Rich table uses [link=URL] markup, but we check for run ID presence
         output = strip_ansi(result.output)
@@ -289,10 +289,10 @@ last_dispatched_node_id: 'WFR_ghi789'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
-        # Verify run ID displays (without link)
+        # Verify run ID displays (without link, run columns always shown)
         output = strip_ansi(result.output)
         assert "99887766" in output
 
@@ -351,10 +351,10 @@ def test_plan_list_handles_missing_workflow_run() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
-        # Verify "-" appears in run-id column
+        # Verify "-" appears in run-id column (run columns always shown)
         output = strip_ansi(result.output)
         assert "run-id" in output, "Expected run-id column header"
         # Run ID cell should show "-"
@@ -553,10 +553,10 @@ last_dispatched_node_id: 'WFR_node2'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
-        # Verify both run IDs appear
+        # Verify both run IDs appear (run columns always shown)
         output = strip_ansi(result.output)
         assert "11111111" in output, "Expected first run ID"
         assert "22222222" in output, "Expected second run ID"
