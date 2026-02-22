@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Split status indicators into separate 'sts' column in TUI dashboard"
+}
