@@ -1075,3 +1075,106 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_after_deleting_b
     # Verify branch was deleted
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
+
+
+def test_cleanup_no_worktree_detaches_branch_checked_out_in_another_worktree(
+    tmp_path: Path,
+) -> None:
+    """Test that _cleanup_no_worktree detaches branch before deletion when checked out elsewhere.
+
+    Regression test for bug where landing from TUI (worktree_path=None) crashed with:
+    "branch is currently checked out in another worktree and cannot be deleted"
+
+    Root cause: _cleanup_no_worktree() was the only cleanup path that did not call
+    _ensure_branch_not_checked_out() before branch deletion. All other cleanup paths
+    had this defensive check.
+
+    The fix adds the same _ensure_branch_not_checked_out() call to _cleanup_no_worktree().
+    """
+    # Branch is checked out in an implementation worktree, but land is called
+    # with worktree_path=None (e.g., from TUI or landing by URL)
+    impl_worktree_path = tmp_path / ".claude" / "worktrees" / "planned-feature"
+    impl_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [
+                WorktreeInfo(path=impl_worktree_path, branch="feature-branch"),
+            ]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        trunk_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            impl_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+        },
+    )
+
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=main_repo_root,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=main_repo_root / "pool.json",
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate with worktree_path=None (NO_WORKTREE path)
+    # Without the fix: delete_branch fails because branch is checked out in impl_worktree_path
+    # With the fix: _ensure_branch_not_checked_out detaches HEAD first, then deletion succeeds
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=None,  # Key: no worktree path (TUI / URL landing)
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            no_delete=False,
+            skip_activation_output=False,
+            cleanup_confirmed=True,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify _ensure_branch_not_checked_out detached HEAD at trunk in the impl worktree
+    detached_calls = [
+        (path, ref)
+        for path, ref in fake_git.detached_checkouts
+        if ref == "main" and path.resolve() == impl_worktree_path.resolve()
+    ]
+    assert len(detached_calls) == 1, (
+        f"Expected detached checkout at impl_worktree_path. "
+        f"Got detached_checkouts: {fake_git.detached_checkouts}"
+    )
+
+    # Verify branch was deleted successfully after detaching
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
