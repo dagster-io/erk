@@ -20,6 +20,7 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block
 
 
 def make_plan_header_body(
+    *,
     schema_version: str = "2",
     created_at: str = "2025-11-25T14:37:43.513418+00:00",
     created_by: str = "testuser",

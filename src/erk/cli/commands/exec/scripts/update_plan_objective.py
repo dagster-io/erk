@@ -75,7 +75,7 @@ def update_plan_objective(
             message=f"Failed to update plan objective: {e}",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(1) from e
 
     result_success = UpdateSuccess(
         success=True,
