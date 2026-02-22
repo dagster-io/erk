@@ -1,4 +1,6 @@
- (erk) ➜  erk-slot-21 git:(planned/plan-add-erk-cc-usage-f-02-22-0606) erk down --delete-current -f
+_One-shot: plan content will be populated by one-shot workflow._
+
+**Prompt:**  (erk) ➜  erk-slot-21 git:(planned/plan-add-erk-cc-usage-f-02-22-0606) erk down --delete-current -f
 Warning: Pull request for branch 'planned/plan-add-erk-cc-usage-f-02-22-0606' is still open.
 https://github.com/dagster-io/erk/pull/7824
 Delete branch anyway? [y/N]: y
@@ -27,4 +29,3 @@ Proceed with these operations? [Y/n]:
 (erk) ➜  erk git:(master)
 
 make -f actually skip these prompts
-
