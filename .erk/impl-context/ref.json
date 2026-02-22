@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Add `--plan-only` flag to `erk one-shot`"
-}
