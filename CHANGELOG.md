@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_As of `177a1838f` (2026-02-22)_
+
+### Added
+
+- LLM-generated branch name slugs with shortened `plnd/` prefix for meaningful, compact branch names
+- Add `--env` flag to `erk codespace connect` for setting environment variables in remote sessions
+- Add `-f/--force` flag to `erk up`/`erk down` to skip interactive prompts and auto-close PRs during destructive operations
+
+### Changed
+
+- Restore abbreviated stage names (impling, impld) in TUI dashboard to fit column width
+- Enhance objective view with parallel in-flight status, planning indicator, and multiple unblocked nodes
+
+### Fixed
+
+- Fix objective prose reconciliation reading metadata-only body instead of comment's objective-body block
+
 ## [0.8.0] - 2026-02-22 03:40 PT
 
 ### Release Overview
