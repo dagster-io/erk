@@ -460,6 +460,7 @@ def _submit_draft_pr_plan(
         repo_root=repo.root,
         provider="github-draft-pr",
         objective_id=plan.objective_id,
+        now_iso=ctx.time.now().isoformat(),
     )
 
     # Stage, commit, and push
@@ -734,6 +735,7 @@ def _create_branch_and_pr(
         repo_root=repo.root,
         provider="github",
         objective_id=plan.objective_id,
+        now_iso=ctx.time.now().isoformat(),
     )
 
     # Stage, commit, and push

@@ -18,7 +18,7 @@ The erk system uses two distinct folders for implementation plans, each with dif
 | ---------- | ---------------------------------------------------- |
 | Created by | Remote implementation workflow                       |
 | Purpose    | Make plan visible in PR immediately                  |
-| Contains   | plan.md, issue.json, progress.md, README.md          |
+| Contains   | plan.md, ref.json                                    |
 | Lifecycle  | Created before remote impl, deleted after completion |
 | Committed  | Yes (visible in PR diff)                             |
 
@@ -28,7 +28,7 @@ The erk system uses two distinct folders for implementation plans, each with dif
 | ---------- | ------------------------------------------------------- |
 | Created by | Copy of .erk/impl-context/ OR local `erk implement`     |
 | Purpose    | Working directory for implementation                    |
-| Contains   | Same structure as .erk/impl-context/ plus run-info.json |
+| Contains   | plan.md, plan-ref.json, plus run-info.json              |
 | Lifecycle  | Exists during implementation only                       |
 | Committed  | Never (in .gitignore)                                   |
 

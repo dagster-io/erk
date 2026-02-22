@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+FAKE_NOW_ISO = "2025-01-15T10:30:00+00:00"
+
 
 def test_create_impl_context_success(tmp_path: Path) -> None:
     """Test creating .erk/impl-context/ folder with all required files."""
@@ -25,6 +27,7 @@ def test_create_impl_context_success(tmp_path: Path) -> None:
         repo_root=tmp_path,
         provider="github",
         objective_id=None,
+        now_iso=FAKE_NOW_ISO,
     )
 
     # Verify folder was created
@@ -65,6 +68,7 @@ def test_create_impl_context_already_exists(tmp_path: Path) -> None:
             repo_root=tmp_path,
             provider="github",
             objective_id=None,
+            now_iso=FAKE_NOW_ISO,
         )
 
 
@@ -82,6 +86,7 @@ def test_create_impl_context_repo_root_not_exists(tmp_path: Path) -> None:
             repo_root=nonexistent_path,
             provider="github",
             objective_id=None,
+            now_iso=FAKE_NOW_ISO,
         )
 
 
@@ -101,6 +106,7 @@ def test_create_impl_context_repo_root_not_directory(tmp_path: Path) -> None:
             repo_root=file_path,
             provider="github",
             objective_id=None,
+            now_iso=FAKE_NOW_ISO,
         )
 
 
@@ -116,6 +122,7 @@ def test_remove_impl_context_success(tmp_path: Path) -> None:
         repo_root=tmp_path,
         provider="github",
         objective_id=None,
+        now_iso=FAKE_NOW_ISO,
     )
 
     impl_context_dir = tmp_path / ".erk" / "impl-context"
@@ -158,6 +165,7 @@ def test_impl_context_exists_true(tmp_path: Path) -> None:
         repo_root=tmp_path,
         provider="github",
         objective_id=None,
+        now_iso=FAKE_NOW_ISO,
     )
 
     assert impl_context_exists(tmp_path) is True
@@ -208,6 +216,7 @@ def example():
         repo_root=tmp_path,
         provider="github",
         objective_id=None,
+        now_iso=FAKE_NOW_ISO,
     )
 
     plan_file = tmp_path / ".erk" / "impl-context" / "plan.md"
@@ -228,6 +237,7 @@ def test_create_impl_context_with_objective_id(tmp_path: Path) -> None:
         repo_root=tmp_path,
         provider="github",
         objective_id=456,
+        now_iso=FAKE_NOW_ISO,
     )
 
     ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
@@ -248,6 +258,7 @@ def test_create_impl_context_with_draft_pr_provider(tmp_path: Path) -> None:
         repo_root=tmp_path,
         provider="github-draft-pr",
         objective_id=None,
+        now_iso=FAKE_NOW_ISO,
     )
 
     ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
@@ -269,6 +280,7 @@ def test_create_impl_context_no_readme(tmp_path: Path) -> None:
         repo_root=tmp_path,
         provider="github",
         objective_id=None,
+        now_iso=FAKE_NOW_ISO,
     )
 
     readme_file = tmp_path / ".erk" / "impl-context" / "README.md"

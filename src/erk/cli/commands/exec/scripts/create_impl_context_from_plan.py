@@ -22,6 +22,7 @@ Examples:
 """
 
 import json
+from datetime import UTC, datetime
 
 import click
 
@@ -75,6 +76,7 @@ def create_impl_context_from_plan(
         repo_root=repo_root,
         provider=provider,
         objective_id=plan.objective_id,
+        now_iso=datetime.now(UTC).isoformat(),
     )
 
     # Output structured success result

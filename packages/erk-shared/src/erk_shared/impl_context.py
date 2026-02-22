@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import json
 import shutil
-from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
@@ -33,6 +32,7 @@ def create_impl_context(
     *,
     provider: str,
     objective_id: int | None,
+    now_iso: str,
 ) -> Path:
     """Create .erk/impl-context/ folder with plan and metadata.
 
@@ -43,6 +43,7 @@ def create_impl_context(
         repo_root: Repository root directory path
         provider: Plan provider name (e.g., "github", "github-draft-pr")
         objective_id: Optional linked objective issue number
+        now_iso: ISO 8601 UTC timestamp for created_at/synced_at fields
 
     Returns:
         Path to the created .erk/impl-context/ directory
@@ -69,13 +70,12 @@ def create_impl_context(
     plan_file.write_text(plan_content, encoding="utf-8")
 
     # Write ref.json directly (lighter format than plan-ref.json)
-    now = datetime.now(UTC).isoformat()
     ref_data: dict[str, str | int | list[str] | None] = {
         "provider": provider,
         "plan_id": plan_id,
         "url": url,
-        "created_at": now,
-        "synced_at": now,
+        "created_at": now_iso,
+        "synced_at": now_iso,
         "labels": [],
         "objective_id": objective_id,
     }
