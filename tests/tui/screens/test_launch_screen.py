@@ -1,5 +1,6 @@
 """Tests for the LaunchScreen modal."""
 
+from erk.tui.commands.registry import get_all_commands
 from erk.tui.commands.types import CommandCategory, CommandContext
 from erk.tui.screens.launch_screen import LAUNCH_KEYS, LaunchScreen
 from erk.tui.views.types import ViewMode
@@ -8,8 +9,6 @@ from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 def test_launch_keys_only_maps_action_commands() -> None:
     """All command IDs in LAUNCH_KEYS should be ACTION category commands."""
-    from erk.tui.commands.registry import get_all_commands
-
     all_commands = get_all_commands()
     action_ids = {cmd.id for cmd in all_commands if cmd.category == CommandCategory.ACTION}
     for command_id in LAUNCH_KEYS:
