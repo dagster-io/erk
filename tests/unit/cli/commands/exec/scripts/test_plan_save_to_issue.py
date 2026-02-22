@@ -1138,6 +1138,122 @@ def test_plan_save_no_marker_no_flag(tmp_path: Path) -> None:
         assert "Auto-linked" not in result.output
 
 
+def test_plan_save_to_issue_on_trunk_json(tmp_path: Path) -> None:
+    """on_trunk=True in JSON when current branch matches trunk."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "main"},
+        trunk_branches={tmp_path: "main"},
+    )
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"trunk-test": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            claude_installation=fake_store,
+            cwd=tmp_path,
+            repo_root=tmp_path,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["on_trunk"] is True
+
+
+def test_plan_save_to_issue_not_on_trunk_json(tmp_path: Path) -> None:
+    """on_trunk=False in JSON when current branch differs from trunk."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
+    )
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"not-trunk-test": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            claude_installation=fake_store,
+            cwd=tmp_path,
+            repo_root=tmp_path,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["on_trunk"] is False
+
+
+def test_plan_save_to_issue_display_on_trunk_shows_new_slot_first(tmp_path: Path) -> None:
+    """Display format on trunk shows 'New slot (recommended)' before 'Same slot'."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "main"},
+        trunk_branches={tmp_path: "main"},
+    )
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"trunk-display": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "display"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            claude_installation=fake_store,
+            cwd=tmp_path,
+            repo_root=tmp_path,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # "New slot" should appear before "Same slot" when on trunk
+    new_slot_pos = result.output.index("New slot (recommended")
+    same_slot_pos = result.output.index("Same slot:")
+    assert new_slot_pos < same_slot_pos
+
+
+def test_plan_save_to_issue_display_in_slot_shows_same_slot_first(tmp_path: Path) -> None:
+    """Display format in slot shows 'Same slot (recommended)' before 'New slot'."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
+    )
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"slot-display": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "display"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            claude_installation=fake_store,
+            cwd=tmp_path,
+            repo_root=tmp_path,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # "Same slot" should appear before "New slot" when in a slot
+    same_slot_pos = result.output.index("Same slot (recommended")
+    new_slot_pos = result.output.index("New slot:")
+    assert same_slot_pos < new_slot_pos
+
+
 def test_plan_save_to_issue_scratch_not_checked_without_session_id() -> None:
     """Test that scratch is not checked when no session_id is provided."""
     fake_gh = FakeGitHubIssues()

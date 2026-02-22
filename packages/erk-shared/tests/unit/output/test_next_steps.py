@@ -36,13 +36,45 @@ def test_issue_next_steps_prepare_uses_co() -> None:
 
 def test_format_draft_pr_next_steps_plain_uses_for_plan() -> None:
     """format_draft_pr_next_steps_plain uses --for-plan command."""
-    output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo")
+    output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo", on_trunk=False)
     assert "erk br co --for-plan 42" in output
     assert 'source "$(erk br co --for-plan 42 --script)"' in output
 
 
 def test_format_next_steps_plain_uses_co() -> None:
     """format_next_steps_plain uses erk br co --for-plan."""
-    output = format_next_steps_plain(99)
+    output = format_next_steps_plain(99, on_trunk=False)
     assert "erk br co --for-plan 99" in output
     assert "erk br create" not in output
+
+
+def test_format_next_steps_plain_on_trunk_recommends_new_slot() -> None:
+    """on_trunk=True shows 'New slot (recommended)' first."""
+    output = format_next_steps_plain(99, on_trunk=True)
+    new_slot_pos = output.index("New slot (recommended")
+    same_slot_pos = output.index("Same slot:")
+    assert new_slot_pos < same_slot_pos
+
+
+def test_format_next_steps_plain_in_slot_recommends_same_slot() -> None:
+    """on_trunk=False shows 'Same slot (recommended)' first."""
+    output = format_next_steps_plain(99, on_trunk=False)
+    same_slot_pos = output.index("Same slot (recommended")
+    new_slot_pos = output.index("New slot:")
+    assert same_slot_pos < new_slot_pos
+
+
+def test_format_draft_pr_next_steps_plain_on_trunk_recommends_new_slot() -> None:
+    """Draft PR: on_trunk=True shows 'New slot (recommended)' first."""
+    output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo", on_trunk=True)
+    new_slot_pos = output.index("New slot (recommended")
+    same_slot_pos = output.index("Same slot:")
+    assert new_slot_pos < same_slot_pos
+
+
+def test_format_draft_pr_next_steps_plain_in_slot_recommends_same_slot() -> None:
+    """Draft PR: on_trunk=False shows 'Same slot (recommended)' first."""
+    output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo", on_trunk=False)
+    same_slot_pos = output.index("Same slot (recommended")
+    new_slot_pos = output.index("New slot:")
+    assert same_slot_pos < new_slot_pos

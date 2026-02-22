@@ -180,10 +180,7 @@ View PR: gh pr view <issue_number> --web
 In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
 
-OR exit Claude Code first, then run one of:
-  Local: erk br co <branch_name>
-  Prepare+Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
-  Submit to Queue: erk plan submit <issue_number>
+<slot options block using on_trunk from JSON>
 ```
 
 **If `plan_backend` is `"github"` (or absent):**
@@ -197,10 +194,7 @@ In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
   Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
 
-OR exit Claude Code first, then run one of:
-  Local: erk br co <branch_name>
-  Prepare+Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
-  Submit to Queue: erk plan submit <issue_number>
+<slot options block using on_trunk from JSON>
 ```
 
 If objective was verified, also display: `Verified objective link: #<objective-number>`

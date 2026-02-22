@@ -53,7 +53,7 @@ def _draft_pr_context(
 
 
 def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Happy path: exit 0, JSON output has success/issue_number/branch_name."""
+    """Happy path: exit 0, JSON output has success/issue_number/branch_name/on_trunk."""
     ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
@@ -66,6 +66,37 @@ def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert "branch_name" in output
     assert output["branch_name"].startswith("plnd/")
     assert output["plan_backend"] == "draft_pr"
+    assert "on_trunk" in output
+
+
+def test_draft_pr_success_json_on_trunk(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """on_trunk=True when current branch matches trunk."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "main"})
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["on_trunk"] is True
+
+
+def test_draft_pr_success_json_not_on_trunk(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """on_trunk=False when current branch differs from trunk."""
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature-branch"}, trunk_branches={tmp_path: "main"}
+    )
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["on_trunk"] is False
 
 
 def test_draft_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

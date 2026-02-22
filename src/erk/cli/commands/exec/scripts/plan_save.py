@@ -259,6 +259,9 @@ def _save_as_draft_pr(
             repo_root=repo_root,
         )
 
+    # Detect whether user is on trunk for slot recommendation
+    on_trunk = current_branch is not None and current_branch == trunk
+
     # Output
     if output_format == "display":
         click.echo(f"Plan saved as draft PR #{plan_number}")
@@ -268,7 +271,11 @@ def _save_as_draft_pr(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_draft_pr_next_steps_plain(plan_number, branch_name=branch_name))
+        click.echo(
+            format_draft_pr_next_steps_plain(
+                plan_number, branch_name=branch_name, on_trunk=on_trunk
+            )
+        )
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
@@ -277,6 +284,7 @@ def _save_as_draft_pr(
             "title": prefixed_title,
             "branch_name": branch_name,
             "plan_backend": "draft_pr",
+            "on_trunk": on_trunk,
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)

@@ -33,6 +33,7 @@ from erk_shared.context.helpers import (
     get_repo_identifier,
     require_claude_installation,
     require_cwd,
+    require_git,
     require_local_config,
     require_repo_root,
 )
@@ -118,6 +119,12 @@ def plan_save_to_issue(
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
+    git = require_git(ctx)
+
+    # Detect trunk for slot recommendation
+    current_branch = git.branch.get_current_branch(cwd)
+    trunk = git.branch.detect_trunk_branch(cwd)
+    on_trunk = current_branch is not None and current_branch == trunk
 
     # session_id comes from --session-id CLI option (or None if not provided)
     effective_session_id = session_id
@@ -334,7 +341,7 @@ def plan_save_to_issue(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_next_steps_plain(result.issue_number))
+        click.echo(format_next_steps_plain(result.issue_number, on_trunk=on_trunk))
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
@@ -342,6 +349,7 @@ def plan_save_to_issue(
             "issue_url": result.issue_url,
             "title": result.title,
             "plan_backend": "github",
+            "on_trunk": on_trunk,
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)

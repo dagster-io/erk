@@ -73,27 +73,57 @@ class TestDraftPRNextSteps:
 
 class TestFormatNextStepsPlain:
     def test_contains_co_commands(self) -> None:
-        output = format_next_steps_plain(99)
+        output = format_next_steps_plain(99, on_trunk=False)
         assert "erk br co --for-plan 99" in output
 
     def test_contains_implement_command(self) -> None:
-        output = format_next_steps_plain(99)
+        output = format_next_steps_plain(99, on_trunk=False)
         assert 'source "$(erk br co --for-plan 99 --script)" && erk implement --dangerous' in output
 
     def test_does_not_contain_create(self) -> None:
-        output = format_next_steps_plain(99)
+        output = format_next_steps_plain(99, on_trunk=False)
         assert "erk br create" not in output
+
+    def test_on_trunk_recommends_new_slot(self) -> None:
+        output = format_next_steps_plain(99, on_trunk=True)
+        assert "New slot (recommended" in output
+        assert output.index("New slot (recommended") < output.index("Same slot:")
+
+    def test_in_slot_recommends_same_slot(self) -> None:
+        output = format_next_steps_plain(99, on_trunk=False)
+        assert "Same slot (recommended" in output
+        assert output.index("Same slot (recommended") < output.index("New slot:")
 
 
 class TestFormatDraftPRNextStepsPlain:
     def test_contains_for_plan_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
+        output = format_draft_pr_next_steps_plain(
+            42, branch_name="plan-my-feature-02-20", on_trunk=False
+        )
         assert "erk br co --for-plan 42" in output
 
     def test_contains_pr_number_in_view_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
+        output = format_draft_pr_next_steps_plain(
+            42, branch_name="plan-my-feature-02-20", on_trunk=False
+        )
         assert "gh pr view 42 --web" in output
 
     def test_contains_implement_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
+        output = format_draft_pr_next_steps_plain(
+            42, branch_name="plan-my-feature-02-20", on_trunk=False
+        )
         assert 'source "$(erk br co --for-plan 42 --script)" && erk implement --dangerous' in output
+
+    def test_on_trunk_recommends_new_slot(self) -> None:
+        output = format_draft_pr_next_steps_plain(
+            42, branch_name="plan-my-feature-02-20", on_trunk=True
+        )
+        assert "New slot (recommended" in output
+        assert output.index("New slot (recommended") < output.index("Same slot:")
+
+    def test_in_slot_recommends_same_slot(self) -> None:
+        output = format_draft_pr_next_steps_plain(
+            42, branch_name="plan-my-feature-02-20", on_trunk=False
+        )
+        assert "Same slot (recommended" in output
+        assert output.index("Same slot (recommended") < output.index("New slot:")
