@@ -7,8 +7,10 @@ from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     InvalidObjectiveSlug,
     InvalidPlanTitle,
+    InvalidWorktreeName,
     ValidObjectiveSlug,
     ValidPlanTitle,
+    ValidWorktreeName,
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
@@ -23,6 +25,7 @@ from erk_shared.naming import (
     strip_plan_from_filename,
     validate_objective_slug,
     validate_plan_title,
+    validate_worktree_name,
 )
 
 
@@ -773,3 +776,78 @@ def test_validate_plan_title_preserves_original_in_error() -> None:
     result = validate_plan_title("   ab   ")
     assert isinstance(result, InvalidPlanTitle)
     assert result.raw_title == "   ab   "
+
+
+# Tests for validate_worktree_name
+@pytest.mark.parametrize(
+    "name",
+    [
+        "add-auth-feature",
+        "fix-bug-123",
+        "a" * 31,
+        "work",
+        "my-feature-01-15-1430",  # timestamp-suffixed (idempotent)
+    ],
+)
+def test_validate_worktree_name_valid(name: str) -> None:
+    """Valid worktree names return ValidWorktreeName."""
+    result = validate_worktree_name(name)
+    assert isinstance(result, ValidWorktreeName)
+    assert result.name == name
+
+
+@pytest.mark.parametrize(
+    ("name", "reason_fragment"),
+    [
+        ("", "Empty"),
+        ("Add_Auth", "silently transformed"),
+        ("my__feature", "silently transformed"),
+        ("FOO-BAR", "silently transformed"),
+        ("@@weird", "silently transformed"),
+        ("--name", "silently transformed"),
+        ("name--bad", "silently transformed"),
+        ("a" * 35, "silently transformed"),
+    ],
+)
+def test_validate_worktree_name_invalid(name: str, reason_fragment: str) -> None:
+    """Invalid worktree names return InvalidWorktreeName with matching reason."""
+    result = validate_worktree_name(name)
+    assert isinstance(result, InvalidWorktreeName)
+    assert reason_fragment in result.reason
+
+
+def test_validate_worktree_name_error_type() -> None:
+    """Error type is machine-readable."""
+    result = validate_worktree_name("Add_Auth")
+    assert isinstance(result, InvalidWorktreeName)
+    assert result.error_type == "invalid-worktree-name"
+
+
+def test_validate_worktree_name_format_message_includes_rules() -> None:
+    """format_message() contains rules, examples, and diagnostics."""
+    result = validate_worktree_name("Add_Auth")
+    assert isinstance(result, InvalidWorktreeName)
+    message = result.format_message()
+    assert "Lowercase letters, digits, and hyphens only" in message
+    assert "No underscores" in message
+    assert "Valid examples" in message
+    assert "Invalid examples" in message
+    assert "Diagnostics" in message
+
+
+def test_validate_worktree_name_preserves_original_in_error() -> None:
+    """Error includes the original unmodified name."""
+    result = validate_worktree_name("  Add_Auth  ")
+    assert isinstance(result, InvalidWorktreeName)
+    assert result.raw_name == "  Add_Auth  "
+
+
+def test_validate_worktree_name_diagnostics_are_specific() -> None:
+    """Diagnostics list is non-empty and identifies specific issues."""
+    result = validate_worktree_name("Add_Auth")
+    assert isinstance(result, InvalidWorktreeName)
+    assert len(result.diagnostics) > 0
+    # Should identify both uppercase and underscore issues
+    diag_text = " ".join(result.diagnostics)
+    assert "uppercase" in diag_text.lower()
+    assert "underscore" in diag_text.lower()
