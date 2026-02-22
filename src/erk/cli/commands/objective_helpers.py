@@ -9,6 +9,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.naming import extract_objective_number
@@ -153,3 +154,43 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     if result.objective_id is not None:
         return result.objective_id
     return extract_objective_number(branch)
+
+
+def run_objective_update_after_land(
+    ctx: ErkContext,
+    *,
+    objective: int,
+    pr: int,
+    branch: str,
+) -> None:
+    """Run the objective update after a PR has been landed.
+
+    This is fail-open: catches all errors and never raises, because the
+    landing has already succeeded by the time this runs.
+    """
+    user_output(f"   Linked to Objective #{objective}")
+    user_output("")
+    user_output("Starting objective update...")
+
+    cmd = (
+        f"/erk:objective-update-with-landed-pr "
+        f"--pr {pr} --objective {objective} --branch {branch} --auto-close"
+    )
+
+    result = stream_command_with_feedback(
+        executor=ctx.prompt_executor,
+        command=cmd,
+        worktree_path=ctx.cwd,
+        dangerous=True,
+        permission_mode="edits",
+    )
+
+    if result.success:
+        user_output("")
+        user_output(click.style("✓", fg="green") + " Objective updated successfully")
+    else:
+        user_output("")
+        user_output(
+            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+        )
+        user_output("  Run '/erk:objective-update-with-landed-pr' manually to retry")

@@ -84,8 +84,8 @@ def test_render_land_execution_script_bakes_in_static_flags() -> None:
     assert "--worktree-path=/worktrees/feature" in script
     assert "--is-current-branch" in script
     assert "--use-graphite" in script
-    # Objective is emitted as a separate command, not as a land-execute flag
-    assert "erk exec objective-update-after-land --objective 42" in script
+    # Objective number is baked into the land-execute command as a flag
+    assert "--objective-number=42" in script
 
 
 def test_render_land_execution_script_without_static_flags() -> None:
@@ -104,8 +104,8 @@ def test_render_land_execution_script_without_static_flags() -> None:
     assert "--worktree-path" not in script
     assert "--is-current-branch" not in script
     assert "--use-graphite" not in script
-    # No objective update command when objective_number is None
-    assert "objective-update-after-land" not in script
+    # No objective flag when objective_number is None
+    assert "--objective-number" not in script
 
 
 def test_render_land_execution_script_does_not_bake_user_flags() -> None:
@@ -200,47 +200,6 @@ def test_render_land_execution_script_stops_on_execute_failure() -> None:
     cd_line_idx = next(i for i, line in enumerate(lines) if line.startswith("cd "))
     assert "|| return 1" in lines[exec_line_idx]
     assert exec_line_idx < cd_line_idx
-
-
-def test_render_land_execution_script_objective_update_is_fail_open() -> None:
-    """Objective update line has no || return 1 (fail-open, landing already succeeded)."""
-    script = render_land_execution_script(
-        pr_number=123,
-        branch="feature-branch",
-        worktree_path=None,
-        is_current_branch=False,
-        objective_number=42,
-        use_graphite=False,
-        cleanup_confirmed=True,
-        target_path=Path("/repo"),
-    )
-
-    lines = script.strip().splitlines()
-    objective_line = next(line for line in lines if "objective-update-after-land" in line)
-    # The objective line must NOT have || return 1
-    assert "|| return 1" not in objective_line
-    # But the land-execute line still has it
-    exec_line = next(line for line in lines if "erk exec land-execute" in line)
-    assert "|| return 1" in exec_line
-
-
-def test_render_land_execution_script_objective_uses_shell_variables() -> None:
-    """Objective update command uses $PR_NUMBER and $BRANCH shell variables."""
-    script = render_land_execution_script(
-        pr_number=123,
-        branch="feature-branch",
-        worktree_path=None,
-        is_current_branch=False,
-        objective_number=42,
-        use_graphite=False,
-        cleanup_confirmed=True,
-        target_path=Path("/repo"),
-    )
-
-    lines = script.strip().splitlines()
-    objective_line = next(line for line in lines if "objective-update-after-land" in line)
-    assert '--pr "$PR_NUMBER"' in objective_line
-    assert '--branch "$BRANCH"' in objective_line
 
 
 def test_render_land_execution_script_has_header_comment() -> None:
