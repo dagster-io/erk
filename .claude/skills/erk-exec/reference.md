@@ -28,7 +28,7 @@ Quick reference for all `erk exec` subcommands.
 | `close-issue-with-comment`        | Close a plan with a comment.                                                |
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                   |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                  |
-| `create-worker-impl-from-issue`   | Create .worker-impl/ folder from plan content.                              |
+| `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                         |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                            |
@@ -243,11 +243,11 @@ Create GitHub issue from plan content with erk-plan label.
 
 **Usage:** `erk exec create-plan-from-context`
 
-### create-worker-impl-from-issue
+### create-impl-context-from-plan
 
-Create .worker-impl/ folder from plan content.
+Create .erk/impl-context/ folder from plan content.
 
-**Usage:** `erk exec create-worker-impl-from-issue` <plan_id>
+**Usage:** `erk exec create-impl-context-from-plan` <plan_id>
 
 **Arguments:**
 

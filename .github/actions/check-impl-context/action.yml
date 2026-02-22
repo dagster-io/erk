@@ -1,0 +1,21 @@
+name: Check for Implementation Context Folder
+description: Checks if .erk/impl-context folder exists and sets skip output
+
+outputs:
+  skip:
+    description: Whether to skip CI (true if .erk/impl-context exists)
+    value: ${{ steps.check.outputs.skip }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check for implementation context folder
+      id: check
+      shell: bash
+      run: |
+        if [ -d ".erk/impl-context" ]; then
+          echo "skip=true" >> $GITHUB_OUTPUT
+          echo "Skipping CI - .erk/impl-context folder detected (AI implementation pending)"
+        else
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi

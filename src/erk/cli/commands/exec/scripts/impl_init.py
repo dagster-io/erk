@@ -39,7 +39,7 @@ def _error_json(error_type: str, message: str) -> NoReturn:
 
 
 def _validate_impl_folder() -> tuple[Path, str]:
-    """Validate .impl/ or .worker-impl/ folder exists and has required files.
+    """Validate .impl/ or .erk/impl-context/ folder exists and has required files.
 
     Returns:
         Tuple of (impl_dir Path, impl_type string)
@@ -49,18 +49,18 @@ def _validate_impl_folder() -> tuple[Path, str]:
     """
     cwd = Path.cwd()
 
-    # Check .impl/ first, then .worker-impl/
+    # Check .impl/ first, then .erk/impl-context/
     impl_dir = cwd / ".impl"
     impl_type = "impl"
 
     if not impl_dir.exists():
-        impl_dir = cwd / ".worker-impl"
-        impl_type = "worker-impl"
+        impl_dir = cwd / ".erk" / "impl-context"
+        impl_type = "impl-context"
 
     if not impl_dir.exists():
         _error_json(
             "no_impl_folder",
-            "No .impl/ or .worker-impl/ folder found in current directory",
+            "No .impl/ or .erk/impl-context/ folder found in current directory",
         )
 
     plan_file = impl_dir / "plan.md"

@@ -66,10 +66,10 @@ def get_closing_text(ctx: click.Context) -> None:
         # Not on a branch (detached HEAD) - can't determine issue number
         return
 
-    # Check .impl/ first, then .worker-impl/
+    # Check .impl/ first, then .erk/impl-context/
     impl_dir = cwd / ".impl"
     if not impl_dir.exists():
-        impl_dir = cwd / ".worker-impl"
+        impl_dir = cwd / ".erk" / "impl-context"
 
     # Validate linkage and get plan ID (branch fallback if no .impl/)
     try:

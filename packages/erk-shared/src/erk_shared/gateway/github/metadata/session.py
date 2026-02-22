@@ -107,7 +107,7 @@ def render_session_exchanges_block(
 
         *User:*
         ```
-        what happened [PR URL]. why did this end up with .worker-impl file?
+        what happened [PR URL]. why did this end up with .erk/impl-context file?
         ```
 
         **Exchange 2:**

@@ -84,10 +84,10 @@ def test_get_closing_text_no_issue_json(tmp_path: Path) -> None:
     assert result.output == ""
 
 
-def test_get_closing_text_with_worker_impl(tmp_path: Path) -> None:
-    """Test get-closing-text works with .worker-impl/ folder."""
-    impl_dir = tmp_path / ".worker-impl"
-    impl_dir.mkdir()
+def test_get_closing_text_with_impl_context(tmp_path: Path) -> None:
+    """Test get-closing-text works with .erk/impl-context/ folder."""
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    impl_dir.mkdir(parents=True)
 
     issue_json = impl_dir / "issue.json"
     issue_json.write_text(
@@ -112,7 +112,7 @@ def test_get_closing_text_with_worker_impl(tmp_path: Path) -> None:
     assert result.output.strip() == "Closes #2935"
 
 
-def test_get_closing_text_prefers_impl_over_worker_impl(tmp_path: Path) -> None:
+def test_get_closing_text_prefers_impl_over_impl_context(tmp_path: Path) -> None:
     """Test get-closing-text prefers .impl/ when both folders exist."""
     # Create both folders with different issue numbers
     impl_dir = tmp_path / ".impl"
@@ -129,9 +129,9 @@ def test_get_closing_text_prefers_impl_over_worker_impl(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    worker_impl_dir = tmp_path / ".worker-impl"
-    worker_impl_dir.mkdir()
-    (worker_impl_dir / "issue.json").write_text(
+    impl_context_dir = tmp_path / ".erk" / "impl-context"
+    impl_context_dir.mkdir(parents=True)
+    (impl_context_dir / "issue.json").write_text(
         json.dumps(
             {
                 "issue_number": 200,

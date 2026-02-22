@@ -146,8 +146,8 @@ jobs:
         run: |
           git fetch origin "$BRANCH_NAME"
           git checkout "$BRANCH_NAME"
-          rm -rf .worker-impl
-          erk exec create-worker-impl-from-issue "$PLAN_ID"
+          rm -rf .erk/impl-context
+          erk exec create-impl-context-from-plan "$PLAN_ID"
           if [ $? -ne 0 ]; then
             if [ "$ERK_PLAN_BACKEND" = "draft_pr" ]; then
               gh pr comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
@@ -158,7 +158,7 @@ jobs:
           fi
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-          git add .worker-impl
+          git add .erk/impl-context
           if [[ -n $(git status --porcelain) ]]; then
             git commit -m "Update plan for plan #$PLAN_ID (rerun)"
             git push origin "$BRANCH_NAME"
@@ -194,8 +194,8 @@ jobs:
 
       - name: Set up implementation folder
         run: |
-          cp -r .worker-impl .impl
-          echo "Copied .worker-impl/ to .impl/"
+          cp -r .erk/impl-context .impl
+          echo "Copied .erk/impl-context/ to .impl/"
           cat > .impl/run-info.json <<EOF
           {
             "run_id": "${{ github.run_id }}",
@@ -212,10 +212,6 @@ jobs:
           NEEDS_CLEANUP=false
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-          if [ -d .worker-impl/ ]; then
-            git rm -rf .worker-impl/
-            NEEDS_CLEANUP=true
-          fi
           if [ -d .erk/impl-context/ ]; then
             git rm -rf .erk/impl-context/
             NEEDS_CLEANUP=true
@@ -310,8 +306,8 @@ jobs:
           PRE_IMPL_HEAD: ${{ steps.pre_impl.outputs.head }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Check for uncommitted changes (staged or unstaged) excluding .worker-impl/ and .impl/
-          UNCOMMITTED=$(git status --porcelain | grep -v '^\s*D.*\.worker-impl/' | grep -v '\.impl/' || true)
+          # Check for uncommitted changes (staged or unstaged) excluding .erk/impl-context/ and .impl/
+          UNCOMMITTED=$(git status --porcelain | grep -v '^\s*D.*\.erk/impl-context/' | grep -v '\.impl/' || true)
 
           # Check for new commits since pre-implementation
           CURRENT_HEAD=$(git rev-parse HEAD)
@@ -409,10 +405,6 @@ jobs:
           NEEDS_CLEANUP=false
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-          if [ -d .worker-impl/ ]; then
-            git rm -rf .worker-impl/
-            NEEDS_CLEANUP=true
-          fi
           if [ -d .erk/impl-context/ ]; then
             git rm -rf .erk/impl-context/
             NEEDS_CLEANUP=true

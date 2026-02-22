@@ -48,11 +48,11 @@ def test_impl_verify_fails_when_impl_missing(tmp_path: Path) -> None:
     assert "action" in data
 
 
-def test_impl_verify_ignores_worker_impl(tmp_path: Path) -> None:
-    """Test impl-verify only checks for .impl/, not .worker-impl/."""
-    # Create .worker-impl/ but not .impl/ - should fail
-    worker_impl_dir = tmp_path / ".worker-impl"
-    worker_impl_dir.mkdir()
+def test_impl_verify_ignores_impl_context(tmp_path: Path) -> None:
+    """Test impl-verify only checks for .impl/, not .erk/impl-context/."""
+    # Create .erk/impl-context/ but not .impl/ - should fail
+    impl_context_dir = tmp_path / ".erk" / "impl-context"
+    impl_context_dir.mkdir(parents=True)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -61,7 +61,7 @@ def test_impl_verify_ignores_worker_impl(tmp_path: Path) -> None:
     )
 
     # Should fail because we only check for .impl/
-    # (.worker-impl/ is for remote implementations which get deleted)
+    # (.erk/impl-context/ is for remote implementations which get deleted)
     assert result.exit_code == 1
     data = json.loads(result.output)
     assert data["valid"] is False

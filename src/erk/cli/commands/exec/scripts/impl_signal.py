@@ -178,10 +178,10 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
-    # Find impl directory (.impl/ or .worker-impl/)
+    # Find impl directory (.impl/ or .erk/impl-context/)
     impl_dir = cwd / ".impl"
     if not impl_dir.exists():
-        impl_dir = cwd / ".worker-impl"
+        impl_dir = cwd / ".erk" / "impl-context"
 
     # Read plan reference FIRST (doesn't require context)
     plan_ref = read_plan_ref(impl_dir)
@@ -293,7 +293,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     # Find impl directory
     impl_dir = cwd / ".impl"
     if not impl_dir.exists():
-        impl_dir = cwd / ".worker-impl"
+        impl_dir = cwd / ".erk" / "impl-context"
 
     # Read plan reference FIRST (doesn't require context)
     plan_ref = read_plan_ref(impl_dir)
@@ -372,7 +372,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     # Find impl directory
     impl_dir = cwd / ".impl"
     if not impl_dir.exists():
-        impl_dir = cwd / ".worker-impl"
+        impl_dir = cwd / ".erk" / "impl-context"
 
     # Read plan reference
     plan_ref = read_plan_ref(impl_dir)

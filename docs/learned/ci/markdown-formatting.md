@@ -98,7 +98,7 @@ Prompting devrun with "fix any formatting errors." This violates devrun's read-o
 ## Configuration Architecture
 
 <!-- Source: Makefile, prettier targets with --ignore-path .gitignore -->
-<!-- Source: .prettierignore, .worker-impl/ exclusion -->
+<!-- Source: .prettierignore, .erk/impl-context/ exclusion -->
 
 Erk's Prettier configuration has two layers:
 
@@ -107,7 +107,7 @@ Erk's Prettier configuration has two layers:
 
 The `--ignore-path .gitignore` flag means: gitignored files are automatically excluded from Prettier. This keeps ignore patterns DRY and prevents "committed but unformatted" files.
 
-When `.worker-impl/` or other transient artifacts appear in `.prettierignore`, they're redundant—those paths are already in `.gitignore`.
+When `.erk/impl-context/` or other transient artifacts appear in `.prettierignore`, they're redundant—those paths are already in `.gitignore`.
 
 ## Related Documentation
 

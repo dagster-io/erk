@@ -98,7 +98,7 @@ See [ci-iteration.md](ci-iteration.md) for the broader pattern of using devrun f
 Prettier failures typically indicate:
 
 1. **Markdown was edited but not formatted** - Run `make prettier` locally via devrun
-2. **Transient artifacts weren't cleaned up** - Check for `.worker-impl/*.md` files that should have been deleted
+2. **Transient artifacts weren't cleaned up** - Check for `.erk/impl-context/*.md` files that should have been deleted
 3. **Manual formatting attempt** - Let prettier handle line wrapping and list indentation, don't try to match it manually
 
 The CI prettier job output shows exactly which files have formatting violations. The autofix job will attempt to fix them automatically, but only if the PR is from the same repository (forks don't have write permissions).

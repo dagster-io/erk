@@ -26,7 +26,7 @@ Every operation in an automated workflow falls on a reliability spectrum. The ke
 | Deterministic     | High        | Only fails if the step itself doesn't run  | Cleanup, state mutations, security-sensitive  |
 | Non-deterministic | Low         | Context limits, misinterpretation, skipped | Creative/generative tasks, contextual choices |
 
-**Why this matters:** Agent instructions feel reliable because they usually work. But "usually" is insufficient for operations that silently corrupt state when skipped. The `.worker-impl/` cleanup saga (below) demonstrates this concretely.
+**Why this matters:** Agent instructions feel reliable because they usually work. But "usually" is insufficient for operations that silently corrupt state when skipped. The `.erk/impl-context/` cleanup saga (below) demonstrates this concretely.
 
 ## Multi-Layer Resilience
 
@@ -42,17 +42,17 @@ For any operation where silent failure creates downstream problems, implement mu
 
 **Key insight:** Only the dedicated workflow step is truly reliable. Upstream layers reduce the frequency of Layer 3 needing to act, but they cannot replace it. This mirrors the broader [defense-in-depth enforcement](../architecture/defense-in-depth-enforcement.md) pattern.
 
-### Case Study: `.worker-impl/` Cleanup
+### Case Study: `.erk/impl-context/` Cleanup
 
-This pattern was learned through production failures. The plan-implement workflow needed to remove `.worker-impl/` after implementation. Three approaches were tried, in order of discovery:
+This pattern was learned through production failures. The plan-implement workflow needed to remove `.erk/impl-context/` after implementation. Three approaches were tried, in order of discovery:
 
-1. **Agent instruction** in the plan-implement command told Claude to `git rm -rf .worker-impl/`. Failed when agents hit context limits or misinterpreted the instruction.
+1. **Agent instruction** in the plan-implement command told Claude to `git rm -rf .erk/impl-context/`. Failed when agents hit context limits or misinterpreted the instruction.
 2. **Staged deletion** via `git rm` in a workflow step, with commit happening later. Failed silently when a downstream `git reset --hard` discarded the staged changes.
 3. **Dedicated commit-and-push step** that removes, commits, and pushes in one atomic operation. This is the only approach that reliably works.
 
-<!-- Source: .github/workflows/plan-implement.yml, Clean up .worker-impl/ after implementation -->
+<!-- Source: .github/workflows/plan-implement.yml, Clean up .erk/impl-context/ after implementation -->
 
-See the "Clean up .worker-impl/ after implementation" step in `.github/workflows/plan-implement.yml` for the production implementation of Layer 3.
+See the "Clean up .erk/impl-context/ after implementation" step in `.github/workflows/plan-implement.yml` for the production implementation of Layer 3.
 
 ## Decision Framework
 
@@ -71,7 +71,7 @@ When adding an automated operation to a workflow:
 
 **The rule:** Any cleanup that uses `git rm` or `git add` must commit and push _before_ any step that might run `git reset --hard`.
 
-<!-- Source: .github/workflows/plan-implement.yml, Clean up .worker-impl/ after implementation -->
+<!-- Source: .github/workflows/plan-implement.yml, Clean up .erk/impl-context/ after implementation -->
 <!-- Source: .github/workflows/plan-implement.yml, Trigger CI workflows -->
 
 See the step ordering in `.github/workflows/plan-implement.yml`: the cleanup step (commit + push) runs before the "Trigger CI workflows" step (which does `git reset --hard`). This ordering is load-bearing — reversing these steps silently drops the cleanup.
@@ -82,24 +82,24 @@ For the detailed anti-pattern with examples, see [plan-implement-workflow-patter
 
 Don't assume a critical operation succeeded. Add an explicit verification step that fails loudly if the expected postcondition doesn't hold. This catches edge cases where the operation ran but didn't achieve its goal (e.g., `git rm` succeeded but the directory was recreated by a subsequent step).
 
-<!-- Source: .github/actions/check-worker-impl/action.yml -->
+<!-- Source: .github/actions/check-impl-context/action.yml -->
 
-See `.github/actions/check-worker-impl/action.yml` for an example: the composite action checks whether `.worker-impl/` exists and exposes a `skip` output, allowing downstream steps to react to unexpected state.
+See `.github/actions/check-impl-context/action.yml` for an example: the composite action checks whether `.erk/impl-context/` exists and exposes a `skip` output, allowing downstream steps to react to unexpected state.
 
-## Case Study: .worker-impl/ Master Pollution
+## Case Study: .erk/impl-context/ Master Pollution
 
-Root cause chain for `.worker-impl/` appearing on master:
+Root cause chain for `.erk/impl-context/` appearing on master:
 
-1. Agent committed `.worker-impl/` during implementation (instructions say not to, but agent behavior is non-deterministic)
-2. PR merged to master with `.worker-impl/` included
-3. All subsequent worktrees created from master inherit the polluted `.worker-impl/`
-4. Prettier CI checks fail on `.worker-impl/plan.md` in unrelated PRs
+1. Agent committed `.erk/impl-context/` during implementation (instructions say not to, but agent behavior is non-deterministic)
+2. PR merged to master with `.erk/impl-context/` included
+3. All subsequent worktrees created from master inherit the polluted `.erk/impl-context/`
+4. Prettier CI checks fail on `.erk/impl-context/plan.md` in unrelated PRs
 
-**Fix**: Added deterministic pre-implementation cleanup step in the CI workflow (`git rm -rf .worker-impl/ && git commit`) that runs before the agent starts, regardless of agent instructions. This is the multi-layer resilience pattern: workflow guarantees what agents cannot.
+**Fix**: Added deterministic pre-implementation cleanup step in the CI workflow (`git rm -rf .erk/impl-context/ && git commit`) that runs before the agent starts, regardless of agent instructions. This is the multi-layer resilience pattern: workflow guarantees what agents cannot.
 
 ## Related Documentation
 
 - [Defense-in-Depth Enforcement](../architecture/defense-in-depth-enforcement.md) — The broader pattern of multi-layer enforcement with reliability hierarchy
 - [Plan Implement Workflow Patterns](../ci/plan-implement-workflow-patterns.md) — Specific cleanup-before-reset patterns in the plan-implement workflow
-- [Worktree Cleanup](worktree-cleanup.md) — When and how `.worker-impl/` is cleaned up
+- [Worktree Cleanup](worktree-cleanup.md) — When and how `.erk/impl-context/` is cleaned up
 - [Composite Action Patterns](../ci/composite-action-patterns.md) — Reusable GitHub Actions setup patterns
