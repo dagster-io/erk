@@ -866,8 +866,8 @@ def test_validate_worktree_name_diagnostics_are_specific() -> None:
     assert "underscore" in diag_text.lower()
 
 
-def test_validate_worktree_name_preserves_original_in_error() -> None:
-    """Error includes the original unmodified input."""
+def test_validate_worktree_name_preserves_original_with_mixed_issues() -> None:
+    """Error includes the original unmodified input with mixed validation issues."""
     result = validate_worktree_name("  FOO_BAR  ")
     assert isinstance(result, InvalidWorktreeName)
     assert result.raw_name == "  FOO_BAR  "
