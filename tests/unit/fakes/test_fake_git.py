@@ -506,7 +506,7 @@ def test_fake_git_commit_files_to_branch_tracks_record() -> None:
 
     git_ops.commit.commit_files_to_branch(
         cwd,
-        branch="planned/my-feature",
+        branch="plnd/my-feature",
         files={"dir/plan.md": "# Plan", "dir/ref.json": '{"key": "value"}'},
         message="Add plan: My Feature",
     )
@@ -514,7 +514,7 @@ def test_fake_git_commit_files_to_branch_tracks_record() -> None:
     assert len(git_ops.branch_commits) == 1
     record = git_ops.branch_commits[0]
     assert record.cwd == cwd
-    assert record.branch == "planned/my-feature"
+    assert record.branch == "plnd/my-feature"
     assert record.files == {"dir/plan.md": "# Plan", "dir/ref.json": '{"key": "value"}'}
     assert record.message == "Add plan: My Feature"
 

@@ -105,12 +105,12 @@ def test_falls_back_to_legacy_plan_prefix(tmp_path: Path) -> None:
     assert result == 7709
 
 
-def test_falls_back_to_planned_prefix(tmp_path: Path) -> None:
-    """Branch with planned/ prefix and no plan found — extract from name."""
+def test_falls_back_to_plnd_prefix(tmp_path: Path) -> None:
+    """Branch with plnd/ prefix and no plan found — extract from name."""
     issues_ops = FakeGitHubIssues(username="testuser", issues={})
     ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
 
-    result = get_objective_for_branch(ctx, tmp_path, "planned/O456-fix-auth-01-15-1430")
+    result = get_objective_for_branch(ctx, tmp_path, "plnd/O456-fix-auth-01-15-1430")
 
     assert result == 456
 

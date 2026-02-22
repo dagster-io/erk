@@ -10,7 +10,7 @@ ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
 PLAN_HEADING_PREFIX = "Plan: "
 
 # PR title prefix for plan-originated PRs
-PLANNED_PR_TITLE_PREFIX = "planned/"
+PLANNED_PR_TITLE_PREFIX = "plnd/"
 
 # GitHub Actions workflow for remote implementation dispatch
 DISPATCH_WORKFLOW_NAME = "plan-implement.yml"

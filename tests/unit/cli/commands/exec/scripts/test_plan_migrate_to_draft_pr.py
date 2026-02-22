@@ -97,7 +97,7 @@ def test_migrate_success_json(tmp_path: Path) -> None:
     assert output["original_issue_number"] == 42
     assert "pr_number" in output
     assert "pr_url" in output
-    assert output["branch_name"].startswith("planned/")
+    assert output["branch_name"].startswith("plnd/")
 
 
 def test_migrate_success_display(tmp_path: Path) -> None:
@@ -234,7 +234,7 @@ def test_migrate_preserves_objective_id(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     # Branch name should include objective slug
-    assert "planned/" in output["branch_name"]
+    assert "plnd/" in output["branch_name"]
 
 
 def test_migrate_preserves_erk_learn_label(tmp_path: Path) -> None:

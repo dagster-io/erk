@@ -25,7 +25,7 @@ def test_strip_plan_markers() -> None:
 
 
 def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
-    """Test submit strips plan markers and adds planned/ prefix when creating PR."""
+    """Test submit strips plan markers and adds plnd/ prefix when creating PR."""
     # Plan with "[erk-plan]" prefix (standard format for erk-plan issues)
     plan = create_plan("123", "[erk-plan] Implement feature X")
     ctx, _, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
@@ -35,10 +35,10 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
 
-    # Verify PR was created with stripped title and planned/ prefix
+    # Verify PR was created with stripped title and plnd/ prefix
     assert len(fake_github.created_prs) == 1
     branch_name, title, body, base, draft = fake_github.created_prs[0]
-    assert title == "planned/Implement feature X"  # Stripped AND prefixed with planned/
+    assert title == "plnd/Implement feature X"  # Stripped AND prefixed with plnd/
 
     # Verify PR body was updated: first with checkout footer, then with workflow run link
     assert len(fake_github.updated_pr_bodies) == 2
@@ -85,22 +85,22 @@ def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
 def test_planned_prefix_idempotent() -> None:
     """Test _add_planned_prefix is idempotent and doesn't double-prefix."""
     # Single application
-    assert _add_planned_prefix("Implement feature X") == "planned/Implement feature X"
+    assert _add_planned_prefix("Implement feature X") == "plnd/Implement feature X"
 
     # Double application should not double-prefix
     once = _add_planned_prefix("Implement feature X")
     twice = _add_planned_prefix(once)
     assert once == twice
-    assert twice == "planned/Implement feature X"
-    assert twice.count("planned/") == 1  # Only one prefix
+    assert twice == "plnd/Implement feature X"
+    assert twice.count("plnd/") == 1  # Only one prefix
 
 
 def test_planned_prefix_added_to_pr_title() -> None:
-    """Test planned/ prefix is added to PR titles from plan-originated submissions."""
+    """Test plnd/ prefix is added to PR titles from plan-originated submissions."""
     # Test various title formats
-    assert _add_planned_prefix("Update docs") == "planned/Update docs"
-    assert _add_planned_prefix("Fix bug in authentication") == "planned/Fix bug in authentication"
-    assert _add_planned_prefix("") == "planned/"  # Edge case: empty title
+    assert _add_planned_prefix("Update docs") == "plnd/Update docs"
+    assert _add_planned_prefix("Fix bug in authentication") == "plnd/Fix bug in authentication"
+    assert _add_planned_prefix("") == "plnd/"  # Edge case: empty title
 
     # Verify it's idempotent for already-prefixed titles
-    assert _add_planned_prefix("planned/Already prefixed") == "planned/Already prefixed"
+    assert _add_planned_prefix("plnd/Already prefixed") == "plnd/Already prefixed"

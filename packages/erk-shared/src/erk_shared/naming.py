@@ -583,7 +583,8 @@ def extract_objective_number(branch_name: str) -> int | None:
     Supports branch naming patterns:
 
     - Issue-based: ``P{plan}-O{objective}-{slug}-{timestamp}``
-    - Draft-PR (current): ``planned/O{objective}-{slug}-{timestamp}``
+    - Draft-PR (current): ``plnd/O{objective}-{slug}-{timestamp}``
+    - Draft-PR (legacy): ``planned/O{objective}-{slug}-{timestamp}``
     - Draft-PR (legacy): ``plan/O{objective}-{slug}-{timestamp}``
 
     Also supports lowercase "o" prefix for case-insensitive matching.
@@ -599,6 +600,8 @@ def extract_objective_number(branch_name: str) -> int | None:
         456
         >>> extract_objective_number("P123-o456-fix-bug")
         456
+        >>> extract_objective_number("plnd/O456-fix-auth-01-15-1430")
+        456
         >>> extract_objective_number("planned/O456-fix-auth-01-15-1430")
         456
         >>> extract_objective_number("plan/O456-fix-auth-01-15-1430")
@@ -608,7 +611,7 @@ def extract_objective_number(branch_name: str) -> int | None:
         >>> extract_objective_number("feature-branch")
         None
     """
-    match = re.match(r"^(?:[Pp]?\d+-|plan(?:ned)?/)[Oo](\d+)-", branch_name)
+    match = re.match(r"^(?:[Pp]?\d+-|pl(?:an(?:ned)?|nd)/)[Oo](\d+)-", branch_name)
     if match:
         return int(match.group(1))
     return None
@@ -617,26 +620,29 @@ def extract_objective_number(branch_name: str) -> int | None:
 def extract_plan_review_issue_number(branch_name: str) -> int | None:
     """Extract issue number from a plan review branch name.
 
-    Plan review branches follow the pattern: planned/review-{issue_number}-{timestamp}
-    Examples: "planned/review-6214-01-15-1430"
+    Plan review branches follow the pattern: plnd/review-{issue_number}-{timestamp}
+    Legacy pattern: planned/review-{issue_number}-{timestamp}
+    Examples: "plnd/review-6214-01-15-1430"
 
     Args:
         branch_name: Branch name to parse
 
     Returns:
-        Issue number if branch matches planned/review-{number}- pattern, else None
+        Issue number if branch matches plnd/review-{number}- pattern, else None
 
     Examples:
+        >>> extract_plan_review_issue_number("plnd/review-6214-01-15-1430")
+        6214
+        >>> extract_plan_review_issue_number("plnd/review-42-01-28-0930")
+        42
         >>> extract_plan_review_issue_number("planned/review-6214-01-15-1430")
         6214
-        >>> extract_plan_review_issue_number("planned/review-42-01-28-0930")
-        42
         >>> extract_plan_review_issue_number("P2382-convert-erk-create-raw-ext")
         None
         >>> extract_plan_review_issue_number("feature-branch")
         None
     """
-    match = re.match(r"^planned/review-(\d+)-", branch_name)
+    match = re.match(r"^pl(?:an(?:ned)?|nd)/review-(\d+)-", branch_name)
     if match:
         return int(match.group(1))
     return None
@@ -797,10 +803,10 @@ def generate_draft_pr_branch_name(
 ) -> str:
     """Generate branch name for draft-PR-backed plans.
 
-    Format: planned/{sanitized_title}-{timestamp}
-    Or with objective: planned/O{objective_id}-{sanitized_title}-{timestamp}
-    Example: planned/fix-auth-bug-01-15-1430
-    Example with objective: planned/O456-fix-auth-bug-01-15-1430
+    Format: plnd/{sanitized_title}-{timestamp}
+    Or with objective: plnd/O{objective_id}-{sanitized_title}-{timestamp}
+    Example: plnd/fix-auth-bug-01-15-1430
+    Example with objective: plnd/O456-fix-auth-bug-01-15-1430
 
     No P{issue} prefix since the PR number isn't known until after creation.
 
@@ -810,20 +816,20 @@ def generate_draft_pr_branch_name(
         objective_id: Optional objective ID to encode in branch name
 
     Returns:
-        Branch name in format planned/{slug}-{timestamp}
+        Branch name in format plnd/{slug}-{timestamp}
 
     Examples:
         >>> from datetime import datetime
         >>> generate_draft_pr_branch_name(
         ...     "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=None
         ... )
-        "planned/fix-auth-bug-01-15-1430"
+        "plnd/fix-auth-bug-01-15-1430"
         >>> generate_draft_pr_branch_name(
         ...     "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=456
         ... )
-        "planned/O456-fix-auth-bug-01-15-1430"
+        "plnd/O456-fix-auth-bug-01-15-1430"
     """
-    prefix = "planned/"
+    prefix = "plnd/"
     if objective_id is not None:
         prefix += f"O{objective_id}-"
     sanitized_title = sanitize_worktree_name(title)

@@ -322,11 +322,11 @@ def test_dispatch_writes_metadata_to_plan_issue() -> None:
 
 
 def test_dispatch_draft_pr_lifecycle() -> None:
-    """Test full draft_pr dispatch: no skeleton issue, planned/ branch, PR with metadata block.
+    """Test full draft_pr dispatch: no skeleton issue, plnd/ branch, PR with metadata block.
 
     In draft_pr mode, the draft PR IS the plan entity. The dispatch should:
     - NOT create a skeleton issue
-    - Use planned/ branch naming
+    - Use plnd/ branch naming
     - Create a draft PR with plan-header metadata block
     - Set plan_issue_number = pr_number for downstream code
     - Write dispatch metadata to the PR (the plan entity)
@@ -366,8 +366,8 @@ def test_dispatch_draft_pr_lifecycle() -> None:
         # No skeleton issue created — draft_pr skips issue creation
         assert len(issues.created_issues) == 0
 
-        # Branch uses planned/ prefix (not P<N>-)
-        assert result.branch_name.startswith("planned/")
+        # Branch uses plnd/ prefix (not P<N>-)
+        assert result.branch_name.startswith("plnd/")
         assert not result.branch_name.startswith("P")
 
         # PR created with plan-header metadata block
