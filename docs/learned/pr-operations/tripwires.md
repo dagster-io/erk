@@ -26,6 +26,8 @@ Rules triggered by matching actions in code.
 
 **investigating an automated reviewer complaint** → Read [Automated Review Handling](automated-review-handling.md) first. Determine if the tool is the authority for that concern. For formatting, prettier is the authority — if prettier passes, dismiss the bot. For type errors, ty is the authority.
 
+**passing a flat list of thread IDs to resolve-review-threads** → Read [Resolve Review Threads JSON Format](resolve-review-threads-format.md) first. The input must be a list of objects with thread*id and comment fields, not a flat list of strings. Wrong: ["PRRT*..."] → 'Item at index 0 is not an object'. Correct: [{"thread_id": "PRRT_...", "comment": "..."}]
+
 **silently catching exceptions in PR body updates** → Read [Stub PR Workflow Link](stub-pr-workflow-link.md) first. Use best-effort pattern: try/except with logger.warning(), not silent pass. See one_shot_dispatch.py for the canonical example.
 
 **using GitHub API to fetch PR diffs** → Read [Large Diff PR Submission Recovery](large-diff-recovery.md) first. GitHub returns HTTP 406 for diffs exceeding ~20k lines. Use local git diff instead via get_diff_to_branch() for reliable extraction.

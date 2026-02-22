@@ -38,10 +38,12 @@ CLI dispatch → skeleton issue → branch + draft PR → workflow trigger
 
 Two CLI commands trigger the pipeline:
 
-- `erk one-shot <prompt>` -- direct dispatch
+- `erk one-shot <prompt>` -- direct dispatch (model shortcuts: `haiku`/`h`, `sonnet`/`s`, `opus`/`o`)
 - `erk objective plan <issue> --one-shot [--node <id>]` -- objective-driven dispatch
 
 Both converge on `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
+
+**Key constraint:** Planning and implementation run in separate Claude sessions. No context carries over. The plan must be self-contained and explicit.
 
 ## Skeleton Plan Issue Pattern
 

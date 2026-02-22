@@ -206,6 +206,8 @@ Rules triggered by matching actions in code.
 
 **passing variables to gh api graphql as JSON blob** [pattern: `gh\s+api\s+graphql`] → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
+**proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (upload_session.py) is the stable implementation.
+
 **reading agent output with TaskOutput then writing it to a file with Write** → Read [Context Efficiency Patterns](context-efficiency.md) first. This is the 'content relay' anti-pattern — it causes 2x context duplication. Instead, have agents accept an output_path parameter and write directly. See /erk:learn for the canonical implementation.
 
 **reading from or writing to ~/.claude/ paths using Path.home() directly** [pattern: `Path\.home\(\).*\.claude`] → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations must go through this gateway for testability and storage abstraction.
@@ -271,6 +273,8 @@ Rules triggered by matching actions in code.
 **using gh pr diff --name-only in production code** [pattern: `gh\s+pr\s+diff\s+--name-only`] → Read [GitHub CLI Limits](github-cli-limits.md) first. For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead.
 
 **using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+
+**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
 
 **using git pull or git pull --rebase on a Graphite-managed branch** [pattern: `git\s+pull`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
 

@@ -28,7 +28,11 @@ Rules triggered by matching actions in code.
 
 **adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.
 
+**adding a new lifecycle stage without updating abbreviation map** → Read [Lifecycle and PR Status Display](lifecycle-display.md) first. The stage column is 9 chars wide. New stages longer than 9 chars need abbreviations in compute_lifecycle_display(). Also update format_lifecycle_with_status() stage detection.
+
 **adding an ACTION command that executes instantly** → Read [TUI Command Architecture](action-inventory.md) first. ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories.
+
+**adding stage column outside draft_pr backend check** → Read [Dashboard Column Inventory](dashboard-columns.md) first. stage column is draft_pr-only. It appears before obj in the column order. Check \_setup_columns() for the backend conditional block.
 
 **adding streaming commands without using \_push_streaming_detail helper** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Streaming ACTION commands need \_push_streaming_detail() to handle the push-then-stream sequence correctly. Direct streaming without it skips the detail screen push.
 
@@ -64,11 +68,15 @@ Rules triggered by matching actions in code.
 
 **registering a new TUI command without a view-mode predicate** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Every command must use \_is_plan_view() or \_is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views.
 
+**removing a field from a frozen dataclass** → Read [Frozen Dataclass Field Management](frozen-dataclass-field-management.md) first. Grep for the class name across ALL constructor sites. Frozen dataclasses have 5+ places to update: field definition, real provider, fake provider, test helpers, and filtering/display logic. Missing one causes runtime TypeError.
+
 **reusing same DOM element id across loading/empty/content states** → Read [TUI Architecture Overview](architecture.md) first. query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase.
 
 **showing toast from a modal screen** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Call self.dismiss() before app-level toasts. Modal blocks the correct z-layer, so toasts must render at app level after modal dismissal.
 
 **using \_render() as a method name in Textual widgets** → Read [TUI View Switching](view-switching.md) first. Textual's LSP reserves \_render(). Use \_refresh_display() instead (see ViewBar).
+
+**using positional arguments when constructing PlanRowData** → Read [Frozen Dataclass Field Management](frozen-dataclass-field-management.md) first. Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests.
 
 **using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL** → Read [Command Execution Strategies](command-execution.md) first. Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls.
 

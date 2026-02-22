@@ -14,6 +14,8 @@
 - **[dashboard-columns.md](dashboard-columns.md)** — adding a new column to the erk dash TUI, understanding which columns are always present vs conditional, debugging why a column is missing in a particular view mode
 - **[data-contract.md](data-contract.md)** — building an alternate frontend consuming plan data, adding fields to PlanRowData or PlanDataProvider, understanding the display-vs-raw field duality, serializing plan data to JSON for external consumers
 - **[dual-handler-pattern.md](dual-handler-pattern.md)** — implementing a TUI command that works from both list and detail views, understanding how MainListCommandProvider and PlanCommandProvider share commands, adding command palette support to a new screen
+- **[frozen-dataclass-field-management.md](frozen-dataclass-field-management.md)** — removing a field from a frozen dataclass, renaming a field in PlanRowData or similar frozen dataclass, getting unexpected constructor errors after field changes
+- **[lifecycle-display.md](lifecycle-display.md)** — adding a new lifecycle stage to the TUI, changing lifecycle abbreviations or colors, modifying PR status emoji indicators, understanding the stage column in erk dash
 - **[modal-screen-pattern.md](modal-screen-pattern.md)** — adding a new modal screen to the TUI, implementing a ModalScreen subclass, displaying detail views or confirmation dialogs
 - **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
 - **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
