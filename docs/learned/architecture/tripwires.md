@@ -40,7 +40,11 @@ Rules triggered by matching actions in code.
 
 **adding a subgateway property to a gateway ABC** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Must implement property in 5 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway, Printing wrapping with script_mode/dry_run.
 
+**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+
 **adding file I/O, network calls, or subprocess invocations to a class **init\***\* → Read [Erk Architecture Patterns](erk-architecture.md) first. Load `dignified-python` skill first. Class **init\*\* should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup.
+
+**adding guidance to the agent without a programmatic gate to enforce it** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Guidance without enforcement is optional compliance. The gate is the hard boundary. The agent should have guidance to help it succeed on the first try, but the gate is what enforces correctness.
 
 **adding new file format support without read-then-fallback** → Read [Erk Architecture Patterns](erk-architecture.md) first. When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for the canonical pattern.
 
@@ -218,6 +222,8 @@ Rules triggered by matching actions in code.
 
 **setting PR reference without providing --plan** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The CLI requires --plan when --pr is set (error: plan_required_with_pr). Use --plan '#NNN' to preserve or --plan '' to explicitly clear. Read roadmap-mutation-semantics.md for the None/empty/value semantics.
 
+**silently transforming agent output (sanitize/normalize) instead of rejecting invalid values** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Silent transformation masks mistakes and prevents the agent from learning. Use a validation gate that rejects invalid input with actionable feedback so the agent can self-correct.
+
 **skipping fallback strategies when the selected item might disappear** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Always provide fallback behavior when selected item not found in refreshed data (reset to 0, preserve index clamped, or clear selection).
 
 **suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
@@ -235,6 +241,8 @@ Rules triggered by matching actions in code.
 **using --force-with-lease in multi-step workflows where earlier steps push** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Force-push silently overwrites intermediate commits from earlier workflow steps. Always `git pull --rebase` before pushing in multi-step workflows.
 
 **using LiveDisplay in watch loops without try/finally blocks** → Read [LiveDisplay Gateway](live-display-gateway.md) first. guard with try/finally to ensure stop() is called even on KeyboardInterrupt
+
+**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
 
 **using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
 

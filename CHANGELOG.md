@@ -7,80 +7,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- as-of: 2f93e6fb2 -->
+## [0.8.0] - 2026-02-22 03:40 PT
+
+### Release Overview
+
+This release introduces dual plan backends, evolves objectives into a dependency graph, and streamlines branch management with stack-in-place workflows.
+
+#### Draft PR Plan Backend
+
+**What it solves:** Issue-based plans have limitations for code-heavy workflows — no native diff view, no CI integration, and awkward code review. Draft PRs provide a natural home for plans that will become code.
+
+**How it works:** Plans can now be stored as GitHub draft PRs instead of issues, with `ERK_PLAN_BACKEND=draft_pr` controlling the backend. All workflows (plan-save, plan-implement, learn, CI) support both backends transparently.
+
+**Key features:** `ERK_PLAN_BACKEND` environment variable, draft PR auto-publishing during `erk pr submit`, backend-agnostic plan checkout via `erk br co --for-plan`.
+
+#### Objective Dependency Graph
+
+**What it solves:** Objectives with linear roadmaps couldn't express real-world dependencies — some nodes can run in parallel, others must wait. The flat step list forced artificial sequencing.
+
+**How it works:** Objectives now use a graph-based model (schema v3) with `depends_on` support between nodes. The vocabulary shifted from "steps" to "nodes" to reflect the graph structure. `erk objective view` displays the dependency graph, and `--all-unblocked` enables parallel dispatch of independent nodes.
+
+**Key features:** `depends_on` field in objective roadmaps, "deps" column in TUI Objectives dashboard, `--all-unblocked` dispatch, `erk objective view` with dependency graph display.
+
+#### Autonomous One-Shot Dispatch
+
+**What it solves:** The plan-then-implement workflow requires human involvement at each stage. For well-defined tasks, this overhead isn't justified.
+
+**How it works:** `erk one-shot` dispatches fully autonomous remote execution — an agent creates a plan, implements it, and submits a PR without user intervention. Extended to objectives via `erk objective next-plan --one-shot` for auto-dispatching the next unblocked roadmap node.
+
+**Key features:** `erk one-shot` with `--file` and `--model` flags, `erk objective next-plan --one-shot`, automatic "Closes #N" PR references.
+
+#### Stack-in-Place Branch Management
+
+**What it solves:** Each stacked branch previously required its own worktree slot, limiting parallelism and wasting disk space.
+
+**How it works:** `erk br create` in assigned worktree slots now updates the assignment tip in place, enabling stacked branches to share a single worktree. Plan checkout unified under `erk br co --for-plan` with `--new-slot` option.
+
+**Key features:** `erk br co --for-plan`, `--new-slot` flag, `erk wt create-from` for adopting existing branches. `erk prepare` removed.
+
+#### TUI Dashboard Evolution
+
+**What it solves:** The dashboard was a single-view plans list. Users needed to switch between plans, learn sessions, and objectives constantly.
+
+**How it works:** The dashboard now supports Plans, Learn, and Objectives views (toggled via 1/2/3 keys or arrow keys), with a launch screen for two-keystroke command execution. PR status indicators, author filtering, and lifecycle labels provide at-a-glance visibility.
+
+**Key features:** View switching (1/2/3 keys), launch screen, branch and author columns, PR status display (draft/conflicts/review), non-blocking toast notifications.
+
+---
+
+_The sections below document changes since 0.7.4:_
 
 ### Major Changes
 
-- Add draft PR plan backend: plans can now be stored as GitHub draft PRs instead of issues, with all workflows (plan-save, plan-implement, learn, CI) supporting both backends via environment-driven configuration (3351bd7, 2cba6a73, 8559caff, a76cab09, 60787e1f, 2d1a14ec, 7a5fde04, 0b41c581, 2db84a17, 24e699cf, f2654e91, 909d81ca, ca311d22, be00080c, b796427, fe30038, c814624, d9fdb99, b37158fd, 68410fd)
-- Add objective dependency graph with `depends_on` support: roadmaps support explicit cross-phase dependencies, with a new "deps" column in Objectives dashboard and `--all-unblocked` dispatch for parallel node implementation (97e480be, aa36c19d, f9dde530, 1030f07f, 8ece7717)
-- Overhaul objective vocabulary and structure toward graph-based model: rename 'step' to 'node' with schema v3, merge `objective inspect` into `objective view` with dependency graph display, rename `objective-implement` to `objective-plan`, and fix node status validation (ff55ce0, e45e1c6, 861c7a0, 7fa81768, 04bb893, 5210dcf, 97bec22)
-- Stack-in-place branch creation and `prepare` command removal: `erk br create` in assigned worktree slots now updates the assignment tip in place, enabling stacked branches to share a single worktree. `erk prepare` removed; use `erk br create --for-plan` instead (fe03e628a)
+- Add draft PR plan backend: plans can now be stored as GitHub draft PRs instead of issues, with all workflows (plan-save, plan-implement, learn, CI) supporting both backends via environment-driven configuration
+- Add objective dependency graph with `depends_on` support: roadmaps support explicit cross-phase dependencies, with a new "deps" column in Objectives dashboard and `--all-unblocked` dispatch for parallel node implementation
+- Overhaul objective vocabulary and structure toward graph-based model: rename 'step' to 'node' with schema v3, merge `objective inspect` into `objective view` with dependency graph display, rename `objective-implement` to `objective-plan`, and fix node status validation
+- Stack-in-place branch creation and `prepare` command removal: `erk br create` in assigned worktree slots now updates the assignment tip in place, enabling stacked branches to share a single worktree. `erk prepare` removed; use `erk br create --for-plan` instead
 
 ### Added
 
-- Add objective tracking to TUI land flow and plan detail screen (3634d19b)
-- Add "codespace run objective plan" to objectives command palette in TUI (a0e73050)
-- Add `erk admin gh-actions-api-key` command for managing GitHub Actions API key secrets (374ea93)
-- Add Claude inference kill switch via `CLAUDE_ENABLED` repository variable (2effff7)
-- Add `--up` option to `erk stack consolidate` for upstack-only consolidation (09cca66)
-- Add `--file` option to `erk one-shot` for passing long instructions via file (5e7f89d)
-- Add `erk wt create-from` command for allocating worktree slots to existing branches with automatic remote branch fetching and `--force` flag (4ccff29e2)
-- Add branch column to TUI dashboard between "title" and "created" (7b4d8e190)
-- Add remote divergence pre-check before `gt submit` with actionable error messages (4a9b06e24)
-- Add launch screen to TUI dashboard for two-keystroke ACTION command execution (798f63784)
-- Add `--oauth` flag to `erk admin gh-actions-api-key` for managing dual authentication secrets (0037f09ad)
+- Add objective tracking to TUI land flow and plan detail screen
+- Add "codespace run objective plan" to objectives command palette in TUI
+- Add `erk admin gh-actions-api-key` command for managing GitHub Actions API key secrets
+- Add Claude inference kill switch via `CLAUDE_ENABLED` repository variable
+- Add `--up` option to `erk stack consolidate` for upstack-only consolidation
+- Add `--file` option to `erk one-shot` for passing long instructions via file
+- Add `erk wt create-from` command for allocating worktree slots to existing branches with automatic remote branch fetching and `--force` flag
+- Add branch column to TUI dashboard between "title" and "created"
+- Add remote divergence pre-check before `gt submit` with actionable error messages
+- Add launch screen to TUI dashboard for two-keystroke ACTION command execution
+- Add `--oauth` flag to `erk admin gh-actions-api-key` for managing dual authentication secrets
 
 ### Changed
 
-- Convert "Submit to Queue" and "Land PR" from modal dialogs to non-blocking toast pattern (5d185bcb, 873dc04b)
-- Show real-time progress in TUI status bar during "Land PR" operation with diagnostic error messages (2cffffcb)
-- Batch objective node updates into single atomic write for reliability (f24b02de)
-- Refresh workspace packages automatically on activation to keep CLI current across worktree switches (0393f9f)
-- Rename `objective-implement` command to `objective-plan` to reflect planning-focused purpose (04bb893)
-- Canonicalize branch naming to encode objective IDs consistently across submit and one-shot codepaths (c524572)
-- Add "Closes #N" reference to one-shot dispatch PR bodies at creation time for immediate TUI linkage (5457b02)
-- Migrate session and learn material storage from GitHub Gists to git branches (3a4c03bed, c7f936340, 12f964cb5)
-- Rename "instruction" to "prompt" throughout `erk one-shot` feature (279873ac5)
-- Replace "issue" with "plan" in implement command output for backend-agnostic messaging (d17948889)
-- Infer "implementing" lifecycle stage when plan has active workflow run (bb5e3ca6f)
-- Auto-force push for plan implementation branches in `erk pr submit` (3c0ee7fcf)
-- Restore PR status indicators (merge conflicts, review decisions) in dashboard (03e09b0a7)
-- Fix shell activation in draft PR next steps to use `source "$(erk br co ...)"` pattern (a78bb01ba)
-- Use branch name instead of PR number in draft PR checkout next steps (433beb649)
-- Publish draft PRs during `erk pr submit` with mutation-safe tracking (5a545a9f4)
-- Unify plan checkout with `erk br co --for-plan` and `--new-slot`, replacing `erk br create --for-plan` (f44fd5c11)
-- Show full lifecycle labels ("implementing", "implemented") instead of abbreviations in dashboard; add `--show-runs`/`--show-prs` flags for conditional data fetching; consolidate PR status into lifecycle column (29a811918)
-- Add PR status display (draft/conflicts/review) and reorganize TUI dashboard column layout (65b75440e)
-- Simplify plan backend configuration from 3-tier to 2-tier: `ERK_PLAN_BACKEND` env var or default, removing config-file tier (e4e4abf6d)
-- Enable learn prompts for remote plan branches during `erk land` (a26d790eb)
+- Convert "Submit to Queue" and "Land PR" from modal dialogs to non-blocking toast pattern
+- Show real-time progress in TUI status bar during "Land PR" operation with diagnostic error messages
+- Batch objective node updates into single atomic write for reliability
+- Refresh workspace packages automatically on activation to keep CLI current across worktree switches
+- Rename `objective-implement` command to `objective-plan` to reflect planning-focused purpose
+- Canonicalize branch naming to encode objective IDs consistently across submit and one-shot codepaths
+- Add "Closes #N" reference to one-shot dispatch PR bodies at creation time for immediate TUI linkage
+- Migrate session and learn material storage from GitHub Gists to git branches
+- Rename "instruction" to "prompt" throughout `erk one-shot` feature
+- Replace "issue" with "plan" in implement command output for backend-agnostic messaging
+- Infer "implementing" lifecycle stage when plan has active workflow run
+- Auto-force push for plan implementation branches in `erk pr submit`
+- Restore PR status indicators (merge conflicts, review decisions) in dashboard
+- Fix shell activation in draft PR next steps to use `source "$(erk br co ...)"` pattern
+- Use branch name instead of PR number in draft PR checkout next steps
+- Publish draft PRs during `erk pr submit` with mutation-safe tracking
+- Unify plan checkout with `erk br co --for-plan` and `--new-slot`, replacing `erk br create --for-plan`
+- Show full lifecycle labels ("implementing", "implemented") instead of abbreviations in dashboard; add `--show-runs`/`--show-prs` flags for conditional data fetching; consolidate PR status into lifecycle column
+- Add PR status display (draft/conflicts/review) and reorganize TUI dashboard column layout
+- Simplify plan backend configuration from 3-tier to 2-tier: `ERK_PLAN_BACKEND` env var or default, removing config-file tier
+- Enable learn prompts for remote plan branches during `erk land`
 
 ### Fixed
 
-- Fix submit pipeline error handling and add network timeout protection (406cb1ec)
-- Fix misleading "PR rewritten" success message in `erk pr rewrite` (d13c56fa)
-- Fix `erk prepare` to handle pre-existing branches with draft PR plan backend (ca311d22)
-- Fix plan reference loss when updating objective roadmap steps with PR numbers (456902a)
-- Fix `learned-docs` capability installation check to require all three directories and preserve user documentation on uninstall (5dc1e52)
-- Fix local session fallback in `/erk:learn` to filter by branch name, preventing unrelated sessions from other branches (97bb0ad)
-- Fix missing `branch_name` in plan-header metadata causing PR lookup failure during async learn (7be24b2)
-- Fix `erk-remote-setup` GitHub Action to accept either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` instead of requiring both (08cf227)
-- Fix draft PR plan list label duplication causing `erk plan list` to return "No plans found" (fe5d2a6d8)
-- Fix `erk one-shot` dispatch metadata writing for draft_pr backend (8622d1854)
-- Fix learn pipeline for draft-PR plans with direct PR lookup and metadata fallback (fb8280e2b)
-- Fix non-fast-forward push in draft-PR plan submission by adding rebase sync (d683f3b0b)
-- Fix `submit` command crashing when `.worker-impl/` already exists (670c3bbb9)
-- Fix `extract_metadata_prefix` falsely matching footer separator in PR bodies (fa37bb0b8)
-- Fix `.erk/impl-context/` cleanup by deferring git removal to plan-implement (d16b20077)
-- Implement lazy tip sync for worktree pool to fix stale assignment state (a5683ff04)
-- Fix `ci-update-pr-body` losing plan-header metadata on draft PR plans (dedcb0d1f)
-- Fix Objectives screen columns being polluted by Plans screen columns (c957ae35f)
-- Fix `erk land` cleanup crashing when branch is checked out in another worktree (71d496412)
-- Fix learn pipeline by migrating from branch-based to gist-based materials storage (26474a62e)
+- Fix submit pipeline error handling and add network timeout protection
+- Fix misleading "PR rewritten" success message in `erk pr rewrite`
+- Fix `erk prepare` to handle pre-existing branches with draft PR plan backend
+- Fix plan reference loss when updating objective roadmap steps with PR numbers
+- Fix `learned-docs` capability installation check to require all three directories and preserve user documentation on uninstall
+- Fix local session fallback in `/erk:learn` to filter by branch name, preventing unrelated sessions from other branches
+- Fix missing `branch_name` in plan-header metadata causing PR lookup failure during async learn
+- Fix `erk-remote-setup` GitHub Action to accept either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` instead of requiring both
+- Fix draft PR plan list label duplication causing `erk plan list` to return "No plans found"
+- Fix `erk one-shot` dispatch metadata writing for draft_pr backend
+- Fix learn pipeline for draft-PR plans with direct PR lookup and metadata fallback
+- Fix non-fast-forward push in draft-PR plan submission by adding rebase sync
+- Fix `submit` command crashing when `.worker-impl/` already exists
+- Fix `extract_metadata_prefix` falsely matching footer separator in PR bodies
+- Fix `.erk/impl-context/` cleanup by deferring git removal to plan-implement
+- Implement lazy tip sync for worktree pool to fix stale assignment state
+- Fix `ci-update-pr-body` losing plan-header metadata on draft PR plans
+- Fix Objectives screen columns being polluted by Plans screen columns
+- Fix `erk land` cleanup crashing when branch is checked out in another worktree
+- Fix learn pipeline by migrating from branch-based to gist-based materials storage
 
 ### Removed
 
-- Remove `erk prepare` command — use `erk br create --for-plan` instead (fe03e628a)
-- Remove `erk:prepare` command; use `erk br co --for-plan` instead (655a124ad)
+- Remove `erk prepare` command — use `erk br create --for-plan` instead
+- Remove `erk:prepare` command; use `erk br co --for-plan` instead
 
 ## [0.7.4] - 2026-02-16 05:33 PT
 

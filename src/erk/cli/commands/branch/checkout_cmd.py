@@ -575,7 +575,6 @@ def branch_checkout(
                         reuse_inactive_slots=True,
                         cleanup_artifacts=True,
                     )
-                    _worktree_path = slot_result.worktree_path
                     is_newly_created = not slot_result.already_assigned
                     if is_newly_created:
                         msg = f"✓ Assigned {branch} to {slot_result.slot_name}"
