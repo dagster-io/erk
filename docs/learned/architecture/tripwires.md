@@ -36,6 +36,8 @@ Rules triggered by matching actions in code.
 
 **adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
+**adding a new sanitize/validate pair without updating this registry** → Read [Backpressure Path Registry](backpressure-path-registry.md) first. New gate/transform domains must be documented here so agents know which paths are gated. See the 'Adding New Paths' section.
+
 **adding a parameter to an erk exec script without updating the calling slash command** → Read [Parameter Threading Pattern](parameter-threading-pattern.md) first. 3-layer parameter threading: When adding a parameter, update all three layers: skill SKILL.md argument-hint, slash command .md, and erk exec script. Verify all invocations thread the parameter through.
 
 **adding a subgateway property to a gateway ABC** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Must implement property in 5 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway, Printing wrapping with script_mode/dry_run.
@@ -95,6 +97,8 @@ Rules triggered by matching actions in code.
 **calling gt commands without --no-interactive flag** [pattern: `\bgt\s+(sync|submit|restack|create|modify)`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately.
 
 **calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+
+**calling sanitize_worktree_name() in agent-facing code without validate_worktree_name()** → Read [Backpressure Path Registry](backpressure-path-registry.md) first. Agent-facing paths must gate (reject invalid input), not silently transform. Use validate_worktree_name() and return actionable feedback.
 
 **calling save_plan_ref with positional arguments** → Read [PlanRef Architecture](plan-ref-architecture.md) first. All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime.
 

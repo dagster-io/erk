@@ -68,3 +68,7 @@ The objective slug migration demonstrates this pattern:
 - **After (validation gate):** `validate_objective_slug()` checks the slug against `_OBJECTIVE_SLUG_PATTERN` (defined in `naming.py`) and 3-40 character length. On failure, it returns an `InvalidObjectiveSlug` with the pattern, rules, actual value, and examples. The agent receives this feedback and retries.
 - **Guidance:** The `objective-create` skill includes the exact regex pattern, length constraints, rules, and valid/invalid examples.
 - **Gate:** `validate_objective_slug()` in `naming.py` enforces the invariant programmatically.
+
+## Related Documentation
+
+- [Backpressure Path Registry](backpressure-path-registry.md) — Concrete catalog of every agent-facing (gated) and human-facing (transformed) path across worktree names, plan titles, and tripwire candidates.
