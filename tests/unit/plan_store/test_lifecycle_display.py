@@ -10,6 +10,26 @@ from erk_shared.gateway.plan_data_provider.lifecycle import (
 from erk_shared.plan_store.types import Plan, PlanState
 
 
+def _format_lifecycle(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+    checks_passing: bool | None = None,
+    has_unresolved_comments: bool | None = None,
+) -> str:
+    """Test helper: wraps format_lifecycle_with_status with None defaults for check params."""
+    return format_lifecycle_with_status(
+        lifecycle_display,
+        is_draft=is_draft,
+        has_conflicts=has_conflicts,
+        review_decision=review_decision,
+        checks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )
+
+
 def _make_plan(
     *,
     header_fields: dict[str, object] | None = None,
@@ -57,13 +77,13 @@ def test_implementing_stage_returns_yellow_markup() -> None:
     """implementing header field returns yellow markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
     result = compute_lifecycle_display(plan, has_workflow_run=False)
-    assert result == "[yellow]implementing[/yellow]"
+    assert result == "[yellow]impling[/yellow]"
 
 
 def test_implemented_stage_returns_cyan_markup() -> None:
     """implemented header field returns cyan markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]implemented[/cyan]"
+    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]impld[/cyan]"
 
 
 def test_merged_stage_returns_green_markup() -> None:
@@ -90,7 +110,7 @@ def test_infer_planned_from_draft_open_pr() -> None:
 def test_infer_review_from_non_draft_open_pr() -> None:
     """Non-draft + OPEN PR infers implemented stage."""
     plan = _make_plan(metadata={"is_draft": False, "pr_state": "OPEN"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]implemented[/cyan]"
+    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]impld[/cyan]"
 
 
 def test_infer_merged_from_merged_pr() -> None:
@@ -139,7 +159,7 @@ def test_header_field_takes_precedence_over_metadata() -> None:
         metadata={"is_draft": False, "pr_state": "MERGED"},
     )
     result = compute_lifecycle_display(plan, has_workflow_run=False)
-    assert result == "[yellow]implementing[/yellow]"
+    assert result == "[yellow]impling[/yellow]"
 
 
 # --- format_lifecycle_with_status tests ---
@@ -147,7 +167,7 @@ def test_header_field_takes_precedence_over_metadata() -> None:
 
 def test_review_no_indicators() -> None:
     """Review stage with no issues returns unchanged."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -158,7 +178,7 @@ def test_review_no_indicators() -> None:
 
 def test_review_with_conflicts() -> None:
     """Review stage with conflicts shows explosion emoji."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=True,
@@ -169,7 +189,7 @@ def test_review_with_conflicts() -> None:
 
 def test_review_approved() -> None:
     """Review stage with approval shows checkmark."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -180,7 +200,7 @@ def test_review_approved() -> None:
 
 def test_review_changes_requested() -> None:
     """Review stage with changes requested shows X."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -191,7 +211,7 @@ def test_review_changes_requested() -> None:
 
 def test_review_conflicts_and_changes_requested() -> None:
     """Review stage with both conflicts and changes requested shows both."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=True,
@@ -202,7 +222,7 @@ def test_review_conflicts_and_changes_requested() -> None:
 
 def test_review_conflicts_and_approved() -> None:
     """Review stage with conflicts and approval shows both."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=True,
@@ -213,40 +233,40 @@ def test_review_conflicts_and_approved() -> None:
 
 def test_implementing_with_conflicts() -> None:
     """Implementing stage with conflicts shows explosion emoji."""
-    result = format_lifecycle_with_status(
-        "[yellow]implementing[/yellow]",
+    result = _format_lifecycle(
+        "[yellow]impling[/yellow]",
         is_draft=None,
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[yellow]implementing 💥[/yellow]"
+    assert result == "[yellow]impling 💥[/yellow]"
 
 
 def test_implementing_no_conflicts() -> None:
     """Implementing stage without conflicts returns unchanged."""
-    result = format_lifecycle_with_status(
-        "[yellow]implementing[/yellow]",
+    result = _format_lifecycle(
+        "[yellow]impling[/yellow]",
         is_draft=None,
         has_conflicts=False,
         review_decision=None,
     )
-    assert result == "[yellow]implementing[/yellow]"
+    assert result == "[yellow]impling[/yellow]"
 
 
 def test_implementing_ignores_review_decision() -> None:
     """Implementing stage does not show review decision indicators."""
-    result = format_lifecycle_with_status(
-        "[yellow]implementing[/yellow]",
+    result = _format_lifecycle(
+        "[yellow]impling[/yellow]",
         is_draft=None,
         has_conflicts=False,
         review_decision="APPROVED",
     )
-    assert result == "[yellow]implementing[/yellow]"
+    assert result == "[yellow]impling[/yellow]"
 
 
 def test_planned_stage_no_indicators() -> None:
     """Planned stage never shows indicators regardless of status."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[dim]planned[/dim]",
         is_draft=None,
         has_conflicts=True,
@@ -257,7 +277,7 @@ def test_planned_stage_no_indicators() -> None:
 
 def test_merged_stage_no_indicators() -> None:
     """Merged stage never shows indicators."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[green]merged[/green]",
         is_draft=None,
         has_conflicts=True,
@@ -268,7 +288,7 @@ def test_merged_stage_no_indicators() -> None:
 
 def test_dash_stage_no_indicators() -> None:
     """Dash (no stage) never shows indicators."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "-",
         is_draft=None,
         has_conflicts=True,
@@ -279,7 +299,7 @@ def test_dash_stage_no_indicators() -> None:
 
 def test_review_with_none_conflicts() -> None:
     """Review stage with None conflicts (unknown) shows no conflict indicator."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=None,
@@ -290,7 +310,7 @@ def test_review_with_none_conflicts() -> None:
 
 def test_review_required_shows_no_indicator() -> None:
     """REVIEW_REQUIRED does not show any indicator (not actionable)."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=None,
         has_conflicts=False,
@@ -301,7 +321,7 @@ def test_review_required_shows_no_indicator() -> None:
 
 def test_plain_text_stage_appends_suffix() -> None:
     """Plain text stage (no Rich markup) appends suffix directly."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "review",
         is_draft=None,
         has_conflicts=True,
@@ -315,84 +335,84 @@ def test_plain_text_stage_appends_suffix() -> None:
 
 def test_planned_draft_shows_construction_emoji() -> None:
     """Planned stage with draft PR shows construction emoji prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[dim]planned[/dim]",
         is_draft=True,
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[dim]🚧 planned[/dim]"
+    assert result == "[dim]planned 🚧[/dim]"
 
 
 def test_planned_published_shows_eyes_emoji() -> None:
     """Planned stage with published PR shows eyes emoji prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[dim]planned[/dim]",
         is_draft=False,
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[dim]👀 planned[/dim]"
+    assert result == "[dim]planned 👀[/dim]"
 
 
 def test_implementing_draft_shows_construction_emoji() -> None:
     """Implementing stage with draft PR shows construction emoji prefix."""
-    result = format_lifecycle_with_status(
-        "[yellow]implementing[/yellow]",
+    result = _format_lifecycle(
+        "[yellow]impling[/yellow]",
         is_draft=True,
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[yellow]🚧 implementing[/yellow]"
+    assert result == "[yellow]impling 🚧[/yellow]"
 
 
 def test_implementing_published_shows_eyes_emoji() -> None:
     """Implementing stage with published PR shows eyes emoji prefix."""
-    result = format_lifecycle_with_status(
-        "[yellow]implementing[/yellow]",
+    result = _format_lifecycle(
+        "[yellow]impling[/yellow]",
         is_draft=False,
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[yellow]👀 implementing[/yellow]"
+    assert result == "[yellow]impling 👀[/yellow]"
 
 
 def test_review_published_shows_eyes_emoji() -> None:
     """Review stage with published PR shows eyes emoji prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=False,
         has_conflicts=False,
         review_decision=None,
     )
-    assert result == "[cyan]👀 review[/cyan]"
+    assert result == "[cyan]review 👀[/cyan]"
 
 
 def test_review_published_with_conflicts_shows_both() -> None:
     """Review stage with published PR and conflicts shows prefix and suffix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=False,
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[cyan]👀 review 💥[/cyan]"
+    assert result == "[cyan]review 👀 💥[/cyan]"
 
 
 def test_review_published_with_approved_shows_both() -> None:
     """Review stage with published PR and approval shows prefix and suffix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[cyan]review[/cyan]",
         is_draft=False,
         has_conflicts=False,
         review_decision="APPROVED",
     )
-    assert result == "[cyan]👀 review ✔[/cyan]"
+    assert result == "[cyan]review 👀 ✔[/cyan]"
 
 
 def test_merged_draft_false_no_prefix() -> None:
     """Merged stage does not show draft/published prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[green]merged[/green]",
         is_draft=False,
         has_conflicts=None,
@@ -403,7 +423,7 @@ def test_merged_draft_false_no_prefix() -> None:
 
 def test_closed_draft_false_no_prefix() -> None:
     """Closed stage does not show draft/published prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "[dim red]closed[/dim red]",
         is_draft=False,
         has_conflicts=None,
@@ -414,24 +434,105 @@ def test_closed_draft_false_no_prefix() -> None:
 
 def test_plain_text_stage_with_draft_prefix() -> None:
     """Plain text stage (no Rich markup) prepends draft prefix."""
-    result = format_lifecycle_with_status(
+    result = _format_lifecycle(
         "review",
         is_draft=False,
         has_conflicts=False,
         review_decision=None,
     )
-    assert result == "👀 review"
+    assert result == "review 👀"
 
 
 def test_implementing_draft_with_conflicts_shows_both() -> None:
     """Implementing draft with conflicts shows prefix and suffix."""
-    result = format_lifecycle_with_status(
-        "[yellow]implementing[/yellow]",
+    result = _format_lifecycle(
+        "[yellow]impling[/yellow]",
         is_draft=True,
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[yellow]🚧 implementing 💥[/yellow]"
+    assert result == "[yellow]impling 🚧 💥[/yellow]"
+
+
+# --- Ready-to-merge (rocket) indicator tests ---
+
+
+def test_implemented_checks_passing_no_comments_shows_rocket() -> None:
+    """Implemented with passing checks and no unresolved comments shows rocket."""
+    result = _format_lifecycle(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "[cyan]impld 🚀[/cyan]"
+
+
+def test_implemented_checks_failing_no_rocket() -> None:
+    """Implemented with failing checks does not show rocket."""
+    result = _format_lifecycle(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=False,
+        has_unresolved_comments=False,
+    )
+    assert result == "[cyan]impld[/cyan]"
+
+
+def test_implemented_checks_none_no_rocket() -> None:
+    """Implemented with unknown checks does not show rocket."""
+    result = _format_lifecycle(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=None,
+        has_unresolved_comments=False,
+    )
+    assert result == "[cyan]impld[/cyan]"
+
+
+def test_implemented_unresolved_comments_no_rocket() -> None:
+    """Implemented with unresolved comments does not show rocket."""
+    result = _format_lifecycle(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=True,
+    )
+    assert result == "[cyan]impld[/cyan]"
+
+
+def test_implemented_conflicts_no_rocket() -> None:
+    """Implemented with conflicts shows conflict emoji, not rocket."""
+    result = _format_lifecycle(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=True,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "[cyan]impld 💥[/cyan]"
+
+
+def test_implementing_checks_passing_no_rocket() -> None:
+    """Implementing stage does not show rocket even with passing checks."""
+    result = _format_lifecycle(
+        "[yellow]impling[/yellow]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "[yellow]impling[/yellow]"
 
 
 # --- Workflow run inference tests ---
@@ -440,7 +541,7 @@ def test_implementing_draft_with_conflicts_shows_both() -> None:
 def test_planned_with_workflow_run_upgrades_to_implementing() -> None:
     """Header "planned" with workflow run upgrades to implementing."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]implementing[/yellow]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impling[/yellow]"
 
 
 def test_planned_without_workflow_run_stays_planned() -> None:
@@ -452,19 +553,19 @@ def test_planned_without_workflow_run_stays_planned() -> None:
 def test_inferred_planned_with_workflow_run_upgrades_to_implementing() -> None:
     """Draft + OPEN (inferred planned) with workflow run upgrades to implementing."""
     plan = _make_plan(metadata={"is_draft": True, "pr_state": "OPEN"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]implementing[/yellow]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impling[/yellow]"
 
 
 def test_implementing_with_workflow_run_stays_implementing() -> None:
     """Already implementing with workflow run stays implementing (no double-upgrade)."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]implementing[/yellow]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impling[/yellow]"
 
 
 def test_implemented_with_workflow_run_stays_implemented() -> None:
     """Past implementing stage with workflow run does not downgrade."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[cyan]implemented[/cyan]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[cyan]impld[/cyan]"
 
 
 def test_no_stage_with_workflow_run_returns_dash() -> None:

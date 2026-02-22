@@ -607,6 +607,8 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_is_draft: bool | None = None
         pr_has_conflicts: bool | None = None
         pr_review_decision: str | None = None
+        pr_checks_passing: bool | None = None
+        pr_has_unresolved_comments: bool | None = None
 
         if plan_id in pr_linkages:
             issue_prs = pr_linkages[plan_id]
@@ -634,13 +636,16 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_is_draft = selected_pr.is_draft
                 pr_has_conflicts = selected_pr.has_conflicts
                 pr_review_decision = selected_pr.review_decision
+                pr_checks_passing = selected_pr.checks_passing
 
                 # Get review thread counts from batched PR data
                 if selected_pr.review_thread_counts is not None:
                     resolved_comment_count, total_comment_count = selected_pr.review_thread_counts
                     comments_display = f"{resolved_comment_count}/{total_comment_count}"
+                    pr_has_unresolved_comments = total_comment_count > resolved_comment_count
                 else:
                     comments_display = "0/0"
+                    pr_has_unresolved_comments = False
 
         # Workflow run info
         run_id: str | None = None
@@ -738,6 +743,8 @@ class RealPlanDataProvider(PlanDataProvider):
             is_draft=pr_is_draft,
             has_conflicts=pr_has_conflicts,
             review_decision=pr_review_decision,
+            checks_passing=pr_checks_passing,
+            has_unresolved_comments=pr_has_unresolved_comments,
         )
 
         return PlanRowData(

@@ -176,7 +176,7 @@ class PlanDataTable(DataTable):
 
         if self._plan_backend == "draft_pr":
             self._stage_column_index = col_index
-            self.add_column("stage", key="stage", width=9)
+            self.add_column("stage", key="stage", width=11)
             col_index += 1
             self.add_column("created", key="created", width=7)
             col_index += 1
