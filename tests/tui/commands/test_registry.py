@@ -132,14 +132,13 @@ def test_close_plan_has_no_shortcut() -> None:
 
 
 def test_land_pr_available_when_all_conditions_met() -> None:
-    """land_pr should be available when PR is open and remote run exists."""
+    """land_pr should be available when PR is open."""
     row = make_plan_row(
         123,
         "Test",
         pr_number=456,
         pr_state="OPEN",
         exists_locally=True,
-        run_url="https://github.com/test/repo/actions/runs/789",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
@@ -149,7 +148,7 @@ def test_land_pr_available_when_all_conditions_met() -> None:
 
 def test_land_pr_not_available_when_no_pr() -> None:
     """land_pr should not be available when no PR."""
-    row = make_plan_row(123, "Test", run_url="https://github.com/test/repo/actions/runs/789")
+    row = make_plan_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -164,7 +163,6 @@ def test_land_pr_not_available_when_pr_merged() -> None:
         pr_number=456,
         pr_state="MERGED",
         exists_locally=False,
-        run_url="https://github.com/test/repo/actions/runs/789",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
@@ -180,7 +178,6 @@ def test_land_pr_available_when_exists_locally() -> None:
         pr_number=456,
         pr_state="OPEN",
         exists_locally=True,
-        run_url="https://github.com/test/repo/actions/runs/789",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
@@ -188,8 +185,8 @@ def test_land_pr_available_when_exists_locally() -> None:
     assert "land_pr" in cmd_ids
 
 
-def test_land_pr_not_available_when_no_run() -> None:
-    """land_pr should not be available when no remote run."""
+def test_land_pr_available_without_run_url() -> None:
+    """land_pr should be available even without a remote run."""
     row = make_plan_row(
         123,
         "Test",
@@ -200,7 +197,7 @@ def test_land_pr_not_available_when_no_run() -> None:
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "land_pr" not in cmd_ids
+    assert "land_pr" in cmd_ids
 
 
 def test_fix_conflicts_remote_available_when_pr_exists() -> None:

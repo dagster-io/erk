@@ -202,10 +202,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.ACTION,
             shortcut=None,
             is_available=lambda ctx: (
-                _is_plan_view(ctx)
-                and ctx.row.pr_number is not None
-                and ctx.row.pr_state == "OPEN"
-                and ctx.row.run_url is not None
+                _is_plan_view(ctx) and ctx.row.pr_number is not None and ctx.row.pr_state == "OPEN"
             ),
             get_display_name=_display_land_pr,
         ),
