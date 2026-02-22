@@ -12,9 +12,7 @@ import pytest
 from erk.cli.shell_utils import cleanup_stale_scripts, write_script_to_temp
 
 
-def test_write_script_to_temp(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_write_script_to_temp(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Test that temp scripts are written with correct metadata."""
     temp_dir = tmp_path / "temp"
     temp_dir.mkdir()
@@ -46,9 +44,7 @@ def test_write_script_to_temp(
     assert script_content in content
 
 
-def test_cleanup_stale_scripts(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_cleanup_stale_scripts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Test that old scripts are removed."""
     temp_dir = tmp_path / "temp"
     temp_dir.mkdir()
