@@ -4,16 +4,18 @@ Review and iterate on existing PRs locally.
 
 ## Overview
 
-Use this workflow when you need to:
+Checking out an existing PR is useful when:
 
-- **Review teammate PRs**: Check out code locally to test or explore
-- **Debug remote execution**: Investigate issues from agent-created PRs
-- **Take over PRs**: Continue work started by others or remote agents
-- **Address review comments**: Make changes in response to PR feedback
+- **Reviewing a teammate's PR** - Run the code locally, test it, leave comments
+- **Debugging remote execution results** - A remote agent created a PR but CI failed
+- **Taking over an abandoned PR** - Continue work someone else started
+- **Continuing from a different machine** - Resume work on a PR you created elsewhere
+
+Erk provides commands to checkout PRs into worktrees, sync them with their base branch, and submit updates.
 
 ## Checking Out a PR
 
-Use `erk pr checkout` (alias: `erk pr co`) to check out a PR into a new worktree:
+Use `erk pr co` to checkout a PR into a worktree:
 
 ```bash
 # By PR number
@@ -21,121 +23,131 @@ erk pr co 123
 
 # By GitHub URL
 erk pr co https://github.com/owner/repo/pull/123
-
-# See what would be created (no changes)
-erk pr co 123 --dry-run
 ```
 
-This command:
+This creates a new worktree with the PR's branch checked out and assigns it to a slot in your worktree pool.
 
-1. Creates a new worktree for the PR branch
-2. Checks out the branch in that worktree
-3. Sets up Graphite tracking if applicable
+### Options
 
-### Flags
+| Flag          | Description                                 |
+| ------------- | ------------------------------------------- |
+| `--no-slot`   | Create worktree without slot assignment     |
+| `-f, --force` | Auto-unassign oldest branch if pool is full |
 
-| Flag        | Description                        |
-| ----------- | ---------------------------------- |
-| `--dry-run` | Show what would be done, don't act |
-| `--restack` | Run `gt restack` after checkout    |
+If your worktree pool is full, use `-f` to automatically unassign the oldest branch:
+
+```bash
+erk pr co 123 -f
+```
 
 ## Syncing with Remote
 
-When remote changes have been pushed (e.g., by CI, remote agents, or teammates), sync your local branch:
+After checking out a PR, sync it with the latest changes from the base branch using `erk pr sync`.
+
+### Git-Only Mode (Default)
+
+The default mode works without Graphite. It fetches the base branch, rebases onto it, and force pushes:
 
 ```bash
-# Sync using Graphite (recommended for gt-tracked branches)
+erk pr sync
+```
+
+Use this mode when:
+
+- Your team doesn't use Graphite
+- You just need to incorporate upstream changes
+- You're doing a one-off review
+
+### Graphite Mode
+
+To register the PR with Graphite for stack management, use the `--dangerous` flag:
+
+```bash
 erk pr sync --dangerous
-
-# Git-only sync (without Graphite)
-git fetch origin && git rebase origin/<branch>
 ```
 
-**Warning**: The `--dangerous` flag is required because syncing can rewrite history. Use `/erk:sync-divergence` if you're unsure about the sync strategy.
+This enables standard `gt` commands (`gt submit`, `gt restack`, etc.) on the branch.
 
-### When Divergence Occurs
+Use Graphite mode when:
 
-If your local branch has diverged from remote:
+- Taking over a PR for ongoing development
+- Building a stack on top of the PR
+- You want full Graphite integration
 
-```bash
-# Use the automated divergence resolver
-/erk:sync-divergence
-```
+**Note:** The `--dangerous` flag is required because Graphite sync invokes Claude with `--dangerously-skip-permissions`.
 
-This command analyzes the divergence and chooses the appropriate sync strategy.
+### Requirements
+
+- Must be on a branch (not detached HEAD)
+- PR must exist and be OPEN
+- PR cannot be from a fork (cross-repo PRs cannot be tracked)
 
 ## Making Changes
 
-Once checked out, iterate on the PR using standard workflows:
+After checkout and sync, iterate normally:
 
-### Using Claude Code
+1. **Edit files** directly or with your editor
+2. **Use Claude Code** for AI-assisted changes: `claude`
+3. **Address review comments** using: `/erk:pr-address`
 
-```bash
-# Address PR review comments
-/erk:pr-address
-
-# General changes with Claude
-claude "make the requested changes"
-```
-
-### Manual Changes
-
-```bash
-# Edit files directly
-vim src/my_file.py
-
-# Commit changes
-git add -p
-git commit -m "Address review feedback"
-```
+The `/erk:pr-address` command fetches unresolved review comments and helps address them systematically.
 
 ## Submitting Updates
 
-After making changes, push them to the PR:
+After making changes, submit with:
 
 ```bash
-# Using Graphite (recommended)
 erk pr submit
-
-# Or with force push if needed
-gt submit --force --no-interactive
 ```
 
-For quick iteration:
+This pushes your changes and updates the PR. If the branch has diverged from remote, use force:
 
 ```bash
-# Commit and submit in one step
-/local:quick-submit
+erk pr submit -f
 ```
+
+### Options
+
+| Flag            | Description                                   |
+| --------------- | --------------------------------------------- |
+| `-f, --force`   | Force push when branch has diverged           |
+| `--no-graphite` | Skip Graphite enhancement (use git + gh only) |
+| `--debug`       | Show diagnostic output                        |
 
 ## Landing
 
-When the PR is approved and CI passes:
+When the PR is approved and ready to merge:
 
 ```bash
-# Land the PR (merge and cleanup)
 erk land
+```
 
-# Land and move to the next branch in stack
+This merges the PR, deletes the remote branch, and cleans up the local worktree.
+
+### Options
+
+| Flag          | Description                                                                 |
+| ------------- | --------------------------------------------------------------------------- |
+| `--up`        | Navigate to child branch instead of trunk after landing (requires Graphite) |
+| `-f, --force` | Skip confirmation prompts                                                   |
+| `--no-delete` | Preserve local branch and slot assignment                                   |
+| `--dry-run`   | Preview without executing                                                   |
+
+To land and continue working on a stacked PR:
+
+```bash
 erk land --up
 ```
 
-The `erk land` command:
-
-1. Merges the PR via GitHub
-2. Deletes the feature branch
-3. Removes the worktree (if in a linked worktree)
-4. Checks out trunk or the next branch
-
 ## Common Scenarios
 
-| Scenario                  | Command Sequence                                    |
-| ------------------------- | --------------------------------------------------- |
-| Review teammate's PR      | `erk pr co 123` then explore/test                   |
-| Address my PR's comments  | `erk pr co 123` → `/erk:pr-address` → submit        |
-| Take over remote agent PR | `erk pr co 123` → make changes → submit             |
-| Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit  |
-| Sync after force push     | `/erk:sync-divergence` or `erk pr sync --dangerous` |
+| Scenario                       | Commands                                                                   |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| Review teammate's PR           | `erk pr co <num>` then review and comment                                  |
+| Debug remote execution failure | `erk pr co <num>` then `erk pr sync` then fix then `erk pr submit`         |
+| Take over abandoned PR         | `erk pr co <num>` then `erk pr sync --dangerous` then continue development |
+| Quick fix on PR                | `erk pr co <num>` then edit then `erk pr submit -f`                        |
+| Land and continue stack        | `erk land --up`                                                            |
 
 ## See Also
 
