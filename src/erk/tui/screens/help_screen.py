@@ -80,6 +80,7 @@ class HelpScreen(ModalScreen):
                 yield Label("p       Open PR in browser", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
                 yield Label("c       View unresolved comments", classes="help-binding")
+                yield Label("l       Launch actions menu", classes="help-binding")
 
             with Vertical(classes="help-section"):
                 yield Label("Filter & Sort", classes="help-section-title")
