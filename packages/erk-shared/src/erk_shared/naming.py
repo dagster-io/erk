@@ -191,6 +191,119 @@ def validate_plan_title(title: str) -> ValidPlanTitle | InvalidPlanTitle:
     return ValidPlanTitle(title=stripped)
 
 
+# Worktree name constraints
+_WORKTREE_NAME_MAX_LENGTH = 31
+
+
+@dataclass(frozen=True)
+class ValidWorktreeName:
+    """Validation success for a worktree name."""
+
+    name: str
+
+
+@dataclass(frozen=True)
+class InvalidWorktreeName:
+    """Validation failure for a worktree name."""
+
+    raw_name: str
+    reason: str
+    diagnostics: list[str]  # Specific issues found
+
+    @property
+    def error_type(self) -> str:
+        return "invalid-worktree-name"
+
+    def format_message(self) -> str:
+        """Full error message with rules and diagnostics for agent self-correction.
+
+        Uses method (not property) because it builds a multi-line string.
+        """
+        diag_lines = "\n".join(f"    - {d}" for d in self.diagnostics)
+        return (
+            f"Invalid worktree name: {self.reason}\n"
+            f"  Actual value: {self.raw_name!r}\n"
+            f"  Diagnostics:\n{diag_lines}\n"
+            f"  Rules:\n"
+            f"    - Lowercase letters, digits, and hyphens only [a-z0-9-]\n"
+            f"    - No underscores (use hyphens)\n"
+            f"    - No consecutive hyphens\n"
+            f"    - No leading/trailing hyphens\n"
+            f"    - Maximum {_WORKTREE_NAME_MAX_LENGTH} characters\n"
+            f"  Valid examples: add-auth-feature, fix-bug-123\n"
+            f"  Invalid examples: Add_Auth, my__feature, --name"
+        )
+
+
+def _diagnose_worktree_name(name: str) -> list[str]:
+    """Identify specific validation failures in a worktree name."""
+    issues: list[str] = []
+    if name != name.lower():
+        issues.append("Contains uppercase letters (must be lowercase)")
+    if "_" in name:
+        issues.append("Contains underscores (use hyphens instead)")
+    if re.search(r"[^a-z0-9-]", name):
+        bad_chars = sorted(set(re.findall(r"[^a-z0-9-]", name)))
+        issues.append(f"Contains invalid characters: {bad_chars}")
+    if "--" in name:
+        issues.append("Contains consecutive hyphens")
+    if name.startswith("-") or name.endswith("-"):
+        issues.append("Has leading or trailing hyphens")
+    if len(name) > _WORKTREE_NAME_MAX_LENGTH:
+        issues.append(f"Too long ({len(name)} characters, maximum {_WORKTREE_NAME_MAX_LENGTH})")
+    return issues
+
+
+def validate_worktree_name(name: str) -> ValidWorktreeName | InvalidWorktreeName:
+    """Validate a worktree name against sanitization rules.
+
+    Agent-facing validation gate. Accepts names that are already clean
+    (would pass through sanitize_worktree_name() unchanged). Rejects names
+    that would be silently transformed.
+
+    Names with timestamp suffixes (-MM-DD-HHMM) are treated as idempotent
+    and pass validation (they've already been sanitized).
+
+    Args:
+        name: The worktree name string to validate.
+
+    Returns:
+        ValidWorktreeName if valid, InvalidWorktreeName if invalid.
+
+    Examples:
+        >>> validate_worktree_name("add-auth-feature")
+        ValidWorktreeName(name='add-auth-feature')
+        >>> validate_worktree_name("Add_Auth")
+        InvalidWorktreeName(raw_name='Add_Auth', reason='...', diagnostics=[...])
+    """
+    stripped = name.strip()
+
+    if not stripped:
+        return InvalidWorktreeName(
+            raw_name=name, reason="Empty or whitespace-only", diagnostics=["Name is empty"]
+        )
+
+    # Timestamp-suffixed names are idempotent — already sanitized
+    if has_timestamp_suffix(stripped):
+        return ValidWorktreeName(name=stripped)
+
+    # Check if sanitization would change the name
+    sanitized = sanitize_worktree_name(stripped)
+    if sanitized == stripped:
+        return ValidWorktreeName(name=stripped)
+
+    # Name would be transformed — diagnose why
+    diagnostics = _diagnose_worktree_name(stripped)
+    if not diagnostics:
+        diagnostics = [f"Would be transformed to: {sanitized!r}"]
+
+    return InvalidWorktreeName(
+        raw_name=name,
+        reason="Name would be silently transformed by sanitization",
+        diagnostics=diagnostics,
+    )
+
+
 @dataclass(frozen=True)
 class ValidObjectiveSlug:
     """Validation success for an objective slug.
