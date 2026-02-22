@@ -158,9 +158,31 @@ class PlanDataTable(DataTable):
         """
         col_index = 0
         # In draft_pr mode, first column shows PR number not issue number
-        plan_col_header = "pr" if self._plan_backend == "draft_pr" else "plan"
+        if self._view_mode == ViewMode.OBJECTIVES:
+            plan_col_header = "issue"
+        elif self._plan_backend == "draft_pr":
+            plan_col_header = "pr"
+        else:
+            plan_col_header = "plan"
         self.add_column(plan_col_header, key="plan", width=6)
         col_index += 1
+
+        # Objectives view: fully independent column set, return early
+        if self._view_mode == ViewMode.OBJECTIVES:
+            self.add_column("title", key="title", width=50)
+            col_index += 1
+            self.add_column("prog", key="progress", width=5)
+            col_index += 1
+            self.add_column("next node", key="next_node", width=50)
+            col_index += 1
+            self.add_column("deps", key="deps", width=12)
+            col_index += 1
+            self.add_column("updated", key="updated", width=7)
+            col_index += 1
+            self.add_column("created by", key="author", width=12)
+            col_index += 1
+            return
+
         if self._plan_backend == "draft_pr":
             self._sts_column_index = col_index
             self.add_column("sts", key="sts", width=5)
@@ -173,20 +195,6 @@ class PlanDataTable(DataTable):
         self.add_column("obj", key="objective", width=5)
         self._objective_column_index = col_index
         col_index += 1
-
-        # Objectives view: plan, obj, prog, next step, deps, updated, author
-        if self._view_mode == ViewMode.OBJECTIVES:
-            self.add_column("prog", key="progress", width=5)
-            col_index += 1
-            self.add_column("next node", key="next_node", width=30)
-            col_index += 1
-            self.add_column("deps", key="deps", width=12)
-            col_index += 1
-            self.add_column("updated", key="updated", width=7)
-            col_index += 1
-            self.add_column("author", key="author", width=9)
-            col_index += 1
-            return
 
         # Plans view: plan, [sts, stage, created,] obj, loc, branch,
         # run-id, run, [created,] author, ...
@@ -281,6 +289,7 @@ class PlanDataTable(DataTable):
         if self._view_mode == ViewMode.OBJECTIVES:
             return (
                 plan_cell,
+                row.full_title,
                 row.objective_progress_display,
                 Text(row.objective_next_node_display),
                 row.objective_deps_display,
