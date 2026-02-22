@@ -66,10 +66,10 @@ When `.erk/impl-context/` isn't properly cleaned up:
 
 ### Interpreting the Failure
 
-| Files in Error                | Meaning                                   |
-| ----------------------------- | ----------------------------------------- |
-| `.erk/impl-context/plan.md`   | Remote implementation didn't clean up     |
-| `.erk/impl-context/ref.json`  | Same - cleanup step failed or was skipped |
+| Files in Error               | Meaning                                   |
+| ---------------------------- | ----------------------------------------- |
+| `.erk/impl-context/plan.md`  | Remote implementation didn't clean up     |
+| `.erk/impl-context/ref.json` | Same - cleanup step failed or was skipped |
 
 ### Recovery
 

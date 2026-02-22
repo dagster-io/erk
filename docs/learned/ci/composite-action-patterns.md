@@ -21,15 +21,15 @@ GitHub Actions composite actions encapsulate reusable setup steps. Erk uses them
 
 ## Available Composite Actions
 
-| Action               | Purpose                                       | Inputs                                                    |
-| -------------------- | --------------------------------------------- | --------------------------------------------------------- |
-| `erk-remote-setup`   | Full remote workflow environment setup        | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
-| `setup-claude-code`  | Install Claude Code CLI with caching          | None                                                      |
-| `setup-python-uv`    | Install Python and uv, sync dependencies      | `python-version` (default: "3.12")                        |
-| `setup-graphite`     | Install Graphite CLI for stack management     | None                                                      |
-| `setup-claude-erk`   | Install erk tools (assumes uv/claude exist)   | None                                                      |
-| `setup-prettier`     | Install Node.js and Prettier                  | None                                                      |
-| `check-impl-context` | Check if `.erk/impl-context/` folder exists   | None (outputs: `skip`)                                    |
+| Action               | Purpose                                     | Inputs                                                    |
+| -------------------- | ------------------------------------------- | --------------------------------------------------------- |
+| `erk-remote-setup`   | Full remote workflow environment setup      | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
+| `setup-claude-code`  | Install Claude Code CLI with caching        | None                                                      |
+| `setup-python-uv`    | Install Python and uv, sync dependencies    | `python-version` (default: "3.12")                        |
+| `setup-graphite`     | Install Graphite CLI for stack management   | None                                                      |
+| `setup-claude-erk`   | Install erk tools (assumes uv/claude exist) | None                                                      |
+| `setup-prettier`     | Install Node.js and Prettier                | None                                                      |
+| `check-impl-context` | Check if `.erk/impl-context/` folder exists | None (outputs: `skip`)                                    |
 
 ## Why Composite Actions Over Repeated Steps
 
