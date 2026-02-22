@@ -14,6 +14,7 @@ from erk.tui.app import (
     _build_github_url,
 )
 from erk.tui.data.types import PlanFilters
+from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
 from erk.tui.views.types import ViewMode, get_view_config
 from erk.tui.widgets.plan_table import PlanDataTable
@@ -2073,3 +2074,91 @@ def test_display_name_draft_pr_non_plans_view() -> None:
     assert app._display_name_for_view(ViewMode.LEARN) == expected_learn
     expected_obj = get_view_config(ViewMode.OBJECTIVES).display_name
     assert app._display_name_for_view(ViewMode.OBJECTIVES) == expected_obj
+
+
+class TestActionLaunch:
+    """Tests for action_launch and _on_launch_result."""
+
+    @pytest.mark.asyncio
+    async def test_launch_with_no_selected_row_does_nothing(self) -> None:
+        """Pressing 'l' with no rows does not push a screen."""
+        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            await pilot.press("l")
+            await pilot.pause()
+
+            assert len(app.screen_stack) == initial_stack_len
+
+    @pytest.mark.asyncio
+    async def test_launch_pushes_launch_screen(self) -> None:
+        """Pressing 'l' with a selected row pushes LaunchScreen."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    plan_url="https://github.com/test/repo/issues/123",
+                    pr_number=456,
+                    pr_url="https://github.com/test/repo/pull/456",
+                )
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("l")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert len(app.screen_stack) > 1
+            assert isinstance(app.screen_stack[-1], LaunchScreen)
+
+    @pytest.mark.asyncio
+    async def test_launch_result_none_does_not_execute_command(self) -> None:
+        """_on_launch_result with None does not execute any command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._on_launch_result(None)
+
+            assert clipboard.last_copied is None
+
+    @pytest.mark.asyncio
+    async def test_launch_result_executes_command(self) -> None:
+        """_on_launch_result with a command_id executes that command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._on_launch_result("copy_prepare")
+
+            assert clipboard.last_copied == "erk br create --for-plan 123"

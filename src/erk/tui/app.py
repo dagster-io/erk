@@ -16,10 +16,12 @@ from textual.screen import Screen
 from textual.widgets import Header, Input, Label
 
 from erk.tui.commands.provider import MainListCommandProvider
+from erk.tui.commands.types import CommandContext
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.screens.help_screen import HelpScreen
+from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
@@ -77,6 +79,7 @@ class ErkDashApp(App):
         Binding("c", "view_comments", "Comments", show=False),
         Binding("i", "show_implement", "Implement"),
         Binding("v", "view_plan_body", "View", show=False),
+        Binding("l", "launch", "Launch"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
         Binding("s", "toggle_sort", "Sort"),
         Binding("ctrl+p", "command_palette", "Commands"),
@@ -380,6 +383,27 @@ class ErkDashApp(App):
     def action_help(self) -> None:
         """Show help screen."""
         self.push_screen(HelpScreen())
+
+    def action_launch(self) -> None:
+        """Open the launch screen for quick ACTION command execution."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        ctx = CommandContext(
+            row=row,
+            view_mode=self._view_mode,
+            plan_backend=self._plan_backend,
+        )
+        self.push_screen(LaunchScreen(ctx=ctx), self._on_launch_result)
+
+    def _on_launch_result(self, command_id: str | None) -> None:
+        """Handle result from the launch screen.
+
+        Args:
+            command_id: The selected command ID, or None if cancelled
+        """
+        if command_id is not None:
+            self.execute_palette_command(command_id)
 
     def _switch_view(self, mode: ViewMode) -> None:
         """Switch to a different view mode.
