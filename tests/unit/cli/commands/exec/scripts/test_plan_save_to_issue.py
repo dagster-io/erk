@@ -1075,9 +1075,12 @@ def test_plan_save_explicit_flag_overrides_marker(tmp_path: Path) -> None:
         result = runner.invoke(
             plan_save_to_issue,
             [
-                "--format", "json",
-                "--session-id", test_session_id,
-                "--objective-issue", "9999",
+                "--format",
+                "json",
+                "--session-id",
+                test_session_id,
+                "--objective-issue",
+                "9999",
             ],
             obj=ErkContext.for_test(
                 github_issues=fake_gh,

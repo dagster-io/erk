@@ -141,7 +141,7 @@ erk exec marker read --session-id "${CLAUDE_SESSION_ID}" objective-context
 If this returns a value matching the objective issue number, proceed.
 If it fails or returns wrong value, STOP and report:
 "ERROR: objective-context marker not created. Re-run the marker command manually:
-  erk exec marker create --session-id '${CLAUDE_SESSION_ID}' --associated-objective <issue-number> objective-context"
+erk exec marker create --session-id '${CLAUDE_SESSION_ID}' --associated-objective <issue-number> objective-context"
 
 ### Step 3: Load Objective Skill
 
