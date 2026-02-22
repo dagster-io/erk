@@ -1,7 +1,7 @@
 """Update an existing GitHub issue's plan comment with new content.
 
 Usage:
-    erk exec plan-update-issue --issue-number N [OPTIONS]
+    erk exec plan-update-issue --plan-number N [OPTIONS]
 
 This command updates the plan content comment on an existing GitHub issue:
 1. Find plan file (from session scratch, --plan-path, or ~/.claude/plans/)
@@ -9,7 +9,7 @@ This command updates the plan content comment on an existing GitHub issue:
 3. Update issue title from plan H1 heading
 
 Options:
-    --issue-number N: GitHub issue number to update (required)
+    --plan-number N: GitHub issue number to update (required)
     --session-id ID: Session ID to find plan file in scratch storage
     --plan-path PATH: Direct path to plan file (overrides session lookup)
 
@@ -39,7 +39,7 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
 
 @click.command(name="plan-update-issue")
 @click.option(
-    "--issue-number",
+    "--plan-number",
     type=int,
     required=True,
     help="GitHub issue number to update",
@@ -64,7 +64,7 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
 def plan_update_issue(
     ctx: click.Context,
     *,
-    issue_number: int,
+    plan_number: int,
     output_format: str,
     plan_path: Path | None,
     session_id: str | None,
@@ -100,10 +100,10 @@ def plan_update_issue(
     assert plan_content is not None
 
     # Step 2: Check plan exists via PlanBackend
-    plan_id = str(issue_number)
+    plan_id = str(plan_number)
     plan_result = backend.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
-        _handle_update_error(f"Issue #{issue_number} not found")
+        _handle_update_error(f"Issue #{plan_number} not found")
 
     # Narrow type for type checker (PlanNotFound case exits above)
     assert not isinstance(plan_result, PlanNotFound)
@@ -126,7 +126,7 @@ def plan_update_issue(
 
     # Step 5: Output success
     if output_format == "display":
-        click.echo(f"Plan updated on issue #{issue_number}")
+        click.echo(f"Plan updated on issue #{plan_number}")
         click.echo(f"Title: {full_title}")
         click.echo(f"URL: {plan_result.url}")
     else:
@@ -134,8 +134,8 @@ def plan_update_issue(
             json.dumps(
                 {
                     "success": True,
-                    "issue_number": issue_number,
-                    "issue_url": plan_result.url,
+                    "plan_number": plan_number,
+                    "plan_url": plan_result.url,
                     "title": full_title,
                 }
             )

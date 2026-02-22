@@ -1,14 +1,14 @@
 """Close a plan review PR without merging.
 
 Usage:
-    erk exec plan-review-complete <issue-number>
+    erk exec plan-review-complete <plan-number>
 
 Output:
-    JSON with success status, issue number, and PR number
+    JSON with success status, plan number, and PR number
 
 Exit Codes:
     0: Success
-    1: Error (issue not found, no plan header, or no review PR)
+    1: Error (plan not found, no plan header, or no review PR)
 """
 
 import json
@@ -37,7 +37,7 @@ class PlanReviewCompleteSuccess:
     """Success response for plan review PR completion."""
 
     success: bool
-    issue_number: int
+    plan_number: int
     pr_number: int
     branch_name: str
     branch_deleted: bool
@@ -69,7 +69,7 @@ def _plan_review_complete_impl(
     branch_manager: BranchManager,
     backend: PlanBackend,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
 ) -> PlanReviewCompleteSuccess:
     """Close a plan review PR without merging.
 
@@ -79,36 +79,36 @@ def _plan_review_complete_impl(
         branch_manager: BranchManager (for branch mutations)
         backend: PlanBackend for plan metadata operations
         repo_root: Repository root path
-        issue_number: Plan issue number
+        plan_number: Plan issue number
 
     Returns:
         PlanReviewCompleteSuccess on success
 
     Raises:
-        PlanReviewCompleteException: If issue not found, no plan header, or no review PR
+        PlanReviewCompleteException: If plan not found, no plan header, or no review PR
     """
-    plan_id = str(issue_number)
+    plan_id = str(plan_number)
 
     # LBYL: Get review_pr from plan-header metadata (also serves as existence check)
     review_pr = backend.get_metadata_field(repo_root, plan_id, "review_pr")
     if isinstance(review_pr, PlanNotFound):
         raise PlanReviewCompleteException(
-            error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
+            error="plan_not_found",
+            message=f"Plan #{plan_number} not found",
         )
 
     # LBYL: Check review_pr is not None
     if review_pr is None:
         raise PlanReviewCompleteException(
             error="no_review_pr",
-            message=f"Issue #{issue_number} has no active review PR",
+            message=f"Plan #{plan_number} has no active review PR",
         )
 
     # review_pr should be an int at this point (from YAML metadata)
     if not isinstance(review_pr, int):
         raise PlanReviewCompleteException(
             error="no_review_pr",
-            message=f"Issue #{issue_number} has invalid review_pr value",
+            message=f"Plan #{plan_number} has invalid review_pr value",
         )
     review_pr_number = review_pr
 
@@ -146,12 +146,12 @@ def _plan_review_complete_impl(
     except PlanHeaderNotFoundError:
         raise PlanReviewCompleteException(
             error="no_plan_header",
-            message=f"Issue #{issue_number} is missing plan-header metadata block",
+            message=f"Plan #{plan_number} is missing plan-header metadata block",
         ) from None
 
     return PlanReviewCompleteSuccess(
         success=True,
-        issue_number=issue_number,
+        plan_number=plan_number,
         pr_number=review_pr_number,
         branch_name=branch_name,
         branch_deleted=branch_deleted,
@@ -160,11 +160,11 @@ def _plan_review_complete_impl(
 
 
 @click.command(name="plan-review-complete")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.pass_context
 def plan_review_complete(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
 ) -> None:
     """Close a plan review PR without merging.
 
@@ -183,7 +183,7 @@ def plan_review_complete(
             branch_manager=branch_manager,
             backend=backend,
             repo_root=repo_root,
-            issue_number=issue_number,
+            plan_number=plan_number,
         )
         click.echo(json.dumps(asdict(result)))
     except PlanReviewCompleteException as e:

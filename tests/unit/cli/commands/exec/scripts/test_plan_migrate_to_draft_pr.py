@@ -80,7 +80,7 @@ def _make_context(
 
 
 def test_migrate_success_json(tmp_path: Path) -> None:
-    """Happy path: issue migrated, returns JSON with pr_number and closes issue."""
+    """Happy path: issue migrated, returns JSON with plan_number and closes issue."""
     issue = _make_issue()
     ctx = _make_context(tmp_path=tmp_path, issue=issue)
     runner = CliRunner()
@@ -94,9 +94,9 @@ def test_migrate_success_json(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["original_issue_number"] == 42
-    assert "pr_number" in output
-    assert "pr_url" in output
+    assert output["original_plan_number"] == 42
+    assert "plan_number" in output
+    assert "plan_url" in output
     assert output["branch_name"].startswith("plnd/")
 
 
@@ -142,7 +142,7 @@ def test_migrate_dry_run(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["dry_run"] is True
-    assert output["original_issue_number"] == 42
+    assert output["original_plan_number"] == 42
     assert "branch_name" in output
     # Issue should NOT be closed
     assert 42 not in fake_issues._closed_issues
@@ -340,7 +340,7 @@ def test_migrate_preserves_operational_metadata(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
-    pr_number = output["pr_number"]
+    pr_number = output["plan_number"]
 
     # Check the final PR body has the operational metadata
     final_body = fake_github._pr_details[pr_number].body

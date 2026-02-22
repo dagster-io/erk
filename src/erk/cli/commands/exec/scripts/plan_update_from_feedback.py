@@ -1,15 +1,15 @@
 """Update a plan issue's plan-body comment with new content.
 
 Usage:
-    erk exec plan-update-from-feedback <issue-number> --plan-path PATH
-    erk exec plan-update-from-feedback <issue-number> --plan-content "..."
+    erk exec plan-update-from-feedback <plan-number> --plan-path PATH
+    erk exec plan-update-from-feedback <plan-number> --plan-content "..."
 
 Output:
-    JSON with success status and issue number
+    JSON with success status and plan number
 
 Exit Codes:
     0: Success
-    1: Error (issue not found, missing label, or update failed)
+    1: Error (plan not found, missing label, or update failed)
 """
 
 import json
@@ -28,7 +28,7 @@ class PlanUpdateFromFeedbackSuccess:
     """Success response for plan update from feedback."""
 
     success: bool
-    issue_number: int
+    plan_number: int
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ def _update_plan_from_feedback_impl(
     backend: PlanBackend,
     *,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
     plan_content: str,
 ) -> PlanUpdateFromFeedbackSuccess:
     """Update the plan-body comment on a plan issue.
@@ -61,7 +61,7 @@ def _update_plan_from_feedback_impl(
     Args:
         backend: PlanBackend for plan operations
         repo_root: Repository root path
-        issue_number: Issue number to update
+        plan_number: Plan number to update
         plan_content: New plan markdown content
 
     Returns:
@@ -70,21 +70,21 @@ def _update_plan_from_feedback_impl(
     Raises:
         PlanUpdateFromFeedbackException: If validation fails
     """
-    plan_id = str(issue_number)
+    plan_id = str(plan_number)
 
     # LBYL: Check if plan exists
     plan_result = backend.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
         raise PlanUpdateFromFeedbackException(
             error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
+            message=f"Plan #{plan_number} not found",
         )
 
     # Validate erk-plan label
     if "erk-plan" not in plan_result.labels:
         raise PlanUpdateFromFeedbackException(
             error="missing_erk_plan_label",
-            message=f"Issue #{issue_number} does not have the erk-plan label",
+            message=f"Plan #{plan_number} does not have the erk-plan label",
         )
 
     # Update plan content via PlanBackend
@@ -98,18 +98,18 @@ def _update_plan_from_feedback_impl(
 
     return PlanUpdateFromFeedbackSuccess(
         success=True,
-        issue_number=issue_number,
+        plan_number=plan_number,
     )
 
 
 @click.command(name="plan-update-from-feedback")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.option("--plan-path", type=click.Path(exists=True), help="Path to plan markdown file")
 @click.option("--plan-content", type=str, help="Plan content as string")
 @click.pass_context
 def plan_update_from_feedback(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
     plan_path: str | None,
     plan_content: str | None,
 ) -> None:
@@ -159,7 +159,7 @@ def plan_update_from_feedback(
         result = _update_plan_from_feedback_impl(
             backend,
             repo_root=repo_root,
-            issue_number=issue_number,
+            plan_number=plan_number,
             plan_content=content,
         )
         click.echo(json.dumps(asdict(result)))

@@ -63,21 +63,21 @@ def make_plan_comment_body_v2(plan_content: str) -> str:
 
 
 def make_issue_info(
-    number: int,
+    plan_number: int,
     body: str,
     title: str,
     labels: list[str] | None,
 ) -> IssueInfo:
-    """Create test IssueInfo with given number, body, and labels."""
+    """Create test IssueInfo with given plan number, body, and labels."""
     if labels is None:
         labels = ["erk-plan"]
     now = datetime.now(UTC)
     return IssueInfo(
-        number=number,
+        number=plan_number,
         title=title,
         body=body,
         state="OPEN",
-        url=f"https://github.com/test-owner/test-repo/issues/{number}",
+        url=f"https://github.com/test-owner/test-repo/issues/{plan_number}",
         labels=labels,
         assignees=[],
         created_at=now,
@@ -108,21 +108,21 @@ def test_plan_create_review_branch_success(tmp_path: Path) -> None:
     """Test successful branch creation and file commit."""
     plan_content = "## Implementation Plan\n\nThis is the plan content."
     comment_id = 123456789
-    issue_number = 1234
+    plan_number = 1234
     repo_root = tmp_path / "repo"
     repo_root.mkdir(parents=True, exist_ok=True)
 
     # Create issue with plan-header
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Plan: Add feature X", labels=None)
+    issue = make_issue_info(plan_number, body, title="Plan: Add feature X", labels=None)
 
     # Create comment with plan-body block
     comment_body = make_plan_comment_body_v2(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment]},
+        issues={plan_number: issue},
+        comments_with_urls={plan_number: [comment]},
     )
 
     fake_git = FakeGit(
@@ -133,13 +133,13 @@ def test_plan_create_review_branch_success(tmp_path: Path) -> None:
     )
 
     # FakeTime default: 2024-01-15 14:30:00 -> branch timestamp -01-15-1430
-    expected_branch = f"plnd/review-{issue_number}-01-15-1430"
+    expected_branch = f"plnd/review-{plan_number}-01-15-1430"
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_branch,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
@@ -150,9 +150,9 @@ def test_plan_create_review_branch_success(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == issue_number
+    assert output["plan_number"] == plan_number
     assert output["branch"] == expected_branch
-    assert output["file_path"] == f"PLAN-REVIEW-{issue_number}.md"
+    assert output["file_path"] == f"PLAN-REVIEW-{plan_number}.md"
     assert output["plan_title"] == "Plan: Add feature X"
 
     # Verify branch was created from origin/master
@@ -171,8 +171,8 @@ def test_plan_create_review_branch_success(tmp_path: Path) -> None:
     branch_commit = fake_git.commit.branch_commits[0]
     assert branch_commit.cwd == repo_root
     assert branch_commit.branch == expected_branch
-    assert branch_commit.files == {f"PLAN-REVIEW-{issue_number}.md": plan_content}
-    assert branch_commit.message == f"Add plan #{issue_number} for review"
+    assert branch_commit.files == {f"PLAN-REVIEW-{plan_number}.md": plan_content}
+    assert branch_commit.message == f"Add plan #{plan_number} for review"
 
     # No traditional stage+commit should have been used
     assert fake_git.commit.commits == []
@@ -202,18 +202,18 @@ Background info here
 All tests pass"""
 
     comment_id = 111222333
-    issue_number = 9999
+    plan_number = 9999
     repo_root = tmp_path / "repo"
     repo_root.mkdir(parents=True, exist_ok=True)
 
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Complex Plan", labels=None)
+    issue = make_issue_info(plan_number, body, title="Complex Plan", labels=None)
     comment_body = make_plan_comment_body_v2(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment]},
+        issues={plan_number: issue},
+        comments_with_urls={plan_number: [comment]},
     )
 
     fake_git = FakeGit(
@@ -227,7 +227,7 @@ All tests pass"""
 
     result = runner.invoke(
         plan_create_review_branch,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
@@ -240,7 +240,7 @@ All tests pass"""
     # Verify plan committed via commit_files_to_branch with full multi-line content
     assert len(fake_git.commit.branch_commits) == 1
     branch_commit = fake_git.commit.branch_commits[0]
-    assert branch_commit.files[f"PLAN-REVIEW-{issue_number}.md"] == plan_content
+    assert branch_commit.files[f"PLAN-REVIEW-{plan_number}.md"] == plan_content
 
 
 # ============================================================================
@@ -274,20 +274,20 @@ def test_plan_create_review_branch_issue_not_found(tmp_path: Path) -> None:
 
 def test_plan_create_review_branch_missing_erk_plan_label(tmp_path: Path) -> None:
     """Test error when issue doesn't have erk-plan label."""
-    issue_number = 1234
+    plan_number = 1234
     repo_root = tmp_path / "repo"
     body = make_plan_header_body(plan_comment_id=123456789)
     issue = make_issue_info(
-        issue_number, body, title="Test Plan Issue", labels=["bug", "enhancement"]
+        plan_number, body, title="Test Plan Issue", labels=["bug", "enhancement"]
     )
 
-    fake_gh = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHubIssues(issues={plan_number: issue})
     fake_git = FakeGit()
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_branch,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
@@ -304,18 +304,18 @@ def test_plan_create_review_branch_missing_erk_plan_label(tmp_path: Path) -> Non
 
 def test_plan_create_review_branch_no_plan_content(tmp_path: Path) -> None:
     """Test error when issue has no plan content."""
-    issue_number = 1234
+    plan_number = 1234
     repo_root = tmp_path / "repo"
     body = make_plan_header_body(plan_comment_id=None)
-    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
+    issue = make_issue_info(plan_number, body, title="Test Plan Issue", labels=None)
 
-    fake_gh = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHubIssues(issues={plan_number: issue})
     fake_git = FakeGit()
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_branch,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
@@ -339,18 +339,18 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
     """Test JSON output structure on success."""
     plan_content = "## Plan content here"
     comment_id = 123456789
-    issue_number = 1234
+    plan_number = 1234
     repo_root = tmp_path / "repo"
     repo_root.mkdir(parents=True, exist_ok=True)
 
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Plan: Test Feature", labels=None)
+    issue = make_issue_info(plan_number, body, title="Plan: Test Feature", labels=None)
     comment_body = make_plan_comment_body_v2(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment]},
+        issues={plan_number: issue},
+        comments_with_urls={plan_number: [comment]},
     )
 
     fake_git = FakeGit(
@@ -361,13 +361,13 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
     )
 
     # FakeTime default: 2024-01-15 14:30:00 -> branch timestamp -01-15-1430
-    expected_branch = f"plnd/review-{issue_number}-01-15-1430"
+    expected_branch = f"plnd/review-{plan_number}-01-15-1430"
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_branch,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
@@ -380,23 +380,23 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     # Verify expected keys
     assert "success" in output
-    assert "issue_number" in output
+    assert "plan_number" in output
     assert "branch" in output
     assert "file_path" in output
     assert "plan_title" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["issue_number"], int)
+    assert isinstance(output["plan_number"], int)
     assert isinstance(output["branch"], str)
     assert isinstance(output["file_path"], str)
     assert isinstance(output["plan_title"], str)
 
     # Verify values
     assert output["success"] is True
-    assert output["issue_number"] == issue_number
+    assert output["plan_number"] == plan_number
     assert output["branch"] == expected_branch
-    assert output["file_path"] == f"PLAN-REVIEW-{issue_number}.md"
+    assert output["file_path"] == f"PLAN-REVIEW-{plan_number}.md"
     assert output["plan_title"] == "Plan: Test Feature"
 
 

@@ -4,9 +4,9 @@ Reads an existing erk-plan GitHub issue, creates a draft PR using the
 draft_pr backend, then closes the original issue with a migration notice.
 
 Usage:
-    erk exec plan-migrate-to-draft-pr <issue_number>
-    erk exec plan-migrate-to-draft-pr <issue_number> --dry-run
-    erk exec plan-migrate-to-draft-pr <issue_number> --format display
+    erk exec plan-migrate-to-draft-pr <plan_number>
+    erk exec plan-migrate-to-draft-pr <plan_number> --dry-run
+    erk exec plan-migrate-to-draft-pr <plan_number> --format display
 
 Options:
     --dry-run: Preview the migration without making any changes
@@ -57,24 +57,24 @@ def _output_error(output_format: str, message: str, error_type: str) -> None:
 def _output_dry_run(
     output_format: str,
     *,
-    issue_number: int,
+    plan_number: int,
     title: str,
     branch_name: str,
     trunk: str,
 ) -> None:
     """Emit dry-run preview in the requested format."""
     if output_format == "display":
-        click.echo(f"[dry-run] Would migrate issue #{issue_number}: {title}")
+        click.echo(f"[dry-run] Would migrate issue #{plan_number}: {title}")
         click.echo(f"[dry-run] Would create branch: {branch_name} from {trunk}")
         click.echo("[dry-run] Would create draft PR from branch")
-        click.echo(f"[dry-run] Would close issue #{issue_number}")
+        click.echo(f"[dry-run] Would close issue #{plan_number}")
     else:
         click.echo(
             json.dumps(
                 {
                     "success": True,
                     "dry_run": True,
-                    "original_issue_number": issue_number,
+                    "original_plan_number": plan_number,
                     "title": title,
                     "branch_name": branch_name,
                     "trunk": trunk,
@@ -84,7 +84,7 @@ def _output_dry_run(
 
 
 @click.command(name="plan-migrate-to-draft-pr")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -101,7 +101,7 @@ def _output_dry_run(
 @click.pass_context
 def plan_migrate_to_draft_pr(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
     *,
     dry_run: bool,
     output_format: str,
@@ -124,11 +124,11 @@ def plan_migrate_to_draft_pr(
 
     # Fetch the issue plan via GitHubPlanStore
     issue_store = GitHubPlanStore(issues)
-    plan = issue_store.get_plan(repo_root, str(issue_number))
+    plan = issue_store.get_plan(repo_root, str(plan_number))
     if isinstance(plan, PlanNotFound):
         _output_error(
             output_format,
-            f"Issue #{issue_number} not found",
+            f"Issue #{plan_number} not found",
             "issue_not_found",
         )
         raise SystemExit(1)
@@ -137,7 +137,7 @@ def plan_migrate_to_draft_pr(
     if "erk-plan" not in plan.labels:
         _output_error(
             output_format,
-            f"Issue #{issue_number} does not have the 'erk-plan' label",
+            f"Issue #{plan_number} does not have the 'erk-plan' label",
             "not_an_erk_plan",
         )
         raise SystemExit(1)
@@ -155,7 +155,7 @@ def plan_migrate_to_draft_pr(
     if dry_run:
         _output_dry_run(
             output_format,
-            issue_number=issue_number,
+            plan_number=plan_number,
             title=plan.title,
             branch_name=branch_name,
             trunk=trunk,
@@ -223,23 +223,23 @@ def plan_migrate_to_draft_pr(
         f"Migrated to draft PR #{pr_number}: {pr_url}\n\n"
         "This issue has been superseded by the draft PR above."
     )
-    issues.add_comment(repo_root, issue_number, migration_comment)
-    issues.close_issue(repo_root, issue_number)
+    issues.add_comment(repo_root, plan_number, migration_comment)
+    issues.close_issue(repo_root, plan_number)
 
     if output_format == "display":
-        click.echo(f"Migrated plan #{issue_number} → draft PR #{pr_number}")
+        click.echo(f"Migrated plan #{plan_number} → draft PR #{pr_number}")
         click.echo(f"Title: {plan.title}")
         click.echo(f"PR URL: {pr_url}")
         click.echo(f"Branch: {branch_name}")
-        click.echo(f"Original issue #{issue_number} closed.")
+        click.echo(f"Original issue #{plan_number} closed.")
     else:
         click.echo(
             json.dumps(
                 {
                     "success": True,
-                    "original_issue_number": issue_number,
-                    "pr_number": pr_number,
-                    "pr_url": pr_url,
+                    "original_plan_number": plan_number,
+                    "plan_number": pr_number,
+                    "plan_url": pr_url,
                     "branch_name": branch_name,
                 }
             )

@@ -1,14 +1,14 @@
 """Create a draft PR for plan review and update plan metadata.
 
 Usage:
-    erk exec plan-create-review-pr <issue-number> <branch-name> <plan-title>
+    erk exec plan-create-review-pr <plan-number> <branch-name> <plan-title>
 
 Output:
-    JSON with success status, issue number, PR number, and PR URL
+    JSON with success status, plan number, PR number, and PR URL
 
 Exit Codes:
     0: Success
-    1: Error (issue not found, PR creation failed, or metadata update failed)
+    1: Error (plan not found, PR creation failed, or metadata update failed)
 """
 
 import json
@@ -35,7 +35,7 @@ class CreateReviewPRSuccess:
     """Success response for plan review PR creation."""
 
     success: bool
-    issue_number: int
+    plan_number: int
     pr_number: int
     pr_url: str
 
@@ -58,11 +58,11 @@ class CreateReviewPRException(Exception):
         self.message = message
 
 
-def _format_pr_body(issue_number: int, plan_title: str) -> str:
+def _format_pr_body(plan_number: int, plan_title: str) -> str:
     """Format PR body with link to plan issue and warning.
 
     Args:
-        issue_number: Plan issue number
+        plan_number: Plan issue number
         plan_title: Title of the plan
 
     Returns:
@@ -70,20 +70,20 @@ def _format_pr_body(issue_number: int, plan_title: str) -> str:
     """
     return f"""# Plan Review: {plan_title}
 
-This PR is for reviewing the plan in issue #{issue_number}.
+This PR is for reviewing the plan in issue #{plan_number}.
 
-**Plan Issue:** #{issue_number}
+**Plan Issue:** #{plan_number}
 
 ## Quick Start
 
 Prepare worktree only:
 ```
-erk br co --for-plan {issue_number}
+erk br co --for-plan {plan_number}
 ```
 
 Prepare and implement:
 ```
-source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous
+source "$(erk br co --for-plan {plan_number} --script)" && erk implement --dangerous
 ```
 
 ## Important
@@ -100,7 +100,7 @@ def _create_review_pr_impl(
     backend: PlanBackend,
     repo_root: Path,
     repo_identifier: str,
-    issue_number: int,
+    plan_number: int,
     branch_name: str,
     plan_title: str,
 ) -> CreateReviewPRSuccess:
@@ -111,7 +111,7 @@ def _create_review_pr_impl(
         backend: PlanBackend for plan metadata operations
         repo_root: Repository root path
         repo_identifier: Repository identifier in "owner/repo" format
-        issue_number: Plan issue number
+        plan_number: Plan issue number
         branch_name: Branch name for the PR
         plan_title: Title of the plan
 
@@ -119,15 +119,15 @@ def _create_review_pr_impl(
         CreateReviewPRSuccess on success
 
     Raises:
-        CreateReviewPRException: If issue not found or PR creation fails
+        CreateReviewPRException: If plan not found or PR creation fails
     """
-    plan_id = str(issue_number)
+    plan_id = str(plan_number)
 
     # LBYL: Check if plan exists before proceeding (get_metadata_field is lightweight)
     if isinstance(backend.get_metadata_field(repo_root, plan_id, "schema_version"), PlanNotFound):
         raise CreateReviewPRException(
-            error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
+            error="plan_not_found",
+            message=f"Plan #{plan_number} not found",
         )
 
     # LBYL: Check if a PR already exists for this branch
@@ -141,9 +141,9 @@ def _create_review_pr_impl(
     # Create draft PR - strip [erk-plan] prefix if present, use [erk-plan-review] prefix
     pr_title = (
         f"{ERK_PLAN_REVIEW_TITLE_PREFIX}"
-        f"{plan_title.removeprefix(ERK_PLAN_TITLE_PREFIX)} (#{issue_number})"
+        f"{plan_title.removeprefix(ERK_PLAN_TITLE_PREFIX)} (#{plan_number})"
     )
-    pr_body = _format_pr_body(issue_number, plan_title)
+    pr_body = _format_pr_body(plan_number, plan_title)
 
     pr_number = github.create_pr(
         repo_root,
@@ -163,8 +163,8 @@ def _create_review_pr_impl(
         backend.update_metadata(repo_root, plan_id, {"review_pr": pr_number})
     except PlanHeaderNotFoundError:
         raise CreateReviewPRException(
-            error="invalid_issue",
-            message=f"Issue #{issue_number} is missing plan-header metadata block",
+            error="invalid_plan",
+            message=f"Plan #{plan_number} is missing plan-header metadata block",
         ) from None
 
     # Construct PR URL
@@ -172,20 +172,20 @@ def _create_review_pr_impl(
 
     return CreateReviewPRSuccess(
         success=True,
-        issue_number=issue_number,
+        plan_number=plan_number,
         pr_number=pr_number,
         pr_url=pr_url,
     )
 
 
 @click.command(name="plan-create-review-pr")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.argument("branch_name", type=str)
 @click.argument("plan_title", type=str)
 @click.pass_context
 def plan_create_review_pr(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
     branch_name: str,
     plan_title: str,
 ) -> None:
@@ -213,7 +213,7 @@ def plan_create_review_pr(
             backend=backend,
             repo_root=repo_root,
             repo_identifier=repo_identifier,
-            issue_number=issue_number,
+            plan_number=plan_number,
             branch_name=branch_name,
             plan_title=plan_title,
         )

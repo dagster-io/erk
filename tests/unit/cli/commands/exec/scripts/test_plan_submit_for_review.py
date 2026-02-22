@@ -113,34 +113,34 @@ def test_plan_submit_for_review_success_v2_format() -> None:
     """Test successful extraction with Schema v2 plan-body format."""
     plan_content = "## Implementation Plan\n\nThis is the plan content."
     comment_id = 123456789
-    issue_number = 1234
+    plan_number = 1234
 
     # Create issue with plan-header
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Plan: Add feature X", labels=None)
+    issue = make_issue_info(plan_number, body, title="Plan: Add feature X", labels=None)
 
     # Create comment with plan-body block
     comment_body = make_plan_comment_body_v2(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment]},
+        issues={plan_number: issue},
+        comments_with_urls={plan_number: [comment]},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         plan_submit_for_review,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == issue_number
+    assert output["plan_number"] == plan_number
     assert output["title"] == "Plan: Add feature X"
-    assert output["url"] == f"https://github.com/test-owner/test-repo/issues/{issue_number}"
+    assert output["url"] == f"https://github.com/test-owner/test-repo/issues/{plan_number}"
     assert output["plan_content"] == plan_content
     assert output["plan_comment_id"] == comment_id
     assert (
@@ -153,25 +153,25 @@ def test_plan_submit_for_review_success_v1_format() -> None:
     """Test backward compatibility with old format (erk:plan-content markers)."""
     plan_content = "## Old Format Plan\n\nUsing legacy markers."
     comment_id = 987654321
-    issue_number = 5678
+    plan_number = 5678
 
     # Create issue with plan-header
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
+    issue = make_issue_info(plan_number, body, title="Test Plan Issue", labels=None)
 
     # Create comment with old format markers
     comment_body = make_plan_comment_body_v1(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment]},
+        issues={plan_number: issue},
+        comments_with_urls={plan_number: [comment]},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         plan_submit_for_review,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -197,22 +197,22 @@ Background info here
 All tests pass"""
 
     comment_id = 111222333
-    issue_number = 9999
+    plan_number = 9999
 
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
+    issue = make_issue_info(plan_number, body, title="Test Plan Issue", labels=None)
     comment_body = make_plan_comment_body_v2(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment]},
+        issues={plan_number: issue},
+        comments_with_urls={plan_number: [comment]},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         plan_submit_for_review,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -247,18 +247,18 @@ def test_plan_submit_for_review_issue_not_found() -> None:
 
 def test_plan_submit_for_review_missing_erk_plan_label() -> None:
     """Test error when issue doesn't have erk-plan label."""
-    issue_number = 1234
+    plan_number = 1234
     body = make_plan_header_body(plan_comment_id=123456789)
     issue = make_issue_info(
-        issue_number, body, title="Test Plan Issue", labels=["bug", "enhancement"]
+        plan_number, body, title="Test Plan Issue", labels=["bug", "enhancement"]
     )
 
-    fake_gh = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHubIssues(issues={plan_number: issue})
     runner = CliRunner()
 
     result = runner.invoke(
         plan_submit_for_review,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -271,16 +271,16 @@ def test_plan_submit_for_review_missing_erk_plan_label() -> None:
 
 def test_plan_submit_for_review_no_plan_comment_id() -> None:
     """Test error when issue has no plan_comment_id in metadata."""
-    issue_number = 1234
+    plan_number = 1234
     body = make_plan_header_body(plan_comment_id=None)
-    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
+    issue = make_issue_info(plan_number, body, title="Test Plan Issue", labels=None)
 
-    fake_gh = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHubIssues(issues={plan_number: issue})
     runner = CliRunner()
 
     result = runner.invoke(
         plan_submit_for_review,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -293,20 +293,20 @@ def test_plan_submit_for_review_no_plan_comment_id() -> None:
 
 def test_plan_submit_for_review_no_comments() -> None:
     """Test error when issue has no comments."""
-    issue_number = 1234
+    plan_number = 1234
     comment_id = 123456789
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
+    issue = make_issue_info(plan_number, body, title="Test Plan Issue", labels=None)
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments={issue_number: []},
+        issues={plan_number: issue},
+        comments={plan_number: []},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         plan_submit_for_review,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -319,23 +319,23 @@ def test_plan_submit_for_review_no_comments() -> None:
 
 def test_plan_submit_for_review_comment_has_no_plan_markers() -> None:
     """Test error when comment exists but has no plan markers."""
-    issue_number = 1234
+    plan_number = 1234
     comment_id = 123456789
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
+    issue = make_issue_info(plan_number, body, title="Test Plan Issue", labels=None)
 
     # Create comment without plan markers
     comment = make_issue_comment(comment_id, "Just a regular comment, no plan here.")
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment]},
+        issues={plan_number: issue},
+        comments_with_urls={plan_number: [comment]},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         plan_submit_for_review,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -355,22 +355,22 @@ def test_json_output_structure_success() -> None:
     """Test JSON output structure on success."""
     plan_content = "## Plan content here"
     comment_id = 123456789
-    issue_number = 1234
+    plan_number = 1234
 
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Plan: Test Feature", labels=None)
+    issue = make_issue_info(plan_number, body, title="Plan: Test Feature", labels=None)
     comment_body = make_plan_comment_body_v2(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
     fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment]},
+        issues={plan_number: issue},
+        comments_with_urls={plan_number: [comment]},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         plan_submit_for_review,
-        [str(issue_number)],
+        [str(plan_number)],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -379,7 +379,7 @@ def test_json_output_structure_success() -> None:
 
     # Verify expected keys
     assert "success" in output
-    assert "issue_number" in output
+    assert "plan_number" in output
     assert "title" in output
     assert "url" in output
     assert "plan_content" in output
@@ -388,7 +388,7 @@ def test_json_output_structure_success() -> None:
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["issue_number"], int)
+    assert isinstance(output["plan_number"], int)
     assert isinstance(output["title"], str)
     assert isinstance(output["url"], str)
     assert isinstance(output["plan_content"], str)
@@ -397,7 +397,7 @@ def test_json_output_structure_success() -> None:
 
     # Verify values
     assert output["success"] is True
-    assert output["issue_number"] == issue_number
+    assert output["plan_number"] == plan_number
     assert output["title"] == "Plan: Test Feature"
 
 

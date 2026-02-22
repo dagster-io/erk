@@ -1,14 +1,14 @@
 """Create a plan review branch and push to remote.
 
 Usage:
-    erk exec plan-create-review-branch <issue-number>
+    erk exec plan-create-review-branch <plan-number>
 
 Output:
     JSON with branch name, file path, and plan title
 
 Exit Codes:
     0: Success
-    1: Error (issue not found, missing erk-plan label, no plan content, branch exists, or git error)
+    1: Error (plan not found, missing erk-plan label, no plan content, branch exists, or git error)
 """
 
 import json
@@ -38,7 +38,7 @@ class PlanReviewBranchSuccess:
     """Success response for plan review branch creation."""
 
     success: bool
-    issue_number: int
+    plan_number: int
     branch: str
     file_path: str
     plan_title: str
@@ -65,41 +65,41 @@ class PlanReviewBranchException(Exception):
 def _fetch_plan_content(
     github_issues: GitHubIssues,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
 ) -> tuple[str, str]:
     """Fetch plan content from GitHub issue.
 
     Args:
         github_issues: GitHub issues gateway
         repo_root: Repository root path
-        issue_number: Issue number to fetch
+        plan_number: Plan number to fetch
 
     Returns:
         Tuple of (plan_title, plan_content) on success
 
     Raises:
-        PlanReviewBranchException: If issue not found, missing label, or no plan content
+        PlanReviewBranchException: If plan not found, missing label, or no plan content
     """
     # LBYL: Check if issue exists before fetching
-    if not github_issues.issue_exists(repo_root, issue_number):
+    if not github_issues.issue_exists(repo_root, plan_number):
         raise PlanReviewBranchException(
             error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
+            message=f"Issue #{plan_number} not found",
         )
 
     # Issue exists, safe to fetch
-    issue = github_issues.get_issue(repo_root, issue_number)
+    issue = github_issues.get_issue(repo_root, plan_number)
     if isinstance(issue, IssueNotFound):
         raise PlanReviewBranchException(
             error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
+            message=f"Issue #{plan_number} not found",
         )
 
     # Validate erk-plan label
     if "erk-plan" not in issue.labels:
         raise PlanReviewBranchException(
             error="missing_erk_plan_label",
-            message=f"Issue #{issue_number} does not have the erk-plan label",
+            message=f"Issue #{plan_number} does not have the erk-plan label",
         )
 
     # Extract plan comment ID from metadata
@@ -107,16 +107,16 @@ def _fetch_plan_content(
     if plan_comment_id is None:
         raise PlanReviewBranchException(
             error="no_plan_content",
-            message=f"Issue #{issue_number} has no plan_comment_id in metadata",
+            message=f"Issue #{plan_number} has no plan_comment_id in metadata",
         )
 
     # Fetch comments
-    comments = github_issues.get_issue_comments_with_urls(repo_root, issue_number)
+    comments = github_issues.get_issue_comments_with_urls(repo_root, plan_number)
 
     if not comments:
         raise PlanReviewBranchException(
             error="no_plan_content",
-            message=f"Issue #{issue_number} has no comments",
+            message=f"Issue #{plan_number} has no comments",
         )
 
     # Find the comment with the plan content
@@ -128,7 +128,7 @@ def _fetch_plan_content(
 
     raise PlanReviewBranchException(
         error="no_plan_content",
-        message=f"Issue #{issue_number} comment {plan_comment_id} has no plan markers",
+        message=f"Issue #{plan_number} comment {plan_comment_id} has no plan markers",
     )
 
 
@@ -138,7 +138,7 @@ def _create_review_branch_impl(
     github_issues: GitHubIssues,
     time: Time,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
 ) -> PlanReviewBranchSuccess:
     """Create a plan review branch and push to remote.
 
@@ -147,7 +147,7 @@ def _create_review_branch_impl(
         github_issues: GitHub issues gateway
         time: Time gateway for timestamps
         repo_root: Repository root path
-        issue_number: Issue number to create review branch for
+        plan_number: Plan number to create review branch for
 
     Returns:
         PlanReviewBranchSuccess on success
@@ -156,12 +156,12 @@ def _create_review_branch_impl(
         PlanReviewBranchException: If plan content cannot be fetched or validated
     """
     # Fetch plan content (raises PlanReviewBranchException on failure)
-    plan_title, plan_content = _fetch_plan_content(github_issues, repo_root, issue_number)
+    plan_title, plan_content = _fetch_plan_content(github_issues, repo_root, plan_number)
 
-    # Define branch and file names with timestamp (format: plnd/review-{issue}-{MM-DD-HHMM})
+    # Define branch and file names with timestamp (format: plnd/review-{plan}-{MM-DD-HHMM})
     timestamp_suffix = format_branch_timestamp_suffix(time.now())
-    branch_name = f"plnd/review-{issue_number}{timestamp_suffix}"
-    file_name = f"PLAN-REVIEW-{issue_number}.md"
+    branch_name = f"plnd/review-{plan_number}{timestamp_suffix}"
+    file_name = f"PLAN-REVIEW-{plan_number}.md"
 
     # Fetch origin/master, create branch, commit plan file directly (no checkout), push
     # These operations let exceptions escape as they represent invariant violations
@@ -174,7 +174,7 @@ def _create_review_branch_impl(
         repo_root,
         branch=branch_name,
         files={file_name: plan_content},
-        message=f"Add plan #{issue_number} for review",
+        message=f"Add plan #{plan_number} for review",
     )
     push_result = git.remote.push_to_remote(
         repo_root, "origin", branch_name, set_upstream=True, force=False
@@ -184,7 +184,7 @@ def _create_review_branch_impl(
 
     return PlanReviewBranchSuccess(
         success=True,
-        issue_number=issue_number,
+        plan_number=plan_number,
         branch=branch_name,
         file_path=file_name,
         plan_title=plan_title,
@@ -192,16 +192,16 @@ def _create_review_branch_impl(
 
 
 @click.command(name="plan-create-review-branch")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.pass_context
 def plan_create_review_branch(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
 ) -> None:
     """Create a plan review branch and push to remote.
 
-    Creates a branch plnd/review-{issue}-{timestamp} from origin/master, writes plan
-    to PLAN-REVIEW-{issue}.md, commits, and pushes to origin.
+    Creates a branch plnd/review-{plan}-{timestamp} from origin/master, writes plan
+    to PLAN-REVIEW-{plan}.md, commits, and pushes to origin.
     """
     git = require_git(ctx)
     github_issues = require_github_issues(ctx)
@@ -214,7 +214,7 @@ def plan_create_review_branch(
             github_issues=github_issues,
             time=time,
             repo_root=repo_root,
-            issue_number=issue_number,
+            plan_number=plan_number,
         )
         click.echo(json.dumps(asdict(result)))
     except PlanReviewBranchException as e:

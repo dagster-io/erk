@@ -60,7 +60,7 @@ def test_plan_update_issue_success() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "42", "--format", "json"],
+        ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -70,7 +70,7 @@ def test_plan_update_issue_success() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_number"] == 42
 
     assert output["title"] == "[erk-plan] Updated Plan"
 
@@ -102,7 +102,7 @@ def test_plan_update_issue_display_format() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "99", "--format", "display"],
+        ["--plan-number", "99", "--format", "display"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -129,7 +129,7 @@ def test_plan_update_issue_no_plan_found() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "42", "--format", "json"],
+        ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -154,7 +154,7 @@ def test_plan_update_issue_issue_not_found() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "999", "--format", "json"],
+        ["--plan-number", "999", "--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -183,7 +183,7 @@ def test_plan_update_issue_formats_plan_content() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "42"],
+        ["--plan-number", "42"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -215,7 +215,7 @@ def test_plan_update_issue_updates_title_from_plan() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "42", "--format", "json"],
+        ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -259,7 +259,7 @@ def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "42", "--format", "json"],
+        ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -289,7 +289,7 @@ def test_plan_update_issue_strips_plan_prefix_from_title() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "42", "--format", "json"],
+        ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -317,7 +317,7 @@ def test_plan_update_issue_display_format_shows_new_title() -> None:
 
     result = runner.invoke(
         plan_update_issue,
-        ["--issue-number", "42", "--format", "display"],
+        ["--plan-number", "42", "--format", "display"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,

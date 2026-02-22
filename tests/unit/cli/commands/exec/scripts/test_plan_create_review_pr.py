@@ -82,7 +82,7 @@ def make_issue_info(
 
 def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     """Test successful PR creation and metadata update."""
-    issue_number = 1234
+    plan_number = 1234
     branch_name = "plnd/review-1234-01-15-1430"
     plan_title = "Add feature X"
     repo_root = tmp_path / "repo"
@@ -90,10 +90,10 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
 
     # Create issue with plan-header
     body = make_plan_header_body(plan_comment_id=123456789)
-    issue = make_issue_info(issue_number, body, title=f"Plan: {plan_title}", labels=None)
+    issue = make_issue_info(plan_number, body, title=f"Plan: {plan_title}", labels=None)
 
     fake_gh_issues = FakeGitHubIssues(
-        issues={issue_number: issue},
+        issues={plan_number: issue},
     )
 
     fake_gh = FakeGitHub(
@@ -104,7 +104,7 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_create_review_pr,
-        [str(issue_number), branch_name, plan_title],
+        [str(plan_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -116,7 +116,7 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == issue_number
+    assert output["plan_number"] == plan_number
     assert output["pr_number"] == 999
     assert output["pr_url"] == "https://github.com/test-owner/test-repo/pull/999"
 
@@ -124,10 +124,10 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     assert len(fake_gh.created_prs) == 1
     pr = fake_gh.created_prs[0]
     assert pr[0] == branch_name  # branch
-    assert pr[1] == f"[erk-plan-review] {plan_title} (#{issue_number})"  # title
-    assert f"issue #{issue_number}" in pr[2]  # body contains issue reference
+    assert pr[1] == f"[erk-plan-review] {plan_title} (#{plan_number})"  # title
+    assert f"issue #{plan_number}" in pr[2]  # body contains issue reference
     assert "Quick Start" in pr[2]  # body contains Quick Start section
-    assert f"erk br co --for-plan {issue_number}" in pr[2]  # body contains prepare command
+    assert f"erk br co --for-plan {plan_number}" in pr[2]  # body contains prepare command
     assert pr[3] == "master"  # base
     assert pr[4] is True  # draft=True
 
@@ -136,29 +136,29 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
 
     # Verify issue body was updated with review_pr field via PlanBackend
     assert len(fake_gh_issues.updated_bodies) == 1
-    updated_issue_number, updated_body = fake_gh_issues.updated_bodies[0]
-    assert updated_issue_number == issue_number
+    updated_plan_number, updated_body = fake_gh_issues.updated_bodies[0]
+    assert updated_plan_number == plan_number
     assert "review_pr: 999" in updated_body
 
 
 def test_plan_create_review_pr_title_format(tmp_path: Path) -> None:
     """Test PR title contains issue reference."""
-    issue_number = 5678
+    plan_number = 5678
     branch_name = "plnd/review-5678-01-15-1430"
     plan_title = "Implement new backend"
     repo_root = tmp_path / "repo"
 
     body = make_plan_header_body(plan_comment_id=123)
-    issue = make_issue_info(issue_number, body, title=f"Plan: {plan_title}", labels=None)
+    issue = make_issue_info(plan_number, body, title=f"Plan: {plan_title}", labels=None)
 
-    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh_issues = FakeGitHubIssues(issues={plan_number: issue})
     fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_pr,
-        [str(issue_number), branch_name, plan_title],
+        [str(plan_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -171,27 +171,27 @@ def test_plan_create_review_pr_title_format(tmp_path: Path) -> None:
 
     # Verify PR title format
     pr = fake_gh.created_prs[0]
-    assert pr[1] == f"[erk-plan-review] {plan_title} (#{issue_number})"
+    assert pr[1] == f"[erk-plan-review] {plan_title} (#{plan_number})"
 
 
 def test_plan_create_review_pr_strips_erk_plan_prefix(tmp_path: Path) -> None:
     """Test PR title strips [erk-plan] prefix from plan_title."""
-    issue_number = 5679
+    plan_number = 5679
     branch_name = "plnd/review-5679-01-15-1430"
     plan_title = "[erk-plan] Implement new backend"
     repo_root = tmp_path / "repo"
 
     body = make_plan_header_body(plan_comment_id=123)
-    issue = make_issue_info(issue_number, body, title=plan_title, labels=None)
+    issue = make_issue_info(plan_number, body, title=plan_title, labels=None)
 
-    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh_issues = FakeGitHubIssues(issues={plan_number: issue})
     fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_pr,
-        [str(issue_number), branch_name, plan_title],
+        [str(plan_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -204,27 +204,27 @@ def test_plan_create_review_pr_strips_erk_plan_prefix(tmp_path: Path) -> None:
 
     # Verify [erk-plan] prefix was stripped and [erk-plan-review] used instead
     pr = fake_gh.created_prs[0]
-    assert pr[1] == f"[erk-plan-review] Implement new backend (#{issue_number})"
+    assert pr[1] == f"[erk-plan-review] Implement new backend (#{plan_number})"
 
 
 def test_plan_create_review_pr_body_format(tmp_path: Path) -> None:
     """Test PR body has issue link and warning."""
-    issue_number = 9999
+    plan_number = 9999
     branch_name = "plnd/review-9999-01-15-1430"
     plan_title = "Test Plan"
     repo_root = tmp_path / "repo"
 
     body = make_plan_header_body(plan_comment_id=456)
-    issue = make_issue_info(issue_number, body, title=f"Plan: {plan_title}", labels=None)
+    issue = make_issue_info(plan_number, body, title=f"Plan: {plan_title}", labels=None)
 
-    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh_issues = FakeGitHubIssues(issues={plan_number: issue})
     fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_pr,
-        [str(issue_number), branch_name, plan_title],
+        [str(plan_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -238,35 +238,35 @@ def test_plan_create_review_pr_body_format(tmp_path: Path) -> None:
     # Verify PR body format
     pr_body = fake_gh.created_prs[0][2]
     assert f"Plan Review: {plan_title}" in pr_body
-    assert f"issue #{issue_number}" in pr_body
+    assert f"issue #{plan_number}" in pr_body
     assert "will not be merged" in pr_body
     assert "inline review comments" in pr_body
     assert "Quick Start" in pr_body
-    assert f"erk br co --for-plan {issue_number}" in pr_body
+    assert f"erk br co --for-plan {plan_number}" in pr_body
     prepare_and_implement_cmd = (
-        f'source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous'
+        f'source "$(erk br co --for-plan {plan_number} --script)" && erk implement --dangerous'
     )
     assert prepare_and_implement_cmd in pr_body
 
 
 def test_plan_create_review_pr_draft_mode(tmp_path: Path) -> None:
     """Test PR is created in draft mode."""
-    issue_number = 2222
+    plan_number = 2222
     branch_name = "plnd/review-2222-01-15-1430"
     plan_title = "Draft PR Test"
     repo_root = tmp_path / "repo"
 
     body = make_plan_header_body(plan_comment_id=789)
-    issue = make_issue_info(issue_number, body, title=f"Plan: {plan_title}", labels=None)
+    issue = make_issue_info(plan_number, body, title=f"Plan: {plan_title}", labels=None)
 
-    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh_issues = FakeGitHubIssues(issues={plan_number: issue})
     fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_pr,
-        [str(issue_number), branch_name, plan_title],
+        [str(plan_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -284,22 +284,22 @@ def test_plan_create_review_pr_draft_mode(tmp_path: Path) -> None:
 
 def test_plan_create_review_pr_metadata_updated(tmp_path: Path) -> None:
     """Test issue metadata contains review_pr field after creation."""
-    issue_number = 3333
+    plan_number = 3333
     branch_name = "plnd/review-3333-01-15-1430"
     plan_title = "Metadata Update Test"
     repo_root = tmp_path / "repo"
 
     body = make_plan_header_body(plan_comment_id=111)
-    issue = make_issue_info(issue_number, body, title=f"Plan: {plan_title}", labels=None)
+    issue = make_issue_info(plan_number, body, title=f"Plan: {plan_title}", labels=None)
 
-    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh_issues = FakeGitHubIssues(issues={plan_number: issue})
     fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_pr,
-        [str(issue_number), branch_name, plan_title],
+        [str(plan_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -312,23 +312,23 @@ def test_plan_create_review_pr_metadata_updated(tmp_path: Path) -> None:
 
     # Verify metadata was updated via PlanBackend
     assert len(fake_gh_issues.updated_bodies) == 1
-    updated_issue_number, updated_body = fake_gh_issues.updated_bodies[0]
-    assert updated_issue_number == issue_number
+    updated_plan_number, updated_body = fake_gh_issues.updated_bodies[0]
+    assert updated_plan_number == plan_number
     assert "review_pr:" in updated_body
     assert "review_pr: 999" in updated_body
 
 
 def test_plan_create_review_pr_uses_dynamic_repo_url(tmp_path: Path) -> None:
     """Test PR URL uses repo identifier from context, not a hardcoded value."""
-    issue_number = 7777
+    plan_number = 7777
     branch_name = "plnd/review-7777-01-15-1430"
     plan_title = "Dynamic URL Test"
     repo_root = tmp_path / "repo"
 
     body = make_plan_header_body(plan_comment_id=333)
-    issue = make_issue_info(issue_number, body, title=f"Plan: {plan_title}", labels=None)
+    issue = make_issue_info(plan_number, body, title=f"Plan: {plan_title}", labels=None)
 
-    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh_issues = FakeGitHubIssues(issues={plan_number: issue})
     fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
 
     custom_repo_info = RepoInfo(owner="my-org", name="my-project")
@@ -337,7 +337,7 @@ def test_plan_create_review_pr_uses_dynamic_repo_url(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_create_review_pr,
-        [str(issue_number), branch_name, plan_title],
+        [str(plan_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -378,7 +378,7 @@ def test_plan_create_review_pr_issue_not_found(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "issue_not_found"
+    assert output["error"] == "plan_not_found"
     assert "#9999" in output["message"]
 
 
@@ -389,22 +389,22 @@ def test_plan_create_review_pr_issue_not_found(tmp_path: Path) -> None:
 
 def test_json_output_structure_success(tmp_path: Path) -> None:
     """Test success JSON output has correct structure."""
-    issue_number = 4444
+    plan_number = 4444
     branch_name = "plnd/review-4444-01-15-1430"
     plan_title = "JSON Test"
     repo_root = tmp_path / "repo"
 
     body = make_plan_header_body(plan_comment_id=222)
-    issue = make_issue_info(issue_number, body, title=f"Plan: {plan_title}", labels=None)
+    issue = make_issue_info(plan_number, body, title=f"Plan: {plan_title}", labels=None)
 
-    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh_issues = FakeGitHubIssues(issues={plan_number: issue})
     fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_create_review_pr,
-        [str(issue_number), branch_name, plan_title],
+        [str(plan_number), branch_name, plan_title],
         obj=ErkContext.for_test(
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -418,13 +418,13 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     # Verify all required fields present
     assert "success" in output
-    assert "issue_number" in output
+    assert "plan_number" in output
     assert "pr_number" in output
     assert "pr_url" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["issue_number"], int)
+    assert isinstance(output["plan_number"], int)
     assert isinstance(output["pr_number"], int)
     assert isinstance(output["pr_url"], str)
 

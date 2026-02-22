@@ -1,7 +1,7 @@
 """Fetch plan content from a GitHub issue for PR-based review workflow.
 
 Usage:
-    erk exec plan-submit-for-review <issue-number>
+    erk exec plan-submit-for-review <plan-number>
 
 Output:
     JSON with plan content and metadata
@@ -30,7 +30,7 @@ class PlanSubmitSuccess:
     """Success response for plan submission."""
 
     success: bool
-    issue_number: int
+    plan_number: int
     title: str
     url: str
     plan_content: str
@@ -48,11 +48,11 @@ class PlanSubmitError:
 
 
 @click.command(name="plan-submit-for-review")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.pass_context
 def plan_submit_for_review(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
 ) -> None:
     """Fetch plan content from a GitHub issue for PR-based review workflow.
 
@@ -64,12 +64,12 @@ def plan_submit_for_review(
     repo_root = require_repo_root(ctx)
 
     # Fetch issue
-    issue = github_issues.get_issue(repo_root, issue_number)
+    issue = github_issues.get_issue(repo_root, plan_number)
     if isinstance(issue, IssueNotFound):
         result = PlanSubmitError(
             success=False,
             error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
+            message=f"Issue #{plan_number} not found",
         )
         click.echo(json.dumps(asdict(result)), err=True)
         raise SystemExit(1)
@@ -79,7 +79,7 @@ def plan_submit_for_review(
         result = PlanSubmitError(
             success=False,
             error="missing_erk_plan_label",
-            message=f"Issue #{issue_number} does not have the erk-plan label",
+            message=f"Issue #{plan_number} does not have the erk-plan label",
         )
         click.echo(json.dumps(asdict(result)), err=True)
         raise SystemExit(1)
@@ -90,19 +90,19 @@ def plan_submit_for_review(
         result = PlanSubmitError(
             success=False,
             error="no_plan_content",
-            message=f"Issue #{issue_number} has no plan_comment_id in metadata",
+            message=f"Issue #{plan_number} has no plan_comment_id in metadata",
         )
         click.echo(json.dumps(asdict(result)), err=True)
         raise SystemExit(1)
 
     # Fetch comments with URLs
     try:
-        comments = github_issues.get_issue_comments_with_urls(repo_root, issue_number)
+        comments = github_issues.get_issue_comments_with_urls(repo_root, plan_number)
     except RuntimeError as e:
         result = PlanSubmitError(
             success=False,
             error="no_plan_content",
-            message=f"Failed to fetch comments for issue #{issue_number}: {e}",
+            message=f"Failed to fetch comments for issue #{plan_number}: {e}",
         )
         click.echo(json.dumps(asdict(result)), err=True)
         raise SystemExit(1) from e
@@ -111,7 +111,7 @@ def plan_submit_for_review(
         result = PlanSubmitError(
             success=False,
             error="no_plan_content",
-            message=f"Issue #{issue_number} has no comments",
+            message=f"Issue #{plan_number} has no comments",
         )
         click.echo(json.dumps(asdict(result)), err=True)
         raise SystemExit(1)
@@ -132,7 +132,7 @@ def plan_submit_for_review(
         result = PlanSubmitError(
             success=False,
             error="no_plan_content",
-            message=f"Issue #{issue_number} comment {plan_comment_id} has no plan markers",
+            message=f"Issue #{plan_number} comment {plan_comment_id} has no plan markers",
         )
         click.echo(json.dumps(asdict(result)), err=True)
         raise SystemExit(1)
@@ -140,7 +140,7 @@ def plan_submit_for_review(
     # Success - type checker now knows plan_comment_url is not None
     result = PlanSubmitSuccess(
         success=True,
-        issue_number=issue_number,
+        plan_number=plan_number,
         title=issue.title,
         url=issue.url,
         plan_content=plan_content,

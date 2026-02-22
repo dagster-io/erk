@@ -53,7 +53,7 @@ def _draft_pr_context(
 
 
 def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Happy path: exit 0, JSON output has success/issue_number/branch_name."""
+    """Happy path: exit 0, JSON output has success/plan_number/branch_name."""
     ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
@@ -62,7 +62,7 @@ def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert "issue_number" in output
+    assert "plan_number" in output
     assert "branch_name" in output
     assert output["branch_name"].startswith("plnd/")
     assert output["plan_backend"] == "draft_pr"

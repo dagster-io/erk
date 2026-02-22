@@ -52,7 +52,7 @@ This is a comprehensive feature plan that includes all the necessary details.
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 1
+    assert output["plan_number"] == 1
     assert output["title"] == "My Feature"
     assert output["plan_backend"] == "github"
 
@@ -302,7 +302,7 @@ def test_plan_save_to_issue_json_output_no_session_metadata() -> None:
     assert "session_ids" not in output
     # Verify core fields are present
     assert "success" in output
-    assert "issue_number" in output
+    assert "plan_number" in output
     assert "title" in output
 
 
@@ -800,7 +800,7 @@ def test_plan_save_to_issue_skips_duplicate_json_format(tmp_path: Path) -> None:
         assert result1.exit_code == 0, f"First call failed: {result1.output}"
         output1 = json.loads(result1.output)
         assert output1["success"] is True
-        assert output1["issue_number"] == 1
+        assert output1["plan_number"] == 1
         assert "skipped_duplicate" not in output1
 
         # Second call - should return existing issue without creating new one
@@ -812,7 +812,7 @@ def test_plan_save_to_issue_skips_duplicate_json_format(tmp_path: Path) -> None:
         assert result2.exit_code == 0, f"Second call failed: {result2.output}"
         output2 = json.loads(result2.output)
         assert output2["success"] is True
-        assert output2["issue_number"] == 1  # Same issue number
+        assert output2["plan_number"] == 1  # Same plan number
         assert output2["skipped_duplicate"] is True
         assert "already saved plan #1" in output2["message"]
 
