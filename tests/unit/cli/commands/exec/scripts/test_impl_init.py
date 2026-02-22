@@ -60,7 +60,7 @@ def test_impl_init_returns_valid_json(impl_folder: Path, monkeypatch: pytest.Mon
     data = json.loads(result.output)
     assert data["valid"] is True
     assert data["impl_type"] == "impl"
-    assert data["has_issue_tracking"] is False
+    assert data["has_plan_tracking"] is False
 
 
 def test_impl_init_extracts_related_docs(
@@ -104,8 +104,8 @@ def test_impl_init_with_issue_tracking(impl_folder: Path, monkeypatch: pytest.Mo
 
     assert result.exit_code == 0
     data = json.loads(result.output)
-    assert data["has_issue_tracking"] is True
-    assert data["issue_number"] == 123
+    assert data["has_plan_tracking"] is True
+    assert data["plan_number"] == 123
 
 
 def test_impl_init_detects_worker_impl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

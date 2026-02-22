@@ -119,7 +119,7 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 123
+    assert output["plan_number"] == 123
 
     # Verify metadata updated
     updated_issue = fake_gh.get_issue(repo_root, 123)
@@ -262,7 +262,7 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> 
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 789
+    assert output["plan_number"] == 789
 
     # Verify metadata updated
     updated_issue = fake_gh.get_issue(repo_root, 789)

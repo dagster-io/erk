@@ -168,7 +168,7 @@ class TestSetupImplFromIssueBranchManager:
         json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
         output = json.loads(json_line)
         assert output["success"] is True
-        assert output["issue_number"] == 42
+        assert output["plan_number"] == 42
 
         # Assert: Graphite track_branch was called (key assertion)
         # This verifies the branch was created through BranchManager,
@@ -337,7 +337,7 @@ class TestSetupImplFromIssueBranchManager:
         output = json.loads(json_line)
         assert output["success"] is True
         assert output["branch"] == existing_branch
-        assert output["issue_number"] == 77
+        assert output["plan_number"] == 77
 
 
 # =============================================================================

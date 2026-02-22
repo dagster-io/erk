@@ -15,7 +15,7 @@ Exit Codes:
 
 Examples:
     $ erk exec setup-impl-from-issue 1028
-    {"success": true, "impl_path": "/path/to/.impl", "issue_number": 1028, "branch": "P1028-..."}
+    {"success": true, "impl_path": "/path/to/.impl", "plan_number": 1028, "branch": "P1028-..."}
 """
 
 import json
@@ -117,7 +117,7 @@ def _checkout_plan_branch(
 def _setup_draft_pr_plan(
     ctx: click.Context,
     *,
-    issue_number: int,
+    plan_number: int,
     no_impl: bool,
 ) -> dict[str, str | int | bool | None]:
     """Set up implementation from a draft-PR plan.
@@ -127,7 +127,7 @@ def _setup_draft_pr_plan(
 
     Args:
         ctx: Click context
-        issue_number: PR number for the draft-PR plan
+        plan_number: PR number for the draft-PR plan
         no_impl: Skip .impl/ folder creation
 
     Returns:
@@ -142,9 +142,9 @@ def _setup_draft_pr_plan(
     impl_dir = cwd / ".impl"
     if impl_dir.exists():
         existing_ref = read_plan_ref(impl_dir)
-        if existing_ref is not None and existing_ref.plan_id == str(issue_number):
+        if existing_ref is not None and existing_ref.plan_id == str(plan_number):
             click.echo(
-                f"Found existing .impl/ for plan #{issue_number}, skipping branch setup",
+                f"Found existing .impl/ for plan #{plan_number}, skipping branch setup",
                 err=True,
             )
             current_branch = _get_current_branch(git, cwd)
@@ -152,8 +152,8 @@ def _setup_draft_pr_plan(
             return {
                 "success": True,
                 "impl_path": impl_path_str,
-                "issue_number": issue_number,
-                "issue_url": existing_ref.url,
+                "plan_number": plan_number,
+                "plan_url": existing_ref.url,
                 "branch": current_branch,
                 "plan_title": "",
                 "no_impl": no_impl,
@@ -164,12 +164,12 @@ def _setup_draft_pr_plan(
     branch_manager = require_branch_manager(ctx)
 
     # Phase A: Lightweight PR query for branch name only
-    pr_result = github.get_pr(repo_root, issue_number)
+    pr_result = github.get_pr(repo_root, plan_number)
     if isinstance(pr_result, PRNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for PR #{issue_number}: PR not found.",
+            "message": f"Could not fetch plan for PR #{plan_number}: PR not found.",
         }
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)
@@ -234,7 +234,7 @@ def _setup_draft_pr_plan(
         save_plan_ref(
             impl_path,
             provider="github-draft-pr",
-            plan_id=str(issue_number),
+            plan_id=str(plan_number),
             url=pr_url,
             labels=(),
             objective_id=objective_id,
@@ -243,8 +243,8 @@ def _setup_draft_pr_plan(
     return {
         "success": True,
         "impl_path": impl_path_str,
-        "issue_number": issue_number,
-        "issue_url": pr_url,
+        "plan_number": plan_number,
+        "plan_url": pr_url,
         "branch": branch_name,
         "plan_title": plan_title,
         "no_impl": no_impl,
@@ -254,7 +254,7 @@ def _setup_draft_pr_plan(
 def _setup_issue_plan(
     ctx: click.Context,
     *,
-    issue_number: int,
+    plan_number: int,
     no_impl: bool,
 ) -> dict[str, str | int | bool | None]:
     """Set up implementation from an issue-based plan.
@@ -263,7 +263,7 @@ def _setup_issue_plan(
 
     Args:
         ctx: Click context
-        issue_number: Issue number for the plan
+        plan_number: Issue number for the plan
         no_impl: Skip .impl/ folder creation
 
     Returns:
@@ -276,12 +276,12 @@ def _setup_issue_plan(
     time = require_time(ctx)
 
     # Fetch plan from GitHub issue
-    result = plan_backend.get_plan(repo_root, str(issue_number))
+    result = plan_backend.get_plan(repo_root, str(plan_number))
     if isinstance(result, PlanNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for issue #{issue_number}: Issue not found. "
+            "message": f"Could not fetch plan for issue #{plan_number}: Issue not found. "
             f"Ensure issue has erk-plan label and plan content.",
         }
         click.echo(json.dumps(error_output), err=True)
@@ -293,10 +293,10 @@ def _setup_issue_plan(
 
     # Issue-based plan: generate P{issue}-... branch name
     # Check if already on a branch for this issue - reuse it
-    expected_prefix = f"P{issue_number}-"
+    expected_prefix = f"P{plan_number}-"
     if current_branch.startswith(expected_prefix):
         # Already on correct branch (e.g., remote workflow re-running with issue arg)
-        click.echo(f"Already on branch for issue #{issue_number}: {current_branch}", err=True)
+        click.echo(f"Already on branch for issue #{plan_number}: {current_branch}", err=True)
         branch_name = current_branch
     else:
         # Generate branch name from issue with LLM-generated slug
@@ -304,7 +304,7 @@ def _setup_issue_plan(
         slug = generate_slug_or_fallback(executor, plan.title)
         timestamp = time.now()
         branch_name = generate_issue_branch_name(
-            issue_number, slug, timestamp, objective_id=plan.objective_id
+            plan_number, slug, timestamp, objective_id=plan.objective_id
         )
 
         # Validate worktree name derived from branch — agent-facing backpressure gate
@@ -354,7 +354,7 @@ def _setup_issue_plan(
         save_plan_ref(
             impl_path,
             provider="github",
-            plan_id=str(issue_number),
+            plan_id=str(plan_number),
             url=plan.url,
             labels=(),
             objective_id=plan.objective_id,
@@ -363,8 +363,8 @@ def _setup_issue_plan(
     return {
         "success": True,
         "impl_path": impl_path_str,
-        "issue_number": issue_number,
-        "issue_url": plan.url,
+        "plan_number": plan_number,
+        "plan_url": plan.url,
         "branch": branch_name,
         "plan_title": plan.title,
         "no_impl": no_impl,
@@ -372,7 +372,7 @@ def _setup_issue_plan(
 
 
 @click.command(name="setup-impl-from-issue")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.option(
     "--session-id",
     default=None,
@@ -386,7 +386,7 @@ def _setup_issue_plan(
 @click.pass_context
 def setup_impl_from_issue(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
     session_id: str | None,
     no_impl: bool,
 ) -> None:
@@ -395,7 +395,7 @@ def setup_impl_from_issue(
     Fetches plan content from GitHub issue, creates/checks out a feature branch,
     and creates .impl/ folder structure with plan.md, progress.md, and issue.json.
 
-    ISSUE_NUMBER: GitHub issue number containing the plan
+    PLAN_NUMBER: GitHub issue number containing the plan
 
     The command:
     1. Fetches the plan from the GitHub issue or draft PR
@@ -408,8 +408,8 @@ def setup_impl_from_issue(
 
     # Dispatch based on plan backend
     if plan_backend.get_provider_name() == "github-draft-pr":
-        output = _setup_draft_pr_plan(ctx, issue_number=issue_number, no_impl=no_impl)
+        output = _setup_draft_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
     else:
-        output = _setup_issue_plan(ctx, issue_number=issue_number, no_impl=no_impl)
+        output = _setup_issue_plan(ctx, plan_number=plan_number, no_impl=no_impl)
 
     click.echo(json.dumps(output))
