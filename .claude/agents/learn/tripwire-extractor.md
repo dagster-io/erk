@@ -98,11 +98,11 @@ The output JSON is validated by a strict gate. Non-conforming output will be rej
 
 **Field naming — correct names vs common drift names that get normalized:**
 
-| Correct field     | Drift names (auto-normalized)             |
-|-------------------|-------------------------------------------|
-| `action`          | `title`, `name`, `trigger_pattern`        |
-| `warning`         | `description`                             |
-| `target_doc_path` | *(no known aliases — must be exact)*      |
+| Correct field     | Drift names (auto-normalized)        |
+| ----------------- | ------------------------------------ |
+| `action`          | `title`, `name`, `trigger_pattern`   |
+| `warning`         | `description`                        |
+| `target_doc_path` | _(no known aliases — must be exact)_ |
 
 **Valid example:**
 
