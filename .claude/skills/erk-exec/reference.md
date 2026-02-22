@@ -901,13 +901,13 @@ Extract plan from ~/.claude/plans/ and create GitHub issue.
 
 Update a plan issue's plan-body comment with new content.
 
-**Usage:** `erk exec plan-update-from-feedback` <issue_number>
+**Usage:** `erk exec plan-update-from-feedback` <plan_number>
 
 **Arguments:**
 
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
+| Name          | Required | Description |
+| ------------- | -------- | ----------- |
+| `PLAN_NUMBER` | Yes      | -           |
 
 **Options:**
 

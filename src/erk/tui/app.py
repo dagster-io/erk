@@ -850,6 +850,12 @@ class ErkDashApp(App):
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
+        elif command_id == "copy_land":
+            if row.pr_number:
+                cmd = f"erk land {row.pr_number}"
+                self._provider.clipboard.copy(cmd)
+                self.notify(f"Copied: {cmd}")
+
         elif command_id == "fix_conflicts_remote":
             if row.pr_number:
                 executor = RealCommandExecutor(

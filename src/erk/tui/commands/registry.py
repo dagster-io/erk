@@ -121,6 +121,11 @@ def _display_copy_replan(ctx: CommandContext) -> str:
     return f"erk plan replan {ctx.row.plan_id}"
 
 
+def _display_copy_land(ctx: CommandContext) -> str:
+    """Display name for copy_land command."""
+    return f"erk land {ctx.row.pr_number}"
+
+
 # === Display Name Generators (Objective Commands) ===
 
 
@@ -344,6 +349,15 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut="6",
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
             get_display_name=_display_copy_replan,
+        ),
+        CommandDefinition(
+            id="copy_land",
+            name="erk land",
+            description="land",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+            get_display_name=_display_copy_land,
         ),
         # === OBJECTIVE COPIES ===
         CommandDefinition(
