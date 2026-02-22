@@ -1,6 +1,6 @@
 """Upload a Claude Code session to a git branch and update the plan header.
 
-This exec command creates a `session/{plan_id}` branch, commits the session
+This exec command creates an `async-learn/{plan_id}` branch, commits the session
 JSONL file to `.erk/session/{session_id}.jsonl`, and optionally updates the
 plan-header metadata in the associated erk-plan issue.
 
@@ -25,7 +25,7 @@ Examples:
           --session-id abc --source remote --plan-id 123
     {
       "success": true,
-      "session_branch": "session/123",
+      "session_branch": "async-learn/123",
       "session_id": "abc",
       "plan_id": 123,
       "issue_updated": true
@@ -82,7 +82,7 @@ def upload_session(
 ) -> None:
     """Upload a session JSONL to a git branch and update plan header.
 
-    Creates a session/{plan_id} branch from origin/master, commits the session
+    Creates an async-learn/{plan_id} branch from origin/master, commits the session
     JSONL to .erk/session/{session_id}.jsonl, then updates the plan-header
     metadata in the associated plan with the branch name and session information.
     """
@@ -98,7 +98,7 @@ def upload_session(
     git = require_git(ctx)
     time = require_time(ctx)
 
-    session_branch = f"session/{plan_id}"
+    session_branch = f"async-learn/{plan_id}"
     original_branch = git.branch.get_current_branch(repo_root)
     start_point = original_branch or "HEAD"
 

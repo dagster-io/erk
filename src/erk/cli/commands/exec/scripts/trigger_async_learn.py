@@ -636,7 +636,7 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
     stats_styled = click.style(f"({file_count} file(s), {total_size:,} bytes)", dim=True)
     click.echo(f"   🌿 {branch_styled} {stats_styled}", err=True)
 
-    # Clean up session branches after materials are on learn branch
+    # Clean up async-learn branches after materials are on learn branch
     for source_item in session_sources:
         if not isinstance(source_item, dict):
             continue

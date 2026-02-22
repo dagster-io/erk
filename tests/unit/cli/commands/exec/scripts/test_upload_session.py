@@ -97,13 +97,13 @@ def test_upload_session_branch_created(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["session_branch"] == "session/42"
+    assert output["session_branch"] == "async-learn/42"
     assert output["session_id"] == "test-session-abc"
     assert output["plan_id"] == 42
 
     # Verify branch was created and pushed
-    assert any(b == "session/42" for _, b, _, _ in fake_git.created_branches)
-    assert any(pb.branch == "session/42" and pb.force for pb in fake_git.pushed_branches)
+    assert any(b == "async-learn/42" for _, b, _, _ in fake_git.created_branches)
+    assert any(pb.branch == "async-learn/42" and pb.force for pb in fake_git.pushed_branches)
 
 
 def test_upload_session_with_issue_update(tmp_path: Path) -> None:
@@ -150,7 +150,7 @@ def test_upload_session_with_issue_update(tmp_path: Path) -> None:
     _, updated_body = fake_gh_issues.updated_bodies[0]
     block = find_metadata_block(updated_body, "plan-header")
     assert block is not None
-    assert block.data["last_session_branch"] == "session/42"
+    assert block.data["last_session_branch"] == "async-learn/42"
     assert block.data["last_session_id"] == "test-session-xyz"
     assert block.data["last_session_source"] == "remote"
     assert "last_session_at" in block.data
@@ -194,4 +194,4 @@ def test_upload_session_plan_not_found(tmp_path: Path) -> None:
     assert output["issue_updated"] is False
     assert "issue_update_error" in output
     # Branch was still created
-    assert output["session_branch"] == "session/999"
+    assert output["session_branch"] == "async-learn/999"
