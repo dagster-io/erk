@@ -6,7 +6,9 @@ import pytest
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     InvalidObjectiveSlug,
+    InvalidPlanTitle,
     ValidObjectiveSlug,
+    ValidPlanTitle,
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
@@ -20,6 +22,7 @@ from erk_shared.naming import (
     sanitize_worktree_name,
     strip_plan_from_filename,
     validate_objective_slug,
+    validate_plan_title,
 )
 
 
@@ -683,3 +686,79 @@ def test_validate_objective_slug_error_message_includes_pattern() -> None:
     assert isinstance(result, InvalidObjectiveSlug)
     assert "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" in result.message
     assert "INVALID" in result.message
+
+
+# Tests for validate_plan_title
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Add User Authentication",
+        "Refactor Gateway Layer",
+        "Fix CLI Argument Parsing",
+        "hello",
+        "a" * 100,
+        "Fix Bug #123 in Auth Module",
+        "café au lait feature",
+        "Update the README file",
+        "Add v2 API support for external clients",
+    ],
+)
+def test_validate_plan_title_valid(title: str) -> None:
+    """Valid titles return ValidPlanTitle."""
+    result = validate_plan_title(title)
+    assert isinstance(result, ValidPlanTitle)
+    assert result.title == title.strip()
+
+
+@pytest.mark.parametrize(
+    ("title", "reason_fragment"),
+    [
+        ("", "empty"),
+        ("   ", "empty"),
+        ("\t\n", "empty"),
+        ("Plan", "Too short"),
+        ("ab", "Too short"),
+        ("a" * 101, "Too long"),
+        ("12345", "at least one alphabetic"),
+        ("12345 67890", "at least one alphabetic"),
+        ("!@#$%^&*()", "at least one alphabetic"),
+        ("\U0001f680\U0001f389\U0001f525\U0001f4a5\U0001f31f", "at least one alphabetic"),
+        ("\u4f60\u597d\u4e16\u754c\u7684\u8ba1\u5212", "No usable content"),
+    ],
+)
+def test_validate_plan_title_invalid(title: str, reason_fragment: str) -> None:
+    """Invalid titles return InvalidPlanTitle with matching reason."""
+    result = validate_plan_title(title)
+    assert isinstance(result, InvalidPlanTitle)
+    assert reason_fragment in result.reason
+
+
+def test_validate_plan_title_error_message_includes_rules() -> None:
+    """Error message includes rules for agent self-correction."""
+    result = validate_plan_title("")
+    assert isinstance(result, InvalidPlanTitle)
+    assert "5-100 characters" in result.message
+    assert "at least one alphabetic" in result.message
+    assert "Valid examples" in result.message
+    assert "Invalid examples" in result.message
+
+
+def test_validate_plan_title_error_type() -> None:
+    """Error type is machine-readable."""
+    result = validate_plan_title("")
+    assert isinstance(result, InvalidPlanTitle)
+    assert result.error_type == "invalid-plan-title"
+
+
+def test_validate_plan_title_strips_whitespace() -> None:
+    """Leading/trailing whitespace is stripped before validation."""
+    result = validate_plan_title("  Add Feature  ")
+    assert isinstance(result, ValidPlanTitle)
+    assert result.title == "Add Feature"
+
+
+def test_validate_plan_title_preserves_original_in_error() -> None:
+    """Error includes the original unmodified title."""
+    result = validate_plan_title("   ab   ")
+    assert isinstance(result, InvalidPlanTitle)
+    assert result.raw_title == "   ab   "

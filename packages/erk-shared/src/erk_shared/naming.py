@@ -69,6 +69,117 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
 
 _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
+# Plan title constraints
+_PLAN_TITLE_MIN_LENGTH = 5
+_PLAN_TITLE_MAX_LENGTH = 100
+
+
+@dataclass(frozen=True)
+class ValidPlanTitle:
+    """Validation success for a plan title.
+
+    Attributes:
+        title: The validated title value.
+    """
+
+    title: str
+
+
+@dataclass(frozen=True)
+class InvalidPlanTitle:
+    """Validation failure for a plan title.
+
+    Attributes:
+        raw_title: The original title value that failed validation.
+        reason: A short description of why validation failed.
+    """
+
+    raw_title: str
+    reason: str
+
+    @property
+    def error_type(self) -> str:
+        return "invalid-plan-title"
+
+    @property
+    def message(self) -> str:
+        """Full error message with rules, actual value, and examples.
+
+        Designed so an agent receiving this message can self-correct.
+        """
+        return (
+            f"Invalid plan title: {self.reason}\n"
+            f"  Actual value: {self.raw_title!r}\n"
+            f"  Rules:\n"
+            f"    - {_PLAN_TITLE_MIN_LENGTH}-{_PLAN_TITLE_MAX_LENGTH} characters\n"
+            f"    - Must contain at least one alphabetic character\n"
+            f"    - Must retain meaningful content after sanitization\n"
+            f"      (emojis, special characters, and accents are stripped)\n"
+            f"  Valid examples: Add User Authentication,"
+            f" Refactor Gateway Layer\n"
+            f"  Invalid examples: \U0001f680\U0001f389, 123, #!@, Plan"
+        )
+
+
+def validate_plan_title(title: str) -> ValidPlanTitle | InvalidPlanTitle:
+    """Validate a plan title against minimum content requirements.
+
+    This is an agent-facing validation gate. It ensures plan titles have enough
+    meaningful content before they are used to generate filenames, branch names,
+    or issue titles. Human-facing paths (like generate_filename_from_title) can
+    still transform arbitrary input silently.
+
+    Returns ValidPlanTitle on success, or InvalidPlanTitle describing the failure.
+
+    Args:
+        title: The plan title string to validate.
+
+    Returns:
+        ValidPlanTitle if valid, InvalidPlanTitle if invalid.
+
+    Examples:
+        >>> validate_plan_title("Add User Authentication")
+        ValidPlanTitle(title='Add User Authentication')
+        >>> validate_plan_title("")
+        InvalidPlanTitle(raw_title='', reason='...')
+        >>> validate_plan_title("🚀🎉")
+        InvalidPlanTitle(raw_title='🚀🎉', reason='...')
+    """
+    stripped = title.strip()
+
+    if not stripped:
+        return InvalidPlanTitle(raw_title=title, reason="Title is empty or whitespace-only")
+
+    if len(stripped) < _PLAN_TITLE_MIN_LENGTH:
+        return InvalidPlanTitle(
+            raw_title=title,
+            reason=f"Too short ({len(stripped)} characters, minimum {_PLAN_TITLE_MIN_LENGTH})",
+        )
+
+    if len(stripped) > _PLAN_TITLE_MAX_LENGTH:
+        return InvalidPlanTitle(
+            raw_title=title,
+            reason=f"Too long ({len(stripped)} characters, maximum {_PLAN_TITLE_MAX_LENGTH})",
+        )
+
+    if not any(c.isalpha() for c in stripped):
+        return InvalidPlanTitle(
+            raw_title=title,
+            reason="Must contain at least one alphabetic character",
+        )
+
+    # Check that sanitization retains meaningful content.
+    # generate_filename_from_title strips emojis, accents, and special chars.
+    # If the result is "plan.md" (the fallback), the title has no usable content.
+    filename = generate_filename_from_title(stripped)
+    if filename == "plan.md":
+        return InvalidPlanTitle(
+            raw_title=title,
+            reason="No usable content after sanitization (only emojis or special characters)",
+        )
+
+    return ValidPlanTitle(title=stripped)
+
 
 @dataclass(frozen=True)
 class ValidObjectiveSlug:
