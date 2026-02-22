@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
 
+**asserting on FakeGitHubIssues.added_comments for PlannedPRBackend.add_comment()** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. PlannedPRBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations.
+
 **asserting on YAML metadata field values with exact string matching** → Read [Erk Test Reference](testing.md) first. Assert on key-only format ('field_name:'), not 'field_name: "value"'. YAML serialization differs from Python repr.
 
 **asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`** → Read [Erk Test Reference](testing.md) first. Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper.
@@ -96,6 +98,8 @@ Rules triggered by matching actions in code.
 
 **testing code that reads from Path.home() or ~/.claude/ or ~/.erk/** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like extract_slugs_from_session() cause flakiness when they read from the user's home directory.
 
+**testing divergence without setting branch_divergence in FakeGit** → Read [FakeGit Branch Divergence Testing](fake-git-divergence.md) first. FakeGit.is_branch_diverged_from_remote() returns from the branch_divergence dict. Missing entries return default (not diverged). Set explicit divergence state for each test scenario.
+
 **testing keyboard navigation in a component test** → Read [Erkdesk Component Test Architecture](erkdesk-component-testing.md) first. Keyboard handlers (j/k) are registered on document in App, not on individual components. Test keyboard navigation in App.test.tsx, not component tests.
 
 **testing only the subcommand path of a group with invoke_without_command=True** → Read [Command Group Testing](command-group-testing.md) first. Groups with default behavior need tests for BOTH paths: direct invocation (no subcommand) and explicit subcommand invocation. Missing either path is a coverage gap.
@@ -107,6 +111,8 @@ Rules triggered by matching actions in code.
 **tracking only the primary argument in a mutation tuple, omitting flags or options** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior.
 
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
+
+**using isinstance() to detect plan backend type in application code** → Read [Dual Backend Testing](dual-backend-testing.md) first. Use plan_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr' or 'github'). isinstance checks couple to implementation classes. The provider name string is the stable API.
 
 **using monkeypatch or unittest.mock in hook tests** → Read [Hook Testing Patterns](hook-testing.md) first. Use ErkContext.for_test() with CliRunner instead of mocking. See docs/learned/testing/hook-testing.md.
 

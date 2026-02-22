@@ -9,6 +9,9 @@ tripwires:
     warning: "comments_with_urls requires IssueComment objects, not strings. Strings cause silent empty-list returns. Match the parameter to the ABC getter method your code calls."
   - action: "creating custom FakeGitHubIssues without passing to build_workspace_test_context"
     warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+  - action: "asserting on FakeGitHubIssues.added_comments for PlannedPRBackend.add_comment()"
+    warning: "PlannedPRBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations."
+    score: 6
 ---
 
 # FakeGitHubIssues Dual-Comment Parameters

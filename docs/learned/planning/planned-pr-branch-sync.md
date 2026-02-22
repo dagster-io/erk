@@ -104,8 +104,19 @@ Calls `generate_issue_branch_name()` with the issue number, plan title, timestam
 
 If already on a branch matching the expected prefix (`P{issue_number}-`), the existing branch is reused.
 
+## Auto-Force Push for Plan Implementation Branches
+
+Plan implementation branches always diverge from remote because the draft PR scaffolding commits (from `plan-save`) differ from the worker's implementation commits. The PR submit pipeline auto-enables force-push for plan branches to avoid requiring `--force` every time.
+
+**Detection:** `state.issue_number is not None` in `submit_pipeline.py`
+
+**Derived flag:** `effective_force = state.force or is_plan_impl`
+
+When auto-force activates, the pipeline prints a dim-styled informational message so the user understands why force-push occurred. See [Derived Flags Pattern](../architecture/derived-flags.md) for the general pattern.
+
 ## Related Topics
 
 - [Planned PR Lifecycle](planned-pr-lifecycle.md) - PR body format through lifecycle stages
 - [Plan Lifecycle](lifecycle.md) - Overall plan lifecycle
 - [Plan Backend Migration](../architecture/plan-backend-migration.md) - Migrating to backend abstraction
+- [Derived Flags Pattern](../architecture/derived-flags.md) - effective_force pattern details

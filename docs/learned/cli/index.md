@@ -57,4 +57,5 @@
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
 - **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with user confirmations, designing commands that perform destructive mutations, adding confirmation prompts to CLI commands, deciding where to place confirmation logic in a command
 - **[workflow-commands.md](workflow-commands.md)** — triggering GitHub Actions workflows from CLI, adding a new workflow to erk launch, understanding local vs remote command duality
+- **[wt-command-comparison.md](wt-command-comparison.md)** — choosing between erk wt create, create-from, and checkout, setting up a worktree for an existing branch, understanding worktree slot allocation
 - **[wt-create-from.md](wt-create-from.md)** — setting up a local worktree for an existing branch, working with a PR branch that needs a worktree slot, understanding the difference between erk wt create and erk wt create-from

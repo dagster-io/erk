@@ -15,6 +15,9 @@ tripwires:
   - action: "checking erk exec plan-save --format json output for empty result"
     warning: "Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture."
     score: 5
+  - action: "calling update_metadata() on PlannedPRBackend without verifying plan exists"
+    warning: "PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata."
+    score: 6
 ---
 
 # Planned PR Backend
@@ -68,6 +71,21 @@ See [branch-plan-resolution.md](branch-plan-resolution.md) for how branches reso
 ## Land Pipeline Integration
 
 Planned PR plans don't have separate review PRs, so the land pipeline skips review PR cleanup for them.
+
+## Learn Pipeline Integration
+
+The learn pipeline detects planned-PR plans via `plan_backend.get_provider_name()`. For planned-PR plans, `plan_id` is the PR number — the learn pipeline can call `github.get_pr(plan_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.
+
+## Metadata API Asymmetry
+
+PlannedPRBackend metadata operations have asymmetric error behavior:
+
+| Operation           | Missing Header Block | Behavior                         |
+| ------------------- | -------------------- | -------------------------------- |
+| `get_plan()`        | No header found      | Returns `None` gracefully        |
+| `update_metadata()` | No header found      | Raises `PlanHeaderNotFoundError` |
+
+**Implication:** Always check that a plan exists (via `get_plan()`) before calling `update_metadata()`. Write operations assume the header block is present because it should have been created during `create_plan()`.
 
 ## Type Narrowing
 

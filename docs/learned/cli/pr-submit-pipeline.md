@@ -132,11 +132,22 @@ Step 4 (`extract_diff`) truncates diffs to fit AI context limits **before** writ
 
 **Why `str` values, not `Any`?** Error details are for logging and debugging. String values enable consistent serialization (JSON, log files) without type uncertainty. If you need structured data, that belongs in a dedicated error type, not in `details`.
 
+## State-Based Plan Detection
+
+The pipeline detects plan implementations via `state.issue_number is not None`. This drives two auto-behaviors:
+
+1. **Auto-force push:** Plan branches always diverge from remote (scaffolding vs implementation commits). The pipeline derives `effective_force = state.force or is_plan_impl` to auto-enable force-push. See [Derived Flags Pattern](../architecture/derived-flags.md).
+
+2. **Title prefix:** Plan PRs receive the `plnd/` prefix via `_add_planned_prefix()`. See [Plan Title Prefix System](../planning/plan-title-prefix-system.md).
+
+Both auto-behaviors print dim-styled informational messages when activated, keeping the user informed without requiring manual flags.
+
 ## Related Documentation
 
 - [State Threading Pattern](../architecture/state-threading-pattern.md) — The underlying architectural pattern
 - [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — SubmitError as discriminated union
 - [Linear Pipeline Architecture](../architecture/linear-pipelines.md) — The broader two-pipeline pattern (validation + execution)
+- [Derived Flags Pattern](../architecture/derived-flags.md) — Auto-force push for plan implementations
 
 ## Reference Implementation
 

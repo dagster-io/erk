@@ -8,6 +8,7 @@
 - **[agent-orchestration.md](agent-orchestration.md)** — designing agent workflows with parallel and sequential tiers, choosing between parallel and sequential agent execution, adding or modifying agents in the learn pipeline, deciding which model tier to assign an agent
 - **[agent-output-routing-strategies.md](agent-output-routing-strategies.md)** — deciding how agents should receive and produce outputs, designing multi-agent orchestration prompts, choosing between embedded-prompt and agent-file routing
 - **[async-learn-local-preprocessing.md](async-learn-local-preprocessing.md)** — modifying trigger-async-learn orchestration, debugging why learn materials are missing or malformed in CI, understanding the local-to-gist-to-codespace data flow
+- **[backend-naming-conventions.md](backend-naming-conventions.md)** — referencing the plan backend by name in code or documentation, confused about draft_pr vs planned_pr vs github-draft-pr naming, adding user-facing output that mentions the backend
 - **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plan issues, implementing PR lookup from plan issues, modifying branch creation or naming conventions
 - **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
 - **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan issue as complete, creating a consolidation plan from multiple PRs
@@ -40,6 +41,7 @@
 - **[plan-creation-pathways.md](plan-creation-pathways.md)** — understanding how plans are created in erk, adding a new plan creation entry point, debugging which code path created a plan
 - **[plan-execution-patterns.md](plan-execution-patterns.md)** — implementing a plan from a GitHub issue, understanding branch naming and worktree isolation, designing PR submission workflows for plans
 - **[plan-header-privatization.md](plan-header-privatization.md)** — migrating callers of plan_header.py functions, understanding why plan_header functions are being privatized, working with PlanBackend metadata operations
+- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles both issue-based and planned-PR plans, debugging 404 errors when fetching plan metadata
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[plan-title-prefix-system.md](plan-title-prefix-system.md)** — working with PR titles for plan implementations, understanding the plnd/ prefix on PR titles, debugging why a PR title has or lacks the plnd/ prefix

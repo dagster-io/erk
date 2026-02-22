@@ -8,6 +8,9 @@ read_when:
 tripwires:
   - action: "running only prettier after editing Python files"
     warning: "Prettier silently skips Python files. Always use 'make format' for .py files."
+  - action: "pushing code without running formatters locally first"
+    warning: "Format-then-commit: run ruff format (Python) and prettier (Markdown) locally and commit the formatted output BEFORE pushing. CI format checks verify but do not auto-fix. Pushing unformatted code requires a second commit to fix."
+    score: 6
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---

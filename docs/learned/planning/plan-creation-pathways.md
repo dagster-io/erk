@@ -12,15 +12,15 @@ Plans can be created through multiple entry points, all routing to the planned-P
 
 ## Entry Points
 
-| Entry Point                             | Backend Used                   | Creates                |
-| --------------------------------------- | ------------------------------ | ---------------------- |
-| `/erk:plan-save`                        | Planned PR (PlannedPRBackend)  | Draft pull request     |
-| `erk plan create --file <path>`         | Issue-based (GitHubPlanStore)  | GitHub issue           |
-| `erk exec plan-save-to-issue`           | Issue-based (GitHubPlanStore)  | GitHub issue           |
-| One-shot dispatch (`one_shot_dispatch`) | Issue-based (GitHubPlanStore)  | Skeleton issue         |
-| `PlannedPRBackend.create_plan()`        | Planned PR                     | Draft pull request     |
-| `GitHubPlanStore.create_plan()`         | Issue-based                    | GitHub issue           |
-| `register_one_shot_plan`                | Issue-based (updates existing) | Updates skeleton issue |
+| Entry Point                             | Backend Used                          | Creates            |
+| --------------------------------------- | ------------------------------------- | ------------------ |
+| `/erk:plan-save`                        | Planned PR (PlannedPRBackend)         | Draft pull request |
+| `erk plan create --file <path>`         | Issue-based (GitHubPlanStore, legacy) | GitHub issue       |
+| `erk exec plan-save-to-issue`           | Issue-based (GitHubPlanStore, legacy) | GitHub issue       |
+| One-shot dispatch (`one_shot_dispatch`) | Backend-aware (`ctx.plan_backend`)    | Draft PR or issue  |
+| `PlannedPRBackend.create_plan()`        | Planned PR                            | Draft pull request |
+| `GitHubPlanStore.create_plan()`         | Issue-based (legacy)                  | GitHub issue       |
+| `register_one_shot_plan`                | Issue-based (updates existing)        | Updates skeleton   |
 
 ## Backend Routing
 

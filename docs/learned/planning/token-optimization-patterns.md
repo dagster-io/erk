@@ -60,9 +60,9 @@ A subtle failure mode: creating the consolidated output before all background ag
 
 <!-- Source: .claude/commands/erk/objective-plan.md, Step 2 -->
 
-The `/erk:objective-plan` command demonstrates this. Step 2 delegates objective data fetching (issue metadata, roadmap parsing, status mapping, step recommendation) to a sonnet-tier general-purpose agent. The parent never makes the 3+ sequential fetches itself — it receives a single structured summary.
+The `/erk:objective-plan` command demonstrates this pattern with an important model selection nuance. Step 2 delegates objective data fetching (issue metadata, roadmap parsing, status mapping, step recommendation) to a single general-purpose agent. The parent never makes the 3+ sequential fetches itself — it receives a single structured summary.
 
-Note: As of PR #7750, `/erk:objective-plan` uses `sonnet` (not `haiku`) because the work involves multi-step reasoning over structured objective data, not pure mechanical formatting.
+**Model selection note:** This command uses `sonnet` (not `haiku`) because the work involves multi-step reasoning — status validation, status-to-label mapping, and generating recommendations — not pure mechanical formatting. Use haiku when the child performs only fetch/parse/format; upgrade to sonnet when the child must reason over the data.
 
 <!-- Source: docs/learned/reference/objective-summary-format.md -->
 
@@ -87,7 +87,16 @@ The output contract is specified in `objective-summary-format.md`, which defines
 | Codebase investigation, analysis   | Default (sonnet) | Needs reasoning for status assessment |
 | Plan synthesis, creative decisions | Parent agent     | Highest-quality reasoning required    |
 
-**Anti-pattern**: Using opus or sonnet for pure data fetching and formatting where haiku suffices. Note: `/erk:objective-plan` uses `sonnet` (not `haiku`) because it involves multi-step reasoning over objective roadmap data, not just mechanical formatting.
+### When to Upgrade from Haiku to Sonnet
+
+| Criterion                              | Model  | Example                                                |
+| -------------------------------------- | ------ | ------------------------------------------------------ |
+| Pure data fetching and formatting      | haiku  | Fetch issue body, extract YAML, return structured JSON |
+| Status validation or enum mapping      | sonnet | Map lifecycle stages to display labels                 |
+| Multi-step reasoning over fetched data | sonnet | Parse roadmap, assess status, generate recommendations |
+| Conditional logic based on data shape  | sonnet | Choose different output format based on plan type      |
+
+**Anti-pattern**: Using opus or sonnet for pure data fetching and formatting where haiku suffices.
 
 ## Anti-Patterns
 

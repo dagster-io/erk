@@ -7,6 +7,9 @@ read_when:
 tripwires:
   - action: "adding a column to PlanDataTable without updating make_plan_row"
     warning: "Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist."
+  - action: "adding or reordering PlanDataTable columns"
+    warning: "TUI column index cascade: adding or reordering columns invalidates ALL test assertions using column indices. Run a systematic grep for column-index assertions (e.g., row[N]) before and after the change. Update every affected test file."
+    score: 6
 last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
 ---
@@ -82,7 +85,34 @@ The `author` field follows the same 5-step pattern. Unlike `created_at`, `author
 4. **fake.py**: Added `author` parameter to `make_plan_row()` with default `"test-user"`
 5. **dash_data.py**: No special serialization needed (plain string)
 
+## Column Reordering
+
+Reordering columns changes the index-based value positions in `_row_to_values()`. This invalidates ALL test assertions that reference columns by index (e.g., `row[3]`).
+
+**Before reordering:**
+
+1. Grep all test files for column-index assertions: `row[`, `values[`, `cells[`
+2. Document the current index → field mapping
+
+**After reordering:**
+
+1. Update every index reference to match the new column order
+2. Re-run the full TUI test suite to verify
+
+This is the highest-frequency test breakage pattern in TUI development (see column index cascade tripwire above).
+
+## View-Specific Columns
+
+Columns inserted before an early return in `_row_to_values()` only appear in one view path. If the method has branching logic (e.g., plans view vs objectives view), verify:
+
+1. The column appears in the correct branch
+2. Both branches produce the same number of values as columns defined
+3. Tests cover both view paths
+
+A mismatch between column count and value count causes a silent rendering error in Textual's DataTable.
+
 ## Related Documentation
 
 - [Data Contract](data-contract.md) — Display-vs-raw field duality pattern
 - [PlanRowData Reference](plan-row-data.md) — Field inventory and nullable fields
+- [Derived Display Columns](derived-display-columns.md) — Exception for columns reusing existing data
