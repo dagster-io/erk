@@ -136,3 +136,84 @@ def test_connect_with_shell_flag_drops_to_shell() -> None:
     assert remote_command == "bash -l"
     assert "claude" not in remote_command
     assert "git pull" not in remote_command
+
+
+def test_connect_with_env_injects_export() -> None:
+    """connect --env KEY=VALUE injects export into the remote command."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
+
+    result = runner.invoke(
+        cli, ["codespace", "connect", "--env", "ERK_PLAN_BACKEND=draft_pr"], obj=ctx
+    )
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    assert "export ERK_PLAN_BACKEND=draft_pr" in fake_codespace.last_call.remote_command
+    assert "git pull" in fake_codespace.last_call.remote_command
+
+
+def test_connect_with_multiple_env_vars() -> None:
+    """connect with multiple --env flags injects all exports."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
+
+    result = runner.invoke(
+        cli,
+        ["codespace", "connect", "--env", "FOO=bar", "--env", "BAZ=qux"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    assert "export FOO=bar BAZ=qux &&" in remote_command
+
+
+def test_connect_env_with_shell_flag() -> None:
+    """connect --env with --shell injects env vars into shell command."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
+
+    result = runner.invoke(cli, ["codespace", "connect", "--shell", "--env", "FOO=bar"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    assert "export FOO=bar" in remote_command
+    assert "exec bash -l" in remote_command
+
+
+def test_connect_env_invalid_format_errors() -> None:
+    """connect --env with invalid format (no =) shows error."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
+
+    result = runner.invoke(cli, ["codespace", "connect", "--env", "INVALID"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "Invalid --env format" in result.output
