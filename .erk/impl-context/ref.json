@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Move objective update from shell script into Python land-execute"
-}
