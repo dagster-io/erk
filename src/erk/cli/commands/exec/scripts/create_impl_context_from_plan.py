@@ -22,13 +22,13 @@ Examples:
 """
 
 import json
-from datetime import UTC, datetime
 
 import click
 
 from erk_shared.context.helpers import (
     require_plan_backend,
     require_repo_root,
+    require_time,
 )
 from erk_shared.impl_context import create_impl_context
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
@@ -51,6 +51,7 @@ def create_impl_context_from_plan(
     """
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
+    time = require_time(ctx)
     plan_id_str = str(plan_id)
     provider = backend.get_provider_name()
 
@@ -76,7 +77,7 @@ def create_impl_context_from_plan(
         repo_root=repo_root,
         provider=provider,
         objective_id=plan.objective_id,
-        now_iso=datetime.now(UTC).isoformat(),
+        now_iso=time.now().isoformat(),
     )
 
     # Output structured success result

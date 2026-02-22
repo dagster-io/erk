@@ -25,8 +25,9 @@ for the full signature. Key points: all parameters after `impl_dir` are keyword-
 
 Called by:
 
-- `create_impl_context()` - For remote implementation
 - `setup-impl-from-issue` exec command - For local implementation
+
+**Note:** `create_impl_context()` writes `ref.json` directly (not via `save_plan_ref()`). It uses a lighter format than `plan-ref.json`.
 
 ## Reading
 

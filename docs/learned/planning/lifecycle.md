@@ -338,12 +338,10 @@ The submit command creates the `.erk/impl-context/` folder structure:
 ```
 .erk/impl-context/
 ├── plan.md         # Full plan content from issue
-├── progress.md     # Initial progress tracking (all unchecked)
-├── plan-ref.json   # Plan reference (provider-agnostic)
-└── README.md       # Documentation for the folder
+└── ref.json        # Plan reference metadata (provider, plan_id, url, etc.)
 ```
 
-**`plan-ref.json` structure:**
+**`ref.json` structure:**
 
 ```json
 {
@@ -352,7 +350,7 @@ The submit command creates the `.erk/impl-context/` folder structure:
   "url": "https://github.com/owner/repo/issues/123",
   "created_at": "2025-01-15T10:30:00Z",
   "synced_at": "2025-01-15T10:30:00Z",
-  "labels": ["erk-plan"],
+  "labels": [],
   "objective_id": null
 }
 ```
