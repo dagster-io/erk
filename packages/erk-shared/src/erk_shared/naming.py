@@ -25,6 +25,10 @@ BRANCH_TIMESTAMP_SUFFIX_FORMAT = "%m-%d-%H%M"
 # Regex pattern to detect existing timestamp suffix (MM-DD-HHMM)
 _TIMESTAMP_SUFFIX_PATTERN = re.compile(r"-\d{2}-\d{2}-\d{4}$")
 
+# Default/fallback titles that extractors return when no real title exists.
+# These must be rejected so agents provide meaningful plan titles.
+_FALLBACK_PLAN_TITLES = {"Untitled Plan", "Implementation Plan"}
+
 
 def has_timestamp_suffix(name: str) -> bool:
     """Check if a name already ends with a timestamp suffix (-MM-DD-HHMM).
@@ -166,6 +170,12 @@ def validate_plan_title(title: str) -> ValidPlanTitle | InvalidPlanTitle:
         return InvalidPlanTitle(
             raw_title=title,
             reason="Must contain at least one alphabetic character",
+        )
+
+    if stripped in _FALLBACK_PLAN_TITLES:
+        return InvalidPlanTitle(
+            raw_title=title,
+            reason=f"'{stripped}' is a default fallback title, not a descriptive plan title",
         )
 
     # Check that sanitization retains meaningful content.

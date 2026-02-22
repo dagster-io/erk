@@ -49,6 +49,6 @@ def test_invalid_title_json_error_contains_guidance() -> None:
     assert result.exit_code == 2
     # CliRunner mixes stderr into output; parse the JSON from it
     error_output = json.loads(result.output.strip())
-    assert error_output["error_type"] == "invalid_plan_title"
+    assert error_output["error_type"] == "invalid-plan-title"
     assert "agent_guidance" in error_output
     assert "default fallback" in error_output["agent_guidance"].lower()
