@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "pr_number": 7772,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v7yRe",
+      "path": "packages/erk-shared/src/erk_shared/plan_store/__init__.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Redundant return statement - Both line 38 and 39 return 'github'. Can be consolidated by combining conditions: `if env_value is not None and env_value in (\"draft_pr\", \"github\"):` - Eliminate redundant code rule",
+          "created_at": "2026-02-21T19:21:59Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in commit 4cd737bfe \u2014 consolidated nested conditions into single `if env_value is not None and env_value in (\"draft_pr\", \"github\"):` with one return path for the default.\n\n_Addressed via `/erk:pr-address` at 2026-02-21 19:44 EST_",
+          "created_at": "2026-02-22T00:44:34Z"
+        }
+      ]
+    }
+  ]
+}
