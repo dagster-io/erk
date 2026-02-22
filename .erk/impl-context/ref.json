@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add `.worker-impl/` cleanup to `pr-address` workflow"
+}
