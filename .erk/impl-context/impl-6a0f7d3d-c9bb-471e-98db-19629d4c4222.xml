@@ -1,0 +1,1036 @@
+<session>
+  <meta branch="planned/restore-abbreviated-sta-02-22-0929" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Address PR Review Comments on #7852
+
+## Context
+
+PR #7852 restores abbreviated stage names (`impling`/`impld`) in the TUI dashboard. 5 automated review comments were filed by bot reviewers (Dignified Code Simplifier, Tripwires). After investigation, 4 are false positives and 1 is legitimate.
+
+## Thread Analysis
+
+### False Positives (4 threads) — resolve with explanation, no code changes
+
+**Threads 1 &amp; 2** (`PRRT_kwDOPxC3hc5wAKMM`, `PRRT_kwDOPxC3hc5wAKNj`) — Lines 59, 62
+- Bot says: hardcoded strings replace dynamic f-string variable usage
+- Why false positive: The `stage` variable holds "implementing" (12 chars) / "implemented" (11 chars). The whole point of this PR is to display abbreviated forms ("impling" / "impld") that fit the 9-char column. Using `f"[yellow]{stage}[/yellow]"` would produce the exact problem being fixed.
+
+**Threads 4 &amp; 5** (`PRRT_kwDOPxC3hc5wAKOt`, `PRRT_kwDOPxC3hc5wAKQj`) — Lines 103, 104
+- Bot says: fragile substring matching creates tight coupling with display abbreviations
+- Why false positive: `format_lifecycle_with_status` receives pre-formatted display strings from `compute_lifecycle_display`. Detection MUST match what the display function outputs. Both functions are in the same module, so this is internal consistency, not fragile coupling.
+
+### Legitimate Issue (1 thread) — fix with code change
+
+**Thread 3** (`PRRT_kwDOPxC3hc5wAK21`) — Line 75
+- Bot says: `checks_passing: bool | None = None` and `has_unresolved_comments: bool | None = None` violate dignified-python no-defaults rule
+- This is correct: production code in `real.py:738-745` passes both params explicitly. The defaults exist only to avoid updating 26 pre-existing test calls.
+- Fix: remove `= None` from both params, add `checks_passing=None, has_unresolved_comments=None` to 26 test calls that don't pass them
+
+## Execution Plan
+
+### Batch 1: Single-File Fix (thread 3) + False Positive Resolution (threads 1,2,4,5)
+
+**Code changes:**
+
+1. `lifecycle.py:75-76` — Remove `= None` defaults:
+   - `checks_passing: bool | None = None,` → `checks_passing: bool | None,`
+   - `has_unresolved_comments: bool | None = None,` → `has_unresolved_comments: bool | None,`
+
+2. `test_lifecycle_display.py` — Add explicit `checks_passing=None, has_unresolved_comments=None` to 26 test calls (lines 150-434 range) that don't already pass them
+
+**Thread resolution:**
+
+3. Resolve threads 1,2,4,5 as false positives with explanations
+4. Resolve thread 3 noting the fix
+
+**Files modified:**
+- `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+- `tests/unit/plan_store/test_lifecycle_display.py`
+
+## Verification
+
+1. Run `uv run pytest tests/unit/plan_store/test_lifecycle_display.py` — all pass
+2. Run fast CI checks
+3. Re-run classifier to verify all threads resolved
+
+## Post-completion
+
+- Push changes
+- Update PR description via `erk exec update-pr-description`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-27/8fb7cb86-83ec-4c2f-adbe-d0a42583d830.jsonl</user>
+  <thinking>Let me start by reading the files that need to be modified and understanding the current state.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7690" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7690}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by reading the two files that need modification and checking the PR comments.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7690" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7690}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HkCoAjvkCx1Sun2SiyK52X">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7690" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7690}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HkCoAjvkCx1Sun2SiyK52X">
+     1→"""Lifecycle stage display computation for plans.
+     2→
+     3→Extracted to a standalone module to avoid circular imports when testing.
+     4→The main consumer is RealPlanDataProvider in real.py.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     8→from erk_shared.plan_store.conversion import header_str
+     9→from erk_shared.plan_store.types import Plan
+    10→
+    11→
+    12→def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+    13→    """Compute lifecycle stage display string for a plan.
+    14→
+    15→    Reads lifecycle_stage from plan header fields if present, otherwise
+    16→    infers from is_draft and pr_state in plan metadata. Returns a
+    17→    color-coded Rich markup string for table display.
+    18→
+    19→    When the resolved stage is "planned" and a workflow run exists,
+    20→    upgrades to "implementing" since the plan is actively being worked on.
+    21→
+    22→    Args:
+    23→        plan: Plan with header_fields and metadata populated
+    24→        has_workflow_run: Whether the plan has an associated workflow run
+    25→
+    26→    Returns:
+    27→        Display string (may contain Rich markup for color)
+    28→    """
+    29→    # Read from header fields first
+    30→    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+... [119 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VeM93m6GoKfJVHVUh4UXFV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7690" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7690}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VeM93m6GoKfJVHVUh4UXFV">
+     1→"""Tests for lifecycle display functions."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     6→from erk_shared.gateway.plan_data_provider.lifecycle import (
+     7→    compute_lifecycle_display,
+     8→    format_lifecycle_with_status,
+     9→)
+    10→from erk_shared.plan_store.types import Plan, PlanState
+    11→
+    12→
+    13→def _make_plan(
+    14→    *,
+    15→    header_fields: dict[str, object] | None = None,
+    16→    metadata: dict[str, object] | None = None,
+    17→) -&gt; Plan:
+    18→    """Create a Plan for testing with minimal required fields."""
+    19→    return Plan(
+    20→        plan_identifier="42",
+    21→        title="Test plan",
+    22→        body="",
+    23→        state=PlanState.OPEN,
+    24→        url="https://github.com/test/repo/issues/42",
+    25→        labels=["erk-plan"],
+    26→        assignees=[],
+    27→        created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+    28→        updated_at=datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
+    29→        metadata=metadata if metadata is not None else {},
+    30→        objective_id=None,
+
+... [525 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DEtmoMDpSxYZDAyJWYff51">
+    <param name="command">gh api repos/anthropics/erk/pulls/7852/comments --jq '.[] | {id: .id, node_id: .node_id, path: .path, line: .line, body: .body[:100]}' 2&gt;/dev/null | head -80</param>
+    <param name="description">Get PR review comments</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7690" cache_read_input_tokens="19041" output_tokens="381" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7690, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DEtmoMDpSxYZDAyJWYff51">
+{"message":"Not Found","documentation_url":"https://docs.github.com/rest/pulls/comments#list-review-comments-on-a-pull-request","status":"404"}
+  </tool_result>
+  <thinking>Let me get the correct repo name for the PR comments.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="17016" cache_read_input_tokens="26731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17016}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me get the correct repo info and find the test calls that need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17016" cache_read_input_tokens="26731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17016}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018a9ZGHz2Nq2H5SYDDVpoYr">
+    <param name="command">gh pr view 7852 --json url --jq '.url' 2&gt;/dev/null</param>
+    <param name="description">Get PR URL to find repo</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17016" cache_read_input_tokens="26731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17016}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018a9ZGHz2Nq2H5SYDDVpoYr">
+https://github.com/dagster-io/erk/pull/7852
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01KpPKjWkNzHt5Q56wiLJQiU">
+    <param name="pattern">format_lifecycle_with_status\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17016" cache_read_input_tokens="26731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17016}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KpPKjWkNzHt5Q56wiLJQiU">
+150:    result = format_lifecycle_with_status(
+161:    result = format_lifecycle_with_status(
+172:    result = format_lifecycle_with_status(
+183:    result = format_lifecycle_with_status(
+194:    result = format_lifecycle_with_status(
+205:    result = format_lifecycle_with_status(
+216:    result = format_lifecycle_with_status(
+227:    result = format_lifecycle_with_status(
+238:    result = format_lifecycle_with_status(
+249:    result = format_lifecycle_with_status(
+260:    result = format_lifecycle_with_status(
+271:    result = format_lifecycle_with_status(
+282:    result = format_lifecycle_with_status(
+293:    result = format_lifecycle_with_status(
+304:    result = format_lifecycle_with_status(
+318:    result = format_lifecycle_with_status(
+329:    result = format_lifecycle_with_status(
+340:    result = format_lifecycle_with_status(
+351:    result = format_lifecycle_with_status(
+362:    result = format_lifecycle_with_status(
+373:    result = format_lifecycle_with_status(
+384:    result = format_lifecycle_with_status(
+395:    result = format_lifecycle_with_status(
+406:    result = format_lifecycle_with_status(
+417:    result = format_lifecycle_with_status(
+428:    result = format_lifecycle_with_status(
+442:    result = format_lifecycle_with_status(
+455:    result = format_lifecycle_with_status(
+468:    result = format_lifecycle_with_status(
+481:    result = format_lifecycle_with_status(
+
+... [2 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to identify which of these 32 calls already pass `checks_passing` and `has_unresolved_comments`, and which don't. Let me look at the test file more carefully. From the read earlier:
+
+Calls that already pass them (lines 440-515):
+- Line 442 (test_implemented_checks_passing_no_comments_shows_rocket) - passes both
+- Line 455 (test_implemented_checks_failing_no_rocket) - passes both
+- Line 468 (test_implemented_checks_none_no_rocket) - passes both
+- Line 481 (test_implemented_unresolved_comments_no_rocket) - passes both
+
+
+- Line 494 (test_implemented_conflicts_no_rocket) - passes both
+- Line 507 (test_implementing_checks_passing_no_rocket) - passes both
+
+So 6 calls already have them, which means I need to add `checks_passing=None, has_unresolved_comments=None` to the remaining 26 calls.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="785" cache_read_input_tokens="43747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 785}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me create tasks and start working.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="785" cache_read_input_tokens="43747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 785}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01RPYkZiHmp3niaPYHBf4re2">
+    <param name="subject">Remove default values from lifecycle.py</param>
+    <param name="description">Remove `= None` defaults from `checks_passing` and `has_unresolved_comments` params in `format_lifecycle_with_status`</param>
+    <param name="activeForm">Removing default values</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="785" cache_read_input_tokens="43747" output_tokens="406" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 785, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RPYkZiHmp3niaPYHBf4re2">
+Task #1 created successfully: Remove default values from lifecycle.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01AHgG6jKZH3XkAELWshLx4t">
+    <param name="subject">Update 26 test calls with explicit params</param>
+    <param name="description">Add `checks_passing=None, has_unresolved_comments=None` to 26 test calls that don't already pass them</param>
+    <param name="activeForm">Updating test calls</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="428" cache_read_input_tokens="44532" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AHgG6jKZH3XkAELWshLx4t">
+Task #2 created successfully: Update 26 test calls with explicit params
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01GxH4yD6tzsTwRFyt3ySjDF">
+    <param name="subject">Run tests to verify changes</param>
+    <param name="description">Run pytest on test_lifecycle_display.py to verify all tests pass</param>
+    <param name="activeForm">Running tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="44960" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GxH4yD6tzsTwRFyt3ySjDF">
+Task #3 created successfully: Run tests to verify changes
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01L8SpKVxrH7tLyZKRvCFFhW">
+    <param name="subject">Resolve PR review threads</param>
+    <param name="description">Resolve all 5 PR review threads: 4 false positives with explanations, 1 legitimate with fix note</param>
+    <param name="activeForm">Resolving PR threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="45115" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 130}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L8SpKVxrH7tLyZKRvCFFhW">
+Task #4 created successfully: Resolve PR review threads
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013FxPwBDqriiQhpCtc8UaFn">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="145" cache_read_input_tokens="45245" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 145}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013FxPwBDqriiQhpCtc8UaFn">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015RAajdZyjrE21cVfHQDGiQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="old_string">    checks_passing: bool | None = None,
+    has_unresolved_comments: bool | None = None,</param>
+    <param name="new_string">    checks_passing: bool | None,
+    has_unresolved_comments: bool | None,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="45390" output_tokens="190" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015RAajdZyjrE21cVfHQDGiQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01FAxarjktsxD2Tz9BfV8R9A">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="45480" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 279, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FAxarjktsxD2Tz9BfV8R9A">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now let me check if there are other callers of `format_lifecycle_with_status` in production code that might need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="45759" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ATfs8YwUW9zB35drTZb3da">
+    <param name="pattern">format_lifecycle_with_status</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="45759" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ATfs8YwUW9zB35drTZb3da">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+tests/unit/plan_store/test_lifecycle_display.py
+docs/learned/integrations/github-review-decision.md
+docs/learned/desktop-dash/visual-status-indicators.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012LcVvAtFwdVoBUo64M1nqp">
+    <param name="pattern">format_lifecycle_with_status</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="45847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012LcVvAtFwdVoBUo64M1nqp">
+54-    PullRequestInfo,
+55-    WorkflowRun,
+56-)
+57-from erk_shared.gateway.http.abc import HttpClient
+58-from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+59:from erk_shared.gateway.plan_data_provider.lifecycle import format_lifecycle_with_status
+60-from erk_shared.impl_folder import read_plan_ref
+61-from erk_shared.naming import extract_leading_issue_number
+62-from erk_shared.plan_store.conversion import (
+63-    header_datetime,
+64-    header_int,
+--
+736-        lifecycle_display = _compute_lifecycle_display(
+737-            plan, has_workflow_run=workflow_run is not None
+738-        )
+739-
+740-        # Enrich lifecycle display with PR status indicators
+741:        lifecycle_display = format_lifecycle_with_status(
+742-            lifecycle_display,
+743-            is_draft=pr_is_draft,
+744-            has_conflicts=pr_has_conflicts,
+745-            review_decision=pr_review_decision,
+746-            checks_passing=pr_checks_passing,
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>add a test helper is probably better to handle the defaults</user>
+  <assistant>
+
+Good call. A test helper avoids touching 26 call sites and keeps things DRY. Let me update the approach.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="480" cache_read_input_tokens="46279" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 480}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01KhnxZj4pHAC7tE6KUgbhyq">
+    <param name="taskId">2</param>
+    <param name="subject">Add test helper with defaults instead of updating 26 calls</param>
+    <param name="description">Create a _format_lifecycle helper in the test file that wraps format_lifecycle_with_status...[truncated 28 chars]...ments=None defaults, then update only the 26 calls that don't pass those params to use it.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="480" cache_read_input_tokens="46279" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 480, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KhnxZj4pHAC7tE6KUgbhyq">
+Updated task #2 subject, description
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_017YC4ozYKUWmDSy8LFL8zyi">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="46759" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 205, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017YC4ozYKUWmDSy8LFL8zyi">
+Updated task #2 status
+  </tool_result>
+  <assistant>First, let me add the helper function after the imports, then update the 26 calls that don't pass `checks_passing`/`has_unresolved_comments`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="46964" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011knH4uNyMTVbnbqyFZXBjd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">def _make_plan(</param>
+    <param name="new_string">def _format_lifecycle(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    h...[truncated 436 chars]..._passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )
+
+
+def _make_plan(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="46964" output_tokens="363" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011knH4uNyMTVbnbqyFZXBjd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to replace the 26 calls that don't pass `checks_passing`/`has_unresolved_comments` with `_format_lifecycle`. The 6 calls that DO pass those params (the rocket/checks tests at the bottom) should keep using `format_lifecycle_with_status` directly. Let me use a targeted approach — replace `format_lifecycle_with_status` calls that have exactly 4 keyword args (the ones without checks_passing/has_unresolved_comments).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="47054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 442}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NgZpbPLEMQ4HdxbYc3EpU1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="offset">160</param>
+    <param name="limit">420</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="47054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 442}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NgZpbPLEMQ4HdxbYc3EpU1">
+   160→    )
+   161→    result = compute_lifecycle_display(plan, has_workflow_run=False)
+   162→    assert result == "[yellow]impling[/yellow]"
+   163→
+   164→
+   165→# --- format_lifecycle_with_status tests ---
+   166→
+   167→
+   168→def test_review_no_indicators() -&gt; None:
+   169→    """Review stage with no issues returns unchanged."""
+   170→    result = format_lifecycle_with_status(
+   171→        "[cyan]review[/cyan]",
+   172→        is_draft=None,
+   173→        has_conflicts=False,
+   174→        review_decision=None,
+   175→    )
+   176→    assert result == "[cyan]review[/cyan]"
+   177→
+   178→
+   179→def test_review_with_conflicts() -&gt; None:
+   180→    """Review stage with conflicts shows explosion emoji."""
+   181→    result = format_lifecycle_with_status(
+   182→        "[cyan]review[/cyan]",
+   183→        is_draft=None,
+   184→        has_conflicts=True,
+   185→        review_decision=None,
+   186→    )
+   187→    assert result == "[cyan]review 💥[/cyan]"
+   188→
+   189→
+
+... [386 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to replace `format_lifecycle_with_status` with `_format_lifecycle` for the 26 calls that don't pass `checks_passing`/`has_unresolved_comments`. The 6 calls that DO pass them (lines 462-534) should stay as `format_lifecycle_with_status`.
+
+Let me use `replace_all` to replace all instances, then change back the 6 that need to stay. Actually, that's messy. Let me do individual replacements for each block.
+
+Wait, actually the simplest approach: use `replace_all` to change ALL `format_lifecycle_with_status(` to `_format_lifecycle(` in the test file, then change back the 6 that explicitly pass checks_passing/has_unresolved_comments.
+
+
+Actually, I'm realizing the helper has defaults, so those 6 calls that pass `checks_passing` and `has_unresolved_comments` explicitly could also use `_format_lifecycle` since it accepts those parameters too. I could just replace all calls at once instead of doing this back-and-forth.
+
+Wait, `_format_lifecycle` has default values, which violates the dignified-python rule about production code not having defaults. But test helpers are fine since they're test infrastructure. Let me just go ahead and replace all the calls.
+
+I'll do a replace_all to swap every `format_lifecycle_with_status(` call with `_format_lifecycle(`. The import of `format_lifecycle_with_status` stays since `_format_lifecycle` calls it internally.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5405" cache_read_input_tokens="47496" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5405}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>All 26 calls without `checks_passing`/`has_unresolved_comments` need to switch to `_format_lifecycle`. The 6 rocket tests that pass explicit values can also use the helper since it accepts those params. Let me replace all test calls at once.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5405" cache_read_input_tokens="47496" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5405}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PGdYy8naSDjdLnuAWMTRBE">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    result = format_lifecycle_with_status(</param>
+    <param name="new_string">    result = _format_lifecycle(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5405" cache_read_input_tokens="47496" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5405}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PGdYy8naSDjdLnuAWMTRBE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated. All occurrences of '    result = format_lifecycle_with_status(' were successfully replaced with '    result = _format_lifecycle('.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01W3bGU9Z8jE1S2VWWJfD37t">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="747" cache_read_input_tokens="52901" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 747, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W3bGU9Z8jE1S2VWWJfD37t">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="53648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01EJLhnVGjrwpS9T5V1QwMoY">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="53648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EJLhnVGjrwpS9T5V1QwMoY">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Task" id="toolu_01LUBTDfs9ZDrnhbQv7GS585">
+    <param name="description">Run lifecycle tests</param>
+    <param name="prompt">Run `uv run pytest tests/unit/plan_store/test_lifecycle_display.py -v` and report all results. Do NOT fix anything, just report.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="53736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 96}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LUBTDfs9ZDrnhbQv7GS585">
+pytest passed: All 53 tests passed in 0.05s
+
+The test suite `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py` executed successfully with no failures, errors, or skipped tests.
+agentId: a2abce927031d4586 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13637
+tool_uses: 1
+duration_ms: 2997&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 53 tests pass. Let me also check for any other callers that might break.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="53832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 269}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01PTXUrMbJgL4bduExKrg5Ft">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="53832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 269}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PTXUrMbJgL4bduExKrg5Ft">
+Updated task #3 status
+  </tool_result>
+  <assistant>Now resolve the PR review threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="109" cache_read_input_tokens="54101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 109}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_012aMcGfNRmUHZQ3DXmsYKcB">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="109" cache_read_input_tokens="54101" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 109, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012aMcGfNRmUHZQ3DXmsYKcB">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011JM4DMZiM2mqqMMr7i6qFU">
+    <param name="command">erk exec pr-thread resolve PRRT_kwDOPxC3hc5wAKMM --reply "False positive. The \`stage\` va...[truncated 164 chars]...Using \`f\"[yellow]{stage}[/yellow]\"\` would produce the exact problem being fixed." 2&gt;&amp;1</param>
+    <param name="description">Resolve thread 1 (false positive)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="98" cache_read_input_tokens="54210" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 98}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011JM4DMZiM2mqqMMr7i6qFU">
+Exit code 2
+Usage: erk exec [OPTIONS] COMMAND [ARGS]...
+Try 'erk exec -h' for help.
+
+Error: No such command 'pr-thread'.
+
+Usage: erk exec [OPTIONS] COMMAND [ARGS]...
+Try 'erk exec -h' for help.
+
+Error: No such command 'pr-thread'.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Tq8VWWrCCKm5hFe3UfWUAi">
+    <param name="command">erk exec pr-thread resolve PRRT_kwDOPxC3hc5wAKNj --reply "False positive. Same as above — ...[truncated 39 chars]...urpose of this PR. The abbreviations are intentional to fit the 9-char column width." 2&gt;&amp;1</param>
+    <param name="description">Resolve thread 2 (false positive)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="98" cache_read_input_tokens="54210" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 98}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tq8VWWrCCKm5hFe3UfWUAi">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Aabu8qXWkWc41CC61vwrZf">
+    <param name="command">erk exec pr-thread resolve PRRT_kwDOPxC3hc5wAK21 --reply "Valid. Removed \`= None\` defaul...[truncated 91 chars]...xisting test calls clean while the production signature requires explicit arguments." 2&gt;&amp;1</param>
+    <param name="description">Resolve thread 3 (legitimate fix)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="98" cache_read_input_tokens="54210" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 98}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Aabu8qXWkWc41CC61vwrZf">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XDEnUJhoYmQeFsGzNV9zMn">
+    <param name="command">erk exec pr-thread resolve PRRT_kwDOPxC3hc5wAKOt --reply "False positive. \`format_lifecyc...[truncated 135 chars]...nctions are in the same module — this is internal consistency, not fragile coupling." 2&gt;&amp;1</param>
+    <param name="description">Resolve thread 4 (false positive)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="98" cache_read_input_tokens="54210" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 98}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XDEnUJhoYmQeFsGzNV9zMn">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FFFpqaRVbqiXjxr2FVaYNb">
+    <param name="command">erk exec pr-thread resolve PRRT_kwDOPxC3hc5wAKQj --reply "False positive. Same reasoning a...[truncated 83 chars]...th functions live in the same module and the detection must match the output format." 2&gt;&amp;1</param>
+    <param name="description">Resolve thread 5 (false positive)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="98" cache_read_input_tokens="54210" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 98}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FFFpqaRVbqiXjxr2FVaYNb">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me check the correct command for resolving PR threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="54308" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1040}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01DSLstWnjm7PYa1Kee1AJnD">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="54308" output_tokens="67" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1040, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DSLstWnjm7PYa1Kee1AJnD">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <assistant>
+
+Now I know the correct commands. Let me use batch resolve.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1513" cache_read_input_tokens="55348" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1513}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011fd2z6ZbJYj7Rg1wHrfggS">
+    <param name="command">echo '[
+  {"thread_id": "PRRT_kwDOPxC3hc5wAKMM", "comment": "False positive. The `stage` v...[truncated 1313 chars]...nd the detection must match the output format."}
+]' | erk exec resolve-review-threads 2&gt;&amp;1</param>
+    <param name="description">Batch resolve all 5 PR review threads</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1513" cache_read_input_tokens="55348" output_tokens="531" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1513, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011fd2z6ZbJYj7Rg1wHrfggS">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAKMM",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAKNj",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAK21",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAKOt",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAKQj",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>All 5 threads resolved.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="56861" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 806}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01M3zKwTXsEWGFxGooqLYs21">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="56861" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 806, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M3zKwTXsEWGFxGooqLYs21">
+Updated task #4 status
+  </tool_result>
+  <assistant>Done. Here's what was done:
+
+**Code changes:**
+1. `lifecycle.py:75-76` — Removed `= None` defaults from `checks_passing` and `has_unresolved_comments` params
+2. `test_lifecycle_display.py` — Added `_format_lifecycle` test helper that wraps `format_lifecycle_with_status` with `None` defaults for the two check params, then replaced all 32 test calls to use it
+
+**PR thread resolution (all 5):**
+- Threads 1,2 (lines 59, 62) — resolved as false positive: abbreviations are the whole point of the PR
+- Thread 3 (line 75) — resolved with fix: removed defaults, added test helper
+- Threads 4,5 (lines 103-104) — resolved as false positive: internal module consistency, not fragile coupling
+
+All 53 tests pass. Ready to commit and push when you'd like.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="57667" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 96}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01PPWCNSUiMuDrFjfR9aDzkc">
+    <param name="command">erk exec quick-submit 2&gt;&amp;1</param>
+    <param name="description">Quick submit changes to Graphite</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="286" cache_read_input_tokens="57983" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PPWCNSUiMuDrFjfR9aDzkc">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7852"
+}
+  </tool_result>
+  <assistant>Submitted. PR: https://github.com/dagster-io/erk/pull/7852</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="58269" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_01ULUkooE1ce1XC68LnaxkDi">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1106" cache_read_input_tokens="58491" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1106, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ULUkooE1ce1XC68LnaxkDi">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Now I have all the data. Let me classify the comments and produce the structured JSON output.
+
+The review threads from `github-actions` are all bot-generated suggestions. Looking at the threads:
+
+1. `PRRT_kwDOPxC3hc5wAOhI` - outdated thread about default parameter values
+2. `PRRT_kwDOPxC3hc5wAOeB` - line 59, hardcoded string literal (f-string abandoned)
+3. `PRRT_kwDOPxC3hc5wAOfD` - line 62, hardcoded string literal (f-string abandoned)
+4. `PRRT_kwDOPxC3hc5wAOiA` - line 103, fragile substring matching
+5. `PRRT_kwDOPxC3hc5wAOi_` - line 104, fragile substring matching
+6. `PRRT_kwDOPxC3hc5wAPXX` - line 19 in test file, no default parameter values (dignified-python violation)
+
+For the discussion comments:
+- schrockn's "Starting implementation" comment: informational
+- Graphite stack comment: informational
+- Test Coverage Review (github-actions): informational (CI status)
+- Dignified Python Review (github-actions): informational (CI status - the one actual violation is already captured as a review thread)
+- Dignified Code Simplifier Review (github-actions): informational (CI - no violations)
+- Tripwires Review (github-actions): informational (CI - no violations)
+
+The bot review threads on `lifecycle.py` (threads 2-5) are style/code simplification suggestions ("could" language). Thread 6 (`PRRT_kwDOPxC3hc5wAPXX`) is a dignified-python violation - actionable.
+
+All 6 threads are from `github-actions` bot. They all go into `actionable_threads`. Threads 2-5 are bot style suggestions (optional/could). Thread 6 is a rule violation fix.
+
+Thread 1 is outdated - still appears in `actionable_threads` per the classification model.
+
+Threads 2 and 3 are in the same file and related (both about hardcoded strings on adjacent lines). Threads 4 and 5 are in the same file at adjacent lines. All are in `lifecycle.py` except thread 6 which is in the test file.
+
+
+... [97 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <thinking>Let me analyze the classifier output and present the preview. There are 6 unresolved review threads - these are NEW threads (different IDs from the ones we already resolved). The previous batch we resolved had IDs ending in `AKMM`, `AKNj`, `AK21`, `AKOt`, `AKQj`. These new ones end in `AOhI`, `AOeB`, `AOfD`, `AOiA`, `AOi_`, `APXX`.
+
+So after our push, new bot reviews were filed. Let me classify them:
+
+1. `PRRT_kwDOPxC3hc5wAOhI` - outdated thread about default parameter values (likely already fixed by our commit)
+
+
+2. `PRRT_kwDOPxC3hc5wAOeB` - line 59, hardcoded string "impling" (false positive - same type as before)
+3. `PRRT_kwDOPxC3hc5wAOfD` - line 62, hardcoded string "impld" (false positive - same type as before)
+4. `PRRT_kwDOPxC3hc5wAOiA` - line 103, fragile substring matching (false positive - same type as before)
+5. `PRRT_kwDOPxC3hc5wAOi_` - still reviewing this one
+
+The pattern's clear - most of these are the same false positives we've seen before, just flagged again on different lines.
+
+Thread 6 is the interesting one though. The bot caught our new `_format_lifecycle` test helper for using default parameter values, which violates the dignified-python rule. But that's exactly what a test helper is supposed to do - provide sensible defaults. The user explicitly asked for this helper with defaults, so this is a false positive in context. Thread 1 is already resolved since we fixed the production code defaults earlier.
+
+Threads 2-5 are just repeating the same false positives we've already dealt with from the new push.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2304" cache_read_input_tokens="59597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2304}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>## PR #7852: "Restore abbreviated stage names in TUI dashboard"
+
+### Actionable Items (6 total)
+
+These are new bot review threads filed after the latest push.
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | lifecycle.py (outdated) | false positive | Remove default parameter values | local |
+| 2 | review | lifecycle.py:59 | false positive | Restore f-string instead of hardcoded "impling" | local |
+| 3 | review | lifecycle.py:62 | false positive | Restore f-string instead of hardcoded "impld" | local |
+| 4 | review | lifecycle.py:103 | false positive | Fragile substring matching on "impling" | local |
+| 5 | review | lifecycle.py:104 | false positive | Fragile substring matching on "impld" | local |
+| 6 | review | test_lifecycle_display.py:19 | needs decision | Default params in `_format_lifecycle` test helper | local |
+
+### Analysis
+
+**Threads 1-5**: Repeat false positives from bots re-running on the new push. Same patterns we already resolved — thread 1 is outdated (defaults already removed from production code), threads 2-3 are about intentional abbreviations, threads 4-5 are about internal module consistency.
+
+**Thread 6**: Bot flags `_format_lifecycle` test helper for having `= None` defaults. This is the helper you just asked me to create. The dignified-python rule says no defaults, but this is a **test helper** whose whole purpose is providing defaults to avoid 26 explicit `None` args. Two options:
+- **Dismiss**: Resolve as false positive — test helpers are infrastructure, not production code
+- **Fix**: Remove defaults from the helper too, add explicit `None` args to all 26 calls (defeats the purpose)
+
+### Execution Plan Preview
+
+**Batch 1: False Positive Resolution** (auto-proceed)
+- Items #1-5: Resolve with same explanations as prior batch
+
+**Batch 2: User Decision** 
+- Item #6: Dismiss test helper defaults, or comply?
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2304" cache_read_input_tokens="59597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2304}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>dismiss them all, resolve the threads</user>
+  <tool_use name="Bash" id="toolu_01RY6hzqvST8aEZftr3hQa4w">
+    <param name="command">echo '[
+  {"thread_id": "PRRT_kwDOPxC3hc5wAOhI", "comment": "Already fixed in prior commit...[truncated 1024 chars]...s to production code, not test infrastructure."}
+]' | erk exec resolve-review-threads 2&gt;&amp;1</param>
+    <param name="description">Batch resolve all 6 new review threads</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="167" cache_read_input_tokens="62994" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 167}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RY6hzqvST8aEZftr3hQa4w">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAOhI",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAOeB",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAOfD",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAOiA",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wAOi_",
+      "comment_added": true
+    },
+    {
+      "success": true,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>All 6 threads resolved. PR should be clean now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="789" cache_read_input_tokens="63161" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 789}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>

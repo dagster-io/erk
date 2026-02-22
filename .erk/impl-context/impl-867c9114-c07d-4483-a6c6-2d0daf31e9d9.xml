@@ -1,0 +1,701 @@
+<session>
+  <meta branch="planned/restore-abbreviated-sta-02-22-0929" />
+  <meta model="claude-opus-4-6" />
+  <user> we should be consistent about where the status emojis are for stage column (always on the right)</user>
+  <thinking>The user wants to make the status emojis in the "stage" column consistent - always on the right side of the stage text. Looking at the screenshot:
+
+- `planning` - no emoji
+- `implin` with emoji on the left (🔨)
+- `implin` with emoji on the left (🔨)
+- `impld` with emoji on the right (🧱)
+- `impld` with no emoji
+- `impld` with emoji on the left (❌)
+- `impld` with no emoji
+- `implin` with emoji on the left (👀)
+- `impld` with no emoji
+
+
+- `impld` with emoji on the left (❌)
+- `impld` with no emoji
+- `impld` with no emoji
+
+So the emojis are scattered - some on the left, one on the right, and some rows missing them entirely. I need to look at the TUI code to see how the stage column is being rendered and figure out where the inconsistency is coming from.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12577" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12577}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I can see the inconsistency - some stage emojis appear on the left (like the 🔨 on `implin` rows) while others appear on the right (like the 🧱 on `impld`). Let me explore how the stage column is rendered.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12577" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12577}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_019HmWyZvb3XEr89jujm9VKE">
+    <param name="description">Explore TUI stage column rendering</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 632 chars]...in src/erk/tui/ related to the dashboard/planned PRs table, and any stage formatting code.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12577" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12577}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019HmWyZvb3XEr89jujm9VKE">
+Perfect! Now I have a complete understanding. Let me create a comprehensive summary document to present my findings.
+
+## Summary of Findings
+
+I've completed a thorough exploration of how the stage column in the TUI dashboard renders stage names with status emojis. Here are the key findings:
+
+### **Architecture Overview**
+
+The stage rendering pipeline consists of three main components:
+
+1. **Stage name computation** (`lifecycle.py:compute_lifecycle_display()`)
+   - Maps stage values to abbreviated color-coded Rich markup strings
+   - Examples: `planned` → `[dim]planned[/dim]`, `implementing` → `[yellow]impling[/yellow]`, `implemented` → `[cyan]impld[/cyan]`
+
+2. **Status emoji enrichment** (`lifecycle.py:format_lifecycle_with_status()`)
+   - Adds draft/published indicators (🚧/👀) as **prefix** for active stages
+   - Adds status indicators (💥/✔/❌) as **suffix** for implementing/implemented/review stages
+
+3. **Display in table** (`src/erk/tui/widgets/plan_table.py:_row_to_values()`)
+   - Line 338: `stage_display = _strip_rich_markup(row.lifecycle_display)`
+   - Inserts the formatted string into the stage column
+
+### **Current Emoji Position Inconsistency**
+
+The problem is in `format_lifecycle_with_status()` (lines 69-149 in `lifecycle.py`):
+
+- **Prefix emojis (🚧/👀)**: Inserted INSIDE Rich markup tags after the opening tag
+  - Line 110-114: `[color]🚧 stage[/color]`
+  - Lines 103-118 show this is intentional to "inherit stage color"
+
+
+... [57 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the key file directly to understand the exact current behavior.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1915" cache_read_input_tokens="31618" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1915}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K3nEmp8p66nQHxLdNcUn3s">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1915" cache_read_input_tokens="31618" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1915, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K3nEmp8p66nQHxLdNcUn3s">
+     1→"""Lifecycle stage display computation for plans.
+     2→
+     3→Extracted to a standalone module to avoid circular imports when testing.
+     4→The main consumer is RealPlanDataProvider in real.py.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     8→from erk_shared.plan_store.conversion import header_str
+     9→from erk_shared.plan_store.types import Plan
+    10→
+    11→
+    12→def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+    13→    """Compute lifecycle stage display string for a plan.
+    14→
+    15→    Reads lifecycle_stage from plan header fields if present, otherwise
+    16→    infers from is_draft and pr_state in plan metadata. Returns a
+    17→    color-coded Rich markup string for table display.
+    18→
+    19→    When the resolved stage is "planned" and a workflow run exists,
+    20→    upgrades to "implementing" since the plan is actively being worked on.
+    21→
+    22→    Args:
+    23→        plan: Plan with header_fields and metadata populated
+    24→        has_workflow_run: Whether the plan has an associated workflow run
+    25→
+    26→    Returns:
+    27→        Display string (may contain Rich markup for color)
+    28→    """
+    29→    # Read from header fields first
+    30→    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+... [120 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SU8hnmkpgKmpVvN7yuuso7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2070" cache_read_input_tokens="33533" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2070, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SU8hnmkpgKmpVvN7yuuso7">
+     1→"""Tests for lifecycle display functions."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     6→from erk_shared.gateway.plan_data_provider.lifecycle import (
+     7→    compute_lifecycle_display,
+     8→    format_lifecycle_with_status,
+     9→)
+    10→from erk_shared.plan_store.types import Plan, PlanState
+    11→
+    12→
+    13→def _make_plan(
+    14→    *,
+    15→    header_fields: dict[str, object] | None = None,
+    16→    metadata: dict[str, object] | None = None,
+    17→) -&gt; Plan:
+    18→    """Create a Plan for testing with minimal required fields."""
+    19→    return Plan(
+    20→        plan_identifier="42",
+    21→        title="Test plan",
+    22→        body="",
+    23→        state=PlanState.OPEN,
+    24→        url="https://github.com/test/repo/issues/42",
+    25→        labels=["erk-plan"],
+    26→        assignees=[],
+    27→        created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+    28→        updated_at=datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
+    29→        metadata=metadata if metadata is not None else {},
+    30→        objective_id=None,
+
+... [444 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a clear picture. The issue is in `format_lifecycle_with_status()` in `lifecycle.py`. Currently:
+
+- **Prefix emojis** (🚧/👀 for draft/published) go on the **left**: `[dim]🚧 planned[/dim]`
+- **Suffix emojis** (💥/✔/❌ for conflicts/review) go on the **right**: `[cyan]review 💥[/cyan]`
+
+The user wants all emojis on the right for consistency. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10608" cache_read_input_tokens="35603" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10608}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_019TWg2323AvwHVfyi6QQW9W">
+    <param name="file_path">/Users/schrockn/.claude/plans/moonlit-dazzling-anchor.md</param>
+    <param name="content"># Plan: Move stage status emojis to consistent right position
+
+## Context
+
+In the TUI dash...[truncated 2357 chars]...
+
+Run scoped tests:
+```
+uv run pytest tests/unit/plan_store/test_lifecycle_display.py
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10608" cache_read_input_tokens="35603" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10608}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019TWg2323AvwHVfyi6QQW9W">
+File created successfully at: /Users/schrockn/.claude/plans/moonlit-dazzling-anchor.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01W9pucUREZt4QwxA1YjY4AQ">
+    <param name="plan"># Plan: Move stage status emojis to consistent right position
+
+## Context
+
+In the TUI dash...[truncated 2357 chars]...
+
+Run scoped tests:
+```
+uv run pytest tests/unit/plan_store/test_lifecycle_display.py
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1172" cache_read_input_tokens="46211" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1172}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W9pucUREZt4QwxA1YjY4AQ">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/moonlit-dazzling-anchor.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Move stage status emojis to consistent right position
+Current context: (wt:erk-slot-27) (br:planned/restore-abbreviated-sta-02-22-0929) (pr:#7852) (plan:#7852)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/r"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 867c9114-c07d-4483-a6c6-2d0daf31e9d9 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Plan: Move stage status emojis to consistent right position
+
+### Context
+
+In the TUI dashboard's "stage" column, status emojis are inconsistently placed:
+- Draft/published indicators (🚧/👀) appear on the **left**: `🚧 impling`
+- Conflict/review indicators (💥/✔/❌) appear on the **right**: `impld 💥`
+
+This should be consistent — all emojis on the right side of the stage name.
+
+### Changes
+
+#### 1. Update `format_lifecycle_with_status()` in `lifecycle.py`
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+
+Change the prefix emoji logic (lines 103-118) to append the draft/published emoji as a suffix instead of prepending it. The emoji should go **after** the stage text but **before** the closing Rich markup tag, just like the existing suffix logic.
+
+Current → New:
+- `[dim]🚧 planned[/dim]` → `[dim]planned 🚧[/dim]`
+- `[yellow]👀 impling[/yellow]` → `[yellow]impling 👀[/yellow]`
+- `[yellow]🚧 impling 💥[/yellow]` → `[yellow]impling 🚧 💥[/yellow]`
+
+Implementation: Collect the draft/published emoji into the `indicators` list (before conflict/review indicators) instead of prepending it. This unifies both types of indicators into a single suffix.
+
+#### 2. Update test expectations
+
+**File:** `tests/unit/plan_store/test_lifecycle_display.py`
+
+Update 9 test assertions to expect emojis on the right instead of the left.
+
+### Verification
+
+```
+uv run pytest tests/unit/plan_store/test_lifecycle_display.py
+```
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="47383" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 654}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01NkzFaRbt3MsUkpRHMgHj5K">
+    <param name="questions">[{'question': 'Plan: Move stage status emojis to consistent right position\nCurrent contex...[truncated 512 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="47383" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 654}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NkzFaRbt3MsUkpRHMgHj5K">
+User has answered your questions: "Plan: Move stage status emojis to consistent right position
+Current context: (wt:erk-slot-27) (br:planned/restore-abbreviated-sta-02-22-0929) (pr:#7852) (plan:#7852)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>implement it right here</user>
+  <tool_use name="Bash" id="toolu_01RXT8vmEZaUhfqsUrWxoCU3">
+    <param name="command">erk exec marker create --session-id 867c9114-c07d-4483-a6c6-2d0daf31e9d9 exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="564" cache_read_input_tokens="48752" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 564}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RXT8vmEZaUhfqsUrWxoCU3">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <assistant>Now let me implement the changes. The key change is in `format_lifecycle_with_status()` — move the draft/published emoji from a prefix to a suffix by folding it into the indicators list.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="49316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LzAdJ7nMJaiyXZ2oZMhXfc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="old_string">    # Detect stage from the display string content
+    is_planned = "planned" in lifecycle...[truncated 1810 chars]...+ suffix + after
+
+    # No Rich markup - just append
+    return lifecycle_display + suffix</param>
+    <param name="new_string">    # Detect stage from the display string content
+    is_planned = "planned" in lifecycle...[truncated 1352 chars]...+ suffix + after
+
+    # No Rich markup - just append
+    return lifecycle_display + suffix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="49316" output_tokens="1106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 160, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LzAdJ7nMJaiyXZ2oZMhXfc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test expectations:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1195" cache_read_input_tokens="49476" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1195}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UhXqBb5aXBmvJCTTM93rWg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "[dim]🚧 planned[/dim]"</param>
+    <param name="new_string">    assert result == "[dim]planned 🚧[/dim]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1195" cache_read_input_tokens="49476" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1195}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UhXqBb5aXBmvJCTTM93rWg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FHsg8xHCbEwt2jUW8ZMptz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "[dim]👀 planned[/dim]"</param>
+    <param name="new_string">    assert result == "[dim]planned 👀[/dim]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="50671" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 250}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FHsg8xHCbEwt2jUW8ZMptz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DGteWdabD8UiRGPz3toUc9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "[yellow]🚧 impling[/yellow]"</param>
+    <param name="new_string">    assert result == "[yellow]impling 🚧[/yellow]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="50921" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 241}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DGteWdabD8UiRGPz3toUc9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01A6A2KMHH2GULUxSgbiaQ1Z">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "[yellow]👀 impling[/yellow]"</param>
+    <param name="new_string">    assert result == "[yellow]impling 👀[/yellow]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="51162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 245}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A6A2KMHH2GULUxSgbiaQ1Z">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VjN1Mi24TWBTcBqduwTFew">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "[cyan]👀 review[/cyan]"</param>
+    <param name="new_string">    assert result == "[cyan]review 👀[/cyan]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="51407" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 243}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VjN1Mi24TWBTcBqduwTFew">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Q3quZQ2derDbQLNLaCYTaM">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "[cyan]👀 review 💥[/cyan]"</param>
+    <param name="new_string">    assert result == "[cyan]review 👀 💥[/cyan]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="51650" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 241}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q3quZQ2derDbQLNLaCYTaM">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HQvu9YMdnR7eyuwLS6n5Lt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "[cyan]👀 review ✔[/cyan]"</param>
+    <param name="new_string">    assert result == "[cyan]review 👀 ✔[/cyan]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="51891" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 358, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HQvu9YMdnR7eyuwLS6n5Lt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01YX9961hQY5kfyUbjMFAwDE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "👀 review"</param>
+    <param name="new_string">    assert result == "review 👀"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="52249" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 248}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YX9961hQY5kfyUbjMFAwDE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01L4zmW2zAKh8hSmNswzjA4d">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">    assert result == "[yellow]🚧 impling 💥[/yellow]"</param>
+    <param name="new_string">    assert result == "[yellow]impling 🚧 💥[/yellow]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="52497" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 229, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L4zmW2zAKh8hSmNswzjA4d">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests to verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="52726" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 251}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01DLvG1wDixZNxnw5UKyzKuj">
+    <param name="description">Run lifecycle display tests</param>
+    <param name="prompt">Run this command and report results:
+uv run pytest tests/unit/plan_store/test_lifecycle_display.py -v</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="52726" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 251}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DLvG1wDixZNxnw5UKyzKuj">
+pytest passed: 47 tests passed in 0.05 seconds
+
+All tests in `tests/unit/plan_store/test_lifecycle_display.py` are passing.
+agentId: a20d6d14d7e7fa565 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13639
+tool_uses: 1
+duration_ms: 2436&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 47 tests pass. The change is clean — I unified both prefix and suffix emojis into a single suffix-based approach. Now all status emojis in the stage column will consistently appear on the right side of the stage name:
+
+- `impling 🚧` (was `🚧 impling`)
+- `impling 👀` (was `👀 impling`)  
+- `planned 🚧` (was `🚧 planned`)
+- `impling 🚧 💥` (was `🚧 impling 💥`)
+- `review 👀 ✔` (was `👀 review ✔`)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="52977" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 240}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+  <assistant>No response requested.</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <user>looks like we are missing draft statuses now n</user>
+  <thinking>The user is pointing out that after our change, the draft/published status emojis (🚧/👀) are no longer showing up in the stage column. Looking at the screenshot, I can see stages like `impling`, `impld`, `impld 💥` but no 🚧 or 👀 emojis anywhere.
+
+Let me think about why. The issue is that in the original code, the draft/published prefix was applied to "active stages" (planned, implementing, review). But now we're in plan mode, so I need to investigate what's going wrong.
+
+Wait - looking more carefully at the screenshot, the stages show:
+
+
+- `impling` (no emoji at all for several rows)
+- `impld` (no emoji)
+- `impld 💥` (has conflict emoji)
+- `impling` (no emoji)
+- `impld` (no emoji)
+
+Previously in the first screenshot, we could see `🔨 impling` and `👀 impling` etc. Now none of the draft/published emojis are showing. The issue might be in how `is_draft` is being passed through the code change - the prefix logic for active stages might not be getting the right value anymore.
+
+Looking at the original implementation, the prefix was added for active stages (planned, implementing, review), while the suffix was only for implementing, implemented, and review. So "planned" should still show the draft/published indicators, and "impling" (implementing) definitely should too. But in the new screenshot, the `impling` rows are missing those emojis entirely, which suggests the draft indicator logic isn't working correctly for those stages.
+
+Let me trace through where `format_lifecycle_with_status` gets called to see if `is_draft` might be None for those rows.
+
+Actually, looking at the new screenshot more carefully — the `impling` rows no longer show the draft or published indicators, but the `impld 💥` still appears. This tells me the suffix logic is working for conflict indicators but not for the draft/published ones. Let me examine the updated code to understand why the draft/published check isn't triggering for active stages.
+
+Wait, I'm checking the condition — if `is_implementing` is true and `is_draft` is not None, the 🚧 or 👀 should definitely be appended. The tests pass, so the logic itself is sound. The real issue might be that `is_draft` is actually None in the actual data for these PRs, even though they're in the implementing stage.
+
+But the user mentioned these indicators were showing before our change and disappeared after, so something we modified must have broken it. Let me trace through the actual file to see what's different. I need to check if maybe `is_draft` is being set to None instead of a boolean value for the implementing rows, or if there's something else in the `is_active_stage` logic that's preventing these rows from being processed correctly. Looking at the first screenshot more carefully, I notice the emoji presence depends on whether the lifecycle stage matches the expected patterns - "planning" doesn't contain "planned" as a substring, so that check wouldn't trigger. The second screenshot actually shows more columns than the first, which might be affecting what I'm seeing about the emoji display.
+
+Examining the "impling" rows across both screenshots, I'm noticing a discrepancy - the first screenshot shows prefix emojis like `🔨 implin` and `👀 implin`, but the second screenshot shows the same rows without any emoji prefix, just plain `impling`. This suggests the emoji rendering might be getting lost somewhere between the two views, or there's a difference in how the data is being processed depending on the viewport width. I need to look at the actual current state of the file to see what abbreviation is being used now, since the screenshots show `implin` in the first one and `impling` in the second. The code checks for `"impling" in lifecycle_display`, which would match the second screenshot but not the first, yet the tests are passing with `impling`, so that must be what's currently in the file. I'm getting caught up in the details here. Let me step back and actually check the code to see what's happening with the draft indicators - they should be showing for implementing rows but they're not appearing in the screenshot, which suggests there might be a real bug in how `is_draft` is being set or displayed for PRs in that stage. I'm looking at the logic for building the indicator suffix — it checks for draft status on active stages, then adds conflict and review decision emojis for the relevant stages, and finally inserts the suffix inside the Rich markup closing tag so the indicators inherit the color styling.
+
+But wait, if the emojis were showing before the change, then `is_draft` shouldn't be None in the real data. Let me reconsider — maybe the issue isn't with the indicator logic itself, but with how the abbreviated stage names are affecting the `_strip_rich_markup` function in `plan_table.py`, or the column width is too narrow to display the emoji properly.
+
+Actually, looking at the second screenshot again, I can see `impld 💥` which shows both the stage name and emoji, so the column is definitely wide enough. The problem is specifically that implementing rows are showing `impling` without any emoji at all.
+
+I think I need to trace through the actual data path in `real.py` to understand what values are being passed and why the draft indicators are missing for implementing stages. Looking at the emoji rendering across both screenshots, the draft indicators like 🚧 and 👀 have vanished while the conflict markers (💥) persist, which suggests the issue is specific to how draft status is being displayed rather than a broader rendering problem. The emojis I'm seeing in the first screenshot don't quite match what the code should be producing, so there might be a rendering or encoding discrepancy I need to investigate more carefully.
+
+Let me check the actual file state to confirm the edits were applied and trace through the caller to see if something else changed.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="33028" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33028}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me investigate why the draft indicators disappeared.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="33028" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33028}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013RNHJd8hFzzfAqsC32EH9f">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="33028" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33028}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013RNHJd8hFzzfAqsC32EH9f">
+     1→"""Lifecycle stage display computation for plans.
+     2→
+     3→Extracted to a standalone module to avoid circular imports when testing.
+     4→The main consumer is RealPlanDataProvider in real.py.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     8→from erk_shared.plan_store.conversion import header_str
+     9→from erk_shared.plan_store.types import Plan
+    10→
+    11→
+    12→def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+    13→    """Compute lifecycle stage display string for a plan.
+    14→
+    15→    Reads lifecycle_stage from plan header fields if present, otherwise
+    16→    infers from is_draft and pr_state in plan metadata. Returns a
+    17→    color-coded Rich markup string for table display.
+    18→
+    19→    When the resolved stage is "planned" and a workflow run exists,
+    20→    upgrades to "implementing" since the plan is actively being worked on.
+    21→
+    22→    Args:
+    23→        plan: Plan with header_fields and metadata populated
+    24→        has_workflow_run: Whether the plan has an associated workflow run
+    25→
+    26→    Returns:
+    27→        Display string (may contain Rich markup for color)
+    28→    """
+    29→    # Read from header fields first
+    30→    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+... [106 lines omitted] ...
+  </tool_result>
+  <tool_use name="Task" id="toolu_01XqVE71wiy5tXhxf4n3zSNo">
+    <param name="description">Find how format_lifecycle_with_status is called</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 332 chars]...hat call this function
+
+Show me the exact call sites with surrounding context (10+ lines).</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="33028" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33028}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XqVE71wiy5tXhxf4n3zSNo">
+Perfect! I found all the callers of `format_lifecycle_with_status`. Let me show you the exact call sites with surrounding context.
+
+## Call Sites for `format_lifecycle_with_status`
+
+Based on my search, there are **2 callers** of this function:
+
+### 1. **Primary Production Call Site** (`real.py`, lines 733-738)
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`
+
+```python
+        # Compute lifecycle display from header or infer from metadata
+        lifecycle_display = _compute_lifecycle_display(
+            plan, has_workflow_run=workflow_run is not None
+        )
+
+        # Enrich lifecycle display with PR status indicators
+        lifecycle_display = format_lifecycle_with_status(
+            lifecycle_display,
+            is_draft=pr_is_draft,
+            has_conflicts=pr_has_conflicts,
+            review_decision=pr_review_decision,
+        )
+
+        return PlanRowData(
+```
+
+**Context:** This is inside the `_build_row_data` method, which transforms plan data for TUI display. The parameters passed are:
+- `is_draft=pr_is_draft` (line 631: `pr_is_draft = selected_pr.is_draft`)
+- `has_conflicts=pr_has_conflicts` (line 632: `pr_has_conflicts = selected_pr.has_conflicts`)
+
+... [94 lines omitted] ...
+  </tool_result>
+  <thinking>OK, so the code looks correct. Let me check if the `pr_is_draft` value is actually being populated correctly. Let me look at how `selected_pr` is determined in real.py.
+
+Actually wait - let me look at the screenshot more carefully one more time. The user says "looks like we are missing draft statuses now." Looking at the second screenshot:
+
+- #7855: `impling` - no draft emoji
+- #7854: `impling` - no draft emoji
+- #7853: `impling` - no draft emoji
+- #7852: `impld` - no draft emoji (expected - implemented isn't active)
+
+
+- #7851: `impld` - no draft emoji (expected)
+
+And in the first screenshot, I can see the implementing rows actually had draft/published emojis before them - like a construction emoji or eye emoji preceding the status text. So something's definitely changed between these two screenshots where those indicators disappeared.
+
+The code logic looks sound - we're just moving the emoji from prefix to suffix - but in the second screenshot, the implementing rows aren't showing any emoji at all, while other rows like #7850 are displaying suffix emojis fine. This suggests the column width isn't the issue. I should dig into how `_strip_rich_markup` processes the lifecycle display in `plan_table.py` to see if something's stripping out the emoji for implementing rows specifically.
+
+Wait, I'm noticing that many of the implementing PRs in the second screenshot have active workflow runs. If those are draft PRs, the code should be appending the 🚧 emoji when `is_active_stage` is true and `is_draft` is true. But maybe `is_draft` is coming through as None instead of a boolean, which would skip that condition entirely. Let me trace back where `pr_is_draft` is actually being populated from.
+
+Actually, hold on—this was working before our changes, and we didn't modify the caller, so the same data should still be producing emojis. Let me look at the logic again more carefully. I'm checking if "impling" appears in the lifecycle display string, which would be wrapped in markup like `[yellow]impling[/yellow]`. The substring check should still catch that...
+
+So if `is_active_stage` is true and `is_draft` is set, we append the draft indicator. Then we check for conflicts and other conditions. The suffix gets built by joining the indicators with spaces, and we find where the closing markup tag is so we can insert the suffix before it. Continuing to trace through the string manipulation...
+
+Actually, I'm realizing the issue might not be with the logic itself. The user ran the dashboard command and saw the second screenshot, but if the package is installed via `uv` rather than running from the development worktree, the code changes wouldn't be reflected yet. The dashboard would still be using the old installed version until the package gets reinstalled.
+
+But wait—the abbreviation changed from `implin` to `impling` between screenshots, which means the code IS being picked up. So the changes are definitely active. Yet the draft indicators are completely missing now across all rows, even ones that had them before. Let me think about whether `is_draft` could be systematically returning None due to some data flow issue, or if there's something else filtering out the emoji rendering.
+
+Actually, I'm wondering if there's a markup stripping function somewhere that's removing emojis during table display. But more likely—the column width might be truncating from the right side, which would cut off suffix emojis while prefix ones would have been visible. The conflict emoji still shows because the text `impld 💥` is short enough to fit, but `impling 🚧` gets clipped at the end. the `impling` and `impld 💥` entries are roughly the same visual width, so if one fits in the column, the other should too. Let me reconsider whether the emoji is actually causing the truncation or if something else is going on with how the column is sizing. ... `impld 💥` takes up 8 columns (5 chars + space + 2-width emoji) while `impling 🚧` needs 10 columns (7 chars + space + 2-width emoji). If the column width is constrained to around 8-9 characters, that would explain why one fits and the other doesn't. I should check how plan_table.py handles column sizing and also verify what those emojis actually are in the stage column versus the separate loc column. Looking at the second screenshot, the emoji is completely gone from the stage column—it just shows "impling" without any draft indicator. This confirms the emojis are being stripped out somewhere. My best guess is that the column has a fixed width and the text is getting truncated on the right side, which would silently drop the emoji if it's positioned after the text.
+
+Let me check the plan_table.py code to see how column widths are being calculated and whether we can either expand the stage column or reposition the emoji to prevent it from being cut off.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7589" cache_read_input_tokens="52069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7589}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The code logic looks correct — tests pass. I suspect the issue is **column width truncation** in the TUI. When the emoji was a prefix (`🚧 impling`), truncation from the right still showed it. Now as a suffix (`impling 🚧`), the emoji gets cut off. Let me verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7589" cache_read_input_tokens="52069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7589}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_012tVkmDVTGVREpRKFVz4Vvi">
+    <param name="description">Explore plan_table stage column width</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 513 chars]... lifecycle_display before rendering
+
+Show me the relevant code sections with line numbers.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7589" cache_read_input_tokens="52069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7589}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012tVkmDVTGVREpRKFVz4Vvi">
+Perfect! Now I have all the information needed. Let me provide you with a comprehensive analysis of how the stage column width is determined.
+
+## Summary: Stage Column Width Determination
+
+Based on my analysis of the codebase, here's how the stage column width is determined in the TUI's plan table:
+
+### 1. **Column Width Definition** (plan_table.py, lines 186-189)
+
+```python
+if self._plan_backend == "draft_pr":
+    self._stage_column_index = col_index
+    self.add_column("stage", key="stage", width=9)
+    col_index += 1
+```
+
+**Key finding:** The stage column has a **fixed width of 9 characters**. This width is only used when `plan_backend == "draft_pr"`.
+
+### 2. **The `_strip_rich_markup()` Function** (plan_table.py, lines 467-479)
+
+```python
+def _strip_rich_markup(text: str) -&gt; str:
+    """Remove Rich markup tags from text.
+
+    Args:
+        text: Text potentially containing Rich markup like [link=...]...[/link]
+
+    Returns:
+        Plain text with markup removed
+    """
+    import re
+
+... [77 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the issue. The stage column has a **fixed width of 9 characters**. Emojis in terminals are typically 2 characters wide. So:
+
+- `impling 🚧` = 7 + 1 + 2 = 10 visual columns → exceeds width 9, gets truncated
+- `🚧 impling` = 2 + 1 + 7 = 10 visual columns → also exceeds width 9, but the emoji is at the start so it's visible
+
+Wait, both should exceed width 9. But in the first screenshot, `🚧 implin` was showing. `implin` is 6 chars, so `🚧 implin` = 2 + 1 + 6 = 9. That fits exactly!
+
+
+The real problem is that the abbreviation grew from `implin` to `impling`, pushing the total width over the limit when the emoji moved to the end. I need to increase the column width to accommodate both the longer text and the emoji. I need to figure out the right column width to handle these stage labels. The longest common case is `impling 🚧` at 10 visual columns, so I should probably bump the width up from 9 to at least 11 or 12 to give it proper breathing room.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="5005" cache_read_input_tokens="59658" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5005}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Found it. The stage column has **`width=9`** in `plan_table.py`. With the old abbreviation `implin` (6 chars), the prefix emoji fit: `🚧 implin` = 2+1+6 = 9. But now with `impling` (7 chars), the suffix gets truncated: `impling 🚧` = 7+1+2 = 10 &gt; 9.
+
+Meanwhile `impld 💥` = 5+1+2 = 8, which fits — that's why conflict emojis still show.
+
+The fix is to widen the stage column. Let me update the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5005" cache_read_input_tokens="59658" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5005}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S71BCKxkLR1V3D3rzqMwFn">
+    <param name="file_path">/Users/schrockn/.claude/plans/moonlit-dazzling-anchor.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5005" cache_read_input_tokens="59658" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5005}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S71BCKxkLR1V3D3rzqMwFn">
+     1→# Plan: Move stage status emojis to consistent right position
+     2→
+     3→## Context
+     4→
+     5→In the TUI dashboard's "stage" column, status emojis are inconsistently placed:
+     6→- Draft/published indicators (🚧/👀) appear on the **left**: `🚧 impling`
+     7→- Conflict/review indicators (💥/✔/❌) appear on the **right**: `impld 💥`
+     8→
+     9→This should be consistent — all emojis on the right side of the stage name.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Update `format_lifecycle_with_status()` in `lifecycle.py`
+    14→
+    15→**File:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+    16→
+    17→Change the prefix emoji logic (lines 103-118) to append the draft/published emoji as a suffix instead of prepending it. The emoji should go **after** the stage text but **before** the closing Rich markup tag, just like the existing suffix logic.
+    18→
+    19→Current behavior:
+    20→- `[dim]🚧 planned[/dim]` → Change to `[dim]planned 🚧[/dim]`
+    21→- `[yellow]👀 impling[/yellow]` → Change to `[yellow]impling 👀[/yellow]`
+    22→
+    23→When both draft and status indicators exist:
+    24→- `[yellow]🚧 impling 💥[/yellow]` → Change to `[yellow]impling 🚧 💥[/yellow]`
+    25→
+    26→Implementation: Collect the draft/published emoji into the `indicators` list (before conflict/review indicators) instead of prepending it. This unifies both types of indicators into a single suffix.
+    27→
+    28→### 2. Update test expectations
+    29→
+    30→**File:** `tests/unit/plan_store/test_lifecycle_display.py`
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_use name="Write" id="toolu_018ayjLZevLJVe8NmbJZ8fTu">
+    <param name="file_path">/Users/schrockn/.claude/plans/moonlit-dazzling-anchor.md</param>
+    <param name="content"># Plan: Move stage status emojis to consistent right position
+
+## Context
+
+In the TUI dash...[truncated 1467 chars]...ual check: `erk dash` — confirm draft/published emojis appear to the right of stage names
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2256" cache_read_input_tokens="64663" output_tokens="625" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2256, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018ayjLZevLJVe8NmbJZ8fTu">
+The file /Users/schrockn/.claude/plans/moonlit-dazzling-anchor.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01HxPdCsjCQZGRuqZ6iyoVnr">
+    <param name="plan"># Plan: Move stage status emojis to consistent right position
+
+## Context
+
+In the TUI dash...[truncated 1467 chars]...ual check: `erk dash` — confirm draft/published emojis appear to the right of stage names
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="66919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 665}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HxPdCsjCQZGRuqZ6iyoVnr">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

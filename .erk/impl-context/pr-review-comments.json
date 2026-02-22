@@ -1,0 +1,204 @@
+{
+  "success": true,
+  "pr_number": 7852,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wAK21",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: Default parameter values detected - dignified-python rule violation. The rule states: 'No default parameter values: `def foo(*, verbose: bool)` not `def foo(verbose: bool = False)`'. Since the production code in real.py passes these parameters explicitly, the defaults appear unnecessary. Consider removing `= None` from both `checks_passing` and `has_unresolved_comments` parameters.",
+          "created_at": "2026-02-22T15:11:16Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Valid. Removed `= None` defaults from both params. Added a `_format_lifecycle` test helper that provides the defaults, keeping the 26 pre-existing test calls clean while the production signature requires explicit arguments.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:24 EST_",
+          "created_at": "2026-02-22T15:24:25Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAOhI",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Code Simplification**: Default parameter values detected - dignified-python rule violation. Rule states: 'No default parameter values: `def foo(*, verbose: bool)` not `def foo(verbose: bool = False)`'. Production code in real.py:643-644 passes these parameters explicitly. Remove `= None` from both parameters since callers always provide explicit values.",
+          "created_at": "2026-02-22T15:22:56Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed in prior commit \u2014 defaults removed from production signature. This thread is outdated.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:29 EST_",
+          "created_at": "2026-02-22T15:29:52Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAKMM",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 59,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Hardcoded string literal replaces variable usage - f-string now unused. Was: `f\"[yellow]{stage}[/yellow]\"` (dynamic), now: `\"[yellow]impling[/yellow]\"` (hardcoded). Loses the key design pattern of using the actual stage value.",
+          "created_at": "2026-02-22T15:09:12Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive. The `stage` variable holds \"implementing\" (12 chars) / \"implemented\" (11 chars). The whole point of this PR is to display abbreviated forms (\"impling\" / \"impld\") that fit the 9-char column. Using `f\"[yellow]{stage}[/yellow]\"` would produce the exact problem being fixed.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:24 EST_",
+          "created_at": "2026-02-22T15:24:22Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAOeB",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 59,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Code Simplification**: Hardcoded string literal replaces variable usage - f-string abandoned. Was: `f\"[yellow]{stage}[/yellow]\"` (dynamic), now: `\"[yellow]impling[/yellow]\"` (hardcoded). Loses design pattern of using actual stage value - this breaks if abbreviations change or stages are added.",
+          "created_at": "2026-02-22T15:22:48Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive. The abbreviations are intentional to fit the 9-char TUI column. Using f-strings with the full stage name would produce the exact problem this PR fixes.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:29 EST_",
+          "created_at": "2026-02-22T15:29:54Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAKNj",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 62,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Hardcoded string literal replaces variable usage - f-string now unused. Was: `f\"[cyan]{stage}[/cyan]\"` (dynamic), now: `\"[cyan]impld[/cyan]\"` (hardcoded). Loses the key design pattern of using the actual stage value.",
+          "created_at": "2026-02-22T15:09:15Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive. Same as above \u2014 using f-strings with the full stage name would defeat the purpose of this PR. The abbreviations are intentional to fit the 9-char column width.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:24 EST_",
+          "created_at": "2026-02-22T15:24:24Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAOfD",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 62,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Code Simplification**: Hardcoded string literal replaces variable usage - f-string abandoned. Was: `f\"[cyan]{stage}[/cyan]\"` (dynamic), now: `\"[cyan]impld[/cyan]\"` (hardcoded). Loses design pattern of using actual stage value.",
+          "created_at": "2026-02-22T15:22:52Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive. Same as above \u2014 hardcoded abbreviations are the point of this PR.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:29 EST_",
+          "created_at": "2026-02-22T15:29:55Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAKOt",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 103,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Detection logic now searches for abbreviated keywords instead of full stage names. Changed from `\"implementing\" in lifecycle_display` to `\"impling\" in lifecycle_display`. This fragile substring matching creates a tight coupling with specific display abbreviations and breaks if display format changes.",
+          "created_at": "2026-02-22T15:09:18Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive. `format_lifecycle_with_status` receives pre-formatted display strings from `compute_lifecycle_display`. Detection must match what the display function outputs. Both functions are in the same module \u2014 this is internal consistency, not fragile coupling.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:24 EST_",
+          "created_at": "2026-02-22T15:24:27Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAOiA",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 103,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Code Simplification**: Detection logic uses fragile substring matching on display abbreviations. Changed from `\"implementing\" in lifecycle_display` to `\"impling\" in lifecycle_display`. This couples the logic tightly to specific display strings and breaks if abbreviations change. Consider using a richer detection method (parsed markup or separate stage parameter).",
+          "created_at": "2026-02-22T15:22:59Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive. Both functions are in the same module. Detection must match what the display function outputs \u2014 this is internal consistency, not fragile coupling.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:29 EST_",
+          "created_at": "2026-02-22T15:29:57Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAKQj",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 104,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Detection logic now searches for abbreviated keywords instead of full stage names. Changed from checking for full strings to `\"impld\" in lifecycle_display`. This fragile substring matching creates tight coupling with specific display abbreviations and breaks if display format changes.",
+          "created_at": "2026-02-22T15:09:22Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive. Same reasoning as the previous thread \u2014 substring matching against display strings is the correct pattern here since both functions live in the same module and the detection must match the output format.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:24 EST_",
+          "created_at": "2026-02-22T15:24:29Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAOi_",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 104,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Code Simplification**: Detection logic uses fragile substring matching on display abbreviations. New check for `\"impld\" in lifecycle_display` couples logic to specific display strings. This pattern is brittle and breaks if format changes - same maintainability concern as line 103.",
+          "created_at": "2026-02-22T15:23:02Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive. Same reasoning \u2014 internal module consistency, not fragile coupling.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:29 EST_",
+          "created_at": "2026-02-22T15:29:59Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wAPXX",
+      "path": "tests/unit/plan_store/test_lifecycle_display.py",
+      "line": 19,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: No default parameter values - remove defaults, callers should pass explicit values. See dignified-python-core.md: 'No default parameter values'",
+          "created_at": "2026-02-22T15:26:17Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Dismissed. This is a test helper whose entire purpose is providing defaults to avoid repeating checks_passing=None, has_unresolved_comments=None across 26 test calls. The no-defaults rule applies to production code, not test infrastructure.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 10:30 EST_",
+          "created_at": "2026-02-22T15:30:00Z"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+<session>
+  <meta branch="planned/restore-abbreviated-sta-02-22-0929" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Fix Temp Directory Flakes in Parallel Tests
+
+## Context
+
+`test_commit_files_to_branch_cleans_up_temp_index` was failing under xdist parallel execution because it scanned the shared system temp directory (`tempfile.gettempdir()`) for `erk-plan-*.idx` files. Other xdist workers running concurrently can create matching files between the before/after snapshots, causing false failures. We already fixed that test; two more tests in `test_shell_utils.py` have the same pattern.
+
+## Changes
+
+### `tests/commands/shell/test_shell_utils.py`
+
+Both tests create/scan files in the shared system temp directory. Fix by monkeypatching `tempfile.tempdir` to a test-specific directory.
+
+**`test_write_script_to_temp`** (line 11):
+- Add `monkeypatch` and `tmp_path` params
+- Create `tmp_path / "temp"` and `monkeypatch.setattr(tempfile, "tempdir", str(...))`
+- The assertion `temp_path.parent == Path(tempfile.gettempdir())` still works since both sides use the monkeypatched value
+- Remove manual `temp_path.unlink()` cleanup (test-specific temp dir is auto-cleaned)
+
+**`test_cleanup_stale_scripts`** (line 42):
+- Add `monkeypatch` and `tmp_path` params
+- Create `tmp_path / "temp"` and `monkeypatch.setattr(tempfile, "tempdir", str(...))`
+- Change `Path(tempfile.gettempdir())` references to use the monkeypatched value (no code change needed — they already call `tempfile.gettempdir()`)
+- Remove manual `new_script.unlink(missing_ok=True)` cleanup
+
+Add `from __future__ import annotations` and `import pytest` to the file.
+
+## Verification
+
+Run the specific test file:
+```
+uv run pytest tests/commands/shell/test_shell_utils.py -v
+```
+
+Run integration tests to confirm the already-fixed test still passes:
+```
+uv run pytest tests/integration/test_real_git_commit_ops.py::test_commit_files_to_branch_cleans_up_temp_index -v
+```
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-27/33d62ce6-7293-49fe-934d-c108ba8391de.jsonl</user>
+  <thinking>Let me read the test file to understand the current code before making changes.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7344" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7344}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Rb79Rjp2FSt4Bqf5wtorFq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/commands/shell/test_shell_utils.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7344" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7344}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rb79Rjp2FSt4Bqf5wtorFq">
+     1→"""Tests for shell_utils module."""
+     2→
+     3→import os
+     4→import tempfile
+     5→import time
+     6→from pathlib import Path
+     7→
+     8→from erk.cli.shell_utils import cleanup_stale_scripts, write_script_to_temp
+     9→
+    10→
+    11→def test_write_script_to_temp() -&gt; None:
+    12→    """Test that temp scripts are written with correct metadata."""
+    13→    script_content = "cd /foo\necho 'hello'\n"
+    14→
+    15→    temp_path = write_script_to_temp(
+    16→        script_content,
+    17→        command_name="test",
+    18→        comment="test comment",
+    19→    )
+    20→
+    21→    # File should exist
+    22→    assert temp_path.exists()
+    23→
+    24→    # Should be in temp directory
+    25→    assert temp_path.parent == Path(tempfile.gettempdir())
+    26→
+    27→    # Should have correct pattern
+    28→    assert temp_path.name.startswith("erk-test-")
+    29→    assert temp_path.name.endswith(".sh")
+    30→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll apply the changes to fix the temp directory flakes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10821" cache_read_input_tokens="26385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10821}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QTMi3bqTTC4Pocw3HNV3zQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/commands/shell/test_shell_utils.py</param>
+    <param name="old_string">"""Tests for shell_utils module."""
+
+import os
+import tempfile
+import time
+from pathlib im...[truncated 1550 chars]...sts()
+    assert new_script.exists()
+
+    # Cleanup
+    new_script.unlink(missing_ok=True)</param>
+    <param name="new_string">"""Tests for shell_utils module."""
+
+from __future__ import annotations
+
+import os
+import ...[truncated 1845 chars]... gone, new should remain
+    assert not old_script.exists()
+    assert new_script.exists()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10821" cache_read_input_tokens="26385" output_tokens="1346" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10821, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QTMi3bqTTC4Pocw3HNV3zQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/commands/shell/test_shell_utils.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests to verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1423" cache_read_input_tokens="37206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1423}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01PVjtf8fgWNsbckv59PnxLX">
+    <param name="description">Run shell_utils tests</param>
+    <param name="prompt">Run the following command and report results:
+```
+uv run pytest tests/commands/shell/test_shell_utils.py -v
+```
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1423" cache_read_input_tokens="37206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1423}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PVjtf8fgWNsbckv59PnxLX">
+pytest passed: 2 tests passed in 0.38s
+
+Both tests in `tests/commands/shell/test_shell_utils.py` executed successfully with no failures.
+agentId: ab9cb479d626d8f1e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13620
+tool_uses: 1
+duration_ms: 2997&lt;/usage&gt;
+  </tool_result>
+  <assistant>Both tests pass. Let me also run the already-fixed integration test to confirm it still works.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="38629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 272}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Ai8ZWaUbcGgTuzwyS66Je2">
+    <param name="description">Run integration test verification</param>
+    <param name="prompt">Run the following command and report results:
+```
+uv run pytest tests/integration/test_rea...[truncated 38 chars]..._temp_index -v
+```
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="38629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 272}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ai8ZWaUbcGgTuzwyS66Je2">
+pytest passed: test_commit_files_to_branch_cleans_up_temp_index completed successfully in 0.19 seconds. The test verifies that temporary index files are properly cleaned up after committing files to a branch.
+agentId: ab62d868f4aa87ea6 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13673
+tool_uses: 1
+duration_ms: 2799&lt;/usage&gt;
+  </tool_result>
+  <assistant>All tests pass. Here's what I changed in `tests/commands/shell/test_shell_utils.py`:
+
+1. Added `from __future__ import annotations` and `import pytest`
+2. **`test_write_script_to_temp`** — Added `monkeypatch` and `tmp_path` params, monkeypatched `tempfile.tempdir` to an isolated directory, removed manual `temp_path.unlink()` cleanup
+3. **`test_cleanup_stale_scripts`** — Added `monkeypatch` and `tmp_path` params, monkeypatched `tempfile.tempdir` to an isolated directory, removed manual `new_script.unlink(missing_ok=True)` cleanup
+
+Both tests now use isolated temp directories instead of the shared system temp, preventing false failures when xdist workers create matching `erk-*.sh` files concurrently.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="38901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 315}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>

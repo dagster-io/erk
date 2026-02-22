@@ -1,0 +1,1038 @@
+<session>
+  <meta branch="planned/restore-abbreviated-sta-02-22-0929" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Plan Review Detection
+
+Before classifying feedback, determine if this is a plan review PR:
+
+1. Get PR data using REST API (avoids GraphQL rate limits):
+   - **If `--pr &lt;number&gt;` specified in ``**: `erk exec get-pr-view &lt;number&gt;`
+   - **Otherwise** (auto-detect from current branch): `erk exec get-pr-view`
+
+   Parse the JSON output to extract `number`, `labels`, and `body`.
+
+2. Check if the PR has the `erk-plan-review` label (from the `labels` array in the output).
+
+3. If YES: extract the plan issue number from the `body` field (which contains `**Plan Issue:** #NNN`):
+   - Parse the issue number from the `**Plan Issue:** #NNN` line
+   - Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
+
+4. If NO: proceed with standard code review flow (Phase 1)
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+**Skip this phase in Plan Review Mode** - plan PRs don't have meaningful code diffs to summarize.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "8fb7cb86-83ec-4c2f-adbe-d0a42583d830"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+---
+
+## Plan Review Mode
+
+When Phase 0 detects the `erk-plan-review` label on the current PR, the entire flow switches to plan review mode. This mode edits plan text instead of source code.
+
+### Key Differences: Plan Mode vs Code Mode
+
+| Aspect            | Code Mode                    | Plan Mode                              |
+| ----------------- | ---------------------------- | -------------------------------------- |
+| File edited       | Source code files            | `PLAN-REVIEW-{issue}.md`               |
+| What changes      | Code implementation          | Plan text/structure                    |
+| CI checks         | Run tests                    | Skip (no code to test)                 |
+| Extra step        | None                         | `plan-update-issue` to sync plan issue |
+| Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
+| Thread resolution | What code change was made    | How plan was updated                   |
+
+### Plan Review Phase 1: Save Current Branch
+
+Before processing feedback, record the current branch so we can return to it later:
+
+```bash
+git branch --show-current
+```
+
+Store the result as `ORIGINAL_BRANCH`.
+
+### Plan Review Phase 2: Classify Feedback
+
+Same as standard Phase 1 — use the Task tool (NOT skill invocation, for `--print` mode isolation) to run the classifier in a subagent (see Phase 1 above for the Task tool pattern). Pass `[--pr &lt;number&gt; if specified]` as arguments.
+
+### Plan Review Phase 3: Display Batched Plan
+
+Same as standard Phase 2, but note at the top of the display:
+
+```
+**Plan Review Mode** (erk-plan-review label detected) — changes apply to plan text, not source code.
+```
+
+### Plan Review Phase 4: Execute by Batch (Plan Mode)
+
+For each batch:
+
+#### Step 1: Edit the Plan
+
+1. Read `PLAN-REVIEW-{issue}.md` from the repo root
+2. For each comment in the batch, incorporate reviewer feedback by editing the plan markdown text
+   - Restructure sections, add detail, clarify language, update design decisions as requested
+   - If feedback applies to implementation (not the plan itself), add a note to the relevant plan section rather than making structural changes
+3. Write the updated `PLAN-REVIEW-{issue}.md`
+
+#### Step 2: Commit and Push
+
+```bash
+git add PLAN-REVIEW-{issue}.md
+git commit -m "Incorporate review feedback (batch N/M)
+
+- &lt;summary of change 1&gt;
+- &lt;summary of change 2&gt;
+..."
+git push
+```
+
+#### Step 3: Sync Plan to GitHub Issue
+
+```bash
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
+```
+
+#### Step 4: Resolve Threads
+
+Resolve each thread using the appropriate command (see `pr-operations` skill):
+
+**For review threads** - use the batch command to resolve all at once:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Incorporated feedback into plan. Updated the relevant section in PLAN-REVIEW-{issue}.md.\n\nSummary of change: {brief description}"}]' | erk exec resolve-review-threads
+```
+
+**For discussion comments** (`reply-to-discussion-comment`):
+
+Use a message like:
+
+```
+Addressed in plan update. {description of how feedback was incorporated or why it was noted for implementation phase}
+```
+
+**For feedback that applies to implementation, not the plan itself:**
+
+Use a message like:
+
+```
+Noted for implementation phase. This feedback applies to the code implementation rather than the plan structure — it will be addressed when implementing the plan.
+```
+
+#### Step 5: Report Progress
+
+Same as standard Phase 4 Step 5 — report what was addressed and what remains.
+
+### Plan Review Phase 5: Final Verification
+
+Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
+
+### Return to Original Branch
+
+After all batches are complete and pushed:
+
+1. Switch back to the branch saved in Phase 1: `git checkout &lt;ORIGINAL_BRANCH&gt;`
+2. The plan-review branch work is complete — the user should not remain on it.
+</user>
+  <assistant>
+
+I'll start by loading the `pr-operations` skill as required, then classify the PR feedback.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15382" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15382}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SK3XSeBpFgM2AoYK6BEkV1">
+    <param name="description">Load pr-operations skill</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 41 chars]...essary.
+
+Read the file .claude/skills/pr-operations/SKILL.md and return its full contents.</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15382" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15382}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Fjfs9rxAtAn7A3Yav9kMtq">
+    <param name="command">git branch --show-current</param>
+    <param name="description">Get current branch name</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15382" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15382}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Fjfs9rxAtAn7A3Yav9kMtq">
+planned/restore-abbreviated-sta-02-22-0929
+  </tool_result>
+  <tool_result tool="toolu_01SK3XSeBpFgM2AoYK6BEkV1">
+Here is the full contents of `.claude/skills/pr-operations/SKILL.md`:
+
+```markdown
+---
+name: pr-operations
+description: Use when working with PR review comments, resolving threads, or replying to discussion comments. Essential for understanding the correct erk exec commands for PR thread operations.
+---
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+... [107 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to detect the PR and check if it's a plan review. Let me get the PR view first, then run the classifier.</thinking>
+  <usage input_tokens="45" cache_creation_input_tokens="1906" cache_read_input_tokens="34423" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1906}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have the pr-operations skill loaded and the current branch is `planned/restore-abbreviated-sta-02-22-0929`. Let me check the PR and run the classifier.</assistant>
+  <usage input_tokens="45" cache_creation_input_tokens="1906" cache_read_input_tokens="34423" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1906}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01F9ZLpwv5w8rikAtejGMoZB">
+    <param name="command">erk exec get-pr-view 2&gt;&amp;1</param>
+    <param name="description">Get PR data for current branch</param>
+  </tool_use>
+  <usage input_tokens="45" cache_creation_input_tokens="1906" cache_read_input_tokens="34423" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1906}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F9ZLpwv5w8rikAtejGMoZB">
+{"success": true, "number": 7852, "title": "Restore abbreviated stage names in TUI dashboard", "url": "https://github.com/dagster-io/erk/pull/7852", "body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-22T09:29:27.259747+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: null\nlast_dispatched_node_id: null\nlast_dispatched_at: null\nlast_local_impl_at: '2026-02-22T14:36:09.191359+00:00'\nlast_local_impl_event: ended\nlast_local_impl_session: ec5ab77c-d3c8-46cd-96ae-b6df1ef7c92f\nlast_local_impl_user: schrockn\nlast_remote_impl_at: null\nlast_remote_impl_run_id: null\nlast_remote_impl_session_id: null\nbranch_name: planned/restore-abbreviated-sta-02-22-0929\ncreated_from_session: 0110eecd-09d8-4798-9cfc-bf971dd2ce21\nlifecycle_stage: implemented\nworktree_name: erk-slot-27\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n\n\n---\n\nThis reverts PR #7790's change to full stage names, restoring the abbreviated display names (impling, impld) that fit within the 9-character stage column width. Full names like \"implementing\" (12 chars) get truncated, losing meaning and appearing broken; abbreviated names were intentionally introduced in PR #7646 for proper column fitting.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified (2 files)\n- `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` - Stage display logic and detection\n- `tests/unit/plan_store/test_lifecycle_display.py` - Test assertions updated to match abbreviated names\n\n&lt;/details&gt;\n\n## Key Changes\n\n- Stage display strings: \"implementing\" \u2192 \"impling\", \"implemented\" \u2192 \"impld\" in `compute_lifecycle_display()`\n- Stage detection logic updated to recognize abbreviated names (\"impling\" and \"impld\") in `format_lifecycle_with_status()`\n- Conflict indicator logic now properly detects \"impld\" stage to show conflict markers on implemented stage\n\n## User Experience\n\n**Before:**\n```\nStage column shows \"implement\" - appears truncated and unclear (12-char name in 9-char width)\n```\n\n**After:**\n```\nStage column shows \"impling\" / \"impld\" - fits cleanly within 9-char width, intentional abbreviation\n```\n\nThe stage column in the TUI dashboard now displays intentionally abbreviated names that fit properly within the column width, improving visual clarity and preventing misleading truncation.\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Restore Abbreviated Stage Names in TUI Dashboard\n\n## Context\n\nPR #7790 (`29a811918`) deliberately changed stage display from abbreviated names (`impling`, `impld`) back to full names (`implementing`, `implemented`). The stage column is 9 chars wide, so `implementing` (12 chars) gets truncated to `implement` \u2014 losing meaning and looking broken. The abbreviated names were introduced in PR #7646 specifically to fit the 9-char column width.\n\n## Changes\n\n### 1. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`\n\nIn `compute_lifecycle_display`:\n- Line 58-59: `f\"[yellow]{stage}[/yellow]\"` \u2192 `\"[yellow]impling[/yellow]\"`\n- Line 60-61: `f\"[cyan]{stage}[/cyan]\"` \u2192 `\"[cyan]impld[/cyan]\"`\n\nIn `format_lifecycle_with_status`:\n- Line 98: `\"implementing\" in lifecycle_display` \u2192 `\"impling\" in lifecycle_display`\n- Line 119: The early return guard `if not is_implementing and not is_review:` \u2014 also need to restore `is_implemented` detection for `\"impld\"` so conflict indicators work on that stage too\n\n### 2. `tests/unit/plan_store/test_lifecycle_display.py`\n\nUpdate all assertions that check for `implementing`/`implemented` display strings:\n- `\"[yellow]implementing[/yellow]\"` \u2192 `\"[yellow]impling[/yellow]\"`\n- `\"[cyan]implemented[/cyan]\"` \u2192 `\"[cyan]impld[/cyan]\"`\n- Status-decorated variants: `\"[yellow]\ud83d\udea7 implementing[/yellow]\"` \u2192 `\"[yellow]\ud83d\udea7 impling[/yellow]\"`, etc.\n\n## Verification\n\n- Run `uv run pytest tests/unit/plan_store/test_lifecycle_display.py` \u2014 all pass\n- Run `uv run pytest tests/tui/test_plan_table.py` \u2014 all pass\n- Visual check: `erk dash -i` shows `impling`/`impld` fitting cleanly in stage column\n\n\n&lt;/details&gt;\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 7852 --script)\" &amp;&amp; erk pr sync --dangerous\n```\n", "state": "OPEN", "is_draft": false, "head_ref_name": "planned/restore-abbreviated-sta-02-22-0929", "base_ref_name": "master", "labels": ["erk-plan"], "author": "schrockn", "mergeable": "UNKNOWN", "merge_state_status": "UNKNOWN", "is_cross_repository": false, "created_at": "2026-02-22T14:29:27+00:00", "updated_at": "2026-02-22T15:11:49+00:00"}
+  </tool_result>
+  <thinking>This is PR #7852. It has the `erk-plan` label, not `erk-plan-review`. So this is NOT a plan review PR - proceed with standard code review flow.
+
+Wait, I'm in plan mode. The `/erk:pr-address` command was invoked but I'm in plan mode which says I should only write to the plan file and use read-only operations. But the command itself is an execution workflow that involves making edits, commits, etc.
+
+Actually, looking more carefully at the system reminder: "Plan mode is active. The user indicated that they do not want you to execute yet -- you MUST NOT make any edits". So I need to plan the pr-address workflow first, then get approval to execute.
+
+
+I should start by running the classifier to see what feedback has been left on this PR, then I can outline the plan for addressing it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2068" cache_read_input_tokens="36329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2068}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>PR #7852 doesn't have the `erk-plan-review` label, so this is standard code review mode. Let me classify the feedback.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2068" cache_read_input_tokens="36329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2068}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01U8a4q6YyrJG9RZytJENznx">
+    <param name="description">Classify PR feedback</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 7852
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2068" cache_read_input_tokens="36329" output_tokens="381" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2068, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U8a4q6YyrJG9RZytJENznx">
+The skill has been executed successfully. Here is the complete JSON output from the pr-feedback-classifier:
+
+```json
+{
+  "success": true,
+  "pr_number": 7852,
+  "pr_title": "Restore abbreviated stage names in TUI dashboard",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7852",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wAKMM",
+      "type": "review",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 59,
+      "is_outdated": false,
+      "classification": "actionable",
+      "action_summary": "Bot suggestion: replace hardcoded \"impling\" string literal with dynamic f-string variable usage",
+      "complexity": "single_file",
+      "original_comment": "**Dignified Code Simplifier Review**: Hardcoded string literal replaces variable usage - f-string now unused. Was: `f\"[yellow]{stage}[/yellow]\"` (dynamic), now: `\"[yellow]impling[/yellow]\"` (hardcoded). Loses the key design pattern of using the actual stage value."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wAKNj",
+      "type": "review",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py",
+      "line": 62,
+      "is_outdated": false,
+      "classification": "actionable",
+      "action_summary": "Bot suggestion: replace hardcoded \"impld\" string literal with dynamic f-string variable usage",
+      "complexity": "single_file",
+      "original_comment": "**Dignified Code Simplifier Review**: Hardcoded string literal replaces variable usage - f-string now unused. Was: `f\"[cyan]{stage}[/cyan]\"` (dynamic), now: `\"[cyan]impld[/cyan]\"` (hardcoded). Loses the key design pattern of using the actual stage value."
+
+... [52 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <thinking>The classifier found 5 actionable review threads, all in the same file `lifecycle.py`. Let me read the file to understand the context before planning.
+
+Wait - the classifier says `informational_count: 5` but classified all 5 as `"actionable"`. Let me look more carefully... Actually the `classification` field says "actionable" for all of them. But these are all from automated bot reviewers (Dignified Code Simplifier Review and Tripwires Review). The skill instructions say:
+
+&gt; **Handling False Positives from Automated Reviewers:**
+&gt; 1. Read the flagged code carefully
+
+
+&gt; 2. Verify if it's a false positive
+&gt; 3. If it's a false positive, do NOT make unnecessary code changes
+
+So I need to read the file and assess whether these are false positives or legitimate suggestions. Let me read the file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1775" cache_read_input_tokens="38397" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Found 5 review threads, all in `lifecycle.py`, all from automated reviewers. Let me read the file to assess whether these are false positives or legitimate suggestions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1775" cache_read_input_tokens="38397" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015qZXzcyKjAJJrjCaAJ5rha">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1775" cache_read_input_tokens="38397" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015qZXzcyKjAJJrjCaAJ5rha">
+     1→"""Lifecycle stage display computation for plans.
+     2→
+     3→Extracted to a standalone module to avoid circular imports when testing.
+     4→The main consumer is RealPlanDataProvider in real.py.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     8→from erk_shared.plan_store.conversion import header_str
+     9→from erk_shared.plan_store.types import Plan
+    10→
+    11→
+    12→def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+    13→    """Compute lifecycle stage display string for a plan.
+    14→
+    15→    Reads lifecycle_stage from plan header fields if present, otherwise
+    16→    infers from is_draft and pr_state in plan metadata. Returns a
+    17→    color-coded Rich markup string for table display.
+    18→
+    19→    When the resolved stage is "planned" and a workflow run exists,
+    20→    upgrades to "implementing" since the plan is actively being worked on.
+    21→
+    22→    Args:
+    23→        plan: Plan with header_fields and metadata populated
+    24→        has_workflow_run: Whether the plan has an associated workflow run
+    25→
+    26→    Returns:
+    27→        Display string (may contain Rich markup for color)
+    28→    """
+    29→    # Read from header fields first
+    30→    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+... [119 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me analyze the 5 review comments:
+
+1. **Thread PRRT_kwDOPxC3hc5wAKMM (line 59)**: Bot says hardcoded "impling" replaces variable usage. But this is intentional - the `stage` variable is "implementing" (the data value), and the display is intentionally abbreviated to "impling" to fit the 9-char column. Using f-string with `stage` would give "implementing" which is too wide. This is a **false positive**.
+
+2. **Thread PRRT_kwDOPxC3hc5wAKNj (line 62)**: Same as above but for "impld" vs "implemented". 
+
+3. **Thread PRRT_kwDOPxC3hc5wAK21 (line 75)**: Bot flags `= None` default parameter values as violating dignified-python. Lines 75-76 have `checks_passing: bool | None = None` and `has_unresolved_comments: bool | None = None`. The bot claims production code passes these explicitly, but I need to check if these defaults were already there or introduced by this PR. Let me look at the git diff to see what changed.
+
+4. **Thread PRRT_kwDOPxC3hc** - this one appears cut off, let me continue examining the remaining comments.
+
+5. **Thread PRRT_kwDOPxC3hc5wAKOt (line 103/105)**: Bot says `"impling" in lifecycle_display` is fragile substring matching, but that's how the function detects stages from the pre-formatted output of `compute_lifecycle_display`. Using "impling" is correct here. **False positive**.
+
+6. **Thread PRRT_kwDOPxC3hc5wAKQj (line 104/106)**: Same issue with "impld" - also a **false positive**.
+
+Actually, reconsidering threads 1 and 2 - the bot suggests using dynamic f-strings, but the display string needs to be abbreviated. The `stage` variable holds "implementing" which can't be used directly, so we'd need a mapping or something else. I'm not sure the bot's suggestion actually works here.
+
+I could create an abbreviation mapping dictionary, but that adds unnecessary complexity for just two cases. Or I could use a separate variable for each stage, but that's just extra verbosity. The current approach is straightforward - if the stage is implementing, show the abbreviated form. It's clear and simple.
+
+Now I need to check the default parameters issue in thread 3 to see if those defaults existed before this PR.
+
+Looking at the diff more carefully, I should verify what this PR actually changed versus what was pre-existing. But I'm in plan mode, so I can only read files and write to the plan file. Let me outline how to address these comments.
+
+The hardcoded "impling" and "impld" strings in threads 1 and 2 are false positives from the bot - the hardcoding is intentional since we're mapping the stage value "implementing" to a shorter display string to fit the column width. Using f-strings with the raw stage variable would defeat that purpose. The default parameters issue appears to be pre-existing, not introduced by this PR.
+
+For the substring matching concerns in threads 4 and 5, they're essentially the same as threads 1 and 2 - the detection logic uses abbreviated strings because that's what the display function outputs, which is the correct behavior. I should resolve threads 1 and 2 as false positives since the abbreviation is the whole point of the PR, check whether the default parameters were changed by this PR or were pre-existing to determine if it's in scope, and handle threads 4 and 5 similarly to threads 1 and 2.
+
+There's a valid point about coupling though - if someone changes the abbreviation in `compute_lifecycle_display`, they'd need to update the matching logic too. A more robust approach would match on stage names rather than display strings, but that's a bigger refactor outside the scope of this PR.
+
+Looking at the classifier output more carefully, it says there are 5 informational comments but classifies all of them as actionable, which seems inconsistent.
+
+Let me check the actual diff to understand what changed in this PR, then I can properly assess which comments are false positives versus legitimate issues that need fixing.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2355" cache_read_input_tokens="40172" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2355}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check the git diff to understand what this PR actually changed vs what was pre-existing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2355" cache_read_input_tokens="40172" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2355}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TDA1bU1cybvDzuzygRpUeQ">
+    <param name="command">git diff master...HEAD -- packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="description">Show PR diff for lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2355" cache_read_input_tokens="40172" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2355}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TDA1bU1cybvDzuzygRpUeQ">
+diff --git a/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py b/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+index cc89b3732..4aebc4809 100644
+--- a/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
++++ b/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+@@ -56,9 +56,9 @@ def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+     if stage == "planned":
+         return f"[dim]{stage}[/dim]"
+     if stage == "implementing":
+-        return f"[yellow]{stage}[/yellow]"
++        return "[yellow]impling[/yellow]"
+     if stage == "implemented":
+-        return f"[cyan]{stage}[/cyan]"
++        return "[cyan]impld[/cyan]"
+     if stage == "merged":
+         return f"[green]{stage}[/green]"
+     if stage == "closed":
+@@ -72,14 +72,18 @@ def format_lifecycle_with_status(
+     is_draft: bool | None,
+     has_conflicts: bool | None,
+     review_decision: str | None,
++    checks_passing: bool | None = None,
++    has_unresolved_comments: bool | None = None,
+ ) -&gt; str:
+     """Add draft/published prefix and status suffix to a lifecycle stage display.
+ 
+     Adds emoji indicators to the stage text when relevant:
+-    - 🚧/👀 prefix for draft/published state (on planned, implementing, review)
++    - 🚧/👀 suffix for draft/published state (on planned, implementing, review)
+     - 💥 suffix for merge conflicts (on implementing and review stages)
+     - ✔ suffix for approved PRs (on review stage only)
+
+... [80 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me analyze all 5 comments:
+
+**Thread 1 (PRRT_kwDOPxC3hc5wAKMM, line 59) - hardcoded "impling":**
+The bot says hardcoded string replaces variable usage. But this is the **entire point of the PR** - the `stage` variable is "implementing" (12 chars, too wide for 9-char column), so we intentionally display "impling" (7 chars). Using `f"[yellow]{stage}[/yellow]"` would give "implementing" which is what we're reverting away from. 
+
+**FALSE POSITIVE.**
+
+**Thread 2 (PRRT_kwDOPxC3hc5wAKNj, line 62) - hardcoded "impld":**
+Same reasoning. `stage` is "implemented" (11 chars), display is "impld" (5 chars). **FALSE POSITIVE.**
+
+**Thread 3 (PRRT_kwDOPxC3hc5wAK21, line 75) - default parameters `= None`:**
+The PR added optional boolean parameters with `None` defaults, which is a legitimate pattern for optional arguments that need to distinguish between "not provided" and explicit boolean values.
+
+However, the bot's concern might be valid if all production callers explicitly pass these parameters—that would suggest the defaults are redundant. I need to verify whether test code or other callers rely on these defaults before concluding whether this is actually a violation or a reasonable design choice.
+
+Looking at the substring matching issues in threads 4 and 5, both check for "impling" and "impld" within the lifecycle display string. Since both the detection logic and the display function are in the same module, this coupling is intentional rather than fragile. These appear to be false positives, though the bot's point about tight coupling between functions does have some validity.
+
+For thread 3, I need to verify whether all callers of the function explicitly pass the required parameter or if some rely on defaults. Let me map out the approach to validate this.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3209" cache_read_input_tokens="42527" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3209}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me check who calls `format_lifecycle_with_status` to assess the default parameters issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3209" cache_read_input_tokens="42527" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3209}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GQkWEsW59Syc4TJGAg3tY9">
+    <param name="pattern">format_lifecycle_with_status</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3209" cache_read_input_tokens="42527" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3209}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQkWEsW59Syc4TJGAg3tY9">
+Found 5 files
+tests/unit/plan_store/test_lifecycle_display.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+docs/learned/integrations/github-review-decision.md
+docs/learned/desktop-dash/visual-status-indicators.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LTm6b2rYPx1hJUidGgpTWB">
+    <param name="pattern">format_lifecycle_with_status</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="45736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 971}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LTm6b2rYPx1hJUidGgpTWB">
+54-    PullRequestInfo,
+55-    WorkflowRun,
+56-)
+57-from erk_shared.gateway.http.abc import HttpClient
+58-from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+59:from erk_shared.gateway.plan_data_provider.lifecycle import format_lifecycle_with_status
+60-from erk_shared.impl_folder import read_plan_ref
+61-from erk_shared.naming import extract_leading_issue_number
+62-from erk_shared.plan_store.conversion import (
+63-    header_datetime,
+64-    header_int,
+--
+733-        lifecycle_display = _compute_lifecycle_display(
+734-            plan, has_workflow_run=workflow_run is not None
+735-        )
+736-
+737-        # Enrich lifecycle display with PR status indicators
+738:        lifecycle_display = format_lifecycle_with_status(
+739-            lifecycle_display,
+740-            is_draft=pr_is_draft,
+741-            has_conflicts=pr_has_conflicts,
+742-            review_decision=pr_review_decision,
+743-            checks_passing=pr_checks_passing,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012e6ccKuarQDv5PY6KR3VvF">
+    <param name="pattern">format_lifecycle_with_status</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="45736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 971}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012e6ccKuarQDv5PY6KR3VvF">
+5-from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+6-from erk_shared.gateway.plan_data_provider.lifecycle import (
+7-    compute_lifecycle_display,
+8:    format_lifecycle_with_status,
+9-)
+10-from erk_shared.plan_store.types import Plan, PlanState
+11-
+--
+142-    assert result == "[yellow]impling[/yellow]"
+143-
+144-
+145:# --- format_lifecycle_with_status tests ---
+146-
+147-
+148-def test_review_no_indicators() -&gt; None:
+149-    """Review stage with no issues returns unchanged."""
+150:    result = format_lifecycle_with_status(
+151-        "[cyan]review[/cyan]",
+152-        is_draft=None,
+153-        has_conflicts=False,
+--
+158-
+159-def test_review_with_conflicts() -&gt; None:
+160-    """Review stage with conflicts shows explosion emoji."""
+161:    result = format_lifecycle_with_status(
+162-        "[cyan]review[/cyan]",
+163-        is_draft=None,
+164-        has_conflicts=True,
+--
+169-
+
+... [238 lines omitted] ...
+  </tool_result>
+  <thinking>Now I can see:
+
+1. In `real.py`, the production caller passes `checks_passing` and `has_unresolved_comments` explicitly (line 743 shows `checks_passing=pr_checks_passing`).
+
+2. In the tests, many test calls do NOT pass `checks_passing` or `has_unresolved_comments`. They rely on the `= None` default. For example, `test_review_no_indicators()` only passes `is_draft`, `has_conflicts`, and `review_decision` - not the two new params.
+
+So the defaults ARE necessary because the tests rely on them. Removing the defaults would require updating ~20+ test calls to explicitly pass `checks_passing=None, has_unresolved_comments=None`.
+ 
+The linter's technically right that removing the defaults would follow the style guide, but it would mean adding verbose `None` arguments to tests that don't actually care about those parameters. Since the tests that skip these params are testing unrelated features, the added verbosity doesn't improve clarity. I think I should acknowledge the linter's point is valid but propose keeping the defaults as a pragmatic trade-off. So I need to remove the default parameter values and update all the test callers to explicitly pass `checks_passing=None` and `has_unresolved_comments=None`. Looking at the five review threads, I'll resolve the first two, fourth, and fifth as false positives with explanations, then fix thread three by removing the defaults and updating all the old tests that don't currently pass these parameters.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3524" cache_read_input_tokens="46707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3524}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me read the full test file to count the calls that need updating for the defaults issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3524" cache_read_input_tokens="46707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3524}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VSPSVEQxDarnX1E2b2RvGY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3524" cache_read_input_tokens="46707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3524}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VSPSVEQxDarnX1E2b2RvGY">
+     1→"""Tests for lifecycle display functions."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     6→from erk_shared.gateway.plan_data_provider.lifecycle import (
+     7→    compute_lifecycle_display,
+     8→    format_lifecycle_with_status,
+     9→)
+    10→from erk_shared.plan_store.types import Plan, PlanState
+    11→
+    12→
+    13→def _make_plan(
+    14→    *,
+    15→    header_fields: dict[str, object] | None = None,
+    16→    metadata: dict[str, object] | None = None,
+    17→) -&gt; Plan:
+    18→    """Create a Plan for testing with minimal required fields."""
+    19→    return Plan(
+    20→        plan_identifier="42",
+    21→        title="Test plan",
+    22→        body="",
+    23→        state=PlanState.OPEN,
+    24→        url="https://github.com/test/repo/issues/42",
+    25→        labels=["erk-plan"],
+    26→        assignees=[],
+    27→        created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+    28→        updated_at=datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
+    29→        metadata=metadata if metadata is not None else {},
+    30→        objective_id=None,
+
+... [525 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me check the real.py caller to see if it passes all params explicitly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12325" cache_read_input_tokens="50231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12325}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016cYNGnio4mnAGXZLT5sKfL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">733</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12325" cache_read_input_tokens="50231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12325}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016cYNGnio4mnAGXZLT5sKfL">
+   733→        lifecycle_display = _compute_lifecycle_display(
+   734→            plan, has_workflow_run=workflow_run is not None
+   735→        )
+   736→
+   737→        # Enrich lifecycle display with PR status indicators
+   738→        lifecycle_display = format_lifecycle_with_status(
+   739→            lifecycle_display,
+   740→            is_draft=pr_is_draft,
+   741→            has_conflicts=pr_has_conflicts,
+   742→            review_decision=pr_review_decision,
+   743→            checks_passing=pr_checks_passing,
+   744→            has_unresolved_comments=pr_has_unresolved_comments,
+   745→        )
+   746→
+   747→        return PlanRowData(
+   748→            plan_id=plan_id,
+   749→            plan_url=plan.url,
+   750→            pr_number=pr_number,
+   751→            pr_url=pr_url,
+   752→            pr_display=pr_display,
+  </tool_result>
+  <thinking>Now I have the full picture. The production caller (`real.py`) passes `checks_passing` and `has_unresolved_comments` explicitly. The tests that don't test these features don't pass them (relying on defaults).
+
+Per dignified-python rules, we should remove the `= None` defaults and update all test callers to explicitly pass `checks_passing=None, has_unresolved_comments=None`.
+
+Let me count how many test calls need updating. Looking at the test file, the calls that DON'T pass `checks_passing` and `has_unresolved_comments` are lines: 150, 161, 172, 183, 194, 205, 216, 227, 238, 249, 260, 271, 282, 293, 304, 318, 329, 340, 351, 362, 373, 384, 395, 406, 417, 428. That's 26 calls. The calls that DO pass them are at lines 442, 455, 468, 481
+
+, 494, 507. That's 6 calls.
+
+So 26 test calls need `checks_passing=None, has_unresolved_comments=None` added.
+
+Now let me work through the assessment. The first issue at line 59 with "impling" is a false positive—the `stage` variable is "implementing" (12 chars) and we're intentionally truncating it to "impling" (7 chars) to fit the 9-character column width. Using the full stage name would reintroduce the exact problem this PR is meant to fix.
+
+The same logic applies to line 62 with "impld"—also a false positive for the same reason.
+
+Line 75 is the real issue: the `= None` defaults on `checks_passing` and `has_unresolved_comments` violate the no-defaults rule, so I need to remove them and update all 26 test calls to pass these explicitly.
+
+Lines 103 and 104 are false positives too. The substring matching for "impling" and "impld" is correct because both functions are in the same module and the detection needs to match what `compute_lifecycle_display` actually outputs.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="443" cache_read_input_tokens="62556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 443}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have complete understanding. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="443" cache_read_input_tokens="62556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 443}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01WsWtu6uLSRetvxJcX5JQBY">
+    <param name="file_path">/Users/schrockn/.claude/plans/zesty-wobbling-yao.md</param>
+    <param name="content"># Address PR Review Comments on #7852
+
+## Context
+
+PR #7852 restores abbreviated stage nam...[truncated 2693 chars]...t-completion
+
+- Push changes
+- Update PR description via `erk exec update-pr-description`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="443" cache_read_input_tokens="62556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 443}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WsWtu6uLSRetvxJcX5JQBY">
+File created successfully at: /Users/schrockn/.claude/plans/zesty-wobbling-yao.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Hd5ftjkq6E9ehTQUQNyFth">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for PR thread operations'}, {'tool': 'B...[truncated 29 chars]...mmitting, and pushing'}, {'tool': 'Bash', 'prompt': 'run erk exec update-pr-description'}]</param>
+    <param name="plan"># Address PR Review Comments on #7852
+
+## Context
+
+PR #7852 restores abbreviated stage nam...[truncated 2693 chars]...t-completion
+
+- Push changes
+- Update PR description via `erk exec update-pr-description`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1641" cache_read_input_tokens="62999" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1641, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hd5ftjkq6E9ehTQUQNyFth">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/zesty-wobbling-yao.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Address PR Review Comments on #7852
+Current context: (wt:erk-slot-27) (br:planned/restore-abbreviated-sta-02-22-0929) (pr:#7852) (plan:#7852)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/r"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 8fb7cb86-83ec-4c2f-adbe-d0a42583d830 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Let me display the plan and ask the question as directed by the hook.
+
+Here's the plan:
+
+---
+
+# Address PR Review Comments on #7852
+
+## Context
+
+PR #7852 restores abbreviated stage names (`impling`/`impld`) in the TUI dashboard. 5 automated review comments were filed by bot reviewers (Dignified Code Simplifier, Tripwires). After investigation, 4 are false positives and 1 is legitimate.
+
+## Thread Analysis
+
+### False Positives (4 threads) — resolve with explanation, no code changes
+
+**Threads 1 &amp; 2** (`PRRT_kwDOPxC3hc5wAKMM`, `PRRT_kwDOPxC3hc5wAKNj`) — Lines 59, 62
+- Bot says: hardcoded strings replace dynamic f-string variable usage
+- Why false positive: The `stage` variable holds "implementing" (12 chars) / "implemented" (11 chars). The whole point of this PR is to display abbreviated forms ("impling" / "impld") that fit the 9-char column. Using `f"[yellow]{stage}[/yellow]"` would produce the exact problem being fixed.
+
+**Threads 4 &amp; 5** (`PRRT_kwDOPxC3hc5wAKOt`, `PRRT_kwDOPxC3hc5wAKQj`) — Lines 103, 104
+- Bot says: fragile substring matching creates tight coupling with display abbreviations
+- Why false positive: `format_lifecycle_with_status` receives pre-formatted display strings from `compute_lifecycle_display`. Detection MUST match what the display function outputs. Both functions are in the same module, so this is internal consistency, not fragile coupling.
+
+### Legitimate Issue (1 thread) — fix with code change
+
+**Thread 3** (`PRRT_kwDOPxC3hc5wAK21`) — Line 75
+- Bot says: `checks_passing: bool | None = None` and `has_unresolved_comments: bool | None = None` violate dignified-python no-defaults rule
+- This is correct: production code in `real.py:738-745` passes both params explicitly. The defaults exist only to avoid updating 26 pre-existing test calls.
+- Fix: remove `= None` from both params, add `checks_passing=None, has_unresolved_comments=None` to 26 test calls that don't pass them
+
+## Execution Plan
+
+### Batch 1: Single-File Fix (thread 3) + False Positive Resolution (threads 1,2,4,5)
+
+**Code changes:**
+
+1. `lifecycle.py:75-76` — Remove `= None` defaults
+2. `test_lifecycle_display.py` — Add explicit `checks_passing=None, has_unresolved_comments=None` to 26 test calls
+
+**Thread resolution:**
+
+3. Resolve threads 1,2,4,5 as false positives with explanations
+4. Resolve thread 3 noting the fix
+
+## Verification
+
+1. Run tests
+2. Run fast CI checks
+3. Re-run classifier to verify all threads resolved
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="844" cache_read_input_tokens="64640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 844}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GpvrBVygH3xcRc55RL61Ew">
+    <param name="questions">[{'question': '📋 Address PR Review Comments on #7852\nCurrent context: (wt:erk-slot-27) (b...[truncated 490 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="844" cache_read_input_tokens="64640" output_tokens="1011" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 844, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GpvrBVygH3xcRc55RL61Ew">
+User has answered your questions: "📋 Address PR Review Comments on #7852
+Current context: (wt:erk-slot-27) (br:planned/restore-abbreviated-sta-02-22-0929) (pr:#7852) (plan:#7852)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>User chose "Skip PR and implement here". Per the hook instructions, I need to:
+1. Create the implement-now marker
+2. Call ExitPlanMode
+3. After exiting plan mode, implement the changes directly</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4365" cache_read_input_tokens="65484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MAnPJdPwGLxQjJoNqsFBwr">
+    <param name="command">erk exec marker create --session-id 8fb7cb86-83ec-4c2f-adbe-d0a42583d830 exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker to skip PR creation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4365" cache_read_input_tokens="65484" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4365, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MAnPJdPwGLxQjJoNqsFBwr">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01S7wHXcF3bevQaSFLF5VHK4">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for PR thread operations'}, {'tool': 'B...[truncated 29 chars]...mmitting, and pushing'}, {'tool': 'Bash', 'prompt': 'run erk exec update-pr-description'}]</param>
+    <param name="plan"># Address PR Review Comments on #7852
+
+## Context
+
+PR #7852 restores abbreviated stage nam...[truncated 2693 chars]...t-completion
+
+- Push changes
+- Update PR description via `erk exec update-pr-description`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="69849" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S7wHXcF3bevQaSFLF5VHK4">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

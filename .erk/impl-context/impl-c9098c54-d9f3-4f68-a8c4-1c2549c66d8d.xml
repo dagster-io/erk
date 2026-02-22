@@ -1,0 +1,582 @@
+<session>
+  <meta branch="planned/restore-abbreviated-sta-02-22-0929" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Plan: Move stage status emojis to consistent right position
+
+## Context
+
+In the TUI dashboard's "stage" column, status emojis are inconsistently placed:
+- Draft/published indicators (🚧/👀) appear on the **left**: `🚧 impling`
+- Conflict/review indicators (💥/✔/❌) appear on the **right**: `impld 💥`
+
+This should be consistent — all emojis on the right side of the stage name.
+
+## Changes
+
+### 1. Move prefix emojis to suffix in `lifecycle.py` (already done)
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+
+Already implemented: the draft/published emoji is now collected into the `indicators` list alongside conflict/review indicators, producing a unified suffix. ✅
+
+### 2. Update test expectations (already done)
+
+**File:** `tests/unit/plan_store/test_lifecycle_display.py`
+
+Already implemented: 9 test assertions updated to expect emojis on the right. All 47 tests pass. ✅
+
+### 3. Widen stage column from 9 to 11
+
+**File:** `src/erk/tui/widgets/plan_table.py` (line 188)
+
+Change `width=9` → `width=11`.
+
+**Why:** The column is currently 9 chars wide. With the old 6-char abbreviation `implin`, the prefix emoji fit exactly: `🚧 implin` = 2+1+6 = 9. But with the current 7-char abbreviation `impling`, the suffix emoji overflows: `impling 🚧` = 7+1+2 = 10 &gt; 9, causing Textual to truncate it silently.
+
+Width 11 accommodates the longest common single-emoji case (`impling 🚧` = 10, `planned 🚧` = 10) with 1 char of breathing room.
+
+## Verification
+
+1. Run scoped tests: `uv run pytest tests/unit/plan_store/test_lifecycle_display.py`
+2. Visual check: `erk dash` — confirm draft/published emojis appear to the right of stage names
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-27/867c9114-c07d-4483-a6c6-2d0daf31e9d9.jsonl</user>
+  <assistant>
+
+Looking at the plan, the first two steps are already done. I just need to widen the stage column from 9 to 11 in `plan_table.py`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7409" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7409}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lu8AwFKwX8vAbYcjEjhWup">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">183</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7409" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7409}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lu8AwFKwX8vAbYcjEjhWup">
+   183→            col_index += 1
+   184→            return
+   185→
+   186→        if self._plan_backend == "draft_pr":
+   187→            self._stage_column_index = col_index
+   188→            self.add_column("stage", key="stage", width=9)
+   189→            col_index += 1
+   190→            self.add_column("created", key="created", width=7)
+   191→            col_index += 1
+   192→        self.add_column("obj", key="objective", width=5)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015nAdTF8MtqYqxffPW7kTph">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">self.add_column("stage", key="stage", width=9)</param>
+    <param name="new_string">self.add_column("stage", key="stage", width=11)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5376" cache_read_input_tokens="26450" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5376, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015nAdTF8MtqYqxffPW7kTph">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the scoped tests to verify everything passes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="239" cache_read_input_tokens="31826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 239}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SPfDWjuwi31cNNQJgXKrqu">
+    <param name="description">Run lifecycle display tests</param>
+    <param name="prompt">Run this command and report the results: uv run pytest tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="239" cache_read_input_tokens="31826" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 239, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SPfDWjuwi31cNNQJgXKrqu">
+pytest passed: 47 tests passed in 0.06s
+
+All tests in the lifecycle display test suite are passing.
+agentId: a709fce512a08e3dc (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13466
+tool_uses: 1
+duration_ms: 2522&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 47 tests pass. The change is simple — `width=9` → `width=11` on line 188 of `plan_table.py` — so the stage column now has room for the longest suffix-emoji case (`impling 🚧` = 10 chars) with 1 char of breathing room.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="32065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 226}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>lastly let's have an emoji represent that all checks are passing and there are no more unresolved comments and in the impld state. give me some options</user>
+  <thinking>The user wants an emoji to represent a "clean" state where all checks pass, no unresolved comments, and the plan is in the "impld" (implemented) state. They want options to choose from.
+
+Let me first understand how the current emoji/indicator system works by looking at the lifecycle.py file.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="195" cache_read_input_tokens="32366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 195}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at how the current indicators work to understand the context.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="195" cache_read_input_tokens="32366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 195}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GkM9ebekXghWSdwicbFrUE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="195" cache_read_input_tokens="32366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 195}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GkM9ebekXghWSdwicbFrUE">
+     1→"""Lifecycle stage display computation for plans.
+     2→
+     3→Extracted to a standalone module to avoid circular imports when testing.
+     4→The main consumer is RealPlanDataProvider in real.py.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     8→from erk_shared.plan_store.conversion import header_str
+     9→from erk_shared.plan_store.types import Plan
+    10→
+    11→
+    12→def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+    13→    """Compute lifecycle stage display string for a plan.
+    14→
+    15→    Reads lifecycle_stage from plan header fields if present, otherwise
+    16→    infers from is_draft and pr_state in plan metadata. Returns a
+    17→    color-coded Rich markup string for table display.
+    18→
+    19→    When the resolved stage is "planned" and a workflow run exists,
+    20→    upgrades to "implementing" since the plan is actively being worked on.
+    21→
+    22→    Args:
+    23→        plan: Plan with header_fields and metadata populated
+    24→        has_workflow_run: Whether the plan has an associated workflow run
+    25→
+    26→    Returns:
+    27→        Display string (may contain Rich markup for color)
+    28→    """
+    29→    # Read from header fields first
+    30→    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+... [106 lines omitted] ...
+  </tool_result>
+  <assistant>So the current indicators are:
+- **🚧** draft PR (active stages)
+- **👀** published PR (active stages)
+- **💥** merge conflicts
+- **✔** approved review
+- **❌** changes requested
+
+You want an emoji for the "impld" state when checks pass and no unresolved comments — essentially "ready to merge." Here are some options:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1993" cache_read_input_tokens="32561" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1993}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GCqvSyYpcXQQVPB1XyMWyC">
+    <param name="questions">[{'question': "Which emoji for 'implemented, checks passing, no unresolved comments' (read...[truncated 343 chars]...althy/good state, distinctive from ✔ (used for approved review)'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1993" cache_read_input_tokens="32561" output_tokens="294" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1993, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GCqvSyYpcXQQVPB1XyMWyC">
+User has answered your questions: "Which emoji for 'implemented, checks passing, no unresolved comments' (ready to merge)?"="🚀". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user chose 🚀. Now I need to implement this. The logic should be:
+
+In the `format_lifecycle_with_status` function, when the stage is "implemented" (impld), checks are passing, and there are no unresolved comments, show 🚀.
+
+But wait - I need to understand what data is available. The function currently takes `is_draft`, `has_conflicts`, and `review_decision`. I need to add parameters for "checks passing" and "no unresolved comments".
+
+Let me look at how this function is called to understand what data is available.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="34554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 494}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I need to understand what data is available for checks and unresolved comments. Let me look at how this function is called and what the plan data looks like.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="34554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 494}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01C5Jx2ZdT37NyT6BExsjHHB">
+    <param name="pattern">format_lifecycle_with_status</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="34554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 494}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C5Jx2ZdT37NyT6BExsjHHB">
+Found 5 files
+tests/unit/plan_store/test_lifecycle_display.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+docs/learned/integrations/github-review-decision.md
+docs/learned/desktop-dash/visual-status-indicators.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LVPA44DA4MHUvCUBVhDNC8">
+    <param name="pattern">checks_passing|unresolved_comment|review_comment</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="34554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 494}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LVPA44DA4MHUvCUBVhDNC8">
+Found 87 files
+tests/unit/status/test_github_pr_collector.py
+tests/unit/services/test_plan_list_service.py
+tests/unit/gateways/github/test_emoji.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/fakes/test_fake_graphite.py
+tests/unit/fakes/test_fake_github.py
+tests/unit/core/test_pr_utils.py
+tests/unit/commands/wt/test_list_helpers.py
+tests/unit/cli/test_navigation_helpers.py
+tests/unit/cli/commands/slot/test_repair_cmd.py
+tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py
+tests/unit/cli/commands/exec/scripts/test_pr_review_comments.py
+tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py
+tests/unit/cli/commands/exec/scripts/test_plan_submit_for_review.py
+tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py
+tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+tests/tui/screens/test_unresolved_comments_screen.py
+tests/tui/test_app.py
+tests/tui/data/test_provider.py
+tests/test_utils/plan_helpers.py
+tests/test_utils/builders.py
+tests/core/operations/test_github.py
+tests/commands/workspace/test_delete.py
+tests/commands/test_status_with_fakes.py
+tests/commands/pr/test_sync_graphite_disabled.py
+tests/commands/pr/test_sync.py
+tests/commands/run/test_list.py
+tests/commands/pr/test_submit_graphite_disabled.py
+
+... [58 lines omitted] ...
+
+tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_0124wLeNAP38BbcrtPPJKqWr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1948" cache_read_input_tokens="35048" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1948, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0124wLeNAP38BbcrtPPJKqWr">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.issues.types import IssueNotFound
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    find_metadata_block,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [865 lines omitted] ...
+
+   338→            raise RuntimeError(f"objective-update-after-land failed: {result.stdout}")
+   690→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <thinking>Now I need to understand what data is available. Looking at the call site on line 732-738, `format_lifecycle_with_status` receives:
+- `lifecycle_display` 
+- `is_draft`
+- `has_conflicts`
+- `review_decision`
+
+For the "ready to merge" rocket emoji, I need to know:
+1. Stage is "implemented" (impld)
+2. Checks are passing
+3. No unresolved comments
+
+Let me check what check status data is available. The `checks_display` is computed from `format_checks_cell(selected_pr)`. Let me look at what `PullRequestInfo` has.
+
+
+I need to trace through `PullRequestInfo` to see how I can determine if checks are passing.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12509" cache_read_input_tokens="36996" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12509}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I need to understand what data is available for checks and comments. Let me look at the `PullRequestInfo` type and the checks formatting.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12509" cache_read_input_tokens="36996" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12509}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DsF27W6FHAxHbEHunfg1cR">
+    <param name="pattern">class PullRequestInfo</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12509" cache_read_input_tokens="36996" output_tokens="387" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DsF27W6FHAxHbEHunfg1cR">
+180:class PullRequestInfo:
+181-    """Information about a GitHub pull request."""
+182-
+183-    number: int
+184-    state: str  # "OPEN", "MERGED", "CLOSED"
+185-    url: str
+186-    is_draft: bool
+187-    title: str | None
+188-    checks_passing: bool | None  # None if no checks, True if all pass, False if any fail
+189-    owner: str  # GitHub repo owner (e.g., "schrockn")
+190-    repo: str  # GitHub repo name (e.g., "erk")
+191-    # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
+192-    has_conflicts: bool | None = None
+193-    checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
+194-    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
+195-    will_close_target: bool = False
+196-    # Head branch name (the source branch) - optional, populated by some API calls
+197-    head_branch: str | None = None
+198-    # Review thread counts: (resolved_count, total_count) or None if not fetched
+199-    review_thread_counts: tuple[int, int] | None = None
+200-    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+201-    review_decision: str | None = None
+202-
+203-
+204-class _NotAvailable:
+205-    """Sentinel for fields not available from certain API queries.
+206-
+207-    Raises AttributeError when accessed as a string, preventing silent bugs
+208-    when code tries to use fields that weren't populated.
+209-    """
+
+... [11 lines omitted] ...
+
+217-        raise AttributeError(msg)
+  </tool_result>
+  <assistant>`PullRequestInfo` has `checks_passing` and `review_thread_counts`. Both are already available in the call site. I need to thread `checks_passing` and the unresolved comment count into `format_lifecycle_with_status`.
+
+Let me check the current test file to understand the test structure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="974" cache_read_input_tokens="49505" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 974}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TqkkTvLmBCXct2dnQfEVY8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="974" cache_read_input_tokens="49505" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 974}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TqkkTvLmBCXct2dnQfEVY8">
+     1→"""Tests for lifecycle display functions."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     6→from erk_shared.gateway.plan_data_provider.lifecycle import (
+     7→    compute_lifecycle_display,
+     8→    format_lifecycle_with_status,
+     9→)
+    10→from erk_shared.plan_store.types import Plan, PlanState
+    11→
+    12→
+    13→def _make_plan(
+    14→    *,
+    15→    header_fields: dict[str, object] | None = None,
+    16→    metadata: dict[str, object] | None = None,
+    17→) -&gt; Plan:
+    18→    """Create a Plan for testing with minimal required fields."""
+    19→    return Plan(
+    20→        plan_identifier="42",
+    21→        title="Test plan",
+    22→        body="",
+    23→        state=PlanState.OPEN,
+    24→        url="https://github.com/test/repo/issues/42",
+    25→        labels=["erk-plan"],
+    26→        assignees=[],
+    27→        created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+    28→        updated_at=datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
+    29→        metadata=metadata if metadata is not None else {},
+    30→        objective_id=None,
+
+... [444 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a good understanding. The user wants a 🚀 emoji to appear on "impld" when:
+1. Checks are passing (`checks_passing is True`)
+2. No unresolved comments (all comments resolved)
+
+I need to:
+1. Add `checks_passing` and `unresolved_comment_count` parameters to `format_lifecycle_with_status`
+2. Add the 🚀 logic for the "impld" stage
+3. Update the call site in `real.py` to pass the new parameters
+4. Update tests
+
+Let me think about what data to pass. Looking at the call site in real.py (lines 732-738):
+
+
+- `checks_passing` is available from `selected_pr.checks_passing` (already computed as part of PullRequestInfo)
+- For unresolved comments, I can calculate it from `review_thread_counts` which gives `(resolved, total)`, so unresolved = total - resolved
+
+For the function signature, I'll add `checks_passing: bool | None` and `unresolved_comment_count: int` parameters.
+
+Actually, it's cleaner to just pass `has_unresolved_comments: bool` to match the existing boolean-style parameters.
+
+Now I need to update three places: add the new parameters to lifecycle.py and implement the logic to append 🚀 when we're in the "impld" stage with all checks passing and no unresolved comments, pass these values from real.py using the PR data, and update the tests to include the new parameters and add coverage for the 🚀 indicator.
+
+The 🚀 should only appear when the stage is "impld" with checks passing, no unresolved comments, and no conflicts—it's a signal that everything is ready. I think the cleanest approach is to have 🚀 appear as the positive indicator when all the negative conditions are absent.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10581" cache_read_input_tokens="50479" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10581}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great, 🚀 it is. I need to thread `checks_passing` and unresolved comment info into `format_lifecycle_with_status`. Let me check how the call site computes those values, then make the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10581" cache_read_input_tokens="50479" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10581}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016WqWZDqGVsFxixA1qVBTie">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="old_string">def format_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | ...[truncated 884 chars]... None
+
+    Returns:
+        Lifecycle display string with prefix/suffix indicators
+    """</param>
+    <param name="new_string">def format_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | ...[truncated 1274 chars]...rwise
+
+    Returns:
+        Lifecycle display string with prefix/suffix indicators
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10581" cache_read_input_tokens="50479" output_tokens="1628" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10581, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016WqWZDqGVsFxixA1qVBTie">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the 🚀 logic for the implemented stage. I need to add it after the existing conflict/review indicators block, but only for `is_implemented`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1815" cache_read_input_tokens="61060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1815}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0182u1ZzxC4z3QeQ3atvQbyw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="old_string">    # Conflict/review indicators for implementing, implemented, and review stages
+    if i...[truncated 233 chars]...ion == "CHANGES_REQUESTED":
+                indicators.append("❌")
+
+    if not indicators:</param>
+    <param name="new_string">    # Conflict/review indicators for implementing, implemented, and review stages
+    if i...[truncated 516 chars]...nresolved_comments is not True:
+            indicators.append("🚀")
+
+    if not indicators:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1815" cache_read_input_tokens="61060" output_tokens="473" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1815, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0182u1ZzxC4z3QeQ3atvQbyw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the call site in `real.py` to pass the new parameters.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="62875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 619}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RDwQk5QbFA7H1ffKJf2PYj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">        # Enrich lifecycle display with PR status indicators
+        lifecycle_display = f...[truncated 85 chars]... has_conflicts=pr_has_conflicts,
+            review_decision=pr_review_decision,
+        )</param>
+    <param name="new_string">        # Derive checks_passing and has_unresolved_comments for lifecycle enrichment
+     ...[truncated 1062 chars]..._checks_passing,
+            has_unresolved_comments=pr_has_unresolved_comments,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="62875" output_tokens="576" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 619, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RDwQk5QbFA7H1ffKJf2PYj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <thinking>Wait, I'm re-selecting the PR which was already selected earlier in the same function. Let me look at the existing code more carefully. The `selected_pr` variable is already available earlier, but it's scoped inside an `if plan_id in pr_linkages:` block. Rather than re-selecting, I should just use the already-computed values. Let me refactor.
+
+Actually, looking more carefully, the existing code already has `selected_pr` computed in the block starting at line 608. I just need to extract `checks_passing` and unresolved comments from it. Let me not re-do the select_display_pr call. Instead I should capture those values alongside the other pr_ fields.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="646" cache_read_input_tokens="63494" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 646}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Wait, I'm redundantly re-selecting the PR. The `selected_pr` is already computed earlier. Let me instead capture the values alongside the existing PR extraction code.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="646" cache_read_input_tokens="63494" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 646}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HHM4dJkfyCkSwjSPhb7Jjg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">        # PR status fields for lifecycle enrichment
+        pr_is_draft: bool | None = None
+        pr_has_conflicts: bool | None = None
+        pr_review_decision: str | None = None</param>
+    <param name="new_string">        # PR status fields for lifecycle enrichment
+        pr_is_draft: bool | None = Non...[truncated 83 chars]..._checks_passing: bool | None = None
+        pr_has_unresolved_comments: bool | None = None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="646" cache_read_input_tokens="63494" output_tokens="492" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 646, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HHM4dJkfyCkSwjSPhb7Jjg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016J9RFibvmBfKAP4Pu1Zjha">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">                # Extract status fields for lifecycle enrichment
+                pr_is_dra...[truncated 41 chars]...selected_pr.has_conflicts
+                pr_review_decision = selected_pr.review_decision</param>
+    <param name="new_string">                # Extract status fields for lifecycle enrichment
+                pr_is_dra...[truncated 104 chars]...selected_pr.review_decision
+                pr_checks_passing = selected_pr.checks_passing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="561" cache_read_input_tokens="64140" output_tokens="282" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 561, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016J9RFibvmBfKAP4Pu1Zjha">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `has_unresolved_comments` derivation inside the review_thread_counts block that already exists:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="64701" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 352}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RBEYi7TCkEscXQsrdHQzpY">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">                # Get review thread counts from batched PR data
+                if selecte...[truncated 183 chars].../{total_comment_count}"
+                else:
+                    comments_display = "0/0"</param>
+    <param name="new_string">                # Get review thread counts from batched PR data
+                if selecte...[truncated 332 chars]...           comments_display = "0/0"
+                    pr_has_unresolved_comments = False</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="64701" output_tokens="400" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 352, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RBEYi7TCkEscXQsrdHQzpY">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the redundant block I added earlier and pass the new params to the call:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="65053" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 470}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WJhA6X7NAccMJ3dors5XnF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">        # Derive checks_passing and has_unresolved_comments for lifecycle enrichment
+     ...[truncated 1062 chars]..._checks_passing,
+            has_unresolved_comments=pr_has_unresolved_comments,
+        )</param>
+    <param name="new_string">        # Enrich lifecycle display with PR status indicators
+        lifecycle_display = f...[truncated 195 chars]..._checks_passing,
+            has_unresolved_comments=pr_has_unresolved_comments,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="65053" output_tokens="609" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 470, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WJhA6X7NAccMJ3dors5XnF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add tests for the 🚀 indicator.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="65523" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 790}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NyELeoU3NV36k5wwg12Rk3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">def test_implementing_draft_with_conflicts_shows_both() -&gt; None:
+    """Implementing draft...[truncated 192 chars]...  assert result == "[yellow]impling 🚧 💥[/yellow]"
+
+
+# --- Workflow run inference tests ---</param>
+    <param name="new_string">def test_implementing_draft_with_conflicts_shows_both() -&gt; None:
+    """Implementing draft...[truncated 2679 chars]...)
+    assert result == "[yellow]impling[/yellow]"
+
+
+# --- Workflow run inference tests ---</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="65523" output_tokens="1118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 790, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NyELeoU3NV36k5wwg12Rk3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <assistant>Now run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1178" cache_read_input_tokens="66313" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1178}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01RW91TVZ4xw2wLzUNFTeekZ">
+    <param name="description">Run lifecycle display tests</param>
+    <param name="prompt">Run this command and report the results: uv run pytest tests/unit/plan_store/test_lifecycle_display.py -v</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1178" cache_read_input_tokens="66313" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1178}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RW91TVZ4xw2wLzUNFTeekZ">
+pytest passed: 53 passed in 0.06s
+
+All tests in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py` passed successfully.
+agentId: aafaa6bccf69cc868 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13692
+tool_uses: 1
+duration_ms: 4136&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 53 tests pass (47 existing + 6 new).
+
+Here's a summary of the changes:
+
+**`lifecycle.py`** — Added two optional parameters (`checks_passing`, `has_unresolved_comments`) to `format_lifecycle_with_status`. When the stage is "impld" and there are no other indicators (no conflicts), checks are passing, and there are no unresolved comments, it appends the 🚀 emoji.
+
+**`real.py`** — Extracted `checks_passing` and derived `has_unresolved_comments` from the already-selected PR's `review_thread_counts`, then passed both to `format_lifecycle_with_status`.
+
+**`test_lifecycle_display.py`** — Added 6 tests covering:
+- 🚀 shown when checks pass + no unresolved comments + no conflicts
+- No 🚀 when checks fail, checks unknown, unresolved comments exist, or conflicts present
+- No 🚀 on "impling" stage (only "impld")</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="67491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 258}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
