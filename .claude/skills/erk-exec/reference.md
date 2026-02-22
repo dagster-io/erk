@@ -105,6 +105,7 @@ Quick reference for all `erk exec` subcommands.
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
 | `update-lifecycle-stage`          | Update the lifecycle_stage metadata field on a plan.                        |
 | `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                  |
+| `update-plan-objective`           | Update objective_issue in GitHub issue plan-header metadata.                |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.          |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
 | `upload-session`                  | Upload a session JSONL to a git branch and update plan header.              |
@@ -1324,6 +1325,19 @@ Update node plan/PR cells in an objective's roadmap table.
 | `--pr`           | TEXT   | No       | Sentinel.UNSET | PR reference (e.g., '#456', or '' to clear)                           |
 | `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from plan/PR value)            |
 | `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body' |
+
+### update-plan-objective
+
+Update objective_issue in GitHub issue plan-header metadata.
+
+**Usage:** `erk exec update-plan-objective` <plan_issue_number> <objective_issue_number>
+
+**Arguments:**
+
+| Name                     | Required | Description |
+| ------------------------ | -------- | ----------- |
+| `PLAN_ISSUE_NUMBER`      | Yes      | -           |
+| `OBJECTIVE_ISSUE_NUMBER` | Yes      | -           |
 
 ### update-plan-remote-session
 
