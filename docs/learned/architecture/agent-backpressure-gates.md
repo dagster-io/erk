@@ -12,7 +12,7 @@ tripwires:
     warning: "Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern."
   - action: "adding guidance to the agent without a programmatic gate to enforce it"
     warning: "Guidance without enforcement is optional compliance. The gate is the hard boundary. The agent should have guidance to help it succeed on the first try, but the gate is what enforces correctness."
-last_audited: "2026-02-22"
+last_audited: "2026-02-22 03:40 PT"
 ---
 
 # Agent Back Pressure via Gates

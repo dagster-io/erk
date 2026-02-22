@@ -135,9 +135,7 @@ def validate_objective_slug(slug: str) -> ValidObjectiveSlug | InvalidObjectiveS
     if len(slug) > 40:
         return InvalidObjectiveSlug(raw_slug=slug, reason="Too long (maximum 40 characters)")
     if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
-        return InvalidObjectiveSlug(
-            raw_slug=slug, reason="Does not match required pattern"
-        )
+        return InvalidObjectiveSlug(raw_slug=slug, reason="Does not match required pattern")
     return ValidObjectiveSlug(slug=slug)
 
 

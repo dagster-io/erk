@@ -4,6 +4,7 @@
 # Architecture Documentation
 
 - **[abc-convenience-methods.md](abc-convenience-methods.md)** — adding non-abstract methods to gateway ABCs, composing primitive gateway operations into higher-level methods, handling exception type differences between real and fake implementations
+- **[agent-backpressure-gates.md](agent-backpressure-gates.md)** — designing validation for agent-generated output, choosing between silent transformation and rejection of invalid input, implementing retry loops for agent-produced values, adding validation to agent-facing APIs
 - **[agent-schema-enforcement.md](agent-schema-enforcement.md)** — processing JSON output from AI agents, normalizing agent-produced data before validation, designing schemas for agent-to-tool communication, debugging tripwire candidate JSON drift
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
 - **[bash-python-integration.md](bash-python-integration.md)** — generating bash commands with heredocs in Claude Code commands or skills, debugging escaping issues where bash mangles content passed to git, gh, or Python, writing Claude Code commands that produce multi-line text via bash

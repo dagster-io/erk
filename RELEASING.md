@@ -6,8 +6,9 @@ How to publish a new erk release.
 
 - All PRs for the release merged to master
 - CI passing on master
-- Create a plan issue for the release
-- Create a release branch: `erk prepare -d <plan-issue>`
+- Create a release branch (use hyphen, not slash):
+  - With Graphite: `gt create release-X.Y.Z -a`
+  - Without Graphite: `git checkout -b release-X.Y.Z`
 
 ## Release Steps
 
