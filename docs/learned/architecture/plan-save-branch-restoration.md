@@ -30,7 +30,17 @@ Key properties:
 
 ## Git Plumbing Approach
 
-The `commit_files_to_branch` method on `GitCommitOps` uses a temporary index file to create a commit without modifying the working tree, HEAD, or the real index. This is race-condition-free because no branch checkout occurs.
+The `commit_files_to_branch` method on `GitCommitOps` uses a temporary index file to create a commit without modifying the working tree, HEAD, or the real index:
+
+1. `git rev-parse <branch>` — resolve parent commit
+2. `git read-tree <parent>` — read parent tree into temp index
+3. `git hash-object -w --stdin` — hash each file's content
+4. `git update-index --add --cacheinfo` — add blobs to temp index
+5. `git write-tree` — create tree from temp index
+6. `git commit-tree` — create commit with parent
+7. `git update-ref` — update branch ref to new commit
+
+This is race-condition-free because no branch checkout occurs.
 
 See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py` for the full implementation.
 
@@ -42,7 +52,7 @@ See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_
 
 ## Testing
 
-See the plan_save test suite in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` for checkout-count and branch-commit assertions that verify the plumbing approach.
+Tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` verify the plumbing approach, including `test_draft_pr_does_not_checkout_branch` which verifies only branch_manager checkouts occur (not plan commit checkouts), and `test_draft_pr_commits_plan_file` which verifies files via `fake_git.branch_commits`.
 
 ## Related Topics
 
