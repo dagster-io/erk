@@ -277,13 +277,13 @@ def _strip_plan_markers(title: str) -> str:
 
 
 def _add_planned_prefix(title: str) -> str:
-    """Prepend 'planned/' prefix to PR title (idempotent).
+    """Prepend 'plnd/' prefix to PR title (idempotent).
 
     Args:
         title: The PR title to prefix
 
     Returns:
-        The title with 'planned/' prefix, skipping if already prefixed
+        The title with 'plnd/' prefix, skipping if already prefixed
     """
     if title.startswith(PLANNED_PR_TITLE_PREFIX):
         return title

@@ -55,7 +55,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert len(fake_github.created_prs) == 1
     branch_name, title, body, base, draft = fake_github.created_prs[0]
     assert branch_name == expected_branch
-    assert title == "planned/Implement feature X"
+    assert title == "plnd/Implement feature X"
     assert draft is True
     # PR body contains plan reference
     assert "**Plan:** #123" in body

@@ -64,7 +64,7 @@ def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert output["success"] is True
     assert "issue_number" in output
     assert "branch_name" in output
-    assert output["branch_name"].startswith("planned/")
+    assert output["branch_name"].startswith("plnd/")
     assert output["plan_backend"] == "draft_pr"
 
 
@@ -78,9 +78,9 @@ def test_draft_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert "Plan saved as draft PR" in result.output
     assert "Title: [erk-plan] Feature Plan" in result.output
-    assert "Branch: planned/" in result.output
+    assert "Branch: plnd/" in result.output
     assert "erk br co" in result.output
-    assert "planned/" in result.output  # branch name appears in checkout command
+    assert "plnd/" in result.output  # branch name appears in checkout command
 
 
 def test_delegates_to_issue_when_not_draft_pr(
@@ -248,7 +248,7 @@ def test_draft_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert f"{IMPL_CONTEXT_DIR}/plan.md" in branch_commit.files
     assert f"{IMPL_CONTEXT_DIR}/ref.json" in branch_commit.files
     assert "Feature Plan" in branch_commit.message
-    assert branch_commit.branch.startswith("planned/")
+    assert branch_commit.branch.startswith("plnd/")
     # Verify plan content
     assert "Feature Plan" in branch_commit.files[f"{IMPL_CONTEXT_DIR}/plan.md"]
     # Verify ref.json content

@@ -72,7 +72,7 @@ Three branch name formats are supported:
 
 - **P-prefix**: `P{number}-{slug}` (issue-based plan branches)
 - **Objective format**: `P{number}-O{objective}-{slug}` (plans linked to objectives)
-- **Draft-PR**: `planned/{slug}-{MM-DD-HHMM}` or `planned/O{objective}-{slug}-{MM-DD-HHMM}` (draft-PR plans)
+- **Draft-PR**: `plnd/{slug}-{MM-DD-HHMM}` or `plnd/O{objective}-{slug}-{MM-DD-HHMM}` (draft-PR plans)
 
 See [branch-plan-resolution.md](branch-plan-resolution.md) for how branches resolve to plans.
 

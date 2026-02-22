@@ -47,7 +47,7 @@
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
 - **[plan-migrate-to-draft-pr.md](plan-migrate-to-draft-pr.md)** — migrating an issue-based plan to a draft PR, understanding two-phase metadata preservation during migration, debugging metadata loss after plan migration
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
-- **[plan-title-prefix-system.md](plan-title-prefix-system.md)** — working with PR titles for plan implementations, understanding the planned/ prefix on PR titles, debugging why a PR title has or lacks the planned/ prefix
+- **[plan-title-prefix-system.md](plan-title-prefix-system.md)** — working with PR titles for plan implementations, understanding the plnd/ prefix on PR titles, debugging why a PR title has or lacks the plnd/ prefix
 - **[planning-patterns.md](planning-patterns.md)** — preparing to enter plan mode, optimizing plan creation workflow, delegating tasks during planning
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
 - **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan issue, debugging why get-pr-for-plan returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field

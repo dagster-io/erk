@@ -88,7 +88,7 @@ Load the `erk-diff-analysis` skill for commit message generation guidance.
 
 ### Step 3.5: Add Planned Prefix (if from plan)
 
-If this worktree was created from a plan (`.impl/` directory exists), prepend `planned/` to the PR title:
+If this worktree was created from a plan (`.impl/` directory exists), prepend `plnd/` to the PR title:
 
 ```bash
 if [ -d ".impl" ]; then
@@ -100,11 +100,11 @@ else
 fi
 ```
 
-When generating the commit message in Step 4, if `has_impl_dir` is true, prepend `planned/` to the title:
+When generating the commit message in Step 4, if `has_impl_dir` is true, prepend `plnd/` to the title:
 
 ```bash
 if [ "$has_impl_dir" = true ]; then
-    pr_title="planned/${pr_title}"
+    pr_title="plnd/${pr_title}"
 fi
 ```
 

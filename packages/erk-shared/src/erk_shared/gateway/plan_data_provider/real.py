@@ -481,7 +481,7 @@ class RealPlanDataProvider(PlanDataProvider):
         Uses PXXXX prefix matching on branch names to associate worktrees
         with issues. Branch names follow pattern: P{plan_id}-{slug}-{timestamp}
 
-        For draft-PR plan branches (planned/{slug}-{timestamp}), falls back to
+        For draft-PR plan branches (plnd/{slug}-{timestamp}), falls back to
         reading .impl/plan-ref.json from the worktree to get the plan ID,
         since the PR number is not encoded in the branch name.
 
@@ -497,7 +497,10 @@ class RealPlanDataProvider(PlanDataProvider):
             )
 
             # Fallback for draft-PR branches: read .impl/plan-ref.json
-            if issue_number is None and worktree.branch and worktree.branch.startswith("planned/"):
+            is_draft_pr_branch = worktree.branch and (
+                worktree.branch.startswith("plnd/") or worktree.branch.startswith("planned/")
+            )
+            if issue_number is None and is_draft_pr_branch:
                 impl_dir = worktree.path / ".impl"
                 plan_ref = read_plan_ref(impl_dir)
                 if plan_ref is not None and plan_ref.plan_id.isdigit():

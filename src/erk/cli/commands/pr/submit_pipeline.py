@@ -52,13 +52,13 @@ from erk_shared.scratch.scratch import write_scratch_file
 
 
 def _add_planned_prefix(title: str) -> str:
-    """Prepend 'planned/' prefix to PR title (idempotent).
+    """Prepend 'plnd/' prefix to PR title (idempotent).
 
     Args:
         title: The PR title to prefix
 
     Returns:
-        The title with 'planned/' prefix, skipping if already prefixed
+        The title with 'plnd/' prefix, skipping if already prefixed
     """
     if title.startswith(PLANNED_PR_TITLE_PREFIX):
         return title
@@ -692,7 +692,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
                 issue_number = closing_ref.issue_number
                 effective_plans_repo = closing_ref.plans_repo
 
-    # Add planned/ prefix for plan-linked PRs
+    # Add plnd/ prefix for plan-linked PRs
     if issue_number is not None:
         pr_title = _add_planned_prefix(pr_title)
 

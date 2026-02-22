@@ -239,9 +239,9 @@ class TestBuildWorktreeMapping:
         assert len(mapping) == 0
 
     def test_draft_pr_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
-        """Draft PR branch (planned/*) resolved via .impl/plan-ref.json.
+        """Draft PR branch (plnd/*) resolved via .impl/plan-ref.json.
 
-        Branch name 'planned/fix-missing-data-02-19-1416' doesn't contain a
+        Branch name 'plnd/fix-missing-data-02-19-1416' doesn't contain a
         numeric issue prefix. The plan ID (PR number) comes from
         .impl/plan-ref.json inside the worktree directory.
         """
@@ -253,7 +253,7 @@ class TestBuildWorktreeMapping:
 
         worktree_path = tmp_path / "worktrees" / "erk-slot-05"
         worktree_path.mkdir(parents=True)
-        branch_name = "planned/fix-missing-data-02-19-1416"
+        branch_name = "plnd/fix-missing-data-02-19-1416"
 
         # Create .impl/plan-ref.json on disk (read_plan_ref does direct I/O)
         impl_dir = worktree_path / ".impl"
@@ -305,8 +305,8 @@ class TestBuildWorktreeMapping:
         assert worktree_name == "erk-slot-05"
         assert worktree_branch == branch_name
 
-    def test_planned_slash_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
-        """Draft PR branch with planned/ prefix resolved via .impl/plan-ref.json.
+    def test_legacy_planned_slash_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
+        """Legacy planned/ prefix branch resolved via .impl/plan-ref.json.
 
         Branch name 'planned/fix-auth-bug-01-15-1430' doesn't contain a
         numeric issue prefix. The plan ID comes from .impl/plan-ref.json.
@@ -374,8 +374,8 @@ class TestBuildWorktreeMapping:
     def test_planned_hyphen_branch_not_matched(self, tmp_path: Path) -> None:
         """Branch with 'planned-' (hyphen) prefix is NOT matched.
 
-        Only 'planned/' (forward slash) is valid. This test ensures the
-        startswith check uses the correct delimiter.
+        Only 'plnd/' or 'planned/' (forward slash) is valid. This test ensures
+        the startswith check uses the correct delimiter.
         """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
@@ -431,7 +431,7 @@ class TestBuildWorktreeMapping:
 
         mapping = provider._build_worktree_mapping()
 
-        # planned- (hyphen) should NOT be recognized — only planned/ (slash) is valid
+        # planned- (hyphen) should NOT be recognized — only plnd/ or planned/ (slash) is valid
         assert 9999 not in mapping
         assert len(mapping) == 0
 
@@ -445,7 +445,7 @@ class TestBuildWorktreeMapping:
 
         worktree_path = tmp_path / "worktrees" / "erk-slot-05"
         worktree_path.mkdir(parents=True)
-        branch_name = "planned/fix-something-02-19-1416"
+        branch_name = "plnd/fix-something-02-19-1416"
 
         # No .impl/plan-ref.json created
 
@@ -479,7 +479,7 @@ class TestBuildWorktreeMapping:
 
         mapping = provider._build_worktree_mapping()
 
-        # No plan-ref.json, so planned/* branch should not produce an entry
+        # No plan-ref.json, so plnd/* branch should not produce an entry
         assert len(mapping) == 0
 
 

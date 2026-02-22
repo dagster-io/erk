@@ -133,7 +133,7 @@ def test_plan_create_review_branch_success(tmp_path: Path) -> None:
     )
 
     # FakeTime default: 2024-01-15 14:30:00 -> branch timestamp -01-15-1430
-    expected_branch = f"planned/review-{issue_number}-01-15-1430"
+    expected_branch = f"plnd/review-{issue_number}-01-15-1430"
 
     runner = CliRunner()
 
@@ -363,7 +363,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
     )
 
     # FakeTime default: 2024-01-15 14:30:00 -> branch timestamp -01-15-1430
-    expected_branch = f"planned/review-{issue_number}-01-15-1430"
+    expected_branch = f"plnd/review-{issue_number}-01-15-1430"
 
     runner = CliRunner()
 
