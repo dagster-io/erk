@@ -757,12 +757,15 @@ def test_validate_plan_title_preserves_original_in_error() -> None:
         "my-feature",
         "fix-auth-bug",
         "add-v2-support",
+        "add-auth-feature",
+        "fix-bug-123",
         "simple",
         "a",
         "work",
         "feature123",
         "123-fix-bug",
         "a" * 31,
+        "my-feature-01-15-1430",
     ],
 )
 def test_validate_worktree_name_valid(name: str) -> None:
@@ -793,9 +796,9 @@ def test_validate_worktree_name_strips_whitespace() -> None:
         ("UPPERCASE", "uppercase"),
         ("camelCase", "uppercase"),
         ("has_underscores", "underscores"),
-        ("my feature", "outside [a-z0-9-]"),
-        ("name!with@special", "outside [a-z0-9-]"),
-        ("name.with.dots", "outside [a-z0-9-]"),
+        ("my feature", "invalid characters"),
+        ("name!with@special", "invalid characters"),
+        ("name.with.dots", "invalid characters"),
         ("double--hyphen", "consecutive hyphens"),
         ("-leading-hyphen", "leading or trailing"),
         ("trailing-hyphen-", "leading or trailing"),
@@ -804,10 +807,13 @@ def test_validate_worktree_name_strips_whitespace() -> None:
     ],
 )
 def test_validate_worktree_name_invalid(name: str, reason_fragment: str) -> None:
-    """Invalid worktree names return InvalidWorktreeName with matching reason."""
+    """Invalid worktree names return InvalidWorktreeName with matching diagnostics."""
     result = validate_worktree_name(name)
     assert isinstance(result, InvalidWorktreeName)
-    assert reason_fragment in result.reason
+    diag_text = " ".join(result.diagnostics)
+    assert reason_fragment in diag_text, (
+        f"Expected {reason_fragment!r} in diagnostics: {result.diagnostics}"
+    )
 
 
 def test_validate_worktree_name_empty() -> None:
@@ -821,22 +827,43 @@ def test_validate_worktree_name_empty() -> None:
     assert "Empty" in result_spaces.reason
 
 
-def test_validate_worktree_name_includes_sanitized_form() -> None:
-    """InvalidWorktreeName includes what sanitize would produce."""
-    result = validate_worktree_name("My_Feature")
+def test_validate_worktree_name_error_type() -> None:
+    """Error type is machine-readable."""
+    result = validate_worktree_name("BAD_NAME")
     assert isinstance(result, InvalidWorktreeName)
-    assert result.sanitized == "my-feature"
+    assert result.error_type == "invalid-worktree-name"
 
 
-def test_validate_worktree_name_error_message_has_rules() -> None:
-    """Error message includes rules for agent self-correction."""
-    result = validate_worktree_name("INVALID_NAME")
+def test_validate_worktree_name_format_message_includes_rules() -> None:
+    """format_message() contains rules, examples, and diagnostics."""
+    result = validate_worktree_name("BAD_NAME")
     assert isinstance(result, InvalidWorktreeName)
     msg = result.format_message()
-    assert "INVALID_NAME" in msg
-    assert "lowercase" in msg.lower()
+    assert "Lowercase letters, digits, and hyphens only" in msg
+    assert "No underscores" in msg
+    assert "No consecutive hyphens" in msg
+    assert "Maximum 31 characters" in msg
     assert "Valid examples" in msg
     assert "Invalid examples" in msg
+    assert "Diagnostics" in msg
+
+
+def test_validate_worktree_name_preserves_original_in_error() -> None:
+    """Error includes the original unmodified name."""
+    result = validate_worktree_name("  BAD  ")
+    assert isinstance(result, InvalidWorktreeName)
+    assert result.raw_name == "  BAD  "
+
+
+def test_validate_worktree_name_diagnostics_are_specific() -> None:
+    """Diagnostics list is non-empty and identifies specific issues."""
+    result = validate_worktree_name("BAD_NAME")
+    assert isinstance(result, InvalidWorktreeName)
+    assert len(result.diagnostics) > 0
+    # Should detect both uppercase and underscore issues
+    diag_text = " ".join(result.diagnostics)
+    assert "uppercase" in diag_text.lower()
+    assert "underscore" in diag_text.lower()
 
 
 def test_validate_worktree_name_roundtrip_with_sanitize() -> None:
