@@ -160,9 +160,6 @@ from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
 from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
 from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
-from erk.cli.commands.exec.scripts.update_plan_remote_session import (
-    update_plan_remote_session,
-)
 from erk.cli.commands.exec.scripts.update_pr_description import (
     update_pr_description,
 )
@@ -262,7 +259,6 @@ exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_issue_body, name="update-issue-body")
 exec_group.add_command(update_plan_header, name="update-plan-header")
 exec_group.add_command(update_objective_node, name="update-objective-node")
-exec_group.add_command(update_plan_remote_session, name="update-plan-remote-session")
 exec_group.add_command(update_pr_description, name="update-pr-description")
 exec_group.add_command(upload_session, name="upload-session")
 exec_group.add_command(ci_update_pr_body)
