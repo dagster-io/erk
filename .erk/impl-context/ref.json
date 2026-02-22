@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Unify plan checkout with `erk br co --for-plan` and `--new-slot`"
+}
