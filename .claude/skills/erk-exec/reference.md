@@ -101,10 +101,9 @@ Quick reference for all `erk exec` subcommands.
 | `track-learn-result`              | Track learn workflow result on a plan issue.                                |
 | `trigger-async-learn`             | Trigger async learn workflow for a plan.                                    |
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                        |
-| `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                  |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
-| `update-lifecycle-stage`          | Update the lifecycle_stage metadata field on a plan.                        |
 | `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                  |
+| `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.          |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
 | `upload-session`                  | Upload a session JSONL to a git branch and update plan header.              |
@@ -1256,21 +1255,6 @@ Output tripwires reminder for UserPromptSubmit hook.
 
 **Usage:** `erk exec tripwires-reminder-hook`
 
-### update-dispatch-info
-
-Update dispatch info in GitHub issue plan-header metadata.
-
-**Usage:** `erk exec update-dispatch-info` <issue_number> <run_id> <node_id> <dispatched_at>
-
-**Arguments:**
-
-| Name            | Required | Description |
-| --------------- | -------- | ----------- |
-| `ISSUE_NUMBER`  | Yes      | -           |
-| `RUN_ID`        | Yes      | -           |
-| `NODE_ID`       | Yes      | -           |
-| `DISPATCHED_AT` | Yes      | -           |
-
 ### update-issue-body
 
 Update an issue's body using REST API (avoids GraphQL rate limits).
@@ -1289,19 +1273,6 @@ Update an issue's body using REST API (avoids GraphQL rate limits).
 | ------------- | ---- | -------- | -------------- | ------------------- |
 | `--body`      | TEXT | No       | Sentinel.UNSET | New body content    |
 | `--body-file` | PATH | No       | Sentinel.UNSET | Read body from file |
-
-### update-lifecycle-stage
-
-Update the lifecycle_stage metadata field on a plan.
-
-**Usage:** `erk exec update-lifecycle-stage`
-
-**Options:**
-
-| Flag        | Type   | Required | Default        | Description                                 |
-| ----------- | ------ | -------- | -------------- | ------------------------------------------- |
-| `--plan-id` | TEXT   | Yes      | Sentinel.UNSET | Plan identifier (issue number or PR number) |
-| `--stage`   | CHOICE | Yes      | Sentinel.UNSET | Lifecycle stage to set                      |
 
 ### update-objective-node
 
@@ -1324,6 +1295,19 @@ Update node plan/PR cells in an objective's roadmap table.
 | `--pr`           | TEXT   | No       | Sentinel.UNSET | PR reference (e.g., '#456', or '' to clear)                           |
 | `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from plan/PR value)            |
 | `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body' |
+
+### update-plan-header
+
+Update plan-header metadata fields on a plan.
+
+**Usage:** `erk exec update-plan-header` <plan_id> [fields]
+
+**Arguments:**
+
+| Name      | Required | Description |
+| --------- | -------- | ----------- |
+| `PLAN_ID` | Yes      | -           |
+| `FIELDS`  | No       | -           |
 
 ### update-plan-remote-session
 

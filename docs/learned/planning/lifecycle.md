@@ -22,7 +22,7 @@ tripwires:
   - action: "delegating batch file renames from a plan"
     warning: "Verify each file path exists before delegating. Wrong paths cause silent coverage gaps in rename operations."
   - action: "renaming a lifecycle stage value"
-    warning: "Update 4 locations: LifecycleStageValue type, valid_stages set, _VALID_STAGES tuple, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors."
+    warning: "Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors."
     score: 7
 ---
 
@@ -821,7 +821,7 @@ last_dispatched_run_id: "1234567890"
 last_dispatched_at: 2025-01-15T10:30:00Z
 ```
 
-Updated by `erk exec update-dispatch-info` command.
+Updated by `erk exec update-plan-header` command.
 
 ### Workflow Run → Issue
 
@@ -1165,19 +1165,19 @@ Each stage is set by specific commands at well-defined moments:
 
 ### Explicit Updates via Exec Command
 
-The `update-lifecycle-stage` exec command allows explicit stage transitions:
+The `update-plan-header` exec command allows explicit field updates, including lifecycle stage:
 
 ```bash
-erk exec update-lifecycle-stage --plan-id 123 --stage implementing
+erk exec update-plan-header 123 lifecycle_stage=implementing
 ```
 
 Returns JSON on success:
 
 ```json
-{ "success": true, "plan_id": "123", "stage": "implementing" }
+{ "success": true, "plan_id": "123", "fields_updated": ["lifecycle_stage"] }
 ```
 
-This command validates that the plan exists and that the stage value is one of the allowed values.
+The backend validates that the plan exists, the field names are valid, and enum values (like lifecycle_stage) are one of the allowed values.
 
 ### Display Computation
 
