@@ -759,66 +759,6 @@ class TestBuildBlockingMessage:
         assert "terminal-based editor" not in message
         assert "separate terminal" not in message
 
-    def test_save_and_review_option_included(self) -> None:
-        """Option 5 'Save and submit for review' is included in message."""
-        plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message(
-            session_id="session-123",
-            current_branch="feature-branch",
-            plan_file_path=plan_path,
-            objective_id=None,
-            plan_title=None,
-            worktree_name=None,
-            pr_number=None,
-            plan_issue_number=None,
-            editor=None,
-            plan_backend="github",
-        )
-        assert "Save and submit for review" in message
-        assert "review PR for inline feedback" in message
-
-    def test_save_and_review_instructions_included(self) -> None:
-        """Instructions for option 5 include plan-review and plan-saved-issue marker read."""
-        plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message(
-            session_id="session-123",
-            current_branch="feature-branch",
-            plan_file_path=plan_path,
-            objective_id=None,
-            plan_title=None,
-            worktree_name=None,
-            pr_number=None,
-            plan_issue_number=None,
-            editor=None,
-            plan_backend="github",
-        )
-        assert "If user chooses 'Save and submit for review':" in message
-        assert "erk exec marker read --session-id session-123 plan-saved-issue" in message
-        assert "/erk:plan-review <issue_number>" in message
-        assert "/erk:plan-save" in message
-        # Should stay in plan mode, not call ExitPlanMode
-        assert "STOP - Do NOT call ExitPlanMode. Stay in plan mode." in message
-
-    def test_save_and_review_uses_objective_save_cmd(self) -> None:
-        """Option 5 instructions use objective-aware save command when objective_id is provided."""
-        plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message(
-            session_id="session-123",
-            current_branch="feature-branch",
-            plan_file_path=plan_path,
-            objective_id=3679,
-            plan_title=None,
-            worktree_name=None,
-            pr_number=None,
-            plan_issue_number=None,
-            editor=None,
-            plan_backend="github",
-        )
-        # The save-and-review block should use the objective-aware save command
-        # Find the save-and-review instruction block and verify it uses the objective flag
-        save_review_section = message.split("If user chooses 'Save and submit for review':")[1]
-        assert "/erk:plan-save --objective-issue=3679" in save_review_section
-
     def test_none_editor_shows_run_instruction(self) -> None:
         """When editor=None, message shows normal run instruction with fallback."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")

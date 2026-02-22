@@ -10,13 +10,13 @@ def select_display_pr(
 ) -> PullRequestInfo | None:
     """Select PR to display: prefer open, then merged, then closed.
 
-    Excludes PRs matching exclude_pr_numbers (e.g., plan review PRs) so
-    the implementation PR is preferred.  Falls back to unfiltered selection
-    if excluding leaves no candidates.
+    Excludes PRs matching exclude_pr_numbers so the implementation PR is
+    preferred.  Falls back to unfiltered selection if excluding leaves no
+    candidates.
 
     Args:
         prs: List of PRs sorted by created_at descending (most recent first)
-        exclude_pr_numbers: PR numbers to exclude from selection (e.g., review PRs)
+        exclude_pr_numbers: PR numbers to exclude from selection
 
     Returns:
         PR to display, or None if no PRs

@@ -390,64 +390,6 @@ validation_results:
 expected_workflow: erk-impl
 ```
 
-### Phase 2b: Plan Review (Optional)
-
-For plans requiring collaborative review or validation before implementation:
-
-#### Review PR Creation
-
-Create a plan review PR using `erk exec plan-create-review-pr`:
-
-1. Creates a temporary review branch from trunk
-2. Adds plan content as markdown file (`PLAN-REVIEW-{issue}.md`)
-3. Creates PR with `plan-review` label
-4. Updates plan-header metadata with `review_pr` field
-
-#### Review PR Fields in plan-header
-
-The plan-header metadata tracks review PR state:
-
-**`review_pr` field**: Active review PR number (set when review PR created, cleared when review completes)
-
-**`last_review_pr` field**: Archived value of previous review PR (for historical tracking)
-
-**State transition:**
-
-```
-Planning
-    ↓ (erk exec plan-create-review-pr)
-Review PR Open (review_pr: 123)
-    ↓ (address feedback, sync changes)
-Feedback Addressed
-    ↓ (erk exec plan-review-complete)
-Review Closed (review_pr: null, last_review_pr: 123)
-    ↓
-Ready for Implementation
-```
-
-See [Archive-on-Clear Metadata Pattern](../architecture/metadata-archival-pattern.md) for details on the review_pr/last_review_pr lifecycle.
-
-#### Feedback Workflow
-
-1. Reviewers add comments to plan review PR
-2. Agent addresses feedback using `/erk:pr-address` (automatically detects plan review mode via `plan-review` label)
-3. Agent edits local plan file (`PLAN-REVIEW-{issue}.md`)
-4. Agent syncs changes back to GitHub issue using `erk exec plan-update-from-feedback`
-5. Process repeats until review is complete
-
-See [Plan File Sync Pattern](../architecture/plan-file-sync-pattern.md) for sync mechanics.
-
-#### Review Completion
-
-When review is complete, run `erk exec plan-review-complete`:
-
-1. Clears `review_pr` field (archives to `last_review_pr`)
-2. Deletes review PR branch (both remote and local)
-3. Removes `plan-review` label from PR
-4. Returns control to normal plan lifecycle
-
-See [PR-Based Plan Review Workflow](pr-review-workflow.md) for complete workflow details.
-
 ---
 
 ## Phase 3: Workflow Dispatch
@@ -613,23 +555,6 @@ The workflow treats no-changes as successful completion, not an error. Users rev
 
 See [No Code Changes Handling](no-changes-handling.md) for details.
 
-### Review PRs Do Not Block Implementation
-
-**Important:** If a plan has an associated review PR (from Phase 3), implementation can proceed regardless of the review PR's state:
-
-- Implementation does **not** wait for review PR feedback
-- Implementation does **not** require review PR to be merged or closed
-- Review feedback is **optional** - implementation follows the original plan
-
-**Workflow:**
-
-1. Plan saved with optional review PR link in metadata
-2. Implementation begins (local or remote)
-3. Implementation follows the plan, ignoring review PR state
-4. Review PR is cleaned up during landing (Phase 5)
-
-**Rationale:** Review PRs provide asynchronous feedback but should not block forward progress. The plan is the source of truth; review feedback is advisory.
-
 ---
 
 ## Phase 5: PR Finalization & Merge
@@ -710,42 +635,6 @@ GitHub automatically closes the linked issue when the PR is merged if the commit
 
 The `gt finalize` command (used during PR finalization) adds the closing keyword to the commit message, ensuring the issue is closed when the PR merges.
 
-### Review PR Auto-Closure During Landing
-
-When a plan's implementation PR is landed (merged), the associated review PR is automatically closed via `cleanup_review_pr()`.
-
-**Workflow steps (from `erk land`):**
-
-1. **Merge PR** (critical operation)
-2. **Delete worktree** (critical operation)
-3. **Cleanup review PR** (optional, fail-open):
-   - Step 2.8: `cleanup_review_pr()` called with `reason="PR landed"`
-   - Adds comment to review PR: "This review PR was automatically closed because PR landed."
-   - Closes the review PR via GitHub API
-   - Archives metadata: `review_pr` → `last_review_pr` in plan issue
-
-**Fail-open semantics:**
-
-`cleanup_review_pr()` uses the fail-open pattern (see [Fail-Open Patterns](../architecture/fail-open-patterns.md)):
-
-- If review PR close **fails** → Land still succeeds, warning logged
-- If metadata update **fails** → Land still succeeds, warning logged
-- Cleanup is **non-critical** → Main operation (land) is not blocked
-
-**Metadata archival:**
-
-The `review_pr` field is moved to `last_review_pr` in the plan issue's metadata block. This preserves historical context while clearing the active review PR link.
-
-**Also triggered by `erk plan close`:**
-
-The same cleanup logic is triggered when a plan is closed via `erk plan close`:
-
-- `cleanup_review_pr(reason="plan closed")`
-- Same fail-open semantics
-- Same metadata archival
-
-See `src/erk/cli/commands/review_pr_cleanup.py` for the canonical implementation.
-
 ---
 
 ## Objective Roadmap Integration
@@ -766,7 +655,7 @@ When implementing a plan that corresponds to an objective roadmap step, the work
 ### Lifecycle
 
 ```
-Create markers → Save plan → Update roadmap → Create review PR → Submit → Clear markers
+Create markers → Save plan → Update roadmap → Submit → Clear markers
 ```
 
 ### When to Use

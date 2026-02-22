@@ -30,7 +30,6 @@ from erk_shared.gateway.github.metadata.schemas import (
     LAST_LOCAL_IMPL_AT,
     LAST_LOCAL_IMPL_EVENT,
     LAST_REMOTE_IMPL_AT,
-    REVIEW_PR,
     SOURCE_REPO,
     WORKTREE_NAME,
 )
@@ -42,7 +41,7 @@ from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store import get_plan_backend
-from erk_shared.plan_store.conversion import header_int, header_str
+from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.types import Plan
 
 P = ParamSpec("P")
@@ -383,7 +382,6 @@ def _build_plans_table(
 
         # Extract from pre-parsed header fields (no repeated YAML parsing)
         source_repo: str | None = None
-        review_pr: int | None = None
         if plan.header_fields:
             extracted = header_str(plan.header_fields, WORKTREE_NAME)
             if extracted:
@@ -396,7 +394,6 @@ def _build_plans_table(
             last_remote_impl_at = header_str(plan.header_fields, LAST_REMOTE_IMPL_AT)
             # Extract source_repo for cross-repo plans
             source_repo = header_str(plan.header_fields, SOURCE_REPO)
-            review_pr = header_int(plan.header_fields, REVIEW_PR)
 
         # Format the worktree cells
         worktree_name_cell = format_worktree_name_cell(worktree_name, exists_locally)
@@ -408,11 +405,7 @@ def _build_plans_table(
         checks_cell = "-"
         if isinstance(issue_number, int) and issue_number in pr_linkages:
             issue_prs = pr_linkages[issue_number]
-            if review_pr is not None:
-                exclude_pr_numbers: set[int] | None = {review_pr}
-            else:
-                exclude_pr_numbers = None
-            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=exclude_pr_numbers)
+            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
             if selected_pr is not None:
                 graphite_url = ctx.graphite.get_graphite_url(
                     GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
