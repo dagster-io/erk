@@ -1723,8 +1723,8 @@ class TestFetchGitHubDataViaGateway:
 class TestBackendLabel:
     """Test plan backend label in statusline output."""
 
-    def test_default_backend_shows_issue(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Default backend (github) should show (be:issue) in output."""
+    def test_default_backend_shows_draft_pr(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Default backend (draft_pr) should show (be:draft-pr) in output."""
         monkeypatch.delenv("ERK_PLAN_BACKEND", raising=False)
         stdin_payload = {
             "workspace": {"current_dir": ""},
@@ -1735,7 +1735,7 @@ class TestBackendLabel:
             with patch("builtins.print") as mock_print:
                 main()
         output = mock_print.call_args[0][0]
-        assert "(be:issue)" in output
+        assert "(be:draft-pr)" in output
 
     def test_draft_pr_backend_shows_draft_pr(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """draft_pr backend via env var should show (be:draft-pr) in output."""

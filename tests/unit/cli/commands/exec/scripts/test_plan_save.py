@@ -87,7 +87,7 @@ def test_delegates_to_issue_when_not_draft_pr(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """plan_backend="github" delegates to plan_save_to_issue."""
-    monkeypatch.delenv("ERK_PLAN_BACKEND", raising=False)
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "github")
     fake_issues = FakeGitHubIssues()
     fake_github = FakeGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(
