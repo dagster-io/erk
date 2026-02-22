@@ -98,15 +98,29 @@ This builds and publishes all packages to PyPI in dependency order.
 
 ### 9. Merge to Master
 
-After confirming the publish succeeded, merge from the release branch:
+After confirming the publish succeeded, merge the release branch into master:
 
 ```bash
-# Capture current branch name, switch to root worktree, then merge
 RELEASE_BRANCH=$(git branch --show-current)
-source .erk/bin/activate.sh && git merge "$RELEASE_BRANCH" && git push origin master --tags
+git checkout master
+git pull origin master
+git merge "$RELEASE_BRANCH" --no-edit
+git push origin master --tags
 ```
 
+> **Warning:** Do NOT use `source .erk/bin/activate.sh` to switch branches. The activate script sets up the venv and working directory but does NOT change the git branch. Running git commands after `activate.sh` will operate on whatever branch you were already on, not master.
+
 Only merge to master after verifying the release works correctly.
+
+## Troubleshooting
+
+### Graphite ref conflicts from slash in branch names
+
+Using `release/X.Y.Z` (with a slash) causes Graphite `refs/gt-fetch-head/release` conflicts because git cannot have both a ref and a child ref at the same path. Always use hyphens: `release-X.Y.Z`.
+
+### Activate script does not switch git branches
+
+`source .erk/bin/activate.sh` sets up the venv and working directory but does NOT change the current git branch. If you run `git reset --hard origin/master` while on a release branch, you will blow away the release commit. Always use explicit `git checkout master` before running git operations that target master.
 
 ## Version Numbering
 
