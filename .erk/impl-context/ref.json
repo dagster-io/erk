@@ -1,0 +1,5 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Replan: Rename issue_number to plan_number in plan_* exec scripts",
+  "objective_id": 7724
+}
