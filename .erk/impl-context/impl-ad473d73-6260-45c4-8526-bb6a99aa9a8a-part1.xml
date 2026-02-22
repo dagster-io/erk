@@ -1,0 +1,880 @@
+<session>
+  <meta branch="planned/phase-1-tripwire-candid-02-22-0713" />
+  <meta model="claude-opus-4-6" />
+  <user>associate this PR with the appropriate objective https://github.com/dagster-io/erk/pull/7842</user>
+  <thinking>The user wants to associate PR #7842 with the appropriate objective. Let me first get the PR details and then list the objectives to find the right match.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="10011" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10011}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me fetch the PR details and list the open objectives in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10011" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10011}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WTckfHQ93zZ2RXZqpc2PfA">
+    <param name="command">gh pr view 7842 --repo dagster-io/erk --json title,body,labels,headRefName</param>
+    <param name="description">Get PR #7842 details</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10011" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10011}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_018qvSNafqRX9ZApyypKS4Cu">
+    <param name="skill">erk:objective-list</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10011" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10011}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WTckfHQ93zZ2RXZqpc2PfA">
+{"body":"Replace three specialized commands (`update-dispatch-info`, `update-lifecycle-stage`, and the pattern from `update-plan-remote-session`) with a single generic `erk exec update-plan-header &lt;plan_id&gt; key=value ...` command. The backend's `update_metadata()` already performs full validation (merge, immutable field protection, schema enforcement), eliminating redundancy.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Added (2 files)\n- `src/erk/cli/commands/exec/scripts/update_plan_header.py` - Generic variadic field updater with type coercion and error handling\n- `tests/unit/cli/commands/exec/scripts/test_update_plan_header.py` - 13 comprehensive tests covering type coercion, schema validation, and error cases\n\n### Modified (5 files)\n- `src/erk/cli/commands/exec/group.py` - Replace specialized command imports with generic `update-plan-header`\n- `.github/workflows/one-shot.yml` - Update caller from `update-lifecycle-stage` to `update-plan-header`\n- `docs/learned/planning/lifecycle.md` - Update references and reduce tripwire count from 4 to 3 locations\n- `docs/learned/planning/plan-backend-migration.md` - Remove outdated migration note\n- `.claude/skills/erk-exec/reference.md` - Replace two specialized entries with unified command documentation\n- `src/erk/cli/commands/codespace/connect_cmd.py` - Remove unused `--env` option and helper\n\n### Deleted (4 files)\n- `src/erk/cli/commands/exec/scripts/update_dispatch_info.py` - Replaced by generic command\n- `src/erk/cli/commands/exec/scripts/update_lifecycle_stage.py` - Replaced by generic command\n- `tests/unit/cli/commands/exec/scripts/test_update_dispatch_info.py` - Tests for removed command\n- `tests/unit/cli/commands/exec/scripts/test_update_lifecycle_stage.py` - Tests for removed command\n\n&lt;/details&gt;\n\n## Key Changes\n\n- **Generic field updater**: `update-plan-header &lt;plan_id&gt; key=value ...` replaces specialized commands\n- **Type coercion**: Automatically converts `\"null\"` → `None`, valid integers → `int`, everything else → `str`\n- **Immutable field protection**: Backend silently preserves immutable fields (`schema_version`, `created_at`, `created_by`)\n- **Full schema validation**: Backend enforces field names, types, and enums (lifecycle_stage, learn_status)\n- **Comprehensive test coverage**: 13 tests covering single/multiple fields, type coercion, validation, and error cases\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 7842 --script)\" &amp;&amp; erk pr sync --dangerous\n```\n","headRefName":"planned/add-generic-erk-exec-up-02-22-0750","labels":[{"id":"LA_kwDOPxC3hc8AAAACQbDc0w","name":"erk-plan","description":"","color":"aaaaaa"}],"title":"Consolidate plan-header metadata commands into generic `update-plan-header`"}
+  </tool_result>
+  <tool_result tool="toolu_018qvSNafqRX9ZApyypKS4Cu">
+Launching skill: erk:objective-list
+  </tool_result>
+  <user># /erk:objective-list
+
+List all open objectives in the current repository.
+
+## Agent Instructions
+
+### Step 1: Fetch Open Objectives
+
+Run:
+
+```bash
+gh issue list --label "erk-objective" --state open --json number,title,createdAt --limit 50
+```
+
+### Step 2: Display Results
+
+Format output as a markdown table:
+
+| #    | Title                 | Created |
+| ---- | --------------------- | ------- |
+| #123 | Objective: Feature X  | 3d ago  |
+| #456 | Objective: Refactor Y | 1w ago  |
+
+If no objectives found, report: "No open objectives found."
+
+### Step 3: Suggest Next Steps
+
+After listing, suggest:
+
+- `/local:objective-view &lt;number&gt;` — View dependency graph, dependencies, and progress
+- `/erk:objective-plan &lt;number&gt;` — Create a plan for the next node
+</user>
+  <tool_use name="Bash" id="toolu_01Xe3s67xzSxx11xBzPEE5Zn">
+    <param name="command">gh issue list --label "erk-objective" --state open --json number,title,createdAt --limit 50 --repo dagster-io/erk</param>
+    <param name="description">List open objectives</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1343" cache_read_input_tokens="29052" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1343, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xe3s67xzSxx11xBzPEE5Zn">
+[{"createdAt":"2026-02-22T11:01:45Z","number":7823,"title":"Objective: Apply Agent Back Pressure Gates Across Erk"},{"createdAt":"2026-02-22T10:13:55Z","number":7813,"title":"Objective: Eliminate Unnecessary Git Checkouts via Plumbing Operations"},{"createdAt":"2026-02-21T19:02:12Z","number":7775,"title":"Objective: Clean Up Legacy Plan Infrastructure"},{"createdAt":"2026-02-21T13:43:06Z","number":7724,"title":"Objective: Rename issue_number to plan_number in plan-related code"},{"createdAt":"2026-02-18T16:04:41Z","number":7457,"title":"Objective: Complete User-Facing Documentation"},{"createdAt":"2026-02-18T00:53:24Z","number":7390,"title":"Objective: Parallel Dependency Graphs — Fan-In, Fan-Out, and Multi-Node Dispatch"},{"createdAt":"2026-02-16T08:45:19Z","number":7160,"title":"Objective: Ensure-Based CLI Error Handling"},{"createdAt":"2026-02-16T08:44:35Z","number":7159,"title":"Objective: Codex CLI Adoption Experience"}]
+  </tool_result>
+  <thinking>The PR #7842 consolidates specialized plan-header metadata commands into a generic `update-plan-header` command. This is about cleaning up legacy plan infrastructure - replacing specialized commands with a generic one. 
+
+Looking at the objectives:
+- **#7775 "Clean Up Legacy Plan Infrastructure"** — This seems like the best match. The PR is consolidating/cleaning up specialized plan commands into a generic one.
+
+Let me view that objective to confirm.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="30395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The PR consolidates specialized plan-header metadata commands into a generic one — that's clearly a cleanup of legacy plan infrastructure. Let me confirm by viewing objective #7775.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="30395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PZU3U5WaZC9BPFCSqwMwSV">
+    <param name="command">gh issue view 7775 --repo dagster-io/erk --json body,title | head -c 3000</param>
+    <param name="description">View objective #7775 details</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="30395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PZU3U5WaZC9BPFCSqwMwSV">
+{"body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-02-21T14:02:12.036549+00:00'\ncreated_by: schrockn\nobjective_comment_id: 3939258671\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '3'\nnodes:\n- id: '1.1'\n  description: Change PLAN_BACKEND default to \"draft_pr\", remove all \"issues\" conditional\n    branches\n  status: pending\n  plan: null\n  pr: null\n- id: '1.2'\n  description: Delete GitHubPlanStore, RealPlanListService (issue-based), and PLAN_BACKEND\n    constant\n  status: pending\n  plan: null\n  pr: null\n- id: '1.3'\n  description: Remove `extract_leading_issue_number` from naming.py, update all documentation\n  status: pending\n  plan: null\n  pr: null\n- id: '2.1'\n  description: Replace .impl/plan.md with committed .erk/branch-data/plan.md on branch\n    (ref.json stores metadata). Plan-implement reads directly from worktree instead\n    of fetching from PR body. First implementation commit deletes the plan file.\n  status: pending\n  plan: null\n  pr: null\n- id: '3.1'\n  description: 'Delete plan-review special case: remove plan_create_review_branch,\n    plan_create_review_pr, plan_review_complete, run_review exec scripts; review_pr_cleanup\n    command; /erk:plan-review slash command; and all callers'\n  status: pending\n  plan: null\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;","title":"Objective: Clean Up Legacy Plan Infrastructure"}
+  </tool_result>
+  <thinking>Looking at the objective nodes, they're about removing issue-based plan storage, deleting legacy services, etc. The PR #7842 consolidates specialized exec commands (`update-dispatch-info`, `update-lifecycle-stage`) into a generic `update-plan-header`. This is indeed cleaning up legacy plan infrastructure.
+
+However, looking more carefully at the objective nodes:
+- 1.1: Change PLAN_BACKEND default
+- 1.2: Delete GitHubPlanStore, etc.
+- 1.3: Remove extract_leading_issue_number
+- 2.1: Replace .impl/plan.md
+
+
+- 3.1: Delete plan-review special case
+
+The PR is about consolidating exec commands for plan metadata—it's in the spirit of cleaning up legacy plan infrastructure even though it doesn't map directly to a specific node. I need to figure out how to properly associate this PR with the objectives, so let me look at how erk handles these associations.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="882" cache_read_input_tokens="30843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Objective #7775 "Clean Up Legacy Plan Infrastructure" is the right match — the PR consolidates specialized plan-header exec commands into a generic one, which is directly in the spirit of cleaning up legacy plan tooling.
+
+Let me associate the PR with the objective.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="882" cache_read_input_tokens="30843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DuSaBseqeLwNLQaiPMSknA">
+    <param name="command">erk objective associate 7775 --pr 7842</param>
+    <param name="description">Associate PR #7842 with objective #7775</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="882" cache_read_input_tokens="30843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DuSaBseqeLwNLQaiPMSknA">
+Exit code 2
+Usage: erk objective [OPTIONS] COMMAND [ARGS]...
+Try 'erk objective -h' for help.
+
+Error: No such command 'associate'.
+
+Usage: erk objective [OPTIONS] COMMAND [ARGS]...
+Try 'erk objective -h' for help.
+
+Error: No such command 'associate'.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017QxNneDfUUiVeGsoVz3ptg">
+    <param name="command">erk objective -h</param>
+    <param name="description">List objective subcommands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="553" cache_read_input_tokens="31725" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 553}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017QxNneDfUUiVeGsoVz3ptg">
+Usage: erk objective [OPTIONS] COMMAND [ARGS]...
+
+  Manage objectives (multi-PR coordination issues).
+
+Options:
+  -h, --help  Show this message and exit.
+
+Commands:
+  check (ch)  Validate an objective's format and roadmap consistency.
+  close (c)   Close an objective GitHub issue.
+  list (ls)   List open objectives (GitHub issues with erk-objective label).
+  plan        Create a plan from an objective node.
+  view (v)    Fetch and display an objective by identifier.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01E532MGSFAzZrZdcsdg8uSn">
+    <param name="command">erk exec -h 2&gt;&amp;1 | head -40</param>
+    <param name="description">Check exec subcommands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="214" cache_read_input_tokens="32278" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 214}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E532MGSFAzZrZdcsdg8uSn">
+Usage: erk exec [OPTIONS] COMMAND [ARGS]...
+
+  Execute erk workflow scripts.
+
+Options:
+  -h, --help  Show this message and exit.
+
+Commands:
+  add-plan-label                  Add a label to a plan via the...
+  add-reaction-to-comment         Add a reaction to a PR/issue comment.
+  add-remote-execution-note       Add remote execution tracking note to...
+  capture-session-info            Capture Claude Code session info for...
+  check-impl                      Check .impl/ folder structure and...
+  ci-update-pr-body               Update PR body with AI-generated...
+  ci-verify-autofix               Run full CI verification after autofix...
+  close-issue-with-comment        Close a plan with a comment.
+  create-issue-from-session       Extract plan from Claude session and...
+  create-plan-from-context        Create GitHub issue from plan content...
+  create-worker-impl-from-issue   Create .worker-impl/ folder from plan...
+  dash-data                       Serialize plan dashboard data to JSON.
+  detect-trunk-branch             Detect whether repo uses main or...
+  discover-reviews                Discover code reviews matching PR...
+  download-remote-session         Download a session from a git branch.
+  exit-plan-mode-hook             Prompt user about plan saving when...
+  extract-latest-plan             Extract the latest plan from Claude...
+  find-project-dir                Find Claude Code project directory for...
+  generate-pr-address-summary     Generate enhanced PR comment for...
+  generate-pr-summary             Generate PR summary from PR diff using...
+  get-closing-text                Get closing text for PR body based on...
+  get-embedded-prompt             Get embedded prompt content from...
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01H89sp9JNaTdmkxTsRcry8z">
+    <param name="command">erk exec -h 2&gt;&amp;1 | grep -i "objective"</param>
+    <param name="description">Find objective-related exec commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="796" cache_read_input_tokens="32492" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 796}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H89sp9JNaTdmkxTsRcry8z">
+  get-plans-for-objective         Fetch erk-plan issues linked to an...
+  migrate-objective-schema        Migrate an objective's roadmap YAML...
+  objective-fetch-context         Fetch all context for objective update...
+  objective-post-action-comment   Post a formatted action comment to an...
+  objective-render-roadmap        Render a complete roadmap section from...
+  objective-save-to-issue         Save plan as objective GitHub issue.
+  objective-update-after-land     Update objective after landing a PR.
+  update-objective-node           Update node plan/PR cells in an...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016CeEu25CWKLYBNu9uB73Pq">
+    <param name="command">erk exec update-objective-node -h</param>
+    <param name="description">Check update-objective-node usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="33288" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 242}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016CeEu25CWKLYBNu9uB73Pq">
+Usage: erk exec update-objective-node [OPTIONS] ISSUE_NUMBER
+
+  Update node plan/PR cells in an objective's roadmap table.
+
+Options:
+  --node TEXT                     Node ID(s) to update (e.g., '1.3')
+                                  [required]
+  --plan TEXT                     Plan issue reference (e.g., '#6464')
+  --pr TEXT                       PR reference (e.g., '#456', or '' to clear)
+  --status [pending|planning|done|in_progress|blocked|skipped]
+                                  Explicit status to set (default: infer from
+                                  plan/PR value)
+  --include-body                  Include the fully-mutated issue body in JSON
+                                  output as 'updated_body'
+  -h, --help                      Show this message and exit.
+  </tool_result>
+  <thinking>The PR doesn't map to a specific node in the objective. Looking at the objective nodes again:
+
+1.1: Change PLAN_BACKEND default to "draft_pr"
+1.2: Delete GitHubPlanStore, RealPlanListService
+1.3: Remove extract_leading_issue_number
+2.1: Replace .impl/plan.md with committed .erk/branch-data/plan.md
+3.1: Delete plan-review special case
+
+The PR consolidates `update-dispatch-info` and `update-lifecycle-stage` into `update-plan-header`. This doesn't really map to any of the existing nodes. 
+
+It's related cleanup but not one of the defined work items. I should check if there's a way to associate this PR with the objective even though it doesn't fit a specific node, maybe through the objective-update commands that seem designed for this kind of situation.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="33530" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 292}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The PR doesn't map directly to any of the existing nodes in objective #7775. The current nodes are:
+
+| Node | Description |
+|------|-------------|
+| 1.1 | Change PLAN_BACKEND default to "draft_pr" |
+| 1.2 | Delete GitHubPlanStore, RealPlanListService |
+| 1.3 | Remove `extract_leading_issue_number` |
+| 2.1 | Replace .impl/plan.md with committed branch data |
+| 3.1 | Delete plan-review special case |
+
+PR #7842 (consolidate exec commands `update-dispatch-info` + `update-lifecycle-stage` into generic `update-plan-header`) is related cleanup but doesn't correspond to an existing node.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="33530" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 292}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_016Bcw3VDbgdpRD6UMJYhB9n">
+    <param name="questions">[{'question': 'How would you like to associate PR #7842 with objective #7775?', 'header': ...[truncated 334 chars]...cription': 'This PR belongs to a different objective than #7775'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="33530" output_tokens="784" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Bcw3VDbgdpRD6UMJYhB9n">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1201" cache_read_input_tokens="33822" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1201}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>this pr is associated with one of the open objectives. find it</user>
+  <thinking>The user wants me to find which objective PR #7842 is associated with. Let me look more carefully at the PR content and match it against the objectives.
+
+PR #7842: "Consolidate plan-header metadata commands into generic `update-plan-header`"
+- Replaces `update-dispatch-info`, `update-lifecycle-stage` with generic `update-plan-header`
+- Also removes unused `--env` option from `connect_cmd.py`
+
+Let me look at the other objectives more carefully. Let me re-examine:
+
+1. #7823 - "Apply Agent Back Pressure Gates Across Erk"
+
+
+2. #7813 - "Eliminate Unnecessary Git Checkouts via Plumbing Operations"
+3. #7775 - "Clean Up Legacy Plan Infrastructure"
+4. #7724 - "Rename issue_number to plan_number in plan-related code"
+5. #7457 - "Complete User-Facing Documentation"
+6. #7390 - "Parallel Dependency Graphs"
+7. #7160 - "Ensure-Based CLI Error Handling"
+8. #7159 - "Codex CLI Adoption Experience"
+
+The PR is consolidating specialized commands into a generic one, which looks like cleanup of legacy plan infrastructure. This matches #7775.
+
+The user is asking me to find which objective this PR is associated with, not asking for confirmation. Looking at the candidates, consolidating exec commands is definitely cleaning up legacy infrastructure rather than renaming variables, so #7775 seems like the right match. Let me verify by checking a few more objectives to be thorough.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="170" cache_read_input_tokens="35034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 170}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the objectives that could be a match more carefully.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="170" cache_read_input_tokens="35034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 170}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JhAJf779AoyiggkRLgBMbQ">
+    <param name="command">gh issue view 7775 --repo dagster-io/erk --json body | jq -r '.body'</param>
+    <param name="description">View objective #7775 full body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="170" cache_read_input_tokens="35034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 170}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JhAJf779AoyiggkRLgBMbQ">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;objective-header&lt;/summary&gt;
+
+```yaml
+
+created_at: '2026-02-21T14:02:12.036549+00:00'
+created_by: schrockn
+objective_comment_id: 3939258671
+
+```
+
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:objective-header --&gt;
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+```yaml
+schema_version: '3'
+nodes:
+- id: '1.1'
+  description: Change PLAN_BACKEND default to "draft_pr", remove all "issues" conditional
+    branches
+  status: pending
+  plan: null
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013ySDtyTEs57RHjzuwPtCUA">
+    <param name="command">gh issue view 7724 --repo dagster-io/erk --json body | jq -r '.body'</param>
+    <param name="description">View objective #7724 full body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="170" cache_read_input_tokens="35034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 170}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013ySDtyTEs57RHjzuwPtCUA">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;objective-header&lt;/summary&gt;
+
+```yaml
+
+created_at: '2026-02-21T13:43:06.368518+00:00'
+created_by: schrockn
+objective_comment_id: 3938799197
+
+```
+
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:objective-header --&gt;
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+```yaml
+schema_version: '3'
+nodes:
+- id: '1.1'
+  description: Rename TargetInfo.issue_number → plan_number and target_type values
+    (issue_number → plan_number, issue_url → plan_url) in implement_shared.py
+
+... [111 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01U7mUGZdMNrK3fmhP41AMU4">
+    <param name="command">gh issue view 7160 --repo dagster-io/erk --json body | jq -r '.body'</param>
+    <param name="description">View objective #7160 full body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="170" cache_read_input_tokens="35034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 170}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U7mUGZdMNrK3fmhP41AMU4">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;objective-header&lt;/code&gt;&lt;/summary&gt;
+
+```yaml
+
+created_at: '2026-02-16T08:45:18.925328+00:00'
+created_by: schrockn
+objective_comment_id: 3907160118
+
+```
+
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:objective-header --&gt;
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+```yaml
+
+... [66 lines omitted] ...
+  </tool_result>
+  <thinking>Looking at objective #7724 "Rename issue_number to plan_number", node 4.1 specifically mentions `update_dispatch_info.py` which is one of the files deleted by PR #7842. The PR deleted `update_dispatch_info.py` and `update_lifecycle_stage.py` and replaced them with `update_plan_header.py`. This directly impacts the rename objective because those files no longer exist - they've been consolidated.
+
+Actually wait, the PR doesn't rename `issue_number` to `plan_number`. It consolidates three specialized commands into one generic command. But it does touch `update_dispatch_info.py` which is listed in node 4.1.
+
+
+So this is more of a dependency or conflict rather than the PR directly implementing that objective. Looking at the PR more carefully, it replaces the dispatch-info and lifecycle-stage commands with a generic update-plan-header command, updates the workflow and documentation, and removes an unused option from connect_cmd.py. I should check the remaining objectives like #7823 and #7813 to see if there are any actual matches.
+
+Wait, the user said this PR is associated with one of the open objectives, so there should be a clear connection. Let me reconsider the PR title "Consolidate plan-header metadata commands into generic `update-plan-header`" against the objectives. #7775 is about cleaning up legacy plan infrastructure, but consolidating exec commands feels like cleanup rather than one of the specific nodes. However, #7724 "Rename issue_number to plan_number" has node 4.1 that mentions `update_dispatch_info.py`, which is directly related to what this PR is modifying.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3721" cache_read_input_tokens="35204" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3721}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HEYyo8U8jTXWE7rzZJtdDC">
+    <param name="command">gh pr view 7842 --repo dagster-io/erk --json body | jq -r '.body' | grep -i "objective\|#7"</param>
+    <param name="description">Check PR body for objective references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3721" cache_read_input_tokens="35204" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3721}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HEYyo8U8jTXWE7rzZJtdDC">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AuCukXuotBTgt2MUCzrpvF">
+    <param name="command">gh issue view 7823 --repo dagster-io/erk --json body | jq -r '.body'</param>
+    <param name="description">View objective #7823 body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3721" cache_read_input_tokens="35204" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3721}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AuCukXuotBTgt2MUCzrpvF">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;objective-header&lt;/summary&gt;
+
+```yaml
+
+created_at: '2026-02-22T06:01:45.531065+00:00'
+created_by: schrockn
+objective_comment_id: 3940710509
+slug: agent-backpressure-gates
+
+```
+
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:objective-header --&gt;
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+```yaml
+
+... [58 lines omitted] ...
+  </tool_result>
+  <thinking>Let me check the remaining objectives too.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1751" cache_read_input_tokens="38925" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1751}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014RDkXbvHv6dCLUxcUfCyKK">
+    <param name="command">gh issue view 7813 --repo dagster-io/erk --json body | jq -r '.body'</param>
+    <param name="description">View objective #7813 body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1751" cache_read_input_tokens="38925" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1751}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014RDkXbvHv6dCLUxcUfCyKK">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;objective-header&lt;/summary&gt;
+
+```yaml
+
+created_at: '2026-02-22T05:13:55.482141+00:00'
+created_by: schrockn
+objective_comment_id: 3940641023
+
+```
+
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:objective-header --&gt;
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+```yaml
+schema_version: '3'
+nodes:
+- id: '1.1'
+  description: 'upload_session.py and trigger_async_learn.py: Replace checkout cycles
+    with commit_files_to_branch + push (4 checkouts eliminated)'
+  status: pending
+  plan: null
+
+... [48 lines omitted] ...
+  </tool_result>
+  <thinking>Let me look at the remaining objectives:
+- #7457 "Complete User-Facing Documentation"
+- #7390 "Parallel Dependency Graphs"
+- #7159 "Codex CLI Adoption Experience"
+
+Actually, I'm now quite confident it's #7775 "Clean Up Legacy Plan Infrastructure". The PR is literally cleaning up legacy plan infrastructure by consolidating specialized plan metadata exec commands into a generic one. Even though it doesn't map to an existing node, the user said it IS associated.
+
+Wait - actually, let me reconsider #7724 "Rename issue_number to plan_number". Node 4.1 specifically mentions `update_dispatch_info.py` as one of the files that needs renaming. 
+
+If that file was deleted by PR #7842, that actually advances the objective by removing a file from the rename scope. But the PR's intent is consolidation, not renaming. Looking at this from the user's perspective, they want me to identify which objective this PR actually supports. The PR deletes `update_dispatch_info.py` and `update_lifecycle_stage.py` while creating `update_plan_header.py` as a generic replacement - this most closely aligns with #7775 since it's consolidating specialized commands into a single generic one.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="884" cache_read_input_tokens="40676" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 884}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017S53AbEfNTssKuPDWuYXRN">
+    <param name="command">gh pr view 7842 --repo dagster-io/erk --json labels,closingIssuesReferences --jq '.closingIssuesReferences'</param>
+    <param name="description">Check for linked issues on PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="884" cache_read_input_tokens="40676" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 884}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017S53AbEfNTssKuPDWuYXRN">
+[]
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TJqssjKiVE6jchgNPRA5GF">
+    <param name="command">gh issue list --label "erk-plan" --state open --json number,title --limit 10 --repo dagster-io/erk | jq -r '.[] | select(.title | test("update.plan.header|consolidat|generic|metadata command"; "i"))'</param>
+    <param name="description">Search for related plan issue</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="884" cache_read_input_tokens="40676" output_tokens="621" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 884, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TJqssjKiVE6jchgNPRA5GF">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017B4Aq6AjAbQs2pMsvpQ3VJ">
+    <param name="command">gh issue list --label "erk-plan" --state all --json number,title --limit 20 --repo dagster-io/erk --search "update plan header" </param>
+    <param name="description">Search for plan issue matching PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="685" cache_read_input_tokens="41560" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 685}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017B4Aq6AjAbQs2pMsvpQ3VJ">
+[{"number":7819,"title":"[erk-learn] Fix ci-update-pr-body plan-header metadata preservation on draft PR plans"},{"number":7834,"title":"[erk-plan] Remove Plan Review Subsystem"},{"number":7367,"title":"[erk-plan] Move plan_header.py extract/update functions to be private to GitHubPlanStore"},{"number":6969,"title":"[erk-plan] Migrate erkweb to @dagster-io/ui-components"},{"number":7403,"title":"[erk-learn] Move plan_header.py extract/update functions to be private to GitHubPlanStore"},{"number":5389,"title":"Update CI Workflow to Record Artifact Location in Plan Header [erk-plan]"},{"number":7238,"title":"[erk-plan] Changelog Update Plan"},{"number":7201,"title":"[erk-plan] Update CHANGELOG.md Unreleased Section"},{"number":7141,"title":"[erk-plan] Fix update-roadmap-step invocation in one-shot workflow"},{"number":7351,"title":"Migrate list_cmd.py and RealPlanDataProvider to Pre-Parsed Header Fields [erk-plan]"},{"number":7106,"title":"[erk-plan] Update all GitHub workflow default models to Opus"},{"number":7047,"title":"[erk-plan] Migrate update_dispatch_info.py, mark_impl_started.py, mark_impl_ended.py to PlanBackend"},{"number":7370,"title":"[erk-plan] Enforce import boundary: lint rule that plan_header is internal to plan_store/"},{"number":7338,"title":"[erk-plan] Migrate Remaining Phase 4 Bypass Sites to PlanBackend"},{"number":7811,"title":"[erk-learn] Fix: Decouple Objectives Screen Columns from Plans Screen"},{"number":7053,"title":"[erk-plan] Migrate update_dispatch_info.py, mark_impl_started/ended.py to PlanBackend"},{"number":6931,"title":"[erk-plan] Changelog Update Plan"},{"number":7348,"title":"[erk-plan] Migrate list_cmd.py and plan_data_provider/real.py to PlanBackend"},{"number":7056,"title":"[erk-plan] Update objective roadmap immediately after one-shot dispatch"},{"number":7080,"title":"[erk-plan] Update plan issue titles when plan content is updated"}]
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016q6WFA9xgm5ncM62pFGKwS">
+    <param name="command">gh issue list --label "erk-plan" --state all --json number,title --limit 20 --repo dagster-io/erk --search "consolidate metadata exec"</param>
+    <param name="description">Search for plan matching PR topic</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="721" cache_read_input_tokens="42245" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 721}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016q6WFA9xgm5ncM62pFGKwS">
+[{"number":7076,"title":"[erk-learn] Consolidated Documentation from 7 Learn Plans"},{"number":7388,"title":"[erk-plan] Delegate replan validation/metadata to subagent"},{"number":7666,"title":"[erk-learn] Support draft PR mode in replan workflow"},{"number":7387,"title":"[erk-learn] Consolidated Documentation from 8 erk-learn Plans"},{"number":7251,"title":"[erk-plan] Migrate Steps 3.6 and 3.7 to PlanBackend"},{"number":6070,"title":"[erk-learn] Workflow Refactor - Consolidation and Consistency"},{"number":7328,"title":"[erk-learn] Consolidated Documentation from 15 erk-learn Plans"},{"number":7028,"title":"[erk-learn] Consolidated Documentation from 6 Learn Plans"},{"number":7047,"title":"[erk-plan] Migrate update_dispatch_info.py, mark_impl_started.py, mark_impl_ended.py to PlanBackend"},{"number":6217,"title":"[erk-learn] Consolidated Documentation for Learn Plans"},{"number":7505,"title":"[erk-learn] Consolidated Documentation for Recent Implementation Sessions"},{"number":6234,"title":"[erk-learn] Consolidated Documentation for Plan Review Workflow"},{"number":6252,"title":"[erk-learn] Consolidated Documentation for Plan Review Patterns &amp; CI Gating"},{"number":7212,"title":"[erk-learn] Consolidated Documentation from 10 erk-learn Plans"},{"number":7033,"title":"[erk-plan] Migrate upload_session.py and update_plan_remote_session.py to PlanBackend"},{"number":7616,"title":"[erk-learn] Consolidated Documentation for Recent Implementation Sessions"},{"number":5634,"title":"Consolidate erk-exec-reference into Workflow-Oriented erk-exec Skill [erk-plan]"},{"number":6264,"title":"[erk-plan] Consolidate Reminder Hooks"},{"number":7120,"title":"[erk-learn] [erk-plan] Address PR #7095 Review Comments (Batch 2)"},{"number":7053,"title":"[erk-plan] Migrate update_dispatch_info.py, mark_impl_started/ended.py to PlanBackend"}]
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BoxZePPiyHa6gfiNbooTA1">
+    <param name="command">gh pr view 7842 --repo dagster-io/erk --json commits --jq '.commits[].messageHeadline'</param>
+    <param name="description">Check commit messages for plan references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="721" cache_read_input_tokens="42245" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 721}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BoxZePPiyHa6gfiNbooTA1">
+Add plan: Add generic `erk exec update-plan-header` command
+Add plan for PR #7842
+Update plan for plan #7842 (rerun)
+Remove plan staging dirs before implementation
+Add generic `erk exec update-plan-header` command
+Trigger CI workflows
+style: sync generated docs
+Address PR review comments (batch 1-2/2)
+  </tool_result>
+  <thinking>Let me check the PR's branch name: `planned/add-generic-erk-exec-up-02-22-0750`. Let me also look at the `.impl/` folder or plan issue for this PR.
+
+Actually, looking at the commit messages, "Add plan for PR #7842" suggests the plan was created as part of the PR itself (draft PR-based plan). Let me check the PR body for plan content or check a plan issue.
+
+Actually, let me go back to matching against objectives. The key question is: which objective does this PR serve?
+
+The PR deletes `update_dispatch_info.py` and `update_lifecycle_stage.py`. 
+
+
+Looking at objective #7724 node 4.1, it lists `update_dispatch_info.py` as needing renaming, but this PR actually deletes it and replaces it with `update_plan_header.py` instead. That reduces the scope for that objective. I think #7775 "Clean Up Legacy Plan Infrastructure" is the better match—the PR is consolidating and removing specialized commands as part of a broader cleanup effort.
+
+The user says the PR is associated with an objective, so maybe I should just identify which one without worrying about specific nodes. But `erk exec update-objective-node` requires a node ID, so I'd need to either add a new node or pick an existing one. Let me think about whether this maps to #7775 node 3.1 about deleting plan-review special cases, or if it's actually just #7775 overall. I should also consider if #7834 "Remove Plan Review Subsystem" is related here.
+
+Actually, let me approach this differently and check if a plan issue was created for PR #7842 that references an objective.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="914" cache_read_input_tokens="42966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 914}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GEz6XP16SAAU81XYy3sLH1">
+    <param name="command">gh pr view 7842 --repo dagster-io/erk --json body | jq -r '.body' | head -80</param>
+    <param name="description">View full PR body for plan references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="914" cache_read_input_tokens="42966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 914}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GEz6XP16SAAU81XYy3sLH1">
+Replace three specialized commands (`update-dispatch-info`, `update-lifecycle-stage`, and the pattern from `update-plan-remote-session`) with a single generic `erk exec update-plan-header &lt;plan_id&gt; key=value ...` command. The backend's `update_metadata()` already performs full validation (merge, immutable field protection, schema enforcement), eliminating redundancy.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Added (2 files)
+- `src/erk/cli/commands/exec/scripts/update_plan_header.py` - Generic variadic field updater with type coercion and error handling
+- `tests/unit/cli/commands/exec/scripts/test_update_plan_header.py` - 13 comprehensive tests covering type coercion, schema validation, and error cases
+
+### Modified (5 files)
+- `src/erk/cli/commands/exec/group.py` - Replace specialized command imports with generic `update-plan-header`
+- `.github/workflows/one-shot.yml` - Update caller from `update-lifecycle-stage` to `update-plan-header`
+- `docs/learned/planning/lifecycle.md` - Update references and reduce tripwire count from 4 to 3 locations
+- `docs/learned/planning/plan-backend-migration.md` - Remove outdated migration note
+- `.claude/skills/erk-exec/reference.md` - Replace two specialized entries with unified command documentation
+- `src/erk/cli/commands/codespace/connect_cmd.py` - Remove unused `--env` option and helper
+
+### Deleted (4 files)
+- `src/erk/cli/commands/exec/scripts/update_dispatch_info.py` - Replaced by generic command
+- `src/erk/cli/commands/exec/scripts/update_lifecycle_stage.py` - Replaced by generic command
+- `tests/unit/cli/commands/exec/scripts/test_update_dispatch_info.py` - Tests for removed command
+- `tests/unit/cli/commands/exec/scripts/test_update_lifecycle_stage.py` - Tests for removed command
+
+&lt;/details&gt;
+
+## Key Changes
+
+- **Generic field updater**: `update-plan-header &lt;plan_id&gt; key=value ...` replaces specialized commands
+
+... [12 lines omitted] ...
+
+- **Comprehensive test coverage**: 13 tests covering single/multiple fields, type coercion, validation, and error cases
+  </tool_result>
+  <thinking>OK I've looked at all the objectives. Let me reconsider:
+
+1. #7823 "Apply Agent Back Pressure Gates Across Erk" - About validation gates. Not related.
+2. #7813 "Eliminate Unnecessary Git Checkouts" - About git plumbing. Not related.
+3. #7775 "Clean Up Legacy Plan Infrastructure" - Cleaning up legacy plan infra. The PR consolidates specialized exec commands = cleaning up legacy infrastructure. This is the best match.
+4. #7724 "Rename issue_number to plan_number" - About renaming. The PR deletes `update_dispatch_info.py` which is mentioned in node 4.1, but the PR isn't about renaming.
+
+
+5. #7457 "Complete User-Facing Documentation" - Docs. Not related.
+6. #7390 "Parallel Dependency Graphs" - Graph features. Not related.
+7. #7160 "Ensure-Based CLI Error Handling" - Error handling patterns. Not related.
+8. #7159 "Codex CLI Adoption Experience" - Codex adoption. Not related.
+
+It has to be #7775. The PR consolidates specialized plan-related exec commands into a generic one, which is exactly what cleaning up legacy plan infrastructure means. I should just associate it rather than overthink this.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1349" cache_read_input_tokens="43880" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1349}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>It's **#7775 "Clean Up Legacy Plan Infrastructure"**. The PR consolidates specialized plan-header exec commands (`update-dispatch-info`, `update-lifecycle-stage`) into a generic `update-plan-header` — that's directly cleaning up legacy plan infrastructure.
+
+None of the existing nodes in #7775 describe this specific work though. Want me to add a new node to the roadmap and associate the PR with it?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1349" cache_read_input_tokens="43880" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1349}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>yes, add a new node and associate it. re-eval the entire objective too</user>
+  <tool_use name="Bash" id="toolu_01B5Kc3wNfLaXTZXEk62YD9x">
+    <param name="command">erk objective view 7775</param>
+    <param name="description">View current objective state</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="174" cache_read_input_tokens="45669" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 174, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B5Kc3wNfLaXTZXEk62YD9x">
+Title:       Objective: Clean Up Legacy Plan Infrastructure
+State:       OPEN
+ID:          ]8;;https://github.com/dagster-io/erk/issues/7775\#7775]8;;\
+URL:         https://github.com/dagster-io/erk/issues/7775
+Created:     2026-02-21 (18h ago)
+Updated:     2026-02-21 (18h ago)
+
+─── Roadmap ───
+Phase 1: Phase 1 (0/3 nodes done)
+[1mnode[0m[1m [0m[1m [0m[1mstatus                [0m[1m [0m[1m [0m[1mdescription                                       [0m
+[36m1.1 [0m[36m [0m [1;32m⏳ pending (unblocked)[0m  Change PLAN_BACKEND default to "draft_pr", remove 
+[36m1.2 [0m[36m [0m [2m⏳ pending[0m              Delete GitHubPlanStore, RealPlanListService (issue
+[36m1.3 [0m[36m [0m [2m⏳ pending[0m              Remove `extract_leading_issue_number` from naming.
+
+Phase 2: Phase 2 (0/1 nodes done)
+[1mnode[0m[1m [0m[1m [0m[1mstatus                [0m[1m [0m[1m [0m[1mdescription                                       [0m
+[36m2.1 [0m[36m [0m [2m⏳ pending[0m              Replace .impl/plan.md with committed .erk/branch-d
+
+Phase 3: Phase 3 (0/1 nodes done)
+[1mnode[0m[1m [0m[1m [0m[1mstatus                [0m[1m [0m[1m [0m[1mdescription                                       [0m
+[36m3.1 [0m[36m [0m [2m⏳ pending[0m              Delete plan-review special case: remove plan_creat
+
+─── Summary ───
+Nodes:       0/5 done, 0 in progress, 5 pending
+In flight:   0
+Unblocked:   1
+Next node:   1.1 - Change PLAN_BACKEND default to "draft_pr", remove all "issues" conditional branches (Phase: Phase 1)
+  </tool_result>
+  <thinking>I need to:
+1. Add a new node for the exec command consolidation work done in PR #7842
+2. Associate PR #7842 with that node and mark it done
+3. Re-evaluate the entire objective
+
+Let me first add the node. Since this is about consolidating exec scripts, it fits as a separate phase or as part of an existing phase. It's cleanup of exec commands, which is somewhat independent. Let me add it as node 3.2 or create a new phase. Actually, looking at the phases:
+
+- Phase 1: Backend/store cleanup (PLAN_BACKEND, GitHubPlanStore, issue_number)
+
+
+- Phase 2: .impl/ replacement 
+- Phase 3: Plan-review deletion
+
+The exec command consolidation is its own cleanup task. It could be phase 3 alongside the plan-review deletion (both are about removing redundant exec scripts), or a new phase 4. Actually, it fits well alongside 3.1 which is about deleting exec scripts. Let me add it as 3.2 and figure out what commands I need to use.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="45843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 712}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me add the new node and associate the PR, then re-evaluate.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="45843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 712}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XSSvjCxmJe3VSaxDFdrqfF">
+    <param name="command">erk exec update-objective-node 7775 --node 3.2 --pr '#7842' --status done -h 2&gt;&amp;1 | head -20</param>
+    <param name="description">Check if update-objective-node can add new nodes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="45843" output_tokens="398" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 712, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XSSvjCxmJe3VSaxDFdrqfF">
+Usage: erk exec update-objective-node [OPTIONS] ISSUE_NUMBER
+
+  Update node plan/PR cells in an objective's roadmap table.
+
+Options:
+  --node TEXT                     Node ID(s) to update (e.g., '1.3')
+                                  [required]
+  --plan TEXT                     Plan issue reference (e.g., '#6464')
+  --pr TEXT                       PR reference (e.g., '#456', or '' to clear)
+  --status [pending|planning|done|in_progress|blocked|skipped]
+                                  Explicit status to set (default: infer from
+                                  plan/PR value)
+  --include-body                  Include the fully-mutated issue body in JSON
+                                  output as 'updated_body'
+  -h, --help                      Show this message and exit.
+  </tool_result>
+  <thinking>The `update-objective-node` command can update existing nodes, but I'm not sure if it can create new ones. Let me check `objective-render-roadmap` or see if I need to edit the issue body directly to add a new node. Let me look at how to add a node to the roadmap.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="709" cache_read_input_tokens="46555" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 709}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T3seuD8jMvCZTEeNswJSNC">
+    <param name="command">erk exec objective-render-roadmap -h</param>
+    <param name="description">Check roadmap rendering command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="709" cache_read_input_tokens="46555" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 709, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T3seuD8jMvCZTEeNswJSNC">
+Usage: erk exec objective-render-roadmap [OPTIONS]
+
+  Render a complete roadmap section from JSON input on stdin.
+
+  Reads structured JSON from stdin describing phases and steps, outputs a
+  complete ## Roadmap markdown section with tables and a machine-readable
+  metadata block.
+
+Options:
+  -h, --help  Show this message and exit.
+  </tool_result>
+  <thinking>I think the approach is:
+1. Get the current roadmap YAML
+2. Add the new node
+3. Update the issue body via the render command or by directly editing the YAML
+
+Actually, the simplest approach might be to use `erk exec update-objective-node` to try to create node 3.2. If it only updates existing nodes, I'll need to manually edit the issue body.
+
+Let me just try it first.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="47264" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EjKPzyBcMV8bYDwUbcvUdJ">
+    <param name="command">erk exec update-objective-node 7775 --node 3.2 --pr '#7842' --status done</param>
+    <param name="description">Try adding node 3.2 with PR association</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="47264" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 259, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EjKPzyBcMV8bYDwUbcvUdJ">
+{"success": false, "error": "plan_required_with_pr", "message": "--plan is required when --pr is set (use --plan '' to explicitly clear, or --plan '#NNN' to preserve)"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Dn62RssUL42NQzSRsDKVJS">
+    <param name="command">erk exec update-objective-node 7775 --node 3.2 --pr '#7842' --plan '' --status done</param>
+    <param name="description">Add node 3.2 with PR, no plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="47523" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 275, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Dn62RssUL42NQzSRsDKVJS">
+{"success": false, "error": "node_not_found", "message": "Node '3.2' not found in issue #7775"}
+  </tool_result>
+  <thinking>I need to add the node to the roadmap YAML first. Let me get the current issue body, modify the YAML to add node 3.2, and update the issue.
+
+Let me look at how to do this. I need to:1. Get the current issue body2. Parse the roadmap YAML
+3. Add node 3.24. Update the issue body
+
+I could either edit the issue body directly with `gh issue edit` or use an erk command if one exists. Let me check.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="47798" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to add the node to the roadmap YAML first. Let me edit the issue body directly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="47798" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MUivaP4neU6h1iaH624W3X">
+    <param name="command">gh issue view 7775 --repo dagster-io/erk --json body | jq -r '.body' &gt; /tmp/obj-7775-body.md</param>
+    <param name="description">Save current issue body to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="47798" output_tokens="262" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 155, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MUivaP4neU6h1iaH624W3X">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VmKh4aVhx3BUkLocS3Y9As">
+    <param name="file_path">/tmp/obj-7775-body.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="47953" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 285}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VmKh4aVhx3BUkLocS3Y9As">
+     1→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     2→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     3→&lt;!-- erk:metadata-block:objective-header --&gt;
+     4→&lt;details&gt;
+     5→&lt;summary&gt;objective-header&lt;/summary&gt;
+     6→
+     7→```yaml
+     8→
+     9→created_at: '2026-02-21T14:02:12.036549+00:00'
+    10→created_by: schrockn
+    11→objective_comment_id: 3939258671
+    12→
+    13→```
+    14→
+    15→&lt;/details&gt;
+    16→&lt;!-- /erk:metadata-block:objective-header --&gt;
+    17→
+    18→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    19→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    20→&lt;details&gt;
+    21→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    22→
+    23→```yaml
+    24→schema_version: '3'
+    25→nodes:
+    26→- id: '1.1'
+    27→  description: Change PLAN_BACKEND default to "draft_pr", remove all "issues" conditional
+    28→    branches
+    29→  status: pending
+    30→  plan: null
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BjpFxprzbfMPYGBdWtzMiT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/tmp/obj-7775-body.md</param>
+    <param name="old_string">- id: '3.1'
+  description: 'Delete plan-review special case: remove plan_create_review_bra...[truncated 90 chars].../erk:plan-review slash command; and all callers'
+  status: pending
+  plan: null
+  pr: null</param>
+    <param name="new_string">- id: '3.1'
+  description: 'Delete plan-review special case: remove plan_create_review_bra...[truncated 300 chars]... pattern into generic update-plan-header command
+  status: done
+  plan: null
+  pr: '#7842'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="818" cache_read_input_tokens="48238" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 818}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BjpFxprzbfMPYGBdWtzMiT">
+The file /tmp/obj-7775-body.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Vt5TXHH7mPBNfyv8eJEJny">
+    <param name="command">gh issue edit 7775 --repo dagster-io/erk --body-file /tmp/obj-7775-body.md</param>
+    <param name="description">Update objective issue with new node</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="49056" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 394, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vt5TXHH7mPBNfyv8eJEJny">
+https://github.com/dagster-io/erk/issues/7775
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017wY6sXGXUQPBNvXAiun6iS">
+    <param name="command">erk objective check 7775</param>
+    <param name="description">Validate objective after edit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="134" cache_read_input_tokens="49450" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 134, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017wY6sXGXUQPBNvXAiun6iS">
+Validating objective #7775...
+
+[PASS] Issue has erk-objective label
+[PASS] Roadmap parses successfully
+[PASS] Status/PR consistency
+[PASS] No orphaned done statuses (done steps have PR references)
+[PASS] Phase numbering is sequential
+[PASS] objective-header has objective_comment_id
+[PASS] Plan/PR references use '#' prefix
+
+Objective validation passed (1/6 done)
+  </tool_result>
+  <assistant>Objective validated. Now let me re-evaluate the entire objective against the current codebase.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="49584" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 197}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_013d951WdPpnaaT271KjK7f5">
+    <param name="skill">local:objective-reevaluate</param>
+    <param name="args">7775</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="49584" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 197}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013d951WdPpnaaT271KjK7f5">
+Launching skill: local:objective-reevaluate
+  </tool_result>
+</session>
