@@ -310,3 +310,79 @@ def test_draft_pr_tracks_branch_with_graphite(
     assert tracked_call[0] == tmp_path  # repo_root
     assert tracked_call[1] == branch_name  # branch_name
     assert tracked_call[2] == "main"  # parent_branch (current branch used as base)
+
+
+# --- Title validation rejection tests (draft-PR path) ---
+
+# Plan content with no H1 heading → extract_title_from_plan returns "Untitled Plan"
+_UNTITLED_PLAN_CONTENT = (
+    "This plan has no heading so extract_title_from_plan"
+    ' returns "Untitled Plan".\n\n'
+    "- Step 1: Set up the environment\n"
+    "- Step 2: Implement the core logic\n"
+    "- Step 3: Add tests and documentation\n"
+    "- Step 4: More content to pass length validation"
+)
+
+
+_EMOJI_ONLY_TITLE_PLAN = """# 🚀🎉
+
+This plan has an emoji-only title which should fail validation.
+
+- Step 1: Set up the environment
+- Step 2: Implement the core logic
+- Step 3: Add tests and documentation"""
+
+
+def test_draft_pr_rejects_untitled_plan_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Draft-PR save rejects plan with fallback title 'Untitled Plan'."""
+    ctx = _draft_pr_context(
+        tmp_path=tmp_path,
+        fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
+        monkeypatch=monkeypatch,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 2
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error_type"] == "validation_failed"
+    assert "agent_guidance" in output
+
+
+def test_draft_pr_rejects_emoji_only_title(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Draft-PR save rejects plan with emoji-only title."""
+    ctx = _draft_pr_context(
+        tmp_path=tmp_path,
+        fake_claude=FakeClaudeInstallation.for_test(plans={"emoji": _EMOJI_ONLY_TITLE_PLAN}),
+        monkeypatch=monkeypatch,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 2
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error_type"] == "validation_failed"
+
+
+def test_draft_pr_rejects_untitled_plan_display(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Draft-PR save shows error message for invalid title in display format."""
+    ctx = _draft_pr_context(
+        tmp_path=tmp_path,
+        fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
+        monkeypatch=monkeypatch,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "display"], obj=ctx)
+
+    assert result.exit_code == 2
+    assert "Invalid plan title" in result.output

@@ -47,7 +47,7 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.naming import generate_draft_pr_branch_name
+from erk_shared.naming import InvalidPlanTitle, generate_draft_pr_branch_name, validate_plan_title
 from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
 from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
@@ -140,6 +140,24 @@ def _save_as_draft_pr(
     claude_installation = require_claude_installation(ctx)
 
     title = extract_title_from_plan(plan_content)
+
+    # Validate plan title before proceeding
+    title_validation = validate_plan_title(title)
+    if isinstance(title_validation, InvalidPlanTitle):
+        if output_format == "display":
+            click.echo(f"Error: {title_validation.message}", err=True)
+        else:
+            click.echo(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": f"Plan title validation failed: {title_validation.reason}",
+                        "error_type": "validation_failed",
+                        "agent_guidance": title_validation.message,
+                    }
+                )
+            )
+        raise SystemExit(2)
 
     # Generate branch name with LLM-generated slug
     executor = require_prompt_executor(ctx)
