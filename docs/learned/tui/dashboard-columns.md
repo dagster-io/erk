@@ -27,7 +27,6 @@ These columns appear in the standard plans view (`ViewMode.PLANS`):
 | `pr`           | `pr`          | No             | Only when `show_prs` and `show_pr_column` are enabled |
 | `chks`         | `chks`        | No             | Only when `show_prs` is enabled                       |
 | `comments`     | `comments`    | No             | Only when `show_prs` is enabled                       |
-| `lrn`          | `learn`       | Yes            | Always                                                |
 | `local-wt`     | `local_wt`    | Yes            | Always                                                |
 | `local-impl`   | `local_impl`  | Yes            | Always                                                |
 | `remote-impl`  | `remote_impl` | No             | Only when `show_runs` is enabled                      |
