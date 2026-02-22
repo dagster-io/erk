@@ -205,8 +205,6 @@ class ErkDashApp(App):
             state=self._plan_filters.state,
             run_state=self._plan_filters.run_state,
             limit=self._plan_filters.limit,
-            show_prs=self._plan_filters.show_prs,
-            show_runs=self._plan_filters.show_runs,
             creator=self._plan_filters.creator,
         )
 

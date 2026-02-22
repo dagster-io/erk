@@ -123,8 +123,8 @@ class RealPlanDataProvider(PlanDataProvider):
         Returns:
             List of PlanRowData objects for display
         """
-        # Determine if we need workflow runs
-        needs_workflow_runs = filters.show_runs or filters.run_state is not None
+        # Always fetch workflow runs (displayed unconditionally)
+        needs_workflow_runs = True
 
         # Route to the appropriate service based on the view's labels
         if "erk-plan" in filters.labels:
