@@ -171,7 +171,7 @@ jobs:
         id: read_result
         if: steps.plan.outputs.plan_success == 'true'
         run: |
-          PLAN_ID=$(jq -r '.issue_number' .impl/plan-result.json)
+          PLAN_ID=$(jq -r '.plan_number' .impl/plan-result.json)
           PLAN_TITLE=$(jq -r '.title' .impl/plan-result.json)
           echo "plan_id=$PLAN_ID" >> $GITHUB_OUTPUT
           echo "plan_title=$PLAN_TITLE" >> $GITHUB_OUTPUT
