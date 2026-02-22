@@ -850,13 +850,13 @@ Update objective after landing a PR.
 
 Migrate an issue-based plan to a draft-PR-based plan.
 
-**Usage:** `erk exec plan-migrate-to-draft-pr` <issue_number>
+**Usage:** `erk exec plan-migrate-to-draft-pr` <plan_number>
 
 **Arguments:**
 
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
+| Name          | Required | Description |
+| ------------- | -------- | ----------- |
+| `PLAN_NUMBER` | Yes      | -           |
 
 **Options:**
 

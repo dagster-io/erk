@@ -53,7 +53,7 @@ Check the `$PLAN_ISSUE_NUMBER` environment variable:
 erk exec plan-update-issue --issue-number $PLAN_ISSUE_NUMBER --plan-path .impl/plan.md --format json
 ```
 
-Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `issue_number`. To get the `title`, extract the first `# ` heading from `.impl/plan.md`.
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.impl/plan.md`.
 
 **If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new issue (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
 
@@ -65,17 +65,17 @@ If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-f
 
 If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), add `--objective-issue $OBJECTIVE_ISSUE` to the command above to link the plan to its parent objective.
 
-Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `issue_number` and `title` from the output.
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
 
 ## Step 7: Write Plan Result
 
 Write the plan result to `.impl/plan-result.json` with the following format:
 
 ```json
-{"issue_number": <num>, "title": "<title>"}
+{"plan_number": <num>, "title": "<title>"}
 ```
 
-Use the `issue_number` and `title` extracted from the Step 6 output.
+Use the `plan_number` and `title` extracted from the Step 6 output.
 
 ## Important Notes
 
