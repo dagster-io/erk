@@ -1,0 +1,1177 @@
+<session>
+  <meta branch="planned/fix-ci-update-pr-body-l-02-22-0515" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="c4ab72f2-4a41-4e0f-942f-579dfb2d2404"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="c4ab72f2-4a41-4e0f-942f-579dfb2d2404" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="c4ab72f2-4a41-4e0f-942f-579dfb2d2404" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.worker-impl/` and `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the instructions:
+
+1. Step 0: No arguments provided (empty)
+2. Step 1: Check if `.impl/` already exists
+
+Let me start by checking if `.impl/` exists and running `erk exec impl-init --json`.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12761" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12761}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12761" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12761}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_0134f8vQUsipVHUGcjXUaZqN">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Check impl-init status</param>
+    <param name="prompt">Run `erk exec impl-init --json` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full output.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12761" cache_read_input_tokens="19041" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12761, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0134f8vQUsipVHUGcjXUaZqN">
+Full output from `erk exec impl-init --json`:
+
+```json
+{
+  "valid": true,
+  "impl_type": "impl",
+  "has_issue_tracking": true,
+  "related_docs": {
+    "skills": [],
+    "docs": []
+  },
+  "issue_number": 7815
+}
+```
+
+**Summary:** Implementation initialization succeeded. The worktree is valid and ready for implementation. Issue #7815 is associated with this implementation context. No related docs or skills are suggested for this task.
+agentId: a9e2e039cd5f1ba3f (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13494
+tool_uses: 1
+duration_ms: 4542&lt;/usage&gt;
+  </tool_result>
+  <thinking>The `.impl/` exists and is valid with `has_issue_tracking: true` and `issue_number: 7815`. According to the instructions:
+
+&gt; If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d.
+
+Let me sync with the remote issue, then proceed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="31802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 442}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Valid `.impl/` found with issue #7815. Syncing with remote...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="31802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 442}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01TLPn5uU3ffZW9B8jWCEiZS">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Sync impl from issue</param>
+    <param name="prompt">Run `erk exec setup-impl-from-issue 7815` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="31802" output_tokens="266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 442, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TLPn5uU3ffZW9B8jWCEiZS">
+The command completed successfully. Here's the full output:
+
+**stdout:**
+```
+Found existing .impl/ for plan #7815, skipping branch setup
+```
+
+**JSON output:**
+```json
+{
+  "success": true,
+  "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.impl",
+  "issue_number": 7815,
+  "issue_url": "https://github.com/dagster-io/erk/pull/7815",
+  "branch": "planned/fix-ci-update-pr-body-l-02-22-0515",
+  "plan_title": "",
+  "no_impl": false
+}
+```
+
+**Summary:** The command detected that a `.impl/` directory already exists for plan #7815, so it skipped the branch setup. The implementation path is `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.impl`, and the branch is `planned/fix-ci-update-pr-body-l-02-22-0515`.
+agentId: a2842871a62d71b52 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13710
+tool_uses: 1
+duration_ms: 4351&lt;/usage&gt;
+  </tool_result>
+  <thinking>Good, synced. Now Step 2d: Clean up `.erk/impl-context/` if it exists. Let me check and clean up, then read the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="32244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Synced. Now let me check for `.erk/impl-context/` cleanup and read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="32244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HDKZq2GDhRGZ1XrcNZMc51">
+    <param name="command">if [ -d .erk/impl-context/ ]; then echo "EXISTS"; else echo "NOT_EXISTS"; fi</param>
+    <param name="description">Check if impl-context directory exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="32244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HDKZq2GDhRGZ1XrcNZMc51">
+EXISTS
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GY9ZQneWinxx9SYRKV6W5o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="32244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GY9ZQneWinxx9SYRKV6W5o">
+     1→# Fix: ci-update-pr-body loses plan-header metadata on draft PR plans
+     2→
+     3→## Context
+     4→
+     5→When a draft-PR plan goes through remote implementation, `ci-update-pr-body` rewrites the PR body but **drops the plan-header metadata block**. This means:
+     6→- `last_dispatched_node_id` can never be written by subsequent workflows (fix-conflicts, address)
+     7→- The dashboard shows no `run_url` for the plan
+     8→- The `land` command is unavailable (it requires `run_url is not None`)
+     9→
+    10→**Root cause:** `ci-update-pr-body` detects draft-PR plans by checking `.impl/plan-ref.json` on disk (line 323-326). In CI, this file may not survive the cleanup steps between implementation and the PR body update. When `is_draft_pr` is `False`, the code takes the issue-based path which builds a plain body without preserving the metadata prefix.
+    11→
+    12→**Fix:** Add fallback detection from the PR body itself. If the fetched PR body contains a `plan-header` metadata block, it's a draft PR plan regardless of `.impl/plan-ref.json`.
+    13→
+    14→## Changes
+    15→
+    16→### 1. `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
+    17→
+    18→**Add import:**
+    19→```python
+    20→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    21→```
+    22→
+    23→**Add fallback detection in `_update_pr_body_impl`** (around line 257, before the `if is_draft_pr:` block):
+    24→
+    25→```python
+    26→# Fallback: detect draft-PR plan from PR body metadata block
+    27→# .impl/plan-ref.json may not survive CI cleanup steps
+    28→if not is_draft_pr and find_metadata_block(pr_result.body, "plan-header") is not None:
+    29→    is_draft_pr = True
+    30→```
+
+... [13 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011DAULuBgdtJY4zoF1t2Fe2">
+    <param name="command">git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove .erk/impl-context/ before implementation" &amp;&amp; git push origin "$(git branch --show-current)"</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1037" cache_read_input_tokens="32838" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1037, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011DAULuBgdtJY4zoF1t2Fe2">
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[planned/fix-ci-update-pr-body-l-02-22-0515 001287676] Remove .erk/impl-context/ before implementation
+ 2 files changed, 46 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   d1d8d4da9..001287676  planned/fix-ci-update-pr-body-l-02-22-0515 -&gt; planned/fix-ci-update-pr-body-l-02-22-0515
+  </tool_result>
+  <assistant>Good, cleanup done. Now let me create the task list and load the necessary context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="33875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 395}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_019pqvw1qKbi86dFqF8EcLsT">
+    <param name="subject">Add fallback draft-PR detection in ci_update_pr_body</param>
+    <param name="description">Add import for find_metadata_block and fallback detection logic in _update_pr_body_impl so...[truncated 1 chars]...r=False but the PR body contains a plan-header metadata block, is_draft_pr is set to True.</param>
+    <param name="activeForm">Adding fallback draft-PR detection</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="33875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 395}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019pqvw1qKbi86dFqF8EcLsT">
+Task #1 created successfully: Add fallback draft-PR detection in ci_update_pr_body
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_017uBZ6Bnkyagi4AfWv1bVau">
+    <param name="subject">Add test for fallback draft-PR detection</param>
+    <param name="description">Add a test case in test_ci_update_pr_body.py that verifies when is_draft_pr=False but PR body contains plan-header metadata block, the code preserves the metadata prefix and original plan section.</param>
+    <param name="activeForm">Adding test for fallback detection</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="33875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 395}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017uBZ6Bnkyagi4AfWv1bVau">
+Task #2 created successfully: Add test for fallback draft-PR detection
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01LdPuSXTNtoCNXrZy4Hu3gb">
+    <param name="subject">Run CI and submit PR</param>
+    <param name="description">Run CI checks iteratively, fix any issues, and submit the PR.</param>
+    <param name="activeForm">Running CI and submitting PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="33875" output_tokens="400" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 395, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LdPuSXTNtoCNXrZy4Hu3gb">
+Task #3 created successfully: Run CI and submit PR
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GBQLtXL2nVDa8EGsA7Ewvm">
+    <param name="command">erk exec impl-signal started --session-id="c4ab72f2-4a41-4e0f-942f-579dfb2d2404" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="34270" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 535}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GBQLtXL2nVDa8EGsA7Ewvm">
+{
+  "success": true,
+  "event": "started",
+  "issue_number": 7815
+}
+  </tool_result>
+  <assistant>Now let me read the source file and understand the existing code, along with the metadata module.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="34805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011vUEqSJdmUYWWzNUJ6jTam">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="34805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011vUEqSJdmUYWWzNUJ6jTam">
+     1→#!/usr/bin/env python3
+     2→"""Update PR body with AI-generated summary and footer.
+     3→
+     4→This command generates a PR summary from the diff using Claude, then updates
+     5→the PR body with the summary, optional workflow link, and standardized footer.
+     6→
+     7→This combines generate-pr-summary + footer construction + gh pr edit in one step,
+     8→replacing ~30 lines of bash in GitHub Actions workflows.
+     9→
+    10→Usage:
+    11→    erk exec ci-update-pr-body \\
+    12→        --plan-id 123 \\
+    13→        [--run-id 456789] \\
+    14→        [--run-url https://github.com/owner/repo/actions/runs/456789]
+    15→
+    16→Output:
+    17→    JSON object with success status
+    18→
+    19→Exit Codes:
+    20→    0: Success (PR body updated)
+    21→    1: Error (no PR for branch, empty diff, Claude failure, or GitHub API failed)
+    22→
+    23→Examples:
+    24→    $ erk exec ci-update-pr-body --plan-id 123
+    25→    {
+    26→      "success": true,
+    27→      "pr_number": 789
+    28→    }
+    29→
+    30→    $ erk exec ci-update-pr-body \\
+
+... [316 lines omitted] ...
+
+    77→class UpdateError:
+    78→    """Error result when PR body update fails."""
+    81→    error: Literal[
+    84→        "diff-fetch-failed",
+    85→        "claude-execution-failed",
+    87→        "github-api-failed",
+   167→) -&gt; UpdateSuccess | UpdateError:
+   182→        UpdateSuccess on success, UpdateError on failure
+   187→        return UpdateError(
+   189→            error="pr-not-found",
+   197→        return UpdateError(
+   199→            error="pr-not-found",
+   209→    except RuntimeError as e:
+   210→        return UpdateError(
+   212→            error="diff-fetch-failed",
+   213→            message=f"Failed to get PR diff: {e}",
+   218→        return UpdateError(
+   220→            error="empty-diff",
+   237→    # Separate failure modes for better diagnostics
+   239→        stderr_preview = result.error[:500] if result.error else None
+   240→        return UpdateError(
+   242→            error="claude-execution-failed",
+   249→        stderr_preview = result.error[:500] if result.error else None
+   250→        return UpdateError(
+   252→            error="claude-empty-output",
+   286→    except RuntimeError as e:
+   287→        return UpdateError(
+   289→            error="github-api-failed",
+   290→            message=f"Failed to update PR: {e}",
+   343→    # Exit with error code if update failed
+   344→    if isinstance(result, UpdateError):
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RyeQL7EmvSv8CrCNDgj2aV">
+    <param name="pattern">find_metadata_block</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="34805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RyeQL7EmvSv8CrCNDgj2aV">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/check_cmd.py-13-from erk_shared.gateway.github.issues.abc import GitHubIssues
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/check_cmd.py-14-from erk_shared.gateway.github.issues.types import IssueNotFound
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/check_cmd.py-15-from erk_shared.gateway.github.metadata.core import (
+src/erk/cli/commands/objective/check_cmd.py:16:    find_metadata_block,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/check_cmd.py-17-)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/check_cmd.py-18-from erk_shared.gateway.github.metadata.dependency_graph import (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/check_cmd.py-19-    DependencyGraph,
+--
+src/erk/cli/commands/objective/check_cmd.py-172-        checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/check_cmd.py-173-
+src/erk/cli/commands/objective/check_cmd.py-174-    # Check 6: v2 format integrity (if objective-header present, verify objective_comment_id)
+src/erk/cli/commands/objective/check_cmd.py:175:    header_block = find_metadata_block(issue.body, "objective-header")
+src/erk/cli/commands/objective/check_cmd.py-176-    if header_block is not None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/check_cmd.py-177-        comment_id = header_block.data.get("objective_comment_id")
+src/erk/cli/commands/objective/check_cmd.py-178-        if comment_id is not None:
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-10-from erk_shared.context.types import NoRepoSentinel
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-11-from erk_shared.gateway.github.issues.abc import GitHubIssues
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-12-from erk_shared.gateway.github.issues.types import IssueNotFound
+src/erk/cli/commands/plan/check_cmd.py:13:from erk_shared.gateway.github.metadata.core import find_metadata_block
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-14-from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-15-from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-16-from erk_shared.output.output import user_output
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-76-    issue_body = issue.body if issue.body else ""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-77-
+src/erk/cli/commands/plan/check_cmd.py-78-    # Check 1: plan-header metadata block exists
+src/erk/cli/commands/plan/check_cmd.py:79:    plan_header_block = find_metadata_block(issue_body, "plan-header")
+src/erk/cli/commands/plan/check_cmd.py-80-    if plan_header_block is None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/check_cmd.py-81-        checks.append((False, "plan-header metadata block present"))
+
+... [65 lines omitted] ...
+
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/learn/complete_cmd.py-39-        raise click.ClickException(f"Issue #{issue_number} not found")
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/plan/learn/complete_cmd.py-44-        raise click.ClickException(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/get_pr_for_plan.py-98-        return _exit_with_error(error="plan-not-found", message=f"Issue #{issue_number} not found")
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/get_pr_for_plan.py-103-        return _exit_with_error(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/get_pr_for_plan.py-104-            error="no-branch-in-plan",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py-38-from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+  </tool_result>
+  <tool_use name="Glob" id="toolu_018xvRH5saSfXxwRbqefnPYe">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="34805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018xvRH5saSfXxwRbqefnPYe">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+  </tool_result>
+  <thinking>Now let me read the test file and also the `find_metadata_block` function to understand how it works.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9881" cache_read_input_tokens="34960" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9881}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the test file and the metadata core module.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9881" cache_read_input_tokens="34960" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9881}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014J7v73JJAJ6tiSzNUbTziB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9881" cache_read_input_tokens="34960" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9881}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014J7v73JJAJ6tiSzNUbTziB">
+     1→"""Unit tests for ci_update_pr_body kit CLI command.
+     2→
+     3→Tests the PR body update with AI-generated summary and footer.
+     4→Uses FakeGit, FakeGitHub, and FakePromptExecutor for dependency injection.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.ci_update_pr_body import (
+    13→    UpdateError,
+    14→    UpdateSuccess,
+    15→    _build_pr_body,
+    16→    _build_prompt,
+    17→    _update_pr_body_impl,
+    18→)
+    19→from erk.cli.commands.exec.scripts.ci_update_pr_body import (
+    20→    ci_update_pr_body as ci_update_pr_body_command,
+    21→)
+    22→from erk_shared.context.context import ErkContext
+    23→from erk_shared.core.fakes import FakePromptExecutor
+    24→from erk_shared.core.prompt_executor import PromptResult
+    25→from erk_shared.gateway.git.fake import FakeGit
+    26→from erk_shared.gateway.github.fake import FakeGitHub
+    27→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    28→
+    29→# ============================================================================
+    30→# 1. Helper Function Tests
+
+... [757 lines omitted] ...
+
+   143→        prompt_results=[PromptResult(success=True, output="Generated PR summary", error=None)]
+   164→    """Test error when no PR exists for the current branch."""
+   182→    assert isinstance(result, UpdateError)
+   184→    assert result.error == "pr-not-found"
+   188→    """Test error when PR diff is empty."""
+   238→    assert isinstance(result, UpdateError)
+   240→    assert result.error == "empty-diff"
+   243→def test_impl_claude_failure(tmp_path: Path) -&gt; None:
+   244→    """Test error when Claude execution fails."""
+   281→        prompt_results=[PromptResult(success=False, output="", error="API error")]
+   296→    assert isinstance(result, UpdateError)
+   298→    assert result.error == "claude-execution-failed"
+   300→    assert result.stderr == "API error"
+   303→def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -&gt; None:
+   340→    # Create a very long error message (&gt; 500 chars)
+   341→    long_error = "x" * 600
+   343→        prompt_results=[PromptResult(success=False, output="", error=long_error)]
+   358→    assert isinstance(result, UpdateError)
+   360→    assert result.error == "claude-execution-failed"
+   367→    """Test error when Claude returns success but with empty output."""
+   404→        prompt_results=[PromptResult(success=True, output="", error=None)]
+   419→    assert isinstance(result, UpdateError)
+   421→    assert result.error == "claude-empty-output"
+   469→        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+   527→        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+   553→def test_cli_error_exit_code(tmp_path: Path) -&gt; None:
+   554→    """Test CLI command exits with error code on failure."""
+   574→    assert output["error"] == "pr-not-found"
+   625→        prompt_results=[PromptResult(success=True, output="Summary", error=None)]
+   651→def test_cli_json_output_structure_error(tmp_path: Path) -&gt; None:
+   652→    """Test that JSON output has expected structure on error."""
+   673→    assert "error" in output
+   679→    assert isinstance(output["error"], str)
+   755→        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017q4n5ptNxBhczp3eCi5oXH">
+    <param name="pattern">def find_metadata_block</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src</param>
+    <param name="output_mode">content</param>
+    <param name="context">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9881" cache_read_input_tokens="34960" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9881}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017q4n5ptNxBhczp3eCi5oXH">
+No matches found
+  </tool_result>
+  <thinking>Let me find the `find_metadata_block` function definition to understand its signature and return type.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13735" cache_read_input_tokens="44841" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13735}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find the `find_metadata_block` function signature.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13735" cache_read_input_tokens="44841" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13735}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BkXMeT8mBrFQYFKA5Y3rnG">
+    <param name="pattern">def find_metadata_block</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13735" cache_read_input_tokens="44841" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13735}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BkXMeT8mBrFQYFKA5Y3rnG">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014q3euXZFmpUeheqfGyBhPG">
+    <param name="pattern">find_metadata_block</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">**/core.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="58576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 357}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014q3euXZFmpUeheqfGyBhPG">
+No files found
+  </tool_result>
+  <tool_use name="Task" id="toolu_01MmJGmdh87dtggp64Dr2ZSS">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find find_metadata_block definition</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 284 chars]...rk_shared and any other locations. Return the full function signature and its return type.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="159" cache_read_input_tokens="58933" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 159, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MmJGmdh87dtggp64Dr2ZSS">
+Perfect! I found the `find_metadata_block` function. Let me extract the relevant information for you.
+
+## Function Definition
+
+**File Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`
+
+**Function Signature:**
+```python
+def find_metadata_block(text: str, key: str) -&gt; MetadataBlock | None:
+```
+
+**Full Implementation (lines 588-603):**
+```python
+def find_metadata_block(text: str, key: str) -&gt; MetadataBlock | None:
+    """
+    Find a specific metadata block by key.
+
+    Args:
+        text: Markdown text to search
+        key: The metadata block key to find
+
+    Returns:
+        MetadataBlock if found, None otherwise
+    """
+    blocks = parse_metadata_blocks(text)
+    for block in blocks:
+        if block.key == key:
+            return block
+    return None
+```
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have all the context I need. Let me implement the changes.
+
+**Phase 1: Add fallback detection in `ci_update_pr_body.py`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="605" cache_read_input_tokens="59092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 605}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_013Uo4ayTDuA1RQ5uKCi1d4K">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="605" cache_read_input_tokens="59092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 605}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Uo4ayTDuA1RQ5uKCi1d4K">
+Updated task #1 status
+  </tool_result>
+  <assistant>The fix goes in `_update_pr_body_impl` at line 257, right before the `if is_draft_pr:` check. I also need to add the import.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="129" cache_read_input_tokens="59697" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 129}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0149zSaW5NafyaEgQeZb8FoF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
+from erk_shared.impl_folder import read_plan_ref</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.ga...[truncated 3 chars]... get_commit_message_prompt, truncate_diff
+from erk_shared.impl_folder import read_plan_ref</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="129" cache_read_input_tokens="59697" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 129}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0149zSaW5NafyaEgQeZb8FoF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019YxnUzmrMEW5KMTcJfA1tg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">    # Build full PR body
+    if is_draft_pr:</param>
+    <param name="new_string">    # Fallback: detect draft-PR plan from PR body metadata block
+    # .impl/plan-ref.json...[truncated 87 chars]...er") is not None:
+        is_draft_pr = True
+
+    # Build full PR body
+    if is_draft_pr:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="59826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 367}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019YxnUzmrMEW5KMTcJfA1tg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JVLevcXFZKwHxhSXC2cDhK">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="60193" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JVLevcXFZKwHxhSXC2cDhK">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 2: Add test for fallback detection**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="60518" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_016q5oHB5yh7LSMzH87EAA6P">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="60518" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016q5oHB5yh7LSMzH87EAA6P">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VUQL9yMBzzohYZUpttQhbk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    assert "original-plan" in updated_body
+    assert "My Plan" in updated_body</param>
+    <param name="new_string">    assert "original-plan" in updated_body
+    assert "My Plan" in updated_body
+
+
+def test...[truncated 2643 chars]...an section
+    assert "original-plan" in updated_body
+    assert "My Plan" in updated_body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="103" cache_read_input_tokens="60606" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 103}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VUQL9yMBzzohYZUpttQhbk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01NzkdVir25BioQwEEKuJ17K">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1111" cache_read_input_tokens="60709" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1111, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NzkdVir25BioQwEEKuJ17K">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 3: Run CI and submit**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="61820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01K5W4vWQvy9KNt6ik4W7dY9">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="61820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K5W4vWQvy9KNt6ik4W7dY9">
+Updated task #3 status
+  </tool_result>
+  <assistant>Let me run the tests first, then lint/type checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="101" cache_read_input_tokens="61908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 101}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01WriMuiMPCVbR5qTmfqF6gr">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run ci_update_pr_body tests</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py -v` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="101" cache_read_input_tokens="61908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 101}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_018A2VzkdYbmqqgc2o2aZ4Ra">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run ruff check on modified files</param>
+    <param name="prompt">Run `uv run ruff check src/erk/cli/commands/exec/scripts/ci_update_pr_body.py tests/unit/c...[truncated 25 chars]...dy.py` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="101" cache_read_input_tokens="61908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 101}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01M64NvGawPVCW8djHmcH45c">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run ty check on modified file</param>
+    <param name="prompt">Run `uv run ty check src/erk/cli/commands/exec/scripts/ci_update_pr_body.py` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="101" cache_read_input_tokens="61908" output_tokens="481" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 101, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018A2VzkdYbmqqgc2o2aZ4Ra">
+ruff check failed: 1 issue found
+
+**File:** src/erk/cli/commands/exec/scripts/ci_update_pr_body.py:40:1
+
+**Issue:** I001 Import block is un-sorted or un-formatted
+
+The import block starting at line 40 needs to be organized. The error indicates imports should be sorted according to ruff's import formatting rules. This is fixable with `--fix`.
+
+The test file passed without issues.
+agentId: a14311b74ed638e83 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14526
+tool_uses: 1
+duration_ms: 3742&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01M64NvGawPVCW8djHmcH45c">
+Type checking passed successfully. The script `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py` has no type-checking issues.
+agentId: a9d1733b0c65510be (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13448
+tool_uses: 1
+duration_ms: 2737&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01WriMuiMPCVbR5qTmfqF6gr">
+pytest failed: 1 issue found
+
+**Test Results Summary:**
+- 18 passed
+- 1 failed in 0.58s
+
+**Failed Test:**
+
+File: `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`
+Test: `test_impl_fallback_detects_draft_pr_from_body_metadata`
+
+**Issue:**
+The test expects the PR body to start with the metadata prefix (preserving plan-header metadata), but the actual updated body starts with "## Summary" instead. This indicates that when `is_draft_pr=False` is passed and the implementation detects the plan-header metadata in the PR body, it's not preserving the metadata block as expected—instead it's treating it as a regular PR and generating a standard summary.
+
+**Expected behavior:** When metadata block is present in the PR body, the draft-PR format should be preserved with the metadata block at the start.
+
+**Actual behavior:** The implementation is generating a standard PR body without the metadata block prefix.
+agentId: abd92b63019ac929d (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16612
+tool_uses: 1
+duration_ms: 5953&lt;/usage&gt;
+  </tool_result>
+  <thinking>Two issues to fix:
+
+1. The test is failing because the fallback detection happens but the code still doesn't know to use `issue_number=None` for the draft-PR path - it uses the original `issue_number` parameter. Let me re-read the code to understand the flow.
+
+Looking at the code flow in `_update_pr_body_impl`:
+- When `is_draft_pr=True`, the code at line 258-272 builds the body with `issue_number=None`
+- When `is_draft_pr=False`, the code at line 273-281 builds the body with the passed `issue_number`
+
+
+- My fallback sets `is_draft_pr = True` before the conditional check, so it should route through the draft path with `issue_number=None`. Let me verify the edit was actually applied to the file.</thinking>
+  <usage input_tokens="345" cache_creation_input_tokens="804" cache_read_input_tokens="62009" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 804}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The test is failing and there's a lint issue. Let me check what happened with the implementation.</assistant>
+  <usage input_tokens="345" cache_creation_input_tokens="804" cache_read_input_tokens="62009" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 804}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RckQxUSLVNrEM3hRUqe8gP">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="offset">255</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="345" cache_creation_input_tokens="804" cache_read_input_tokens="62009" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 804}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RckQxUSLVNrEM3hRUqe8gP">
+   255→            stderr=stderr_preview,
+   256→        )
+   257→
+   258→    # Fallback: detect draft-PR plan from PR body metadata block
+   259→    # .impl/plan-ref.json may not survive CI cleanup steps
+   260→    if not is_draft_pr and find_metadata_block(pr_result.body, "plan-header") is not None:
+   261→        is_draft_pr = True
+   262→
+   263→    # Build full PR body
+   264→    if is_draft_pr:
+   265→        # For draft-PR plans: preserve metadata prefix, include original plan section
+   266→        metadata_prefix = extract_metadata_prefix(pr_result.body)
+   267→        plan_content = extract_plan_content(pr_result.body)
+   268→        original_plan_section = build_original_plan_section(plan_content)
+   269→
+   270→        summary_body = _build_pr_body(
+   271→            summary=result.output,
+   272→            pr_number=pr_number,
+   273→            issue_number=None,
+   274→            run_id=run_id,
+   275→            run_url=run_url,
+   276→            plans_repo=plans_repo,
+   277→        )
+   278→        pr_body = metadata_prefix + summary_body + original_plan_section
+   279→    else:
+   280→        pr_body = _build_pr_body(
+   281→            summary=result.output,
+   282→            pr_number=pr_number,
+   283→            issue_number=issue_number,
+   284→            run_id=run_id,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>The logic looks correct. The test should be passing — let me check if `extract_metadata_prefix` can handle the test's metadata format. Let me look at what it returns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1192" cache_read_input_tokens="62813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1192}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HS87RFYrqf6rNTtpGeWgP3">
+    <param name="pattern">def extract_metadata_prefix</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1192" cache_read_input_tokens="62813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1192}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HS87RFYrqf6rNTtpGeWgP3">
+Found 1 file
+packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015JJg3k4YfnKEfQ42AuuQ4J">
+    <param name="pattern">def extract_metadata_prefix"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="204" cache_read_input_tokens="64005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 204}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015JJg3k4YfnKEfQ42AuuQ4J">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01P5t8zB5XNpXaENGJbvVWsR">
+    <param name="pattern">def extract_metadata_prefix</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="64209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P5t8zB5XNpXaENGJbvVWsR">
+149-    Args:
+150-        pr_body: Full PR body string
+151-
+152-    Returns:
+153-        Plan content portion of the body
+154-    """
+155-    # Try new &lt;code&gt;-tagged format first, then legacy plain-text format
+156-    for details_open in (DETAILS_OPEN, _LEGACY_DETAILS_OPEN):
+157-        open_idx = pr_body.find(details_open)
+158-        if open_idx != -1:
+159-            content_start = open_idx + len(details_open)
+160-            close_idx = pr_body.find(DETAILS_CLOSE, content_start)
+161-            if close_idx != -1:
+162-                return pr_body[content_start:close_idx]
+163-
+164-    # Backward compat: old flat format (metadata + separator + plan content)
+165-    separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
+166-    if separator_index == -1:
+167-        return pr_body
+168-    candidate_prefix = pr_body[:separator_index]
+169-    if "&lt;!-- erk:metadata-block:" not in candidate_prefix:
+170-        return pr_body
+171-    return pr_body[separator_index + len(PLAN_CONTENT_SEPARATOR) :]
+172-
+173-
+174:def extract_metadata_prefix(pr_body: str) -&gt; str:
+175-    """Extract the metadata block + separator for preservation during stage transitions.
+176-
+177-    Returns everything up to and including the content separator.
+178-    If no separator is found, returns an empty string.
+
+... [14 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NGFCdjpWft4QTvJTL9f6GZ">
+    <param name="pattern">PLAN_CONTENT_SEPARATOR</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">2</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="890" cache_read_input_tokens="64386" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 890}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NGFCdjpWft4QTvJTL9f6GZ">
+86-IMPL_CONTEXT_DIR = ".erk/impl-context"
+87-
+88:PLAN_CONTENT_SEPARATOR = "\n\n---\n\n"
+89-DETAILS_OPEN = "&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n"
+90-_LEGACY_DETAILS_OPEN = "&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;\n\n"
+
+[Showing results with pagination = limit: 5, offset: 0]
+  </tool_result>
+  <thinking>Looking at the test, the metadata_prefix is:
+```
+"&lt;!-- erk:metadata-block:plan-header --&gt;\n"
+"plan-header metadata\n"
+"&lt;!-- /erk:metadata-block --&gt;\n\n---\n\n"
+```
+
+So `PLAN_CONTENT_SEPARATOR` is `"\n\n---\n\n"` and the separator IS present at the end of the metadata_prefix. The `extract_metadata_prefix` function should find it and return the prefix.
+
+But wait — the `find_metadata_block` function parses metadata blocks from the text. The format in the test is:
+
+
+```
+&lt;!-- erk:metadata-block:plan-header --&gt;
+plan-header metadata
+&lt;!-- /erk:metadata-block --&gt;
+```
+
+Let me verify that `find_metadata_block` can parse this correctly. Actually, the test failure shows the updated body starts with "## Summary" instead of the metadata prefix, which means `extract_metadata_prefix` is returning an empty string. The function looks for `PLAN_CONTENT_SEPARATOR` (`"\n\n---\n\n"`) to determine where the metadata ends, so if it's not finding that separator, it won't extract anything.
+
+Looking at the test PR body, the separator should be there between the metadata block and the content. But I'm wondering if `find_metadata_block` is actually locating the metadata correctly—it might be expecting JSON data inside the block rather than plain text.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="65276" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 315}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `parse_metadata_blocks` parses blocks — the test's metadata format might not be valid JSON.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="65276" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 315}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018rcSwcprJjsZg4b2VNAtsf">
+    <param name="pattern">def parse_metadata_blocks</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="65276" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 315}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018rcSwcprJjsZg4b2VNAtsf">
+525-        The parsed YAML data as a dict
+526-
+527-    Raises:
+528-        ValueError: If body format is invalid or YAML parsing fails
+529-    """
+530-    # Phase 2 pattern: Extract YAML content from details structure
+531-    # Accept both &lt;details&gt; and &lt;details open&gt;
+532-    pattern = (
+533-        r"&lt;details(?:\s+open)?&gt;\s*&lt;summary&gt;(?:&lt;code&gt;)?[^&lt;]+(?:&lt;/code&gt;)?&lt;/summary&gt;\s*"
+534-        r"```yaml\s*(.*?)\s*```\s*&lt;/details&gt;"
+535-    )
+536-
+537-    match = re.search(pattern, body, re.DOTALL)
+538-    if not match:
+539-        raise ValueError("Body does not match expected &lt;details&gt; structure")
+540-
+541-    yaml_content = match.group(1)
+542-
+543-    # Parse YAML (strict - raises on error)
+544-    try:
+545-        data = yaml.safe_load(yaml_content)
+546-    except yaml.YAMLError as e:
+547-        raise ValueError(f"Failed to parse YAML content: {e}") from e
+548-
+549-    if not isinstance(data, dict):
+550-        raise ValueError(f"YAML content is not a dict, got {type(data).__name__}")
+551-
+552-    return data
+553-
+554-
+
+... [31 lines omitted] ...
+
+562-    Maintains lenient behavior: logs warnings and skips blocks with parsing errors.
+580-        except ValueError as e:
+582-            logger.debug(f"Failed to parse metadata block '{raw_block.key}': {e}")
+  </tool_result>
+  <thinking>The issue is that `find_metadata_block` calls `parse_metadata_blocks`, which does two phases:
+1. Extract raw blocks by HTML comment markers
+2. Parse the body expecting a `&lt;details&gt;` structure with YAML
+
+The test uses plain text `"plan-header metadata"` as the block body, but `parse_metadata_block_body` expects a `&lt;details&gt;` structure with YAML. So the parsing will fail and the block will be skipped. That means `find_metadata_block` returns `None` for the test's format!
+
+But wait — the existing test `test_impl_draft_pr_preserves_metadata_and_adds_plan_section` passes with `is_draft_pr=True`, which bypasses `find_metadata_block` entirely. 
+
+The problem with my new test is that when `is_draft_pr=False`, the fallback detection can't find the metadata block because the test data doesn't match the actual format. I need to figure out what format the metadata blocks actually use in production and update my test data accordingly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1394" cache_read_input_tokens="65591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1394}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I see the issue — the test uses plain text in the metadata block body, but `find_metadata_block` expects `&lt;details&gt;` YAML structure. Let me look at how real metadata blocks are formatted.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1394" cache_read_input_tokens="65591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1394}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Xm2FftrEkwDuJQrks2pEmA">
+    <param name="pattern">def extract_raw_metadata_blocks</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1394" cache_read_input_tokens="65591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1394}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>

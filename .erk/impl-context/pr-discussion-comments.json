@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "pr_number": 7815,
+  "comments": [
+    {
+      "id": 3940646107,
+      "author": "schrockn",
+      "body": "\ud83d\ude80 Starting implementation\n\n---\n\n**Worktree:** `erk-slot-24`\n**Branch:** `planned/fix-ci-update-pr-body-l-02-22-0515`",
+      "url": "https://github.com/dagster-io/erk/pull/7815#issuecomment-3940646107"
+    },
+    {
+      "id": 3940654295,
+      "author": "schrockn",
+      "body": "* **#7815** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7815?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7815?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7815#issuecomment-3940654295"
+    },
+    {
+      "id": 3940655650,
+      "author": "github-actions[bot]",
+      "body": "<!-- test-coverage-review -->\n\n## \u2705 Test Coverage Review\n\n**Last updated:** 2026-02-22 02:34:17 PT\n\nAll source code changes have corresponding test coverage. No violations detected.\n\n### Source Files\n\n| File | Status | Tests |\n|------|--------|-------|\n| `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py` | Modified | \u2705 `test_cli_draft_pr_flag()` |\n\n### Patterns Checked\n\n\u2705 Source modifications have test coverage  \n\u2705 Tests use fake-driven architecture (FakeGit, FakeGitHub, FakePromptExecutor)  \n\u2705 New test covers CLI flag acceptance  \n\u2705 New test covers draft-PR body path selection  \n\u2705 New test covers metadata preservation and plan section inclusion  \n\n### Activity Log\n\n- **2026-02-22 02:34:17 PT**: Source modification (--draft-pr flag addition) covered by new CLI test with proper fakes\n- **2026-02-22 02:22:15 PT**: All source changes covered. New test comprehensively covers fallback draft-PR detection logic with proper fakes.",
+      "url": "https://github.com/dagster-io/erk/pull/7815#issuecomment-3940655650"
+    },
+    {
+      "id": 3940655663,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-code-simplifier-review -->\n\n## \u2705 Dignified Code Simplifier Review\n\n**Last updated:** 2026-02-22 02:34:33 PT\n\nFound 0 violations across 3 files. Code changes follow dignified Python standards and improve code clarity.\n\n### Patterns Checked\n\u2705 LBYL over EAFP - No violations found (removed unnecessary file I/O detection)\n\u2705 Absolute imports only - All imports correctly absolute\n\u2705 Pathlib usage - Not applicable (no file path operations in new code)\n\u2705 O(1) properties - Not applicable (no properties in changes)\n\u2705 Indentation depth - Maximum 2 levels (well within standard)\n\u2705 Variable declarations - All declared close to use\n\u2705 No re-exports - Not applicable (removed unused import)\n\u2705 Import aliases - Not used\n\u2705 Exception handling - No exception handling in changes\n\n### Improvements Made\n- Removed unnecessary  import that wasn't used\n- Removed implicit file-based detection () in favor of explicit CLI flag\n- Simplified function logic by passing flag directly instead of file I/O\n- New test follows fake-driven testing architecture correctly\n\n### Files Reviewed\n- : 0 violations (bash shell script)\n- : 0 violations\n- : 0 violations\n\n---\n\n### Activity Log\n- **2026-02-22 02:34:33 PT**: Review update - All changes maintain dignified Python standards. Improvements include removed unused imports and simplified logic (CLI flag vs file I/O detection).\n- **2026-02-22 02:22:18 PT**: Initial review - No violations detected. Fallback metadata detection and test implementation follow dignified Python standards perfectly.",
+      "url": "https://github.com/dagster-io/erk/pull/7815#issuecomment-3940655663"
+    },
+    {
+      "id": 3940655877,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-python-review -->\n\n## \u2705 Dignified Python Review\n\n**Last updated:** 2026-02-22 02:34:23 PT\n\nFound 0 violations. All code changes comply with dignified-python standards.\n\n### Patterns Checked\n\u2705 LBYL over EAFP - No control-flow exceptions found\n\u2705 Path operations (exists before resolve) - Not applicable\n\u2705 Import organization - Proper import removal, no re-exports\n\u2705 Default parameters - Click decorators only (acceptable exception)\n\u2705 Function signatures - Click command callback (exempt from keyword-only rule)\n\u2705 Frozen dataclasses - Not modified\n\u2705 Subprocess handling - Not applicable\n\n### Code Summary\n\n**Refactoring:** Removed automatic draft-PR detection via `read_plan_ref()` and replaced with explicit `--draft-pr` CLI flag. This improves testability and clarity.\n\n**Files Reviewed:**\n- `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`: Refactored to accept `--draft-pr` flag instead of auto-detecting via .impl folder\n- `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`: Added new test for `--draft-pr` CLI flag\n\n---\n\n### Activity Log\n- **2026-02-22 02:34:23 PT**: Review complete - no violations found. Refactoring follows dignified patterns (LBYL, Click exception for defaults/parameters).",
+      "url": "https://github.com/dagster-io/erk/pull/7815#issuecomment-3940655877"
+    },
+    {
+      "id": 3940657707,
+      "author": "github-actions[bot]",
+      "body": "<!-- tripwires-review -->\n\n## \u2705 Tripwires Review\n\n**Last updated:** 2026-02-22 02:35:00 PT\n\nNo violations detected. All tripwire checks passed.\n\n### Tripwires Checked\n\n**Universal Tripwires:**\n- \u2705 No bare subprocess.run with check=True\n- \u2705 No new ABC methods added\n- \u2705 No exception raises for expected failures\n- \u2705 No Path.home() usage\n- \u2705 No os.chdir() calls\n- \u2705 No time module imports\n- \u2705 No file I/O in __init__\n- \u2705 Business logic changes include tests\n- \u2705 No gh pr diff --name-only usage\n- \u2705 No session IDs via environment variables\n\n**CLI Tripwires:**\n- \u2705 No RuntimeError for expected CLI failures\n- \u2705 No inline shell logic in slash commands\n- \u2705 No user-interactive steps without CI detection\n- \u2705 No direct gh/git calls from slash commands\n- \u2705 Uses gateway imports correctly\n- \u2705 Parameter addition includes workflow update\n- \u2705 Exec reference docs compliance\n\n**Testing Tripwires:**\n- \u2705 No monkeypatch usage\n- \u2705 Uses FakeGit and FakeGitHub properly\n- \u2705 Test follows fake-driven architecture\n- \u2705 No Path.home() in production code\n- \u2705 Tests business logic changes (draft-PR flag)\n\n**CI Tripwires:**\n- \u2705 GitHub Actions shell variable usage is safe\n- \u2705 No escape sequence issues\n- \u2705 Workflow environment variables passed correctly\n\n### Files Reviewed\n- `.github/workflows/plan-implement.yml`: 0 violations\n- `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`: 0 violations\n- `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`: 0 violations\n\n### Code Quality Notes\nThe implementation follows erk's best practices:\n- Parameter addition properly coordinated across workflow, exec script, and tests\n- Clean removal of unused import (`read_plan_ref`)\n- Simplifies architecture: explicit `--draft-pr` flag replaces implicit filesystem detection\n- Test uses fake-driven architecture with FakeGit, FakeGitHub, FakePromptExecutor\n- Proper LBYL pattern maintained\n- No backwards-compatibility hacks\n\n---\n\n### Activity Log\n- **2026-02-22 02:35:00 PT**: No violations detected across 10 universal, 7 CLI, 5 testing, and 4 CI tripwires\n- **2026-02-22 02:23:16 PT**: No violations detected across 10 universal, 6 CLI, and 4 testing tripwires",
+      "url": "https://github.com/dagster-io/erk/pull/7815#issuecomment-3940657707"
+    }
+  ]
+}

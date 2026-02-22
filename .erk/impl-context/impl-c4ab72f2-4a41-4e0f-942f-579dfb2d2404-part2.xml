@@ -1,0 +1,794 @@
+<session>
+  <meta branch="planned/fix-ci-update-pr-body-l-02-22-0515" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01Xm2FftrEkwDuJQrks2pEmA">
+449-    """Format the complete issue body for a plan issue.
+450-
+451-    Creates an issue body with:
+452-    1. Plan content wrapped in collapsible metadata block
+453-    2. Horizontal rule separator
+454-    3. Execution commands section
+455-
+456-    Args:
+457-        plan_content: The plan markdown content
+458-        issue_number: GitHub issue number (for command formatting)
+459-
+460-    Returns:
+461-        Complete issue body ready for GitHub
+462-    """
+463-    plan_block = create_plan_body_block(plan_content)
+464-    plan_markdown = render_plan_body_block(plan_block)
+465-    commands_section = format_execution_commands(issue_number)
+466-
+467-    return f"""{plan_markdown}
+468-
+469----
+470-
+471-{commands_section}"""
+472-
+473-
+474:def extract_raw_metadata_blocks(text: str) -&gt; list[RawMetadataBlock]:
+475-    """
+476-    Extract raw metadata blocks using HTML comment markers (Phase 1).
+477-
+478-    Extracts blocks delimited by:
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GYUDXXRGBk997vpRJwnHB1">
+    <param name="pattern">def render_metadata_block|def format_metadata_block|def create_metadata_block"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1104" cache_read_input_tokens="66985" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1104}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GYUDXXRGBk997vpRJwnHB1">
+33-    """
+34-    Create a metadata block with optional schema validation.
+35-
+36-    Args:
+37-        key: The metadata block key (appears in summary)
+38-        data: The structured data (will be rendered as YAML)
+39-        schema: Optional schema to validate data against
+40-
+41-    Returns:
+42-        MetadataBlock instance
+43-
+44-    Raises:
+45-        ValueError: If schema validation fails
+46-    """
+47-    if schema is not None:
+48-        schema.validate(data)
+49-
+50-    return MetadataBlock(key=key, data=data)
+51-
+52-
+53:def render_metadata_block(block: MetadataBlock) -&gt; str:
+54-    """
+55-    Render a metadata block as markdown with HTML comment wrappers.
+56-
+57-    Returns markdown like:
+58-    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+59-    &lt;!-- erk:metadata-block:{key} --&gt;
+60-    &lt;details&gt;
+61-    &lt;summary&gt;{key}&lt;/summary&gt;
+62-    ```yaml
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand the format. A real metadata block looks like:
+
+```
+&lt;!-- erk:metadata-block:plan-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;plan-header&lt;/summary&gt;
+```yaml
+key: value
+```
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block --&gt;
+```
+
+I need to update the test to use a valid metadata block format that `find_metadata_block` can parse. I also need to fix the existing test's metadata format since it seems wrong too (but that test passes because it uses `is_draft_pr=True` directly).
+
+Let me also fix the import sort issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="68089" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 559}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UHn8QbutkBCa94JJwLCBip">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="offset">40</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="68089" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 559}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UHn8QbutkBCa94JJwLCBip">
+    40→import json
+    41→from dataclasses import asdict, dataclass
+    42→from pathlib import Path
+    43→from typing import Literal
+    44→
+    45→import click
+    46→
+    47→from erk.cli.config import load_config
+    48→from erk_shared.context.helpers import (
+    49→    require_git,
+    50→    require_github,
+    51→    require_prompt_executor,
+    52→    require_repo_root,
+    53→)
+    54→from erk_shared.core.prompt_executor import PromptExecutor
+    55→from erk_shared.gateway.git.abc import Git
+    56→from erk_shared.gateway.github.abc import GitHub
+    57→from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
+    58→from erk_shared.gateway.github.types import PRNotFound
+    59→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    60→from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
+    61→from erk_shared.impl_folder import read_plan_ref
+    62→from erk_shared.plan_store.draft_pr_lifecycle import (
+    63→    build_original_plan_section,
+    64→    extract_metadata_prefix,
+    65→    extract_plan_content,
+    66→)
+    67→
+    68→
+    69→@dataclass(frozen=True)
+  </tool_result>
+  <assistant>The import is out of order — `erk_shared.gateway.github.metadata.core` should come before `erk_shared.gateway.github.pr_footer`. Let me fix both issues.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="68648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 669}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XKpW7DVakaP8YRrLNhyUYs">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.pr_footer ...[truncated 73 chars]... import PRNotFound
+from erk_shared.gateway.github.metadata.core import find_metadata_block</param>
+    <param name="new_string">from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.metadata.c...[truncated 73 chars]...footer, build_remote_execution_note
+from erk_shared.gateway.github.types import PRNotFound</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="68648" output_tokens="340" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 669, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XKpW7DVakaP8YRrLNhyUYs">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the test to use a valid metadata block format that `find_metadata_block` can parse.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="69317" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 596}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012MDD7VRRUuALyixUd2tBQc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">def test_impl_fallback_detects_draft_pr_from_body_metadata(tmp_path: Path) -&gt; None:
+    ""...[truncated 392 chars]...tent = "# My Plan\n\n## Steps\n\n1. Do thing"
+    pr_body = metadata_prefix + plan_content</param>
+    <param name="new_string">def test_impl_fallback_detects_draft_pr_from_body_metadata(tmp_path: Path) -&gt; None:
+    ""...[truncated 497 chars]...tent = "# My Plan\n\n## Steps\n\n1. Do thing"
+    pr_body = metadata_prefix + plan_content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="69317" output_tokens="618" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 596, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012MDD7VRRUuALyixUd2tBQc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <assistant>Now run the tests again.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="69913" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 686}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_019RMTT1nw3ywF2bmRHsCQu6">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Re-run tests and lint</param>
+    <param name="prompt">Run these commands sequentially in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24:
+
+...[truncated 157 chars]...commands/exec/scripts/test_ci_update_pr_body.py`
+
+Report the full output of both commands.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="69913" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 686, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019RMTT1nw3ywF2bmRHsCQu6">
+## Results
+
+Both commands completed successfully:
+
+**1. pytest** - 19 passed in 0.41s
+- All tests in `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py` passed
+
+**2. ruff check** - All checks passed
+- No linting violations in either:
+  - `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
+  - `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`
+agentId: a6fe57a17595828c1 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13954
+tool_uses: 2
+duration_ms: 5720&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 19 tests pass and lint is clean. Now let me verify the implementation is preserved and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="70599" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 432}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016BMtazysh3ZjsCMNeVuHmx">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="70599" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 432, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016BMtazysh3ZjsCMNeVuHmx">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.impl"}
+  </tool_result>
+  <assistant>Now let me run fast CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="71031" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 156}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01LM7Br6gjgyniNDyJyan91K">
+    <param name="skill">local:fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="71031" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 156}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LM7Br6gjgyniNDyJyan91K">
+Launching skill: local:fast-ci
+  </tool_result>
+  <user>You are an implementation finalizer for rapid development feedback. Your task is to run `make fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the fast CI pipeline (`make fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**Fast CI vs All CI**: The `fast-ci` target runs unit tests only, providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
+
+## CI Pipeline (make fast-ci)
+
+The `make fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format-check** - Ruff code formatting checks
+3. **prettier-check** - Markdown formatting checks
+4. **md-check** - AGENTS.md standard compliance validation
+5. **docs-validate** - Agent documentation frontmatter validation
+6. **ty** - Type checking
+7. **test** - Pytest unit tests only (fast feedback loop)
+8. **exec-reference-check** - Exec subcommand reference documentation validation
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on linting and type checking issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint ty` together. If EITHER fails, stop immediately to fix issues before proceeding to remaining checks.
+2. **Phase 2 (Remaining Checks)**: Only after phase 1 passes, run remaining checks via `make fast-ci`.
+
+This ensures that common issues (linting/formatting and type errors) are caught and fixed first, providing rapid feedback without waiting for slower test runs.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with `make fast-ci` to run the complete fast CI pipeline. Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Running the fail-fast phase first (lint + type checking).</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="644" cache_read_input_tokens="71187" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 644}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_011sewpGZ6W6QZZE5mMqufWE">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run lint and ty checks</param>
+    <param name="prompt">Run `make lint ty` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full output. Include any errors or warnings.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="644" cache_read_input_tokens="71187" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 644, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011sewpGZ6W6QZZE5mMqufWE">
+Both checks passed successfully:
+
+**ruff check**: All checks passed!
+
+**ty check**: All checks passed!
+
+There are no linting violations or type checking errors to report.
+agentId: af283a6966bf34365 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13389
+tool_uses: 1
+duration_ms: 2626&lt;/usage&gt;
+  </tool_result>
+  <assistant>Lint and type checks pass. Now running full fast-ci.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="431" cache_read_input_tokens="71831" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 431}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_019B9aksZ8VaPkW8Btp7mam6">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run full fast-ci pipeline</param>
+    <param name="prompt">Run `make fast-ci` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full output. This may take a while. Include any errors, warnings, or failures. Use a 600000ms timeout.</param>
+    <param name="max_turns">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="431" cache_read_input_tokens="71831" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 431}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019B9aksZ8VaPkW8Btp7mam6">
+make fast-ci passed: All checks passed successfully
+
+The complete results:
+
+- **Lint**: All checks passed
+- **Format Check**: 1505 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: PASSED (19 CLAUDE.md files, 0 violations)
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md is up to date
+- **Type Checking (ty)**: All checks passed
+- **Unit Tests (erk)**: 5302 passed in 14.92s
+- **Tests (erk-dev)**: 136 passed in 2.62s
+- **Tests (erk-statusline)**: 126 passed in 0.74s
+
+**Total: 5564 tests passed, no failures, no warnings.**
+agentId: a4367446fd01942b4 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14500
+tool_uses: 1
+duration_ms: 29294&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 5564 tests pass, all checks green. Now let me signal completion and submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="72262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Y7hqb2ypfWVkE59i72asoD">
+    <param name="command">erk exec impl-signal ended --session-id="c4ab72f2-4a41-4e0f-942f-579dfb2d2404" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="72262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y7hqb2ypfWVkE59i72asoD">
+{
+  "success": true,
+  "event": "ended",
+  "issue_number": 7815
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016C2CZRkk8SuqVKppKaS2Gf">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(python3 -c "import json; print(j...[truncated 198 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="178" cache_read_input_tokens="72716" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 178, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016C2CZRkk8SuqVKppKaS2Gf">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LiuK4HeepuzvUmK2fX2X34">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Final impl verification</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="72894" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 232}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LiuK4HeepuzvUmK2fX2X34">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.impl"}
+  </tool_result>
+  <assistant>Now submitting the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="73126" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 127}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WHg934SFUv6uUjhXAijWLw">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="73126" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 127}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WHg934SFUv6uUjhXAijWLw">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Vg2CS2zKcYBtu9T32HHJeW">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="73253" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 127, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vg2CS2zKcYBtu9T32HHJeW">
+{
+  "success": true,
+  "event": "submitted",
+  "issue_number": 7815
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0195aWRnfeR9STDKXkwKJzFB">
+    <param name="command">erk pr check</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="73380" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0195aWRnfeR9STDKXkwKJzFB">
+Checking PR #7815 for branch planned/fix-ci-update-pr-body-l-02-22-0515...
+
+[PASS] Branch name and plan reference agree (#7815)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01M7qtc8V4KeQgRx5qzrMLbb">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="73503" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M7qtc8V4KeQgRx5qzrMLbb">
+Updated task #3 status
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary:
+
+**Changes made:**
+
+1. **`src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`** — Added `find_metadata_block` import and a 2-line fallback detection: when `is_draft_pr=False` but the PR body contains a `plan-header` metadata block, `is_draft_pr` is set to `True`. This ensures draft-PR plans are handled correctly even when `.impl/plan-ref.json` doesn't survive CI cleanup steps.
+
+2. **`tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`** — Added `test_impl_fallback_detects_draft_pr_from_body_metadata` verifying the fallback correctly triggers the draft-PR path (preserving metadata prefix, original plan section, and omitting `Closes #N`).
+
+**CI results:** All 5564 tests pass, all checks green. PR #7815 submitted and validated.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="73831" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="576" cache_read_input_tokens="73919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 576}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/7815&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user> # Fallback: detect draft-PR plan from PR body metadata block
+    # .impl/plan-ref.json may not survive CI cleanup steps
+    if not is_draft_pr and find_metadata_block(pr_result.body, "plan-header") is not None:
+        is_draft_pr = True
+
+the way this is framed makes me thikn we do not under the full lifecycel here and we are not adressing root causes</user>
+  <thinking>The user is questioning whether this fix addresses the root cause or is just a band-aid. They want to understand the full lifecycle of how `is_draft_pr` gets determined and why `.impl/plan-ref.json` might not survive CI cleanup steps. Let me investigate the full lifecycle to give them a proper answer.
+
+Let me trace through the CI workflow to understand:
+1. How `.impl/plan-ref.json` gets created
+2. What CI cleanup steps might remove it
+3. When `ci-update-pr-body` runs relative to those cleanup steps
+4. Whether we should fix the cleanup instead of adding a fallback</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="375" cache_read_input_tokens="74495" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 375}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>You're right to question this. Let me trace the full lifecycle to understand the actual root cause.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="375" cache_read_input_tokens="74495" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 375}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01KpNK6s7txagqUjpFZM1pWM">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Trace ci-update-pr-body lifecycle</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 792 chars]...ref.json, or if plan-ref.json was never created in the first place for certain code paths.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="375" cache_read_input_tokens="74495" output_tokens="547" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 375, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KpNK6s7txagqUjpFZM1pWM">
+Perfect! Now I have the full picture. Let me compile a comprehensive summary document:
+
+## Full Lifecycle Analysis: `is_draft_pr` Determination in `ci-update-pr-body`
+
+Based on my analysis of the codebase, here's the complete lifecycle:
+
+### 1. **Where `.impl/plan-ref.json` Gets Created**
+
+`.impl/plan-ref.json` is created through a **two-stage copy process**:
+
+#### Stage 1: `.worker-impl/plan-ref.json` Creation
+- **Created by**: `erk exec create-worker-impl-from-issue` (called at line 150 in plan-implement.yml)
+- **Function**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/exec/scripts/create_worker_impl_from_issue.py`
+- **Creates** `.worker-impl/` folder with `plan-ref.json` using `create_worker_impl_folder()` from `packages/erk-shared/src/erk_shared/worker_impl_folder.py` (line 26-97)
+- **Plan reference is saved** by calling `save_plan_ref()` with:
+  - `provider`: Either `"github"` or `"github-draft-pr"` (from `backend.get_provider_name()`)
+  - `plan_id`: The plan identifier as string
+  - `url`: The plan URL
+  - `objective_id`: Optional parent objective issue number
+
+#### Stage 2: `.impl/plan-ref.json` Creation from `.worker-impl/`
+- **Location**: Plan-implement.yml lines 195-205: "Set up implementation folder"
+- **Action**: `cp -r .worker-impl .impl` copies **entire `.worker-impl/` directory to `.impl/`**
+- This includes `plan-ref.json` (along with `plan.md` and `README.md`)
+- **Critical timing**: This happens BEFORE "Remove plan staging dirs from git tracking" step
+
+---
+
+### 2. **Cleanup Steps and Their Impact**
+
+
+... [133 lines omitted] ...
+
+1. **`.impl/` folder doesn't exist**: Only if the "Set up implementation folder" step failed to copy `.worker-impl/`
+2. **`.worker-impl/` was never created properly**: If `create-worker-impl-from-issue` failed silently or returned a corrupted state
+The fallback detection (checking PR body metadata) is a **safety net** for cases where the copy failed or the file was corrupted, ensuring draft-PR plans are still correctly identified by examining the PR's `plan-header` metadata block.
+  </tool_result>
+  <thinking>The user is right to question this. The analysis shows that `.impl/plan-ref.json` should always exist by the time `ci-update-pr-body` runs because:
+
+1. `.worker-impl/plan-ref.json` is created by `create-worker-impl-from-issue`
+2. It's copied to `.impl/` by `cp -r .worker-impl .impl`
+3. Cleanup only removes `.worker-impl/`, not `.impl/`
+
+So the plan's comment about "may not survive CI cleanup steps" seems incorrect. But there might be another workflow path where `ci-update-pr-body` is called without `.impl/` being set up. Let me look at what other workflows call `ci-update-pr-body`.
+
+
+I need to check if `ci-update-pr-body` gets invoked from other workflows that might skip the `.worker-impl/` → `.impl/` copy step, or if there's something in the plan's logic I'm misreading about how the draft PR detection works.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3157" cache_read_input_tokens="74870" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3157}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>You're right. The explore analysis shows `.impl/` cleanup **never touches `plan-ref.json`** — the cleanup only removes `.worker-impl/` and `.erk/impl-context/`. So the plan's stated root cause ("may not survive CI cleanup steps") seems wrong.
+
+Let me find the actual problem — which workflows call `ci-update-pr-body` and whether `.impl/` exists in all of them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3157" cache_read_input_tokens="74870" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3157}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KkkQ2jRJzKmKu1uPgHAagi">
+    <param name="pattern">ci-update-pr-body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.github</param>
+    <param name="output_mode">content</param>
+    <param name="context">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3157" cache_read_input_tokens="74870" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3157}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KkkQ2jRJzKmKu1uPgHAagi">
+.github/workflows/plan-implement.yml-429-        env:
+.github/workflows/plan-implement.yml-430-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+.github/workflows/plan-implement.yml-431-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/plan-implement.yml-432-          GH_TOKEN: ${{ github.token }}
+.github/workflows/plan-implement.yml-433-        run: |
+.github/workflows/plan-implement.yml:434:          erk exec ci-update-pr-body \
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.github/workflows/plan-implement.yml-435-            --plan-id "${{ inputs.plan_id }}" \
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.github/workflows/plan-implement.yml-436-            --run-id "${{ github.run_id }}" \
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.github/workflows/plan-implement.yml-437-            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.github/workflows/plan-implement.yml-438-
+.github/workflows/plan-implement.yml-439-      - name: Trigger CI workflows
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Ua1e1mwoPV2jA4sxRSTkGv">
+    <param name="pattern">ci-update-pr-body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.github</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1129" cache_read_input_tokens="78027" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1129}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ua1e1mwoPV2jA4sxRSTkGv">
+Found 1 file
+.github/workflows/plan-implement.yml
+  </tool_result>
+  <assistant>Only one caller. Let me look at the full workflow context around the cleanup and the `ci-update-pr-body` call.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="79156" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 153}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D1BuaEdaZijCKa9YmFBU3R">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.github/workflows/plan-implement.yml</param>
+    <param name="offset">390</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="79156" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 153}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D1BuaEdaZijCKa9YmFBU3R">
+   390→            --model "${{ inputs.model_name }}"
+   391→
+   392→      - name: Mark PR ready for review
+   393→        if: steps.implement.outputs.implementation_success == 'true' &amp;&amp; steps.handle_outcome.outputs.has_changes == 'true' &amp;&amp; (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+   394→        env:
+   395→          GH_TOKEN: ${{ github.token }}
+   396→          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+   397→        run: |
+   398→          gh pr ready "$BRANCH_NAME"
+   399→          echo "PR marked ready for review"
+   400→
+   401→      - name: Clean up plan staging dirs after implementation
+   402→        if: steps.implement.outputs.implementation_success == 'true' &amp;&amp; steps.handle_outcome.outputs.has_changes == 'true' &amp;&amp; (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+   403→        env:
+   404→          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+   405→          SUBMITTED_BY: ${{ inputs.submitted_by }}
+   406→        run: |
+   407→          git fetch origin "$BRANCH_NAME"
+   408→          git reset --hard "origin/$BRANCH_NAME"
+   409→          NEEDS_CLEANUP=false
+   410→          git config user.name "$SUBMITTED_BY"
+   411→          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+   412→          if [ -d .worker-impl/ ]; then
+   413→            git rm -rf .worker-impl/
+   414→            NEEDS_CLEANUP=true
+   415→          fi
+   416→          if [ -d .erk/impl-context/ ]; then
+   417→            git rm -rf .erk/impl-context/
+   418→            NEEDS_CLEANUP=true
+   419→          fi
+
+... [25 lines omitted] ...
+
+   427→        continue-on-error: true
+  </tool_result>
+  <assistant>Now I see it. Look at line 408:
+
+```bash
+git reset --hard "origin/$BRANCH_NAME"
+```
+
+This runs **before** `ci-update-pr-body`. The `git reset --hard` wipes all untracked files — including `.impl/` which was created locally (never committed to git). `.impl/` is **untracked** while `.worker-impl/` is committed. After `git reset --hard`, `.impl/` is gone.
+
+So the actual lifecycle is:
+
+1. `.worker-impl/` created and committed to git (with `plan-ref.json`)
+2. `cp -r .worker-impl .impl` creates **untracked** `.impl/`
+3. Implementation runs using `.impl/`
+4. **Cleanup step**: `git reset --hard origin/$BRANCH_NAME` + `git rm -rf .worker-impl/` + `git push`
+5. `ci-update-pr-body` runs — but `.impl/` was wiped by `git reset --hard`
+
+The fallback is the right *safety net*, but the real fix would be either:
+
+**Option A**: Move `ci-update-pr-body` before the cleanup step
+**Option B**: Have the cleanup step re-create `.impl/` from `.worker-impl/` before removing it
+**Option C**: Have `ci-update-pr-body` not depend on local disk at all — pass `is_draft_pr` as a CLI flag from the workflow (which already knows the plan type)
+
+Option C is the cleanest since it removes the fragile coupling to disk state in CI entirely. The workflow already has `plan_id` and can determine the plan type. What's your preference?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1142" cache_read_input_tokens="79309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1142}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>present plan for option c</user>
+  <assistant>
+
+Let me explore the workflow and CLI command to design Option C properly.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1858" cache_read_input_tokens="80451" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1858}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Q8imR1nGdnpYHxAEcUxYq5">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore plan-implement workflow inputs</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 906 chars]...commands/exec/scripts/ci_update_pr_body.py` (the Click command definition and its options)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1858" cache_read_input_tokens="80451" output_tokens="416" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1858, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q8imR1nGdnpYHxAEcUxYq5">
+Perfect! Now I have all the information I need. Let me provide a comprehensive summary to the user.
+
+## Summary: How `plan-implement.yml` Knows Plan Type
+
+Based on my investigation of the codebase, here are the answers to your questions:
+
+### 1. **Workflow Inputs - Plan Type Detection**
+
+The `plan-implement.yml` workflow has a **`plan_backend` input** (lines 40-44) that explicitly specifies the plan type:
+
+```yaml
+plan_backend:
+  description: "Plan backend type (github or draft_pr)"
+  required: false
+  type: string
+  default: "github"
+```
+
+The workflow sets the `ERK_PLAN_BACKEND` environment variable (line 101) from this input:
+```yaml
+env:
+  ERK_PLAN_BACKEND: ${{ inputs.plan_backend }}
+```
+
+**Key finding:** The workflow is passed `plan_backend="draft_pr"` for draft-PR plans and `plan_backend="github"` (or omitted, defaulting to "github") for issue-based plans.
+
+### 2. **How Callers Know the Plan Type**
+
+Looking at the dispatch callers:
+
+
+... [105 lines omitted] ...
+
+**Line 152-156** — When posting error comments:
+  </tool_result>
+  <thinking>Now I have a clear picture. The workflow already has `plan_backend` input and sets `ERK_PLAN_BACKEND` env var. The cleanest fix is:
+
+1. Add `--draft-pr` boolean flag to `ci-update-pr-body` CLI command
+2. Pass `--draft-pr` from the workflow when `inputs.plan_backend == 'draft_pr'`
+3. Remove the fragile disk-based detection and the body-based fallback
+
+Let me also verify exactly what happens when `is_draft_pr` is True vs False in the implementation, so the plan is precise.
+
+Let me write the plan now. I have enough context.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1998" cache_read_input_tokens="82309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1998}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear picture now. The workflow already knows the plan type via `inputs.plan_backend` but never tells `ci-update-pr-body`. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1998" cache_read_input_tokens="82309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1998}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_0152eVi6wC2SpxBvWGmL7pNd">
+    <param name="file_path">/Users/schrockn/.claude/plans/iterative-soaring-octopus.md</param>
+    <param name="content"># Fix: Pass draft-PR status explicitly to ci-update-pr-body
+
+## Context
+
+`ci-update-pr-bod...[truncated 2778 chars]...uv run ty check src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
+4. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1998" cache_read_input_tokens="82309" output_tokens="1293" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1998, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0152eVi6wC2SpxBvWGmL7pNd">
+File created successfully at: /Users/schrockn/.claude/plans/iterative-soaring-octopus.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01DuzM6UE43pf3nyz2BVpZV7">
+    <param name="plan"># Fix: Pass draft-PR status explicitly to ci-update-pr-body
+
+## Context
+
+`ci-update-pr-bod...[truncated 2778 chars]...uv run ty check src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
+4. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1329" cache_read_input_tokens="84307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1329}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DuzM6UE43pf3nyz2BVpZV7">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/iterative-soaring-octopus.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Pass draft-PR status explicitly to ci-update-pr-body
+Current context: (wt:erk-slot-24) (br:planned/fix-ci-update-pr-body-l-02-22-0515) (pr:#7815) (plan:#7815)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/f"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id c4ab72f2-4a41-4e0f-942f-579dfb2d2404 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix: Pass draft-PR status explicitly to ci-update-pr-body
+
+## Context
+
+`ci-update-pr-body` determines whether a plan is a draft-PR plan by reading `.impl/plan-ref.json` from disk. In CI, this file doesn't survive the cleanup step that runs `git reset --hard` right before the command (plan-implement.yml:408). The current PR added a fallback that sniffs the PR body for a `plan-header` metadata block, but this is still indirect detection of something the workflow already knows.
+
+The workflow receives `plan_backend: "draft_pr"` as an explicit input and sets `ERK_PLAN_BACKEND` env var. The fix is to pass this knowledge directly to the command via a `--draft-pr` flag, eliminating the fragile disk and body-sniffing detection entirely.
+
+## Changes
+
+### 1. `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
+
+**CLI command** (~line 303): Add `--draft-pr` boolean flag. **Click handler** (~line 328): Replace disk-based detection with the flag. **`_update_pr_body_impl`** (~line 260): Remove the body-sniffing fallback. Remove unused imports: `find_metadata_block`, `read_plan_ref`.
+
+### 2. `.github/workflows/plan-implement.yml`
+
+**"Update PR body" step** (~line 434): Pass `--draft-pr` when `inputs.plan_backend == "draft_pr"`.
+
+### 3. `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`
+
+Remove `test_impl_fallback_detects_draft_pr_from_body_metadata`. Add CLI test that passes `--draft-pr` and verifies the draft-PR body path is taken.
+
+## Verification
+
+1. Unit tests, ruff, ty, `make fast-ci`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="761" cache_read_input_tokens="85636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 761}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01NdXE24WHAEsPFqQG4sGHGE">
+    <param name="questions">[{'question': '📋 Fix: Pass draft-PR status explicitly to ci-update-pr-body\nCurrent contex...[truncated 512 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="761" cache_read_input_tokens="85636" output_tokens="735" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 761, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NdXE24WHAEsPFqQG4sGHGE">
+User has answered your questions: "📋 Fix: Pass draft-PR status explicitly to ci-update-pr-body
+Current context: (wt:erk-slot-24) (br:planned/fix-ci-update-pr-body-l-02-22-0515) (pr:#7815) (plan:#7815)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014KnSyZULuEBQ99kxPC9ojq">
+    <param name="command">erk exec marker create --session-id c4ab72f2-4a41-4e0f-942f-579dfb2d2404 exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="853" cache_read_input_tokens="86397" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 853, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014KnSyZULuEBQ99kxPC9ojq">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01HXdybTG2t6NXPCVpwNaQnm">
+    <param name="plan"># Fix: Pass draft-PR status explicitly to ci-update-pr-body
+
+## Context
+
+`ci-update-pr-bod...[truncated 2778 chars]...uv run ty check src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
+4. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="231" cache_read_input_tokens="87250" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 231}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HXdybTG2t6NXPCVpwNaQnm">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>
