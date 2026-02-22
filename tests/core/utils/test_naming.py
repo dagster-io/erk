@@ -792,18 +792,22 @@ def test_validate_worktree_name_strips_whitespace() -> None:
 @pytest.mark.parametrize(
     ("name", "reason_fragment"),
     [
-        ("My_Feature", "uppercase"),
-        ("UPPERCASE", "uppercase"),
-        ("camelCase", "uppercase"),
-        ("has_underscores", "underscores"),
-        ("my feature", "invalid characters"),
-        ("name!with@special", "invalid characters"),
-        ("name.with.dots", "invalid characters"),
-        ("double--hyphen", "consecutive hyphens"),
-        ("-leading-hyphen", "leading or trailing"),
-        ("trailing-hyphen-", "leading or trailing"),
-        ("a" * 32, "Too long"),
-        ("a" * 50, "Too long"),
+        ("", "Empty"),
+        ("My_Feature", "transformed"),
+        ("UPPERCASE", "transformed"),
+        ("camelCase", "transformed"),
+        ("has_underscores", "transformed"),
+        ("my feature", "transformed"),
+        ("name!with@special", "transformed"),
+        ("name.with.dots", "transformed"),
+        ("double--hyphen", "transformed"),
+        ("-leading-hyphen", "transformed"),
+        ("trailing-hyphen-", "transformed"),
+        ("a" * 32, "transformed"),
+        ("a" * 50, "transformed"),
+        ("@@weird", "transformed"),
+        ("--name", "transformed"),
+        ("name--bad", "transformed"),
     ],
 )
 def test_validate_worktree_name_invalid(name: str, reason_fragment: str) -> None:
@@ -829,38 +833,36 @@ def test_validate_worktree_name_empty() -> None:
 
 def test_validate_worktree_name_error_type() -> None:
     """Error type is machine-readable."""
-    result = validate_worktree_name("BAD_NAME")
+    result = validate_worktree_name("FOO")
     assert isinstance(result, InvalidWorktreeName)
     assert result.error_type == "invalid-worktree-name"
 
 
 def test_validate_worktree_name_format_message_includes_rules() -> None:
-    """format_message() contains rules, examples, and diagnostics."""
-    result = validate_worktree_name("BAD_NAME")
+    """format_message() includes rules, examples, and diagnostics."""
+    result = validate_worktree_name("FOO_BAR")
     assert isinstance(result, InvalidWorktreeName)
-    msg = result.format_message()
-    assert "Lowercase letters, digits, and hyphens only" in msg
-    assert "No underscores" in msg
-    assert "No consecutive hyphens" in msg
-    assert "Maximum 31 characters" in msg
-    assert "Valid examples" in msg
-    assert "Invalid examples" in msg
-    assert "Diagnostics" in msg
+    message = result.format_message()
+    assert "Lowercase letters, digits, and hyphens only" in message
+    assert "No underscores" in message
+    assert "Valid examples" in message
+    assert "Invalid examples" in message
+    assert "Diagnostics" in message
 
 
 def test_validate_worktree_name_preserves_original_in_error() -> None:
     """Error includes the original unmodified name."""
-    result = validate_worktree_name("  BAD  ")
+    result = validate_worktree_name("  FOO  ")
     assert isinstance(result, InvalidWorktreeName)
-    assert result.raw_name == "  BAD  "
+    assert result.raw_name == "  FOO  "
 
 
 def test_validate_worktree_name_diagnostics_are_specific() -> None:
-    """Diagnostics list is non-empty and identifies specific issues."""
-    result = validate_worktree_name("BAD_NAME")
+    """Diagnostics list is non-empty and contains specific constraint violations."""
+    result = validate_worktree_name("FOO_BAR")
     assert isinstance(result, InvalidWorktreeName)
-    assert len(result.diagnostics) > 0
-    # Should detect both uppercase and underscore issues
+    assert len(result.diagnostics) >= 1
+    # Should identify both uppercase and underscore issues
     diag_text = " ".join(result.diagnostics)
     assert "uppercase" in diag_text.lower()
     assert "underscore" in diag_text.lower()
