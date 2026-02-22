@@ -22,6 +22,7 @@ from erk.cli.commands.exec.scripts.normalize_tripwire_candidates import (
 )
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.metadata.tripwire_candidates import (
+    InvalidTripwireCandidates,
     render_tripwire_candidates_comment,
     validate_candidates_data,
 )
@@ -58,21 +59,37 @@ def store_tripwire_candidates(
     issues = require_issues(ctx)
 
     # Read, normalize, and validate candidates file
+    path = Path(candidates_file)
+    if not path.is_file():
+        error_response = StoreError(
+            success=False, error=f"Candidates file not found: {candidates_file}"
+        )
+        click.echo(json.dumps(asdict(error_response)), err=True)
+        raise SystemExit(1)
+
+    raw = path.read_text(encoding="utf-8")
     try:
-        path = Path(candidates_file)
-        if not path.is_file():
-            raise FileNotFoundError(f"Candidates file not found: {candidates_file}")
-        raw = path.read_text(encoding="utf-8")
         data = json.loads(raw)
-        if not isinstance(data, dict):
-            raise ValueError(f"Expected JSON object, got {type(data).__name__}")
-        normalized_data, _changed = normalize_candidates_data(data)
-        candidates = validate_candidates_data(normalized_data)
-    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
-        error_response = StoreError(success=False, error=str(exc))
+    except json.JSONDecodeError as exc:
+        error_response = StoreError(success=False, error=f"Invalid JSON: {exc}")
         click.echo(json.dumps(asdict(error_response)), err=True)
         raise SystemExit(1) from None
 
+    if not isinstance(data, dict):
+        error_response = StoreError(
+            success=False, error=f"Expected JSON object, got {type(data).__name__}"
+        )
+        click.echo(json.dumps(asdict(error_response)), err=True)
+        raise SystemExit(1)
+
+    normalized_data, _changed = normalize_candidates_data(data)
+    result = validate_candidates_data(normalized_data)
+    if isinstance(result, InvalidTripwireCandidates):
+        error_response = StoreError(success=False, error=result.message)
+        click.echo(json.dumps(asdict(error_response)), err=True)
+        raise SystemExit(1)
+
+    candidates = result.candidates
     if not candidates:
         # No candidates to store - still success
         success_response = StoreSuccess(success=True, count=0)

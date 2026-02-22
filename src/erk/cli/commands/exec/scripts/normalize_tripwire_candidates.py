@@ -22,6 +22,11 @@ from typing import Any
 
 import click
 
+from erk_shared.gateway.github.metadata.tripwire_candidates import (
+    InvalidTripwireCandidates,
+    validate_candidates_data,
+)
+
 CANONICAL_FIELDS = frozenset({"action", "warning", "target_doc_path"})
 
 # Maps drifted root keys to the canonical root key.
@@ -106,6 +111,34 @@ def normalize_candidates_data(data: dict) -> tuple[dict, bool]:
     return data, changed
 
 
+@dataclass(frozen=True)
+class UnsalvageableInput:
+    """Input too structurally broken for normalization."""
+
+    reason: str
+
+
+def check_salvageable(data: Any) -> UnsalvageableInput | None:
+    """Reject inputs too structurally broken for normalization.
+
+    Returns None if the data is salvageable, or UnsalvageableInput with a reason
+    if it cannot be normalized.
+    """
+    if not isinstance(data, dict):
+        return UnsalvageableInput(reason=f"Expected JSON object, got {type(data).__name__}")
+    all_candidate_keys = {"candidates"} | set(ROOT_KEY_ALIASES.keys())
+    if not any(key in data for key in all_candidate_keys):
+        return UnsalvageableInput(
+            reason="No 'candidates' key (or known alias) found in JSON object"
+        )
+    for key in all_candidate_keys:
+        if key in data:
+            if not isinstance(data[key], list):
+                return UnsalvageableInput(reason=f"'{key}' value is not a list")
+            break
+    return None
+
+
 @click.command(name="normalize-tripwire-candidates")
 @click.option("--candidates-file", required=True, help="Path to tripwire-candidates.json")
 def normalize_tripwire_candidates(
@@ -129,18 +162,24 @@ def normalize_tripwire_candidates(
         click.echo(json.dumps(asdict(error_response)), err=True)
         raise SystemExit(1) from None
 
-    if not isinstance(data, dict):
-        error_response = NormalizeError(
-            success=False, error=f"Expected JSON object, got {type(data).__name__}"
-        )
+    unsalvageable = check_salvageable(data)
+    if unsalvageable is not None:
+        error_response = NormalizeError(success=False, error=unsalvageable.reason)
         click.echo(json.dumps(asdict(error_response)), err=True)
         raise SystemExit(1)
 
     normalized_data, changed = normalize_candidates_data(data)
 
+    # Post-normalization validation gate
+    validation_result = validate_candidates_data(normalized_data)
+    if isinstance(validation_result, InvalidTripwireCandidates):
+        error_response = NormalizeError(success=False, error=validation_result.message)
+        click.echo(json.dumps(asdict(error_response)), err=True)
+        raise SystemExit(1)
+
     if changed:
         path.write_text(json.dumps(normalized_data, indent=2) + "\n", encoding="utf-8")
 
-    candidate_count = len(normalized_data.get("candidates", []))
+    candidate_count = len(validation_result.candidates)
     success_response = NormalizeSuccess(success=True, normalized=changed, count=candidate_count)
     click.echo(json.dumps(asdict(success_response)))

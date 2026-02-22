@@ -319,3 +319,66 @@ def test_canonical_field_not_overwritten_by_alias(tmp_path: Path) -> None:
     candidate = rewritten["candidates"][0]
     assert candidate["action"] == "correct action"
     assert candidate["warning"] == "correct warning"
+
+
+def test_unsalvageable_array_root(tmp_path: Path) -> None:
+    """JSON array input is unsalvageable and exits 1."""
+    json_file = tmp_path / "array.json"
+    json_file.write_text("[1, 2, 3]", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        normalize_tripwire_candidates,
+        ["--candidates-file", str(json_file)],
+    )
+
+    assert result.exit_code == 1
+
+
+def test_unsalvageable_no_candidates_key(tmp_path: Path) -> None:
+    """JSON object without candidates key or alias is unsalvageable."""
+    candidates_file = _write_json(tmp_path, {"data": [{"action": "foo"}]})
+
+    runner = CliRunner()
+    result = runner.invoke(
+        normalize_tripwire_candidates,
+        ["--candidates-file", str(candidates_file)],
+    )
+
+    assert result.exit_code == 1
+
+
+def test_unsalvageable_candidates_not_list(tmp_path: Path) -> None:
+    """JSON object with candidates as a string is unsalvageable."""
+    candidates_file = _write_json(tmp_path, {"candidates": "not a list"})
+
+    runner = CliRunner()
+    result = runner.invoke(
+        normalize_tripwire_candidates,
+        ["--candidates-file", str(candidates_file)],
+    )
+
+    assert result.exit_code == 1
+
+
+def test_post_normalization_validation_rejects_missing_fields(tmp_path: Path) -> None:
+    """Normalizable root key but still-invalid candidates after normalization exits 1."""
+    candidates_file = _write_json(
+        tmp_path,
+        {
+            "tripwire_candidates": [
+                {
+                    "action": "calling foo()",
+                    # missing warning and target_doc_path even after normalization
+                }
+            ]
+        },
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        normalize_tripwire_candidates,
+        ["--candidates-file", str(candidates_file)],
+    )
+
+    assert result.exit_code == 1
