@@ -101,8 +101,13 @@ def test_upload_session_branch_created(tmp_path: Path) -> None:
     assert output["session_id"] == "test-session-abc"
     assert output["plan_id"] == 42
 
-    # Verify branch was created and pushed
+    # Verify branch was created, files committed via plumbing, and pushed
     assert any(b == "async-learn/42" for _, b, _, _ in fake_git.created_branches)
+    assert len(fake_git.branch_commits) == 1
+    bc = fake_git.branch_commits[0]
+    assert bc.branch == "async-learn/42"
+    assert ".erk/session/test-session-abc.jsonl" in bc.files
+    assert bc.message == "Session test-session-abc for plan #42"
     assert any(pb.branch == "async-learn/42" and pb.force for pb in fake_git.pushed_branches)
 
 
