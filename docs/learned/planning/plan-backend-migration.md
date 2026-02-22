@@ -135,7 +135,6 @@ def test_my_exec_script(tmp_path: Path) -> None:
 Some scripts have not been fully migrated to the LBYL pattern:
 
 - `mark_impl_started.py` and `mark_impl_ended.py` lack LBYL checks before `update_metadata()`
-- `update_dispatch_info.py` exits 1 on failure vs 0 in other scripts
 
 These represent opportunities for future migration.
 

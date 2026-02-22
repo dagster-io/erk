@@ -125,7 +125,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
         run: |
-          erk exec update-lifecycle-stage --plan-id "$PLAN_ISSUE_NUMBER" --stage planning
+          erk exec update-plan-header "$PLAN_ISSUE_NUMBER" lifecycle_stage=planning
 
       - name: Run one-shot planning
         id: plan
