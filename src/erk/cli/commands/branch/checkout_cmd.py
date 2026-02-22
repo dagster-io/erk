@@ -35,7 +35,6 @@ from erk_shared.issue_workflow import (
     prepare_plan_for_worktree,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -401,7 +400,6 @@ def branch_checkout(
 
     # Plan setup - fetches plan and derives branch name if --for-plan is used
     setup: IssueBranchSetup | None = None
-    plan_backend = None
 
     if for_plan is not None:
         issue_number = parse_issue_identifier(for_plan)
@@ -410,9 +408,8 @@ def branch_checkout(
             raise click.ClickException(f"Issue #{issue_number} not found")
         plan = result
 
-        plan_backend = get_plan_backend()
         plan_result = prepare_plan_for_worktree(
-            plan, ctx.time.now(), plan_backend=plan_backend, warn_non_open=True
+            plan, ctx.time.now(), warn_non_open=True
         )
         if isinstance(plan_result, IssueValidationFailed):
             user_output(f"Error: {plan_result.message}")
@@ -437,27 +434,14 @@ def branch_checkout(
         local_branches = ctx.git.branch.list_local_branches(repo.root)
         branch_exists_locally = branch in local_branches
 
-        if plan_backend == "draft_pr":
-            # Draft PR backend: branch was created by plan-save
-            if branch_exists_locally:
-                user_output(f"Using existing branch: {branch}")
-            else:
-                ctx.git.remote.fetch_branch(repo.root, "origin", branch)
-                ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")
-                user_output(f"Created tracking branch: {branch}")
-            ctx.branch_manager.track_branch(repo.root, branch, trunk)
-        elif plan_backend == "github":
-            # Issue backend: create branch if it doesn't exist
-            if not branch_exists_locally:
-                current_branch = ctx.git.branch.get_current_branch(repo.root)
-                if current_branch and current_branch != trunk:
-                    parent_branch = current_branch
-                else:
-                    parent_branch = trunk
-                ctx.branch_manager.create_branch(repo.root, branch, parent_branch)
-                user_output(f"Created branch: {branch}")
-            else:
-                user_output(f"Using existing branch: {branch}")
+        # Draft PR backend: branch was created by plan-save
+        if branch_exists_locally:
+            user_output(f"Using existing branch: {branch}")
+        else:
+            ctx.git.remote.fetch_branch(repo.root, "origin", branch)
+            ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")
+            user_output(f"Created tracking branch: {branch}")
+        ctx.branch_manager.track_branch(repo.root, branch, trunk)
 
     # Get all worktrees
     worktrees = ctx.git.worktree.list_worktrees(repo.root)

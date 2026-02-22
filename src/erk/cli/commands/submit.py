@@ -1239,93 +1239,44 @@ def submit_cmd(
     _, username, _ = ctx.github.check_auth_status()
     submitted_by = username or "unknown"
 
-    # Detect draft-PR backend
-    is_draft_pr = ctx.plan_backend.get_provider_name() == "github-draft-pr"
+    # Draft-PR path: branch and PR already exist, just validate and trigger workflow
+    user_output(f"Validating {len(issue_numbers)} draft-PR plan(s)...")
+    user_output("")
 
-    if is_draft_pr:
-        # Draft-PR path: branch and PR already exist, just validate and trigger workflow
-        user_output(f"Validating {len(issue_numbers)} draft-PR plan(s)...")
+    validated_draft_prs: list[ValidatedDraftPR] = []
+    for issue_number in issue_numbers:
+        user_output(f"Validating PR #{issue_number}...")
+        validated_pr = _validate_draft_pr_for_submit(ctx, repo, issue_number)
+        validated_draft_prs.append(validated_pr)
+
+    user_output("")
+    user_output(
+        click.style("✓", fg="green") + f" All {len(validated_draft_prs)} plan(s) validated"
+    )
+    user_output("")
+
+    for v in validated_draft_prs:
+        user_output(f"  #{v.number}: {click.style(v.title, fg='yellow')}")
+    user_output("")
+
+    results: list[SubmitResult] = []
+    for i, v in enumerate(validated_draft_prs):
+        if len(validated_draft_prs) > 1:
+            count = len(validated_draft_prs)
+            user_output(f"--- Submitting PR {i + 1}/{count}: #{v.number} ---")
+        else:
+            user_output(f"Submitting PR #{v.number}...")
         user_output("")
-
-        validated_draft_prs: list[ValidatedDraftPR] = []
-        for issue_number in issue_numbers:
-            user_output(f"Validating PR #{issue_number}...")
-            validated_pr = _validate_draft_pr_for_submit(ctx, repo, issue_number)
-            validated_draft_prs.append(validated_pr)
-
-        user_output("")
-        user_output(
-            click.style("✓", fg="green") + f" All {len(validated_draft_prs)} plan(s) validated"
+        result = _submit_draft_pr_plan(
+            ctx,
+            repo=repo,
+            validated=v,
+            submitted_by=submitted_by,
+            original_branch=original_branch,
+            base_branch=target_branch,
         )
+        results.append(result)
         user_output("")
-
-        for v in validated_draft_prs:
-            user_output(f"  #{v.number}: {click.style(v.title, fg='yellow')}")
-        user_output("")
-
-        results: list[SubmitResult] = []
-        for i, v in enumerate(validated_draft_prs):
-            if len(validated_draft_prs) > 1:
-                count = len(validated_draft_prs)
-                user_output(f"--- Submitting PR {i + 1}/{count}: #{v.number} ---")
-            else:
-                user_output(f"Submitting PR #{v.number}...")
-            user_output("")
-            result = _submit_draft_pr_plan(
-                ctx,
-                repo=repo,
-                validated=v,
-                submitted_by=submitted_by,
-                original_branch=original_branch,
-                base_branch=target_branch,
-            )
-            results.append(result)
-            user_output("")
-    else:
-        # Issue-based path: existing flow
-        # Phase 1: Validate ALL issues upfront (atomic - fail fast before any side effects)
-        user_output(f"Validating {len(issue_numbers)} issue(s)...")
-        user_output("")
-
-        validated_issues: list[ValidatedIssue] = []
-        for issue_number in issue_numbers:
-            user_output(f"Validating issue #{issue_number}...")
-            validated_issue = _validate_issue_for_submit(
-                ctx, repo, issue_number, target_branch, force=force
-            )
-            validated_issues.append(validated_issue)
-
-        user_output("")
-        user_output(
-            click.style("✓", fg="green") + f" All {len(validated_issues)} issue(s) validated"
-        )
-        user_output("")
-
-        # Display validated issues
-        for v in validated_issues:
-            user_output(f"  #{v.number}: {click.style(v.issue.title, fg='yellow')}")
-        user_output("")
-
-        # Phase 2: Submit all validated issues
-        results = []
-        for i, v in enumerate(validated_issues):
-            if len(validated_issues) > 1:
-                user_output(
-                    f"--- Submitting issue {i + 1}/{len(validated_issues)}: #{v.number} ---"
-                )
-            else:
-                user_output(f"Submitting issue #{v.number}...")
-            user_output("")
-            result = _submit_single_issue(
-                ctx,
-                repo=repo,
-                validated=v,
-                submitted_by=submitted_by,
-                original_branch=original_branch,
-                base_branch=target_branch,
-            )
-            results.append(result)
-            user_output("")
 
     # Success output
     user_output("")

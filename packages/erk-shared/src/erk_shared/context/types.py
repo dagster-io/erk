@@ -22,9 +22,6 @@ from erk_shared.gateway.github.types import GitHubRepoId
 # Agent backend types
 AgentBackend = Literal["claude", "codex"]
 
-# Plan storage backend types
-PlanBackendType = Literal["draft_pr", "github"]
-
 # Claude CLI permission modes:
 # - "default": Default mode with permission prompts
 # - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)

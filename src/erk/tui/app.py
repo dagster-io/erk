@@ -36,7 +36,6 @@ from erk.tui.views.types import (
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
-from erk_shared.context.types import PlanBackendType
 from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
@@ -111,7 +110,6 @@ class ErkDashApp(App):
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
-        plan_backend: PlanBackendType = "github",
     ) -> None:
         """Initialize the dashboard app.
 
@@ -120,13 +118,11 @@ class ErkDashApp(App):
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
             initial_sort: Initial sort state (defaults to by issue number)
-            plan_backend: Plan backend type ("github" or "draft_pr")
         """
         super().__init__()
         self._provider = provider
         self._plan_filters = filters
         self._refresh_interval = refresh_interval
-        self._plan_backend = plan_backend
         self._table: PlanDataTable | None = None
         self._status_bar: StatusBar | None = None
         self._filter_input: Input | None = None
@@ -145,16 +141,13 @@ class ErkDashApp(App):
     def _display_name_for_view(self, mode: ViewMode) -> str:
         """Get the display name for a view mode.
 
-        For Plans view in draft_pr mode, returns "Planned PRs".
-        Otherwise returns the default view config display name.
-
         Args:
             mode: The view mode to get a display name for
 
         Returns:
             Display name string
         """
-        if mode == ViewMode.PLANS and self._plan_backend == "draft_pr":
+        if mode == ViewMode.PLANS:
             return "Planned PRs"
         return get_view_config(mode).display_name
 
@@ -170,7 +163,7 @@ class ErkDashApp(App):
                 f"Loading {self._display_name_for_view(ViewMode.PLANS).lower()}...",
                 id="loading-message",
             )
-            yield PlanDataTable(self._plan_filters, plan_backend=self._plan_backend)
+            yield PlanDataTable(self._plan_filters)
         yield Input(id="filter-input", placeholder="Filter...", disabled=True)
         yield StatusBar()
 
@@ -394,7 +387,6 @@ class ErkDashApp(App):
         ctx = CommandContext(
             row=row,
             view_mode=self._view_mode,
-            plan_backend=self._plan_backend,
         )
         self.push_screen(LaunchScreen(ctx=ctx), self._on_launch_result)
 
@@ -430,7 +422,6 @@ class ErkDashApp(App):
             self._table.reconfigure(
                 plan_filters=self._plan_filters,
                 view_mode=mode,
-                plan_backend=self._plan_backend,
             )
 
         # Check cache for the new view's labels

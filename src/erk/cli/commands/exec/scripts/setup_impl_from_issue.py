@@ -404,12 +404,6 @@ def setup_impl_from_issue(
     4. Creates .impl/ folder with plan content
     5. Saves issue reference for PR linking
     """
-    plan_backend = require_plan_backend(ctx)
-
-    # Dispatch based on plan backend
-    if plan_backend.get_provider_name() == "github-draft-pr":
-        output = _setup_draft_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
-    else:
-        output = _setup_issue_plan(ctx, plan_number=plan_number, no_impl=no_impl)
+    output = _setup_draft_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
 
     click.echo(json.dumps(output))

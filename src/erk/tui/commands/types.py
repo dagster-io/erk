@@ -6,7 +6,6 @@ from enum import Enum, auto
 
 from erk.tui.data.types import PlanRowData
 from erk.tui.views.types import ViewMode
-from erk_shared.context.types import PlanBackendType
 
 
 class CommandCategory(Enum):
@@ -31,7 +30,6 @@ class CommandContext:
 
     row: PlanRowData
     view_mode: ViewMode
-    plan_backend: PlanBackendType
 
 
 @dataclass(frozen=True)

@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
-from erk_shared.plan_store import get_plan_backend
 
 if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
@@ -78,8 +77,7 @@ def context_for_test(
         agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
-        plan_store: Optional PlanStore. If None, creates GitHubPlanStore or
-            DraftPRPlanBackend based on ERK_PLAN_BACKEND env var.
+        plan_store: Optional PlanStore. If None, creates DraftPRPlanBackend.
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -111,11 +109,7 @@ def context_for_test(
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.plan_store.github import GitHubPlanStore
-
     # Resolve defaults - create issues first since it's composed into github
-    # Track whether issues was explicitly passed (for composition logic below)
-    issues_explicitly_passed = github_issues is not None
 
     resolved_issues: GitHubIssues = (
         github_issues if github_issues is not None else FakeGitHubIssues()
@@ -126,7 +120,7 @@ def context_for_test(
     # Only inject issues if caller explicitly passed BOTH github and github_issues
     if github is None:
         resolved_github: GitHub = FakeGitHub(issues_gateway=resolved_issues)
-    elif isinstance(github, FakeGitHub) and issues_explicitly_passed:
+    elif isinstance(github, FakeGitHub) and github_issues is not None:
         # Caller passed both github and github_issues separately - inject issues
         # into the existing FakeGitHub instance to preserve test references
         github._issues_gateway = resolved_issues
@@ -183,17 +177,11 @@ def context_for_test(
 
     resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
 
-    # Resolve plan_store: explicit > ERK_PLAN_BACKEND env var > default (GitHubPlanStore)
     resolved_plan_store: PlanStore
     if plan_store is not None:
         resolved_plan_store = plan_store
-    # When github_issues is explicitly passed, the caller is setting up for the github
-    # backend (FakeGitHubIssues with issues/comments). Use GitHubPlanStore to match
-    # their intent rather than switching to DraftPRPlanBackend.
-    elif get_plan_backend() == "draft_pr" and not issues_explicitly_passed:
-        resolved_plan_store = DraftPRPlanBackend(resolved_github, resolved_issues, time=FakeTime())
     else:
-        resolved_plan_store = GitHubPlanStore(resolved_issues, fake_time)
+        resolved_plan_store = DraftPRPlanBackend(resolved_github, resolved_issues, time=FakeTime())
 
     return ErkContext(
         git=resolved_git,

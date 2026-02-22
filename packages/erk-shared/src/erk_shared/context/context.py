@@ -160,12 +160,9 @@ class ErkContext:
     def plan_backend(self) -> PlanBackend:
         """Access plan_store as PlanBackend (read/write interface).
 
-        GitHubPlanStore now extends PlanBackend, so this property provides
-        typed access to write operations (create_plan, update_metadata, add_comment)
-        while plan_store remains for backward compatibility.
+        Provides typed access to write operations (create_plan, update_metadata,
+        add_comment) while plan_store remains for backward compatibility.
         """
-        # GitHubPlanStore extends PlanBackend, so this cast is safe
-        # At runtime, plan_store is always a GitHubPlanStore instance
         if not isinstance(self.plan_store, PlanBackend):
             raise RuntimeError(
                 f"plan_store must be a PlanBackend, got {type(self.plan_store).__name__}"

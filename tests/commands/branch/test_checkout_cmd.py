@@ -21,7 +21,6 @@ from erk.core.worktree_pool import (
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
@@ -708,17 +707,15 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = get_plan_backend()
-        plan_store, _ = create_plan_store({"500": plan}, backend=backend)
+        plan_store, _ = create_plan_store({"500": plan}, backend="draft_pr")
 
         # Draft-PR backend needs the branch to exist already
-        if backend == "draft_pr":
-            git = FakeGit(
-                git_common_dirs={env.cwd: env.git_dir},
-                default_branches={env.cwd: "main"},
-                local_branches={env.cwd: ["main", "plan-500"]},
-                existing_paths={env.cwd, env.repo.worktrees_dir},
-            )
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "plan-500"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
 
         ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
 

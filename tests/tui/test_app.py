@@ -2049,18 +2049,9 @@ def test_display_name_draft_pr_plans_view() -> None:
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
     app = ErkDashApp(
-        provider=provider, filters=filters, refresh_interval=0, plan_backend="draft_pr"
+        provider=provider, filters=filters, refresh_interval=0
     )
     assert app._display_name_for_view(ViewMode.PLANS) == "Planned PRs"
-
-
-def test_display_name_github_plans_view() -> None:
-    """github backend + PLANS view returns default display name."""
-    provider = FakePlanDataProvider()
-    filters = PlanFilters.default()
-    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0, plan_backend="github")
-    expected = get_view_config(ViewMode.PLANS).display_name
-    assert app._display_name_for_view(ViewMode.PLANS) == expected
 
 
 def test_display_name_draft_pr_non_plans_view() -> None:
@@ -2068,7 +2059,7 @@ def test_display_name_draft_pr_non_plans_view() -> None:
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
     app = ErkDashApp(
-        provider=provider, filters=filters, refresh_interval=0, plan_backend="draft_pr"
+        provider=provider, filters=filters, refresh_interval=0
     )
     expected_learn = get_view_config(ViewMode.LEARN).display_name
     assert app._display_name_for_view(ViewMode.LEARN) == expected_learn
@@ -2159,6 +2150,6 @@ class TestActionLaunch:
             await pilot.pause()
             await pilot.pause()
 
-            app._on_launch_result("copy_prepare")
+            app._on_launch_result("copy_submit")
 
-            assert clipboard.last_copied == "erk br create --for-plan 123"
+            assert clipboard.last_copied == "erk plan submit 123"

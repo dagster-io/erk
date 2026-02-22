@@ -677,20 +677,13 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     issue_number = state.issue_number
     effective_plans_repo = plans_repo
 
-    if ctx.plan_backend.get_provider_name() == "github-draft-pr" and state.pr_number is not None:
+    if state.pr_number is not None:
         existing_pr = ctx.github.get_pr(state.repo_root, state.pr_number)
         if not isinstance(existing_pr, PRNotFound):
             metadata_prefix = extract_metadata_prefix(existing_pr.body)
-        # Don't self-close: draft PR IS the plan
-        issue_number = None
-        effective_plans_repo = None
-    else:
-        # Fallback: preserve existing closing reference from PR body
-        if issue_number is None:
-            closing_ref = _extract_closing_ref_from_pr(ctx, state.cwd, state.pr_number)
-            if closing_ref is not None:
-                issue_number = closing_ref.issue_number
-                effective_plans_repo = closing_ref.plans_repo
+    # Don't self-close: draft PR IS the plan
+    issue_number = None
+    effective_plans_repo = None
 
     # Add plnd/ prefix for plan-linked PRs
     if issue_number is not None:

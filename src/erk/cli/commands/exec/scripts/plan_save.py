@@ -26,9 +26,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.exec.scripts.plan_save_to_issue import (
-    plan_save_to_issue,
-)
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
 from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk_shared.context.helpers import (
@@ -49,7 +46,6 @@ from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import InvalidPlanTitle, generate_draft_pr_branch_name, validate_plan_title
 from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
@@ -434,26 +430,7 @@ def plan_save(
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
 ) -> None:
-    """Backend-aware plan save: dispatches to issue or draft-PR based on constant.
-
-    When ERK_PLAN_BACKEND is "draft_pr", creates a draft PR.
-    Otherwise delegates to plan-save-to-issue.
-    """
-    # PLAN_BACKEND_SPLIT: dispatches to issue-based save or draft-PR save based on config/env
-    # Default backend: delegate to issue-based save
-    if get_plan_backend() != "draft_pr":
-        ctx.invoke(
-            plan_save_to_issue,
-            output_format=output_format,
-            plan_file=plan_file,
-            session_id=session_id,
-            objective_issue=objective_issue,
-            plan_type=plan_type,
-            learned_from_issue=learned_from_issue,
-            created_from_workflow_run_url=created_from_workflow_run_url,
-        )
-        return
-
+    """Save plan as a draft PR."""
     _save_plan_via_draft_pr(
         ctx,
         output_format=output_format,

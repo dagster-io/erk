@@ -162,7 +162,6 @@ def _update_pr_body_impl(
     run_id: str | None,
     run_url: str | None,
     plans_repo: str | None,
-    is_draft_pr: bool,
 ) -> UpdateSuccess | UpdateError:
     """Implementation of PR body update.
 
@@ -175,7 +174,6 @@ def _update_pr_body_impl(
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
         plans_repo: Target repo in "owner/repo" format for cross-repo plans
-        is_draft_pr: True if this is a draft-PR plan (no Closes #N)
 
     Returns:
         UpdateSuccess on success, UpdateError on failure
@@ -253,31 +251,20 @@ def _update_pr_body_impl(
             stderr=stderr_preview,
         )
 
-    # Build full PR body
-    if is_draft_pr:
-        # For draft-PR plans: preserve metadata prefix, include original plan section
-        metadata_prefix = extract_metadata_prefix(pr_result.body)
-        plan_content = extract_plan_content(pr_result.body)
-        original_plan_section = build_original_plan_section(plan_content)
+    # Build full PR body: preserve metadata prefix, include original plan section
+    metadata_prefix = extract_metadata_prefix(pr_result.body)
+    plan_content = extract_plan_content(pr_result.body)
+    original_plan_section = build_original_plan_section(plan_content)
 
-        summary_body = _build_pr_body(
-            summary=result.output,
-            pr_number=pr_number,
-            issue_number=None,
-            run_id=run_id,
-            run_url=run_url,
-            plans_repo=plans_repo,
-        )
-        pr_body = metadata_prefix + summary_body + original_plan_section
-    else:
-        pr_body = _build_pr_body(
-            summary=result.output,
-            pr_number=pr_number,
-            issue_number=issue_number,
-            run_id=run_id,
-            run_url=run_url,
-            plans_repo=plans_repo,
-        )
+    summary_body = _build_pr_body(
+        summary=result.output,
+        pr_number=pr_number,
+        issue_number=None,
+        run_id=run_id,
+        run_url=run_url,
+        plans_repo=plans_repo,
+    )
+    pr_body = metadata_prefix + summary_body + original_plan_section
 
     # Update PR body
     try:
@@ -297,14 +284,12 @@ def _update_pr_body_impl(
 @click.option("--plan-id", type=int, required=True, help="Plan identifier to close on merge")
 @click.option("--run-id", type=str, default=None, help="Optional workflow run ID")
 @click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
-@click.option("--draft-pr", is_flag=True, default=False, help="Draft-PR plan (no Closes #N)")
 @click.pass_context
 def ci_update_pr_body(
     ctx: click.Context,
     plan_id: int,
     run_id: str | None,
     run_url: str | None,
-    draft_pr: bool,
 ) -> None:
     """Update PR body with AI-generated summary and footer.
 
@@ -330,7 +315,6 @@ def ci_update_pr_body(
         run_id=run_id,
         run_url=run_url,
         plans_repo=plans_repo,
-        is_draft_pr=draft_pr,
     )
 
     # Output JSON result

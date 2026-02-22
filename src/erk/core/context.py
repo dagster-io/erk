@@ -78,9 +78,7 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
 
 
@@ -162,7 +160,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         git=git,
         github=fake_github,
         github_admin=FakeGitHubAdmin(),
-        plan_store=GitHubPlanStore(fake_issues, fake_time),
+        plan_store=DraftPRPlanBackend(fake_github, fake_issues, time=fake_time),
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         console=fake_console,
@@ -301,7 +299,7 @@ def context_for_test(
     if plan_store is None:
         # Always compose from issues layer - no separate FakePlanStore
         # This ensures tests use the same composition as production code
-        plan_store = GitHubPlanStore(issues)
+        plan_store = DraftPRPlanBackend(github, issues, time=FakeTime())
 
     # Handle graphite based on global_config.use_graphite to match production behavior
     # When use_graphite=False, use GraphiteDisabled sentinel so that
@@ -606,15 +604,8 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
     github: GitHub = RealGitHub(time, repo_info, issues=issues)
 
-    # PLAN_BACKEND_SPLIT: selects DraftPRPlanBackend or GitHubPlanStore based on ERK_PLAN_BACKEND
-    plan_store: PlanStore
-    plan_list_service: PlanListService
-    if get_plan_backend() == "draft_pr":
-        plan_store = DraftPRPlanBackend(github, issues, time=RealTime())
-        plan_list_service = DraftPRPlanListService(github)
-    else:
-        plan_store = GitHubPlanStore(issues)
-        plan_list_service = RealPlanListService(github, issues)
+    plan_store: PlanStore = DraftPRPlanBackend(github, issues, time=RealTime())
+    plan_list_service: PlanListService = DraftPRPlanListService(github)
 
     # Objectives are always issue-based regardless of plan backend
     objective_list_service: ObjectiveListService = RealObjectiveListService(github, issues)

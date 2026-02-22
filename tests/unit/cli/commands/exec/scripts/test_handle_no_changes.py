@@ -25,10 +25,14 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+from erk_shared.gateway.github.types import PRDetails
 
 
-def _create_github_with_issue(issue_number: int) -> tuple[FakeGitHub, FakeGitHubIssues]:
-    """Create FakeGitHub with a plan issue configured for adding comments.
+def _create_github_with_plan(plan_number: int) -> tuple[FakeGitHub, FakeGitHubIssues]:
+    """Create FakeGitHub with a draft PR plan configured for metadata updates.
+
+    Sets up both a PRDetails entry (for DraftPRPlanBackend operations) and an
+    IssueInfo entry (for issue-level operations like comments).
 
     Returns:
         Tuple of (FakeGitHub, FakeGitHubIssues) for passing both to ErkContext.
@@ -64,12 +68,12 @@ def _create_github_with_issue(issue_number: int) -> tuple[FakeGitHub, FakeGitHub
     )
     issues_gateway = FakeGitHubIssues(
         issues={
-            issue_number: IssueInfo(
-                number=issue_number,
+            plan_number: IssueInfo(
+                number=plan_number,
                 title="Test Plan",
                 body=body,
                 state="open",
-                url=f"https://github.com/test-owner/test-repo/issues/{issue_number}",
+                url=f"https://github.com/test-owner/test-repo/issues/{plan_number}",
                 labels=["erk-plan"],
                 assignees=[],
                 created_at=test_time,
@@ -78,7 +82,24 @@ def _create_github_with_issue(issue_number: int) -> tuple[FakeGitHub, FakeGitHub
             )
         }
     )
-    return FakeGitHub(issues_gateway=issues_gateway), issues_gateway
+    pr_details = {
+        plan_number: PRDetails(
+            number=plan_number,
+            url=f"https://github.com/test-owner/test-repo/pull/{plan_number}",
+            title="Test Plan",
+            body=body,
+            state="OPEN",
+            is_draft=True,
+            base_ref_name="master",
+            head_ref_name=f"plnd/test-plan-{plan_number}",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="test-owner",
+            repo="test-repo",
+        )
+    }
+    return FakeGitHub(issues_gateway=issues_gateway, pr_details=pr_details), issues_gateway
 
 
 # ============================================================================
@@ -94,7 +115,6 @@ def test_build_pr_body_includes_all_sections() -> None:
         base_branch="master",
         recent_commits="abc1234 Fix bug\ndef5678 Add feature",
         run_url="https://github.com/owner/repo/actions/runs/789",
-        is_draft_pr=False,
     )
 
     assert "## No Code Changes" in body
@@ -107,7 +127,6 @@ def test_build_pr_body_includes_all_sections() -> None:
     assert "abc1234 Fix bug" in body
     assert "def5678 Add feature" in body
     assert "### Next Steps" in body
-    assert "Closes #456" in body
     assert "https://github.com/owner/repo/actions/runs/789" in body
 
 
@@ -119,12 +138,10 @@ def test_build_pr_body_without_recent_commits() -> None:
         base_branch="main",
         recent_commits=None,
         run_url=None,
-        is_draft_pr=False,
     )
 
     assert "## No Code Changes" in body
     assert "### Diagnosis" in body
-    assert "Closes #456" in body
     # Should not include commits section when behind_count is 0
     assert "commits** behind" not in body
     # Should not include run URL
@@ -139,7 +156,6 @@ def test_build_pr_body_with_empty_recent_commits() -> None:
         base_branch="master",
         recent_commits="",
         run_url=None,
-        is_draft_pr=False,
     )
 
     assert "## No Code Changes" in body
@@ -148,40 +164,11 @@ def test_build_pr_body_with_empty_recent_commits() -> None:
     assert "Recent commits" not in body
 
 
-def test_build_pr_body_draft_pr_no_closes_reference() -> None:
-    """Test that _build_pr_body omits Closes #N for draft-PR plans."""
-    body = _build_pr_body(
-        plan_id=789,
-        behind_count=0,
-        base_branch="master",
-        recent_commits=None,
-        run_url=None,
-        is_draft_pr=True,
-    )
-
-    assert "## No Code Changes" in body
-    assert "Closes #789" not in body
-    assert "Close this PR" in body
-    assert "linked plan" not in body
-
-
 def test_build_issue_comment() -> None:
-    """Test that _build_issue_comment includes PR reference."""
-    comment = _build_issue_comment(pr_number=123, is_draft_pr=False)
+    """Test that _build_issue_comment describes no-changes outcome."""
+    comment = _build_issue_comment(pr_number=123)
 
     assert "no code changes" in comment.lower()
-    assert "PR #123" in comment
-    assert "diagnostic" in comment.lower()
-
-
-def test_build_issue_comment_draft_pr() -> None:
-    """Test that _build_issue_comment for draft-PR omits self-referential text."""
-    comment = _build_issue_comment(pr_number=789, is_draft_pr=True)
-
-    assert "no code changes" in comment.lower()
-    assert "close this PR" in comment
-    assert "PR #789" not in comment
-    assert "both this issue" not in comment
 
 
 def test_build_no_changes_title() -> None:
@@ -207,7 +194,7 @@ def test_build_no_changes_title_preserves_original() -> None:
 
 def test_cli_success(tmp_path: Path) -> None:
     """Test CLI command succeeds with valid inputs."""
-    github, fake_gh_issues = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_plan(456)
 
     ctx = ErkContext.for_test(
         github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
@@ -244,7 +231,7 @@ def test_cli_success(tmp_path: Path) -> None:
 
 def test_cli_success_minimal_options(tmp_path: Path) -> None:
     """Test CLI command succeeds with only required options."""
-    github, fake_gh_issues = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_plan(456)
 
     ctx = ErkContext.for_test(
         github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
@@ -275,7 +262,7 @@ def test_cli_success_minimal_options(tmp_path: Path) -> None:
 
 def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
     """Test that CLI command updates PR title and body."""
-    github, fake_gh_issues = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_plan(456)
 
     ctx = ErkContext.for_test(
         github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
@@ -306,16 +293,16 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
     assert title == "[no-changes] P456 Impl Attempt: Fix Cache Issue"
 
     # Verify PR body was updated (updated_pr_bodies is list of (pr_number, body) tuples)
-    assert len(github.updated_pr_bodies) == 1
-    pr_number, body = github.updated_pr_bodies[0]
-    assert pr_number == 123
+    # Two updates: (1) no-changes body on PR #123, (2) lifecycle_stage metadata on plan PR #456
+    no_changes_updates = [(n, b) for n, b in github.updated_pr_bodies if n == 123]
+    assert len(no_changes_updates) == 1
+    _, body = no_changes_updates[0]
     assert "No Code Changes" in body
-    assert "Closes #456" in body
 
 
 def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
     """Test that CLI command adds no-changes label to PR."""
-    github, fake_gh_issues = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_plan(456)
 
     ctx = ErkContext.for_test(
         github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
@@ -348,7 +335,7 @@ def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
 
 def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
     """Test that CLI command adds comment to plan issue."""
-    github, fake_gh_issues = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_plan(456)
 
     ctx = ErkContext.for_test(
         github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
@@ -372,12 +359,12 @@ def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
         obj=ctx,
     )
 
-    # Verify comment was added to issue via PlanBackend
-    # added_comments is list of (issue_number, body, comment_id) tuples
-    assert len(fake_gh_issues.added_comments) == 1
-    issue_number, body, _comment_id = fake_gh_issues.added_comments[0]
-    assert issue_number == 456
-    assert "PR #123" in body
+    # Verify comment was added to plan PR via DraftPRPlanBackend
+    # pr_comments is list of (pr_number, body) tuples
+    assert len(github.pr_comments) == 1
+    pr_num, body = github.pr_comments[0]
+    assert pr_num == 456
+    assert "no code changes" in body.lower()
 
 
 def test_cli_requires_pr_number() -> None:
@@ -486,7 +473,7 @@ def test_cli_requires_original_title() -> None:
 
 def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     """Test that JSON output has expected structure on success."""
-    github, fake_gh_issues = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_plan(456)
 
     ctx = ErkContext.for_test(
         github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path
@@ -526,7 +513,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
 
 def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
     """Test that CLI exits with code 0 on success (workflow succeeds)."""
-    github, fake_gh_issues = _create_github_with_issue(456)
+    github, fake_gh_issues = _create_github_with_plan(456)
 
     ctx = ErkContext.for_test(
         github=github, github_issues=fake_gh_issues, repo_root=tmp_path, cwd=tmp_path

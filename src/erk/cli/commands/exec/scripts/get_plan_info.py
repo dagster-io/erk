@@ -66,7 +66,7 @@ def get_plan_info(
         "labels": plan.labels,
         "url": plan.url,
         "objective_id": plan.objective_id,
-        "backend": backend.get_provider_name(),
+        "backend": "github-draft-pr",
     }
 
     if include_body:

@@ -11,7 +11,6 @@ from textual.widgets import DataTable
 
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.views.types import ViewMode
-from erk_shared.context.types import PlanBackendType
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp
@@ -71,16 +70,14 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
-    def __init__(self, plan_filters: PlanFilters, *, plan_backend: PlanBackendType) -> None:
+    def __init__(self, plan_filters: PlanFilters) -> None:
         """Initialize table with column configuration based on filters.
 
         Args:
             plan_filters: Filter options that determine which columns to show
-            plan_backend: Plan backend type ("github" or "draft_pr")
         """
         super().__init__(cursor_type="row")
         self._plan_filters = plan_filters
-        self._plan_backend = plan_backend
         self._view_mode: ViewMode = ViewMode.PLANS
         self._rows: list[PlanRowData] = []
         self._plan_column_index: int = 0  # Always first column
@@ -109,7 +106,7 @@ class PlanDataTable(DataTable):
         cast("ErkDashApp", self.app).action_next_view()
 
     def reconfigure(
-        self, *, plan_filters: PlanFilters, view_mode: ViewMode, plan_backend: PlanBackendType
+        self, *, plan_filters: PlanFilters, view_mode: ViewMode
     ) -> None:
         """Reconfigure the table for a new view mode.
 
@@ -119,11 +116,9 @@ class PlanDataTable(DataTable):
         Args:
             plan_filters: New filter options for column configuration
             view_mode: The new view mode
-            plan_backend: Plan backend type ("github" or "draft_pr")
         """
         self._plan_filters = plan_filters
         self._view_mode = view_mode
-        self._plan_backend = plan_backend
         # Reset column indices before _setup_columns rebuilds them
         self._plan_column_index = 0
         self._objective_column_index = None
@@ -149,10 +144,8 @@ class PlanDataTable(DataTable):
         # In draft_pr mode, first column shows PR number not issue number
         if self._view_mode == ViewMode.OBJECTIVES:
             plan_col_header = "issue"
-        elif self._plan_backend == "draft_pr":
-            plan_col_header = "pr"
         else:
-            plan_col_header = "plan"
+            plan_col_header = "pr"
         self.add_column(plan_col_header, key="plan", width=6)
         col_index += 1
 
@@ -174,14 +167,13 @@ class PlanDataTable(DataTable):
             col_index += 1
             return
 
-        if self._plan_backend == "draft_pr":
-            self._stage_column_index = col_index
-            self.add_column("stage", key="stage", width=8)
-            col_index += 1
-            self.add_column("sts", key="sts", width=4)
-            col_index += 1
-            self.add_column("created", key="created", width=7)
-            col_index += 1
+        self._stage_column_index = col_index
+        self.add_column("stage", key="stage", width=8)
+        col_index += 1
+        self.add_column("sts", key="sts", width=4)
+        col_index += 1
+        self.add_column("created", key="created", width=7)
+        col_index += 1
         self.add_column("obj", key="objective", width=5)
         self._objective_column_index = col_index
         col_index += 1
@@ -198,9 +190,6 @@ class PlanDataTable(DataTable):
         col_index += 1
         self.add_column("run", key="run_state", width=3)
         col_index += 1
-        if self._plan_backend != "draft_pr":
-            self.add_column("created", key="created", width=7)
-            col_index += 1
         self.add_column("author", key="author", width=9)
         col_index += 1
 
@@ -315,11 +304,10 @@ class PlanDataTable(DataTable):
         values: list[str | Text] = [
             plan_cell,
         ]
-        if self._plan_backend == "draft_pr":
-            stage_display = _strip_rich_markup(row.lifecycle_display)
-            values.append(stage_display)
-            values.append(row.status_display)
-            values.append(row.created_display)
+        stage_display = _strip_rich_markup(row.lifecycle_display)
+        values.append(stage_display)
+        values.append(row.status_display)
+        values.append(row.created_display)
         values.extend(
             [
                 objective_cell,
@@ -329,8 +317,6 @@ class PlanDataTable(DataTable):
                 run_state_emoji,
             ]
         )
-        if self._plan_backend != "draft_pr":
-            values.append(row.created_display)
         values.append(row.author)
 
         checks_display = _strip_rich_markup(row.checks_display)

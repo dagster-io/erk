@@ -28,11 +28,6 @@ def _is_objectives_view(ctx: CommandContext) -> bool:
     return ctx.view_mode == ViewMode.OBJECTIVES
 
 
-def _is_github_backend(ctx: CommandContext) -> bool:
-    """True when the plan backend is github (not draft_pr)."""
-    return ctx.plan_backend == "github"
-
-
 # === Display Name Generators (Plan Commands) ===
 
 
@@ -97,18 +92,6 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
         pr = ctx.row.pr_number
         return f'source "$(erk pr checkout {pr} --script)" && erk pr sync --dangerous'
     return "checkout && sync"
-
-
-def _display_copy_prepare(ctx: CommandContext) -> str:
-    """Display name for copy_prepare command."""
-    return f"erk br co --for-plan {ctx.row.plan_id}"
-
-
-def _display_copy_prepare_activate(ctx: CommandContext) -> str:
-    """Display name for copy_prepare_activate command."""
-    return (
-        f'source "$(erk br co --for-plan {ctx.row.plan_id} --script)" && erk implement --dangerous'
-    )
 
 
 def _display_copy_submit(ctx: CommandContext) -> str:
@@ -308,24 +291,6 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut="e",
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_copy_pr_checkout,
-        ),
-        CommandDefinition(
-            id="copy_prepare",
-            name="erk br co --for-plan",
-            description="create branch for plan",
-            category=CommandCategory.COPY,
-            shortcut="1",
-            is_available=lambda ctx: _is_plan_view(ctx) and _is_github_backend(ctx),
-            get_display_name=_display_copy_prepare,
-        ),
-        CommandDefinition(
-            id="copy_prepare_activate",
-            name="prepare && implement",
-            description="implement",
-            category=CommandCategory.COPY,
-            shortcut="4",
-            is_available=lambda ctx: _is_plan_view(ctx) and _is_github_backend(ctx),
-            get_display_name=_display_copy_prepare_activate,
         ),
         CommandDefinition(
             id="copy_submit",

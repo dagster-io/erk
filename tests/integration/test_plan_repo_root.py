@@ -80,7 +80,6 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                 filters,
                 refresh_interval,
                 initial_sort=None,
-                plan_backend=None,
             ):
                 nonlocal captured_provider, captured_filters
                 captured_provider = provider

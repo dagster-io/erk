@@ -89,7 +89,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
-    from erk_shared.plan_store.github import GitHubPlanStore
+    from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 
     resolved_cwd = cwd if cwd is not None else Path.cwd()
 
@@ -131,9 +131,11 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     # Import here to avoid circular imports
     from erk_shared.gateway.agent_docs.real import RealAgentDocs
 
+    github = RealGitHub(time=time, repo_info=repo_info, issues=github_issues)
+
     return ErkContext(
         git=git,
-        github=RealGitHub(time=time, repo_info=repo_info, issues=github_issues),
+        github=github,
         github_admin=FakeGitHubAdmin(),
         claude_installation=RealClaudeInstallation(),
         prompt_executor=FakePromptExecutor(),
@@ -143,7 +145,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         time=fake_time,
         erk_installation=erk_installation,
         agent_docs=RealAgentDocs(),
-        plan_store=GitHubPlanStore(github_issues, fake_time),
+        plan_store=DraftPRPlanBackend(github, github_issues, time=fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
         codespace=FakeCodespace(),

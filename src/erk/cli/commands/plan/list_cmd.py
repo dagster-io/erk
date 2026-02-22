@@ -40,7 +40,6 @@ from erk_shared.gateway.live_display.abc import LiveDisplay
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.types import Plan
 
@@ -647,8 +646,6 @@ def _run_interactive_mode(
     clipboard = RealClipboard()
     browser = RealBrowserLauncher()
 
-    plan_backend = get_plan_backend()
-
     # Fetch GitHub token once at startup for fast HTTP client
     token = fetch_github_token()
     http_client = RealHttpClient(token=token, base_url="https://api.github.com")
@@ -668,7 +665,7 @@ def _run_interactive_mode(
         show_prs=prs,
         show_runs=runs,
         creator=creator,
-        show_pr_column=plan_backend != "draft_pr",
+        show_pr_column=False,
     )
 
     # Convert sort string to SortState
@@ -680,7 +677,6 @@ def _run_interactive_mode(
         filters=filters,
         refresh_interval=interval,
         initial_sort=initial_sort,
-        plan_backend=plan_backend,
     )
     app.run()
 
