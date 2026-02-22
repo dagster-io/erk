@@ -71,6 +71,60 @@ If no tripwire-worthy items are found, write:
 }
 ```
 
+### Schema Rules (Enforced by Validation Gate)
+
+The output JSON is validated by a strict gate. Non-conforming output will be rejected with an actionable error message.
+
+**Required schema:**
+
+```json
+{
+  "candidates": [
+    {
+      "action": "<string>",
+      "warning": "<string>",
+      "target_doc_path": "<string>"
+    }
+  ]
+}
+```
+
+**Rules enforced:**
+
+1. Root must be a JSON object (not an array or primitive)
+2. Must contain a `candidates` key (the normalizer also accepts `tripwire_candidates` as an alias)
+3. `candidates` value must be a list
+4. Each entry must be an object with exactly three required string fields: `action`, `warning`, `target_doc_path`
+
+**Field naming — correct names vs common drift names that get normalized:**
+
+| Correct field     | Drift names (auto-normalized)             |
+|-------------------|-------------------------------------------|
+| `action`          | `title`, `name`, `trigger_pattern`        |
+| `warning`         | `description`                             |
+| `target_doc_path` | *(no known aliases — must be exact)*      |
+
+**Valid example:**
+
+```json
+{
+  "candidates": [
+    {
+      "action": "calling os.chdir() directly",
+      "warning": "Use context.chdir() for testability and isolation.",
+      "target_doc_path": "architecture/subprocess-wrappers.md"
+    }
+  ]
+}
+```
+
+**Invalid examples:**
+
+- `[{"action": "..."}]` — root is an array, not an object
+- `{"data": [...]}` — no `candidates` key or known alias
+- `{"candidates": "string"}` — `candidates` is not a list
+- `{"candidates": [{"action": "missing fields"}]}` — entry missing `warning` and `target_doc_path`
+
 ## Output
 
 Write the JSON to the file path: `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json`
@@ -80,6 +134,8 @@ Use the Write tool to create this file. Do NOT use bash heredoc.
 ## Quality Criteria
 
 - **Action patterns should be specific**: "calling os.chdir()" not "changing directories"
-- **Warnings should be actionable**: "Use context.time.sleep() for testability" not "Be careful with sleep"
+- **Action must start with a gerund or "Before"**: "Editing CI files" or "Before modifying gateways", not "CI file edits"
+- **Warnings should be actionable and imperative**: "Use context.time.sleep() for testability" not "Be careful with sleep"
 - **Target docs must exist or be planned**: Only reference docs that exist in `docs/learned/` or are being created by the learn plan
+- **`target_doc_path` must be relative within `docs/learned/`**: e.g., `architecture/foo.md`, not `docs/learned/architecture/foo.md`
 - **Prefer fewer, high-quality candidates**: 2-3 precise tripwires are better than 10 vague ones

@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-import pytest
-
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.tripwire_candidates import (
+    InvalidTripwireCandidates,
     TripwireCandidate,
+    ValidTripwireCandidates,
     extract_tripwire_candidates_from_comments,
     render_tripwire_candidates_comment,
     validate_candidates_data,
@@ -115,38 +115,42 @@ def test_validate_candidates_json(tmp_path: Path) -> None:
     json_file = tmp_path / "candidates.json"
     json_file.write_text(json_content, encoding="utf-8")
 
-    results = validate_candidates_json(str(json_file))
-    assert len(results) == 1
-    assert results[0].action == "doing X"
-    assert results[0].warning == "Do Y."
-    assert results[0].target_doc_path == "foo.md"
+    result = validate_candidates_json(str(json_file))
+    assert isinstance(result, ValidTripwireCandidates)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].action == "doing X"
+    assert result.candidates[0].warning == "Do Y."
+    assert result.candidates[0].target_doc_path == "foo.md"
 
 
 def test_validate_candidates_json_missing_file() -> None:
-    """Raise FileNotFoundError for missing file."""
-    with pytest.raises(FileNotFoundError):
-        validate_candidates_json("/nonexistent/path.json")
+    """Return InvalidTripwireCandidates for missing file."""
+    result = validate_candidates_json("/nonexistent/path.json")
+    assert isinstance(result, InvalidTripwireCandidates)
+    assert "not found" in result.reason
 
 
 def test_validate_candidates_json_invalid_structure(tmp_path: Path) -> None:
-    """Raise ValueError for invalid JSON structure."""
+    """Return InvalidTripwireCandidates for invalid JSON structure."""
     json_file = tmp_path / "bad.json"
     json_file.write_text(
         '{"candidates": [{"action": "no warning or path"}]}',
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="missing 'warning' string"):
-        validate_candidates_json(str(json_file))
+    result = validate_candidates_json(str(json_file))
+    assert isinstance(result, InvalidTripwireCandidates)
+    assert "missing 'warning' string" in result.reason
 
 
 def test_validate_candidates_json_not_object(tmp_path: Path) -> None:
-    """Raise ValueError when JSON root is not an object."""
+    """Return InvalidTripwireCandidates when JSON root is not an object."""
     json_file = tmp_path / "array.json"
     json_file.write_text("[1, 2, 3]", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="Expected JSON object"):
-        validate_candidates_json(str(json_file))
+    result = validate_candidates_json(str(json_file))
+    assert isinstance(result, InvalidTripwireCandidates)
+    assert "Expected JSON object" in result.reason
 
 
 def test_validate_candidates_json_empty_candidates(tmp_path: Path) -> None:
@@ -154,8 +158,9 @@ def test_validate_candidates_json_empty_candidates(tmp_path: Path) -> None:
     json_file = tmp_path / "empty.json"
     json_file.write_text('{"candidates": []}', encoding="utf-8")
 
-    results = validate_candidates_json(str(json_file))
-    assert results == []
+    result = validate_candidates_json(str(json_file))
+    assert isinstance(result, ValidTripwireCandidates)
+    assert result.candidates == []
 
 
 def test_validate_candidates_data_with_dict() -> None:
@@ -175,11 +180,32 @@ def test_validate_candidates_data_with_dict() -> None:
         ]
     }
 
-    results = validate_candidates_data(data)
-    assert len(results) == 2
-    assert results[0] == TripwireCandidate(
+    result = validate_candidates_data(data)
+    assert isinstance(result, ValidTripwireCandidates)
+    assert len(result.candidates) == 2
+    assert result.candidates[0] == TripwireCandidate(
         action="doing X", warning="Do Y.", target_doc_path="foo.md"
     )
-    assert results[1] == TripwireCandidate(
+    assert result.candidates[1] == TripwireCandidate(
         action="doing A", warning="Do B.", target_doc_path="bar.md"
     )
+
+
+def test_invalid_tripwire_candidates_message_includes_schema() -> None:
+    """InvalidTripwireCandidates.message includes schema, rules, and examples."""
+    invalid = InvalidTripwireCandidates(
+        raw_data={"candidates": [{"action": "no warning"}]},
+        reason="Candidate at index 0 missing 'warning' string",
+    )
+    message = invalid.message
+    assert "Expected schema" in message
+    assert "action" in message and "warning" in message and "target_doc_path" in message
+    assert "Root must be a JSON object" in message
+    assert "Valid example" in message
+    assert "Invalid example" in message
+
+
+def test_invalid_tripwire_candidates_error_type() -> None:
+    """InvalidTripwireCandidates.error_type is 'invalid-tripwire-candidates'."""
+    invalid = InvalidTripwireCandidates(raw_data=None, reason="test")
+    assert invalid.error_type == "invalid-tripwire-candidates"
