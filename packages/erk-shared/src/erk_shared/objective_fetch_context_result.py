@@ -17,6 +17,7 @@ class ObjectiveInfoDict(TypedDict):
     state: str
     labels: list[str]
     url: str
+    objective_content: str | None
 
 
 class PlanInfoDict(TypedDict):

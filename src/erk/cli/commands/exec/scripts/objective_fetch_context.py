@@ -17,6 +17,7 @@ Exit Codes:
 """
 
 import json
+from pathlib import Path
 
 import click
 
@@ -28,8 +29,13 @@ from erk_shared.context.helpers import (
     require_plan_backend,
     require_repo_root,
 )
+from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.core import extract_raw_metadata_blocks
+from erk_shared.gateway.github.metadata.core import (
+    extract_objective_from_comment,
+    extract_objective_header_comment_id,
+    extract_raw_metadata_blocks,
+)
 from erk_shared.gateway.github.metadata.dependency_graph import (
     build_graph,
     compute_graph_summary,
@@ -99,6 +105,25 @@ def _build_roadmap_context(objective_body: str, plan_id: str) -> RoadmapContextD
         next_node=next_node,
         all_complete=graph.is_complete(),
     )
+
+
+def _fetch_objective_content(issue_body: str, issues: GitHubIssues, repo_root: Path) -> str | None:
+    """Fetch prose content from the objective's first comment.
+
+    Objective prose lives in the first comment's objective-body metadata block,
+    not in the issue body (which contains only metadata). This extracts the
+    comment ID from the objective-header block, fetches the comment, and
+    parses the prose from the objective-body block.
+
+    Returns None if any step fails (no comment ID, comment not found, no
+    objective-body block).
+    """
+    comment_id = extract_objective_header_comment_id(issue_body)
+    if comment_id is None:
+        return None
+
+    comment_body = issues.get_comment_by_id(repo_root, comment_id)
+    return extract_objective_from_comment(comment_body)
 
 
 @click.command(name="objective-fetch-context")
@@ -180,6 +205,9 @@ def objective_fetch_context(
 
     roadmap = _build_roadmap_context(objective.body, plan_id)
 
+    # Fetch prose content from the first comment's objective-body block
+    objective_content = _fetch_objective_content(objective.body, issues, repo_root)
+
     objective_info: ObjectiveInfoDict = {
         "number": objective.number,
         "title": objective.title,
@@ -187,6 +215,7 @@ def objective_fetch_context(
         "state": objective.state,
         "labels": objective.labels,
         "url": objective.url,
+        "objective_content": objective_content,
     }
     plan_info: PlanInfoDict = {
         "number": plan_id,

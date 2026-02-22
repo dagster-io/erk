@@ -66,12 +66,14 @@ Preserve the existing plan reference for each node (available in `roadmap.phases
 
 ### Step 3: Perform Prose Reconciliation
 
-Compare `updated_body` against what the PR actually did:
+Compare `objective.objective_content` (the prose from the first comment's `objective-body` block) against what the PR actually did. Note: `updated_body` from Step 2 contains only metadata (roadmap); prose lives in `objective_content`.
+
+If `objective_content` is null, skip prose reconciliation entirely (objective has no prose comment).
 
 - Read each Design Decision. Did the PR override or refine any?
 - Read Implementation Context. Does the architecture description still match?
 - Read upcoming node descriptions. Did this PR change the landscape?
-- If nothing is stale, skip body update entirely.
+- If nothing is stale, skip prose update entirely.
 
 | Contradiction Type          | Example                                                      | Section to Update                             |
 | --------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
@@ -95,18 +97,18 @@ echo '{"issue_number": <N>, "date": "YYYY-MM-DD", "pr_number": <N>, "phase_step"
 - **Lessons Learned:** Infer from implementation patterns. If straightforward, note what worked well.
 - **Body Reconciliation:** Only include if prose sections needed updating. Omit entirely if nothing is stale.
 
-### Step 5: Update Objective Body
+### Step 5: Update Objective Prose (First Comment)
 
-**Only if prose reconciliation found stale sections**, update the objective body:
+**Only if prose reconciliation found stale sections**, update the objective's first comment (where prose lives). Use `extract_objective_header_comment_id` from the objective body to get the comment ID, then update the comment with reconciled prose wrapped in the `objective-body` metadata block.
+
+To get the comment ID, parse it from `objective.body`'s `objective-header` metadata block (the `objective_comment_id` field).
 
 ```bash
-erk exec update-issue-body <issue-number> --body "$(cat <<'BODY_EOF'
-<full updated body text with reconciled sections>
-BODY_EOF
-)"
+# Update the first comment (not the issue body) with reconciled prose
+gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="<updated comment body>"
 ```
 
-If nothing is stale, skip this step entirely.
+If nothing is stale, skip this step entirely. The issue body (`updated_body`) contains only metadata and should NOT be the target of prose updates.
 
 ### Step 6: Validate Objective
 
