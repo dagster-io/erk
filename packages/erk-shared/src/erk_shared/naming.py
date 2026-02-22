@@ -71,6 +71,11 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
     return f"-{dt.strftime(BRANCH_TIMESTAMP_SUFFIX_FORMAT)}"
 
 
+# --- Agent Backpressure Gates ---
+# Gate functions (validate_*) reject invalid agent output with actionable feedback.
+# Their human-facing counterparts (generate_*, sanitize_*) silently transform input.
+# See docs/learned/architecture/agent-backpressure-gates.md for the pattern.
+
 _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
 # Plan title constraints
@@ -128,12 +133,20 @@ class InvalidPlanTitle:
 def validate_plan_title(title: str) -> ValidPlanTitle | InvalidPlanTitle:
     """Validate a plan title against minimum content requirements.
 
-    This is an agent-facing validation gate. It ensures plan titles have enough
-    meaningful content before they are used to generate filenames, branch names,
-    or issue titles. Human-facing paths (like generate_filename_from_title) can
-    still transform arbitrary input silently.
+    Agent-facing validation gate. Ensures plan titles have enough meaningful
+    content before they are used to generate filenames, branch names, or issue
+    titles. On failure, returns ``InvalidPlanTitle`` with actionable feedback
+    (rules, actual value, examples) so the agent can self-correct and retry.
 
-    Returns ValidPlanTitle on success, or InvalidPlanTitle describing the failure.
+    Agent-facing callers:
+        - ``plan_save_to_issue`` (exec script)
+        - ``plan_save`` (exec script)
+        - ``issue_title_to_filename`` (exec script)
+
+    Human-facing counterpart:
+        ``generate_filename_from_title`` silently transforms arbitrary input
+        (including emoji-only or accent-heavy strings) into a usable filename,
+        bypassing this gate entirely.
 
     Args:
         title: The plan title string to validate.
@@ -258,8 +271,22 @@ def validate_worktree_name(name: str) -> ValidWorktreeName | InvalidWorktreeName
     """Validate a worktree name against sanitization rules.
 
     Agent-facing validation gate. Accepts names that are already clean
-    (would pass through sanitize_worktree_name() unchanged). Rejects names
-    that would be silently transformed.
+    (would pass through ``sanitize_worktree_name()`` unchanged). Rejects
+    names that would be silently transformed, returning
+    ``InvalidWorktreeName`` with diagnostic details for self-correction.
+
+    This is an internal consistency check: it validates system-generated
+    names (not direct agent input). The typical flow is sanitize first,
+    then validate to confirm the result is stable.
+
+    Agent-facing callers:
+        - ``prepare_plan_for_worktree`` (in ``issue_workflow.py``)
+        - ``setup_impl_from_issue`` (exec script)
+
+    Human-facing counterpart:
+        ``sanitize_worktree_name`` silently transforms arbitrary input
+        (lowercasing, replacing underscores, collapsing hyphens) into a
+        valid name, bypassing this gate entirely.
 
     Names with timestamp suffixes (-MM-DD-HHMM) are treated as idempotent
     and pass validation (they've already been sanitized).
@@ -364,14 +391,20 @@ def validate_objective_slug(slug: str) -> ValidObjectiveSlug | InvalidObjectiveS
 def sanitize_worktree_name(name: str) -> str:
     """Sanitize a worktree name for use as a directory name.
 
-    - If name already has timestamp suffix (-MM-DD-HHMM), returns as-is (idempotent)
-    - Lowercases input
-    - Replaces underscores with hyphens
-    - Replaces characters outside `[A-Za-z0-9-]` with `-`
-    - Collapses consecutive `-`
-    - Strips leading/trailing `-`
-    - Truncates to 31 characters maximum (matches branch component sanitization)
-    Returns `"work"` if the result is empty.
+    Human-facing silent transformation. Accepts arbitrary input and produces
+    a valid worktree name without raising errors. This is the counterpart to
+    ``validate_worktree_name``, which is the agent-facing gate that rejects
+    names requiring transformation.
+
+    Transformations applied:
+        - If name already has timestamp suffix (-MM-DD-HHMM), returns as-is (idempotent)
+        - Lowercases input
+        - Replaces underscores with hyphens
+        - Replaces characters outside ``[a-z0-9-]`` with ``-``
+        - Collapses consecutive ``-``
+        - Strips leading/trailing ``-``
+        - Truncates to 31 characters maximum (matches branch component sanitization)
+        - Returns ``"work"`` if the result is empty
 
     The 31-character limit ensures worktree names match their corresponding branch
     names, maintaining consistency across the worktree/branch model.
@@ -454,17 +487,26 @@ def sanitize_branch_component(name: str) -> str:
 def generate_filename_from_title(title: str) -> str:
     """Convert title to kebab-case filename with -plan.md suffix.
 
-    Comprehensive transformation:
-    1. Lowercase
-    2. Replace spaces with hyphens
-    3. Unicode normalization (NFD)
-    4. Remove emojis and non-alphanumeric characters (except hyphens)
-    5. Collapse consecutive hyphens
-    6. Strip leading/trailing hyphens
-    7. Validate at least one alphanumeric character remains
-    8. Append "-plan.md"
+    Human-facing silent transformation. Accepts arbitrary input (including
+    emoji-only or accent-heavy strings) and produces a usable filename.
+    This is the counterpart to ``validate_plan_title``, which is the
+    agent-facing gate that rejects titles lacking meaningful content.
 
-    Returns "plan.md" if title is empty after cleanup.
+    ``validate_plan_title`` calls this function internally: if the result
+    is ``"plan.md"`` (the fallback), the title has no usable content and
+    the gate rejects it.
+
+    Transformation steps:
+        1. Lowercase
+        2. Unicode normalization (NFD)
+        3. Remove emojis and non-ASCII characters, keep alphanumeric + hyphens
+        4. Replace spaces with hyphens
+        5. Collapse consecutive hyphens
+        6. Strip leading/trailing hyphens
+        7. Validate at least one alphanumeric character remains
+        8. Append ``"-plan.md"``
+
+    Returns ``"plan.md"`` if title is empty after cleanup.
 
     Args:
         title: Plan title to convert
