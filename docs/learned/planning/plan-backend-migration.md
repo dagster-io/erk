@@ -147,20 +147,14 @@ Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store
 | `get_plan(repo_root, plan_id)`                     | `Plan \| PlanNotFound`   | Fetch full plan by ID                       |
 | `get_metadata_field(repo_root, plan_id, field)`    | `object \| PlanNotFound` | Get a single metadata field value           |
 | `update_metadata(repo_root, plan_id, metadata)`    | `None \| PlanNotFound`   | Update metadata fields in plan header block |
-| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan (line 398-414)        |
+| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |
 | `post_event(repo_root, plan_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |
 
 `add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).
 
-## Source Code References
+## Source Code
 
-| File                                                       | Key Components                             |
-| ---------------------------------------------------------- | ------------------------------------------ |
-| `packages/erk-shared/src/erk_shared/plan_store/backend.py` | `PlanBackend` ABC                          |
-| `packages/erk-shared/src/erk_shared/plan_store/github.py`  | `GitHubPlanStore` implementation           |
-| `packages/erk-shared/src/erk_shared/plan_store/types.py`   | `PlanNotFound`, `PlanHeaderNotFoundError`  |
-| `packages/erk-shared/src/erk_shared/context/helpers.py`    | `require_plan_backend()`, `require_time()` |
-| `src/erk/cli/commands/exec/scripts/upload_session.py`      | LBYL pattern with partial success          |
+The canonical implementation lives in `packages/erk-shared/src/erk_shared/plan_store/` (backend ABC, GitHub implementation, types) and `packages/erk-shared/src/erk_shared/context/helpers.py` (context helpers). Refer to the source directly for current signatures and behavior.
 
 ## get_metadata_field Returns object | PlanNotFound
 
