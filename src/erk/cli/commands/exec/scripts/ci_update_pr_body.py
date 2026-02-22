@@ -54,6 +54,7 @@ from erk_shared.context.helpers import (
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
@@ -253,6 +254,11 @@ def _update_pr_body_impl(
             message="Claude returned empty output (check API quota, rate limits, or token)",
             stderr=stderr_preview,
         )
+
+    # Fallback: detect draft-PR plan from PR body metadata block
+    # .impl/plan-ref.json may not survive CI cleanup steps
+    if not is_draft_pr and find_metadata_block(pr_result.body, "plan-header") is not None:
+        is_draft_pr = True
 
     # Build full PR body
     if is_draft_pr:

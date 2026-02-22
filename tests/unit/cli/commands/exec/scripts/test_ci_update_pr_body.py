@@ -784,3 +784,88 @@ def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) 
     # Should have original plan section
     assert "original-plan" in updated_body
     assert "My Plan" in updated_body
+
+
+def test_impl_fallback_detects_draft_pr_from_body_metadata(tmp_path: Path) -> None:
+    """Test that is_draft_pr=False is overridden when PR body contains plan-header metadata."""
+    git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
+
+    # Build a PR body with valid metadata block (details/yaml format) and plan content
+    metadata_prefix = (
+        "<!-- erk:metadata-block:plan-header -->\n"
+        "<details>\n<summary>plan-header</summary>\n\n"
+        "```yaml\nbranch: plan-test-01-01\n```\n"
+        "</details>\n"
+        "<!-- /erk:metadata-block -->\n\n---\n\n"
+    )
+    plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
+    pr_body = metadata_prefix + plan_content
+
+    pr_details = PRDetails(
+        number=42,
+        url="https://github.com/owner/repo/pull/42",
+        title="[erk-plan] Test Plan",
+        body=pr_body,
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="master",
+        head_ref_name="plan-test-01-01",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=("erk-plan",),
+    )
+
+    github = FakeGitHub(
+        prs={
+            "plan-test-01-01": PullRequestInfo(
+                number=42,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/42",
+                is_draft=True,
+                title="[erk-plan] Test Plan",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={42: pr_details},
+        pr_diffs={42: "+added line"},
+    )
+
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+    )
+
+    # Pass is_draft_pr=False to simulate .impl/plan-ref.json missing in CI
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        issue_number=42,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
+        is_draft_pr=False,
+    )
+
+    assert isinstance(result, UpdateSuccess)
+    assert result.pr_number == 42
+
+    # Verify the updated body preserves metadata (draft-PR path was taken)
+    updated_bodies = github.updated_pr_bodies
+    assert len(updated_bodies) == 1
+    _pr_num, updated_body = updated_bodies[0]
+
+    # Should have metadata prefix preserved (fallback detection triggered draft-PR path)
+    assert updated_body.startswith(metadata_prefix)
+    # Should have summary
+    assert "Generated summary" in updated_body
+    # Should NOT have Closes #N (draft-PR path passes issue_number=None)
+    assert "Closes #42" not in updated_body
+    # Should have original plan section
+    assert "original-plan" in updated_body
+    assert "My Plan" in updated_body
