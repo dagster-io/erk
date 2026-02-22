@@ -132,6 +132,7 @@ def dispatch_one_shot(
     repo: RepoContext = ctx.repo
 
     # Validate GitHub authentication
+    user_output("Validating GitHub authentication...")
     Ensure.gh_authenticated(ctx)
 
     # Get GitHub username
@@ -181,6 +182,7 @@ def dispatch_one_shot(
     # draft_pr backend: skip skeleton issue, use plnd/ branch naming, PR is the plan
     plan_issue_number: int | None = None
     if not is_draft_pr:
+        user_output("Creating skeleton plan issue...")
         skeleton_plan_content = (
             f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
             f"**Prompt:** {params.prompt}"
@@ -202,6 +204,7 @@ def dispatch_one_shot(
         plan_issue_number = skeleton_result.issue_number
 
     # Generate branch name with LLM-generated slug
+    user_output("Generating branch name...")
     slug = generate_slug_or_fallback(ctx.prompt_executor, params.prompt)
     if is_draft_pr:
         # draft_pr: plnd/ prefix (no issue number needed)

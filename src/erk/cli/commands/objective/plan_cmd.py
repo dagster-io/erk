@@ -266,6 +266,7 @@ def _handle_all_unblocked(
     # Single atomic update after all dispatches complete
     if successful_dispatches:
         assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        user_output("Updating objective roadmap...")
         _batch_update_objective_nodes(
             ctx.issues,
             ctx.repo.root,
@@ -677,6 +678,7 @@ def _handle_one_shot(
         # - use_next path: _resolve_next validates repo
         # - non-use_next path: repo is assigned above
         assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        user_output("Updating objective roadmap...")
         _update_objective_node(
             ctx.issues,
             ctx.repo.root,
