@@ -463,7 +463,7 @@ def test_objective_save_to_issue_with_roadmap_creates_frontmatter() -> None:
     created_body = fake_gh.created_issues[0][1]
     assert "erk:metadata-block:objective-header" in created_body
     assert "erk:metadata-block:objective-roadmap" in created_body
-    assert "schema_version: '3'" in created_body or 'schema_version: "3"' in created_body
+    assert "schema_version: '4'" in created_body or 'schema_version: "4"' in created_body
 
     # Should contain step IDs in frontmatter
     assert "id: '1.1'" in created_body or 'id: "1.1"' in created_body

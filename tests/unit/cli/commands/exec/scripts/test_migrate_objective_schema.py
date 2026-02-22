@@ -68,6 +68,37 @@ nodes:
 <!-- /erk:metadata-block:objective-roadmap -->
 """
 
+V4_ROADMAP_BODY = """\
+# Objective: Build Feature X
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '4'
+nodes:
+  - id: '1.1'
+    slug: setup-project
+    description: Set up project structure
+    status: done
+    plan: null
+    pr: '#100'
+  - id: '1.2'
+    slug: add-core-types
+    description: Add core types
+    status: in_progress
+    plan: '#200'
+    pr: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
 NO_ROADMAP_BODY = """\
 # Objective: Simple Issue
 
@@ -92,8 +123,8 @@ def _make_issue(number: int, body: str) -> IssueInfo:
     )
 
 
-def test_migrate_v2_to_v3() -> None:
-    """V2 objective is migrated to v3 — steps become nodes, schema_version becomes 3."""
+def test_migrate_v2_to_v4() -> None:
+    """V2 objective is migrated to v4 — steps become nodes with slugs."""
     issue = _make_issue(7391, V2_ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={7391: issue})
     runner = CliRunner()
@@ -110,19 +141,20 @@ def test_migrate_v2_to_v3() -> None:
     assert output["issue_number"] == 7391
     assert output["migrated"] is True
     assert output["previous_version"] == "2"
-    assert output["new_version"] == "3"
+    assert output["new_version"] == "4"
 
     # Verify the body was actually updated
     assert len(fake_gh.updated_bodies) == 1
     updated_body = fake_gh.updated_bodies[0][1]
-    assert "schema_version: '3'" in updated_body
+    assert "schema_version: '4'" in updated_body
     assert "nodes:" in updated_body
+    assert "slug:" in updated_body
     # v2 key should no longer be present
     assert "steps:" not in updated_body
 
 
-def test_already_v3_no_op() -> None:
-    """V3 objective reports nothing to do without updating."""
+def test_migrate_v3_to_v4() -> None:
+    """V3 objective is migrated to v4 — slugs are added."""
     issue = _make_issue(7391, V3_ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={7391: issue})
     runner = CliRunner()
@@ -136,8 +168,34 @@ def test_already_v3_no_op() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
+    assert output["migrated"] is True
+    assert output["previous_version"] == "3"
+    assert output["new_version"] == "4"
+
+    # Verify the body was actually updated
+    assert len(fake_gh.updated_bodies) == 1
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "schema_version: '4'" in updated_body
+    assert "slug:" in updated_body
+
+
+def test_already_v4_no_op() -> None:
+    """V4 objective reports nothing to do without updating."""
+    issue = _make_issue(7391, V4_ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={7391: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        migrate_objective_schema,
+        ["7391"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
     assert output["migrated"] is False
-    assert "Already v3" in output["message"]
+    assert "Already v4" in output["message"]
 
     # No update should have been made
     assert len(fake_gh.updated_bodies) == 0
@@ -179,7 +237,7 @@ def test_dry_run_no_update() -> None:
     assert output["migrated"] is True
     assert output["dry_run"] is True
     assert output["previous_version"] == "2"
-    assert output["new_version"] == "3"
+    assert output["new_version"] == "4"
 
     # No update should have been made
     assert len(fake_gh.updated_bodies) == 0

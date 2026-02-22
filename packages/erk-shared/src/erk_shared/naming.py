@@ -78,6 +78,34 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
 
 _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
+# Node slug constraints
+_NODE_SLUG_MIN_LENGTH = 2
+_NODE_SLUG_MAX_LENGTH = 30
+
+# Common filler words to strip in deterministic slug generation
+_FILLER_WORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "the",
+        "to",
+        "for",
+        "of",
+        "in",
+        "on",
+        "with",
+        "from",
+        "by",
+        "into",
+        "this",
+        "that",
+        "is",
+        "are",
+        "be",
+    }
+)
+
 # Plan title constraints
 _PLAN_TITLE_MIN_LENGTH = 5
 _PLAN_TITLE_MAX_LENGTH = 100
@@ -386,6 +414,132 @@ def validate_objective_slug(slug: str) -> ValidObjectiveSlug | InvalidObjectiveS
     if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
         return InvalidObjectiveSlug(raw_slug=slug, reason="Does not match required pattern")
     return ValidObjectiveSlug(slug=slug)
+
+
+@dataclass(frozen=True)
+class ValidNodeSlug:
+    """Validation success for a node slug.
+
+    Attributes:
+        slug: The validated slug value.
+    """
+
+    slug: str
+
+
+@dataclass(frozen=True)
+class InvalidNodeSlug:
+    """Validation failure for a node slug.
+
+    Attributes:
+        raw_slug: The original slug value that failed validation.
+        reason: A short description of why validation failed.
+    """
+
+    raw_slug: str
+    reason: str
+
+    @property
+    def message(self) -> str:
+        """Full error message with pattern, rules, actual value, and examples.
+
+        Designed so an agent receiving this message can self-correct.
+        """
+        return (
+            f"Invalid node slug: {self.reason}\n"
+            f"  Actual value: {self.raw_slug!r}\n"
+            f"  Pattern: ^[a-z][a-z0-9]*(-[a-z0-9]+)*$\n"
+            f"  Rules:\n"
+            f"    - {_NODE_SLUG_MIN_LENGTH}-{_NODE_SLUG_MAX_LENGTH} characters\n"
+            f"    - Lowercase letters and digits only\n"
+            f"    - Must start with a letter\n"
+            f"    - Hyphens allowed between words (no consecutive hyphens)\n"
+            f"  Valid examples: add-user-model, wire-cli, fix-auth\n"
+            f"  Invalid examples: Add-User, 123-start, a, my--slug"
+        )
+
+
+def validate_node_slug(slug: str) -> ValidNodeSlug | InvalidNodeSlug:
+    """Validate a node slug against the required format.
+
+    Node slugs follow the same pattern as objective slugs but with
+    different length constraints (2-30 characters).
+
+    Args:
+        slug: The slug string to validate.
+
+    Returns:
+        ValidNodeSlug if valid, InvalidNodeSlug if invalid.
+    """
+    if len(slug) < _NODE_SLUG_MIN_LENGTH:
+        return InvalidNodeSlug(
+            raw_slug=slug,
+            reason=f"Too short (minimum {_NODE_SLUG_MIN_LENGTH} characters)",
+        )
+    if len(slug) > _NODE_SLUG_MAX_LENGTH:
+        return InvalidNodeSlug(
+            raw_slug=slug,
+            reason=f"Too long (maximum {_NODE_SLUG_MAX_LENGTH} characters)",
+        )
+    if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
+        return InvalidNodeSlug(raw_slug=slug, reason="Does not match required pattern")
+    return ValidNodeSlug(slug=slug)
+
+
+def slugify_node_description(description: str) -> str:
+    """Generate a deterministic slug from a node description.
+
+    Deterministic fallback for when LLM is unavailable. Transforms a
+    description into a kebab-case slug by:
+    1. Lowercasing
+    2. Stripping filler words
+    3. Taking first 4 meaningful words
+    4. Hyphenating
+    5. Truncating to 30 characters
+
+    Args:
+        description: Node description to slugify.
+
+    Returns:
+        A kebab-case slug, max 30 characters.
+    """
+    lowered = description.strip().lower()
+    # Replace non-alphanumeric with spaces for splitting
+    cleaned = re.sub(r"[^a-z0-9]+", " ", lowered)
+    words = cleaned.split()
+    # Strip filler words
+    meaningful = [w for w in words if w not in _FILLER_WORDS]
+    if not meaningful:
+        meaningful = words[:4] if words else ["node"]
+    # Take first 4 words
+    slug_words = meaningful[:4]
+    slug = "-".join(slug_words)
+    # Truncate to 30 chars, strip trailing hyphen
+    if len(slug) > _NODE_SLUG_MAX_LENGTH:
+        slug = slug[:_NODE_SLUG_MAX_LENGTH].rstrip("-")
+    return slug
+
+
+def make_unique_slug(slug: str, existing_slugs: set[str]) -> str:
+    """Ensure a slug is unique within a set by appending a numeric suffix.
+
+    If the slug already exists, appends -2, -3, etc. until unique.
+
+    Args:
+        slug: The base slug to check.
+        existing_slugs: Set of slugs already in use.
+
+    Returns:
+        A unique slug, either the original or with a numeric suffix.
+    """
+    if slug not in existing_slugs:
+        return slug
+    counter = 2
+    while True:
+        candidate = f"{slug}-{counter}"
+        if candidate not in existing_slugs:
+            return candidate
+        counter += 1
 
 
 def sanitize_worktree_name(name: str) -> str:

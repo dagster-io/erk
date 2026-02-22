@@ -22,6 +22,7 @@ from erk_shared.gateway.github.metadata.core import (
     extract_raw_metadata_blocks,
     parse_metadata_block_body,
 )
+from erk_shared.naming import make_unique_slug, slugify_node_description
 
 RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
 
@@ -36,6 +37,7 @@ class RoadmapNode:
     plan: str | None  # None or "#123" (plan issue number)
     pr: str | None  # None or "#456" (landed PR number)
     depends_on: tuple[str, ...] | None  # None = not specified, () = no deps
+    slug: str | None  # None = not yet generated, or kebab-case slug
 
 
 @dataclass(frozen=True)
@@ -73,7 +75,7 @@ def validate_roadmap_frontmatter(
         errors.append("Missing required field: schema_version")
         return None, errors
 
-    if schema_version not in ("2", "3"):
+    if schema_version not in ("2", "3", "4"):
         errors.append(f"Unsupported schema_version: {schema_version}")
         return None, errors
 
@@ -143,6 +145,11 @@ def validate_roadmap_frontmatter(
                     return None, errors
             depends_on = tuple(cast(list[str], raw_depends_on))
 
+        raw_slug = step_dict.get("slug")
+        if raw_slug is not None and not isinstance(raw_slug, str):
+            errors.append(f"Step {i} field 'slug' must be a string or null")
+            return None, errors
+
         steps.append(
             RoadmapNode(
                 id=step_id,
@@ -151,10 +158,28 @@ def validate_roadmap_frontmatter(
                 plan=raw_plan,
                 pr=raw_pr,
                 depends_on=depends_on,
+                slug=raw_slug,
             )
         )
 
-    return steps, errors
+    # Auto-generate slugs for nodes that don't have them (lazy migration)
+    seen_slugs: set[str] = set()
+    # First pass: collect existing slugs
+    for step in steps:
+        if step.slug is not None:
+            seen_slugs.add(step.slug)
+    # Second pass: generate missing slugs
+    migrated_steps: list[RoadmapNode] = []
+    for step in steps:
+        if step.slug is not None:
+            migrated_steps.append(step)
+        else:
+            generated = slugify_node_description(step.description)
+            unique_slug = make_unique_slug(generated, seen_slugs)
+            seen_slugs.add(unique_slug)
+            migrated_steps.append(replace(step, slug=unique_slug))
+
+    return migrated_steps, errors
 
 
 def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapNode] | None:
@@ -199,6 +224,7 @@ def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
     for s in nodes:
         node_dict: dict[str, object] = {
             "id": s.id,
+            "slug": s.slug,
             "description": s.description,
             "status": s.status,
             "plan": s.plan,
@@ -208,7 +234,7 @@ def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
             node_dict["depends_on"] = list(s.depends_on) if s.depends_on is not None else []
         node_dicts.append(node_dict)
     data: dict[str, object] = {
-        "schema_version": "3",
+        "schema_version": "4",
         "nodes": node_dicts,
     }
     yaml_content = yaml.safe_dump(
@@ -433,7 +459,7 @@ def parse_v2_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]] | None:
 
     data = parse_metadata_block_body(roadmap_block.body)
 
-    if data.get("schema_version") not in ("2", "3"):
+    if data.get("schema_version") not in ("2", "3", "4"):
         return None
 
     steps, errors = validate_roadmap_frontmatter(data)
@@ -593,6 +619,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
             "nodes": [
                 {
                     "id": step.id,
+                    "slug": step.slug,
                     "description": step.description,
                     "status": step.status,
                     "plan": step.plan,
@@ -613,6 +640,7 @@ def find_next_node(phases: list[RoadmapPhase]) -> dict[str, str] | None:
             if step.status == "pending":
                 return {
                     "id": step.id,
+                    "slug": step.slug or "",
                     "description": step.description,
                     "phase": phase.name,
                 }
