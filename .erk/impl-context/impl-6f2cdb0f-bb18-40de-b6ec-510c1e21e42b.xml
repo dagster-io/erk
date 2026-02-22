@@ -1,0 +1,692 @@
+<session>
+  <meta branch="planned/O7823-plan-title-valida-02-22-0854" />
+  <meta model="claude-opus-4-6" />
+  <user>Last login: Sun Feb 22 12:29:54 on ttys019
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-27/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-27/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/.venv (3.13.1)
+source "$(erk pr checkout 7846 --script)" &amp;&amp; erk pr sync --dangerousActivated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk-slot-27 git:(planned/O7775-erk-objective-pla-02-22-0858) source "$(erk pr checkout 7846 --script)" &amp;&amp; erk pr sync --dangerous
+Fetching PR #7846...
+✓ Assigned planned/O7823-plan-title-valida-02-22-0854 to erk-slot-32
+Tracking branch with Graphite...
+Submitting to link with Graphite...
+✓ Branch linked with Graphite
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-32/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-32/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv (3.13.1)
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv (3.13.1)
+Checked out PR #7846 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32
+✓ Branch 'planned/O7823-plan-title-valida-02-22-0854' already tracked by Graphite (parent: master)
+Syncing with remote...
+🌲 Fetching branches from remote...
+Running git fetch: [========================================] 100% | Done
+master is up to date.
+
+🔄 Syncing branches...
+Branch P7508-erk-learn-generalize-plan-02-19-0400 is up to date with remote (PR #7509 v7).
+Branch P7637-erk-plan-fix-tui-plan-bod-02-19-1837 is up to date with remote (PR #7639 v3).
+Branch P7640-erk-learn-documentation-p-02-19-1839 is up to date with remote (PR #7642 v1).
+Branch plan/plan-consolidated-document-02-21-1149 is up to date with remote (PR #7760 v3).
+Branch planned/plan-consolidated-docum-02-22-0354 is up to date with remote (PR #7799 v15).
+Branch planned/remove-plan-review-subs-02-22-0718 is up to date with remote (PR #7838 v18).
+Branch planned/O7823-plan-title-valida-02-22-0854 is up to date with remote (PR #7846 v9).
+Branch planned/O7775-erk-objective-pla-02-22-0858 is up to date with remote (PR #7848 v8).
+Branch plnd/fix-same-slot-copy-02-22-1055 is up to date with remote (PR #7863 v7).
+Synced plnd/release-plan-02-22-1111 (PR #7868 v1) from remote (previously at 375136a6ccff5084b836e1ddc85054c1624eeee2).
+Branch release-0.8.1 is up to date with remote (PR #7869 v1).
+
+🥞 Restacking branches...
+planned/remove-plan-review-subs-02-22-0718 does not need to be restacked on master.
+plnd/fix-same-slot-copy-02-22-1055 does not need to be restacked on master.
+P7637-erk-plan-fix-tui-plan-bod-02-19-1837 does not need to be restacked on master.
+P7640-erk-learn-documentation-p-02-19-1839 does not need to be restacked on master.
+plan/plan-consolidated-document-02-21-1149 does not need to be restacked on master.
+planned/O7775-erk-objective-pla-02-22-0858 does not need to be restacked on master.
+release-0.8.1 does not need to be restacked on master.
+Restacked plnd/release-plan-02-22-1111 on master.
+Restacked planned/O7823-plan-title-valida-02-22-0854 on master.
+
+WARNING: The following branches could not be restacked cleanly:
+WARNING: ▸ planned/plan-consolidated-docum-02-22-0354
+WARNING: ▸ P7508-erk-learn-generalize-plan-02-19-0400
+WARNING: You can resolve conflicts with gt restack.
+✓ Synced with remote
+Restacking branch...
+planned/O7823-plan-title-valida-02-22-0854 does not need to be restacked on master.
+✓ Branch restacked
+Pushing to remote...
+✓ Pushed to remote
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854)
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854)
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854)
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854)
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854) git pull
+Already up to date.
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854) gt restack
+planned/O7823-plan-title-valida-02-22-0854 does not need to be restacked on master.
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854) gt submit
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ planned/O7823-plan-title-valida-02-22-0854 (No-op)
+
+🆗 All PRs up to date.
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854) gt pr
+https://app.graphite.dev/github/pr/dagster-io/erk/7846
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854) make fast-ci
+=== Fast CI ===
+
+--- Lint ---
+      Built erk @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32
+      Built erk-dev @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-dev
+      Built erk-shared @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared
+      Built erk-statusline @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-statusline
+Uninstalled 4 packages in 9ms
+Installed 4 packages in 3ms
+All checks passed!
+
+--- Format Check ---
+1506 files already formatted
+
+--- Prettier Check ---
+Checking formatting...
+All matched files use Prettier code style!
+
+--- Markdown Check ---
+✓ AGENTS.md standard: PASSED
+
+All CLAUDE.md and AGENTS.md files properly paired.
+
+CLAUDE.md files checked: 19
+Violations: 0
+
+--- Exec Reference Check ---
+OK: .claude/skills/erk-exec/reference.md is up to date
+
+--- ty ---
+All checks passed!
+
+--- Unit Tests (erk) ---
+bringing up nodes...
+............................................................................................................................................................. [  2%]
+............................................................................................................................................................. [  5%]
+............................................................................................................................................................. [  8%]
+.................................F................F.......................................................................................................... [ 11%]
+............................................................................................................................................................. [ 14%]
+.....................................................................................................................F.....F................................. [ 17%]
+............................................................................................................................................................. [ 20%]
+..........................................................................................FF...F............................................................. [ 23%]
+............................................................................................................................................................. [ 25%]
+............................................................................................................................................................. [ 28%]
+............................................................................................................................................................. [ 31%]
+............................................................................................................................................................. [ 34%]
+............................................................................................................................................................. [ 37%]
+............................................................................................................................................................. [ 40%]
+............................................................................................................................................................. [ 43%]
+............................................................................................................................................................. [ 46%]
+............................................................................................................................................................. [ 49%]
+............................................................................................................................................................. [ 51%]
+............................................................................................................................................................. [ 54%]
+............................................................................................................................................................. [ 57%]
+............................................................................................................................................................. [ 60%]
+............................................................................................................................................................. [ 63%]
+............................................................................................................................................................. [ 66%]
+............................................................................................................................................................. [ 69%]
+............................................................................................................................................................. [ 72%]
+............................................................................................................................................................. [ 75%]
+............................................................................................................................................................. [ 77%]
+............................................................................................................................................................. [ 80%]
+............................................................................................................................................................. [ 83%]
+............................................................................................................................................................. [ 86%]
+............................................................................................................................................................. [ 89%]
+............................................................................................................................................................. [ 92%]
+............................................................................................................................................................. [ 95%]
+............................................................................................................................................................. [ 98%]
+.................................................................................................                                                             [100%]
+============================================================================= FAILURES ==============================================================================
+_____________________________________________________________ test_draft_pr_rejects_untitled_plan_json ______________________________________________________________
+[gw4] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv/bin/python
+
+tmp_path = PosixPath('/private/var/folders/9r/wfby6pcs4mgbfb_lg0ndgb180000gn/T/pytest-of-schrockn/pytest-2598/popen-gw4/test_draft_pr_rejects_untitled0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x12c722750&gt;
+
+    def test_draft_pr_rejects_untitled_plan_json(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -&gt; None:
+        """Draft-PR save rejects plan with fallback title 'Untitled Plan'."""
+        ctx = _draft_pr_context(
+            tmp_path=tmp_path,
+            fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
+            monkeypatch=monkeypatch,
+        )
+        runner = CliRunner()
+
+        result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+&gt;       assert result.exit_code == 2
+E       assert 0 == 2
+E        +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:350: AssertionError
+____________________________________________________________ test_draft_pr_rejects_untitled_plan_display ____________________________________________________________
+[gw4] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv/bin/python
+
+tmp_path = PosixPath('/private/var/folders/9r/wfby6pcs4mgbfb_lg0ndgb180000gn/T/pytest-of-schrockn/pytest-2598/popen-gw4/test_draft_pr_rejects_untitled1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x12c5c64c0&gt;
+
+    def test_draft_pr_rejects_untitled_plan_display(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -&gt; None:
+        """Draft-PR save shows error message for invalid title in display format."""
+        ctx = _draft_pr_context(
+            tmp_path=tmp_path,
+            fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
+            monkeypatch=monkeypatch,
+        )
+        runner = CliRunner()
+
+        result = runner.invoke(plan_save, ["--format", "display"], obj=ctx)
+
+&gt;       assert result.exit_code == 2
+E       assert 0 == 2
+E        +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:387: AssertionError
+________________________________________________________ test_plan_save_to_issue_rejects_fallback_title_json ________________________________________________________
+[gw4] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv/bin/python
+
+    def test_plan_save_to_issue_rejects_fallback_title_json() -&gt; None:
+        """Issue-based save rejects plan with 'Implementation Plan' fallback title."""
+        fake_gh = FakeGitHubIssues()
+        fake_store = FakeClaudeInstallation.for_test(
+            plans={"fallback-title": _IMPLEMENTATION_PLAN_FALLBACK_CONTENT}
+        )
+        runner = CliRunner()
+
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json"],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                claude_installation=fake_store,
+            ),
+        )
+
+&gt;       assert result.exit_code == 2
+E       assert 0 == 2
+E        +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py:1209: AssertionError
+______________________________________________________ test_plan_save_to_issue_rejects_fallback_title_display _______________________________________________________
+[gw4] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv/bin/python
+
+    def test_plan_save_to_issue_rejects_fallback_title_display() -&gt; None:
+        """Issue-based save shows error in display format for invalid title."""
+        fake_gh = FakeGitHubIssues()
+        fake_store = FakeClaudeInstallation.for_test(
+            plans={"fallback-display": _IMPLEMENTATION_PLAN_FALLBACK_CONTENT}
+        )
+        runner = CliRunner()
+
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "display"],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                claude_installation=fake_store,
+            ),
+        )
+
+&gt;       assert result.exit_code == 2
+E       assert 0 == 2
+E        +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py:1257: AssertionError
+________________________________________________________ test_invalid_title_exits_with_code_2[Untitled Plan] ________________________________________________________
+[gw2] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv/bin/python
+
+title = 'Untitled Plan'
+
+    @pytest.mark.parametrize(
+        "title",
+        [
+            "",
+            "   ",
+            "Untitled Plan",
+            "Implementation Plan",
+            "🚀🎉",
+            "A",
+        ],
+    )
+    def test_invalid_title_exits_with_code_2(title: str) -&gt; None:
+        """Invalid titles exit with code 2 and JSON error on stderr."""
+        runner = CliRunner()
+        result = runner.invoke(issue_title_to_filename, [title])
+&gt;       assert result.exit_code == 2
+E       assert 0 == 2
+E        +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py:42: AssertionError
+_____________________________________________________ test_invalid_title_exits_with_code_2[Implementation Plan] _____________________________________________________
+[gw2] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv/bin/python
+
+title = 'Implementation Plan'
+
+    @pytest.mark.parametrize(
+        "title",
+        [
+            "",
+            "   ",
+            "Untitled Plan",
+            "Implementation Plan",
+            "🚀🎉",
+            "A",
+        ],
+    )
+    def test_invalid_title_exits_with_code_2(title: str) -&gt; None:
+        """Invalid titles exit with code 2 and JSON error on stderr."""
+        runner = CliRunner()
+        result = runner.invoke(issue_title_to_filename, [title])
+&gt;       assert result.exit_code == 2
+E       assert 0 == 2
+E        +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py:42: AssertionError
+__________________________________________________________ test_invalid_title_json_error_contains_guidance __________________________________________________________
+[gw2] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.venv/bin/python
+
+    def test_invalid_title_json_error_contains_guidance() -&gt; None:
+        """Invalid title outputs JSON with error_type and agent_guidance."""
+        runner = CliRunner()
+        result = runner.invoke(issue_title_to_filename, ["Untitled Plan"])
+&gt;       assert result.exit_code == 2
+E       assert 0 == 2
+E        +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py:49: AssertionError
+====================================================================== short test summary info ======================================================================
+FAILED tests/unit/cli/commands/exec/scripts/test_plan_save.py::test_draft_pr_rejects_untitled_plan_json - assert 0 == 2
+FAILED tests/unit/cli/commands/exec/scripts/test_plan_save.py::test_draft_pr_rejects_untitled_plan_display - assert 0 == 2
+FAILED tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py::test_plan_save_to_issue_rejects_fallback_title_json - assert 0 == 2
+FAILED tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py::test_plan_save_to_issue_rejects_fallback_title_display - assert 0 == 2
+FAILED tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py::test_invalid_title_exits_with_code_2[Untitled Plan] - assert 0 == 2
+FAILED tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py::test_invalid_title_exits_with_code_2[Implementation Plan] - assert 0 == 2
+FAILED tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py::test_invalid_title_json_error_contains_guidance - assert 0 == 2
+7 failed, 5428 passed in 18.71s
+
+--- Tests (erk-dev) ---
+bringing up nodes...
+........................................................................................................................................                      [100%]
+136 passed in 2.77s
+
+--- Tests (erk-statusline) ---
+bringing up nodes...
+..............................................................................................................................                                [100%]
+126 passed in 0.70s
+make: *** [fast-ci] Error 1
+(erk) ➜  erk-slot-32 git:(planned/O7823-plan-title-valida-02-22-0854)
+
+fix tests</user>
+  <thinking>The user wants me to fix 7 failing tests. Let me understand what's happening:
+
+1. Tests expect certain titles ("Untitled Plan", "Implementation Plan") to be rejected with exit code 2
+2. But the actual exit code is 0 - meaning the validation isn't rejecting these titles
+
+This is on branch `planned/O7823-plan-title-valida-02-22-0854` which adds "plan title validation gates for agent-facing save paths" (from the commit message).
+
+Let me explore the relevant source files to understand the validation logic and why it's not working.
+
+The failing tests are in:
+
+
+- `tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+- `tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py`
+- `tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py`
+
+Now I need to check the implementation files to see why these specific titles aren't being rejected as expected.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="16719" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16719}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the failing tests and the implementation to understand what's going wrong.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16719" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16719}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_012u66ameQDTov8VkjwwDjSS">
+    <param name="description">Explore failing test files</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1429 chars]...r should be) called
+- Why it's currently not working (returning exit code 0 instead of 2)
+</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16719" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16719}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012u66ameQDTov8VkjwwDjSS">
+Now I have everything I need. Let me create a comprehensive analysis document.
+
+## Summary of Findings
+
+Based on my thorough exploration of the codebase, I've identified the root cause of the failing tests. Here's what I found:
+
+### The Failing Tests
+
+Seven tests are failing where "Untitled Plan" and "Implementation Plan" titles should be rejected with exit code 2 but are passing with exit code 0:
+
+1. `test_invalid_title_exits_with_code_2` - Tests that `issue_title_to_filename` rejects invalid titles (including "Untitled Plan" and "Implementation Plan")
+2. `test_invalid_title_json_error_contains_guidance` - Tests error output format for "Untitled Plan"
+3. `test_draft_pr_rejects_untitled_plan_json` - Tests draft-PR save rejects "Untitled Plan"
+4. `test_draft_pr_rejects_untitled_plan_display` - Tests error display for "Untitled Plan" in draft-PR path
+5. `test_plan_save_to_issue_rejects_fallback_title_json` - Tests issue-based save rejects "Implementation Plan"
+6. `test_plan_save_to_issue_rejects_emoji_only_title` - Tests emoji-only title rejection
+7. `test_plan_save_to_issue_rejects_fallback_title_display` - Tests error display for "Implementation Plan"
+
+### Root Cause: Missing Validation Logic
+
+The validation logic **does not exist** for rejecting fallback/default plan titles. Here's why:
+
+#### 1. **Current `validate_plan_title()` Implementation** (`naming.py` lines 124-181)
+
+The function validates:
+- ✓ Empty/whitespace-only titles
+- ✓ Too short (&lt;5 chars) or too long (&gt;100 chars)
+- ✓ No alphabetic characters
+- ✓ No usable content after sanitization (emojis only)
+
+
+... [95 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear understanding. The `validate_plan_title()` function in `naming.py` is missing checks for fallback titles "Untitled Plan" and "Implementation Plan". Let me read the actual file to see exactly where to add the check.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2521" cache_read_input_tokens="35760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2521}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the actual validation function to plan the exact fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2521" cache_read_input_tokens="35760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2521}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MR3RArGZrZpAVmsS6WDX3p">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="offset">120</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2521" cache_read_input_tokens="35760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2521}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MR3RArGZrZpAVmsS6WDX3p">
+   120→            f"  Invalid examples: \U0001f680\U0001f389, 123, #!@, Plan"
+   121→        )
+   122→
+   123→
+   124→def validate_plan_title(title: str) -&gt; ValidPlanTitle | InvalidPlanTitle:
+   125→    """Validate a plan title against minimum content requirements.
+   126→
+   127→    This is an agent-facing validation gate. It ensures plan titles have enough
+   128→    meaningful content before they are used to generate filenames, branch names,
+   129→    or issue titles. Human-facing paths (like generate_filename_from_title) can
+   130→    still transform arbitrary input silently.
+   131→
+   132→    Returns ValidPlanTitle on success, or InvalidPlanTitle describing the failure.
+   133→
+   134→    Args:
+   135→        title: The plan title string to validate.
+   136→
+   137→    Returns:
+   138→        ValidPlanTitle if valid, InvalidPlanTitle if invalid.
+   139→
+   140→    Examples:
+   141→        &gt;&gt;&gt; validate_plan_title("Add User Authentication")
+   142→        ValidPlanTitle(title='Add User Authentication')
+   143→        &gt;&gt;&gt; validate_plan_title("")
+   144→        InvalidPlanTitle(raw_title='', reason='...')
+   145→        &gt;&gt;&gt; validate_plan_title("🚀🎉")
+   146→        InvalidPlanTitle(raw_title='🚀🎉', reason='...')
+   147→    """
+   148→    stripped = title.strip()
+   149→
+
+... [40 lines omitted] ...
+  </tool_result>
+  <thinking>Now I can see the issue clearly. The `validate_plan_title()` function doesn't check for fallback/default titles like "Untitled Plan" and "Implementation Plan". I need to add that check.
+
+Let me also check if there are any constants defined for these fallback titles elsewhere in the codebase, so I can reuse them.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1132" cache_read_input_tokens="38281" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1132}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check if there are existing constants for these fallback titles.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1132" cache_read_input_tokens="38281" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1132}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019voSLyvVYdXZqD4Dq4Ag9Q">
+    <param name="pattern">Untitled Plan|Implementation Plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1132" cache_read_input_tokens="38281" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1132}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019voSLyvVYdXZqD4Dq4Ag9Q">
+packages/erk-shared/src/erk_shared/plan_utils.py:14:_PLAN_PREFIXES = ("Plan: ", "Implementation Plan: ", "Documentation Plan: ")
+packages/erk-shared/src/erk_shared/plan_utils.py:32:        &gt;&gt;&gt; _strip_plan_prefixes("Implementation Plan: Refactor Y")
+packages/erk-shared/src/erk_shared/plan_utils.py:115:    (e.g., "Plan: ", "Implementation Plan: ").
+packages/erk-shared/src/erk_shared/plan_utils.py:121:        Extracted title string, or "Implementation Plan" if extraction fails
+packages/erk-shared/src/erk_shared/plan_utils.py:140:        &gt;&gt;&gt; plan = "# Implementation Plan: Refactor Y\\n\\nDetails..."
+packages/erk-shared/src/erk_shared/plan_utils.py:145:        return "Implementation Plan"
+packages/erk-shared/src/erk_shared/plan_utils.py:175:    return "Implementation Plan"
+packages/erk-shared/src/erk_shared/worker_impl_folder.py:83:    readme_content = f"""# .worker-impl/ - Worker Implementation Plan
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:376:    &lt;summary&gt;&lt;strong&gt;📋 Implementation Plan&lt;/strong&gt;&lt;/summary&gt;
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:391:&lt;summary&gt;&lt;strong&gt;📋 Implementation Plan&lt;/strong&gt;&lt;/summary&gt;
+packages/erk-shared/src/erk_shared/plan_store/plan_content.py:20:        Title text, or "Untitled Plan" if no heading found
+packages/erk-shared/src/erk_shared/plan_store/plan_content.py:26:    return "Untitled Plan"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BMfvJarUbti2LagECkYUGX">
+    <param name="pattern">Untitled Plan|Implementation Plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1132" cache_read_input_tokens="38281" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1132}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BMfvJarUbti2LagECkYUGX">
+src/erk/core/file_utils.py:15:    Common prefixes like "Plan: " and "Implementation Plan: " are stripped from the title.
+src/erk/core/file_utils.py:42:        "Implementation Plan: ",
+src/erk/core/file_utils.py:43:        "Implementation Plan - ",
+src/erk/core/commit_message_generator.py:211:## Implementation Plan (Issue #{plan_context.plan_id})
+src/erk/cli/commands/pr/shared.py:155:        "## Implementation Plan",
+src/erk/cli/commands/pr/shared.py:158:        f"&lt;summary&gt;&lt;strong&gt;Implementation Plan&lt;/strong&gt; (Issue #{issue_num})&lt;/summary&gt;",
+src/erk/cli/commands/submit.py:761:        f"## Implementation Plan\n\n"
+src/erk/cli/commands/submit.py:763:        f"&lt;summary&gt;&lt;strong&gt;Implementation Plan&lt;/strong&gt; (Issue #{issue_number})&lt;/summary&gt;\n\n"
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LkNNErsZWWXuLA4m1wguLf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/plan_store/plan_content.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1254" cache_read_input_tokens="39413" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1254}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LkNNErsZWWXuLA4m1wguLf">
+     1→"""Plan content parsing and resolution utilities.
+     2→
+     3→Pure functions for extracting information from plan markdown content
+     4→and resolving plan content from multiple sources with priority ordering.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    10→from erk_shared.scratch.scratch import get_scratch_dir
+    11→
+    12→
+    13→def extract_title_from_plan(plan_content: str) -&gt; str:
+    14→    """Extract title from plan content's first markdown heading.
+    15→
+    16→    Args:
+    17→        plan_content: Plan markdown content
+    18→
+    19→    Returns:
+    20→        Title text, or "Untitled Plan" if no heading found
+    21→    """
+    22→    for line in plan_content.splitlines():
+    23→        stripped = line.strip()
+    24→        if stripped.startswith("# "):
+    25→            return stripped[2:].strip()
+    26→    return "Untitled Plan"
+    27→
+    28→
+    29→def resolve_plan_content(
+    30→    *,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01G7cLjS2jWkNCJAojHr4FdT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/plan_utils.py</param>
+    <param name="offset">140</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1254" cache_read_input_tokens="39413" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1254}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G7cLjS2jWkNCJAojHr4FdT">
+   140→        &gt;&gt;&gt; plan = "# Implementation Plan: Refactor Y\\n\\nDetails..."
+   141→        &gt;&gt;&gt; extract_title_from_plan(plan)
+   142→        'Refactor Y'
+   143→    """
+   144→    if not plan or not plan.strip():
+   145→        return "Implementation Plan"
+   146→
+   147→    lines = plan.strip().split("\n")
+   148→
+   149→    # Try H1 first
+   150→    for line in lines:
+   151→        line = line.strip()
+   152→        if line.startswith("# ") and len(line) &gt; 2:
+   153→            title = _clean_title(line[2:])
+   154→            if title:
+   155→                # Limit to 100 chars (GitHub recommendation)
+   156→                return title[:100] if len(title) &gt; 100 else title
+   157→
+   158→    # Try H2 second
+   159→    for line in lines:
+   160→        line = line.strip()
+   161→        if line.startswith("## ") and len(line) &gt; 3:
+   162→            title = _clean_title(line[3:])
+   163→            if title:
+   164→                return title[:100] if len(title) &gt; 100 else title
+   165→
+   166→    # Fallback: first non-empty line
+   167→    for line in lines:
+   168→        line = line.strip()
+   169→        # Skip YAML front matter delimiters
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have the full picture. The fix is simple — `validate_plan_title()` in `naming.py` needs to reject the known fallback titles "Untitled Plan" and "Implementation Plan". Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1095" cache_read_input_tokens="40667" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1095}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01RyXr2YhA2qJYucFqCkvrsE">
+    <param name="file_path">/Users/schrockn/.claude/plans/reflective-crunching-galaxy.md</param>
+    <param name="content"># Fix: Add fallback title rejection to `validate_plan_title()`
+
+## Context
+
+PR #7846 added...[truncated 1190 chars].../test_plan_save.py tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1095" cache_read_input_tokens="40667" output_tokens="546" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1095, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RyXr2YhA2qJYucFqCkvrsE">
+File created successfully at: /Users/schrockn/.claude/plans/reflective-crunching-galaxy.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01T32ZSSVczHGgnigLbwnLsb">
+    <param name="plan"># Fix: Add fallback title rejection to `validate_plan_title()`
+
+## Context
+
+PR #7846 added...[truncated 1190 chars].../test_plan_save.py tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="695" cache_read_input_tokens="41762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 695}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T32ZSSVczHGgnigLbwnLsb">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/reflective-crunching-galaxy.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Add fallback title rejection to `validate_plan_title()`
+Current context: (wt:erk-slot-32) (br:planned/O7823-plan-title-valida-02-22-0854) (pr:#7846)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/O"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 6f2cdb0f-bb18-40de-b6ec-510c1e21e42b \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant># Fix: Add fallback title rejection to `validate_plan_title()`
+
+## Context
+
+PR #7846 added plan title validation gates but missed rejecting the two known fallback/default titles:
+- `"Untitled Plan"` — returned by `plan_content.extract_title_from_plan()` when no H1 heading exists
+- `"Implementation Plan"` — returned by `plan_utils.extract_title_from_plan()` when plan is empty or has no extractable title
+
+These are placeholder titles, not descriptive plan titles. The validation should reject them so agents are forced to provide meaningful titles.
+
+## Change
+
+**File:** `packages/erk-shared/src/erk_shared/naming.py` (~line 169, after the alphabetic character check, before the filename sanitization check)
+
+Add a constant and check for known fallback titles:
+
+```python
+_FALLBACK_PLAN_TITLES = {"Untitled Plan", "Implementation Plan"}
+```
+
+In `validate_plan_title()`, after the `isalpha` check and before the filename check:
+
+```python
+if stripped in _FALLBACK_PLAN_TITLES:
+    return InvalidPlanTitle(
+        raw_title=title,
+        reason=f"'{stripped}' is a default fallback title, not a descriptive plan title",
+    )
+```
+
+## Verification
+
+Run the 7 failing tests to confirm they pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="42457" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 751}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_0165UDjyBUt41QbPMnexSG2W">
+    <param name="questions">[{'question': '📋 Fix: Add fallback title rejection to `validate_plan_title()`\nCurrent con...[truncated 502 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="42457" output_tokens="573" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0165UDjyBUt41QbPMnexSG2W">
+User has answered your questions: "📋 Fix: Add fallback title rejection to `validate_plan_title()`
+Current context: (wt:erk-slot-32) (br:planned/O7823-plan-title-valida-02-22-0854) (pr:#7846)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DsNFghBEPpfYBedWcftS3j">
+    <param name="command">erk exec marker create --session-id 6f2cdb0f-bb18-40de-b6ec-510c1e21e42b exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="43208" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 701, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DsNFghBEPpfYBedWcftS3j">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01NDmFHzwuxLXaCSGMPqmysn">
+    <param name="plan"># Fix: Add fallback title rejection to `validate_plan_title()`
+
+## Context
+
+PR #7846 added...[truncated 1190 chars].../test_plan_save.py tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="43909" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 230, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NDmFHzwuxLXaCSGMPqmysn">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

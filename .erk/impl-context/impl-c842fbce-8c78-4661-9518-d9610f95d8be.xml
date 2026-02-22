@@ -1,0 +1,343 @@
+<session>
+  <meta branch="planned/O7823-plan-title-valida-02-22-0854" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Fix: Add fallback title rejection to `validate_plan_title()`
+
+## Context
+
+PR #7846 added plan title validation gates but missed rejecting the two known fallback/default titles:
+- `"Untitled Plan"` — returned by `plan_content.extract_title_from_plan()` when no H1 heading exists
+- `"Implementation Plan"` — returned by `plan_utils.extract_title_from_plan()` when plan is empty or has no extractable title
+
+These are placeholder titles, not descriptive plan titles. The validation should reject them so agents are forced to provide meaningful titles.
+
+## Change
+
+**File:** `packages/erk-shared/src/erk_shared/naming.py` (~line 169, after the alphabetic character check, before the filename sanitization check)
+
+Add a check for known fallback titles:
+
+```python
+_FALLBACK_PLAN_TITLES = {"Untitled Plan", "Implementation Plan"}
+```
+
+In `validate_plan_title()`, after the `isalpha` check (line 169) and before the filename check (line 174):
+
+```python
+if stripped in _FALLBACK_PLAN_TITLES:
+    return InvalidPlanTitle(
+        raw_title=title,
+        reason=f"'{stripped}' is a default fallback title, not a descriptive plan title",
+    )
+```
+
+## Verification
+
+Run the 7 failing tests:
+```
+pytest tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py tests/unit/cli/commands/exec/scripts/test_plan_save.py tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py -x
+```
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-32/6f2cdb0f-bb18-40de-b6ec-510c1e21e42b.jsonl</user>
+  <thinking>Let me implement the plan. First, I need to read the target file to understand the current code structure.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7227" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7227}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C2JpJNc8bsH6Dg5JCxpKQw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="offset">155</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7227" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7227}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C2JpJNc8bsH6Dg5JCxpKQw">
+   155→            raw_title=title,
+   156→            reason=f"Too short ({len(stripped)} characters, minimum {_PLAN_TITLE_MIN_LENGTH})",
+   157→        )
+   158→
+   159→    if len(stripped) &gt; _PLAN_TITLE_MAX_LENGTH:
+   160→        return InvalidPlanTitle(
+   161→            raw_title=title,
+   162→            reason=f"Too long ({len(stripped)} characters, maximum {_PLAN_TITLE_MAX_LENGTH})",
+   163→        )
+   164→
+   165→    if not any(c.isalpha() for c in stripped):
+   166→        return InvalidPlanTitle(
+   167→            raw_title=title,
+   168→            reason="Must contain at least one alphabetic character",
+   169→        )
+   170→
+   171→    # Check that sanitization retains meaningful content.
+   172→    # generate_filename_from_title strips emojis, accents, and special chars.
+   173→    # If the result is "plan.md" (the fallback), the title has no usable content.
+   174→    filename = generate_filename_from_title(stripped)
+   175→    if filename == "plan.md":
+   176→        return InvalidPlanTitle(
+   177→            raw_title=title,
+   178→            reason="No usable content after sanitization (only emojis or special characters)",
+   179→        )
+   180→
+   181→    return ValidPlanTitle(title=stripped)
+   182→
+   183→
+   184→@dataclass(frozen=True)
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>The plan is clear. I'll add the fallback title check after the `isalpha` check (line 169) and before the filename sanitization check (line 171).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3800" cache_read_input_tokens="26268" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3800}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016T85zPTEN6RZB6Rt8pjsuR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3800" cache_read_input_tokens="26268" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3800}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016T85zPTEN6RZB6Rt8pjsuR">
+     1→"""Naming utilities for filenames and worktree names.
+     2→
+     3→This module provides pure utility functions for transforming titles and names
+     4→into sanitized, filesystem-safe identifiers. All functions are pure (no I/O)
+     5→and follow LBYL patterns.
+     6→
+     7→Functions that require git operations accept a git_ops parameter via dependency
+     8→injection to maintain separation from I/O concerns.
+     9→"""
+    10→
+    11→import re
+    12→import unicodedata
+    13→from dataclasses import dataclass
+    14→from datetime import datetime
+    15→from pathlib import Path
+    16→
+    17→_SAFE_COMPONENT_RE = re.compile(r"[^A-Za-z0-9_/-]+")
+    18→
+    19→# Date suffix format for plan-derived worktree names: -YY-MM-DD-HHMM
+    20→WORKTREE_DATE_SUFFIX_FORMAT = "%y-%m-%d-%H%M"
+    21→
+    22→# Branch timestamp suffix format: -MM-DD-HHMM (appended after truncation)
+    23→BRANCH_TIMESTAMP_SUFFIX_FORMAT = "%m-%d-%H%M"
+    24→
+    25→# Regex pattern to detect existing timestamp suffix (MM-DD-HHMM)
+    26→_TIMESTAMP_SUFFIX_PATTERN = re.compile(r"-\d{2}-\d{2}-\d{4}$")
+    27→
+    28→
+    29→def has_timestamp_suffix(name: str) -&gt; bool:
+    30→    """Check if a name already ends with a timestamp suffix (-MM-DD-HHMM).
+  </tool_result>
+  <assistant>Now I'll add the constant and the check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="30068" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 589}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018tRpzkeB759Wcervoj6QvP">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="old_string"># Regex pattern to detect existing timestamp suffix (MM-DD-HHMM)
+_TIMESTAMP_SUFFIX_PATTERN = re.compile(r"-\d{2}-\d{2}-\d{4}$")</param>
+    <param name="new_string"># Regex pattern to detect existing timestamp suffix (MM-DD-HHMM)
+_TIMESTAMP_SUFFIX_PATTERN...[truncated 136 chars]...e meaningful plan titles.
+_FALLBACK_PLAN_TITLES = {"Untitled Plan", "Implementation Plan"}</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="30068" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 589, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018tRpzkeB759Wcervoj6QvP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/naming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01G4tnJiajWVukcabecNto2D">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="old_string">    if not any(c.isalpha() for c in stripped):
+        return InvalidPlanTitle(
+          ...[truncated 46 chars]...lphabetic character",
+        )
+
+    # Check that sanitization retains meaningful content.</param>
+    <param name="new_string">    if not any(c.isalpha() for c in stripped):
+        return InvalidPlanTitle(
+          ...[truncated 255 chars]...criptive plan title",
+        )
+
+    # Check that sanitization retains meaningful content.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="30657" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 382, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G4tnJiajWVukcabecNto2D">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/packages/erk-shared/src/erk_shared/naming.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests specified in the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="31039" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 390}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SKaiJNVAS3e12x6D6dFv6p">
+    <param name="description">Run verification tests</param>
+    <param name="prompt">Run the following pytest command and report results:
+
+pytest tests/unit/cli/commands/exec/...[truncated 103 chars].../scripts/test_plan_save_to_issue.py -x
+
+Report the full output including pass/fail counts.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="31039" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 390}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SKaiJNVAS3e12x6D6dFv6p">
+pytest failed: 1 issue found
+
+**File:** tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py::test_invalid_title_json_error_contains_guidance
+
+**Issue:** The test expects `error_type` to be `"invalid_plan_title"` (with underscores), but the actual value returned is `"invalid-plan-title"` (with hyphens).
+
+**Line:** 52
+
+**Error Type:** AssertionError - Mismatch in error_type format
+
+**Summary:** 1 failed, 9 passed in 0.52s
+
+The test failure indicates that the error type string is using kebab-case (`invalid-plan-title`) but the test expects snake_case (`invalid_plan_title`). This is a discrepancy between the implementation and the test expectation.
+agentId: ab41bd0d931776d64 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14393
+tool_uses: 1
+duration_ms: 6053&lt;/usage&gt;
+  </tool_result>
+  <thinking>One test failed - let me look at the test to understand the issue and the implementation to see what's happening.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="31429" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>One test failure unrelated to my change — it's a pre-existing issue with `error_type` format. Let me check if this test was already failing before my change.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="31429" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FYqw2Ayqs5Ne9fTfv8qZfU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py</param>
+    <param name="offset">40</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="31429" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FYqw2Ayqs5Ne9fTfv8qZfU">
+    40→    runner = CliRunner()
+    41→    result = runner.invoke(issue_title_to_filename, [title])
+    42→    assert result.exit_code == 2
+    43→
+    44→
+    45→def test_invalid_title_json_error_contains_guidance() -&gt; None:
+    46→    """Invalid title outputs JSON with error_type and agent_guidance."""
+    47→    runner = CliRunner()
+    48→    result = runner.invoke(issue_title_to_filename, ["Untitled Plan"])
+    49→    assert result.exit_code == 2
+    50→    # CliRunner mixes stderr into output; parse the JSON from it
+    51→    error_output = json.loads(result.output.strip())
+    52→    assert error_output["error_type"] == "invalid_plan_title"
+    53→    assert "agent_guidance" in error_output
+    54→    assert "default fallback" in error_output["agent_guidance"].lower()
+    55→
+  </tool_result>
+  <assistant>This test was written as part of the plan — it expects my change to exist. The test expects `"invalid_plan_title"` but the code returns `"invalid-plan-title"`. Let me check the actual error output structure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4767" cache_read_input_tokens="31883" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4767}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MVPwDQHd5n9XN6LQq5U55i">
+    <param name="pattern">error_type.*invalid.plan.title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4767" cache_read_input_tokens="31883" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4767}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019v9zu7McnXawyBfyHQnSi4">
+    <param name="pattern">invalid.plan.title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4767" cache_read_input_tokens="31883" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4767}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MVPwDQHd5n9XN6LQq5U55i">
+tests/core/utils/test_naming.py:761:    assert result.error_type == "invalid-plan-title"
+tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py:52:    assert error_output["error_type"] == "invalid_plan_title"
+  </tool_result>
+  <tool_result tool="toolu_019v9zu7McnXawyBfyHQnSi4">
+No matches found
+  </tool_result>
+  <assistant>The core test at `test_naming.py:761` uses `"invalid-plan-title"` (kebab-case), which matches the actual implementation. The test in `test_issue_title_to_filename.py:52` uses `"invalid_plan_title"` (snake_case) — that's the bug. The test was written with a typo. Let me fix it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="36650" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 413}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TSGwYm5mo7MvU5zLor5BnS">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py</param>
+    <param name="old_string">    assert error_output["error_type"] == "invalid_plan_title"</param>
+    <param name="new_string">    assert error_output["error_type"] == "invalid-plan-title"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="36650" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TSGwYm5mo7MvU5zLor5BnS">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="37063" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 350}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01UkNECmDpjPgc5s8KpRAWKs">
+    <param name="description">Re-run verification tests</param>
+    <param name="prompt">Run the following pytest command and report results:
+
+pytest tests/unit/cli/commands/exec/...[truncated 103 chars].../scripts/test_plan_save_to_issue.py -x
+
+Report the full output including pass/fail counts.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="37063" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 350, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UkNECmDpjPgc5s8KpRAWKs">
+pytest passed: 57 tests passed in 0.61s
+
+All three test files executed successfully with no failures:
+- tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py
+- tests/unit/cli/commands/exec/scripts/test_plan_save.py
+- tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py
+agentId: acc4705f654c09465 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13602
+tool_uses: 1
+duration_ms: 10524&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 57 tests pass. Here's a summary of the changes:
+
+**`packages/erk-shared/src/erk_shared/naming.py`** — Added fallback title rejection to `validate_plan_title()`:
+- Added `_FALLBACK_PLAN_TITLES = {"Untitled Plan", "Implementation Plan"}` constant
+- Added a check after the `isalpha` validation that rejects these known placeholder titles with a descriptive error message
+
+**`tests/unit/cli/commands/exec/scripts/test_issue_title_to_filename.py`** — Fixed a pre-existing test bug:
+- Changed `"invalid_plan_title"` to `"invalid-plan-title"` to match the actual kebab-case `error_type` returned by the implementation</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="37413" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 353}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01HrDQgVd3H8nU1Cbscg9fpX">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Run erk quick-submit to commit and push</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="282" cache_read_input_tokens="37948" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 282, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HrDQgVd3H8nU1Cbscg9fpX">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7846"
+}
+  </tool_result>
+  <assistant>Changes submitted successfully: https://github.com/dagster-io/erk/pull/7846</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="38230" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 215}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/7846&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
