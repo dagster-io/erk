@@ -318,7 +318,6 @@ def test_retracks_graphite_after_amend(tmp_path: Path) -> None:
         use_graphite=True,
         shell_setup_complete=False,
         github_planning=True,
-        plan_backend="github",
     )
     ctx = context_for_test(
         git=fake_git, github=fake_github, global_config=global_config, cwd=tmp_path

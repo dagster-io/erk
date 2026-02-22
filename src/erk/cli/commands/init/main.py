@@ -137,7 +137,6 @@ def create_and_save_global_config(
         use_graphite=use_graphite,
         shell_setup_complete=shell_setup_complete,
         github_planning=True,
-        plan_backend="github",
         prompt_learn_on_land=True,
         interactive_agent=agent_config,
     )

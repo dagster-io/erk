@@ -32,6 +32,7 @@ def _draft_pr_context(
     fake_github: FakeGitHub | None = None,
     fake_git: FakeGit | None = None,
     fake_claude: FakeClaudeInstallation | None = None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> ErkContext:
     """Build an ErkContext configured for draft-PR plan backend."""
     if fake_git is None:
@@ -41,19 +42,19 @@ def _draft_pr_context(
     if fake_claude is None:
         fake_claude = FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT})
 
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
     return context_for_test(
         github=fake_github,
         git=fake_git,
         claude_installation=fake_claude,
-        plan_backend="draft_pr",
         cwd=tmp_path,
         repo_root=tmp_path,
     )
 
 
-def test_draft_pr_success_json(tmp_path: Path) -> None:
+def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Happy path: exit 0, JSON output has success/issue_number/branch_name."""
-    ctx = _draft_pr_context(tmp_path=tmp_path)
+    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
@@ -67,9 +68,9 @@ def test_draft_pr_success_json(tmp_path: Path) -> None:
     assert output["plan_backend"] == "draft_pr"
 
 
-def test_draft_pr_success_display(tmp_path: Path) -> None:
+def test_draft_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Display format: output contains 'Plan saved as draft PR'."""
-    ctx = _draft_pr_context(tmp_path=tmp_path)
+    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "display"], obj=ctx)
@@ -93,7 +94,6 @@ def test_delegates_to_issue_when_not_draft_pr(
         github=fake_github,
         github_issues=fake_issues,
         claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
-        plan_backend="github",
         cwd=tmp_path,
         repo_root=tmp_path,
     )
@@ -109,11 +109,12 @@ def test_delegates_to_issue_when_not_draft_pr(
     assert len(fake_github.created_prs) == 0
 
 
-def test_draft_pr_no_plan_found(tmp_path: Path) -> None:
+def test_draft_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Empty claude_installation: exit code 1."""
     ctx = _draft_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(),
+        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -125,12 +126,13 @@ def test_draft_pr_no_plan_found(tmp_path: Path) -> None:
     assert "No plan found" in output["error"]
 
 
-def test_draft_pr_validation_failure(tmp_path: Path) -> None:
+def test_draft_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Short plan: exit code 2, error_type='validation_failed'."""
     short_plan = "# Short\n\n- Step"
     ctx = _draft_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"short": short_plan}),
+        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -142,9 +144,9 @@ def test_draft_pr_validation_failure(tmp_path: Path) -> None:
     assert output["error_type"] == "validation_failed"
 
 
-def test_draft_pr_session_deduplication(tmp_path: Path) -> None:
+def test_draft_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Second call with same session_id: skipped_duplicate=True."""
-    ctx = _draft_pr_context(tmp_path=tmp_path)
+    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
     session_id = "dedup-session"
 
@@ -171,7 +173,7 @@ def test_draft_pr_session_deduplication(tmp_path: Path) -> None:
     assert output2["skipped_duplicate"] is True
 
 
-def test_draft_pr_plan_file_priority(tmp_path: Path) -> None:
+def test_draft_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """--plan-file takes priority over claude_installation."""
     plan_file = tmp_path / "custom-plan.md"
     plan_file.write_text(
@@ -179,7 +181,7 @@ def test_draft_pr_plan_file_priority(tmp_path: Path) -> None:
         "- Step 1: Custom step\n- Step 2: Another custom step",
         encoding="utf-8",
     )
-    ctx = _draft_pr_context(tmp_path=tmp_path)
+    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -194,10 +196,10 @@ def test_draft_pr_plan_file_priority(tmp_path: Path) -> None:
     assert output["title"] == "[erk-plan] Custom Plan"
 
 
-def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
+def test_draft_pr_objective_issue_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """--objective-issue 123 includes in branch name, metadata, and ref.json."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -217,10 +219,10 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
     assert ref_json["objective_id"] == 123
 
 
-def test_draft_pr_does_not_checkout_branch(tmp_path: Path) -> None:
+def test_draft_pr_does_not_checkout_branch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """plan-save uses git plumbing to commit without checking out the plan branch."""
     fake_git = FakeGit(current_branches={tmp_path: "feature-branch"})
-    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
@@ -233,10 +235,10 @@ def test_draft_pr_does_not_checkout_branch(tmp_path: Path) -> None:
     assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # restore
 
 
-def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
+def test_draft_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """plan-save commits plan.md to the plan branch via git plumbing."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
@@ -260,11 +262,18 @@ def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
     assert len(fake_git.commits) == 0
 
 
-def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None:
+def test_draft_pr_trunk_branch_passes_through_to_pr_base(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """trunk_branch detected by detect_trunk_branch flows through metadata to PR base."""
     fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
     fake_github = FakeGitHub()
-    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, fake_github=fake_github)
+    ctx = _draft_pr_context(
+        tmp_path=tmp_path,
+        fake_git=fake_git,
+        fake_github=fake_github,
+        monkeypatch=monkeypatch,
+    )
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
@@ -274,15 +283,17 @@ def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None
     assert fake_github.created_prs[0][3] == "master"
 
 
-def test_draft_pr_tracks_branch_with_graphite(tmp_path: Path) -> None:
+def test_draft_pr_tracks_branch_with_graphite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Plan branch is tracked with Graphite so it can be used as a stack parent."""
     fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
     fake_graphite = FakeGraphite()
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
         claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
-        plan_backend="draft_pr",
         cwd=tmp_path,
         repo_root=tmp_path,
     )

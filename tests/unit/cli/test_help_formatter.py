@@ -70,7 +70,6 @@ def test_help_shows_hidden_commands_when_config_enabled() -> None:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             show_hidden_commands=True,
         ),
     )
@@ -97,7 +96,6 @@ def test_help_hides_hidden_commands_when_config_disabled() -> None:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             show_hidden_commands=False,
         ),
     )
@@ -121,7 +119,6 @@ def test_command_hidden_options_visible_when_config_enabled() -> None:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             show_hidden_commands=True,
         ),
     )
@@ -146,7 +143,6 @@ def test_command_hidden_options_hidden_when_config_disabled() -> None:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             show_hidden_commands=False,
         ),
     )
@@ -182,7 +178,6 @@ def test_script_option_help_text_clarifies_not_dry_run() -> None:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             show_hidden_commands=True,
         ),
     )

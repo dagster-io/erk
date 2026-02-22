@@ -30,7 +30,6 @@ class TestResolveGraphite:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             fix_conflicts_require_dangerous_flag=True,
             show_hidden_commands=False,
         )
@@ -48,7 +47,6 @@ class TestResolveGraphite:
             use_graphite=True,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             fix_conflicts_require_dangerous_flag=True,
             show_hidden_commands=False,
         )
@@ -66,7 +64,6 @@ class TestResolveGraphite:
             use_graphite=True,
             shell_setup_complete=True,
             github_planning=True,
-            plan_backend="github",
             fix_conflicts_require_dangerous_flag=True,
             show_hidden_commands=False,
         )

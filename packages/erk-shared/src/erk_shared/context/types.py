@@ -236,7 +236,6 @@ class GlobalConfig:
     use_graphite: bool
     shell_setup_complete: bool
     github_planning: bool
-    plan_backend: PlanBackendType
     fix_conflicts_require_dangerous_flag: bool = True
     show_hidden_commands: bool = False
     prompt_learn_on_land: bool = True
@@ -250,7 +249,6 @@ class GlobalConfig:
         use_graphite: bool = True,
         shell_setup_complete: bool = True,
         github_planning: bool = True,
-        plan_backend: PlanBackendType = "github",
         fix_conflicts_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
         prompt_learn_on_land: bool = True,
@@ -263,7 +261,6 @@ class GlobalConfig:
             use_graphite=use_graphite,
             shell_setup_complete=shell_setup_complete,
             github_planning=github_planning,
-            plan_backend=plan_backend,
             fix_conflicts_require_dangerous_flag=fix_conflicts_require_dangerous_flag,
             show_hidden_commands=show_hidden_commands,
             prompt_learn_on_land=prompt_learn_on_land,
