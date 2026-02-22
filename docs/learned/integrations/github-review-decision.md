@@ -50,7 +50,7 @@ The `review_decision: str | None` field at `packages/erk-shared/src/erk_shared/g
 
 | `review_decision` value | Indicator added |
 | ----------------------- | --------------- |
-| `"APPROVED"`            | `✔` suffix     |
+| `"APPROVED"`            | `✔` suffix      |
 | `"CHANGES_REQUESTED"`   | `❌` suffix     |
 | `"REVIEW_REQUIRED"`     | No indicator    |
 | `None`                  | No indicator    |
