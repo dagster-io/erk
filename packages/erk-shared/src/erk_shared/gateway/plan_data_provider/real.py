@@ -56,7 +56,7 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
-from erk_shared.gateway.plan_data_provider.lifecycle import format_lifecycle_with_status
+from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.conversion import (
@@ -737,8 +737,8 @@ class RealPlanDataProvider(PlanDataProvider):
             plan, has_workflow_run=workflow_run is not None
         )
 
-        # Enrich lifecycle display with PR status indicators
-        lifecycle_display = format_lifecycle_with_status(
+        # Compute status indicators separately for the "sts" column
+        status_display = compute_status_indicators(
             lifecycle_display,
             is_draft=pr_is_draft,
             has_conflicts=pr_has_conflicts,
@@ -798,6 +798,7 @@ class RealPlanDataProvider(PlanDataProvider):
             author=str(plan.metadata.get("author", "")),
             is_learn_plan=is_learn_plan,
             lifecycle_display=lifecycle_display,
+            status_display=status_display,
         )
 
 

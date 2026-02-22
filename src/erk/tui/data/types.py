@@ -62,6 +62,7 @@ class PlanRowData:
         created_display: Formatted relative time string (e.g., "2d ago")
         author: GitHub login of the issue creator
         lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-")
+        status_display: Status indicator emojis (e.g., "🚀", "👀 💥", "-")
     """
 
     plan_id: int
@@ -114,6 +115,7 @@ class PlanRowData:
     author: str
     is_learn_plan: bool
     lifecycle_display: str
+    status_display: str
 
 
 @dataclass(frozen=True)

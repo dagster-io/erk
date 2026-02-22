@@ -178,6 +178,8 @@ class PlanDataTable(DataTable):
             self._stage_column_index = col_index
             self.add_column("stage", key="stage", width=11)
             col_index += 1
+            self.add_column("sts", key="sts", width=4)
+            col_index += 1
             self.add_column("created", key="created", width=7)
             col_index += 1
         self.add_column("obj", key="objective", width=5)
@@ -316,6 +318,7 @@ class PlanDataTable(DataTable):
         if self._plan_backend == "draft_pr":
             stage_display = _strip_rich_markup(row.lifecycle_display)
             values.append(stage_display)
+            values.append(row.status_display)
             values.append(row.created_display)
         values.extend(
             [
