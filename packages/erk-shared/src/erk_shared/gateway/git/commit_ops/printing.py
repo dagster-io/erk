@@ -54,6 +54,19 @@ class PrintingGitCommitOps(PrintingBase, GitCommitOps):
         self._emit(self._format_command(f'git commit --amend -m "{display_msg}"'))
         self._wrapped.amend_commit(cwd, message)
 
+    def commit_files_to_branch(
+        self,
+        cwd: Path,
+        *,
+        branch: str,
+        files: dict[str, str],
+        message: str,
+    ) -> None:
+        """Commit files to branch with printed output."""
+        file_list = ", ".join(files.keys())
+        self._emit(self._format_command(f"git plumbing: commit [{file_list}] to {branch}"))
+        self._wrapped.commit_files_to_branch(cwd, branch=branch, files=files, message=message)
+
     # ============================================================================
     # Query Operations (delegate without printing)
     # ============================================================================

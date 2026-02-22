@@ -196,7 +196,8 @@ def test_draft_pr_plan_file_priority(tmp_path: Path) -> None:
 
 def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
     """--objective-issue 123 includes in branch name, metadata, and ref.json."""
-    ctx = _draft_pr_context(tmp_path=tmp_path)
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -210,15 +211,14 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path) -> None:
     assert output["success"] is True
     # Branch name should include objective ID
     assert "O123" in output["branch_name"]
-    # ref.json should include objective_id
-    ref_file = tmp_path / IMPL_CONTEXT_DIR / "ref.json"
-    assert ref_file.exists()
-    ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
-    assert ref_data["objective_id"] == 123
+    # ref.json content should include objective_id (via branch commit, no filesystem)
+    assert len(fake_git.branch_commits) == 1
+    ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
+    assert ref_json["objective_id"] == 123
 
 
-def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
-    """plan-save checks out plan branch for commit, then restores original."""
+def test_draft_pr_does_not_checkout_branch(tmp_path: Path) -> None:
+    """plan-save uses git plumbing to commit without checking out the plan branch."""
     fake_git = FakeGit(current_branches={tmp_path: "feature-branch"})
     ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
@@ -226,17 +226,15 @@ def test_draft_pr_restores_original_branch(tmp_path: Path) -> None:
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    # Four checkouts: branch_manager.create_branch() does checkout+restore for gt track,
-    # then plan_save does checkout+restore for committing plan file
-    assert len(fake_git.checked_out_branches) == 4
+    # Only 2 checkouts from branch_manager.create_branch() (checkout+restore for gt track).
+    # The plan commit now uses git plumbing — no additional checkouts.
+    assert len(fake_git.checked_out_branches) == 2
     assert fake_git.checked_out_branches[0][1].startswith("planned/")  # for gt track
     assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # restore
-    assert fake_git.checked_out_branches[2][1].startswith("planned/")  # for plan commit
-    assert fake_git.checked_out_branches[3] == (tmp_path, "feature-branch")  # final restore
 
 
 def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
-    """plan-save commits plan.md to the plan branch in IMPL_CONTEXT_DIR."""
+    """plan-save commits plan.md to the plan branch via git plumbing."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
     ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
@@ -244,23 +242,22 @@ def test_draft_pr_commits_plan_file(tmp_path: Path) -> None:
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    # Verify commit was created with impl-context files
-    assert len(fake_git.commits) == 1
-    commit = fake_git.commits[0]
-    assert f"{IMPL_CONTEXT_DIR}/plan.md" in commit.staged_files
-    assert f"{IMPL_CONTEXT_DIR}/ref.json" in commit.staged_files
-    assert "Feature Plan" in commit.message
-    # Verify plan file was written
-    plan_file = tmp_path / IMPL_CONTEXT_DIR / "plan.md"
-    assert plan_file.exists()
-    assert "Feature Plan" in plan_file.read_text(encoding="utf-8")
-    # Verify ref.json was written with provider and title (no url)
-    ref_file = tmp_path / IMPL_CONTEXT_DIR / "ref.json"
-    assert ref_file.exists()
-    ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
+    # Verify branch commit was created with impl-context files (via git plumbing)
+    assert len(fake_git.branch_commits) == 1
+    branch_commit = fake_git.branch_commits[0]
+    assert f"{IMPL_CONTEXT_DIR}/plan.md" in branch_commit.files
+    assert f"{IMPL_CONTEXT_DIR}/ref.json" in branch_commit.files
+    assert "Feature Plan" in branch_commit.message
+    assert branch_commit.branch.startswith("planned/")
+    # Verify plan content
+    assert "Feature Plan" in branch_commit.files[f"{IMPL_CONTEXT_DIR}/plan.md"]
+    # Verify ref.json content
+    ref_data = json.loads(branch_commit.files[f"{IMPL_CONTEXT_DIR}/ref.json"])
     assert ref_data["provider"] == "github-draft-pr"
     assert ref_data["title"] == "Feature Plan"
     assert "url" not in ref_data
+    # No regular commits should exist (git plumbing bypasses stage+commit)
+    assert len(fake_git.commits) == 0
 
 
 def test_draft_pr_trunk_branch_passes_through_to_pr_base(tmp_path: Path) -> None:

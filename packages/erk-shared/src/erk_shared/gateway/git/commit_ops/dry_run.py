@@ -59,6 +59,17 @@ class DryRunGitCommitOps(GitCommitOps):
         # Do nothing - prevents actual commit amendment
         pass
 
+    def commit_files_to_branch(
+        self,
+        cwd: Path,
+        *,
+        branch: str,
+        files: dict[str, str],
+        message: str,
+    ) -> None:
+        """No-op for committing files to branch in dry-run mode."""
+        pass
+
     # ============================================================================
     # Query Operations (delegate to wrapped implementation)
     # ============================================================================
