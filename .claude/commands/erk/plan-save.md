@@ -24,7 +24,7 @@ The plan is saved using the configured backend:
 - **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
 - **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
 
-The JSON output contract is the same for both backends (`issue_number`, `issue_url`, `title`, `branch_name`, `plan_backend`).
+The JSON output contract is the same for both backends (`plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`).
 
 ## Agent Instructions
 
@@ -56,7 +56,7 @@ Run this command with the session ID and optional flags:
 erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
 ```
 
-Parse the JSON output to extract `issue_number` for verification in Step 3.
+Parse the JSON output to extract `plan_number` for verification in Step 3.
 
 If the command fails, display the error and stop.
 
@@ -67,7 +67,7 @@ If the command fails, display the error and stop.
 Verify the objective link was saved correctly:
 
 ```bash
-erk exec get-plan-metadata <issue_number> objective_issue
+erk exec get-plan-metadata <plan_number> objective_issue
 ```
 
 Parse the JSON response:
@@ -89,7 +89,7 @@ Expected objective: #<expected>
 Actual: <actual-or-null>
 
 The plan was saved but without the correct objective link.
-Fix: Close <"draft PR" if plan_backend=="draft_pr", else "issue"> #<issue_number> and re-run:
+Fix: Close <"draft PR" if plan_backend=="draft_pr", else "issue"> #<plan_number> and re-run:
   /erk:plan-save --objective-issue=<expected>
 ```
 
@@ -112,14 +112,14 @@ If the marker doesn't exist (command fails), skip this step - the plan wasn't cr
 2. **Update the roadmap table** using the dedicated command:
 
 ```bash
-erk exec update-objective-node <objective-issue> --node "$step_id" --plan "#<issue_number>"
+erk exec update-objective-node <objective-issue> --node "$step_id" --plan "#<plan_number>"
 ```
 
 This atomically fetches the issue body, finds the matching node row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
 
 3. **Report the update:**
 
-Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan #<issue_number>`
+Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan #<plan_number>`
 
 **Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
 
@@ -130,7 +130,7 @@ On success, display based on `plan_backend` from JSON output:
 **Header (both backends):**
 
 ```
-Plan "<title>" saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #<issue_number>
+Plan "<title>" saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #<plan_number>
 URL: <issue_url>
 ```
 
@@ -151,7 +151,7 @@ OR exit Claude Code first, then run one of:
     Local: erk br co <branch_name>
     Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
 
-  Submit to Queue: erk plan submit <issue_number>
+  Submit to Queue: erk plan submit <plan_number>
 ```
 
 If **on trunk = false**:
@@ -167,7 +167,7 @@ OR exit Claude Code first, then run one of:
     Local: erk br co --new-slot <branch_name>
     Implement: source "$(erk br co --new-slot <branch_name> --script)" && erk implement --dangerous
 
-  Submit to Queue: erk plan submit <issue_number>
+  Submit to Queue: erk plan submit <plan_number>
 ```
 
 **If `plan_backend` is `"draft_pr"`:**
@@ -175,7 +175,7 @@ OR exit Claude Code first, then run one of:
 ```
 Next steps:
 
-View PR: gh pr view <issue_number> --web
+View PR: gh pr view <plan_number> --web
 
 In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
@@ -183,7 +183,7 @@ In Claude Code:
 OR exit Claude Code first, then run one of:
   Local: erk br co <branch_name>
   Prepare+Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
-  Submit to Queue: erk plan submit <issue_number>
+  Submit to Queue: erk plan submit <plan_number>
 ```
 
 **If `plan_backend` is `"github"` (or absent):**
@@ -191,7 +191,7 @@ OR exit Claude Code first, then run one of:
 ```
 Next steps:
 
-View Issue: gh issue view <issue_number> --web
+View Issue: gh issue view <plan_number> --web
 
 In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
@@ -200,7 +200,7 @@ In Claude Code:
 OR exit Claude Code first, then run one of:
   Local: erk br co <branch_name>
   Prepare+Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
-  Submit to Queue: erk plan submit <issue_number>
+  Submit to Queue: erk plan submit <plan_number>
 ```
 
 If objective was verified, also display: `Verified objective link: #<objective-number>`

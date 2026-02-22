@@ -928,12 +928,12 @@ Update an existing GitHub issue's plan comment with new content.
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description                                               |
-| ---------------- | ------- | -------- | -------------- | --------------------------------------------------------- |
-| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update                             |
-| `--format`       | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text) |
-| `--plan-path`    | PATH    | No       | Sentinel.UNSET | Direct path to plan file (overrides session lookup)       |
-| `--session-id`   | TEXT    | No       | Sentinel.UNSET | Session ID to find plan file in scratch storage           |
+| Flag            | Type    | Required | Default        | Description                                               |
+| --------------- | ------- | -------- | -------------- | --------------------------------------------------------- |
+| `--plan-number` | INTEGER | Yes      | Sentinel.UNSET | Plan number to update                                     |
+| `--format`      | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text) |
+| `--plan-path`   | PATH    | No       | Sentinel.UNSET | Direct path to plan file (overrides session lookup)       |
+| `--session-id`  | TEXT    | No       | Sentinel.UNSET | Session ID to find plan file in scratch storage           |
 
 ### post-or-update-pr-summary
 
