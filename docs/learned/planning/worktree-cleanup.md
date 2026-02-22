@@ -73,8 +73,11 @@ Cleanup uses three independent layers because no single layer is reliable on its
 **Only Layer 3 is deterministic.** Layers 1 and 2 reduce how often Layer 3 needs to act, but cannot replace it.
 
 <!-- Source: .github/workflows/plan-implement.yml, Clean up .worker-impl/ after implementation -->
+<!-- Source: .github/workflows/pr-address.yml, Clean up plan staging dirs if present -->
 
 See the "Clean up .worker-impl/ after implementation" step in `.github/workflows/plan-implement.yml` for the production Layer 3 implementation.
+
+The `pr-address.yml` workflow also includes a cleanup step ("Clean up plan staging dirs if present") that removes `.worker-impl/` and `.erk/impl-context/` after Claude addresses review comments but before pushing. This prevents these folders from persisting when `pr-address` pushes changes to a branch that already contains them.
 
 ## Anti-Patterns
 
