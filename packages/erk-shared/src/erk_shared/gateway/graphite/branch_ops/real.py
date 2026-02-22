@@ -25,8 +25,9 @@ class RealGraphiteBranchOps(GraphiteBranchOps):
     def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
         """Track a branch with Graphite.
 
-        Uses `gt track --branch <branch> --parent <parent>` to register a branch
-        in Graphite's cache.
+        Uses `gt track <branch> --parent <parent>` to register a branch
+        in Graphite's cache. The branch name is passed positionally, so
+        no checkout is required.
 
         Args:
             cwd: Working directory where gt track should run
@@ -36,7 +37,6 @@ class RealGraphiteBranchOps(GraphiteBranchOps):
         cmd = [
             "gt",
             "track",
-            "--branch",
             branch_name,
             "--parent",
             parent_branch,
@@ -89,18 +89,19 @@ class RealGraphiteBranchOps(GraphiteBranchOps):
             user_output(result.stderr, nl=False)
 
     def retrack_branch(self, cwd: Path, branch_name: str) -> None:
-        """Re-track the current branch to fix Graphite tracking divergence.
+        """Re-track a branch to fix Graphite tracking divergence.
 
-        Runs `gt track` with no args to re-track the current branch. This updates
-        Graphite's branchRevision to match the actual git HEAD, fixing divergence
-        after rebase/restack operations.
+        Runs `gt track <branch>` to re-track the specified branch. The branch name
+        is passed positionally, so no checkout is required. This updates Graphite's
+        branchRevision to match the actual git HEAD, fixing divergence after
+        rebase/restack operations.
 
         Args:
-            cwd: Working directory (must be on the target branch)
-            branch_name: Name of the branch being re-tracked (for logging)
+            cwd: Working directory where gt track should run
+            branch_name: Name of the branch being re-tracked
         """
         run_subprocess_with_context(
-            cmd=["gt", "track", "--no-interactive"],
+            cmd=["gt", "track", branch_name, "--no-interactive"],
             operation_context=f"re-track branch '{branch_name}' with Graphite",
             cwd=cwd,
         )

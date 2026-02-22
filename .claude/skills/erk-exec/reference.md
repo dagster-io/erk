@@ -272,6 +272,8 @@ Serialize plan dashboard data to JSON.
 | `--state`     | CHOICE  | No       | -             | -           |
 | `--label`     | TEXT    | No       | ('erk-plan',) | -           |
 | `--limit`     | INTEGER | No       | -             | -           |
+| `--show-prs`  | FLAG    | No       | -             | -           |
+| `--show-runs` | FLAG    | No       | -             | -           |
 | `--run-state` | TEXT    | No       | -             | -           |
 | `--creator`   | TEXT    | No       | -             | -           |
 

@@ -134,15 +134,15 @@ class TestObjectiveHeaderSchemaValidation:
         with pytest.raises(ValueError, match="objective_comment_id must be positive"):
             schema.validate(data)
 
-    def test_unknown_fields_warns(self) -> None:
-        """Unknown fields emit a warning instead of raising."""
+    def test_unknown_fields_rejected(self) -> None:
+        """Unknown fields raise ValueError."""
         schema = ObjectiveHeaderSchema()
         data = {
             "created_at": "2025-11-25T14:37:43+00:00",
             "created_by": "testuser",
             "unexpected_field": "value",
         }
-        with pytest.warns(UserWarning, match="Unknown fields.*unexpected_field"):
+        with pytest.raises(ValueError, match="Unknown fields.*unexpected_field"):
             schema.validate(data)
 
     def test_get_key(self) -> None:

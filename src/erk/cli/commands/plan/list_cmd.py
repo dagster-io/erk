@@ -194,6 +194,7 @@ def _build_plans_table(
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
+    runs: bool,
     limit: int | None,
     all_users: bool,
     sort: str,
@@ -214,8 +215,8 @@ def _build_plans_table(
     # Build labels list - default to ["erk-plan"] if no labels specified
     labels_list = list(label) if label else ["erk-plan"]
 
-    # Always fetch workflow runs (displayed unconditionally)
-    needs_workflow_runs = True
+    # Determine if we need workflow runs (for display or filtering)
+    needs_workflow_runs = runs or run_state is not None
 
     # Get owner/repo from RepoContext (already populated via git remote URL parsing)
     if repo.github is None:
@@ -344,9 +345,10 @@ def _build_plans_table(
     table.add_column("lcl-wt", no_wrap=True)
     table.add_column("lcl-actvty", no_wrap=True)
     table.add_column("lcl-impl", no_wrap=True)
-    table.add_column("remote-impl", no_wrap=True)
-    table.add_column("run-id", no_wrap=True)
-    table.add_column("run-state", no_wrap=True, width=12)
+    if runs:
+        table.add_column("remote-impl", no_wrap=True)
+        table.add_column("run-id", no_wrap=True)
+        table.add_column("run-state", no_wrap=True, width=12)
 
     # Populate table rows
     for plan in plans:
@@ -466,7 +468,8 @@ def _build_plans_table(
                 local_run_cell,
             ]
         )
-        row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
+        if runs:
+            row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
         table.add_row(*row)
 
     return table, len(plans)
@@ -478,6 +481,7 @@ def _list_plans_impl(
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
+    runs: bool,
     limit: int | None,
     all_users: bool,
     sort: str,
@@ -488,6 +492,7 @@ def _list_plans_impl(
         label=label,
         state=state,
         run_state=run_state,
+        runs=runs,
         limit=limit,
         all_users=all_users,
         sort=sort,
@@ -602,6 +607,8 @@ def _run_interactive_mode(
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
+    runs: bool,
+    prs: bool,
     limit: int | None,
     interval: float,
     all_users: bool,
@@ -614,6 +621,8 @@ def _run_interactive_mode(
         label: Labels to filter by
         state: State filter ("open", "closed", or None)
         run_state: Workflow run state filter
+        runs: Whether to show run columns
+        prs: Whether to show PR columns
         limit: Maximum number of results
         interval: Refresh interval in seconds
         all_users: If True, show plans from all users; if False, filter to authenticated user
@@ -663,6 +672,8 @@ def _run_interactive_mode(
         state=state,
         run_state=run_state,
         limit=limit,
+        show_prs=prs,
+        show_runs=runs,
         creator=creator,
         show_pr_column=plan_backend != "draft_pr",
     )
@@ -683,6 +694,13 @@ def _run_interactive_mode(
 
 @click.command("list")
 @plan_filter_options
+@click.option(
+    "--runs",
+    "-r",
+    is_flag=True,
+    default=False,
+    help="Show workflow run columns (run-id, run-state)",
+)
 @click.pass_obj
 def list_plans(
     ctx: ErkContext,
@@ -693,6 +711,7 @@ def list_plans(
     limit: int | None,
     all_users: bool,
     sort: str,
+    runs: bool,
 ) -> None:
     """List plans as a static table.
 
@@ -707,6 +726,7 @@ def list_plans(
         erk plan list --label erk-plan --label bug
         erk plan list --limit 10
         erk plan list --run-state in_progress
+        erk plan list --runs
         erk plan list --sort activity    # Sort by recent branch activity
     """
     _list_plans_impl(
@@ -714,6 +734,7 @@ def list_plans(
         label=label,
         state=state,
         run_state=run_state,
+        runs=runs,
         limit=limit,
         all_users=all_users,
         sort=sort,
@@ -741,7 +762,8 @@ def dash(
     to show plans from all users.
 
     Launches an interactive terminal UI for viewing and managing plans.
-    For a static table output, use 'erk plan list' instead.
+    Shows all columns (runs) by default. For a static table output, use
+    'erk plan list' instead.
 
     Examples:
         erk dash                         # Your plans only
@@ -753,11 +775,17 @@ def dash(
         erk dash --run-state in_progress
         erk dash --sort activity         # Sort by recent branch activity
     """
+    # Default to showing all columns (runs=True)
+    prs = True  # Always show PRs
+    runs = True  # Default to showing runs
+
     _run_interactive_mode(
         ctx,
         label=label,
         state=state,
         run_state=run_state,
+        runs=runs,
+        prs=prs,
         limit=limit,
         interval=interval,
         all_users=all_users,

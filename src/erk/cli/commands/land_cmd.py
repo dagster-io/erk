@@ -748,12 +748,6 @@ def _cleanup_no_worktree(cleanup: CleanupContext) -> None:
     """Handle cleanup when no worktree exists: delete branch only if exists locally."""
     local_branches = cleanup.ctx.git.branch.list_local_branches(cleanup.main_repo_root)
     if cleanup.branch in local_branches:
-        # Defensive: ensure branch is released before deletion
-        # (handles case where branch is checked out in a worktree not known to the caller,
-        # e.g., landing from TUI while an implementation worktree still has the branch)
-        _ensure_branch_not_checked_out(
-            cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
-        )
         cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
         user_output(click.style("✓", fg="green") + f" Deleted branch '{cleanup.branch}'")
     # else: Branch doesn't exist locally - no cleanup needed (remote implementation or fork PR)
@@ -1060,8 +1054,9 @@ def _validate_pr_for_landing(
     check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
 
     # 5. Learn status check (for plan branches)
+    # Check when: has plan issue AND (is_current_branch OR has worktree)
     plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, target.branch)
-    if plan_id is not None:
+    if plan_id is not None and (target.is_current_branch or target.worktree_path is not None):
         _check_learn_status_and_prompt(
             ctx,
             repo_root=main_repo_root,

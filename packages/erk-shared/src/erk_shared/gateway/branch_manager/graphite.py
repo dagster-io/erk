@@ -74,9 +74,6 @@ class GraphiteBranchManager(BranchManager):
         Creates the branch via git and registers it with Graphite for stack tracking.
         Does NOT checkout the branch - leaves the current branch unchanged.
 
-        Note: Graphite's `gt track` requires the branch to exist and be checked out,
-        so we temporarily checkout the new branch to track it, then checkout back.
-
         Args:
             repo_root: Repository root directory
             branch_name: Name of the new branch
@@ -85,17 +82,9 @@ class GraphiteBranchManager(BranchManager):
         Returns:
             BranchCreated on success, BranchAlreadyExists if branch already exists.
         """
-        # Save current branch to restore later
-        current_branch = self.git.branch.get_current_branch(repo_root)
-
-        # Create the branch from base_branch
         result = self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
         if isinstance(result, BranchAlreadyExists):
             return result
-
-        # Checkout the new branch temporarily to track it with Graphite
-        # (gt track requires the branch to be checked out)
-        self.git.branch.checkout_branch(repo_root, branch_name)
 
         # Track it with Graphite - use local branch name for parent
         # (gt track doesn't accept remote refs like origin/branch)
@@ -108,17 +97,11 @@ class GraphiteBranchManager(BranchManager):
 
         # Auto-fix diverged parent before tracking child
         # (gt track fails if parent is diverged from Graphite's tracking)
+        # No checkout needed — gt track accepts branch positionally
         if self.graphite.is_branch_diverged_from_tracking(self.git, repo_root, parent_for_graphite):
-            # Checkout parent, retrack to update Graphite's cache, restore to new branch
-            self.git.branch.checkout_branch(repo_root, parent_for_graphite)
             self.graphite_branch_ops.retrack_branch(repo_root, parent_for_graphite)
-            self.git.branch.checkout_branch(repo_root, branch_name)
 
         self.graphite_branch_ops.track_branch(repo_root, branch_name, parent_for_graphite)
-
-        # Restore original branch so callers can create worktrees with the new branch
-        if current_branch is not None:
-            self.git.branch.checkout_branch(repo_root, current_branch)
 
         return BranchCreated()
 
@@ -129,9 +112,8 @@ class GraphiteBranchManager(BranchManager):
 
         If the local branch doesn't exist, it is created from the remote ref.
         If the local branch exists but has diverged from remote, it is
-        force-updated to match remote. This is safe because by the time this
-        method is called, we've already checked out the new branch being
-        created, so we're not on the local_branch.
+        force-updated to match remote. This is safe because the caller is not
+        on the local_branch being updated.
 
         Args:
             repo_root: Repository root directory
@@ -153,7 +135,7 @@ class GraphiteBranchManager(BranchManager):
             return  # Already in sync
 
         # Local and remote diverged - force-update local to match remote
-        # This is safe because we're on the new branch (not this one)
+        # This is safe because the caller is not on local_branch
         self.git.branch.create_branch(repo_root, local_branch, remote_ref, force=True)
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:

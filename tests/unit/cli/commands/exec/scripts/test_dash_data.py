@@ -43,7 +43,6 @@ def test_serialize_plan_row_datetime_fields() -> None:
         pr_title=None,
         pr_state=None,
         pr_head_branch=None,
-        pr_has_conflicts=None,
         worktree_branch=None,
         last_local_impl_at=now,
         last_remote_impl_at=now,
@@ -75,7 +74,6 @@ def test_serialize_plan_row_datetime_fields() -> None:
         author="test-user",
         is_learn_plan=False,
         lifecycle_display="-",
-        pr_status_display="-",
     )
 
     result = _serialize_plan_row(row)
@@ -105,7 +103,6 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         pr_title=None,
         pr_state=None,
         pr_head_branch=None,
-        pr_has_conflicts=None,
         worktree_branch=None,
         last_local_impl_at=None,
         last_remote_impl_at=None,
@@ -137,7 +134,6 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         author="test-user",
         is_learn_plan=False,
         lifecycle_display="-",
-        pr_status_display="-",
     )
 
     result = _serialize_plan_row(row)
@@ -189,7 +185,6 @@ def test_serialize_plan_row_all_fields_present() -> None:
         "pr_title",
         "pr_state",
         "pr_head_branch",
-        "pr_has_conflicts",
         "worktree_branch",
         "last_local_impl_at",
         "last_remote_impl_at",
@@ -221,7 +216,6 @@ def test_serialize_plan_row_all_fields_present() -> None:
         "author",
         "is_learn_plan",
         "lifecycle_display",
-        "pr_status_display",
     }
     assert set(result.keys()) == expected_fields
 
@@ -248,7 +242,6 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         pr_title="Fix it",
         pr_state="MERGED",
         pr_head_branch="feature-branch",
-        pr_has_conflicts=None,
         worktree_branch="feature-branch",
         last_local_impl_at=now,
         last_remote_impl_at=None,
@@ -280,7 +273,6 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         author="test-user",
         is_learn_plan=False,
         lifecycle_display="-",
-        pr_status_display="-",
     )
 
     result = _serialize_plan_row(row)

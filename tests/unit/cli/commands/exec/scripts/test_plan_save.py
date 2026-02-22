@@ -228,11 +228,9 @@ def test_draft_pr_does_not_checkout_branch(tmp_path: Path, monkeypatch: pytest.M
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    # Only 2 checkouts from branch_manager.create_branch() (checkout+restore for gt track).
-    # The plan commit now uses git plumbing — no additional checkouts.
-    assert len(fake_git.checked_out_branches) == 2
-    assert fake_git.checked_out_branches[0][1].startswith("planned/")  # for gt track
-    assert fake_git.checked_out_branches[1] == (tmp_path, "feature-branch")  # restore
+    # No checkouts at all — gt track accepts branch positionally, and
+    # the plan commit uses git plumbing. No checkout/restore cycle needed.
+    assert len(fake_git.checked_out_branches) == 0
 
 
 def test_draft_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -91,7 +91,6 @@ class PlanDataTable(DataTable):
         self._view_mode: ViewMode = ViewMode.PLANS
         self._rows: list[PlanRowData] = []
         self._plan_column_index: int = 0  # Always first column
-        self._sts_column_index: int | None = None
         self._objective_column_index: int | None = None
         self._pr_column_index: int | None = None
         self._branch_column_index: int | None = None
@@ -135,7 +134,6 @@ class PlanDataTable(DataTable):
         self._plan_backend = plan_backend
         # Reset column indices before _setup_columns rebuilds them
         self._plan_column_index = 0
-        self._sts_column_index = None
         self._objective_column_index = None
         self._pr_column_index = None
         self._branch_column_index = None
@@ -184,9 +182,6 @@ class PlanDataTable(DataTable):
             return
 
         if self._plan_backend == "draft_pr":
-            self._sts_column_index = col_index
-            self.add_column("sts", key="sts", width=5)
-            col_index += 1
             self._stage_column_index = col_index
             self.add_column("stage", key="stage", width=9)
             col_index += 1
@@ -196,7 +191,7 @@ class PlanDataTable(DataTable):
         self._objective_column_index = col_index
         col_index += 1
 
-        # Plans view: plan, [sts, stage, created,] obj, loc, branch,
+        # Plans view: plan, [stage, created,] obj, loc, branch,
         # run-id, run, [created,] author, ...
         self.add_column("loc", key="location", width=3)
         col_index += 1
@@ -337,7 +332,6 @@ class PlanDataTable(DataTable):
             plan_cell,
         ]
         if self._plan_backend == "draft_pr":
-            values.append(row.pr_status_display)
             stage_display = _strip_rich_markup(row.lifecycle_display)
             values.append(stage_display)
             values.append(row.created_display)
