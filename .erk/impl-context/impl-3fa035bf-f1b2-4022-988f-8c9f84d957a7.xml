@@ -1,0 +1,117 @@
+<session>
+  <meta branch="plnd/add-status-tui-02-22-1050" />
+  <meta model="claude-opus-4-6" />
+  <user>for loc column i want the remote case to the the cloud emoji rather than whatever it is now</user>
+  <thinking>The user wants to change the "loc" column in the TUI dashboard to show a cloud emoji for the "remote" case. Let me look at the current code for the plan table widget since that's the modified file.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="10126" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10126}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Tb1Sv6bXkZWUDQHotmVyay">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10126" cache_read_input_tokens="19041" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10126, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tb1Sv6bXkZWUDQHotmVyay">
+     1→"""Plan table widget for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from rich.text import Text
+     8→from textual.events import Click
+     9→from textual.message import Message
+    10→from textual.widgets import DataTable
+    11→
+    12→from erk.tui.data.types import PlanFilters, PlanRowData
+    13→from erk.tui.views.types import ViewMode
+    14→from erk_shared.context.types import PlanBackendType
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk.tui.app import ErkDashApp
+    18→
+    19→
+    20→class PlanDataTable(DataTable):
+    21→    """DataTable subclass for displaying plans.
+    22→
+    23→    Manages column configuration and row population from PlanRowData.
+    24→    Uses row selection mode (not cell selection) for simpler navigation.
+    25→    """
+    26→
+    27→    class LocalWtClicked(Message):
+    28→        """Posted when user clicks local-wt column on a row with existing worktree."""
+    29→
+    30→        def __init__(self, row_index: int) -&gt; None:
+
+... [419 lines omitted] ...
+  </tool_result>
+  <assistant>I can see on line 304 the remote case uses `\U0001f310` (🌐 globe with meridians). I'll change it to the cloud emoji (☁️).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8201" cache_read_input_tokens="29167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8201}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JCYVQqLBCUkfbWM3LvWvxv">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # Compact location emoji: 💻 = local checkout, 🌐 = remote run
+        location_part...[truncated 70 chars]...f4bb")
+        if row.run_url is not None:
+            location_parts.append("\U0001f310")</param>
+    <param name="new_string">        # Compact location emoji: 💻 = local checkout, ☁️ = remote run
+        location_par...[truncated 73 chars]...bb")
+        if row.run_url is not None:
+            location_parts.append("\u2601\ufe0f")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8201" cache_read_input_tokens="29167" output_tokens="347" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8201, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JCYVQqLBCUkfbWM3LvWvxv">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Done. Changed the remote location indicator from 🌐 (globe) to ☁️ (cloud).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="37368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>that meessed up alignment</user>
+  <assistant>
+
+The cloud emoji (☁️) is wider than the globe emoji was, pushing the alignment off. I'll increase the `loc` column width to accommodate it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="37820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01L4kkKGMLu7AW55wzSA5DXq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">self.add_column("loc", key="location", width=3)</param>
+    <param name="new_string">self.add_column("loc", key="location", width=4)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="37820" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1007, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L4kkKGMLu7AW55wzSA5DXq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Bumped the `loc` column width from 3 to 4 to account for the wider cloud emoji.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="38827" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 278}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>still a problem</user>
+  <thinking>The cloud emoji with variation selector (☁️ = U+2601 U+FE0F) is rendering wider than expected in the terminal. The issue is that the variation selector `\ufe0f` forces emoji presentation which makes it wider. Let me try using just the plain cloud character `\u2601` without the variation selector, which should render as a text-width character.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="949" cache_read_input_tokens="39131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 949}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The variation selector (`\ufe0f`) is forcing emoji-width rendering. Let me use the plain cloud character without it, and revert the column width.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="949" cache_read_input_tokens="39131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 949}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V5UqQ9q4JXuZ5HJHiXi8Zj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">            location_parts.append("\u2601\ufe0f")</param>
+    <param name="new_string">            location_parts.append("\u2601")</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="949" cache_read_input_tokens="39131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 949}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V5UqQ9q4JXuZ5HJHiXi8Zj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018X73Q5Gt6BNBGfzpF7Ek9x">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">self.add_column("loc", key="location", width=4)</param>
+    <param name="new_string">self.add_column("loc", key="location", width=3)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="40080" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018X73Q5Gt6BNBGfzpF7Ek9x">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Reverted to width 3 and dropped the `\ufe0f` variation selector. Now it's just `☁` (U+2601) which should render at normal text width instead of double-wide emoji width.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="40453" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 350}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>

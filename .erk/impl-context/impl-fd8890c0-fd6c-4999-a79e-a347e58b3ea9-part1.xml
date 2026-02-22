@@ -1,0 +1,1125 @@
+<session>
+  <meta branch="plnd/add-status-tui-02-22-1050" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="fd8890c0-fd6c-4999-a79e-a347e58b3ea9"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="fd8890c0-fd6c-4999-a79e-a347e58b3ea9" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="fd8890c0-fd6c-4999-a79e-a347e58b3ea9" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.worker-impl/` and `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the instructions:
+
+1. Step 0: No arguments provided, so no ISSUE_ARG or FILE_ARG
+2. Step 1b: Check if `.impl/` already exists
+
+Let me check if `.impl/` exists and run `erk exec impl-init --json`.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12868" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12868}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12868" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12868}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AaVk1zga95kNj2PdDh7ikW">
+    <param name="command">erk exec impl-init --json</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12868" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12868}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AaVk1zga95kNj2PdDh7ikW">
+{"valid": true, "impl_type": "impl", "has_issue_tracking": true, "related_docs": {"skills": [], "docs": []}, "issue_number": 7860}
+  </tool_result>
+  <assistant>`.impl/` is valid with issue tracking (issue #7860). Let me sync with remote first.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="31909" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EdCc385jnwhkkSbPUPiUeR">
+    <param name="command">erk exec setup-impl-from-issue 7860</param>
+    <param name="description">Sync local branch with remote for issue #7860</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="31909" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EdCc385jnwhkkSbPUPiUeR">
+Found existing .impl/ for plan #7860, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/.impl", "issue_number": 7860, "issue_url": "https://github.com/dagster-io/erk/pull/7860", "branch": "plnd/add-status-tui-02-22-1050", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <assistant>Good, already synced. Now let me clean up any impl-context directory and read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="32169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 248}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018j6QnEAaoocWHPpaFZnDWH">
+    <param name="command">if [ -d .erk/impl-context/ ]; then git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove ...[truncated 32 chars]...h origin "$(git branch --show-current)"; else echo "No .erk/impl-context/ to clean up"; fi</param>
+    <param name="description">Clean up plan staging directory if it exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="32169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 248}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018j6QnEAaoocWHPpaFZnDWH">
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plnd/add-status-tui-02-22-1050 40ba353ea] Remove .erk/impl-context/ before implementation
+ 2 files changed, 72 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   310f37a7b..40ba353ea  plnd/add-status-tui-02-22-1050 -&gt; plnd/add-status-tui-02-22-1050
+  </tool_result>
+  <assistant>Now let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="32417" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 440}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XQx6ASvFckJrMXST2i8bTc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="32417" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 440, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XQx6ASvFckJrMXST2i8bTc">
+     1→# Plan: Add separate "sts" column for status indicators in TUI dashboard
+     2→
+     3→## Context
+     4→
+     5→The TUI dashboard's "stage" column currently combines the lifecycle stage name (e.g., "impld", "impling") with status emoji indicators (e.g., 🚀, 👀, 💥) in a single column. The user wants the status indicators split into their own "sts" column for clearer visual separation.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Extract indicator computation into a standalone function (`lifecycle.py`)
+    10→
+    11→**File:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+    12→
+    13→Add a new `compute_status_indicators()` function that returns just the emoji string (e.g., `"🚀"`, `"👀 💥"`, `""`). This extracts the indicator logic currently embedded in `format_lifecycle_with_status()`. The existing `format_lifecycle_with_status()` can then delegate to it (or be removed if no longer needed).
+    14→
+    15→The new function signature:
+    16→```python
+    17→def compute_status_indicators(
+    18→    lifecycle_display: str,
+    19→    *,
+    20→    is_draft: bool | None,
+    21→    has_conflicts: bool | None,
+    22→    review_decision: str | None,
+    23→    checks_passing: bool | None,
+    24→    has_unresolved_comments: bool | None,
+    25→) -&gt; str:
+    26→```
+    27→
+    28→Returns the space-joined indicators string, or `"-"` when empty.
+    29→
+    30→### 2. Add `status_display` field to `PlanRowData` (`types.py`)
+
+... [39 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the plan. Let me create task entries and start implementing. Let me first load the relevant documentation and skills.
+
+The plan has 5 implementation changes (change 6 is "no changes needed"):
+
+1. Extract indicator computation into `compute_status_indicators()` in `lifecycle.py`
+2. Add `status_display` field to `PlanRowData` in `types.py`
+3. Populate separately in `real.py`
+4. Add "sts" column in `plan_table.py`
+5. Update `make_plan_row` in `fake.py`
+
+Let me read the relevant files first, then create tasks and implement.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan... The plan has 5 changes to add a separate "sts" column for status indicators. Let me load tripwires and read the relevant files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Sn1wQtRBKPurSJrkVP5GgL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/tui/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sn1wQtRBKPurSJrkVP5GgL">
+     1→---
+     2→title: Tui Tripwires
+     3→read_when:
+     4→  - "working on tui code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from tui/*.md frontmatter --&gt;
+    10→
+    11→# Tui Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**accessing \_status_bar without null guard** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Guard \_status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError.
+    16→
+    17→**adding a DataTable column with add_column(key=...)** → Read [TUI Architecture Overview](architecture.md) first. Column key is a data binding contract — must match data field name. Silent failure when mismatched.
+    18→
+    19→**adding a column to PlanDataTable without updating make_plan_row** → Read [Column Addition Pattern](column-addition-pattern.md) first. Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist.
+    20→
+    21→**adding a command without an availability predicate** → Read [TUI Command Architecture](action-inventory.md) first. Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute.
+    22→
+    23→**adding a field to PlanRowData without updating make_plan_row** → Read [TUI Data Contract](data-contract.md) first. The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break.
+    24→
+    25→**adding a new TUI command that should only show in certain plan backends** → Read [Backend-Aware TUI Commands](backend-aware-commands.md) first. Commands have THREE filter dimensions: view mode, data availability, AND plan backend. If the command is backend-specific, add \_is_github_backend() or a similar predicate to is_available. See backend-aware-commands.md.
+    26→
+    27→**adding a new TUI command without updating all 3 places** → Read [TUI Command Registration](tui-command-registration.md) first. TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md.
+    28→
+    29→**adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.
+    30→
+
+... [48 lines omitted] ...
+
+    41→**constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
+    51→**extending PlanDataProvider ABC** → Read [TUI Architecture Overview](architecture.md) first. Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in **init**. Missing init causes AttributeError at test time.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FG5Rpmuk7QcHLDQRZqN7Ef">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FG5Rpmuk7QcHLDQRZqN7Ef">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding Closes #N for draft-PR backend** → Read [PR Body Assembly](pr-body-assembly.md) first. Set issue_number=None for draft-PR backend. The draft PR IS the plan — Closes #N would be self-referential.
+    24→
+    25→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    26→
+    27→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    28→
+    29→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    30→
+
+... [274 lines omitted] ...
+
+    43→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    63→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    73→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+    87→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+    89→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+    97→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   101→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   105→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   119→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   129→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   133→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   145→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   181→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   183→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   185→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   187→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   199→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   215→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+   223→**setting PR reference without providing --plan** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The CLI requires --plan when --pr is set (error: plan_required_with_pr). Use --plan '#NNN' to preserve or --plan '' to explicitly clear. Read roadmap-mutation-semantics.md for the None/empty/value semantics.
+   229→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   237→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   245→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   247→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   251→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   253→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   273→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   277→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   301→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Rv2rpCRyxsAui4LKGvrpx8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rv2rpCRyxsAui4LKGvrpx8">
+     1→"""Lifecycle stage display computation for plans.
+     2→
+     3→Extracted to a standalone module to avoid circular imports when testing.
+     4→The main consumer is RealPlanDataProvider in real.py.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     8→from erk_shared.plan_store.conversion import header_str
+     9→from erk_shared.plan_store.types import Plan
+    10→
+    11→
+    12→def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+    13→    """Compute lifecycle stage display string for a plan.
+    14→
+    15→    Reads lifecycle_stage from plan header fields if present, otherwise
+    16→    infers from is_draft and pr_state in plan metadata. Returns a
+    17→    color-coded Rich markup string for table display.
+    18→
+    19→    When the resolved stage is "planned" and a workflow run exists,
+    20→    upgrades to "implementing" since the plan is actively being worked on.
+    21→
+    22→    Args:
+    23→        plan: Plan with header_fields and metadata populated
+    24→        has_workflow_run: Whether the plan has an associated workflow run
+    25→
+    26→    Returns:
+    27→        Display string (may contain Rich markup for color)
+    28→    """
+    29→    # Read from header fields first
+    30→    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+... [119 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CA9VSwB2DD3GaSLBe4gmxF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CA9VSwB2DD3GaSLBe4gmxF">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class PlanRowData:
+    11→    """Row data for displaying a plan in the TUI table.
+    12→
+    13→    Contains pre-formatted display strings and raw data needed for actions.
+    14→    Immutable to ensure table state consistency.
+    15→
+    16→    Attributes:
+    17→        plan_id: GitHub issue number (e.g., 123)
+    18→        plan_url: Full URL to the GitHub issue
+    19→        pr_number: PR number if linked, None otherwise
+    20→        pr_url: URL to PR (GitHub or Graphite), None if no PR
+    21→        pr_display: Formatted PR cell content (e.g., "#123 👀")
+    22→        checks_display: Formatted checks cell (e.g., "✓" or "✗")
+    23→        worktree_name: Name of local worktree, empty string if none
+    24→        exists_locally: Whether worktree exists on local machine
+    25→        local_impl_display: Relative time since last local impl (e.g., "2h ago")
+    26→        remote_impl_display: Relative time since last remote impl
+    27→        run_id_display: Formatted workflow run ID
+    28→        run_state_display: Formatted workflow run state
+    29→        run_url: URL to the GitHub Actions run page
+    30→        full_title: Complete untruncated plan title
+
+... [126 lines omitted] ...
+
+    40→        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UjwsKXjfbTAScTt3mDb297">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UjwsKXjfbTAScTt3mDb297">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.issues.types import IssueNotFound
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    find_metadata_block,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [875 lines omitted] ...
+
+   338→            raise RuntimeError(f"objective-update-after-land failed: {result.stdout}")
+   698→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FnsNRjSveYjgz351WFk6CZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/widgets/plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FnsNRjSveYjgz351WFk6CZ">
+     1→"""Plan table widget for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from rich.text import Text
+     8→from textual.events import Click
+     9→from textual.message import Message
+    10→from textual.widgets import DataTable
+    11→
+    12→from erk.tui.data.types import PlanFilters, PlanRowData
+    13→from erk.tui.views.types import ViewMode
+    14→from erk_shared.context.types import PlanBackendType
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk.tui.app import ErkDashApp
+    18→
+    19→
+    20→class PlanDataTable(DataTable):
+    21→    """DataTable subclass for displaying plans.
+    22→
+    23→    Manages column configuration and row population from PlanRowData.
+    24→    Uses row selection mode (not cell selection) for simpler navigation.
+    25→    """
+    26→
+    27→    class LocalWtClicked(Message):
+    28→        """Posted when user clicks local-wt column on a row with existing worktree."""
+    29→
+    30→        def __init__(self, row_index: int) -&gt; None:
+
+... [416 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GR4JwkiveM6K671BHV4yPj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="32857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GR4JwkiveM6K671BHV4yPj">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRReviewThread
+    13→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [391 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    55→        self._update_objective_error: str | None = None
+    83→            RuntimeError: If fetch_error is set
+    86→        if self._fetch_error is not None:
+    87→            raise RuntimeError(self._fetch_error)
+   139→        if self._update_objective_error is not None:
+   140→            raise RuntimeError(self._update_objective_error)
+  </tool_result>
+  <thinking>Now I have a thorough understanding of all the files. Let me also check the TUI column-addition-pattern doc that was mentioned in tripwires, and then I'll check if there are tests for the lifecycle module.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="46018" cache_read_input_tokens="34051" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46018}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the column-addition-pattern doc (referenced in tripwires) and check for existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="46018" cache_read_input_tokens="34051" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46018}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019gTRnPpMCVz8QQK3z77Aog">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/tui/column-addition-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="46018" cache_read_input_tokens="34051" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46018}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019gTRnPpMCVz8QQK3z77Aog">
+     1→---
+     2→title: Column Addition Pattern
+     3→read_when:
+     4→  - "adding a column to the plan table"
+     5→  - "adding a field to PlanRowData"
+     6→  - "modifying plan_table.py column layout"
+     7→tripwires:
+     8→  - action: "adding a column to PlanDataTable without updating make_plan_row"
+     9→    warning: "Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist."
+    10→last_audited: "2026-02-16 08:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Column Addition Pattern
+    15→
+    16→Adding a column to the PlanDataTable requires 5 coordinated changes across the data pipeline. Missing any one causes runtime errors or test failures.
+    17→
+    18→## Worked Example: created_at Datetime Column (PR #6978)
+    19→
+    20→### 1. Add field to PlanRowData (`src/erk/tui/data/types.py`)
+    21→
+    22→Add both the raw data field and the display-formatted field:
+    23→
+    24→```python
+    25→@dataclass(frozen=True)
+    26→class PlanRowData:
+    27→    created_at: datetime     # Raw value for sorting/filtering
+    28→    created_display: str     # Formatted for display (e.g., "2d ago")
+    29→```
+    30→
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Pcq6T2AC1xVqZY6tWnyUEi">
+    <param name="pattern">format_lifecycle_with_status|compute_lifecycle_display|compute_status_indicators</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="46018" cache_read_input_tokens="34051" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46018}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pcq6T2AC1xVqZY6tWnyUEi">
+Found 1 file
+tests/unit/plan_store/test_lifecycle_display.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MKv4szZELgSfAyTFttG3uD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/tui/data-contract.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="46018" cache_read_input_tokens="34051" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46018}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MKv4szZELgSfAyTFttG3uD">
+     1→---
+     2→title: TUI Data Contract
+     3→read_when:
+     4→  - "building an alternate frontend consuming plan data"
+     5→  - "adding fields to PlanRowData or PlanDataProvider"
+     6→  - "understanding the display-vs-raw field duality"
+     7→  - "serializing plan data to JSON for external consumers"
+     8→tripwires:
+     9→  - action: "formatting display strings during table render"
+    10→    warning: "Display strings are pre-formatted at fetch time. Add new *_display fields to PlanRowData and format in RealPlanDataProvider._build_row_data(), not in the widget layer."
+    11→  - action: "adding a field to PlanRowData without updating make_plan_row"
+    12→    warning: "The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break."
+    13→  - action: "putting PlanDataProvider ABC in src/erk/tui/"
+    14→    warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
+    15→  - action: "constructing PlanFilters without copying all fields from existing filters"
+    16→    warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# TUI Data Contract
+    22→
+    23→The TUI data layer is designed around a single frozen dataclass (`PlanRowData`) that carries both display-ready strings and raw identifiers. This document explains the design decisions behind the data contract, the cross-package split, and the pitfalls of JSON serialization — things that can't be learned by reading any single source file.
+    24→
+    25→## Why Display and Raw Fields Coexist
+    26→
+    27→&lt;!-- Source: src/erk/tui/data/types.py, PlanRowData --&gt;
+    28→
+    29→`PlanRowData` carries two kinds of fields for the same data. For example, `pr_number` (raw `int | None`) and `pr_display` (pre-formatted `str` like `"#123 👀"`). This is deliberate:
+    30→
+
+... [211 lines omitted] ...
+
+   143→| `run_conclusion` | `str`                              | Yes      | Workflow run conclusion: `"success"`, `"failure"`, `"cancelled"`, etc. |
+   225→Adding a field to `PlanRowData` touches at minimum five places. Missing any one causes test failures or silent data loss:
+  </tool_result>
+  <thinking>Now I have a comprehensive understanding of all the files and patterns. Let me also check the existing lifecycle display tests to understand what test coverage exists.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7220" cache_read_input_tokens="80069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the existing test file and the serialization file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7220" cache_read_input_tokens="80069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W671dpCBey1q99rVhmDF21">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/unit/plan_store/test_lifecycle_display.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7220" cache_read_input_tokens="80069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W671dpCBey1q99rVhmDF21">
+     1→"""Tests for lifecycle display functions."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     6→from erk_shared.gateway.plan_data_provider.lifecycle import (
+     7→    compute_lifecycle_display,
+     8→    format_lifecycle_with_status,
+     9→)
+    10→from erk_shared.plan_store.types import Plan, PlanState
+    11→
+    12→
+    13→def _format_lifecycle(
+    14→    lifecycle_display: str,
+    15→    *,
+    16→    is_draft: bool | None,
+    17→    has_conflicts: bool | None,
+    18→    review_decision: str | None,
+    19→    checks_passing: bool | None = None,
+    20→    has_unresolved_comments: bool | None = None,
+    21→) -&gt; str:
+    22→    """Test helper: wraps format_lifecycle_with_status with None defaults for check params."""
+    23→    return format_lifecycle_with_status(
+    24→        lifecycle_display,
+    25→        is_draft=is_draft,
+    26→        has_conflicts=has_conflicts,
+    27→        review_decision=review_decision,
+    28→        checks_passing=checks_passing,
+    29→        has_unresolved_comments=has_unresolved_comments,
+    30→    )
+
+... [545 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R5ACdkXkF1q35rfixFS33M">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7220" cache_read_input_tokens="80069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R5ACdkXkF1q35rfixFS33M">
+     1→"""Serialize plan dashboard data to JSON for external consumers.
+     2→
+     3→Usage:
+     4→    erk exec dash-data [--state open|closed] [--label LABEL] [--limit N]
+     5→        [--show-prs/--no-show-prs] [--show-runs/--no-show-runs]
+     6→        [--run-state STATE] [--creator USER]
+     7→
+     8→Output:
+     9→    JSON with {success, plans, count}
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (missing repo info, API error)
+    14→"""
+    15→
+    16→import dataclasses
+    17→import json
+    18→from datetime import datetime
+    19→from typing import Any
+    20→
+    21→import click
+    22→
+    23→from erk.cli.core import discover_repo_context
+    24→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    25→from erk.tui.data.types import PlanFilters, PlanRowData
+    26→from erk_shared.context.helpers import require_context
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    30→from erk_shared.gateway.http.auth import fetch_github_token
+
+... [79 lines omitted] ...
+
+    78→            json.dumps({"success": False, "error": "Could not determine repository owner/name"})
+  </tool_result>
+  <thinking>Now I have a complete understanding. Let me create the task list and start implementing. The plan has 5 concrete changes plus a "no changes needed" for serialization.
+
+Let me create the tasks and start implementing sequentially.
+
+Key changes:
+1. Add `compute_status_indicators()` to lifecycle.py
+2. Add `status_display: str` to PlanRowData in types.py
+3. Update real.py to compute status_display separately
+4. Add "sts" column in plan_table.py
+5. Update `make_plan_row` in fake.py with `status_display` parameter
+
+Let me also check for any tests that reference `_row_to_values` to see if they construct values tuples that would need updating.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete understanding of all the files. Let me create tasks and begin implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01XtBs8zUxSPB7DMmrVvi9wh">
+    <param name="subject">Add compute_status_indicators() to lifecycle.py</param>
+    <param name="description">Extract indicator logic from format_lifecycle_with_status() into standalone compute_status_indicators() function that returns just the emoji string.</param>
+    <param name="activeForm">Adding compute_status_indicators() function</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XtBs8zUxSPB7DMmrVvi9wh">
+Task #1 created successfully: Add compute_status_indicators() to lifecycle.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_011U2FmtycHyHEbbR83uAmsR">
+    <param name="subject">Add status_display field to PlanRowData</param>
+    <param name="description">Add status_display: str field to PlanRowData in types.py</param>
+    <param name="activeForm">Adding status_display field</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011U2FmtycHyHEbbR83uAmsR">
+Task #2 created successfully: Add status_display field to PlanRowData
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01GPcL8SghQXjDSz9meA3TfM">
+    <param name="subject">Populate status_display separately in real.py</param>
+    <param name="description">Stop enriching lifecycle_display with indicators, compute status_display via compute_status_indicators() instead</param>
+    <param name="activeForm">Updating real provider</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GPcL8SghQXjDSz9meA3TfM">
+Task #3 created successfully: Populate status_display separately in real.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01NahwEfDRpykZQeeNZNqTyJ">
+    <param name="subject">Add "sts" column in plan_table.py</param>
+    <param name="description">Add self.add_column("sts", key="sts", width=4) after stage column and insert row.status_display in _row_to_values()</param>
+    <param name="activeForm">Adding sts column to table</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NahwEfDRpykZQeeNZNqTyJ">
+Task #4 created successfully: Add "sts" column in plan_table.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_018JwnF9kvwb5UcqVcRgwyS8">
+    <param name="subject">Update make_plan_row in fake.py</param>
+    <param name="description">Add status_display parameter with default "-" and pass through to PlanRowData</param>
+    <param name="activeForm">Updating fake make_plan_row</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018JwnF9kvwb5UcqVcRgwyS8">
+Task #5 created successfully: Update make_plan_row in fake.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01TQmUQ9SRh3ozBZshHEcLpd">
+    <param name="subject">Add tests for compute_status_indicators()</param>
+    <param name="description">Add tests for the new function in test_lifecycle_display.py</param>
+    <param name="activeForm">Writing tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TQmUQ9SRh3ozBZshHEcLpd">
+Task #6 created successfully: Add tests for compute_status_indicators()
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01BoZSurNyYiVXrD18yHCdgX">
+    <param name="subject">Run CI checks</param>
+    <param name="description">Run fast-ci to verify all changes pass</param>
+    <param name="activeForm">Running CI checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14092" cache_read_input_tokens="87289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BoZSurNyYiVXrD18yHCdgX">
+Task #7 created successfully: Run CI checks
+  </tool_result>
+  <assistant>Now let me signal the implementation has started and begin Phase 1.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1224" cache_read_input_tokens="101381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1224}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PnZMMeLsDUWrUm6CLkFYRo">
+    <param name="command">erk exec impl-signal started --session-id="fd8890c0-fd6c-4999-a79e-a347e58b3ea9" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1224" cache_read_input_tokens="101381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1224}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_014dxeqhehLmji7TgAwAUxYK">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1224" cache_read_input_tokens="101381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1224}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PnZMMeLsDUWrUm6CLkFYRo">
+{
+  "success": true,
+  "event": "started",
+  "issue_number": 7860
+}
+  </tool_result>
+  <tool_result tool="toolu_014dxeqhehLmji7TgAwAUxYK">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 1: Add `compute_status_indicators()` to lifecycle.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="102605" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 279}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V6svT6edvp76BDAHZLywMX">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="old_string">def format_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | ...[truncated 3096 chars]...+ suffix + after
+
+    # No Rich markup - just append
+    return lifecycle_display + suffix</param>
+    <param name="new_string">def compute_status_indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | Non...[truncated 5786 chars]...unresolved_comments is not True:
+            indicators.append("🚀")
+
+    return indicators</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="102605" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 279}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V6svT6edvp76BDAHZLywMX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014Q8cDVbZ82rJMYqgSagjJ4">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2687" cache_read_input_tokens="102884" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2687}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Q8cDVbZ82rJMYqgSagjJ4">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_019DmfFvLPuFswJNRB8xUttV">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2687" cache_read_input_tokens="102884" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2687}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019DmfFvLPuFswJNRB8xUttV">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 2: Add `status_display` field to PlanRowData**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="105571" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AeDpnFEfrjnHj47PmPdvxf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/data/types.py</param>
+    <param name="old_string">        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-")
+    """
+
+    plan_id: int</param>
+    <param name="new_string">        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-")
+        status_display: Status indicator emojis (e.g., "🚀", "👀 💥", "-")
+    """
+
+    plan_id: int</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="105571" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AeDpnFEfrjnHj47PmPdvxf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the field at the end of the dataclass (after `lifecycle_display`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="318" cache_read_input_tokens="105769" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 318}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UkEffBJg78smuT2Syy1P42">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/data/types.py</param>
+    <param name="old_string">    is_learn_plan: bool
+    lifecycle_display: str</param>
+    <param name="new_string">    is_learn_plan: bool
+    lifecycle_display: str
+    status_display: str</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="318" cache_read_input_tokens="105769" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 318}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UkEffBJg78smuT2Syy1P42">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XtpFTDHVthVoADepYJVK81">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="262" cache_read_input_tokens="106087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 262}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XtpFTDHVthVoADepYJVK81">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01SMwFwoQd9t4KxpBNzNV3RP">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="262" cache_read_input_tokens="106087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 262}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SMwFwoQd9t4KxpBNzNV3RP">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 3: Update real.py to compute status_display separately**
+
+First, update the import to include `compute_status_indicators`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="106349" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013nBKTGEkbC5ppZY1fu625Z">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">from erk_shared.gateway.plan_data_provider.lifecycle import format_lifecycle_with_status</param>
+    <param name="new_string">from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="106349" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013nBKTGEkbC5ppZY1fu625Z">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `_build_row_data` to stop enriching `lifecycle_display` and instead compute `status_display`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="106547" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 305}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>
