@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "pr_number": 7861,
+  "comments": [
+    {
+      "id": 3941254796,
+      "author": "schrockn",
+      "body": "\ud83d\ude80 Starting implementation\n\n---\n\n**Worktree:** `erk-slot-32`\n**Branch:** `plnd/update-changelog-02-22-1051`",
+      "url": "https://github.com/dagster-io/erk/pull/7861#issuecomment-3941254796"
+    },
+    {
+      "id": 3941257367,
+      "author": "schrockn",
+      "body": "* **#7861** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7861?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7861?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7861#issuecomment-3941257367"
+    }
+  ]
+}
