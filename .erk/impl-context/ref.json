@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Add slug validation gate to objective creation with agent backpressure"
+}
