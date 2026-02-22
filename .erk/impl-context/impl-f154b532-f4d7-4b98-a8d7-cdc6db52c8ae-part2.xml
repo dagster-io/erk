@@ -1,0 +1,1027 @@
+<session>
+  <meta branch="planned/O7390-plan-enhance-obje-02-22-0620" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_014QcUPY23zfExrFvNVjni73">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="old_string">        objective_deps_display=objective_deps_display,
+        updated_at=effective_updated_at,</param>
+    <param name="new_string">        objective_deps_display=objective_deps_display,
+        objective_in_flight_display=objective_in_flight_display,
+        updated_at=effective_updated_at,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="95115" output_tokens="227" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 326}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014QcUPY23zfExrFvNVjni73">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014nmgwh1qFUgbZ3fX9VunAG">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="95441" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014nmgwh1qFUgbZ3fX9VunAG">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Vuckx3pscWKQ9vtBkKYWDD">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="95441" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 297}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vuckx3pscWKQ9vtBkKYWDD">
+Updated task #5 status
+  </tool_result>
+  <assistant>Phase 5 (unblocked count in TUI next_node) was already integrated into Phase 4's real provider changes.
+
+Now let me move to Phase 6: Tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="95738" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01MzfdYs9714ug29PbBuoX5K">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="95738" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MzfdYs9714ug29PbBuoX5K">
+Updated task #6 status
+  </tool_result>
+  <assistant>**Phase 6: Tests**
+
+Let me first check the full test file to understand the fan-out fixture and remaining tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="131" cache_read_input_tokens="95934" cache_creation="{'ephemeral_5m_input_tokens': 131, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WLttwpoYdmjUCs482ZJY7j">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="offset">609</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="131" cache_read_input_tokens="95934" cache_creation="{'ephemeral_5m_input_tokens': 131, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WLttwpoYdmjUCs482ZJY7j">
+&lt;system-reminder&gt;Warning: the file exists but is shorter than the provided offset (609). The file has 609 lines.&lt;/system-reminder&gt;
+  </tool_result>
+  <assistant>Good, I've seen the full file. Now let me add the new test fixture and tests. I need to:
+
+1. Add `OBJECTIVE_WITH_PARALLEL_DISPATCH` fixture with nodes in `planning` status
+2. Test `planning` status emoji renders correctly
+3. Test "In flight" line appears in summary
+4. Test multiple unblocked nodes listed when fan-out pattern exists
+5. Test JSON output includes `in_flight` and `pending_unblocked` fields
+6. Update `test_view_objective_displays_summary` assertion to match new format</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="96065" cache_creation="{'ephemeral_5m_input_tokens': 183, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KMbitBGEotoweEMyqe6PrA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">        assert "2/5 done" in result.output
+        assert "Next node:" in result.output
+        assert "1.3" in result.output  # First pending step</param>
+    <param name="new_string">        assert "2/5 done" in result.output
+        assert "In flight:" in result.output
+        assert "Next node:" in result.output
+        assert "1.3" in result.output  # First pending step</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="96065" output_tokens="373" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 183}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KMbitBGEotoweEMyqe6PrA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the new test fixtures and tests at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="96248" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S2T7c7rPNmGFFtx1Bs8axL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="offset">590</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="96248" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S2T7c7rPNmGFFtx1Bs8axL">
+   590→    """Human output shows 'pending (unblocked)' for both 2.1 and 2.2."""
+   591→    issue = _make_issue(1700, "Objective: Fan-Out Human", OBJECTIVE_WITH_FAN_OUT_FAN_IN)
+   592→    fake_gh = FakeGitHubIssues(issues={1700: issue})
+   593→    runner = CliRunner()
+   594→
+   595→    with erk_inmem_env(runner) as env:
+   596→        test_ctx = env.build_context(issues=fake_gh)
+   597→        result = runner.invoke(
+   598→            view_objective,
+   599→            ["1700"],
+   600→            obj=test_ctx,
+   601→        )
+   602→
+   603→        assert result.exit_code == 0, f"Failed: {result.output}"
+   604→        output = strip_ansi(result.output)
+   605→        # Count occurrences of "pending (unblocked)" — should be exactly 2 (for 2.1 and 2.2)
+   606→        unblocked_count = output.count("pending (unblocked)")
+   607→        assert unblocked_count == 2, (
+   608→            f"Expected 2 unblocked, got {unblocked_count}. Output:\n{output}"
+   609→        )
+   610→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TPsGEt7Xj7SUbh8bsxDMPm">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">        unblocked_count = output.count("pending (unblocked)")
+        assert unblocked_count == 2, (
+            f"Expected 2 unblocked, got {unblocked_count}. Output:\n{output}"
+        )</param>
+    <param name="new_string">        unblocked_count = output.count("pending (unblocked)")
+        assert unblocked_cou...[truncated 6299 chars]...ld be 0 (nothing planning or in_progress)
+        assert data["summary"]["in_flight"] == 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="496" cache_read_input_tokens="96683" output_tokens="2292" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 496}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TPsGEt7Xj7SUbh8bsxDMPm">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if there are TUI plan table tests that might need updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2354" cache_read_input_tokens="97179" cache_creation="{'ephemeral_5m_input_tokens': 2354, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Risj5br9aExXaGcFWxMBYC">
+    <param name="pattern">ViewMode.OBJECTIVES</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2354" cache_read_input_tokens="97179" cache_creation="{'ephemeral_5m_input_tokens': 2354, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Risj5br9aExXaGcFWxMBYC">
+Found 6 files
+tests/tui/screens/test_launch_screen.py
+tests/tui/test_app.py
+tests/tui/test_plan_table.py
+tests/tui/test_view_bar.py
+tests/tui/views/test_types.py
+tests/tui/commands/test_registry.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017QqD5H9sdYSf8dVJM46PUa">
+    <param name="pattern">OBJECTIVES</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/tui/test_plan_table.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="99533" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017QqD5H9sdYSf8dVJM46PUa">
+388-
+389-    def test_objectives_view_has_enriched_columns(self) -&gt; None:
+390-        """Objectives view produces plan, progress, next, deps, updated, author."""
+391-        filters = PlanFilters.default()
+392-        table = PlanDataTable(filters, plan_backend="github")
+393:        table._view_mode = ViewMode.OBJECTIVES
+394-        row = make_plan_row(42, "Objective Plan")
+395-
+396-        values = table._row_to_values(row)
+397-
+398-        # Objectives view: plan, title, progress, next, deps, updated, author
+--
+407-
+408-    def test_objectives_view_shows_progress_and_next(self) -&gt; None:
+409-        """Objectives view shows progress and next step from row data."""
+410-        filters = PlanFilters.default()
+411-        table = PlanDataTable(filters, plan_backend="github")
+412:        table._view_mode = ViewMode.OBJECTIVES
+413-        row = make_plan_row(
+414-            42,
+415-            "Objective: Build Feature",
+416-            objective_done_nodes=3,
+417-            objective_total_nodes=7,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DWTebzMGGxTicPPtiVau5d">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/tui/test_plan_table.py</param>
+    <param name="offset">388</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="671" cache_read_input_tokens="99770" cache_creation="{'ephemeral_5m_input_tokens': 671, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DWTebzMGGxTicPPtiVau5d">
+   388→
+   389→    def test_objectives_view_has_enriched_columns(self) -&gt; None:
+   390→        """Objectives view produces plan, progress, next, deps, updated, author."""
+   391→        filters = PlanFilters.default()
+   392→        table = PlanDataTable(filters, plan_backend="github")
+   393→        table._view_mode = ViewMode.OBJECTIVES
+   394→        row = make_plan_row(42, "Objective Plan")
+   395→
+   396→        values = table._row_to_values(row)
+   397→
+   398→        # Objectives view: plan, title, progress, next, deps, updated, author
+   399→        assert len(values) == 7
+   400→        assert _text_to_str(values[0]) == "#42"
+   401→        assert values[1] == "Objective Plan"  # full_title
+   402→        assert values[2] == "-"  # progress_display
+   403→        assert _text_to_str(values[3]) == "-"  # next_step_display
+   404→        assert values[4] == "-"  # deps_display
+   405→        assert values[5] == "-"  # updated_display
+   406→        assert values[6] == "test-user"  # author
+   407→
+   408→    def test_objectives_view_shows_progress_and_next(self) -&gt; None:
+   409→        """Objectives view shows progress and next step from row data."""
+   410→        filters = PlanFilters.default()
+   411→        table = PlanDataTable(filters, plan_backend="github")
+   412→        table._view_mode = ViewMode.OBJECTIVES
+   413→        row = make_plan_row(
+   414→            42,
+   415→            "Objective: Build Feature",
+   416→            objective_done_nodes=3,
+   417→            objective_total_nodes=7,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>I need to update these two tests to account for the new "fly" column. The values tuple now has 8 elements instead of 7, with `objective_in_flight_display` at index 3.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="910" cache_read_input_tokens="100441" cache_creation="{'ephemeral_5m_input_tokens': 910, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0133LyvZsDPkBuRPYNCMbbVJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/tui/test_plan_table.py</param>
+    <param name="old_string">    def test_objectives_view_has_enriched_columns(self) -&gt; None:
+        """Objectives vie...[truncated 1528 chars]...ep
+        assert values[4] == "-"  # deps
+        assert values[5] == "2h ago"  # updated</param>
+    <param name="new_string">    def test_objectives_view_has_enriched_columns(self) -&gt; None:
+        """Objectives vie...[truncated 1688 chars]...ep
+        assert values[5] == "-"  # deps
+        assert values[6] == "2h ago"  # updated</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="910" cache_read_input_tokens="100441" output_tokens="1266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 910}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0133LyvZsDPkBuRPYNCMbbVJ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013EznicMTR25Nh6zsbbcuSU">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1323" cache_read_input_tokens="101351" cache_creation="{'ephemeral_5m_input_tokens': 1323, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013EznicMTR25Nh6zsbbcuSU">
+Updated task #6 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01PxFf9CKXq2UeWXmdbw54oR">
+    <param name="taskId">7</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1323" cache_read_input_tokens="101351" cache_creation="{'ephemeral_5m_input_tokens': 1323, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PxFf9CKXq2UeWXmdbw54oR">
+Updated task #7 status
+  </tool_result>
+  <assistant>Now let me verify the implementation before running CI. Let me check the view_cmd.py is consistent:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="102674" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S33pUitX88NinfC7EiFFgA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/src/erk/cli/commands/objective/view_cmd.py</param>
+    <param name="offset">320</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="102674" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S33pUitX88NinfC7EiFFgA">
+   320→                    _format_node_status(step.status, plan=step.plan, is_unblocked=is_unblocked),
+   321→                    escape(step.description),
+   322→                    escape(deps_str),
+   323→                    _format_ref_link(step.plan, repo_base_url),
+   324→                    _format_ref_link(step.pr, repo_base_url),
+   325→                )
+   326→
+   327→            console.print(table)
+   328→
+   329→            user_output("")
+   330→
+   331→        # Display summary
+   332→        user_output(click.style("─── Summary ───", bold=True))
+   333→
+   334→        # Format steps summary (include planning count)
+   335→        nodes_parts = [
+   336→            f"{summary['done']}/{summary['total_nodes']} done",
+   337→        ]
+   338→        if summary["planning"] &gt; 0:
+   339→            nodes_parts.append(f"{summary['planning']} planning")
+   340→        nodes_parts.append(f"{summary['in_progress']} in progress")
+   341→        nodes_parts.append(f"{summary['pending']} pending")
+   342→        user_output(_format_field("Nodes", ", ".join(nodes_parts)))
+   343→
+   344→        # Display in-flight count (planning + in_progress)
+   345→        in_flight = summary["planning"] + summary["in_progress"]
+   346→        user_output(_format_field("In flight", str(in_flight)))
+   347→
+   348→        # Display unblocked count
+   349→        pending_unblocked = graph.pending_unblocked_nodes()
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now let me run the relevant tests first to check for issues before running the full CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1022" cache_read_input_tokens="102872" cache_creation="{'ephemeral_5m_input_tokens': 1022, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01EmFo9APmozf1vh4jpXbM5L">
+    <param name="description">Run view_cmd tests</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/commands/objective/test_view_cmd.py -x -v` and report the results. Do NOT fix anything, just report what you see.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1022" cache_read_input_tokens="102872" cache_creation="{'ephemeral_5m_input_tokens': 1022, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Hy489DbCpiafvKok4sgzQZ">
+    <param name="description">Run plan_table TUI tests</param>
+    <param name="prompt">Run `uv run pytest tests/tui/test_plan_table.py -x -v` and report the results. Do NOT fix anything, just report what you see.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1022" cache_read_input_tokens="102872" cache_creation="{'ephemeral_5m_input_tokens': 1022, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EmFo9APmozf1vh4jpXbM5L">
+**pytest passed:** All 26 tests in test_view_cmd.py passed in 0.46s
+
+The objective view command tests are fully passing. No failures or issues found.
+agentId: a1d9e01de7bea2980 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13600
+tool_uses: 1
+duration_ms: 5587&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Hy489DbCpiafvKok4sgzQZ">
+pytest failed: 1 failure found
+
+**Summary:** 14 tests passed, 1 test failed in 0.42s
+
+**Failure Details:**
+
+Test: `TestPlanDataTableRowConversion::test_row_to_values_basic`
+File: `tests/tui/test_plan_table.py:165`
+Error: `AssertionError: assert 15 == 9`
+
+The test expects 9 columns when converting a row to values, but the actual result returned 15 values. The comment in the test indicates the expected columns are: plan, obj, sts, branch, created, author, lrn, local-wt, local-impl. However, the `_row_to_values()` method is now returning 15 values instead.
+agentId: a5fdc5c2319db195b (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14920
+tool_uses: 1
+duration_ms: 6262&lt;/usage&gt;
+  </tool_result>
+  <thinking>One test failure. Let me look at the `test_row_to_values_basic` test to understand the issue. It seems like a pre-existing issue (15 != 9) that isn't related to my changes — let me check.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="676" cache_read_input_tokens="103894" cache_creation="{'ephemeral_5m_input_tokens': 676, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The view_cmd tests pass. There's one pre-existing test failure in plan_table. Let me check if it's related to my changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="676" cache_read_input_tokens="103894" cache_creation="{'ephemeral_5m_input_tokens': 676, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015B2jLTty24TQ42FpxPSgbF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/tui/test_plan_table.py</param>
+    <param name="offset">155</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="676" cache_read_input_tokens="103894" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 676}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015B2jLTty24TQ42FpxPSgbF">
+   155→            limit=None,
+   156→            show_prs=False,
+   157→            show_runs=False,
+   158→        )
+   159→        table = PlanDataTable(filters, plan_backend="github")
+   160→        row = make_plan_row(123, "Test Plan")
+   161→
+   162→        values = table._row_to_values(row)
+   163→
+   164→        # plan, obj, sts, branch, created, author, lrn, local-wt, local-impl
+   165→        assert len(values) == 9
+   166→        assert _text_to_str(values[0]) == "#123"
+   167→        assert _text_to_str(values[1]) == "-"  # objective (none)
+   168→        assert values[2] == "-"  # status (no local, no run)
+   169→        assert values[3] == "-"  # branch (none)
+   170→        assert values[4] == "-"  # created_display
+   171→        assert values[5] == "test-user"  # author
+   172→        assert _text_to_str(values[6]) == "-"  # learn (no status)
+   173→        assert _text_to_str(values[7]) == "-"  # worktree (not exists)
+   174→        assert _text_to_str(values[8]) == "-"  # local impl
+   175→
+   176→    def test_row_to_values_with_prs(self) -&gt; None:
+   177→        """Row conversion with PR columns enabled."""
+   178→        filters = PlanFilters(
+   179→            labels=("erk-plan",),
+   180→            state=None,
+   181→            run_state=None,
+   182→            limit=None,
+   183→            show_prs=True,
+   184→            show_runs=False,
+  </tool_result>
+  <assistant>This test was already failing before my changes — it expects 9 values but the actual table has more columns (run-id, run, etc.). This is not related to my changes. Let me verify by checking on master:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="707" cache_read_input_tokens="104570" cache_creation="{'ephemeral_5m_input_tokens': 707, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MsTKDEBKjXZAuCgJFE9dZ2">
+    <param name="command">cd /Users/schrockn/.erk/repos/erk &amp;&amp; git stash &amp;&amp; uv run pytest tests/tui/test_plan_table.py::TestPlanDataTableRowConversion::test_row_to_values_basic -x --no-header -q 2&gt;&amp;1 | tail -5; git stash pop</param>
+    <param name="description">Check if test was already failing on master</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="707" cache_read_input_tokens="104570" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 707}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MsTKDEBKjXZAuCgJFE9dZ2">
+Exit code 128
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+  </tool_result>
+  <tool_use name="Task" id="toolu_014qW61RGB8qU28pjqygX7N5">
+    <param name="description">Check pre-existing test failure</param>
+    <param name="prompt">Run `git stash` then `uv run pytest tests/tui/test_plan_table.py::TestPlanDataTableRowConv...[truncated 57 chars]...ort whether this test was already failing before the stashed changes. Do NOT fix anything.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="105277" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014qW61RGB8qU28pjqygX7N5">
+**Test Status: ALREADY FAILING BEFORE STASHED CHANGES**
+
+The test `test_row_to_values_basic` was already failing before your changes were stashed. The failure is:
+
+```
+AssertionError: assert 15 == 9
+```
+
+The test expects 9 values in the row conversion, but the code is currently returning 15 values. This test failure existed in the baseline code (after `git stash`, before your changes).
+
+Your stashed changes are now restored and ready for development.
+agentId: a77a77dac9b4411e9 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14873
+tool_uses: 3
+duration_ms: 6392&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+Good — that test failure is pre-existing, not caused by my changes. Now let me run the full fast-ci.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="572" cache_read_input_tokens="105588" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01E7SEgpdys7bgp3J3VozUtf">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="572" cache_read_input_tokens="105588" output_tokens="82" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 572}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E7SEgpdys7bgp3J3VozUtf">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run the fast-ci target.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1730" cache_read_input_tokens="106160" cache_creation="{'ephemeral_5m_input_tokens': 1730, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01W3twY2SswExn7KCbBuxE14">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full results. Do NOT fix anything.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1730" cache_read_input_tokens="106160" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1730}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W3twY2SswExn7KCbBuxE14">
+## Results Summary
+
+make fast-ci failed with exit code 2. Here are the issues found:
+
+### Failures:
+
+**1. Format Check**
+- 1 file would be reformatted: `packages/erk-shared/src/erk_shared/naming.py`
+- 1,504 files already formatted
+
+**2. Prettier Check**
+- 3 files have code style issues:
+  - `.claude/commands/erk/plan-save.md`
+  - `docs/learned/architecture/agent-backpressure-gates.md`
+  - `docs/learned/planning/next-steps-output.md`
+
+**3. Exec Reference Check**
+- `.claude/skills/erk-exec/reference.md` is out of date
+- Requires running: `erk-dev gen-exec-reference-docs`
+
+**4. Unit Tests (erk)**
+- 4 test failures in `tests/unit/cli/commands/exec/scripts/test_dash_data.py`:
+  1. `test_serialize_plan_row_datetime_fields` - FAILED
+  2. `test_serialize_plan_row_tuple_to_list` - FAILED
+  3. `test_serialize_plan_row_all_fields_present` - AssertionError: Extra field `objective_in_flight_display` in result
+  4. `test_serialize_plan_row_json_roundtrip` - TypeError: Missing required positional argument `objective_in_flight_display`
+
+- 5,345 tests passed
+
+**Passed checks:**
+
+... [9 lines omitted] ...
+  </tool_result>
+  <thinking>Let me analyze the failures:
+
+1. **Format Check** - `packages/erk-shared/src/erk_shared/naming.py` needs reformatting - this is pre-existing, not my change
+2. **Prettier Check** - 3 markdown files - pre-existing
+3. **Exec Reference Check** - pre-existing
+4. **Unit Tests** - `test_dash_data.py` failures are related to my new field `objective_in_flight_display`
+
+I need to fix the test_dash_data.py failures. Let me look at those tests first, and also fix the formatting issues.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="639" cache_read_input_tokens="107890" cache_creation="{'ephemeral_5m_input_tokens': 639, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have test failures related to my new `objective_in_flight_display` field in `test_dash_data.py`. Let me fix those, along with the format/prettier issues.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="639" cache_read_input_tokens="107890" cache_creation="{'ephemeral_5m_input_tokens': 639, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NMz7ze9ZRmUUfovsvVvFnR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="639" cache_read_input_tokens="107890" output_tokens="296" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 639}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NMz7ze9ZRmUUfovsvVvFnR">
+     1→"""Unit tests for dash-data exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def test_serialize_plan_row_basic() -&gt; None:
+    12→    """Test basic serialization of PlanRowData to dict."""
+    13→    row = make_plan_row(123, "Test Plan")
+    14→    result = _serialize_plan_row(row)
+    15→
+    16→    assert result["plan_id"] == 123
+    17→    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
+    18→    assert result["pr_number"] is None
+    19→    assert result["exists_locally"] is False
+    20→    assert result["last_local_impl_at"] is None
+    21→    assert result["last_remote_impl_at"] is None
+    22→
+    23→
+    24→def test_serialize_plan_row_datetime_fields() -&gt; None:
+    25→    """Test that datetime fields are converted to ISO 8601 strings."""
+    26→    now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
+    27→    row = PlanRowData(
+    28→        plan_id=456,
+    29→        plan_url="https://github.com/test/repo/issues/456",
+    30→        pr_number=None,
+
+... [257 lines omitted] ...
+  </tool_result>
+  <assistant>I need to add `objective_in_flight_display` to the three PlanRowData constructor calls and the expected fields set. Let me fix all four tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4061" cache_read_input_tokens="108529" cache_creation="{'ephemeral_5m_input_tokens': 4061, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LsXxmzznYi885beVTG8ig3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">        objective_deps_display="-",
+        updated_at=now,
+        updated_display="-",
+ ...[truncated 218 chars]...15T12:30:00+00:00"
+    assert result["last_remote_impl_at"] == "2025-06-15T12:30:00+00:00"</param>
+    <param name="new_string">        objective_deps_display="-",
+        objective_in_flight_display="-",
+        updat...[truncated 259 chars]...15T12:30:00+00:00"
+    assert result["last_remote_impl_at"] == "2025-06-15T12:30:00+00:00"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4061" cache_read_input_tokens="108529" output_tokens="495" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4061}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LsXxmzznYi885beVTG8ig3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FzSNzGZ7B4cmtQU4mQYKZ7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">        objective_deps_display="-",
+        updated_at=datetime(2025, 1, 1, tzinfo=UTC),
+ ...[truncated 184 chars]...
+    result = _serialize_plan_row(row)
+
+    assert isinstance(result["log_entries"], list)</param>
+    <param name="new_string">        objective_deps_display="-",
+        objective_in_flight_display="-",
+        updat...[truncated 225 chars]...
+    result = _serialize_plan_row(row)
+
+    assert isinstance(result["log_entries"], list)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="112590" output_tokens="411" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 559}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FzSNzGZ7B4cmtQU4mQYKZ7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MjSdEsa2RJhs1u5nJrU4ZK">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">        "objective_deps_display",
+        "updated_at",</param>
+    <param name="new_string">        "objective_deps_display",
+        "objective_in_flight_display",
+        "updated_at",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="113149" output_tokens="194" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 475}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MjSdEsa2RJhs1u5nJrU4ZK">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the JSON roundtrip test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="113624" cache_creation="{'ephemeral_5m_input_tokens': 471, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0188AC2KSF7DxpLex3sywfnu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">        objective_deps_display="-",
+        updated_at=now,
+        updated_display="-",
+ ...[truncated 108 chars]...isplay="-",
+    )
+
+    result = _serialize_plan_row(row)
+    json_str = json.dumps(result)</param>
+    <param name="new_string">        objective_deps_display="-",
+        objective_in_flight_display="-",
+        updat...[truncated 149 chars]...isplay="-",
+    )
+
+    result = _serialize_plan_row(row)
+    json_str = json.dumps(result)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="113624" output_tokens="363" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 471}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0188AC2KSF7DxpLex3sywfnu">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also fix the pre-existing formatting issues (format + prettier):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="114095" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_013nwPrW49hECsVVniDSGSeD">
+    <param name="description">Run format and prettier fixes</param>
+    <param name="prompt">Run `make format` from /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24, then run `make prettier` from the same directory. Report the results. Do NOT fix anything else.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="114095" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 427}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013nwPrW49hECsVVniDSGSeD">
+## Results
+
+**make format passed:** 1 file reformatted, 1504 files left unchanged
+
+**make prettier passed:** All markdown files formatted successfully
+- Most files were unchanged
+- A few files required minor formatting (e.g., `.claude/commands/erk/plan-save.md`, `docs/learned/architecture/agent-backpressure-gates.md`, `docs/learned/planning/next-steps-output.md`)
+- Prettier processed 780 markdown files across the codebase
+
+Both formatting tools completed successfully with no errors.
+agentId: a5ff5d02ecfadb6ae (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 32569
+tool_uses: 3
+duration_ms: 12461&lt;/usage&gt;
+  </tool_result>
+  <assistant>Good, formatting is fixed. Now let me re-run fast-ci to verify everything passes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3463" cache_read_input_tokens="114522" cache_creation="{'ephemeral_5m_input_tokens': 3463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01C4cRxkdCuMJ4Panx2hJrEQ">
+    <param name="description">Run make fast-ci again</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full results. Do NOT fix anything.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3463" cache_read_input_tokens="114522" cache_creation="{'ephemeral_5m_input_tokens': 3463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C4cRxkdCuMJ4Panx2hJrEQ">
+## make fast-ci Results
+
+**Status:** FAILED (exit code 2)
+
+**Summary of Checks:**
+
+| Check | Result |
+|-------|--------|
+| Lint | PASSED - All checks passed |
+| Format Check | PASSED - 1505 files already formatted |
+| Prettier Check | PASSED - All matched files use Prettier code style |
+| Markdown Check | PASSED - 0 violations (19 CLAUDE.md files checked) |
+| Exec Reference Check | **FAILED** - .claude/skills/erk-exec/reference.md is out of date |
+| Type Check (ty) | PASSED - All checks passed |
+| Unit Tests (erk) | PASSED - 5349 tests passed in 12.75s |
+| Unit Tests (erk-dev) | PASSED - 136 tests passed in 2.50s |
+| Unit Tests (erk-statusline) | PASSED - 126 tests passed in 0.64s |
+
+**Failure Details:**
+
+The only failing check is the Exec Reference Check:
+
+```
+FAIL: .claude/skills/erk-exec/reference.md is out of date
+Run 'erk-dev gen-exec-reference-docs' to regenerate it.
+```
+
+This indicates that the reference documentation file at `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.claude/skills/erk-exec/reference.md` needs to be regenerated using the `erk-dev gen-exec-reference-docs` command.
+agentId: aecb576561876d661 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15041
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>All my changes pass — all 5349 unit tests pass, lint, format, prettier, ty all pass. The only failure is the exec reference check which is pre-existing (not related to my changes). Let me verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="117985" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0139eA44BRTgn6rJ9pp6ahKf">
+    <param name="command">git diff --name-only .claude/skills/erk-exec/reference.md 2&gt;/dev/null; git status .claude/skills/erk-exec/reference.md --short 2&gt;/dev/null</param>
+    <param name="description">Check if exec reference.md was modified by our changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="117985" output_tokens="205" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 596}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0139eA44BRTgn6rJ9pp6ahKf">
+
+  </tool_result>
+  <assistant>Not modified by our changes — it's a pre-existing issue. Let me regenerate it to get a clean CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="118581" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01WcMgNTcpekTwyhS6W5nsTD">
+    <param name="description">Regenerate exec reference docs</param>
+    <param name="prompt">Run `erk-dev gen-exec-reference-docs` from /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the results. Do NOT fix anything.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="118581" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 202}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WcMgNTcpekTwyhS6W5nsTD">
+The command executed successfully.
+
+**Result:** `erk-dev gen-exec-reference-docs` passed
+
+- Generated `.claude/skills/erk-exec/reference.md` file
+- 91 top-level commands documented
+- Output was formatted
+agentId: af792898eae819742 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13436
+tool_uses: 1
+duration_ms: 3653&lt;/usage&gt;
+  </tool_result>
+  <assistant>Good. Now let me do one final CI run to confirm everything is clean.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="509" cache_read_input_tokens="118783" cache_creation="{'ephemeral_5m_input_tokens': 509, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_017Lw6SijCnzbQHw59fjKRRW">
+    <param name="description">Final make fast-ci run</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24 and report the full results. Do NOT fix anything.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="509" cache_read_input_tokens="118783" cache_creation="{'ephemeral_5m_input_tokens': 509, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017Lw6SijCnzbQHw59fjKRRW">
+**Fast CI passed successfully.**
+
+Summary of results:
+
+- **Lint**: All checks passed
+- **Format Check**: 1505 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: All CLAUDE.md and AGENTS.md files properly paired (0 violations across 19 files)
+- **Exec Reference Check**: Up to date
+- **Type Check (ty)**: All checks passed
+- **Unit Tests (erk)**: 5349 passed in 11.94s
+- **Tests (erk-dev)**: 136 passed in 2.44s
+- **Tests (erk-statusline)**: 126 passed in 0.64s
+
+All CI checks passed with no failures.
+agentId: ad2d37f1db95ca5fc (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14447
+tool_uses: 1
+duration_ms: 25115&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass. Now let me signal completion, verify `.impl/`, and submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3509" cache_read_input_tokens="119292" cache_creation="{'ephemeral_5m_input_tokens': 3509, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019oJsmXjFFqkKb3nevcJfEf">
+    <param name="command">erk exec impl-signal ended --session-id="f154b532-f4d7-4b98-a8d7-cdc6db52c8ae" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3509" cache_read_input_tokens="119292" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3509}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019oJsmXjFFqkKb3nevcJfEf">
+{
+  "success": true,
+  "event": "ended",
+  "issue_number": 7827
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013aZ81FzmSFJCq4x2kSktTp">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(python3 -c "import json; print(j...[truncated 197 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="122801" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 180}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013aZ81FzmSFJCq4x2kSktTp">
+Usage: erk exec upload-session [OPTIONS]
+Try 'erk exec upload-session -h' for help.
+
+Error: No such option: --issue-number
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XYGrVsVC1wD5nuD7K4g5Ko">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="122981" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XYGrVsVC1wD5nuD7K4g5Ko">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-24/.impl"}
+  </tool_result>
+  <assistant>Good, `.impl/` is preserved. Now let me submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="123239" cache_creation="{'ephemeral_5m_input_tokens': 132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014xLhKwDAvfDK4gQTFZH2UL">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pr submit</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="123239" cache_creation="{'ephemeral_5m_input_tokens': 132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014xLhKwDAvfDK4gQTFZH2UL">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XGC7KEpmQtSUfesK48F7oD">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="139" cache_read_input_tokens="123371" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 139}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XGC7KEpmQtSUfesK48F7oD">
+{
+  "success": true,
+  "event": "submitted",
+  "issue_number": 7827
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GNMNrm3M3Lner4vCh6j4GJ">
+    <param name="command">erk pr check 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="123510" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GNMNrm3M3Lner4vCh6j4GJ">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WcT8E8Hh5LHpurB3v4GzFK">
+    <param name="command">gh pr view --json url,title --jq '"\(.title)\n\(.url)"'</param>
+    <param name="description">Get PR URL</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="123633" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WcT8E8Hh5LHpurB3v4GzFK">
+Enhance objective view to display parallel in-flight activity
+https://github.com/dagster-io/erk/pull/7827
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01UU5NHNSGTh23ebPTtPccmD">
+    <param name="taskId">7</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="134" cache_read_input_tokens="123938" cache_creation="{'ephemeral_5m_input_tokens': 134, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UU5NHNSGTh23ebPTtPccmD">
+Updated task #7 status
+  </tool_result>
+  <assistant>## Plan execution complete
+
+**PR:** https://github.com/dagster-io/erk/pull/7827
+
+### Summary of changes
+
+**CLI `erk objective view` enhancements:**
+- Added `planning` status with rocket emoji (`🚀 planning plan #N`) to `_format_node_status()`
+- Enhanced `Nodes:` summary line to include `planning` count when &gt; 0
+- Added `In flight:` line showing combined planning + in_progress count
+- Replaced single `Next node:` with `Next nodes:` listing all unblocked pending nodes when multiple exist
+- Added `in_flight` to JSON summary and `pending_unblocked` to JSON graph output
+
+**TUI dashboard enhancements:**
+- Added `objective_in_flight_display` field to `PlanRowData`
+- Added "fly" column (width 3) to objectives view, showing in-flight count
+- Computed in-flight count (planning + in_progress) in real provider
+- Added unblocked count prefix (e.g., `(2) 2.1 Branch A`) to next_node display when multiple nodes are unblocked
+
+**Tests (8 new):**
+- `test_view_planning_status_renders` — planning emoji + plan reference
+- `test_view_in_flight_line_in_summary` — in-flight count in summary
+- `test_view_planning_count_in_nodes_line` — planning count in Nodes line
+- `test_view_multiple_unblocked_nodes_listed` — plural Next nodes listing
+- `test_view_json_includes_in_flight_and_pending_unblocked` — JSON output fields
+- `test_view_fan_out_json_includes_pending_unblocked` — fan-out JSON fields
+- Updated 2 existing TUI plan_table tests for new "fly" column
+- Updated 4 existing dash_data tests for new field</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="124072" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+</session>
