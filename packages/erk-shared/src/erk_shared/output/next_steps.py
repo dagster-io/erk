@@ -1,6 +1,7 @@
 """Issue and draft PR next steps formatting - single source of truth."""
 
 from dataclasses import dataclass
+from typing import Protocol
 
 
 @dataclass(frozen=True)
@@ -87,52 +88,51 @@ SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
 PREPARE_SLASH_COMMAND = "/erk:prepare"
 
 
-def _format_slot_options(
-    *,
-    on_trunk: bool,
-    prepare: str,
-    prepare_and_implement: str,
-    prepare_new_slot: str,
-    prepare_new_slot_and_implement: str,
-    submit: str,
-) -> str:
+class SlotCommands(Protocol):
+    """Protocol for objects that provide slot-related command strings."""
+
+    @property
+    def prepare(self) -> str: ...
+    @property
+    def prepare_and_implement(self) -> str: ...
+    @property
+    def prepare_new_slot(self) -> str: ...
+    @property
+    def prepare_new_slot_and_implement(self) -> str: ...
+    @property
+    def submit(self) -> str: ...
+
+
+def _format_slot_options(*, on_trunk: bool, commands: SlotCommands) -> str:
     """Format slot options block with trunk-aware ordering."""
     if on_trunk:
         return f"""OR exit Claude Code first, then run one of:
 
   New slot (recommended — you're on trunk):
-    Local: {prepare_new_slot}
-    Implement: {prepare_new_slot_and_implement}
+    Local: {commands.prepare_new_slot}
+    Implement: {commands.prepare_new_slot_and_implement}
 
   Same slot:
-    Local: {prepare}
-    Implement: {prepare_and_implement}
+    Local: {commands.prepare}
+    Implement: {commands.prepare_and_implement}
 
-  Submit to Queue: {submit}"""
+  Submit to Queue: {commands.submit}"""
     return f"""OR exit Claude Code first, then run one of:
 
   Same slot (recommended — you're in a slot):
-    Local: {prepare}
-    Implement: {prepare_and_implement}
+    Local: {commands.prepare}
+    Implement: {commands.prepare_and_implement}
 
   New slot:
-    Local: {prepare_new_slot}
-    Implement: {prepare_new_slot_and_implement}
+    Local: {commands.prepare_new_slot}
+    Implement: {commands.prepare_new_slot_and_implement}
 
-  Submit to Queue: {submit}"""
+  Submit to Queue: {commands.submit}"""
 
 
 def format_next_steps_plain(issue_number: int, *, on_trunk: bool) -> str:
     """Format for CLI output (plain text)."""
     s = IssueNextSteps(issue_number)
-    slot_block = _format_slot_options(
-        on_trunk=on_trunk,
-        prepare=s.prepare,
-        prepare_and_implement=s.prepare_and_implement,
-        prepare_new_slot=s.prepare_new_slot,
-        prepare_new_slot_and_implement=s.prepare_new_slot_and_implement,
-        submit=s.submit,
-    )
     return f"""Next steps:
 
 View Issue: {s.view}
@@ -140,20 +140,12 @@ View Issue: {s.view}
 In Claude Code:
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
-{slot_block}"""
+{_format_slot_options(on_trunk=on_trunk, commands=s)}"""
 
 
 def format_draft_pr_next_steps_plain(pr_number: int, *, branch_name: str, on_trunk: bool) -> str:
     """Format for CLI output (plain text) for draft PR plans."""
     s = DraftPRNextSteps(pr_number=pr_number, branch_name=branch_name)
-    slot_block = _format_slot_options(
-        on_trunk=on_trunk,
-        prepare=s.prepare,
-        prepare_and_implement=s.prepare_and_implement,
-        prepare_new_slot=s.prepare_new_slot,
-        prepare_new_slot_and_implement=s.prepare_new_slot_and_implement,
-        submit=s.submit,
-    )
     return f"""Next steps:
 
 View PR: {s.view}
@@ -161,7 +153,7 @@ View PR: {s.view}
 In Claude Code:
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
-{slot_block}"""
+{_format_slot_options(on_trunk=on_trunk, commands=s)}"""
 
 
 def format_next_steps_markdown(issue_number: int) -> str:
