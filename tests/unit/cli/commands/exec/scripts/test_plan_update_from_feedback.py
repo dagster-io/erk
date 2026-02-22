@@ -134,7 +134,7 @@ def test_success_with_plan_content(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == issue_number
+    assert output["plan_number"] == issue_number
 
     # Verify comment was updated
     assert len(fake_gh.updated_comments) == 1
@@ -180,7 +180,7 @@ def test_success_with_plan_path(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == issue_number
+    assert output["plan_number"] == issue_number
 
     # Verify comment was updated with file content
     assert len(fake_gh.updated_comments) == 1

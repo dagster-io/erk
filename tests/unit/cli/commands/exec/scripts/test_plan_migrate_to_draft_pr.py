@@ -94,7 +94,7 @@ def test_migrate_success_json(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["original_issue_number"] == 42
+    assert output["original_plan_number"] == 42
     assert "pr_number" in output
     assert "pr_url" in output
     assert output["branch_name"].startswith("plnd/")
@@ -142,7 +142,7 @@ def test_migrate_dry_run(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["dry_run"] is True
-    assert output["original_issue_number"] == 42
+    assert output["original_plan_number"] == 42
     assert "branch_name" in output
     # Issue should NOT be closed
     assert 42 not in fake_issues._closed_issues

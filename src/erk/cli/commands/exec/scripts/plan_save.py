@@ -272,8 +272,8 @@ def _save_as_draft_pr(
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
-            "issue_number": plan_number,
-            "issue_url": result.url,
+            "plan_number": plan_number,
+            "plan_url": result.url,
             "title": prefixed_title,
             "branch_name": branch_name,
             "plan_backend": "draft_pr",
@@ -325,7 +325,7 @@ def _save_plan_via_draft_pr(
                     json.dumps(
                         {
                             "success": True,
-                            "issue_number": existing_issue,
+                            "plan_number": existing_issue,
                             "skipped_duplicate": True,
                             "message": f"Session already saved plan #{existing_issue}",
                         }

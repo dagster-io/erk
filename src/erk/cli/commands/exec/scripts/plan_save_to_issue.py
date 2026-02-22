@@ -139,7 +139,7 @@ def plan_save_to_issue(
                     json.dumps(
                         {
                             "success": True,
-                            "issue_number": existing_issue,
+                            "plan_number": existing_issue,
                             "skipped_duplicate": True,
                             "message": f"Session already saved plan #{existing_issue}",
                         }
@@ -255,8 +255,8 @@ def plan_save_to_issue(
                         {
                             "success": False,
                             "error": result.error,
-                            "issue_number": result.issue_number,
-                            "issue_url": result.issue_url,
+                            "plan_number": result.issue_number,
+                            "plan_url": result.issue_url,
                         }
                     )
                 )
@@ -338,8 +338,8 @@ def plan_save_to_issue(
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
-            "issue_number": result.issue_number,
-            "issue_url": result.issue_url,
+            "plan_number": result.issue_number,
+            "plan_url": result.issue_url,
             "title": result.title,
             "plan_backend": "github",
         }
