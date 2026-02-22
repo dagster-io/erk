@@ -685,6 +685,7 @@ class RealPlanDataProvider(PlanDataProvider):
         objective_progress_display = "-"
         objective_next_node_display = "-"
         objective_deps_display = "-"
+        objective_in_flight_display = "-"
         if plan.body:
             phases, _errors = parse_roadmap(plan.body)
             if phases:
@@ -693,9 +694,18 @@ class RealPlanDataProvider(PlanDataProvider):
                 objective_done_nodes = summary["done"]
                 objective_total_nodes = summary["total_nodes"]
                 objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+
+                # Compute in-flight count (planning + in_progress)
+                in_flight = summary["planning"] + summary["in_progress"]
+                objective_in_flight_display = str(in_flight) if in_flight > 0 else "-"
+
+                # Compute next node display with unblocked count prefix
+                pending_unblocked = graph.pending_unblocked_nodes()
                 next_node = find_graph_next_node(graph, phases)
                 if next_node is not None:
                     step_text = f"{next_node['id']} {next_node['description']}"
+                    if len(pending_unblocked) > 1:
+                        step_text = f"({len(pending_unblocked)}) {step_text}"
                     if len(step_text) > 60:
                         step_text = step_text[:57] + "..."
                     objective_next_node_display = step_text
@@ -770,6 +780,7 @@ class RealPlanDataProvider(PlanDataProvider):
             objective_progress_display=objective_progress_display,
             objective_next_node_display=objective_next_node_display,
             objective_deps_display=objective_deps_display,
+            objective_in_flight_display=objective_in_flight_display,
             updated_at=plan.updated_at,
             updated_display=updated_display,
             created_at=plan.created_at,

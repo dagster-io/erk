@@ -171,6 +171,8 @@ class PlanDataTable(DataTable):
             col_index += 1
             self.add_column("prog", key="progress", width=5)
             col_index += 1
+            self.add_column("fly", key="in_flight", width=3)
+            col_index += 1
             self.add_column("next node", key="next_node", width=50)
             col_index += 1
             self.add_column("deps", key="deps", width=12)
@@ -280,12 +282,13 @@ class PlanDataTable(DataTable):
         if row.plan_url:
             plan_cell = Text(plan_cell, style="cyan underline")
 
-        # Objectives view: plan, progress, next, updated, author
+        # Objectives view: plan, progress, fly, next, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
             return (
                 plan_cell,
                 row.full_title,
                 row.objective_progress_display,
+                row.objective_in_flight_display,
                 Text(row.objective_next_node_display),
                 row.objective_deps_display,
                 row.updated_display,

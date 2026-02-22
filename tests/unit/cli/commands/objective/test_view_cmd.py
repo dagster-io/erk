@@ -238,6 +238,7 @@ def test_view_objective_displays_summary() -> None:
         assert "Nodes:" in result.output
         # 2 done (with PRs), 1 in_progress (plan #), 1 pending (no PR), 1 blocked
         assert "2/5 done" in result.output
+        assert "In flight:" in result.output
         assert "Next node:" in result.output
         assert "1.3" in result.output  # First pending step
 
@@ -606,3 +607,207 @@ def test_view_fan_out_human_shows_unblocked_status() -> None:
         assert unblocked_count == 2, (
             f"Expected 2 unblocked, got {unblocked_count}. Output:\n{output}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Parallel dispatch tests (planning status + in-flight display)
+# ---------------------------------------------------------------------------
+
+OBJECTIVE_WITH_PARALLEL_DISPATCH = """\
+# Objective: Parallel Dispatch Test
+
+## Roadmap
+
+### Phase 1: Root
+
+### Phase 2: Parallel Work
+
+### Phase 3: Merge
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '3'
+nodes:
+- id: '1.1'
+  description: Root step
+  status: done
+  plan: null
+  pr: '#100'
+  depends_on: []
+- id: '2.1'
+  description: Branch A
+  status: planning
+  plan: '#201'
+  pr: null
+  depends_on:
+  - '1.1'
+- id: '2.2'
+  description: Branch B
+  status: in_progress
+  plan: '#202'
+  pr: null
+  depends_on:
+  - '1.1'
+- id: '2.3'
+  description: Branch C
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '1.1'
+- id: '3.1'
+  description: Merge step
+  status: pending
+  plan: null
+  pr: null
+  depends_on:
+  - '2.1'
+  - '2.2'
+  - '2.3'
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+def test_view_planning_status_renders() -> None:
+    """Test that planning status shows rocket emoji and plan reference."""
+    issue = _make_issue(1800, "Objective: Planning", OBJECTIVE_WITH_PARALLEL_DISPATCH)
+    fake_gh = FakeGitHubIssues(issues={1800: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1800"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "🚀 planning" in result.output
+        assert "planning plan #201" in result.output
+
+
+def test_view_in_flight_line_in_summary() -> None:
+    """Test that In flight line appears in summary with correct count."""
+    issue = _make_issue(1900, "Objective: In Flight", OBJECTIVE_WITH_PARALLEL_DISPATCH)
+    fake_gh = FakeGitHubIssues(issues={1900: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1900"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = strip_ansi(result.output)
+        # planning (2.1) + in_progress (2.2) = 2 in flight
+        assert "In flight:" in output
+        assert "In flight:   2" in output
+
+
+def test_view_planning_count_in_nodes_line() -> None:
+    """Test that Nodes line includes planning count when > 0."""
+    issue = _make_issue(2000, "Objective: Planning Count", OBJECTIVE_WITH_PARALLEL_DISPATCH)
+    fake_gh = FakeGitHubIssues(issues={2000: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["2000"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = strip_ansi(result.output)
+        assert "1 planning" in output
+        assert "1 in progress" in output
+
+
+def test_view_multiple_unblocked_nodes_listed() -> None:
+    """Test that multiple unblocked pending nodes are listed as Next nodes."""
+    issue = _make_issue(2100, "Objective: Multi Unblocked", OBJECTIVE_WITH_FAN_OUT_FAN_IN)
+    fake_gh = FakeGitHubIssues(issues={2100: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["2100"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = strip_ansi(result.output)
+        # Should show "Next nodes:" (plural) not "Next node:"
+        assert "Next nodes:" in output
+        assert "2.1 - Branch A" in output
+        assert "2.2 - Branch B" in output
+
+
+def test_view_json_includes_in_flight_and_pending_unblocked() -> None:
+    """Test JSON output includes in_flight and pending_unblocked fields."""
+    issue = _make_issue(2200, "Objective: JSON Enhanced", OBJECTIVE_WITH_PARALLEL_DISPATCH)
+    fake_gh = FakeGitHubIssues(issues={2200: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["2200", "--json-output"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        data = json.loads(result.output)
+
+        # in_flight in summary: planning (1) + in_progress (1) = 2
+        assert data["summary"]["in_flight"] == 2
+        assert data["summary"]["planning"] == 1
+
+        # pending_unblocked in graph: only 2.3 is pending+unblocked
+        assert "pending_unblocked" in data["graph"]
+        assert "2.3" in data["graph"]["pending_unblocked"]
+        # 2.1 is planning, 2.2 is in_progress - not pending
+        assert "2.1" not in data["graph"]["pending_unblocked"]
+        assert "2.2" not in data["graph"]["pending_unblocked"]
+
+
+def test_view_fan_out_json_includes_pending_unblocked() -> None:
+    """Test JSON output pending_unblocked for fan-out with multiple pending."""
+    issue = _make_issue(2300, "Objective: Fan-Out Pending", OBJECTIVE_WITH_FAN_OUT_FAN_IN)
+    fake_gh = FakeGitHubIssues(issues={2300: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["2300", "--json-output"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        data = json.loads(result.output)
+
+        # Both 2.1 and 2.2 are pending+unblocked
+        pending_unblocked = data["graph"]["pending_unblocked"]
+        assert "2.1" in pending_unblocked
+        assert "2.2" in pending_unblocked
+        assert "3.1" not in pending_unblocked
+
+        # in_flight should be 0 (nothing planning or in_progress)
+        assert data["summary"]["in_flight"] == 0

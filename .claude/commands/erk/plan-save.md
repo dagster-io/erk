@@ -170,7 +170,6 @@ OR exit Claude Code first, then run one of:
   Submit to Queue: erk plan submit <issue_number>
 ```
 
-
 **If `plan_backend` is `"draft_pr"`:**
 
 ```
