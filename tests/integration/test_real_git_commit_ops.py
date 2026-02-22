@@ -4,8 +4,12 @@ Tests verify that commit_files_to_branch correctly creates commits on a branch
 using git plumbing commands without modifying the working tree or HEAD.
 """
 
+from __future__ import annotations
+
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from erk_shared.gateway.git.commit_ops.real import RealGitCommitOps
 from erk_shared.gateway.time.real import RealTime
@@ -233,7 +237,9 @@ def test_commit_files_to_branch_does_not_affect_real_index(tmp_path: Path) -> No
     assert "plumbing-file.txt" not in result.stdout
 
 
-def test_commit_files_to_branch_cleans_up_temp_index(tmp_path: Path) -> None:
+def test_commit_files_to_branch_cleans_up_temp_index(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that the temporary index file is cleaned up after the operation."""
     import tempfile
 
@@ -241,9 +247,10 @@ def test_commit_files_to_branch_cleans_up_temp_index(tmp_path: Path) -> None:
     repo.mkdir()
     init_git_repo(repo, "main")
 
-    # Record existing temp files before to avoid false positives from other tests
-    temp_dir = Path(tempfile.gettempdir())
-    before = set(temp_dir.glob("erk-plan-*.idx"))
+    # Use test-specific temp directory to avoid interference from parallel xdist workers
+    test_temp_dir = tmp_path / "temp"
+    test_temp_dir.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(test_temp_dir))
 
     commit_ops = _make_commit_ops()
 
@@ -255,7 +262,6 @@ def test_commit_files_to_branch_cleans_up_temp_index(tmp_path: Path) -> None:
         message="Test commit",
     )
 
-    # Assert: No new erk-plan-*.idx files remain after the operation
-    after = set(temp_dir.glob("erk-plan-*.idx"))
-    new_files = after - before
-    assert new_files == set(), f"Temp index files not cleaned up: {new_files}"
+    # Assert: No erk-plan-*.idx files remain in our isolated temp dir
+    remaining = list(test_temp_dir.glob("erk-plan-*.idx"))
+    assert remaining == [], f"Temp index files not cleaned up: {remaining}"
