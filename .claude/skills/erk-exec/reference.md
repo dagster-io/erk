@@ -72,13 +72,9 @@ Quick reference for all `erk exec` subcommands.
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                 |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                        |
 | `objective-update-after-land`     | Update objective after landing a PR.                                        |
-| `plan-create-review-branch`       | Create a plan review branch and push to remote.                             |
-| `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.                 |
 | `plan-migrate-to-draft-pr`        | Migrate an issue-based plan to a draft-PR-based plan.                       |
-| `plan-review-complete`            | Close a plan review PR without merging.                                     |
 | `plan-save`                       | Backend-aware plan save: dispatches to issue or draft-PR based on constant. |
 | `plan-save-to-issue`              | Extract plan from ~/.claude/plans/ and create GitHub issue.                 |
-| `plan-submit-for-review`          | Fetch plan content from a GitHub issue for PR-based review workflow.        |
 | `plan-update-from-feedback`       | Update a plan issue's plan-body comment with new content.                   |
 | `plan-update-issue`               | Update an existing GitHub issue's plan comment with new content.            |
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                        |

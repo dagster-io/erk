@@ -187,6 +187,41 @@ Post findings.
 
         assert diff_pos < dedup_pos < post_pos < summary_pos
 
+    def test_summary_wraps_details_in_collapsible_block(self) -> None:
+        """Summary format wraps verbose sections in a collapsible details block."""
+        review = _make_review(
+            name="Test Review",
+            marker="<!-- test-review -->",
+            body="Check for issues.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="owner/repo",
+            pr_number=42,
+            base_branch=None,
+        )
+
+        # The details block must be present
+        assert "<details>" in prompt
+        assert "<summary>Details</summary>" in prompt
+        assert "</details>" in prompt
+
+        # Violation count line must appear before the details block opens
+        violation_count_pos = prompt.index("Found X violations across Y files.")
+        details_open_pos = prompt.index("<details>")
+        assert violation_count_pos < details_open_pos
+
+        # Extract only the content inside the details block
+        details_close_pos = prompt.index("</details>")
+        details_content = prompt[details_open_pos:details_close_pos]
+
+        # Detailed sections must be inside the details block
+        assert "### Patterns Checked" in details_content
+        assert "### Violations Summary" in details_content
+        assert "### Files Reviewed" in details_content
+        assert "### Activity Log" in details_content
+
 
 class TestAssembleLocalPrompt:
     """Tests for local mode prompt assembly."""

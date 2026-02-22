@@ -109,6 +109,9 @@ Summary format (preserve existing Activity Log entries and prepend new entry):
 
 Found X violations across Y files. Inline comments posted for each.
 
+<details>
+<summary>Details</summary>
+
 ### Patterns Checked
 ✅ [pattern] - None found
 ❌ [pattern] - Found in src/foo.py:12
@@ -127,6 +130,8 @@ Found X violations across Y files. Inline comments posted for each.
 ### Activity Log
 - **YYYY-MM-DD HH:MM:SS PT**: [Brief description of this review's findings]
 - [Previous log entries preserved here...]
+
+</details>
 ```
 
 Activity log entry examples:
