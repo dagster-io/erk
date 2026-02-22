@@ -171,6 +171,32 @@ def test_permission_mode_to_claude_unknown_raises() -> None:
         permission_mode_to_claude("invalid")  # type: ignore[arg-type]
 
 
+def test_with_overrides_preserves_codex_backend() -> None:
+    """with_overrides() preserves backend='codex' through override calls."""
+    config = InteractiveAgentConfig(
+        backend="codex",
+        model=None,
+        verbose=False,
+        permission_mode="edits",
+        dangerous=False,
+        allow_dangerous=False,
+    )
+
+    result = config.with_overrides(
+        permission_mode_override="plan",
+        model_override="gpt-4",
+        dangerous_override=None,
+        allow_dangerous_override=True,
+    )
+
+    # Backend is preserved through the override chain
+    assert result.backend == "codex"
+    # Other overrides applied correctly
+    assert result.permission_mode == "plan"
+    assert result.model == "gpt-4"
+    assert result.allow_dangerous is True
+
+
 def test_with_overrides_returns_new_instance() -> None:
     """with_overrides() returns a new instance, not mutating original."""
     config = InteractiveAgentConfig.default()
