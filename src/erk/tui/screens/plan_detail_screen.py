@@ -655,7 +655,7 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_land":
-            if row.pr_number:
+            if row.pr_number is not None:
                 cmd = f"erk land {row.pr_number}"
                 executor.copy_to_clipboard(cmd)
                 executor.notify(f"Copied: {cmd}", severity=None)

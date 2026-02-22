@@ -356,6 +356,32 @@ def test_display_name_copy_replan_shows_issue() -> None:
     assert get_display_name(cmd, ctx) == "erk plan replan 5831"
 
 
+def test_display_name_copy_land_shows_pr_number() -> None:
+    """copy_land should show the erk land command with PR number."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    cmd = next(c for c in get_all_commands() if c.id == "copy_land")
+    assert get_display_name(cmd, ctx) == "erk land 456"
+
+
+def test_copy_land_available_when_pr_exists() -> None:
+    """copy_land should be available when PR number exists."""
+    row = make_plan_row(123, "Test", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_land" in cmd_ids
+
+
+def test_copy_land_not_available_when_no_pr() -> None:
+    """copy_land should not be available when no PR number."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_land" not in cmd_ids
+
+
 def test_all_commands_have_get_display_name() -> None:
     """All commands should have get_display_name defined."""
     commands = get_all_commands()
@@ -443,6 +469,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "copy_prepare_activate",
         "copy_submit",
         "copy_replan",
+        "copy_land",
     ]
     for plan_id in plan_cmd_ids:
         assert plan_id not in cmd_ids, f"Plan command {plan_id} should be hidden in Objectives view"
@@ -654,6 +681,7 @@ def test_commands_available_in_draft_pr_mode() -> None:
         "copy_pr_checkout",
         "copy_submit",
         "copy_replan",
+        "copy_land",
     ]
     for cmd_id in expected_available:
         assert cmd_id in cmd_ids, f"Command {cmd_id} should be available in draft_pr mode"
