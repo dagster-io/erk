@@ -48,9 +48,9 @@ def test_one_shot_happy_path() -> None:
         assert push.remote == "origin"
         assert push.set_upstream is True
 
-        # Verify commit was made
-        assert len(git.commits) == 1
-        assert "fix the import in config.py" in git.commits[0].message
+        # Verify prompt was committed directly to branch (no checkout)
+        assert len(git.branch_commits) == 1
+        assert "fix the import in config.py" in git.branch_commits[0].message
 
         # Verify PR was created: tuple is (branch, title, body, base, draft)
         assert len(github.created_prs) == 1
@@ -224,8 +224,8 @@ def test_one_shot_pr_title_truncation() -> None:
         assert len(title) < len(long_prompt) + 20
 
 
-def test_one_shot_restores_branch_on_error() -> None:
-    """Test that original branch is restored even if push fails."""
+def test_one_shot_stays_on_original_branch_on_error() -> None:
+    """Test that we stay on original branch when push fails (no checkout = nothing to restore)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -250,7 +250,7 @@ def test_one_shot_restores_branch_on_error() -> None:
         # Verify command failed
         assert result.exit_code != 0
 
-        # Verify we're back on original branch despite error
+        # Verify we're still on original branch (no checkout occurred)
         assert git.branch.get_current_branch(env.cwd) == "main"
 
 

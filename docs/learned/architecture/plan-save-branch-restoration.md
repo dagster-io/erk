@@ -30,7 +30,11 @@ Key properties:
 
 ## Git Plumbing Approach
 
-The `commit_files_to_branch` method on `GitCommitOps` uses a temporary index file to create a commit without modifying the working tree, HEAD, or the real index. This is race-condition-free because no branch checkout occurs.
+The `commit_files_to_branch` method on `GitCommitOps` uses a temporary index file to create a commit without modifying the working tree, HEAD, or the real index:
+
+The method creates a temporary index, hashes file contents into it, writes a tree and commit object, and updates the branch ref — all without touching HEAD, the working tree, or the real index.
+
+This is race-condition-free because no branch checkout occurs.
 
 See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py` for the full implementation.
 
@@ -42,7 +46,7 @@ See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_
 
 ## Testing
 
-See the plan_save test suite in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` for checkout-count and branch-commit assertions that verify the plumbing approach.
+Tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` verify that plan save does not check out the plan branch and that plan files are committed directly to the branch via the plumbing approach.
 
 ## Related Topics
 
