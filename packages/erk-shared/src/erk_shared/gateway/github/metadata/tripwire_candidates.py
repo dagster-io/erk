@@ -155,8 +155,23 @@ def validate_candidates_data(
 ) -> ValidTripwireCandidates | InvalidTripwireCandidates:
     """Validate a parsed tripwire candidates dict.
 
-    Validates the structure matches the expected format:
-    {"candidates": [{"action": ..., "warning": ..., "target_doc_path": ...}]}
+    Agent-facing validation gate. Ensures the structure matches the expected
+    schema before candidates are stored or processed. On failure, returns
+    ``InvalidTripwireCandidates`` with schema details and index-specific
+    diagnostics so the agent can self-correct.
+
+    Agent-facing callers:
+        - ``normalize_tripwire_candidates`` (exec script)
+        - ``store_tripwire_candidates`` (exec script)
+
+    Pre-gate recovery layer:
+        ``normalize_candidates_data`` (in ``normalize_tripwire_candidates``)
+        attempts to fix common structural issues before this gate is applied,
+        giving the agent a second chance without a full retry loop.
+
+    Expected schema::
+
+        {"candidates": [{"action": str, "warning": str, "target_doc_path": str}]}
 
     Args:
         data: Parsed JSON data to validate.
@@ -218,8 +233,9 @@ def validate_candidates_json(
 ) -> ValidTripwireCandidates | InvalidTripwireCandidates:
     """Read and validate a tripwire candidates JSON file.
 
-    Reads JSON from a file path and validates the structure matches
-    the expected format: {"candidates": [{"action": ..., "warning": ..., "target_doc_path": ...}]}
+    Convenience wrapper that reads JSON from disk and delegates to
+    ``validate_candidates_data``. Handles file-not-found and parse errors
+    before the structural validation gate runs.
 
     Args:
         json_path: Path to the JSON file.

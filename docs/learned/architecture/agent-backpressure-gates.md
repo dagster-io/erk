@@ -12,7 +12,7 @@ tripwires:
     warning: "Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern."
   - action: "adding guidance to the agent without a programmatic gate to enforce it"
     warning: "Guidance without enforcement is optional compliance. The gate is the hard boundary. The agent should have guidance to help it succeed on the first try, but the gate is what enforces correctness."
-last_audited: "2026-02-22 03:40 PT"
+last_audited: "2026-02-22 23:15 PT"
 ---
 
 # Agent Back Pressure via Gates
@@ -60,11 +60,13 @@ A gate can be:
 - **Guidance without a gate**: No enforcement means compliance is optional. The agent may drift over time.
 - **Transforming agent output silently**: Masks mistakes, prevents learning. The agent never discovers that its output was wrong.
 
-## Example: Objective Slug Validation
+## Gate Inventory
 
-The objective slug migration demonstrates this pattern:
+The gate functions and their human-facing counterparts live in code with detailed docstrings. Refer to the source for caller lists, schema details, and examples.
 
-- **Before (silent transformation):** The previous implementation, `sanitize_objective_slug()` (now removed), accepted any string, lowercased it, replaced special characters, collapsed hyphens, and returned a valid slug. The agent never knew if its input was wrong.
-- **After (validation gate):** `validate_objective_slug()` checks the slug against `_OBJECTIVE_SLUG_PATTERN` (defined in `naming.py`) and 3-40 character length. On failure, it returns an `InvalidObjectiveSlug` with the pattern, rules, actual value, and examples. The agent receives this feedback and retries.
-- **Guidance:** The `objective-create` skill includes the exact regex pattern, length constraints, rules, and valid/invalid examples.
-- **Gate:** `validate_objective_slug()` in `naming.py` enforces the invariant programmatically.
+| Gate (agent-facing)        | Human-facing counterpart                        | Location                                                    |
+| -------------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| `validate_plan_title`      | `generate_filename_from_title`                  | `erk_shared/naming.py`                                      |
+| `validate_worktree_name`   | `sanitize_worktree_name`                        | `erk_shared/naming.py`                                      |
+| `validate_objective_slug`  | _(none — no silent path)_                       | `erk_shared/naming.py`                                      |
+| `validate_candidates_data` | `normalize_candidates_data` (pre-gate recovery) | `erk_shared/gateway/github/metadata/tripwire_candidates.py` |
