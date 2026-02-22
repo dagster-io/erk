@@ -1166,3 +1166,94 @@ This plan is found without session ID.
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["title"] == "No Session Plan"
+
+
+# --- Title validation rejection tests ---
+
+# Plan content with default fallback title "Implementation Plan"
+_IMPLEMENTATION_PLAN_FALLBACK_CONTENT = """# Implementation Plan
+
+This plan uses a default fallback title that should be rejected by validation.
+
+- Step 1: Set up the environment
+- Step 2: Implement the core logic
+- Step 3: Add tests and documentation"""
+
+
+_EMOJI_TITLE_PLAN_CONTENT = """# 🚀🎉
+
+This plan has an emoji-only title which should fail validation.
+
+- Step 1: Set up the environment
+- Step 2: Implement the core logic
+- Step 3: Add tests and documentation"""
+
+
+def test_plan_save_to_issue_rejects_fallback_title_json() -> None:
+    """Issue-based save rejects plan with 'Implementation Plan' fallback title."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(
+        plans={"fallback-title": _IMPLEMENTATION_PLAN_FALLBACK_CONTENT}
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 2
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error_type"] == "validation_failed"
+    assert "agent_guidance" in output
+    # Verify no issue was created
+    assert len(fake_gh.created_issues) == 0
+
+
+def test_plan_save_to_issue_rejects_emoji_only_title() -> None:
+    """Issue-based save rejects plan with emoji-only title."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(plans={"emoji-title": _EMOJI_TITLE_PLAN_CONTENT})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 2
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error_type"] == "validation_failed"
+    assert len(fake_gh.created_issues) == 0
+
+
+def test_plan_save_to_issue_rejects_fallback_title_display() -> None:
+    """Issue-based save shows error in display format for invalid title."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(
+        plans={"fallback-display": _IMPLEMENTATION_PLAN_FALLBACK_CONTENT}
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "display"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 2
+    assert "Invalid plan title" in result.output
+    assert len(fake_gh.created_issues) == 0

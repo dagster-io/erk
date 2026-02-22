@@ -12,11 +12,14 @@ Output:
 Exit Codes:
     0: Success
     1: Error (empty title)
+    2: Validation failed (title rejected by validate_plan_title)
 """
+
+import json
 
 import click
 
-from erk_shared.naming import generate_filename_from_title
+from erk_shared.naming import InvalidPlanTitle, generate_filename_from_title, validate_plan_title
 
 
 @click.command(name="issue-title-to-filename")
@@ -26,9 +29,18 @@ def issue_title_to_filename(title: str) -> None:
 
     TITLE: Plan title to convert
     """
-    if not title or not title.strip():
-        click.echo(click.style("Error: ", fg="red") + "Plan title cannot be empty", err=True)
-        raise SystemExit(1)
+    result = validate_plan_title(title)
+    if isinstance(result, InvalidPlanTitle):
+        click.echo(
+            json.dumps(
+                {
+                    "error_type": result.error_type,
+                    "agent_guidance": result.message,
+                }
+            ),
+            err=True,
+        )
+        raise SystemExit(2)
 
     filename = generate_filename_from_title(title)
     click.echo(filename)

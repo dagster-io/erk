@@ -42,8 +42,10 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.github.metadata.session import render_session_exchanges_block
 from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.learn.extraction.session_schema import extract_session_exchanges_from_jsonl
+from erk_shared.naming import InvalidPlanTitle, validate_plan_title
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.plan_store.plan_content import resolve_plan_content
+from erk_shared.plan_utils import extract_title_from_plan
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
     create_plan_saved_issue_marker,
@@ -183,6 +185,25 @@ def plan_save_to_issue(
             )
         raise SystemExit(2)
 
+    # Validate plan title before creating issue
+    title = extract_title_from_plan(plan)
+    title_validation = validate_plan_title(title)
+    if isinstance(title_validation, InvalidPlanTitle):
+        if output_format == "display":
+            click.echo(f"Error: {title_validation.message}", err=True)
+        else:
+            click.echo(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": f"Plan title validation failed: {title_validation.reason}",
+                        "error_type": "validation_failed",
+                        "agent_guidance": title_validation.message,
+                    }
+                )
+            )
+        raise SystemExit(2)
+
     # Auto-link to objective from session context marker (fallback)
     if objective_issue is None and effective_session_id is not None:
         marker_value = read_objective_context_marker(effective_session_id, repo_root)
@@ -211,7 +232,7 @@ def plan_save_to_issue(
         github_issues=github,
         repo_root=repo_root,
         plan_content=plan,
-        title=None,
+        title=title,
         extra_labels=extra_labels,
         title_tag=None,
         source_repo=source_repo,
