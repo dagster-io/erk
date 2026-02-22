@@ -73,13 +73,16 @@ def format_lifecycle_with_status(
     has_conflicts: bool | None,
     review_decision: str | None,
 ) -> str:
-    """Add draft/published prefix and status suffix to a lifecycle stage display.
+    """Add status indicator prefixes to a lifecycle stage display.
 
-    Adds emoji indicators to the stage text when relevant:
-    - 🚧/👀 prefix for draft/published state (on planned, implementing, review)
-    - 💥 suffix for merge conflicts (on implementing and review stages)
-    - ✔ suffix for approved PRs (on review stage only)
-    - ❌ suffix for changes requested (on review stage only)
+    Adds emoji indicators as prefixes to the stage text when relevant:
+    - 🚧/👀 prefix for draft/published state (on planned, implementing, implemented, review)
+    - 💥 prefix for merge conflicts (on planned, implementing, implemented, review)
+    - ✔ prefix for approved PRs (on review stage only)
+    - ❌ prefix for changes requested (on review stage only)
+
+    All indicators are placed before the stage text so they survive
+    column truncation in the TUI table (stage column is 9 chars wide).
 
     Indicators are inserted inside Rich markup tags so they inherit
     the stage color.
@@ -91,58 +94,52 @@ def format_lifecycle_with_status(
         review_decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
 
     Returns:
-        Lifecycle display string with prefix/suffix indicators
+        Lifecycle display string with prefix indicators
     """
     # Detect stage from the display string content
-    is_planned = "planned" in lifecycle_display
     is_implementing = "implementing" in lifecycle_display
+    is_implemented = "implemented" in lifecycle_display and not is_implementing
+    is_planned = "planned" in lifecycle_display
     is_review = "review" in lifecycle_display and "REVIEW" not in lifecycle_display
-    is_active_stage = is_planned or is_implementing or is_review
+    is_active_stage = is_planned or is_implementing or is_implemented or is_review
 
-    # Prepend draft/published emoji for active stages
-    if is_active_stage and is_draft is not None:
-        prefix = "🚧 " if is_draft else "👀 "
-        # Insert prefix inside Rich markup: [color]stage -> [color]prefix stage
-        if lifecycle_display.startswith("["):
-            opening_end = lifecycle_display.find("]")
-            if opening_end != -1:
-                lifecycle_display = (
-                    lifecycle_display[: opening_end + 1]
-                    + prefix
-                    + lifecycle_display[opening_end + 1 :]
-                )
-            else:
-                lifecycle_display = prefix + lifecycle_display
-        else:
-            lifecycle_display = prefix + lifecycle_display
-
-    if not is_implementing and not is_review:
+    if not is_active_stage:
         return lifecycle_display
 
-    # Build indicator suffix
-    indicators: list[str] = []
+    # Build ordered prefix parts: draft/published → conflict → review decision
+    parts: list[str] = []
+
+    if is_draft is not None:
+        parts.append("🚧" if is_draft else "👀")
 
     if has_conflicts is True:
-        indicators.append("💥")
+        parts.append("💥")
 
     if is_review:
         if review_decision == "APPROVED":
-            indicators.append("✔")
+            parts.append("✔")
         elif review_decision == "CHANGES_REQUESTED":
-            indicators.append("❌")
+            parts.append("❌")
 
-    if not indicators:
+    if not parts:
         return lifecycle_display
 
-    suffix = " " + " ".join(indicators)
+    prefix = " ".join(parts) + " "
 
-    # Insert suffix inside Rich markup closing tag so indicators inherit color
-    # Pattern: "[color]stage[/color]" -> "[color]stage suffix[/color]"
-    closing_idx = lifecycle_display.rfind("[/")
-    if closing_idx != -1:
-        before = lifecycle_display[:closing_idx]
-        after = lifecycle_display[closing_idx:]
-        return before + suffix + after
+    # Parse Rich markup to extract opening tag and stage text
+    if lifecycle_display.startswith("["):
+        opening_end = lifecycle_display.find("]")
+        if opening_end != -1:
+            opening_tag = lifecycle_display[: opening_end + 1]
+            rest = lifecycle_display[opening_end + 1 :]
+            # rest is "stage_text[/color]"
+            closing_idx = rest.rfind("[/")
+            if closing_idx != -1:
+                stage_text = rest[:closing_idx]
+                closing_tag = rest[closing_idx:]
+                return opening_tag + prefix + stage_text + closing_tag
+            return opening_tag + prefix + rest
+        return prefix + lifecycle_display
 
-    # No Rich markup - just append
-    return lifecycle_display + suffix
+    # No Rich markup - just prepend
+    return prefix + lifecycle_display

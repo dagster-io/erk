@@ -164,7 +164,7 @@ def test_review_with_conflicts() -> None:
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[cyan]review 💥[/cyan]"
+    assert result == "[cyan]💥 review[/cyan]"
 
 
 def test_review_approved() -> None:
@@ -175,7 +175,7 @@ def test_review_approved() -> None:
         has_conflicts=False,
         review_decision="APPROVED",
     )
-    assert result == "[cyan]review ✔[/cyan]"
+    assert result == "[cyan]✔ review[/cyan]"
 
 
 def test_review_changes_requested() -> None:
@@ -186,7 +186,7 @@ def test_review_changes_requested() -> None:
         has_conflicts=False,
         review_decision="CHANGES_REQUESTED",
     )
-    assert result == "[cyan]review ❌[/cyan]"
+    assert result == "[cyan]❌ review[/cyan]"
 
 
 def test_review_conflicts_and_changes_requested() -> None:
@@ -197,7 +197,7 @@ def test_review_conflicts_and_changes_requested() -> None:
         has_conflicts=True,
         review_decision="CHANGES_REQUESTED",
     )
-    assert result == "[cyan]review 💥 ❌[/cyan]"
+    assert result == "[cyan]💥 ❌ review[/cyan]"
 
 
 def test_review_conflicts_and_approved() -> None:
@@ -208,7 +208,7 @@ def test_review_conflicts_and_approved() -> None:
         has_conflicts=True,
         review_decision="APPROVED",
     )
-    assert result == "[cyan]review 💥 ✔[/cyan]"
+    assert result == "[cyan]💥 ✔ review[/cyan]"
 
 
 def test_implementing_with_conflicts() -> None:
@@ -219,7 +219,7 @@ def test_implementing_with_conflicts() -> None:
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[yellow]implementing 💥[/yellow]"
+    assert result == "[yellow]💥 implementing[/yellow]"
 
 
 def test_implementing_no_conflicts() -> None:
@@ -244,15 +244,15 @@ def test_implementing_ignores_review_decision() -> None:
     assert result == "[yellow]implementing[/yellow]"
 
 
-def test_planned_stage_no_indicators() -> None:
-    """Planned stage never shows indicators regardless of status."""
+def test_planned_stage_shows_conflicts_not_review_decision() -> None:
+    """Planned stage shows conflict indicator but ignores review decision."""
     result = format_lifecycle_with_status(
         "[dim]planned[/dim]",
         is_draft=None,
         has_conflicts=True,
         review_decision="CHANGES_REQUESTED",
     )
-    assert result == "[dim]planned[/dim]"
+    assert result == "[dim]💥 planned[/dim]"
 
 
 def test_merged_stage_no_indicators() -> None:
@@ -285,7 +285,7 @@ def test_review_with_none_conflicts() -> None:
         has_conflicts=None,
         review_decision="APPROVED",
     )
-    assert result == "[cyan]review ✔[/cyan]"
+    assert result == "[cyan]✔ review[/cyan]"
 
 
 def test_review_required_shows_no_indicator() -> None:
@@ -299,15 +299,15 @@ def test_review_required_shows_no_indicator() -> None:
     assert result == "[cyan]review[/cyan]"
 
 
-def test_plain_text_stage_appends_suffix() -> None:
-    """Plain text stage (no Rich markup) appends suffix directly."""
+def test_plain_text_stage_prepends_prefix() -> None:
+    """Plain text stage (no Rich markup) prepends prefix directly."""
     result = format_lifecycle_with_status(
         "review",
         is_draft=None,
         has_conflicts=True,
         review_decision="APPROVED",
     )
-    assert result == "review 💥 ✔"
+    assert result == "💥 ✔ review"
 
 
 # --- is_draft prefix tests ---
@@ -376,7 +376,7 @@ def test_review_published_with_conflicts_shows_both() -> None:
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[cyan]👀 review 💥[/cyan]"
+    assert result == "[cyan]👀 💥 review[/cyan]"
 
 
 def test_review_published_with_approved_shows_both() -> None:
@@ -387,7 +387,7 @@ def test_review_published_with_approved_shows_both() -> None:
         has_conflicts=False,
         review_decision="APPROVED",
     )
-    assert result == "[cyan]👀 review ✔[/cyan]"
+    assert result == "[cyan]👀 ✔ review[/cyan]"
 
 
 def test_merged_draft_false_no_prefix() -> None:
@@ -431,7 +431,7 @@ def test_implementing_draft_with_conflicts_shows_both() -> None:
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[yellow]🚧 implementing 💥[/yellow]"
+    assert result == "[yellow]🚧 💥 implementing[/yellow]"
 
 
 # --- Workflow run inference tests ---
@@ -471,3 +471,50 @@ def test_no_stage_with_workflow_run_returns_dash() -> None:
     """No stage resolved with workflow run still returns dash."""
     plan = _make_plan()
     assert compute_lifecycle_display(plan, has_workflow_run=True) == "-"
+
+
+# --- Implemented stage indicator tests ---
+
+
+def test_implemented_with_conflicts() -> None:
+    """Implemented stage with conflicts shows explosion emoji prefix."""
+    result = format_lifecycle_with_status(
+        "[cyan]implemented[/cyan]",
+        is_draft=None,
+        has_conflicts=True,
+        review_decision=None,
+    )
+    assert result == "[cyan]💥 implemented[/cyan]"
+
+
+def test_implemented_no_conflicts() -> None:
+    """Implemented stage without conflicts returns unchanged."""
+    result = format_lifecycle_with_status(
+        "[cyan]implemented[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+    )
+    assert result == "[cyan]implemented[/cyan]"
+
+
+def test_implemented_published_with_conflicts() -> None:
+    """Implemented stage with published PR and conflicts shows both prefixes."""
+    result = format_lifecycle_with_status(
+        "[cyan]implemented[/cyan]",
+        is_draft=False,
+        has_conflicts=True,
+        review_decision=None,
+    )
+    assert result == "[cyan]👀 💥 implemented[/cyan]"
+
+
+def test_implemented_ignores_review_decision() -> None:
+    """Implemented stage does not show review decision indicators."""
+    result = format_lifecycle_with_status(
+        "[cyan]implemented[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision="APPROVED",
+    )
+    assert result == "[cyan]implemented[/cyan]"
