@@ -250,9 +250,7 @@ def _diagnose_worktree_name(name: str) -> list[str]:
     if name.startswith("-") or name.endswith("-"):
         issues.append("Has leading or trailing hyphens")
     if len(name) > _WORKTREE_NAME_MAX_LENGTH:
-        issues.append(
-            f"Too long ({len(name)} characters, maximum {_WORKTREE_NAME_MAX_LENGTH})"
-        )
+        issues.append(f"Too long ({len(name)} characters, maximum {_WORKTREE_NAME_MAX_LENGTH})")
     return issues
 
 
