@@ -57,14 +57,12 @@ def test_dispatch_happy_path() -> None:
         assert len(git.created_branches) == 1
         assert git.created_branches[0][2] == "main"  # start_point is trunk
 
-        # Verify .worker-impl/prompt.md was staged and committed
-        assert len(git.commits) == 1
-        assert git.commits[0].staged_files == (".worker-impl/prompt.md",)
-
-        # Verify .worker-impl/prompt.md was written to disk
-        prompt_file = env.cwd / ".worker-impl" / "prompt.md"
-        assert prompt_file.exists()
-        assert prompt_file.read_text(encoding="utf-8") == "fix the import in config.py\n"
+        # Verify .worker-impl/prompt.md was committed directly to branch (no checkout)
+        assert len(git.branch_commits) == 1
+        assert git.branch_commits[0].files == {
+            ".worker-impl/prompt.md": "fix the import in config.py\n",
+        }
+        assert git.branch_commits[0].branch.startswith("P1-")
 
         # Verify push to remote
         assert len(git.pushed_branches) == 1
@@ -177,8 +175,8 @@ def test_dispatch_dry_run() -> None:
         assert len(github.triggered_workflows) == 0
 
 
-def test_dispatch_restores_branch_on_error() -> None:
-    """Test that original branch is restored even if push fails."""
+def test_dispatch_stays_on_original_branch_on_error() -> None:
+    """Test that we stay on original branch when push fails (no checkout = nothing to restore)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -203,7 +201,7 @@ def test_dispatch_restores_branch_on_error() -> None:
         # Verify command failed
         assert result.exit_code != 0
 
-        # Verify we're back on original branch despite error
+        # Verify we're still on original branch (no checkout occurred)
         assert git.branch.get_current_branch(env.cwd) == "main"
 
 
@@ -443,11 +441,6 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
         assert len(inputs["prompt"]) < len(long_prompt)
         assert inputs["prompt"].endswith("... (full prompt committed to .worker-impl/prompt.md)")
 
-        # Verify full prompt was committed to .worker-impl/prompt.md
-        prompt_file = env.cwd / ".worker-impl" / "prompt.md"
-        assert prompt_file.exists()
-        content = prompt_file.read_text(encoding="utf-8")
-        assert content == long_prompt + "\n"
-
-        # Verify the file was staged
-        assert git.commits[0].staged_files == (".worker-impl/prompt.md",)
+        # Verify full prompt was committed directly to branch via branch_commits
+        assert len(git.branch_commits) == 1
+        assert git.branch_commits[0].files == {".worker-impl/prompt.md": long_prompt + "\n"}
