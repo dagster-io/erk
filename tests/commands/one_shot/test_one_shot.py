@@ -224,8 +224,8 @@ def test_one_shot_pr_title_truncation() -> None:
         assert len(title) < len(long_prompt) + 20
 
 
-def test_one_shot_stays_on_original_branch_on_error() -> None:
-    """Test that we stay on original branch when push fails (no checkout = nothing to restore)."""
+def test_one_shot_stays_on_current_branch_on_error() -> None:
+    """Test that we stay on current branch when push fails (no checkout = nothing to restore)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()

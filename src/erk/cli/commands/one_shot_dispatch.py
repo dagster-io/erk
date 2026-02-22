@@ -223,9 +223,9 @@ def dispatch_one_shot(
             prompt_executor=None,
         )
 
-    # Save current branch for restoration after workflow trigger
-    original_branch = ctx.git.branch.get_current_branch(repo.root)
-    if original_branch is None:
+    # Guard against detached HEAD state
+    current_branch = ctx.git.branch.get_current_branch(repo.root)
+    if current_branch is None:
         user_output(
             click.style("Error: ", fg="red")
             + "Not on a branch (detached HEAD state). Cannot submit from here."

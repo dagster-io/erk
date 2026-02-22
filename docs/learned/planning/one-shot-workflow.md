@@ -155,7 +155,7 @@ One-shot dispatch and `erk plan submit` both push branches and create PRs, but o
 
 ## Branch Safety
 
-The dispatch function always restores the original branch in a `finally` block, even on errors. This prevents leaving the user's worktree on an unexpected branch.
+The dispatch function commits directly to the target branch using git plumbing (`commit_files_to_branch`) without checking out any branch. The user's working tree and HEAD remain untouched throughout the dispatch.
 
 ## Source Code References
 
