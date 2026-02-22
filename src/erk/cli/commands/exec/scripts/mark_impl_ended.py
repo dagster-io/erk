@@ -19,7 +19,7 @@ Exit Codes:
 
 Examples:
     $ erk exec mark-impl-ended
-    {"success": true, "issue_number": 123}
+    {"success": true, "plan_number": 123}
 
     $ erk exec mark-impl-ended
     {"success": false, "error_type": "no_issue_reference", "message": "..."}
@@ -46,7 +46,7 @@ class MarkImplSuccess:
     """Success response for mark impl ended."""
 
     success: bool
-    issue_number: int
+    plan_number: int
 
 
 @dataclass(frozen=True)
@@ -161,6 +161,6 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
 
     result_success = MarkImplSuccess(
         success=True,
-        issue_number=int(plan_ref.plan_id),
+        plan_number=int(plan_ref.plan_id),
     )
     click.echo(json.dumps(asdict(result_success), indent=2))

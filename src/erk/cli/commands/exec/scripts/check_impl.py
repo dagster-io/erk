@@ -17,7 +17,7 @@ Exit Codes:
 
 Examples:
     $ erk exec check-impl --dry-run
-    {"valid": true, "has_issue_tracking": true, "plan_length": 1234}
+    {"valid": true, "has_plan_tracking": true, "plan_length": 1234}
 
     $ erk exec check-impl
     Plan loaded from .impl/plan.md
@@ -65,15 +65,15 @@ def _validate_impl_folder() -> Path:
     return impl_dir
 
 
-def _get_issue_reference(impl_dir: Path, *, silent: bool = False) -> dict[str, int | str] | None:
-    """Get issue reference if available, None if not (non-fatal).
+def _get_plan_reference(impl_dir: Path, *, silent: bool = False) -> dict[str, int | str] | None:
+    """Get plan reference if available, None if not (non-fatal).
 
     Args:
         impl_dir: Path to .impl/ directory
         silent: If True, don't print info message when tracking disabled
 
     Returns:
-        Dict with issue_number and issue_url, or None if not available
+        Dict with plan_number and plan_url, or None if not available
     """
     plan_ref = read_plan_ref(impl_dir)
 
@@ -87,20 +87,20 @@ def _get_issue_reference(impl_dir: Path, *, silent: bool = False) -> dict[str, i
         return None
 
     return {
-        "issue_number": int(plan_ref.plan_id),
-        "issue_url": plan_ref.url,
+        "plan_number": int(plan_ref.plan_id),
+        "plan_url": plan_ref.url,
     }
 
 
-def _execute_plan(plan_content: str, issue_info: dict[str, int | str] | None) -> None:
+def _execute_plan(plan_content: str, plan_info: dict[str, int | str] | None) -> None:
     """Display plan execution instructions.
 
     Args:
         plan_content: Content of plan.md
-        issue_info: Issue info dict or None
+        plan_info: Plan info dict or None
     """
-    if issue_info:
-        tracking_msg = f"GitHub tracking: ENABLED (issue #{issue_info['issue_number']})"
+    if plan_info:
+        tracking_msg = f"GitHub tracking: ENABLED (issue #{plan_info['plan_number']})"
     else:
         tracking_msg = "GitHub tracking: DISABLED (no issue.json)"
 
@@ -116,8 +116,8 @@ The /erk:plan-implement slash command will:
   1. Execute implementation steps
   2. Update progress.md as steps complete"""
 
-    if issue_info:
-        msg += f"\n  3. Post progress to GitHub issue #{issue_info['issue_number']}"
+    if plan_info:
+        msg += f"\n  3. Post progress to GitHub issue #{plan_info['plan_number']}"
 
     click.echo(msg)
 
@@ -135,7 +135,7 @@ def check_impl(dry_run: bool) -> None:
     """
     impl_dir = _validate_impl_folder()
     # In dry-run mode, suppress info messages to keep JSON output clean
-    issue_info = _get_issue_reference(impl_dir, silent=dry_run)
+    plan_info = _get_plan_reference(impl_dir, silent=dry_run)
 
     plan_file = impl_dir / "plan.md"
     plan_content = plan_file.read_text(encoding="utf-8")
@@ -143,10 +143,10 @@ def check_impl(dry_run: bool) -> None:
     if dry_run:
         result = {
             "valid": True,
-            "has_issue_tracking": issue_info is not None,
+            "has_plan_tracking": plan_info is not None,
             "plan_length": len(plan_content),
         }
         click.echo(json.dumps(result))
         return
 
-    _execute_plan(plan_content, issue_info)
+    _execute_plan(plan_content, plan_info)

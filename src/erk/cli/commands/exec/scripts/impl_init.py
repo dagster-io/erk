@@ -18,7 +18,7 @@ Exit Codes:
 
 Examples:
     $ erk exec impl-init --json
-    {"valid": true, "impl_type": "impl", "has_issue_tracking": true, ...}
+    {"valid": true, "impl_type": "impl", "has_plan_tracking": true, ...}
 """
 
 import json
@@ -134,8 +134,8 @@ def impl_init(json_output: bool) -> None:
 
     # Get plan reference info
     plan_ref = read_plan_ref(impl_dir)
-    has_issue_tracking = plan_ref is not None
-    issue_number = int(plan_ref.plan_id) if plan_ref else None
+    has_plan_tracking = plan_ref is not None
+    plan_number = int(plan_ref.plan_id) if plan_ref else None
 
     # Read plan content
     plan_file = impl_dir / "plan.md"
@@ -148,11 +148,11 @@ def impl_init(json_output: bool) -> None:
     result: dict = {
         "valid": True,
         "impl_type": impl_type,
-        "has_issue_tracking": has_issue_tracking,
+        "has_plan_tracking": has_plan_tracking,
         "related_docs": related_docs,
     }
 
-    if issue_number is not None:
-        result["issue_number"] = issue_number
+    if plan_number is not None:
+        result["plan_number"] = plan_number
 
     click.echo(json.dumps(result))
