@@ -410,7 +410,7 @@ def branch_checkout(
             raise click.ClickException(f"Issue #{issue_number} not found")
         plan = result
 
-        plan_backend = get_plan_backend(ctx.global_config)
+        plan_backend = get_plan_backend()
         plan_result = prepare_plan_for_worktree(
             plan, ctx.time.now(), plan_backend=plan_backend, warn_non_open=True
         )

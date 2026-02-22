@@ -11,23 +11,23 @@
 Insert a cleanup step between "Address PR review comments" (line 57-70) and "Push changes" (line 72-81). This way the cleanup commit gets pushed by the existing push step — no duplicate push needed.
 
 ```yaml
-    - name: Clean up plan staging dirs if present
-      run: |
-        NEEDS_CLEANUP=false
-        if [ -d .worker-impl/ ]; then
-          git rm -rf .worker-impl/
-          NEEDS_CLEANUP=true
-        fi
-        if [ -d .erk/impl-context/ ]; then
-          git rm -rf .erk/impl-context/
-          NEEDS_CLEANUP=true
-        fi
-        if [ "$NEEDS_CLEANUP" = true ]; then
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "Remove plan staging dirs"
-          echo "Cleaned up plan staging dirs"
-        fi
+- name: Clean up plan staging dirs if present
+  run: |
+    NEEDS_CLEANUP=false
+    if [ -d .worker-impl/ ]; then
+      git rm -rf .worker-impl/
+      NEEDS_CLEANUP=true
+    fi
+    if [ -d .erk/impl-context/ ]; then
+      git rm -rf .erk/impl-context/
+      NEEDS_CLEANUP=true
+    fi
+    if [ "$NEEDS_CLEANUP" = true ]; then
+      git config user.name "github-actions[bot]"
+      git config user.email "github-actions[bot]@users.noreply.github.com"
+      git commit -m "Remove plan staging dirs"
+      echo "Cleaned up plan staging dirs"
+    fi
 ```
 
 **Why this placement:** The existing "Push changes" step (line 72) checks `git log --oneline @{upstream}..HEAD` and pushes all unpushed commits. By inserting cleanup before push, the cleanup commit is included automatically.
