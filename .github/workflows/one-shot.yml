@@ -49,6 +49,11 @@ on:
         required: false
         type: string
         default: "github"
+      plan_only:
+        description: "If true, only run the plan phase, skip implementation"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: one-shot-${{ inputs.branch_name }}
@@ -222,7 +227,7 @@ jobs:
 
   implement:
     needs: plan
-    if: needs.plan.outputs.plan_id != ''
+    if: needs.plan.outputs.plan_id != '' && !inputs.plan_only
     uses: ./.github/workflows/plan-implement.yml
     with:
       plan_id: ${{ needs.plan.outputs.plan_id }}
