@@ -1,0 +1,5 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add validate_worktree_name() Backpressure Gate",
+  "objective_id": 7724
+}
