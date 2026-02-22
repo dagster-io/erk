@@ -19,7 +19,7 @@ last_audited: "2026-02-22"
 
 ## Core Concept
 
-A **gate** is any programmatic invariant check that an agent's output must pass through. The agent has maximum flexibility in *how* it produces its output, but the gate enforces *what* the output must look like. If the agent's output fails the gate, the workflow loops: the agent receives the failure feedback and retries until it passes.
+A **gate** is any programmatic invariant check that an agent's output must pass through. The agent has maximum flexibility in _how_ it produces its output, but the gate enforces _what_ the output must look like. If the agent's output fails the gate, the workflow loops: the agent receives the failure feedback and retries until it passes.
 
 ## The Pattern is General
 
@@ -34,20 +34,20 @@ A gate can be:
 
 ## Two Components
 
-1. **Guidance** — Instructions to the agent describing what the gate expects (rules, patterns, examples). This is a *hint* to help the agent succeed on the first try, but it is not the enforcement mechanism.
+1. **Guidance** — Instructions to the agent describing what the gate expects (rules, patterns, examples). This is a _hint_ to help the agent succeed on the first try, but it is not the enforcement mechanism.
 2. **Gate** — The programmatic check that enforces the invariant. This is the hard boundary. The agent cannot bypass it. The gate produces actionable feedback on failure so the agent can self-correct.
 
 **Key insight:** The guidance and the gate are independent. The guidance can be imprecise or incomplete — the gate is what matters. The workflow is structured so that the agent keeps trying until the gate passes.
 
 ## Spectrum of Gate Complexity
 
-| Gate | Invariant | Feedback |
-|------|-----------|----------|
-| Regex validation | String format | Pattern + actual value |
-| Type checker (ty) | Type correctness | Type errors with locations |
+| Gate                | Invariant              | Feedback                      |
+| ------------------- | ---------------------- | ----------------------------- |
+| Regex validation    | String format          | Pattern + actual value        |
+| Type checker (ty)   | Type correctness       | Type errors with locations    |
 | Test suite (pytest) | Behavioral correctness | Test failures with assertions |
-| Linter (ruff) | Style/convention | Rule violations with fixes |
-| Schema validator | Structural correctness | Missing/invalid fields |
+| Linter (ruff)       | Style/convention       | Rule violations with fixes    |
+| Schema validator    | Structural correctness | Missing/invalid fields        |
 
 ## When to Use Gates vs. Silent Transformation
 

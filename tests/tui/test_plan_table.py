@@ -387,7 +387,7 @@ class TestObjectivesViewRowConversion:
     """Tests for row conversion in Objectives view."""
 
     def test_objectives_view_has_enriched_columns(self) -> None:
-        """Objectives view produces plan, progress, next, deps, updated, author."""
+        """Objectives view produces plan, title, progress, fly, next, deps, updated, author."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
@@ -395,15 +395,16 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        # Objectives view: plan, title, progress, next, deps, updated, author
-        assert len(values) == 7
+        # Objectives view: plan, title, progress, fly, next, deps, updated, author
+        assert len(values) == 8
         assert _text_to_str(values[0]) == "#42"
         assert values[1] == "Objective Plan"  # full_title
         assert values[2] == "-"  # progress_display
-        assert _text_to_str(values[3]) == "-"  # next_step_display
-        assert values[4] == "-"  # deps_display
-        assert values[5] == "-"  # updated_display
-        assert values[6] == "test-user"  # author
+        assert values[3] == "-"  # in_flight_display
+        assert _text_to_str(values[4]) == "-"  # next_step_display
+        assert values[5] == "-"  # deps_display
+        assert values[6] == "-"  # updated_display
+        assert values[7] == "test-user"  # author
 
     def test_objectives_view_shows_progress_and_next(self) -> None:
         """Objectives view shows progress and next step from row data."""
@@ -417,15 +418,17 @@ class TestObjectivesViewRowConversion:
             objective_total_nodes=7,
             objective_progress_display="3/7",
             objective_next_node_display="1.3 Add tests",
+            objective_in_flight_display="2",
             updated_display="2h ago",
         )
 
         values = table._row_to_values(row)
 
         assert values[2] == "3/7"  # progress
-        assert _text_to_str(values[3]) == "1.3 Add tests"  # next step
-        assert values[4] == "-"  # deps
-        assert values[5] == "2h ago"  # updated
+        assert values[3] == "2"  # in_flight
+        assert _text_to_str(values[4]) == "1.3 Add tests"  # next step
+        assert values[5] == "-"  # deps
+        assert values[6] == "2h ago"  # updated
 
 
 class TestShowPrColumnFalse:

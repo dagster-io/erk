@@ -23,28 +23,28 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 For issue-based plans. Takes `issue_number: int`.
 
-| Property                          | Output                                                                                              |
-| --------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `view`                            | `gh issue view {issue_number} --web`                                                                |
-| `prepare`                         | `erk br co --for-plan {issue_number}`                                                               |
-| `submit`                          | `erk plan submit {issue_number}`                                                                    |
-| `prepare_and_implement`           | `source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous`             |
-| `prepare_new_slot`                | `erk br co --new-slot --for-plan {issue_number}`                                                    |
-| `prepare_new_slot_and_implement`  | `source "$(erk br co --new-slot --for-plan {issue_number} --script)" && erk implement --dangerous`  |
+| Property                         | Output                                                                                             |
+| -------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `view`                           | `gh issue view {issue_number} --web`                                                               |
+| `prepare`                        | `erk br co --for-plan {issue_number}`                                                              |
+| `submit`                         | `erk plan submit {issue_number}`                                                                   |
+| `prepare_and_implement`          | `source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous`            |
+| `prepare_new_slot`               | `erk br co --new-slot --for-plan {issue_number}`                                                   |
+| `prepare_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {issue_number} --script)" && erk implement --dangerous` |
 
 ### `DraftPRNextSteps`
 
 For draft-PR plans. Takes `pr_number: int` and `branch_name: str`.
 
-| Property                          | Output                                                                                          |
-| --------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `view`                            | `gh pr view {pr_number} --web`                                                                  |
-| `submit`                          | `erk plan submit {pr_number}`                                                                   |
-| `checkout_and_implement`          | `source "$(erk br co {branch_name} --script)" && erk implement --dangerous`                     |
-| `prepare`                         | `erk br co --for-plan {pr_number}`                                                              |
-| `prepare_and_implement`           | `source "$(erk br co --for-plan {pr_number} --script)" && erk implement --dangerous`            |
-| `prepare_new_slot`                | `erk br co --new-slot --for-plan {pr_number}`                                                   |
-| `prepare_new_slot_and_implement`  | `source "$(erk br co --new-slot --for-plan {pr_number} --script)" && erk implement --dangerous` |
+| Property                         | Output                                                                                          |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `view`                           | `gh pr view {pr_number} --web`                                                                  |
+| `submit`                         | `erk plan submit {pr_number}`                                                                   |
+| `checkout_and_implement`         | `source "$(erk br co {branch_name} --script)" && erk implement --dangerous`                     |
+| `prepare`                        | `erk br co --for-plan {pr_number}`                                                              |
+| `prepare_and_implement`          | `source "$(erk br co --for-plan {pr_number} --script)" && erk implement --dangerous`            |
+| `prepare_new_slot`               | `erk br co --new-slot --for-plan {pr_number}`                                                   |
+| `prepare_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {pr_number} --script)" && erk implement --dangerous` |
 
 ## Shell Activation Pattern
 

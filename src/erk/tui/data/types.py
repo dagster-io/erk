@@ -106,6 +106,7 @@ class PlanRowData:
     objective_progress_display: str
     objective_next_node_display: str
     objective_deps_display: str
+    objective_in_flight_display: str
     updated_at: datetime
     updated_display: str
     created_at: datetime

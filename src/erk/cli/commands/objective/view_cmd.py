@@ -72,7 +72,7 @@ def _format_node_status(status: str, *, plan: str | None, is_unblocked: bool) ->
     """Format node status indicator with emoji and Rich markup.
 
     Args:
-        status: Node status ("done", "in_progress", "pending", "blocked", "skipped")
+        status: Node status ("done", "in_progress", "planning", "pending", "blocked", "skipped")
         plan: Plan reference (e.g., "#6464") or None
         is_unblocked: Whether the node's dependencies are all satisfied
 
@@ -84,6 +84,9 @@ def _format_node_status(status: str, *, plan: str | None, is_unblocked: bool) ->
     if status == "in_progress":
         ref_text = f" plan {escape(plan)}" if plan else ""
         return f"[yellow]🔄 in_progress{ref_text}[/yellow]"
+    if status == "planning":
+        ref_text = f" plan {escape(plan)}" if plan else ""
+        return f"[magenta]🚀 planning{ref_text}[/magenta]"
     if status == "blocked":
         return "[red]🚫 blocked[/red]"
     if status == "skipped":
@@ -132,6 +135,9 @@ def _display_json(
     next_node = graph.next_node()
     summary = compute_graph_summary(graph)
 
+    # Add in_flight count (planning + in_progress)
+    summary["in_flight"] = summary["planning"] + summary["in_progress"]
+
     output = {
         "issue_number": issue_number,
         "phases": serialize_phases(phases),
@@ -148,6 +154,7 @@ def _display_json(
                 for n in graph.nodes
             ],
             "unblocked": [n.id for n in graph.unblocked_nodes()],
+            "pending_unblocked": [n.id for n in graph.pending_unblocked_nodes()],
             "next_node": next_node.id if next_node else None,
             "is_complete": graph.is_complete(),
         },
@@ -324,28 +331,43 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
         # Display summary
         user_output(click.style("─── Summary ───", bold=True))
 
-        # Format steps summary
-        user_output(
-            _format_field(
-                "Nodes",
-                (
-                    f"{summary['done']}/{summary['total_nodes']} done,"
-                    f" {summary['in_progress']} in progress,"
-                    f" {summary['pending']} pending"
-                ),
-            )
-        )
+        # Format steps summary (include planning count)
+        nodes_parts = [
+            f"{summary['done']}/{summary['total_nodes']} done",
+        ]
+        if summary["planning"] > 0:
+            nodes_parts.append(f"{summary['planning']} planning")
+        nodes_parts.append(f"{summary['in_progress']} in progress")
+        nodes_parts.append(f"{summary['pending']} pending")
+        user_output(_format_field("Nodes", ", ".join(nodes_parts)))
+
+        # Display in-flight count (planning + in_progress)
+        in_flight = summary["planning"] + summary["in_progress"]
+        user_output(_format_field("In flight", str(in_flight)))
 
         # Display unblocked count
-        user_output(
-            _format_field(
-                "Unblocked",
-                str(sum(1 for n in graph.unblocked_nodes() if n.status == "pending")),
-            )
-        )
+        pending_unblocked = graph.pending_unblocked_nodes()
+        user_output(_format_field("Unblocked", str(len(pending_unblocked))))
 
-        # Display next node if available
-        if next_node:
+        # Display next nodes - show all unblocked pending when multiple
+        if len(pending_unblocked) > 1:
+            # Multiple unblocked: list them all
+            # Find phase for each node
+            phase_by_node: dict[str, str] = {}
+            for phase in phases:
+                for step in phase.nodes:
+                    phase_by_node[step.id] = f"Phase {phase.number}{phase.suffix}"
+            first = True
+            for node in pending_unblocked:
+                phase_label = phase_by_node.get(node.id, "")
+                line = f"{node.id} - {node.description} ({phase_label})"
+                if first:
+                    user_output(_format_field("Next nodes", line))
+                    first = False
+                else:
+                    # Indent continuation lines to align with the first value
+                    user_output(f"{'':>14}{line}")
+        elif next_node:
             user_output(
                 _format_field(
                     "Next node",

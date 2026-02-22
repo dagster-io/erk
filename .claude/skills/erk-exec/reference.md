@@ -192,11 +192,12 @@ Update PR body with AI-generated summary and footer.
 
 **Options:**
 
-| Flag        | Type    | Required | Default        | Description                       |
-| ----------- | ------- | -------- | -------------- | --------------------------------- |
-| `--plan-id` | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to close on merge |
-| `--run-id`  | TEXT    | No       | -              | Optional workflow run ID          |
-| `--run-url` | TEXT    | No       | -              | Optional workflow run URL         |
+| Flag         | Type    | Required | Default        | Description                       |
+| ------------ | ------- | -------- | -------------- | --------------------------------- |
+| `--plan-id`  | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to close on merge |
+| `--run-id`   | TEXT    | No       | -              | Optional workflow run ID          |
+| `--run-url`  | TEXT    | No       | -              | Optional workflow run URL         |
+| `--draft-pr` | FLAG    | No       | -              | Draft-PR plan (no Closes #N)      |
 
 ### ci-verify-autofix
 
@@ -304,10 +305,10 @@ Download a session from a git branch.
 
 **Options:**
 
-| Flag               | Type | Required | Default        | Description                                           |
-| ------------------ | ---- | -------- | -------------- | ----------------------------------------------------- |
-| `--session-branch` | TEXT | Yes      | Sentinel.UNSET | Git branch containing the session (e.g., session/123) |
-| `--session-id`     | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to locate file on the branch) |
+| Flag               | Type | Required | Default        | Description                                               |
+| ------------------ | ---- | -------- | -------------- | --------------------------------------------------------- |
+| `--session-branch` | TEXT | Yes      | Sentinel.UNSET | Git branch containing the session (e.g., async-learn/123) |
+| `--session-id`     | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to locate file on the branch)     |
 
 ### exit-plan-mode-hook
 
@@ -825,11 +826,12 @@ Save plan as objective GitHub issue.
 
 **Options:**
 
-| Flag           | Type   | Required | Default | Description                                                           |
-| -------------- | ------ | -------- | ------- | --------------------------------------------------------------------- |
-| `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text)             |
-| `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                                     |
-| `--validate`   | FLAG   | No       | -       | Run objective validation after creation and include results in output |
+| Flag           | Type   | Required | Default | Description                                                               |
+| -------------- | ------ | -------- | ------- | ------------------------------------------------------------------------- |
+| `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text)                 |
+| `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                                         |
+| `--slug`       | TEXT   | No       | -       | Short kebab-case identifier for the objective (e.g., 'build-auth-system') |
+| `--validate`   | FLAG   | No       | -       | Run objective validation after creation and include results in output     |
 
 ### objective-update-after-land
 
