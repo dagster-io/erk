@@ -50,25 +50,27 @@ class TestDraftPRNextSteps:
             'source "$(erk br co plan-my-feature-02-20 --script)" && erk implement --dangerous'
         )
 
-    def test_prepare_uses_pr_number(self) -> None:
+    def test_prepare_uses_branch_name(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
-        assert steps.prepare == "erk br co --for-plan 42"
+        assert steps.prepare == "erk br co plan-my-feature-02-20"
 
-    def test_prepare_and_implement_uses_pr_number(self) -> None:
+    def test_prepare_and_implement_uses_branch_name(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
         assert steps.prepare_and_implement == (
-            'source "$(erk br co --for-plan 42 --script)" && erk implement --dangerous'
+            'source "$(erk br co plan-my-feature-02-20 --script)" && erk implement --dangerous'
         )
 
     def test_prepare_new_slot(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
-        assert steps.prepare_new_slot == "erk br co --new-slot --for-plan 42"
+        assert steps.prepare_new_slot == "erk br co --new-slot plan-my-feature-02-20"
 
     def test_prepare_new_slot_and_implement(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
-        assert steps.prepare_new_slot_and_implement == (
-            'source "$(erk br co --new-slot --for-plan 42 --script)" && erk implement --dangerous'
+        expected = (
+            'source "$(erk br co --new-slot plan-my-feature-02-20 --script)"'
+            " && erk implement --dangerous"
         )
+        assert steps.prepare_new_slot_and_implement == expected
 
 
 class TestFormatNextStepsPlain:
@@ -86,9 +88,9 @@ class TestFormatNextStepsPlain:
 
 
 class TestFormatDraftPRNextStepsPlain:
-    def test_contains_for_plan_command(self) -> None:
+    def test_contains_branch_name_command(self) -> None:
         output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
-        assert "erk br co --for-plan 42" in output
+        assert "erk br co plan-my-feature-02-20" in output
 
     def test_contains_pr_number_in_view_command(self) -> None:
         output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
@@ -96,4 +98,5 @@ class TestFormatDraftPRNextStepsPlain:
 
     def test_contains_implement_command(self) -> None:
         output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
-        assert 'source "$(erk br co --for-plan 42 --script)" && erk implement --dangerous' in output
+        assert "erk br co plan-my-feature-02-20 --script" in output
+        assert "erk implement --dangerous" in output

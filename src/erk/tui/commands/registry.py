@@ -99,13 +99,24 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
     return "checkout && sync"
 
 
+def _resolve_branch_name(ctx: CommandContext) -> str | None:
+    """Resolve the branch name from row data, if available."""
+    return ctx.row.pr_head_branch or ctx.row.worktree_branch
+
+
 def _display_copy_prepare(ctx: CommandContext) -> str:
     """Display name for copy_prepare command."""
+    branch = _resolve_branch_name(ctx)
+    if branch is not None:
+        return f"erk br co {branch}"
     return f"erk br co --for-plan {ctx.row.plan_id}"
 
 
 def _display_copy_prepare_activate(ctx: CommandContext) -> str:
     """Display name for copy_prepare_activate command."""
+    branch = _resolve_branch_name(ctx)
+    if branch is not None:
+        return f'source "$(erk br co {branch} --script)" && erk implement --dangerous'
     return (
         f'source "$(erk br co --for-plan {ctx.row.plan_id} --script)" && erk implement --dangerous'
     )

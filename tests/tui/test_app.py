@@ -2288,4 +2288,4 @@ class TestActionLaunch:
 
             app._on_launch_result("copy_prepare")
 
-            assert clipboard.last_copied == "erk br create --for-plan 123"
+            assert clipboard.last_copied == "erk br co --for-plan 123"

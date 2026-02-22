@@ -22,10 +22,10 @@ def test_draft_pr_next_steps_checkout_and_implement_uses_branch_name() -> None:
     assert "42" not in s.checkout_and_implement
 
 
-def test_draft_pr_next_steps_prepare_uses_pr_number() -> None:
-    """prepare uses --for-plan with pr_number."""
+def test_draft_pr_next_steps_prepare_uses_branch_name() -> None:
+    """prepare uses branch_name directly."""
     s = DraftPRNextSteps(pr_number=42, branch_name="plan-feature-foo")
-    assert s.prepare == "erk br co --for-plan 42"
+    assert s.prepare == "erk br co plan-feature-foo"
 
 
 def test_issue_next_steps_prepare_uses_co() -> None:
@@ -34,11 +34,11 @@ def test_issue_next_steps_prepare_uses_co() -> None:
     assert s.prepare == "erk br co --for-plan 99"
 
 
-def test_format_draft_pr_next_steps_plain_uses_for_plan() -> None:
-    """format_draft_pr_next_steps_plain uses --for-plan command."""
+def test_format_draft_pr_next_steps_plain_uses_branch_name() -> None:
+    """format_draft_pr_next_steps_plain uses branch name for prepare commands."""
     output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo")
-    assert "erk br co --for-plan 42" in output
-    assert 'source "$(erk br co --for-plan 42 --script)"' in output
+    assert "erk br co plan-feature-foo" in output
+    assert 'source "$(erk br co plan-feature-foo --script)"' in output
 
 
 def test_format_next_steps_plain_uses_co() -> None:

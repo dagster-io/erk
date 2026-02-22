@@ -61,23 +61,20 @@ class DraftPRNextSteps:
 
     @property
     def prepare(self) -> str:
-        return f"erk br co --for-plan {self.pr_number}"
+        return f"erk br co {self.branch_name}"
 
     @property
     def prepare_and_implement(self) -> str:
-        return (
-            f'source "$(erk br co --for-plan {self.pr_number} --script)"'
-            " && erk implement --dangerous"
-        )
+        return f'source "$(erk br co {self.branch_name} --script)" && erk implement --dangerous'
 
     @property
     def prepare_new_slot(self) -> str:
-        return f"erk br co --new-slot --for-plan {self.pr_number}"
+        return f"erk br co --new-slot {self.branch_name}"
 
     @property
     def prepare_new_slot_and_implement(self) -> str:
         return (
-            f'source "$(erk br co --new-slot --for-plan {self.pr_number} --script)"'
+            f'source "$(erk br co --new-slot {self.branch_name} --script)"'
             " && erk implement --dangerous"
         )
 

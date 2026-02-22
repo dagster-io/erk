@@ -868,15 +868,23 @@ class ErkDashApp(App):
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_prepare":
-            cmd = f"erk br co --for-plan {row.plan_id}"
+            branch = row.pr_head_branch or row.worktree_branch
+            if branch is not None:
+                cmd = f"erk br co {branch}"
+            else:
+                cmd = f"erk br co --for-plan {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_prepare_activate":
-            cmd = (
-                f'source "$(erk br co --for-plan {row.plan_id} --script)"'
-                " && erk implement --dangerous"
-            )
+            branch = row.pr_head_branch or row.worktree_branch
+            if branch is not None:
+                cmd = f'source "$(erk br co {branch} --script)" && erk implement --dangerous'
+            else:
+                cmd = (
+                    f'source "$(erk br co --for-plan {row.plan_id} --script)"'
+                    " && erk implement --dangerous"
+                )
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 

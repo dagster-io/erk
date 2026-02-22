@@ -170,7 +170,6 @@ OR exit Claude Code first, then run one of:
   Submit to Queue: erk plan submit <issue_number>
 ```
 
-
 **If `plan_backend` is `"draft_pr"`:**
 
 ```
@@ -182,8 +181,8 @@ In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
 
 OR exit Claude Code first, then run one of:
-  Local: erk br create --for-plan <issue_number>
-  Prepare+Implement: source "$(erk br create --for-plan <issue_number> --script)" && erk implement --dangerous
+  Local: erk br co <branch_name>
+  Prepare+Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
   Submit to Queue: erk plan submit <issue_number>
 ```
 
