@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_As of `177a1838f` (2026-02-22)_
+## [0.8.1] - 2026-02-22 08:14 PT
 
 ### Added
 
@@ -18,6 +18,7 @@ _As of `177a1838f` (2026-02-22)_
 ### Changed
 
 - Restore abbreviated stage names (impling, impld) in TUI dashboard to fit column width
+- Split status indicators into a separate "sts" column in the TUI dashboard
 - Enhance objective view with parallel in-flight status, planning indicator, and multiple unblocked nodes
 
 ### Fixed
