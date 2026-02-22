@@ -14,7 +14,6 @@ from erk_shared.naming import (
     ensure_unique_worktree_name,
     extract_leading_issue_number,
     extract_objective_number,
-    extract_plan_review_issue_number,
     extract_trailing_number,
     generate_draft_pr_branch_name,
     generate_issue_branch_name,
@@ -529,33 +528,6 @@ def test_extract_leading_issue_number_with_objective_format(
 ) -> None:
     """Extract leading issue number still works with objective ID in branch name."""
     assert extract_leading_issue_number(branch_name) == expected
-
-
-@pytest.mark.parametrize(
-    ("branch_name", "expected"),
-    [
-        # Valid plan review branches (current prefix)
-        ("plnd/review-6214-01-15-1430", 6214),
-        ("plnd/review-42-01-28-0930", 42),
-        ("plnd/review-1-12-31-2359", 1),
-        ("plnd/review-99999-01-01-0000", 99999),
-        # Legacy planned/ prefix still works
-        ("planned/review-6214-01-15-1430", 6214),
-        ("planned/review-42-01-28-0930", 42),
-        ("planned/review-1-12-31-2359", 1),
-        ("planned/review-99999-01-01-0000", 99999),
-        # Not plan review branches
-        ("P2382-convert-erk-create-raw-ext", None),
-        ("2382-convert-erk-create-raw-ext", None),
-        ("feature-branch", None),
-        ("master", None),
-        ("plnd/review", None),  # Missing issue number
-        ("plnd/review-", None),  # Missing issue number
-        ("plnd/review-abc-01-15-1430", None),  # Non-numeric issue
-    ],
-)
-def test_extract_plan_review_issue_number(branch_name: str, expected: int | None) -> None:
-    assert extract_plan_review_issue_number(branch_name) == expected
 
 
 # Tests for generate_draft_pr_branch_name

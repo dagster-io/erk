@@ -32,13 +32,13 @@ The `exit-plan-mode` hook reads `objective-context` to update the objective issu
 
 ### Plan Issue Tracking
 
-When saving a plan to GitHub for review, markers communicate the issue number between commands:
+When saving a plan to GitHub, markers communicate the issue number between commands:
 
 ```bash
 # Created by /erk:plan-save
 erk exec marker create --name plan-saved-issue --value "6425"
 
-# Read by /erk:plan-review to create review PR
+# Read by subsequent commands to reference the saved plan
 ISSUE_NUM=$(erk exec marker read --name plan-saved-issue)
 ```
 
@@ -46,10 +46,7 @@ Lifecycle:
 
 1. `/erk:plan-save` saves plan to GitHub, creates issue, writes `plan-saved-issue` marker
 2. User (or automation) reads marker to get issue number
-3. `/erk:plan-review <issue-number>` creates review PR for the saved plan
-4. Marker persists for the session, enabling multiple review PR iterations if needed
-
-This enables the "Save and submit for review" workflow (Option E) where plans are saved and reviewed via PR before implementation.
+3. Marker persists for the session, enabling subsequent operations on the saved plan
 
 ### Workflow State
 

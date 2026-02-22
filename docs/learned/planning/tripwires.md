@@ -56,8 +56,6 @@ Rules triggered by matching actions in code.
 
 **automatically removing .impl/ folder** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .impl/. It belongs to the user for plan-vs-implementation review. Only .worker-impl/ is auto-cleaned.
 
-**blocking implementation on review PR feedback** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Review PRs are advisory and non-blocking. Implementation can proceed regardless of review PR state.
-
 **calling `create_worker_impl_folder()` without checking `worker_impl_folder_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if worker_impl_folder_exists(): remove_worker_impl_folder()` before creating. Stale .worker-impl/ from a prior failed submission causes errors.
 
 **calling commands that depend on `.impl/plan-ref.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json.
@@ -108,8 +106,6 @@ Rules triggered by matching actions in code.
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 
-**editing plan content only in the PR branch without syncing** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan content lives in two places (PR branch + issue comment). Edit the local file, then sync to the issue with `erk exec plan-update-from-feedback`. See plan-file-sync-pattern.md.
-
 **entering Plan Mode in replan or consolidation workflow** → Read [Context Preservation in Replan Workflow](context-preservation-in-replan.md) first. Gather investigation context FIRST (Step 6a). Enter plan mode only after collecting file paths, evidence, and discoveries. Sparse plans are destructive to downstream implementation.
 
 **estimating effort for a plan without checking actual files changed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes.
@@ -147,8 +143,6 @@ Rules triggered by matching actions in code.
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
 **marking a draft-PR plan as 'implementation complete' and referencing itself as the implementing PR** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Self-referential close prevention: when a draft PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard.
-
-**merging a plan review PR** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan review PRs are NEVER merged. They exist only for inline review comments. Close without merging when review is complete.
 
 **migrating a plan without preserving operational metadata** → Read [Plan Migration to Draft PR](plan-migrate-to-draft-pr.md) first. create_plan() only sets a subset of fields. Use update_metadata() in a second phase to carry over operational fields like lifecycle_stage, last_dispatched_at, etc. See \_FIELDS_HANDLED_BY_CREATE in plan_migrate_to_draft_pr.py.
 

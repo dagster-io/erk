@@ -29,7 +29,6 @@ from erk.cli.commands.implement_shared import (
     prepare_plan_source_from_file,
     validate_flags,
 )
-from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.context import ErkContext
@@ -115,14 +114,6 @@ def _implement_from_issue(
             "Create a plan using 'erk plan create' or add the label manually."
         )
         raise SystemExit(1) from None
-
-    # Close any open review PR (implementation supersedes review)
-    cleanup_review_pr(
-        ctx,
-        repo_root=repo.root,
-        issue_number=int(issue_number),
-        reason=f"the plan (plan #{issue_number}) was submitted for implementation",
-    )
 
     ctx.console.info(f"Plan: {plan.title}")
 

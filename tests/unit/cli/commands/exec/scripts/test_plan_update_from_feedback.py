@@ -5,6 +5,7 @@ Uses FakeGitHubIssues for fast, reliable testing.
 """
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -14,12 +15,88 @@ from erk.cli.commands.exec.scripts.plan_update_from_feedback import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from tests.unit.cli.commands.exec.scripts.test_plan_create_review_branch import (
-    make_issue_comment,
-    make_issue_info,
-    make_plan_comment_body_v2,
-    make_plan_header_body,
-)
+from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+
+
+def make_plan_header_body(
+    plan_comment_id: int | None,
+) -> str:
+    """Create a test issue body with plan-header metadata block."""
+    comment_id_line = (
+        f"plan_comment_id: {plan_comment_id}"
+        if plan_comment_id is not None
+        else "plan_comment_id: null"
+    )
+
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2025-11-25T14:37:43.513418+00:00'
+created_by: testuser
+{comment_id_line}
+last_dispatched_run_id: null
+last_dispatched_at: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+
+def make_plan_comment_body_v2(plan_content: str) -> str:
+    """Create a comment body with plan-body metadata block (Schema v2)."""
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-body -->
+<details open>
+<summary><strong>plan-body</strong></summary>
+
+{plan_content}
+
+</details>
+<!-- /erk:metadata-block:plan-body -->"""
+
+
+def make_issue_info(
+    number: int,
+    body: str,
+    title: str,
+    labels: list[str] | None,
+) -> IssueInfo:
+    """Create test IssueInfo with given number, body, and labels."""
+    if labels is None:
+        labels = ["erk-plan"]
+    now = datetime.now(UTC)
+    return IssueInfo(
+        number=number,
+        title=title,
+        body=body,
+        state="OPEN",
+        url=f"https://github.com/test-owner/test-repo/issues/{number}",
+        labels=labels,
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="test-user",
+    )
+
+
+def make_issue_comment(
+    comment_id: int,
+    body: str,
+) -> IssueComment:
+    """Create test IssueComment with given ID and body."""
+    return IssueComment(
+        id=comment_id,
+        body=body,
+        url=f"https://github.com/test-owner/test-repo/issues/1234#issuecomment-{comment_id}",
+        author="test-user",
+    )
+
 
 # ============================================================================
 # Success Cases

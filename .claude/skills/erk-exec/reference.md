@@ -846,32 +846,6 @@ Update objective after landing a PR.
 | `--pr`        | INTEGER | Yes      | Sentinel.UNSET | PR number that was just landed |
 | `--branch`    | TEXT    | Yes      | Sentinel.UNSET | Branch name that was landed    |
 
-### plan-create-review-branch
-
-Create a plan review branch and push to remote.
-
-**Usage:** `erk exec plan-create-review-branch` <issue_number>
-
-**Arguments:**
-
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
-
-### plan-create-review-pr
-
-Create a draft PR for plan review and update plan metadata.
-
-**Usage:** `erk exec plan-create-review-pr` <issue_number> <branch_name> <plan_title>
-
-**Arguments:**
-
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
-| `BRANCH_NAME`  | Yes      | -           |
-| `PLAN_TITLE`   | Yes      | -           |
-
 ### plan-migrate-to-draft-pr
 
 Migrate an issue-based plan to a draft-PR-based plan.
@@ -890,18 +864,6 @@ Migrate an issue-based plan to a draft-PR-based plan.
 | ----------- | ------ | -------- | ------- | --------------------------------------------------------- |
 | `--dry-run` | FLAG   | No       | -       | Preview the migration without making any changes          |
 | `--format`  | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text) |
-
-### plan-review-complete
-
-Close a plan review PR without merging.
-
-**Usage:** `erk exec plan-review-complete` <issue_number>
-
-**Arguments:**
-
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
 
 ### plan-save
 
@@ -938,18 +900,6 @@ Extract plan from ~/.claude/plans/ and create GitHub issue.
 | `--plan-type`                     | CHOICE  | No       | -       | Plan type: standard (default) or learn (for documentation learning plans) |
 | `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans, enables auto-update on land)   |
 | `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL that created this plan (for backlink)     |
-
-### plan-submit-for-review
-
-Fetch plan content from a GitHub issue for PR-based review workflow.
-
-**Usage:** `erk exec plan-submit-for-review` <issue_number>
-
-**Arguments:**
-
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
 
 ### plan-update-from-feedback
 

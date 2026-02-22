@@ -40,7 +40,6 @@ from erk_shared.gateway.github.metadata.schemas import (
     LAST_REMOTE_IMPL_AT,
     LAST_REMOTE_IMPL_RUN_ID,
     LAST_REMOTE_IMPL_SESSION_ID,
-    LAST_REVIEW_PR,
     LAST_SESSION_AT,
     LAST_SESSION_BRANCH,
     LAST_SESSION_ID,
@@ -54,7 +53,6 @@ from erk_shared.gateway.github.metadata.schemas import (
     LIFECYCLE_STAGE,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
-    REVIEW_PR,
     SCHEMA_VERSION,
     SOURCE_REPO,
     WORKTREE_NAME,
@@ -1325,63 +1323,6 @@ def update_plan_header_learn_plan_completed(
     return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
 
 
-def update_plan_header_review_pr(
-    issue_body: str,
-    review_pr: int,
-) -> str:
-    """Update review_pr field in plan-header metadata block.
-
-    Uses Python YAML parsing for robustness (not regex).
-    This function reads the existing plan-header block, updates the
-    review_pr field, and re-renders the entire body.
-
-    Args:
-        issue_body: Current issue body containing plan-header block
-        review_pr: PR number for the plan review PR
-
-    Returns:
-        Updated issue body with new review_pr field
-
-    Raises:
-        ValueError: If plan-header block not found or invalid
-    """
-    # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
-    if block is None:
-        raise ValueError("plan-header block not found in issue body")
-
-    # Update review_pr field
-    updated_data = dict(block.data)
-    updated_data[REVIEW_PR] = review_pr
-
-    # Validate updated data
-    schema = PlanHeaderSchema()
-    schema.validate(updated_data)
-
-    # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
-    new_block_content = render_metadata_block(new_block)
-
-    # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
-
-
-def extract_plan_header_review_pr(issue_body: str) -> int | None:
-    """Extract review_pr field from plan-header metadata block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        PR number if present, None if absent or block missing
-    """
-    block = find_metadata_block(issue_body, "plan-header")
-    if block is None:
-        return None
-
-    return block.data.get(REVIEW_PR)
-
-
 def extract_plan_header_learn_materials_branch(issue_body: str) -> str | None:
     """Extract learn_materials_branch from plan-header block.
 
@@ -1427,46 +1368,4 @@ def update_plan_header_learn_materials_branch(
     new_block = MetadataBlock(key="plan-header", data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
-
-
-def clear_plan_header_review_pr(issue_body: str) -> str:
-    """Clear review_pr and archive its value to last_review_pr.
-
-    Archives the current review_pr value to last_review_pr (if not None),
-    then sets review_pr to None. This is called when a review PR is
-    completed to clear the active review while preserving history.
-
-    Args:
-        issue_body: Current issue body containing plan-header block
-
-    Returns:
-        Updated issue body with review_pr cleared and last_review_pr set
-
-    Raises:
-        ValueError: If plan-header block not found or invalid
-    """
-    block = find_metadata_block(issue_body, "plan-header")
-    if block is None:
-        raise ValueError("plan-header block not found in issue body")
-
-    updated_data = dict(block.data)
-
-    # Archive current review_pr to last_review_pr (if not None)
-    current_review_pr = updated_data.get(REVIEW_PR)
-    if current_review_pr is not None:
-        updated_data[LAST_REVIEW_PR] = current_review_pr
-
-    # Clear review_pr
-    updated_data[REVIEW_PR] = None
-
-    # Validate updated data
-    schema = PlanHeaderSchema()
-    schema.validate(updated_data)
-
-    # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
-    new_block_content = render_metadata_block(new_block)
-
-    # Replace block in full body
     return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)

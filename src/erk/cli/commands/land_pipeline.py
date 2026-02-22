@@ -17,7 +17,6 @@ import click
 
 from erk.cli.commands.navigation_helpers import check_clean_working_tree
 from erk.cli.commands.objective_helpers import get_objective_for_branch
-from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.ensure_ideal import EnsureIdeal
@@ -461,24 +460,6 @@ def update_learn_plan(ctx: ErkContext, state: LandState) -> LandState | LandErro
     return state
 
 
-def close_review_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Close review PR if plan has one."""
-    if state.plan_id is None:
-        return state
-
-    # Draft-PR plans have no separate review PR to close
-    if ctx.plan_store.get_provider_name() == "github-draft-pr":
-        return state
-
-    cleanup_review_pr(
-        ctx,
-        repo_root=state.main_repo_root,
-        issue_number=int(state.plan_id),
-        reason=f"the plan (issue #{state.plan_id}) was implemented and landed",
-    )
-    return state
-
-
 def cleanup_and_navigate(ctx: ErkContext, state: LandState) -> LandState | LandError:
     """Dispatch cleanup by type, navigate. Terminal step (may SystemExit)."""
     from erk.cli.commands.land_cmd import _cleanup_and_navigate
@@ -522,7 +503,6 @@ def _execution_pipeline() -> tuple[LandStep, ...]:
     return (
         merge_pr,
         update_learn_plan,
-        close_review_pr,
         cleanup_and_navigate,
     )
 

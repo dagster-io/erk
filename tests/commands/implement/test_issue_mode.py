@@ -7,10 +7,6 @@ from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.github.metadata.plan_header import update_plan_header_review_pr
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.fakes.prompt_executor import FakePromptExecutor
@@ -19,7 +15,6 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import (
     create_plan_store,
     create_plan_store_with_plans,
-    format_plan_header_body_for_test,
 )
 
 
@@ -259,83 +254,3 @@ def test_auto_detect_fails_on_non_plan_branch() -> None:
         assert "Could not auto-detect plan number" in result.output
         assert "feature-branch" in result.output
         assert "PXXXX-* pattern" in result.output
-
-
-def test_implement_from_issue_closes_review_pr() -> None:
-    """Test that implementing from an issue closes its associated review PR.
-
-    This test is GitHub-only because it relies on GitHub issue metadata and
-    the plan-header mechanism for storing review_pr references.
-    """
-    # Build issue body with plan-header metadata containing review_pr: 99
-    issue_body = format_plan_header_body_for_test()
-    issue_body_with_review_pr = update_plan_header_review_pr(issue_body, 99)
-
-    # Create IssueInfo objects with plan-header metadata in the issue body.
-    # cleanup_review_pr reads review_pr via ctx.plan_backend.get_metadata_field(),
-    # so the plan store must be backed by the same FakeGitHubIssues that has
-    # the plan-header metadata block.
-    issue_42 = IssueInfo(
-        number=42,
-        title="Add Authentication Feature",
-        body=issue_body_with_review_pr,
-        state="OPEN",
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan", "enhancement"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        author="test-author",
-    )
-    # Review PR issue (must exist for add_comment to succeed)
-    issue_99 = IssueInfo(
-        number=99,
-        title="Review PR for plan #42",
-        body="Review PR body",
-        state="OPEN",
-        url="https://github.com/owner/repo/pull/99",
-        labels=[],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        author="test-author",
-    )
-    fake_issues = FakeGitHubIssues(issues={42: issue_42, 99: issue_99})
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
-            default_branches={env.cwd: "main"},
-        )
-        executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(
-            env,
-            git=git,
-            prompt_executor=executor,
-            issues=fake_issues,
-            github=fake_github,
-        )
-
-        result = runner.invoke(implement, ["#42"], obj=ctx)
-
-        assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
-
-        # Review PR was closed
-        assert 99 in fake_github.closed_prs
-
-        # Comment was added to review PR explaining why it was closed
-        comment_bodies = [body for num, body, _ in fake_issues.added_comments if num == 99]
-        assert len(comment_bodies) == 1
-        assert "automatically closed" in comment_bodies[0]
-
-        # Issue body was updated to clear review_pr metadata
-        updated_bodies = [body for num, body in fake_issues.updated_bodies if num == 42]
-        assert len(updated_bodies) == 1
-        assert "review_pr: null" in updated_bodies[0] or "review_pr:" in updated_bodies[0]
-
-        # .impl/ folder was created (normal implement behavior still works)
-        assert (env.cwd / ".impl").exists()
