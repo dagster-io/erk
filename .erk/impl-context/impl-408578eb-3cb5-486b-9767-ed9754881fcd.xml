@@ -1,0 +1,810 @@
+<session>
+  <meta branch="plnd/update-changelog-02-22-1051" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="408578eb-3cb5-486b-9767-ed9754881fcd"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="408578eb-3cb5-486b-9767-ed9754881fcd" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="408578eb-3cb5-486b-9767-ed9754881fcd" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.worker-impl/` and `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the steps outlined in the command.
+
+Step 0: No arguments provided, so no ISSUE_ARG or FILE_ARG.
+
+Step 1b: Check if `.impl/` already exists by running `erk exec impl-init --json`.
+
+Let me start by checking the current state.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12833" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12833}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12833" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12833}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012gfvxatyKTG9HJCNMueAhh">
+    <param name="command">erk exec impl-init --json</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12833" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12833}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012gfvxatyKTG9HJCNMueAhh">
+{"valid": true, "impl_type": "impl", "has_issue_tracking": true, "related_docs": {"skills": [], "docs": []}, "issue_number": 7861}
+  </tool_result>
+  <assistant>`.impl/` exists and is valid with issue tracking (issue #7861). Let me sync the local branch with remote, then read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="31874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MPQJKUAVwvPPSwM9PGmi5P">
+    <param name="command">erk exec setup-impl-from-issue 7861</param>
+    <param name="description">Sync local branch with remote for issue #7861</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="31874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MPQJKUAVwvPPSwM9PGmi5P">
+Found existing .impl/ for plan #7861, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.impl", "issue_number": 7861, "issue_url": "https://github.com/dagster-io/erk/pull/7861", "branch": "plnd/update-changelog-02-22-1051", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JZsjKXHhNDeFhM5wcYZu34">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="31874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JZsjKXHhNDeFhM5wcYZu34">
+     1→# Changelog Update Plan
+     2→
+     3→## Context
+     4→Routine changelog sync — 15 commits merged to master since last sync (491610bc4). User reviewed the proposal and approved with one adjustment: no Major Changes category (move branch naming slugs to Added).
+     5→
+     6→## Changes to CHANGELOG.md
+     7→
+     8→Add an "As of" marker and new entries to the `## [Unreleased]` section (currently empty, between lines 8-10):
+     9→
+    10→### Added (3)
+    11→- LLM-generated branch name slugs with shortened `plnd/` prefix for meaningful, compact branch names (fcb6890ec, 19aa595e0)
+    12→- Add `--env` flag to `erk codespace connect` for setting environment variables in remote sessions (8e5c5370f)
+    13→- Add `-f/--force` flag to `erk up`/`erk down` to skip interactive prompts and auto-close PRs during destructive operations (a70c3e7d8)
+    14→
+    15→### Changed (2)
+    16→- Restore abbreviated stage names (impling, impld) in TUI dashboard to fit column width (177a1838f)
+    17→- Enhance objective view with parallel in-flight status, planning indicator, and multiple unblocked nodes (a05e6a5a6)
+    18→
+    19→### Fixed (1)
+    20→- Fix objective prose reconciliation reading metadata-only body instead of comment's objective-body block (0d54e2532)
+    21→
+    22→## Verification
+    23→- Read the updated Unreleased section to confirm formatting and ordering
+    24→
+  </tool_result>
+  <thinking>The plan is simple - update the CHANGELOG.md with new entries. Let me check for the cleanup step and then proceed.
+
+Step 2d: Check if `.erk/impl-context/` exists.
+Step 3: Already read the plan.
+Step 4: No related documentation or skills to load.
+Step 5: Create todo entries.
+Step 6: Signal started.
+Step 7: Execute.
+
+Let me proceed with the steps.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="32133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 788}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan...
+
+The plan is straightforward: update the `## [Unreleased]` section of CHANGELOG.md with 6 new entries across 3 categories (Added, Changed, Fixed).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="32133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 788}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012AqSyjmqqXRESH5CsCTJs7">
+    <param name="command">if [ -d .erk/impl-context/ ]; then git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove ...[truncated 32 chars]...h origin "$(git branch --show-current)"; else echo "No .erk/impl-context/ to clean up"; fi</param>
+    <param name="description">Clean up plan staging directory if it exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="32133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 788}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012AqSyjmqqXRESH5CsCTJs7">
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plnd/update-changelog-02-22-1051 152701397] Remove .erk/impl-context/ before implementation
+ 2 files changed, 27 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   bd931c593..152701397  plnd/update-changelog-02-22-1051 -&gt; plnd/update-changelog-02-22-1051
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01D4K5Ryot3nYhFzcVV3NHks">
+    <param name="subject">Update CHANGELOG.md unreleased section</param>
+    <param name="description">Add 6 new entries to the [Unreleased] section: 3 Added, 2 Changed, 1 Fixed, per the plan in .impl/plan.md</param>
+    <param name="activeForm">Updating CHANGELOG.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="32921" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 566}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D4K5Ryot3nYhFzcVV3NHks">
+Task #1 created successfully: Update CHANGELOG.md unreleased section
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_015Z3PbbQ1TXmwvSn3V8R4Yu">
+    <param name="subject">Verify formatting and run CI</param>
+    <param name="description">Read back the updated section to confirm formatting, then run CI checks</param>
+    <param name="activeForm">Verifying changelog formatting</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="32921" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 566}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Z3PbbQ1TXmwvSn3V8R4Yu">
+Task #2 created successfully: Verify formatting and run CI
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014iFd9ZTX38G9URW9WUZo77">
+    <param name="subject">Submit PR</param>
+    <param name="description">Push branch and create/update PR via erk pr submit</param>
+    <param name="activeForm">Submitting PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="32921" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 566}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014iFd9ZTX38G9URW9WUZo77">
+Task #3 created successfully: Submit PR
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014vUFhfHpjX6f3D7CXALQX3">
+    <param name="command">erk exec impl-signal started --session-id="408578eb-3cb5-486b-9767-ed9754881fcd" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="32921" output_tokens="410" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 566, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014vUFhfHpjX6f3D7CXALQX3">
+{
+  "success": true,
+  "event": "started",
+  "issue_number": 7861
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XqSnJG8ZtfNkzGC8GbnEPd">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="583" cache_read_input_tokens="33487" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 583}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XqSnJG8ZtfNkzGC8GbnEPd">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EoQQTDP91xRmSMEK5H34ZU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/CHANGELOG.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="583" cache_read_input_tokens="33487" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 583, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EoQQTDP91xRmSMEK5H34ZU">
+     1→# Changelog
+     2→
+     3→All notable changes to erk will be documented in this file.
+     4→
+     5→The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+     6→and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+     7→
+     8→## [Unreleased]
+     9→
+    10→## [0.8.0] - 2026-02-22 03:40 PT
+    11→
+    12→### Release Overview
+    13→
+    14→This release introduces dual plan backends, evolves objectives into a dependency graph, and streamlines branch management with stack-in-place workflows.
+    15→
+    16→#### Draft PR Plan Backend
+    17→
+    18→**What it solves:** Issue-based plans have limitations for code-heavy workflows — no native diff view, no CI integration, and awkward code review. Draft PRs provide a natural home for plans that will become code.
+    19→
+    20→**How it works:** Plans can now be stored as GitHub draft PRs instead of issues, with `ERK_PLAN_BACKEND=draft_pr` controlling the backend. All workflows (plan-save, plan-implement, learn, CI) support both backends transparently.
+    21→
+    22→**Key features:** `ERK_PLAN_BACKEND` environment variable, draft PR auto-publishing during `erk pr submit`, backend-agnostic plan checkout via `erk br co --for-plan`.
+    23→
+    24→#### Objective Dependency Graph
+    25→
+    26→**What it solves:** Objectives with linear roadmaps couldn't express real-world dependencies — some nodes can run in parallel, others must wait. The flat step list forced artificial sequencing.
+    27→
+    28→**How it works:** Objectives now use a graph-based model (schema v3) with `depends_on` support between nodes. The vocabulary shifted from "steps" to "nodes" to reflect the graph structure. `erk objective view` displays the dependency graph, and `--all-unblocked` enables parallel dispatch of independent nodes.
+    29→
+    30→**Key features:** `depends_on` field in objective roadmaps, "deps" column in TUI Objectives dashboard, `--all-unblocked` dispatch, `erk objective view` with dependency graph display.
+
+... [1118 lines omitted] ...
+
+    77→- Add remote divergence pre-check before `gt submit` with actionable error messages
+    84→- Show real-time progress in TUI status bar during "Land PR" operation with diagnostic error messages
+   107→- Fix submit pipeline error handling and add network timeout protection
+   113→- Fix missing `branch_name` in plan-header metadata causing PR lookup failure during async learn
+   140→- **V2-only objective format enforcement**: All legacy v1 format support removed. Legacy objectives show a migration error directing users to recreate via `erk objective create`
+   198→- Improve error message for Graphite restack conflicts in `erk pr submit`
+   199→- Fix `pr-fix-conflicts` workflow "Argument list too long" error by capturing Claude output internally
+   251→- Fix pr-fix-conflicts "Argument list too long" error in PR comment formatting
+   292→**What it solves:** Diverged branches cause confusing errors during stack operations.
+   333→- Improve Claude CLI error reporting with exit code, stderr, and stdout context
+   412→- Enable CI autofix agent to automatically fix type errors
+   430→- Fix `erk-bootstrap` to distinguish between "not in project" and "erk not installed" with targeted error messages
+   437→- Remove redundant "Error: " prefix from `erk land` shell integration message
+   463→- Fix FileNotFoundError when invoking erk from shell integration in venv environments
+   464→- Fix `erk pr sync` failure for stacked PRs with locally restacked parents
+   466→- Fix `erk doctor` to show remediation steps for artifact warnings, not just failures
+   478→- Add secret validation to erk-impl workflow with clear error messages when ERK_QUEUE_GH_PAT is missing
+   483→- Fix erk-impl workflow silent failure on implementation errors
+   484→- Fix spurious learn warning when landing remote PRs without local worktrees
+   517→- Make artifact health checks capability-aware to avoid false warnings for uninstalled capabilities
+   610→- Add `-f/--force` hint to error message when deleting branch with open PR
+   618→- Suppress slot warning when `--force` flag is specified in land command
+   647→- Add error message when submitting stacked PR without parent PR, guiding users to `gt submit -s`
+   680→- Fix false branch-mismatch error for stacked branches in slot list
+   691→- Make `erk dash` resilient to GitHub API failures
+   694→- Fix version warning to use LBYL pattern for git repo detection
+   730→- Silence version check warning outside git repos
+   802→- Detect uncommitted changes before checkout in slot assignment with user-friendly error messages
+   814→- Clarify slot list UX with improved status ("available", "assigned", "error") and reason terminology
+   892→- Fix frontmatter deprecation warning cluttering test output
+   971→- Add uvx/`uv tool run` detection with warning and confirmation prompt for shell integration commands
+   975→- Add retry logic with exponential backoff to prompt executor for transient API failures
+  1018→- Fix missing error handling for deleted plan comment references with graceful fallback
+  1056→- Add `.impl/` preservation guardrail to plan-implement workflow to prevent agents from deleting implementation plans - note: this may cause hard failures, please report if encountered
+  1075→- Fix branch divergence error handling in PR submission with actionable remediation message
+  1116→- Add hooks disabled check to `erk doctor` command with warning indicator
+  1130→- Fix detect no-work-events failure mode in auto-restack command
+  1131→- Fix OSError "argument list too long" by passing prompt via stdin instead of command line
+  </tool_result>
+  <thinking>Now I need to update the `## [Unreleased]` section (currently empty between lines 8-10) with the new entries from the plan. Let me add the entries.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="19841" cache_read_input_tokens="34070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19841}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Phase 1: Update CHANGELOG.md unreleased section**
+
+Now I'll add the new entries to the `[Unreleased]` section.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="19841" cache_read_input_tokens="34070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19841}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012PVEMqLzgwnTtZiqvBR8kj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/CHANGELOG.md</param>
+    <param name="old_string">## [Unreleased]
+
+## [0.8.0] - 2026-02-22 03:40 PT</param>
+    <param name="new_string">## [Unreleased]
+
+_As of `177a1838f` (2026-02-22)_
+
+### Added
+
+- LLM-generated branch name ...[truncated 545 chars]...data-only body instead of comment's objective-body block
+
+## [0.8.0] - 2026-02-22 03:40 PT</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19841" cache_read_input_tokens="34070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19841}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012PVEMqLzgwnTtZiqvBR8kj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/CHANGELOG.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XEmqyUqiu4jytPbftUamL3">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="516" cache_read_input_tokens="53911" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 516}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XEmqyUqiu4jytPbftUamL3">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01CfQyC55Ph8EyVNVXTZJ53Q">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="516" cache_read_input_tokens="53911" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 516, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CfQyC55Ph8EyVNVXTZJ53Q">
+Updated task #2 status
+  </tool_result>
+  <assistant>Let me verify the formatting by reading the updated section.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="54427" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B8BGc4E2DmdoEmMmYyoCPm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/CHANGELOG.md</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="54427" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B8BGc4E2DmdoEmMmYyoCPm">
+     1→# Changelog
+     2→
+     3→All notable changes to erk will be documented in this file.
+     4→
+     5→The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+     6→and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+     7→
+     8→## [Unreleased]
+     9→
+    10→_As of `177a1838f` (2026-02-22)_
+    11→
+    12→### Added
+    13→
+    14→- LLM-generated branch name slugs with shortened `plnd/` prefix for meaningful, compact branch names
+    15→- Add `--env` flag to `erk codespace connect` for setting environment variables in remote sessions
+    16→- Add `-f/--force` flag to `erk up`/`erk down` to skip interactive prompts and auto-close PRs during destructive operations
+    17→
+    18→### Changed
+    19→
+    20→- Restore abbreviated stage names (impling, impld) in TUI dashboard to fit column width
+    21→- Enhance objective view with parallel in-flight status, planning indicator, and multiple unblocked nodes
+    22→
+    23→### Fixed
+    24→
+    25→- Fix objective prose reconciliation reading metadata-only body instead of comment's objective-body block
+    26→
+    27→## [0.8.0] - 2026-02-22 03:40 PT
+    28→
+    29→### Release Overview
+    30→
+  </tool_result>
+  <assistant>Formatting looks correct. Now let me run CI and verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="519" cache_read_input_tokens="54625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 519}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_011RAoDzSvPCpyCwNVQZFit9">
+    <param name="description">Run CI checks on changelog</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Do NOT fix any errors - just report them.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="519" cache_read_input_tokens="54625" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 519, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011RAoDzSvPCpyCwNVQZFit9">
+**make fast-ci passed: All checks and tests passed successfully**
+
+Summary of results:
+
+- **Lint (ruff)**: All checks passed
+- **Format Check (ruff)**: 1505 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: AGENTS.md standard passed, all CLAUDE.md/AGENTS.md files properly paired (19 files checked, 0 violations)
+- **Exec Reference Check**: `.claude/skills/erk-exec/reference.md` is up to date
+- **Type Check (ty)**: All checks passed
+- **Unit Tests (erk)**: 5410 passed in 15.95s
+- **Tests (erk-dev)**: 136 passed in 3.23s
+- **Tests (erk-statusline)**: 126 passed in 0.73s
+
+All checks and tests completed successfully with no failures.
+agentId: a3092f68ffc1b3085 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14628
+tool_uses: 1
+duration_ms: 31143&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass. Let me now verify `.impl/` is preserved and proceed to submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="55144" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 412}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UGKLqaj9fA7HbpYfrzGdUG">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="55144" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 412}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_011Sdc4GnshPNa3MVyxx3iJC">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="55144" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 412}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UGKLqaj9fA7HbpYfrzGdUG">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-32/.impl"}
+  </tool_result>
+  <tool_result tool="toolu_011Sdc4GnshPNa3MVyxx3iJC">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Mp2DdyzetfFXEbrTAPEt5t">
+    <param name="command">erk exec impl-signal ended --session-id="408578eb-3cb5-486b-9767-ed9754881fcd" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="261" cache_read_input_tokens="55556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 261}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mp2DdyzetfFXEbrTAPEt5t">
+{
+  "success": true,
+  "event": "ended",
+  "issue_number": 7861
+}
+  </tool_result>
+  <assistant>Now let me upload the session and submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="55817" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 149}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011Wgzo4LDFwAQbWmUP4PSfH">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(python3 -c "import json; print(j...[truncated 191 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="55817" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 149}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Wgzo4LDFwAQbWmUP4PSfH">
+
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TLYaQkjpa4medFeQAyRYX8">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="55966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 241}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TLYaQkjpa4medFeQAyRYX8">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01K8yr8tuTyUWLCs62dAmn8K">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pr submit</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="55966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 241}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K8yr8tuTyUWLCs62dAmn8K">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DydazkXH6hJnp5N9eSUUqd">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="56207" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 224}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TSmXbxg9nLw9NaDGAipSWf">
+    <param name="command">erk pr check 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="56207" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 224}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DydazkXH6hJnp5N9eSUUqd">
+{
+  "success": true,
+  "event": "submitted",
+  "issue_number": 7861
+}
+  </tool_result>
+  <tool_result tool="toolu_01TSmXbxg9nLw9NaDGAipSWf">
+
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01X98DbetGB7JPTkUBiF6XhK">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="56431" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 244}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X98DbetGB7JPTkUBiF6XhK">
+Updated task #3 status
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary:
+
+**Changes made to CHANGELOG.md:**
+- Added 6 entries to the `[Unreleased]` section with an "As of" marker (`177a1838f`)
+- **Added (3):** LLM branch name slugs, `--env` flag for codespace connect, `-f/--force` for `erk up`/`erk down`
+- **Changed (2):** Restored abbreviated TUI stage names, enhanced objective view
+- **Fixed (1):** Objective prose reconciliation bug
+
+**CI:** All checks passed (5410+ tests, lint, format, type checks)
+**PR:** Submitted via `erk pr submit` for plan #7861</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="56675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>gt pr</user>
+  <tool_use name="Bash" id="toolu_017gQY2mRpDRtEt8pbsuD9ki">
+    <param name="command">gh pr view --web 2&gt;/dev/null || gh pr view</param>
+    <param name="description">View current branch's PR</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="156" cache_read_input_tokens="56930" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017gQY2mRpDRtEt8pbsuD9ki">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EeGCzKgA1rjmttwiAdhwKG">
+    <param name="command">gh pr view</param>
+    <param name="description">View current branch's PR details</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="116" cache_read_input_tokens="57086" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 116}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EeGCzKgA1rjmttwiAdhwKG">
+title:	Update CHANGELOG with unreleased features and fixes
+state:	OPEN
+author:	schrockn
+labels:	erk-plan
+assignees:	
+reviewers:	
+projects:	
+milestone:	
+number:	7861
+url:	https://github.com/dagster-io/erk/pull/7861
+additions:	17
+deletions:	0
+auto-merge:	disabled
+--
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:plan-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;plan-header&lt;/summary&gt;
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-22T10:51:12.320931+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: null
+last_dispatched_node_id: null
+
+... [78 lines omitted] ...
+  </tool_result>
+  <assistant>PR #7861 is open: https://github.com/dagster-io/erk/pull/7861
+
+- **Title:** Update CHANGELOG with unreleased features and fixes
+- **State:** OPEN
+- **+17 / -0 lines** (CHANGELOG.md only)
+- **Lifecycle:** implemented</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="57202" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1201}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>land it</user>
+  <user>[Request interrupted by user]</user>
+</session>
