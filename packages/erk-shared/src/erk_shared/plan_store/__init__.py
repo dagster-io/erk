@@ -32,8 +32,6 @@ def get_plan_backend() -> PlanBackendType:
         Resolved plan backend type.
     """
     env_value = os.environ.get("ERK_PLAN_BACKEND")
-    if env_value is not None:
-        if env_value in ("draft_pr", "github"):
-            return cast(PlanBackendType, env_value)
-        return "github"
+    if env_value is not None and env_value in ("draft_pr", "github"):
+        return cast(PlanBackendType, env_value)
     return "github"
