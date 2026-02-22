@@ -66,6 +66,45 @@ def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
     return stage
 
 
+def compute_status_indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+    checks_passing: bool | None,
+    has_unresolved_comments: bool | None,
+) -> str:
+    """Compute status indicator emojis for a lifecycle stage.
+
+    Returns a space-joined string of emoji indicators, or "-" when empty.
+    This is the standalone version used to populate the "sts" column.
+
+    Args:
+        lifecycle_display: Pre-formatted lifecycle string (may contain Rich markup)
+        is_draft: True for draft PR, False for published PR, None if unknown
+        has_conflicts: True if PR has merge conflicts, False/None otherwise
+        review_decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+        checks_passing: True if all CI checks pass, False/None otherwise
+        has_unresolved_comments: True if there are unresolved review threads,
+            False/None otherwise
+
+    Returns:
+        Space-joined indicators string (e.g., "🚧 💥"), or "-" when no indicators
+    """
+    indicators = _build_indicators(
+        lifecycle_display,
+        is_draft=is_draft,
+        has_conflicts=has_conflicts,
+        review_decision=review_decision,
+        checks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )
+    if not indicators:
+        return "-"
+    return " ".join(indicators)
+
+
 def format_lifecycle_with_status(
     lifecycle_display: str,
     *,
@@ -100,6 +139,58 @@ def format_lifecycle_with_status(
     Returns:
         Lifecycle display string with prefix/suffix indicators
     """
+    indicators = _build_indicators(
+        lifecycle_display,
+        is_draft=is_draft,
+        has_conflicts=has_conflicts,
+        review_decision=review_decision,
+        checks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )
+
+    if not indicators:
+        return lifecycle_display
+
+    suffix = " " + " ".join(indicators)
+
+    # Insert suffix inside Rich markup closing tag so indicators inherit color
+    # Pattern: "[color]stage[/color]" -> "[color]stage suffix[/color]"
+    closing_idx = lifecycle_display.rfind("[/")
+    if closing_idx != -1:
+        before = lifecycle_display[:closing_idx]
+        after = lifecycle_display[closing_idx:]
+        return before + suffix + after
+
+    # No Rich markup - just append
+    return lifecycle_display + suffix
+
+
+def _build_indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    has_conflicts: bool | None,
+    review_decision: str | None,
+    checks_passing: bool | None,
+    has_unresolved_comments: bool | None,
+) -> list[str]:
+    """Build list of emoji indicators for a lifecycle stage.
+
+    Shared logic used by both compute_status_indicators() and
+    format_lifecycle_with_status().
+
+    Args:
+        lifecycle_display: Pre-formatted lifecycle string (may contain Rich markup)
+        is_draft: True for draft PR, False for published PR, None if unknown
+        has_conflicts: True if PR has merge conflicts, False/None otherwise
+        review_decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+        checks_passing: True if all CI checks pass, False/None otherwise
+        has_unresolved_comments: True if there are unresolved review threads,
+            False/None otherwise
+
+    Returns:
+        List of emoji indicator strings
+    """
     # Detect stage from the display string content
     is_planned = "planned" in lifecycle_display
     is_implementing = "impling" in lifecycle_display
@@ -131,18 +222,4 @@ def format_lifecycle_with_status(
         if checks_passing is True and has_unresolved_comments is not True:
             indicators.append("🚀")
 
-    if not indicators:
-        return lifecycle_display
-
-    suffix = " " + " ".join(indicators)
-
-    # Insert suffix inside Rich markup closing tag so indicators inherit color
-    # Pattern: "[color]stage[/color]" -> "[color]stage suffix[/color]"
-    closing_idx = lifecycle_display.rfind("[/")
-    if closing_idx != -1:
-        before = lifecycle_display[:closing_idx]
-        after = lifecycle_display[closing_idx:]
-        return before + suffix + after
-
-    # No Rich markup - just append
-    return lifecycle_display + suffix
+    return indicators

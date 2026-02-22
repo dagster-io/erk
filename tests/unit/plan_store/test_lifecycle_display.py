@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
 from erk_shared.gateway.plan_data_provider.lifecycle import (
     compute_lifecycle_display,
+    compute_status_indicators,
     format_lifecycle_with_status,
 )
 from erk_shared.plan_store.types import Plan, PlanState
@@ -572,3 +573,87 @@ def test_no_stage_with_workflow_run_returns_dash() -> None:
     """No stage resolved with workflow run still returns dash."""
     plan = _make_plan()
     assert compute_lifecycle_display(plan, has_workflow_run=True) == "-"
+
+
+# --- compute_status_indicators tests ---
+
+
+def _indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None = None,
+    has_conflicts: bool | None = None,
+    review_decision: str | None = None,
+    checks_passing: bool | None = None,
+    has_unresolved_comments: bool | None = None,
+) -> str:
+    """Test helper: wraps compute_status_indicators with None defaults."""
+    return compute_status_indicators(
+        lifecycle_display,
+        is_draft=is_draft,
+        has_conflicts=has_conflicts,
+        review_decision=review_decision,
+        checks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )
+
+
+def test_indicators_no_stage_returns_dash() -> None:
+    """No stage returns dash indicator."""
+    assert _indicators("-") == "-"
+
+
+def test_indicators_planned_draft_returns_construction() -> None:
+    """Planned draft returns construction emoji."""
+    assert _indicators("[dim]planned[/dim]", is_draft=True) == "🚧"
+
+
+def test_indicators_planned_published_returns_eyes() -> None:
+    """Planned published returns eyes emoji."""
+    assert _indicators("[dim]planned[/dim]", is_draft=False) == "👀"
+
+
+def test_indicators_implementing_with_conflicts() -> None:
+    """Implementing with conflicts returns draft + conflict emojis."""
+    assert _indicators("[yellow]impling[/yellow]", is_draft=True, has_conflicts=True) == "🚧 💥"
+
+
+def test_indicators_implemented_ready_to_merge() -> None:
+    """Implemented with passing checks returns rocket."""
+    result = _indicators(
+        "[cyan]impld[/cyan]",
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "🚀"
+
+
+def test_indicators_implemented_with_conflicts_no_rocket() -> None:
+    """Implemented with conflicts returns conflict, not rocket."""
+    result = _indicators(
+        "[cyan]impld[/cyan]",
+        has_conflicts=True,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "💥"
+
+
+def test_indicators_review_approved() -> None:
+    """Review approved returns checkmark."""
+    assert _indicators("[cyan]review[/cyan]", review_decision="APPROVED") == "✔"
+
+
+def test_indicators_review_changes_requested_with_conflicts() -> None:
+    """Review with changes requested and conflicts returns both."""
+    result = _indicators(
+        "[cyan]review[/cyan]",
+        has_conflicts=True,
+        review_decision="CHANGES_REQUESTED",
+    )
+    assert result == "💥 ❌"
+
+
+def test_indicators_merged_returns_dash() -> None:
+    """Merged stage returns dash (no indicators)."""
+    assert _indicators("[green]merged[/green]", is_draft=False) == "-"

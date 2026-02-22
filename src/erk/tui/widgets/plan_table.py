@@ -176,7 +176,9 @@ class PlanDataTable(DataTable):
 
         if self._plan_backend == "draft_pr":
             self._stage_column_index = col_index
-            self.add_column("stage", key="stage", width=11)
+            self.add_column("stage", key="stage", width=8)
+            col_index += 1
+            self.add_column("sts", key="sts", width=4)
             col_index += 1
             self.add_column("created", key="created", width=7)
             col_index += 1
@@ -294,12 +296,12 @@ class PlanDataTable(DataTable):
         if row.objective_issue is not None:
             objective_cell = Text(row.objective_display, style="cyan underline")
 
-        # Compact location emoji: 💻 = local checkout, 🌐 = remote run
+        # Compact location emoji: 💻 = local checkout, ☁️ = remote run
         location_parts: list[str] = []
         if row.exists_locally:
             location_parts.append("\U0001f4bb")
         if row.run_url is not None:
-            location_parts.append("\U0001f310")
+            location_parts.append("\u2601")
         location_cell = "".join(location_parts) if location_parts else "-"
 
         # run-id and run-state (always shown)
@@ -316,6 +318,7 @@ class PlanDataTable(DataTable):
         if self._plan_backend == "draft_pr":
             stage_display = _strip_rich_markup(row.lifecycle_display)
             values.append(stage_display)
+            values.append(row.status_display)
             values.append(row.created_display)
         values.extend(
             [
