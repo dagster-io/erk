@@ -125,6 +125,43 @@ class LocalRunState:
     user: str  # User who ran the implementation
 
 
+def build_plan_ref_json(
+    *,
+    provider: str,
+    plan_id: str,
+    url: str,
+    labels: tuple[str, ...],
+    objective_id: int | None,
+) -> str:
+    """Build plan-ref.json content as a JSON string.
+
+    Pure data transformation — no filesystem access.
+
+    Args:
+        provider: Plan provider name (e.g. "github", "github-draft-pr")
+        plan_id: Provider-specific ID as string ("42", "PROJ-123")
+        url: Web URL to view the plan
+        labels: Plan labels
+        objective_id: Optional linked objective issue number
+
+    Returns:
+        JSON string with plan reference data
+    """
+    now = datetime.now(UTC).isoformat()
+
+    data: dict[str, str | int | list[str] | None] = {
+        "provider": provider,
+        "plan_id": plan_id,
+        "url": url,
+        "created_at": now,
+        "synced_at": now,
+        "labels": list(labels),
+        "objective_id": objective_id,
+    }
+
+    return json.dumps(data, indent=2)
+
+
 def save_plan_ref(
     impl_dir: Path,
     *,
@@ -152,19 +189,14 @@ def save_plan_ref(
         raise FileNotFoundError(msg)
 
     plan_ref_file = impl_dir / "plan-ref.json"
-    now = datetime.now(UTC).isoformat()
-
-    data: dict[str, str | int | list[str] | None] = {
-        "provider": provider,
-        "plan_id": plan_id,
-        "url": url,
-        "created_at": now,
-        "synced_at": now,
-        "labels": list(labels),
-        "objective_id": objective_id,
-    }
-
-    plan_ref_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    content = build_plan_ref_json(
+        provider=provider,
+        plan_id=plan_id,
+        url=url,
+        labels=labels,
+        objective_id=objective_id,
+    )
+    plan_ref_file.write_text(content, encoding="utf-8")
 
 
 def _parse_ref_json(ref_file: Path) -> PlanRef | None:
