@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: ci-update-pr-body loses plan-header metadata on draft PR plans"
-}
