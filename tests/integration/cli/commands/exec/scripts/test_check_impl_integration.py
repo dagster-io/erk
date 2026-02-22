@@ -59,7 +59,7 @@ def test_check_impl_validates_complete_issue_json(impl_folder: Path, monkeypatch
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["valid"] is True
-    assert data["has_issue_tracking"] is True
+    assert data["has_plan_tracking"] is True
     assert data["plan_length"] > 0
 
 
@@ -83,7 +83,7 @@ def test_check_impl_handles_incomplete_issue_json(impl_folder: Path, monkeypatch
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["valid"] is True
-    assert data["has_issue_tracking"] is False  # Tracking disabled due to incomplete format
+    assert data["has_plan_tracking"] is False  # Tracking disabled due to incomplete format
 
 
 def test_check_impl_handles_missing_issue_json(impl_folder: Path, monkeypatch) -> None:
@@ -99,7 +99,7 @@ def test_check_impl_handles_missing_issue_json(impl_folder: Path, monkeypatch) -
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["valid"] is True
-    assert data["has_issue_tracking"] is False
+    assert data["has_plan_tracking"] is False
 
 
 def test_check_impl_errors_on_missing_plan(tmp_path: Path, monkeypatch) -> None:
