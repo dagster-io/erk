@@ -86,7 +86,7 @@ When you need to modify a plan that's already saved to GitHub:
 /local:plan-update 123
 
 # Via CLI
-erk exec plan-update-issue --issue-number 123 --session-id="<session-id>"
+erk exec plan-update-issue --plan-number 123 --session-id="<session-id>"
 ```
 
 **When to update vs create new:**

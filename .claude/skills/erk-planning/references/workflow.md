@@ -73,7 +73,7 @@ When working in a worktree with `.impl/issue.json`:
 
 ```json
 {
-  "issue_number": 123,
+  "plan_number": 123,
   "issue_url": "https://github.com/owner/repo/issues/123"
 }
 ```

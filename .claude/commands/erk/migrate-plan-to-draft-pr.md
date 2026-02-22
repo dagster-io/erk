@@ -1,6 +1,6 @@
 ---
 description: Migrate an issue-based plan to a draft-PR-based plan
-argument-hint: "<issue_number>"
+argument-hint: "<plan_number>"
 ---
 
 # /erk:migrate-plan-to-draft-pr
@@ -31,14 +31,14 @@ Extract the issue number from `$ARGUMENTS`.
 
 If no argument is provided, search the conversation from bottom to top for the most recent issue URL or issue number reference and use that.
 
-If still no issue number found, tell the user: "Please provide an issue number: `/erk:migrate-plan-to-draft-pr <issue_number>`"
+If still no issue number found, tell the user: "Please provide a plan number: `/erk:migrate-plan-to-draft-pr <plan_number>`"
 
 ### Step 2: Preview (optional dry run)
 
 To preview what would happen without making changes:
 
 ```bash
-erk exec plan-migrate-to-draft-pr <issue_number> --dry-run --format display
+erk exec plan-migrate-to-draft-pr <plan_number> --dry-run --format display
 ```
 
 Display the output to the user and ask if they want to proceed. Skip this step if the user said to proceed directly.
@@ -46,7 +46,7 @@ Display the output to the user and ask if they want to proceed. Skip this step i
 ### Step 3: Run the Migration
 
 ```bash
-erk exec plan-migrate-to-draft-pr <issue_number> --format json
+erk exec plan-migrate-to-draft-pr <plan_number> --format json
 ```
 
 Parse the JSON output. If `success` is `false`, display the error and stop.

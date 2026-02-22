@@ -1,6 +1,6 @@
 ---
 description: Update an existing plan issue with the current session's plan
-argument-hint: <issue-number>
+argument-hint: <plan-number>
 ---
 
 # /local:plan-update
@@ -32,7 +32,7 @@ If still no issue number, ask the user for the issue number.
 ### Step 2: Run Update Command
 
 ```bash
-erk exec plan-update-issue --issue-number <issue> --format display --session-id="${CLAUDE_SESSION_ID}"
+erk exec plan-update-issue --plan-number <plan> --format display --session-id="${CLAUDE_SESSION_ID}"
 ```
 
 ### Step 3: Display Results
