@@ -1,0 +1,150 @@
+{
+  "success": true,
+  "pr_number": 7838,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v_kZo",
+      "path": "docs/learned/cli/erk-exec-commands.md",
+      "line": 142,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents private method names that will change.\n\nSource: `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`\n\nRisk: The names `create_branch()`, `checkout_branch()`, and `GraphiteBranchManager` are private/internal identifiers. Per the learned-docs standards, private `_underscore` methods must never appear in learned docs, and symbol names in prose should default to NOT being named. These names are volatile and go stale without obvious indication.\n\nConsider replacing with: \"After branch creation, the branch is explicitly checked out because the branch manager restores the original branch after tracking.\" (no symbol names)",
+          "created_at": "2026-02-22T13:46:29Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in 4b65457e1: Replaced private method names (create_branch(), checkout_branch(), GraphiteBranchManager) with generic description per learned-docs standards.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 13:57 UTC_",
+          "created_at": "2026-02-22T13:57:42Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v_nXa",
+      "path": "docs/learned/cli/erk-exec-commands.md",
+      "line": 142,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"GraphiteBranchManager restores the original branch after tracking\"\nReality: The current `GraphiteBranchManager.create_branch()` docstring explicitly says \"Does NOT checkout the branch - leaves the current branch unchanged.\" The method creates the branch via git and registers it with Graphite's `gt track`, but does not checkout the new branch or restore any previous branch. There is no branch restoration in the current implementation.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` (GraphiteBranchManager.create_branch, line 69-106)\n\nNote: The existing drift-risk comment on this line suggests fixing to \"the branch manager restores the original branch after tracking\" \u2014 but this phrasing is itself inaccurate. The correct phrasing is: \"After branch creation, the branch is not automatically checked out, so an explicit checkout call is required.\"\n\nSuggested fix: Replace line 142 with: \"**Important:** After `create_branch()`, explicit `checkout_branch()` is called because branch creation does not automatically check out the new branch.\"",
+          "created_at": "2026-02-22T13:57:55Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in 17eef7d1a: Corrected the explanation. Branch creation does not checkout the new branch (per GraphiteBranchManager.create_branch docstring), so an explicit checkout is required. No private method names used in the prose.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 13:59 UTC_",
+          "created_at": "2026-02-22T13:59:19Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v_YCD",
+      "path": "docs/learned/planning/lifecycle.md",
+      "line": 638,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nThe section \"Review PRs Do Not Block Implementation\" (around line 558) remains in this file but describes a subsystem that was just removed by this PR. The section states: \"If a plan has an associated review PR (from Phase 3), implementation can proceed regardless of the review PR's state\" \u2014 but there is no longer a Phase 2b (Plan Review) or a `review_pr` metadata field. `review_pr_cleanup.py` was deleted in this PR.\n\nSource: `src/erk/cli/commands/review_pr_cleanup.py` (deleted in this PR)\n\nSuggested fix: Remove the \"Review PRs Do Not Block Implementation\" section from lifecycle.md (~lines 558-573) since the review PR subsystem no longer exists.",
+          "created_at": "2026-02-22T12:59:59Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Removed the stale \"Review PRs Do Not Block Implementation\" section (lines 558-573) from lifecycle.md. Fixed in commit 4e3c20bd0.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 13:10 UTC_",
+          "created_at": "2026-02-22T13:10:02Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v_YDm",
+      "path": "docs/learned/planning/workflow.md",
+      "line": 113,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nThe flow diagram above (in the \"Plan Save Workflow\" section) still shows Option E \"Save & Review\" as a valid workflow option, but Option E was removed by this PR. The ASCII diagram shows a 5-branch flow including a box labeled \"Save & Review (E)\" which now leads to a dead section.\n\nClaim: The flow diagram implies 5 options (A, B, C, D, E) exist.\nReality: Only 4 options remain after this PR removes Option E. The `exit_plan_mode_hook.py` no longer offers a Save & Review option.\n\nSource: `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py` (only offers options A-D)\n\nSuggested fix: Update the flow diagram to remove the \"Save & Review (E)\" branch.",
+          "created_at": "2026-02-22T13:00:08Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Removed Option E \"Save & Review\" branch from the flow diagram in workflow.md. Fixed in commit 4e3c20bd0.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 13:10 UTC_",
+          "created_at": "2026-02-22T13:10:03Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v_bhv",
+      "path": "docs/learned/planning/workflow.md",
+      "line": 149,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: Line 61 still reads \"When exiting plan mode, you have five options:\"\nReality: Option E \"Save and submit for review\" was correctly removed from the flow diagram above, but the prose on line 61 was not updated. Only 4 options remain (A, B, C, D).\n\nSource: `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py` (GitHub backend offers 4 options)\n\nSuggested fix: Change \"five options\" to \"four options\" on line 61.",
+          "created_at": "2026-02-22T13:16:15Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit f7bb17c \u2014 changed \"five options\" to \"four options\" on line 61 to match the 4 remaining options (A, B, C, D).\n\n_Addressed via `/erk:pr-address` at 2026-02-22 13:42 UTC_",
+          "created_at": "2026-02-22T13:42:25Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v_U6l",
+      "path": "src/erk/core/pr_utils.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter values violate dignified-python standards - violates the CRITICAL rule 'No default parameter values'. Parameters with default values should be required keyword-only arguments. See [dignified-python standards](../../.claude/skills/dignified-python/)",
+          "created_at": "2026-02-22T12:42:58Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in a551ab7: Removed default parameter value. Made exclude_pr_numbers a required keyword-only arg and updated all callers to pass it explicitly.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 12:59 UTC_",
+          "created_at": "2026-02-22T12:59:33Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v_XoR",
+      "path": "src/erk/core/pr_utils.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Default parameter values are not allowed in function signatures - Use LBYL to check the parameter and branch on None instead.",
+          "created_at": "2026-02-22T12:57:55Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in a551ab7: Removed default parameter value. Made exclude_pr_numbers a required keyword-only arg and updated all callers.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 13:00 UTC_",
+          "created_at": "2026-02-22T13:00:14Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v_Z23",
+      "path": "src/erk/core/pr_utils.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter values violate dignified-python standards - the parameter should be required (keyword-only) without a default value. Use LBYL pattern: check the parameter at call sites. See [dignified-python standards](../../.claude/skills/dignified-python/SKILL.md) - CRITICAL rule 'No default parameter values'",
+          "created_at": "2026-02-22T13:09:48Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Removed default parameter value from exclude_pr_numbers. Updated all callers (plan/list_cmd.py, real.py) to pass explicit None. Fixed in commit 44331da61.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 13:11 UTC_",
+          "created_at": "2026-02-22T13:11:32Z"
+        }
+      ]
+    }
+  ]
+}

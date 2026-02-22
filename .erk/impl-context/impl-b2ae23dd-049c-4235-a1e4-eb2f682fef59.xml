@@ -1,0 +1,720 @@
+<session>
+  <meta branch="planned/remove-plan-review-subs-02-22-0718" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user wants me to run the `/erk:pr-preview-address` command. This is a read-only preview that fetches PR review comments and shows what `/erk:pr-address` would do.
+
+Let me follow the instructions:
+
+1. First, I need to invoke the pr-feedback-classifier skill to fetch and classify PR feedback
+2. Then display results
+
+Let me start by invoking the pr-feedback-classifier skill.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="11020" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11020}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01GpjeQiGTcwwzZaz3xgL3nn">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11020" cache_read_input_tokens="19041" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11020, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GpjeQiGTcwwzZaz3xgL3nn">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Based on the fetched data, here is the classification:
+
+**PR #7838** has one unresolved review thread and all discussion comments are informational (CI/bot status updates, Graphite stack comment, workflow automation comments).
+
+The single review thread from `github-actions` on `docs/learned/cli/erk-exec-commands.md` line 142 is actionable — it flags an inaccurate claim about `GraphiteBranchManager` branch restoration and provides a suggested fix.
+
+All discussion comments are either CI automation status updates, Graphite stack metadata, or `pr-address` acknowledgment comments — all informational.
+
+{"success": true, "pr_number": 7838, "pr_title": "Remove plan review PR feature", "pr_url": "https://github.com/dagster-io/erk/pull/7838", "actionable_threads": [{"thread_id": "PRRT_kwDOPxC3hc5v_nXa", "type": "review", "path": "docs/learned/cli/erk-exec-commands.md", "line": 142, "is_outdated": false, "classification": "actionable", "action_summary": "Fix inaccurate claim about GraphiteBranchManager branch restoration: replace line 142 with accurate description that create_branch() does not auto-checkout the new branch, so an explicit checkout call is required.", "complexity": "local", "original_comment": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"GraphiteBranchManager restores the original branch after tracking\"\nReality: The current `GraphiteBranchManager.create_branch()` docstring explicitly says \"Does NO"}], "discussion_actions": [], "informational_count": 17, "batches": [{"name": "Local Fixes", "complexity": "local", "auto_proceed": true, "item_indices": [0]}], "error": null}
+  </tool_result>
+  <assistant>## PR #7838: "Remove plan review PR feature"
+
+### Actionable Items (1 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | `docs/learned/cli/erk-exec-commands.md:142` | actionable | Fix inaccurate claim about GraphiteBranchManager branch restoration | local |
+
+### Informational Items (0 total)
+
+_No informational review threads._
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: `docs/learned/cli/erk-exec-commands.md:142` - Fix inaccurate claim: replace with accurate description that `create_branch()` does not auto-checkout the new branch, so an explicit checkout call is required.
+
+### Statistics
+- Actionable items: 1
+- Informational items: 0
+- Informational discussion comments: 17
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="30061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "b2ae23dd-049c-4235-a1e4-eb2f682fef59"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <thinking>The user wants me to run `/erk:pr-address`. Let me follow the instructions carefully.
+
+First, I need to load the `pr-operations` skill as a prerequisite, then run Phase 1 (classify feedback using Task tool).
+
+Actually, I already have the classification results from the previous `/erk:pr-preview-address` command. But the instructions say to use the Task tool for classification in Phase 1. Let me follow the instructions.
+
+Wait - I already have the classification JSON from the preview. But the instructions explicitly say to use Task tool for classification. Let me re-run it to get fresh data.
+
+Actually, let me be practical. The data is from just moments ago and the PR hasn't changed. 
+
+I should follow the explicit instructions and use the Task tool for classification, even though I have recent data. Let me load the pr-operations skill first, then run the classifier.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="3091" cache_read_input_tokens="30996" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3091}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll load the prerequisite skill and run the classifier in parallel.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3091" cache_read_input_tokens="30996" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3091}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01AA5yeYTo5SyapxCE6cjHkc">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3091" cache_read_input_tokens="30996" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3091}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AA5yeYTo5SyapxCE6cjHkc">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-21/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <tool_use name="Task" id="toolu_01PEtJenEMEG4Fe8HtDABYpZ">
+    <param name="description">Classify PR feedback</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3091" cache_read_input_tokens="30996" output_tokens="399" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3091, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PEtJenEMEG4Fe8HtDABYpZ">
+Perfect! Now I have all the information I need. Let me analyze and classify the comments according to the skill's classification model.
+
+Looking at the discussion comments, I can see:
+1. Most comments are from bots (github-actions[bot]) providing automated reviews and feedback
+2. Comments from schrockn are workflow-related metadata (plan queued, Graphite stack comments)
+3. All bot comments are informational in nature - they're reviews, status updates, and CI-generated feedback
+4. There are NO unresolved review threads (the review comments array is empty)
+
+Let me classify all the discussion comments:
+
+1. **3940837431** (schrockn) - Workflow metadata - informational
+2. **3940838170** (github-actions) - GitHub Action Started - informational
+3. **3940874439** (github-actions) - Dignified Python Review - informational (CI review passed)
+4. **3940874672** (github-actions) - Test Coverage Review - informational (no coverage violations)
+5. **3940876081** (github-actions) - Audit PR Docs - informational (CI review, 1 violation but it's being reported)
+6. **3940877236** (github-actions) - Tripwires Review - informational (CI review passed)
+7. **3940878530** (github-actions) - Dignified Code Simplifier Review - informational (CI review passed)
+8. **3940893789** (schrockn) - Plan Queued for Implementation - informational (workflow metadata)
+9. **3940894412** (github-actions) - GitHub Action Started - informational
+10. **3940898440** (github-actions) - Action taken response - informational (documenting fixes)
+11. **3940898484** (github-actions) - Action taken response - informational (documenting fixes)
+12. **3940899904** (github-actions) - PR Review Comment Addressing Failed - informational (status update)
+13. **3940909255** (github-actions) - Remote rebase completed - informational
+14. **3940914602** (github-actions) - Violations addressed response - informational (documenting fixes)
+15. **3940914642** (github-actions) - Remote addressing failed response - informational (documenting status)
+16. **3940974637** (github-actions) - Test Coverage Review - informational (duplicated status)
+17. **3940995054** (schrockn) - Graphite stack comment - informational
+18. **3940998991** (github-actions) - Audit PR Docs violations addressed - informational (documenting fixes)
+
+Since there are NO unresolved review threads and all discussion comments are purely informational (CI reviews, status updates, Graphite metadata), the output should show:
+
+... [22 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <thinking>The classifier returned no actionable threads and no discussion actions. The previous preview showed 1 actionable review thread, but now the classifier says there are none. Let me check - the haiku agent may have missed the review thread. Let me look more carefully at the results.
+
+The haiku classifier returned:
+- `actionable_threads`: empty
+- `discussion_actions`: empty
+- `informational_count`: 18
+
+But the earlier preview showed 1 actionable review thread (PRRT_kwDOPxC3hc5v_nXa on docs/learned/cli/erk-exec-commands.md:142).
+
+
+The haiku agent claimed there were no unresolved review threads, but that contradicts what the preview found. I should re-run the classifier with a more capable model to get accurate results, since the haiku agent may have incorrectly fetched the data.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2775" cache_read_input_tokens="34087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2775}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The haiku classifier returned no actionable threads, but the earlier preview found one unresolved review thread. Let me re-run with a more capable model to get accurate results.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2775" cache_read_input_tokens="34087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2775}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_0136N4LkfFCiATciwVpmouCg">
+    <param name="description">Re-classify PR feedback accurately</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">sonnet</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+
+...[truncated 119 chars]... actual commands to get real data.
+
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2775" cache_read_input_tokens="34087" output_tokens="473" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2775, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0136N4LkfFCiATciwVpmouCg">
+I now have all the data needed. Let me analyze the results:
+
+- PR #7838: "Remove plan review PR feature"
+- Review threads: 0 (empty `threads` array)
+- Discussion comments: 18 comments, all from bots (github-actions[bot]) or the PR author (schrockn) — all are CI status updates, workflow notifications, Graphite stack comments, and addressing acknowledgements
+
+All discussion comments are informational: CI bot reviews, workflow status updates, plan submission notifications, addressing acknowledgements, and a Graphite stack comment. None require action.
+
+{"success": true, "pr_number": 7838, "pr_title": "Remove plan review PR feature", "pr_url": "https://github.com/dagster-io/erk/pull/7838", "actionable_threads": [], "discussion_actions": [], "informational_count": 18, "batches": [], "error": null}
+agentId: a1c7f70acdf9a2c02 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 31441
+tool_uses: 4
+duration_ms: 18287&lt;/usage&gt;
+  </tool_result>
+  <thinking>Both classifiers are returning 0 review threads. The earlier preview found one, but it seems like the review thread may have been resolved since then, or the preview's classification was based on different data.
+
+Let me check directly - let me run the `erk exec get-pr-review-comments` command myself to see what's there.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="36862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Both classifier runs show 0 review threads. The thread from the preview may have been resolved in the interim. Let me verify directly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="36862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HaARLwMgaK79fi9HZA3gyQ">
+    <param name="command">erk exec get-pr-review-comments 2&gt;&amp;1</param>
+    <param name="description">Fetch unresolved PR review comments directly</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="36862" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 755, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HaARLwMgaK79fi9HZA3gyQ">
+{
+  "success": true,
+  "pr_number": 7838,
+  "pr_url": "https://github.com/dagster-io/erk/pull/7838",
+  "pr_title": "Remove plan review PR feature",
+  "threads": []
+}
+  </tool_result>
+  <assistant>No unresolved review comments or discussion comments requiring action on PR #7838.
+
+All 18 discussion comments are informational (CI bot reviews, workflow status updates, Graphite stack metadata). Nothing to address.
+
+The review thread flagged in the preview (`docs/learned/cli/erk-exec-commands.md:142` about GraphiteBranchManager) appears to have already been resolved.
+
+**No action needed.** The PR is clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="37617" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 283}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/7838&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
