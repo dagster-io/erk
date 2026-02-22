@@ -749,7 +749,7 @@ def test_render_deferred_deletion_commands_slot_graphite(tmp_path: Path) -> None
     # For slots, use erk slot unassign
     assert commands[0] == "erk slot unassign erk-slot-01"
     # For Graphite, use gt delete
-    assert commands[1] == "gt delete -f feature-branch"
+    assert commands[1] == "gt delete -f --no-interactive feature-branch"
 
 
 def test_render_deferred_deletion_commands_slot_git(tmp_path: Path) -> None:
@@ -793,7 +793,7 @@ def test_render_deferred_deletion_commands_regular_graphite(tmp_path: Path) -> N
     # For regular worktrees, use git worktree remove
     assert f"git worktree remove --force {worktree_path}" in commands[0]
     # For Graphite, use gt delete
-    assert commands[1] == "gt delete -f feature-branch"
+    assert commands[1] == "gt delete -f --no-interactive feature-branch"
 
 
 def test_render_deferred_deletion_commands_regular_git(tmp_path: Path) -> None:
@@ -835,7 +835,7 @@ def test_render_deferred_deletion_commands_special_characters(tmp_path: Path) ->
 
     assert len(commands) == 2
     # Branch name should be quoted to handle the slash
-    assert "gt delete -f feature/add-login" in commands[1]
+    assert "gt delete -f --no-interactive feature/add-login" in commands[1]
 
 
 def test_get_slot_name_for_worktree_returns_slot_name(tmp_path: Path) -> None:

@@ -593,7 +593,7 @@ def test_print_activation_instructions_with_source_branch_and_force(
     captured = capsys.readouterr()
     # Should show only the delete instruction (not the basic activation message)
     assert "To activate and delete branch feature-branch:" in captured.err
-    assert f"source {script_path} && erk br delete feature-branch" in captured.err
+    assert f"source {script_path} && erk br delete feature-branch -f" in captured.err
     # Should NOT show the separate activation message
     assert "To activate the worktree environment:" not in captured.err
 

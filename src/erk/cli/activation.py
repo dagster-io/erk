@@ -327,7 +327,7 @@ def print_activation_instructions(
 
     # If deleting current branch, make the delete command the primary command
     if source_branch is not None and force:
-        primary_cmd = f"{source_cmd} && erk br delete {source_branch}"
+        primary_cmd = f"{source_cmd} && erk br delete {source_branch} -f"
         instruction = f"To activate and delete branch {source_branch}:"
     else:
         primary_cmd = build_activation_command(config, script_path)

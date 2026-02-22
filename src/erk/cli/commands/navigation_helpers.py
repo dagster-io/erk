@@ -95,19 +95,15 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str, fo
 
     if pr_details.state == "OPEN":
         if force:
-            # Show warning and prompt for confirmation
+            # With --force, skip all prompts and auto-close the PR
             user_output(
                 click.style("Warning: ", fg="yellow")
                 + f"Pull request for branch '{branch}' is still open.\n"
                 + f"{pr_details.url}"
             )
-            if not ctx.console.confirm("Delete branch anyway?", default=False):
-                raise SystemExit(1)
-            # Ask if user wants to close the PR
-            if ctx.console.confirm("Close the PR?", default=True):
-                ctx.github.close_pr(repo_root, pr_details.number)
-                user_output(f"✓ Closed PR #{pr_details.number}")
-            return  # User confirmed, allow deletion
+            ctx.github.close_pr(repo_root, pr_details.number)
+            user_output(f"✓ Closed PR #{pr_details.number}")
+            return
 
         # Block deletion for open PRs (active work in progress)
         user_output(
@@ -267,7 +263,7 @@ def render_deferred_deletion_commands(
     quoted_branch = shlex.quote(branch)
     if is_graphite_managed:
         # Use gt delete to clean up Graphite metadata
-        commands.append(f"gt delete -f {quoted_branch}")
+        commands.append(f"gt delete -f --no-interactive {quoted_branch}")
     else:
         commands.append(f"git -C {quoted_main_repo} branch -D {quoted_branch}")
 
