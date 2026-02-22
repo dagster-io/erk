@@ -26,7 +26,6 @@ Examples:
 """
 
 import json
-import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -599,35 +598,27 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
         return
 
     learn_branch = f"learn/{plan_id}"
-    original_branch = git.branch.get_current_branch(repo_root)
-    start_point = original_branch or "HEAD"
 
     message = click.style(f"🌿 Creating learn branch {learn_branch}...", fg="cyan")
     click.echo(message, err=True)
 
     # Delete existing local learn branch if it exists (re-learn scenario)
-    local_branches = git.branch.list_local_branches(repo_root)
-    if learn_branch in local_branches:
-        git.branch.delete_branch(repo_root, learn_branch, force=True)
+    git.branch.delete_branch(repo_root, learn_branch, force=True)
 
-    # Create learn branch from origin/master
+    # Create learn branch from origin/master (no checkout needed)
     git.branch.create_branch(repo_root, learn_branch, "origin/master", force=False)
-    git.branch.checkout_branch(repo_root, learn_branch)
 
-    try:
-        # Copy preprocessed files to .erk/impl-context/
-        impl_context_dir = repo_root / ".erk" / "impl-context"
-        impl_context_dir.mkdir(parents=True, exist_ok=True)
-        for f in learn_files:
-            shutil.copy2(f, impl_context_dir / f.name)
+    # Commit learn files directly to branch using git plumbing (no checkout)
+    files_dict = {f".erk/impl-context/{f.name}": f.read_text(encoding="utf-8") for f in learn_files}
+    git.commit.commit_files_to_branch(
+        repo_root,
+        branch=learn_branch,
+        files=files_dict,
+        message=f"Learn materials for plan #{plan_id}",
+    )
 
-        # Stage, commit, push
-        file_paths = [f".erk/impl-context/{f.name}" for f in learn_files]
-        git.commit.stage_files(repo_root, file_paths)
-        git.commit.commit(repo_root, f"Learn materials for plan #{plan_id}")
-        git.remote.push_to_remote(repo_root, "origin", learn_branch, set_upstream=True, force=True)
-    finally:
-        git.branch.checkout_branch(repo_root, start_point)
+    # Force-push (does not require branch to be checked out)
+    git.remote.push_to_remote(repo_root, "origin", learn_branch, set_upstream=True, force=True)
 
     file_count = len(learn_files)
     total_size = sum(f.stat().st_size for f in learn_files)

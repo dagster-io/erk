@@ -33,7 +33,6 @@ Examples:
 """
 
 import json
-import shutil
 from datetime import UTC
 from pathlib import Path
 from typing import Literal
@@ -99,33 +98,24 @@ def upload_session(
     time = require_time(ctx)
 
     session_branch = f"async-learn/{plan_id}"
-    original_branch = git.branch.get_current_branch(repo_root)
-    start_point = original_branch or "HEAD"
 
     # Delete existing local session branch if it exists (re-implementation idempotency)
-    local_branches = git.branch.list_local_branches(repo_root)
-    if session_branch in local_branches:
-        git.branch.delete_branch(repo_root, session_branch, force=True)
+    git.branch.delete_branch(repo_root, session_branch, force=True)
 
-    # Create session branch from origin/master
+    # Create session branch from origin/master (no checkout needed)
     git.branch.create_branch(repo_root, session_branch, "origin/master", force=False)
-    git.branch.checkout_branch(repo_root, session_branch)
 
-    try:
-        # Copy session JSONL to .erk/session/ directory on the branch
-        session_dir = repo_root / ".erk" / "session"
-        session_dir.mkdir(parents=True, exist_ok=True)
-        session_dest = session_dir / f"{session_id}.jsonl"
-        shutil.copy2(session_file, session_dest)
+    # Commit session file directly to branch using git plumbing (no checkout)
+    session_content = session_file.read_text(encoding="utf-8")
+    git.commit.commit_files_to_branch(
+        repo_root,
+        branch=session_branch,
+        files={f".erk/session/{session_id}.jsonl": session_content},
+        message=f"Session {session_id} for plan #{plan_id}",
+    )
 
-        # Stage, commit, and force-push
-        git.commit.stage_files(repo_root, [f".erk/session/{session_id}.jsonl"])
-        git.commit.commit(repo_root, f"Session {session_id} for plan #{plan_id}")
-        git.remote.push_to_remote(
-            repo_root, "origin", session_branch, set_upstream=True, force=True
-        )
-    finally:
-        git.branch.checkout_branch(repo_root, start_point)
+    # Force-push (does not require branch to be checked out)
+    git.remote.push_to_remote(repo_root, "origin", session_branch, set_upstream=True, force=True)
 
     # Build base result
     result: dict[str, object] = {

@@ -281,6 +281,7 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(issues={456: _make_issue_info(456, body)})
     fake_claude = FakeClaudeInstallation.for_test()
     fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_git = FakeGit()
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
@@ -288,6 +289,7 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
         github=fake_gh,
         github_issues=fake_issues,
         claude_installation=fake_claude,
+        git=fake_git,
         repo_info=repo_info,
     )
 
@@ -296,7 +298,8 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
     learn_dir.mkdir(parents=True)
     (learn_dir / "placeholder.txt").write_text("test content", encoding="utf-8")
 
-    runner.invoke(trigger_async_learn_command, ["456"], obj=ctx)
+    result = runner.invoke(trigger_async_learn_command, ["456"], obj=ctx)
+    assert result.exit_code == 0, result.output
 
     assert len(fake_gh.triggered_workflows) == 1
     workflow, inputs = fake_gh.triggered_workflows[0]
@@ -304,6 +307,14 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
     assert inputs["plan_id"] == "456"
     assert "learn_branch" in inputs
     assert inputs["learn_branch"] == "learn/456"
+
+    # Verify files committed via plumbing (no checkout)
+    assert len(fake_git.branch_commits) == 1
+    bc = fake_git.branch_commits[0]
+    assert bc.branch == "learn/456"
+    assert ".erk/impl-context/placeholder.txt" in bc.files
+    assert bc.files[".erk/impl-context/placeholder.txt"] == "test content"
+    assert bc.message == "Learn materials for plan #456"
 
 
 def test_trigger_async_learn_no_repo_info(tmp_path: Path) -> None:
