@@ -296,12 +296,12 @@ class PlanDataTable(DataTable):
         if row.objective_issue is not None:
             objective_cell = Text(row.objective_display, style="cyan underline")
 
-        # Compact location emoji: 💻 = local checkout, 🌐 = remote run
+        # Compact location emoji: 💻 = local checkout, ☁️ = remote run
         location_parts: list[str] = []
         if row.exists_locally:
             location_parts.append("\U0001f4bb")
         if row.run_url is not None:
-            location_parts.append("\U0001f310")
+            location_parts.append("\u2601")
         location_cell = "".join(location_parts) if location_parts else "-"
 
         # run-id and run-state (always shown)
