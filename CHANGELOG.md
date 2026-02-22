@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- as-of: 3a4c03bed -->
+<!-- as-of: 2f93e6fb2 -->
 
 ### Major Changes
 
@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `erk wt create-from` command for allocating worktree slots to existing branches with automatic remote branch fetching and `--force` flag (4ccff29e2)
 - Add branch column to TUI dashboard between "title" and "created" (7b4d8e190)
 - Add remote divergence pre-check before `gt submit` with actionable error messages (4a9b06e24)
+- Add launch screen to TUI dashboard for two-keystroke ACTION command execution (798f63784)
+- Add `--oauth` flag to `erk admin gh-actions-api-key` for managing dual authentication secrets (0037f09ad)
 
 ### Changed
 
@@ -46,6 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix shell activation in draft PR next steps to use `source "$(erk br co ...)"` pattern (a78bb01ba)
 - Use branch name instead of PR number in draft PR checkout next steps (433beb649)
 - Publish draft PRs during `erk pr submit` with mutation-safe tracking (5a545a9f4)
+- Unify plan checkout with `erk br co --for-plan` and `--new-slot`, replacing `erk br create --for-plan` (f44fd5c11)
+- Show full lifecycle labels ("implementing", "implemented") instead of abbreviations in dashboard; add `--show-runs`/`--show-prs` flags for conditional data fetching; consolidate PR status into lifecycle column (29a811918)
+- Add PR status display (draft/conflicts/review) and reorganize TUI dashboard column layout (65b75440e)
+- Simplify plan backend configuration from 3-tier to 2-tier: `ERK_PLAN_BACKEND` env var or default, removing config-file tier (e4e4abf6d)
+- Enable learn prompts for remote plan branches during `erk land` (a26d790eb)
 
 ### Fixed
 
@@ -65,10 +72,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `extract_metadata_prefix` falsely matching footer separator in PR bodies (fa37bb0b8)
 - Fix `.erk/impl-context/` cleanup by deferring git removal to plan-implement (d16b20077)
 - Implement lazy tip sync for worktree pool to fix stale assignment state (a5683ff04)
+- Fix `ci-update-pr-body` losing plan-header metadata on draft PR plans (dedcb0d1f)
+- Fix Objectives screen columns being polluted by Plans screen columns (c957ae35f)
+- Fix `erk land` cleanup crashing when branch is checked out in another worktree (71d496412)
+- Fix learn pipeline by migrating from branch-based to gist-based materials storage (26474a62e)
 
 ### Removed
 
 - Remove `erk prepare` command — use `erk br create --for-plan` instead (fe03e628a)
+- Remove `erk:prepare` command; use `erk br co --for-plan` instead (655a124ad)
 
 ## [0.7.4] - 2026-02-16 05:33 PT
 
