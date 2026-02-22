@@ -7,6 +7,7 @@ regex-based extraction from learn plan markdown.
 
 import json
 import logging
+import pathlib
 from dataclasses import dataclass
 from typing import Any
 
@@ -226,8 +227,6 @@ def validate_candidates_json(
     Returns:
         ValidTripwireCandidates on success, InvalidTripwireCandidates on failure.
     """
-    import pathlib
-
     path = pathlib.Path(json_path)
     if not path.is_file():
         return InvalidTripwireCandidates(
