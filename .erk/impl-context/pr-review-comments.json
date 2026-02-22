@@ -1,0 +1,150 @@
+{
+  "success": true,
+  "pr_number": 7795,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v-gqY",
+      "path": ".worker-impl/plan-ref.json",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "schrockn",
+          "body": "delete this entire folder (.worker-impl)",
+          "created_at": "2026-02-22T09:42:22Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Deleted .worker-impl folder in commit 060dcf86d.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 09:44 UTC_",
+          "created_at": "2026-02-22T09:44:58Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-b6c",
+      "path": "docs/learned/planning/next-steps-output.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected \u2014 incomplete property table.\n\nClaim: The table documents all `IssueNextSteps` properties with 4 entries.\nReality: The source now has 6 properties \u2014 `prepare_new_slot` and `prepare_new_slot_and_implement` were added in this PR but are missing from the table.\n\nSource: `packages/erk-shared/src/erk_shared/output/next_steps.py:33-40`\n\nSuggested fix: Add the two missing rows:\n```\n| `prepare_new_slot`              | `erk br co --new-slot --for-plan {issue_number}`                                                        |\n| `prepare_new_slot_and_implement` | `source \"$(erk br co --new-slot --for-plan {issue_number} --script)\" && erk implement --dangerous` |\n```",
+          "created_at": "2026-02-22T09:30:00Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: added the two missing rows (prepare_new_slot and prepare_new_slot_and_implement) to the IssueNextSteps property table in commit 1647333.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 09:32 UTC_",
+          "created_at": "2026-02-22T09:32:23Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-ttY",
+      "path": "docs/learned/planning/next-steps-output.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected \u2014 DraftPRNextSteps table is incomplete.\n\nClaim: The `DraftPRNextSteps` table documents 3 properties (`view`, `submit`, `checkout_and_implement`).\nReality: This PR adds 4 new properties to `DraftPRNextSteps` \u2014 `prepare`, `prepare_and_implement`, `prepare_new_slot`, and `prepare_new_slot_and_implement` \u2014 none of which appear in the table.\n\nSource: `packages/erk-shared/src/erk_shared/output/next_steps.py:62-82`\n\nSuggested fix: Add the 4 missing rows to the `DraftPRNextSteps` table:\n```\n| `prepare`                       | `erk br co --for-plan {pr_number}`                                                                   |\n| `prepare_and_implement`          | `source \"$(erk br co --for-plan {pr_number} --script)\" && erk implement --dangerous`          |\n| `prepare_new_slot`               | `erk br co --new-slot --for-plan {pr_number}`                                                        |\n| `prepare_new_slot_and_implement`  | `source \"$(erk br co --new-slot --for-plan {pr_number} --script)\" && erk implement --dangerous` |\n```",
+          "created_at": "2026-02-22T10:27:47Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed \u2014 added all 4 missing properties to DraftPRNextSteps table (prepare, prepare_and_implement, prepare_new_slot, prepare_new_slot_and_implement). Also added prepare_new_slot and prepare_new_slot_and_implement to IssueNextSteps table.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 05:31 EST_",
+          "created_at": "2026-02-22T10:31:18Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-tya",
+      "path": "docs/learned/planning/next-steps-output.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected \u2014 PREPARE_SLASH_COMMAND description is stale.\n\nClaim: `PREPARE_SLASH_COMMAND` and `SUBMIT_SLASH_COMMAND` are both used in the plain-text formatters for the 'In Claude Code:' section.\nReality: This PR removes the 'Prepare worktree' line from `format_next_steps_plain()`. Only `SUBMIT_SLASH_COMMAND` is now used in `format_next_steps_plain()`. `PREPARE_SLASH_COMMAND` is defined but no longer used in the plain-text output.\n\nSource: `packages/erk-shared/src/erk_shared/output/next_steps.py:86-103`\n\nSuggested fix: Update the Slash Command Constants section to reflect that `PREPARE_SLASH_COMMAND` is defined for potential use in Claude Code skills but is no longer emitted by `format_next_steps_plain()`.",
+          "created_at": "2026-02-22T10:28:00Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed \u2014 updated description to clarify that PREPARE_SLASH_COMMAND is defined but not currently used in any formatter. Only SUBMIT_SLASH_COMMAND is used in the plain-text formatters.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 05:31 EST_",
+          "created_at": "2026-02-22T10:31:20Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-aM7",
+      "path": "src/erk/cli/commands/branch/checkout_cmd.py",
+      "line": 271,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: Consider moving loop to a helper list comprehension or using built-in function like `next()` with generator expression to simplify the path matching logic. Current approach iterates and returns within loop - could be more explicit with early-exit patterns.",
+          "created_at": "2026-02-22T09:22:24Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Applied: replaced for-loop with `next()` generator expression in commit b433242.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 09:31 UTC_",
+          "created_at": "2026-02-22T09:31:35Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-aNK",
+      "path": "src/erk/cli/commands/branch/checkout_cmd.py",
+      "line": 438,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: Variable `branch_exists_locally` is assigned once and used immediately in conditional. Following 'declare variables close to use' principle, this could be inlined into the if conditions rather than computed upfront.",
+          "created_at": "2026-02-22T09:22:27Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "False positive: `branch_exists_locally` is used in two separate code paths \u2014 once in the `draft_pr` branch (line 442) and once in the `github` branch (line 451). Inlining would require duplicating the `branch in local_branches` check. Keeping the variable.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 09:31 UTC_",
+          "created_at": "2026-02-22T09:31:31Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-aNn",
+      "path": "src/erk/cli/commands/branch/checkout_cmd.py",
+      "line": 452,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: Nested if-else determining `parent_branch` could be simplified to a ternary expression: `parent_branch = current_branch if (current_branch and current_branch != trunk) else trunk` - more direct assignment.",
+          "created_at": "2026-02-22T09:22:29Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Applied: simplified to ternary expression in commit b433242.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 09:31 UTC_",
+          "created_at": "2026-02-22T09:31:33Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-aOW",
+      "path": "src/erk/cli/commands/branch/checkout_cmd.py",
+      "line": 503,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: Repeated call to `ctx.git.branch.list_local_branches(repo.root)` on lines 437 and 503. Consider caching this result or moving earlier to avoid redundant calls, per LBYL pattern.",
+          "created_at": "2026-02-22T09:22:33Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "False positive: the two calls to `list_local_branches()` are in mutually exclusive branches \u2014 line 437 is inside `if setup is not None` and line 503 is inside `if setup is None`. Only one ever executes per invocation, so there is no redundant call.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 09:31 UTC_",
+          "created_at": "2026-02-22T09:31:36Z"
+        }
+      ]
+    }
+  ]
+}

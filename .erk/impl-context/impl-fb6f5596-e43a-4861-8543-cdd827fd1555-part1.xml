@@ -1,0 +1,831 @@
+<session>
+  <meta branch="planned/plan-unify-plan-next-st-02-21-2015" />
+  <meta model="claude-opus-4-6" />
+  <user>this plan added lots of guidance to print out
+
+erk br co --for-plan &lt;&lt;num&gt;&gt;to the new</user>
+  <user>[Request interrupted by user]</user>
+  <user>this plan added lots of guidance to print out
+
+erk br co --for-plan &lt;&lt;num&gt;&gt; to the use
+
+erk br co &lt;&lt;name&gt;&gt; is much much preferable. change all copy</user>
+  <thinking>The user wants me to update the plan that was previously created (the current branch is `planned/plan-unify-plan-next-st-02-21-2015` which relates to unifying plan checkout into `erk br co`). They're saying that the plan added guidance to print out `erk br co --for-plan &lt;&lt;num&gt;&gt;` but they prefer `erk br co &lt;&lt;name&gt;&gt;` and want all copy/messaging updated to prefer that simpler form.
+
+Let me first understand what the current state is - the branch already has a commit "Unify plan checkout into `erk br co` with `--for-plan` and `--new-slot` options". So this is about updating messaging/copy in the already-implemented code.
+
+
+I need to check what files were modified in this branch to see where the copy and messaging about the command syntax is located.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11437" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11437}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore what copy/messaging currently references `erk br co --for-plan` so I can understand the scope of changes needed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11437" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11437}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_011HGV3EuA6KCA7bYNRyg3Ld">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find all --for-plan copy</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 678 chars]...s added.
+
+Also search broadly for `--for-plan` across the codebase to find all references.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11437" cache_read_input_tokens="19041" output_tokens="538" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11437, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011HGV3EuA6KCA7bYNRyg3Ld">
+Perfect! Now I have all the information I need. Let me compile a comprehensive report:
+
+## Summary: All User-Facing References to `erk br co --for-plan`
+
+I've found all instances where the codebase displays `erk br co --for-plan` (or the older `erk br create --for-plan`) to users. Here are all the locations:
+
+### **1. Core Output Generation (Canonical Source of Truth)**
+
+**File:** `/packages/erk-shared/src/erk_shared/output/next_steps.py`
+
+This is the single source of truth for next-steps commands shown to users. It contains property methods that generate the commands:
+
+- **Line 18:** `IssueNextSteps.prepare` property returns `f"erk br co --for-plan {self.issue_number}"`
+- **Line 27:** `IssueNextSteps.prepare_and_implement` property includes `erk br co --for-plan {self.issue_number} --script`
+- **Line 33:** `IssueNextSteps.prepare_new_slot` property returns `erk br co --new-slot --for-plan {self.issue_number}`
+- **Line 38:** `IssueNextSteps.prepare_new_slot_and_implement` property includes the full command with `--script`
+- **Line 64:** `DraftPRNextSteps.prepare` property returns `erk br co --for-plan {self.pr_number}`
+- **Line 69:** `DraftPRNextSteps.prepare_and_implement` property includes `erk br co --for-plan {self.pr_number} --script`
+- **Line 75:** `DraftPRNextSteps.prepare_new_slot` property returns the `--new-slot` variant
+- **Line 80:** `DraftPRNextSteps.prepare_new_slot_and_implement` property includes the full command
+
+---
+
+### **2. Plan Save Markdown Spec**
+
+**File:** `/.claude/commands/erk/plan-save.md`
+
+This is a specification document for the `/erk:plan-save` skill command. It documents the expected output format:
+
+- **Lines 147-152:** Slot options block (on trunk) shows both commands with `erk br co --for-plan`
+
+... [114 lines omitted] ...
+
+- **Line 135:** Error message when no plan found suggests `erk br co --for-plan {issue_number}`
+   - **CLI error messages and help text** (in command files)
+  </tool_result>
+  <thinking>The user wants to change all user-facing copy from `erk br co --for-plan &lt;&lt;num&gt;&gt;` to prefer `erk br co &lt;&lt;name&gt;&gt;`. Let me understand the context better - the current branch already implemented the `--for-plan` flag on `erk br co`. But the user is saying that `erk br co &lt;&lt;name&gt;&gt;` (using the branch name directly) is much more preferable and the copy should be updated.
+
+Let me look at the actual next_steps.py and the checkout command to understand the semantics better before writing the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2558" cache_read_input_tokens="30478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2558}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a comprehensive picture. Let me read the key source files to understand the exact current copy and what `erk br co &lt;&lt;name&gt;&gt;` means in this context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2558" cache_read_input_tokens="30478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2558}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AnCpRvWd7Ww8nz9j74mWZx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2558" cache_read_input_tokens="30478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2558}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AnCpRvWd7Ww8nz9j74mWZx">
+     1→"""Issue and draft PR next steps formatting - single source of truth."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class IssueNextSteps:
+     8→    """Canonical commands for issue operations."""
+     9→
+    10→    issue_number: int
+    11→
+    12→    @property
+    13→    def view(self) -&gt; str:
+    14→        return f"gh issue view {self.issue_number} --web"
+    15→
+    16→    @property
+    17→    def prepare(self) -&gt; str:
+    18→        return f"erk br co --for-plan {self.issue_number}"
+    19→
+    20→    @property
+    21→    def submit(self) -&gt; str:
+    22→        return f"erk plan submit {self.issue_number}"
+    23→
+    24→    @property
+    25→    def prepare_and_implement(self) -&gt; str:
+    26→        return (
+    27→            f'source "$(erk br co --for-plan {self.issue_number} --script)"'
+    28→            " &amp;&amp; erk implement --dangerous"
+    29→        )
+    30→
+
+... [110 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012wbopUJcugPsULPU7E5Qh2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2558" cache_read_input_tokens="30478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2558}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012wbopUJcugPsULPU7E5Qh2">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import sys
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.activation import (
+     9→    activation_config_activate_only,
+    10→    ensure_worktree_activate_script,
+    11→    print_activation_instructions,
+    12→    render_activation_script,
+    13→)
+    14→from erk.cli.alias import alias
+    15→from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_worktree
+    16→from erk.cli.commands.completions import complete_branch_names
+    17→from erk.cli.commands.slot.common import (
+    18→    allocate_slot_for_branch,
+    19→    update_slot_assignment_tip,
+    20→)
+    21→from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+    22→from erk.cli.core import discover_repo_context
+    23→from erk.cli.github_parsing import parse_issue_identifier
+    24→from erk.cli.graphite import find_worktrees_containing_branch
+    25→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    26→from erk.core.context import ErkContext
+    27→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    28→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+    29→from erk.core.worktree_utils import compute_relative_path_in_worktree
+    30→from erk_shared.gateway.git.abc import WorktreeInfo
+
+... [621 lines omitted] ...
+
+    34→    IssueValidationFailed,
+   382→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   388→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   392→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   410→            raise click.ClickException(f"Issue #{issue_number} not found")
+   417→        if isinstance(plan_result, IssueValidationFailed):
+   418→            user_output(f"Error: {plan_result.message}")
+   424→        for warning in setup.warnings:
+   425→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   434→            user_output("Error: Could not detect trunk branch.")
+   493→                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+   516→                                f"Error: Branch '{branch}' does not exist.\n"
+   638→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <thinking>Now I understand the situation. The user wants to change all user-facing copy that currently says `erk br co --for-plan &lt;&lt;num&gt;&gt;` to instead say `erk br co &lt;&lt;name&gt;&gt;`. The idea is that `erk br co &lt;&lt;name&gt;&gt;` (using the branch name directly) is much more natural and preferable to the verbose `--for-plan` flag form.
+
+Looking at the code, the `--for-plan` flag does two things:
+1. Resolves a plan issue/PR number to a branch name
+2. Sets up the `.impl/` folder after checkout
+
+But the branch name is the more user-friendly way to reference a checkout. 
+
+I notice that `DraftPRNextSteps` already shows the pattern I need—it has a `checkout_and_implement` method that uses the branch name directly. But `IssueNextSteps` only has the issue number available, not the branch name, and both classes currently use `--for-plan` in their `prepare` property. So I need to figure out how to get the branch name into `IssueNextSteps` so it can follow the same pattern.
+
+Looking at the code flow, `prepare_plan_for_worktree` returns an `IssueBranchSetup` that contains the branch name, so callers could pass that information along when creating `IssueNextSteps`. I should trace where these classes are instantiated to see if that's feasible.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="11006" cache_read_input_tokens="33036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check where the next steps are generated to understand how branch names flow through.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11006" cache_read_input_tokens="33036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JVeVfNfQqEGfRnV6ZbDQWX">
+    <param name="pattern">IssueNextSteps|format_next_steps_plain|format_next_steps_markdown|format_draft_pr_next_steps</param>
+    <param name="output_mode">content</param>
+    <param name="type">py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11006" cache_read_input_tokens="33036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JVeVfNfQqEGfRnV6ZbDQWX">
+src/erk/cli/commands/exec/scripts/plan_save.py:49:from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
+src/erk/cli/commands/exec/scripts/plan_save.py:249:        click.echo(format_draft_pr_next_steps_plain(plan_number, branch_name=branch_name))
+src/erk/cli/commands/exec/scripts/plan_save_to_issue.py:45:from erk_shared.output.next_steps import format_next_steps_plain
+src/erk/cli/commands/exec/scripts/plan_save_to_issue.py:305:        click.echo(format_next_steps_plain(result.issue_number))
+packages/erk-shared/src/erk_shared/output/next_steps.py:7:class IssueNextSteps:
+packages/erk-shared/src/erk_shared/output/next_steps.py:90:def format_next_steps_plain(issue_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/output/next_steps.py:92:    s = IssueNextSteps(issue_number)
+packages/erk-shared/src/erk_shared/output/next_steps.py:106:def format_draft_pr_next_steps_plain(pr_number: int, *, branch_name: str) -&gt; str:
+packages/erk-shared/src/erk_shared/output/next_steps.py:122:def format_next_steps_markdown(issue_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/output/next_steps.py:124:    s = IssueNextSteps(issue_number)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:22:from erk_shared.output.next_steps import format_next_steps_markdown
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:408:    return format_next_steps_markdown(issue_number)
+packages/erk-shared/tests/unit/output/test_next_steps.py:5:    IssueNextSteps,
+packages/erk-shared/tests/unit/output/test_next_steps.py:6:    format_draft_pr_next_steps_plain,
+packages/erk-shared/tests/unit/output/test_next_steps.py:7:    format_next_steps_plain,
+packages/erk-shared/tests/unit/output/test_next_steps.py:32:    """IssueNextSteps.prepare uses erk br co --for-plan."""
+packages/erk-shared/tests/unit/output/test_next_steps.py:33:    s = IssueNextSteps(issue_number=99)
+packages/erk-shared/tests/unit/output/test_next_steps.py:37:def test_format_draft_pr_next_steps_plain_uses_for_plan() -&gt; None:
+packages/erk-shared/tests/unit/output/test_next_steps.py:38:    """format_draft_pr_next_steps_plain uses --for-plan command."""
+packages/erk-shared/tests/unit/output/test_next_steps.py:39:    output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo")
+packages/erk-shared/tests/unit/output/test_next_steps.py:44:def test_format_next_steps_plain_uses_co() -&gt; None:
+packages/erk-shared/tests/unit/output/test_next_steps.py:45:    """format_next_steps_plain uses erk br co --for-plan."""
+packages/erk-shared/tests/unit/output/test_next_steps.py:46:    output = format_next_steps_plain(99)
+tests/unit/shared/test_next_steps.py:5:    IssueNextSteps,
+tests/unit/shared/test_next_steps.py:6:    format_draft_pr_next_steps_plain,
+tests/unit/shared/test_next_steps.py:7:    format_next_steps_plain,
+tests/unit/shared/test_next_steps.py:11:class TestIssueNextSteps:
+tests/unit/shared/test_next_steps.py:13:        steps = IssueNextSteps(issue_number=99)
+tests/unit/shared/test_next_steps.py:17:        steps = IssueNextSteps(issue_number=99)
+tests/unit/shared/test_next_steps.py:23:        steps = IssueNextSteps(issue_number=99)
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01976FtyAp335rS3zJHNwDmT">
+    <param name="pattern">erk br co --for-plan</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11006" cache_read_input_tokens="33036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01976FtyAp335rS3zJHNwDmT">
+src/erk/cli/commands/plan/checkout_cmd.py:135:            f"  • Run: erk br co --for-plan {issue_number}"
+src/erk/cli/commands/plan/create_cmd.py:120:    user_output(f"  Prepare:    erk br co --for-plan {result.issue_number}")
+src/erk/cli/commands/branch/checkout_cmd.py:375:        erk br co --for-plan 123         # Checkout plan branch with .impl/ setup
+src/erk/tui/commands/types.py:50:            (e.g., "erk br co --for-plan 123").
+src/erk/tui/commands/registry.py:104:    return f"erk br co --for-plan {ctx.row.plan_id}"
+src/erk/tui/commands/registry.py:110:        f'source "$(erk br co --for-plan {ctx.row.plan_id} --script)" &amp;&amp; erk implement --dangerous'
+src/erk/tui/commands/registry.py:317:            name="erk br co --for-plan",
+src/erk/tui/app.py:871:            cmd = f"erk br co --for-plan {row.plan_id}"
+src/erk/tui/app.py:877:                f'source "$(erk br co --for-plan {row.plan_id} --script)"'
+src/erk/cli/commands/implement.py:402:                f"  3. Checkout plan branch: erk br co --for-plan &lt;issue&gt;"
+src/erk/tui/screens/plan_detail_screen.py:341:        cmd = f"erk br co --for-plan {self._row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:347:            f'source "$(erk br co --for-plan {self._row.plan_id} --script)"'
+src/erk/tui/screens/plan_detail_screen.py:635:            cmd = f"erk br co --for-plan {row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:641:                f'source "$(erk br co --for-plan {row.plan_id} --script)"'
+src/erk/tui/screens/plan_detail_screen.py:841:            prepare_cmd = f"erk br co --for-plan {self._row.plan_id}"
+src/erk/cli/commands/exec/scripts/plan_create_review_pr.py:81:erk br co --for-plan {issue_number}
+src/erk/cli/commands/exec/scripts/plan_create_review_pr.py:86:source "$(erk br co --for-plan {issue_number} --script)" &amp;&amp; erk implement --dangerous
+.claude/commands/erk/plan-save.md:151:    Local: erk br co --for-plan &lt;issue_number&gt;
+.claude/commands/erk/plan-save.md:152:    Implement: source "$(erk br co --for-plan &lt;issue_number&gt; --script)" &amp;&amp; erk implement --dangerous
+.claude/commands/erk/plan-save.md:163:    Local: erk br co --for-plan &lt;issue_number&gt;
+.claude/commands/erk/plan-save.md:164:    Implement: source "$(erk br co --for-plan &lt;issue_number&gt; --script)" &amp;&amp; erk implement --dangerous
+.claude/commands/erk/migrate-plan-to-draft-pr.md:66:  Prepare:  erk br co --for-plan &lt;pr_number&gt;
+docs/learned/integrations/issue-pr-closing-integration.md:29:| `.impl/plan-ref.json`     | Authoritative when present | Created by `erk br co --for-plan` or `erk plan submit` — explicit plan linkage |
+docs/learned/integrations/issue-pr-closing-integration.md:41:When `.impl/` exists but lacks `plan-ref.json`, and the branch name contains a valid issue number, `prepare_state()` auto-creates the missing `plan-ref.json`. This bridges the gap when a worktree is created manually from a plan branch (e.g., `git worktree add`) without going through `erk br co --for-plan`, which would normally create the file. See `prepare_state()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
+docs/tutorials/first-plan.md:115:erk br co --for-plan 1
+docs/tutorials/first-plan.md:210:| Prepare worktree     | `erk br co --for-plan &lt;issue&gt;`                 |
+packages/erk-shared/src/erk_shared/output/next_steps.py:18:        return f"erk br co --for-plan {self.issue_number}"
+packages/erk-shared/src/erk_shared/output/next_steps.py:27:            f'source "$(erk br co --for-plan {self.issue_number} --script)"'
+packages/erk-shared/src/erk_shared/output/next_steps.py:64:        return f"erk br co --for-plan {self.pr_number}"
+packages/erk-shared/src/erk_shared/output/next_steps.py:69:            f'source "$(erk br co --for-plan {self.pr_number} --script)"'
+
+... [39 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. The user wants to change all the user-facing copy from `erk br co --for-plan &lt;&lt;num&gt;&gt;` to `erk br co &lt;&lt;name&gt;&gt;`. 
+
+But there's a subtlety: at the time these next-steps are printed (e.g., after `plan-save`), do we know the branch name? Let me check:
+
+1. For `IssueNextSteps` - currently only has `issue_number`. But the callers would need to provide a branch name. Let me check where the issue branch name gets determined...
+
+The branch name is determined by `prepare_plan_for_worktree` which returns `IssueBranchSetup` with a `branch_name`. 
+
+The real question is whether we have the branch name available when displaying next steps after plan-save. Looking at the code that prints next steps, it's currently just passing the issue number. I need to trace through whether the branch name gets determined and stored in the issue metadata at that point, or if it's only inferred later. I need to figure out what `&lt;&lt;name&gt;&gt;` actually refers to. For draft PRs we already have the branch name available, but for issues it gets derived from the title using `infer_branch_name_from_title()`. So I should add `branch_name` to `IssueNextSteps` and use that to generate the correct command output.
+
+Now I'm checking what data's available in the TUI context to see if the branch name is already accessible there, or if I need to derive it the same way.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5300" cache_read_input_tokens="44042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5300}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what data is available in the TUI plan rows and the plan save result.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5300" cache_read_input_tokens="44042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5300}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PpjSTBju2N4yKZJJKTY6be">
+    <param name="pattern">class.*Row|branch_name|plan_id</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+    <param name="head_limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5300" cache_read_input_tokens="44042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5300}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PpjSTBju2N4yKZJJKTY6be">
+src/erk/tui/widgets/plan_table.py:243:            selected_key = str(self._rows[self.cursor_row].plan_id)
+src/erk/tui/widgets/plan_table.py:253:            self.add_row(*values, key=str(row.plan_id))
+src/erk/tui/widgets/plan_table.py:260:                    if str(row.plan_id) == selected_key:
+src/erk/tui/widgets/plan_table.py:279:        plan_cell: str | Text = f"#{row.plan_id}"
+src/erk/tui/filtering/logic.py:35:        if query_lower in str(plan.plan_id):
+src/erk/tui/data/types.py:10:class PlanRowData:
+src/erk/tui/data/types.py:17:        plan_id: GitHub issue number (e.g., 123)
+src/erk/tui/data/types.py:67:    plan_id: int
+src/erk/tui/sorting/logic.py:27:        return sorted(plans, key=lambda p: p.plan_id, reverse=True)
+src/erk/tui/sorting/logic.py:41:            activity = activity_map.get(plan.plan_id)
+src/erk/tui/app.py:510:    def _close_plan_async(self, plan_id: int, plan_url: str) -&gt; None:
+src/erk/tui/app.py:514:            plan_id: The plan identifier
+src/erk/tui/app.py:520:            closed_prs = self._provider.close_plan(plan_id, plan_url)
+src/erk/tui/app.py:523:                msg = f"Closed plan #{plan_id} (and {len(closed_prs)} linked PRs)"
+src/erk/tui/app.py:525:                msg = f"Closed plan #{plan_id}"
+src/erk/tui/app.py:533:                f"Failed to close plan #{plan_id}: {e}",
+src/erk/tui/app.py:651:                plan_id=row.plan_id,
+src/erk/tui/app.py:745:                self._status_bar.set_message(f"Opened issue #{row.plan_id}")
+src/erk/tui/app.py:767:        cmd = f"erk implement {row.plan_id}"
+src/erk/tui/app.py:789:        self.notify(f"Closing plan #{row.plan_id}...")
+src/erk/tui/app.py:790:        self._close_plan_async(row.plan_id, row.plan_url)
+src/erk/tui/app.py:850:                self.notify(f"Opened issue #{row.plan_id}")
+src/erk/tui/app.py:871:            cmd = f"erk br co --for-plan {row.plan_id}"
+src/erk/tui/app.py:877:                f'source "$(erk br co --for-plan {row.plan_id} --script)"'
+src/erk/tui/app.py:884:            cmd = f"erk plan submit {row.plan_id}"
+src/erk/tui/app.py:889:            cmd = f"erk plan replan {row.plan_id}"
+src/erk/tui/app.py:964:                self.notify(f"Closing plan #{row.plan_id}...")
+src/erk/tui/app.py:965:                self._close_plan_async(row.plan_id, row.plan_url)
+src/erk/tui/app.py:971:                    command=["erk", "plan", "submit", str(row.plan_id), "-f"],
+src/erk/tui/app.py:972:                    title=f"Submit Plan #{row.plan_id}",
+
+... [12 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01C1BvUe1LrQNHNNuDFFofGB">
+    <param name="pattern">branch_name</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/data</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5300" cache_read_input_tokens="44042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5300}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C1BvUe1LrQNHNNuDFFofGB">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KGoFvpVQa2DePjJJpV4ZJQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/exec/scripts/plan_save_to_issue.py</param>
+    <param name="offset">290</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5300" cache_read_input_tokens="44042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5300}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KGoFvpVQa2DePjJJpV4ZJQ">
+   290→            # This allows the user to modify and re-save the plan before implementing
+   291→
+   292→    # Step 10: Output success
+   293→    # At this point result.success is True, so issue_number must be set
+   294→    # Guard for type narrowing
+   295→    if result.issue_number is None:
+   296→        raise RuntimeError("Unexpected: issue_number is None after successful create_plan_issue")
+   297→
+   298→    if output_format == "display":
+   299→        click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
+   300→        click.echo(f"Title: {result.title}")
+   301→        click.echo(f"URL: {result.issue_url}")
+   302→        if snapshot_result is not None:
+   303→            click.echo(f"Archived: {snapshot_result.snapshot_dir}")
+   304→        click.echo()
+   305→        click.echo(format_next_steps_plain(result.issue_number))
+   306→    else:
+   307→        output_data: dict[str, str | int | bool | None] = {
+   308→            "success": True,
+   309→            "issue_number": result.issue_number,
+   310→            "issue_url": result.issue_url,
+   311→            "title": result.title,
+   312→            "plan_backend": "github",
+   313→        }
+   314→        if snapshot_result is not None:
+   315→            output_data["archived_to"] = str(snapshot_result.snapshot_dir)
+   316→        click.echo(json.dumps(output_data))
+   317→
+  </tool_result>
+  <thinking>Now I understand the full picture. The key question is: at the time we print next-steps, do we have the branch name available?
+
+Looking at the code:
+
+1. **`format_next_steps_plain(issue_number)`** - called after saving a plan to an issue. At this point, we have the issue number. The branch name is inferred from the issue title. Let me check if the result object has the branch name.
+
+2. **`format_draft_pr_next_steps_plain(pr_number, branch_name=...)`** - already has branch name.
+
+3. **TUI** - `PlanRowData` has `plan_id` but NOT `branch_name`. 
+
+I need to trace through the `PlanRowData` class definition and the plan save result to see if the branch name is available there.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4260" cache_read_input_tokens="49342" cache_creation="{'ephemeral_5m_input_tokens': 4260, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XQJEfjguK1sBxs4if8mJNx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4260" cache_read_input_tokens="49342" cache_creation="{'ephemeral_5m_input_tokens': 4260, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XQJEfjguK1sBxs4if8mJNx">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class PlanRowData:
+    11→    """Row data for displaying a plan in the TUI table.
+    12→
+    13→    Contains pre-formatted display strings and raw data needed for actions.
+    14→    Immutable to ensure table state consistency.
+    15→
+    16→    Attributes:
+    17→        plan_id: GitHub issue number (e.g., 123)
+    18→        plan_url: Full URL to the GitHub issue
+    19→        pr_number: PR number if linked, None otherwise
+    20→        pr_url: URL to PR (GitHub or Graphite), None if no PR
+    21→        pr_display: Formatted PR cell content (e.g., "#123 👀")
+    22→        checks_display: Formatted checks cell (e.g., "✓" or "✗")
+    23→        worktree_name: Name of local worktree, empty string if none
+    24→        exists_locally: Whether worktree exists on local machine
+    25→        local_impl_display: Relative time since last local impl (e.g., "2h ago")
+    26→        remote_impl_display: Relative time since last remote impl
+    27→        run_id_display: Formatted workflow run ID
+    28→        run_state_display: Formatted workflow run state
+    29→        run_url: URL to the GitHub Actions run page
+    30→        full_title: Complete untruncated plan title
+
+... [125 lines omitted] ...
+
+    40→        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_011fG71soQDtosKJ4FN5Cjyj">
+    <param name="pattern">infer_branch_name</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4260" cache_read_input_tokens="49342" cache_creation="{'ephemeral_5m_input_tokens': 4260, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011fG71soQDtosKJ4FN5Cjyj">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01F1jKuJmjUhVgARuR8hPwLh">
+    <param name="pattern">class.*Result|issue_number|branch_name</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/exec/scripts/plan_save_to_issue.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4260" cache_read_input_tokens="49342" cache_creation="{'ephemeral_5m_input_tokens': 4260, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F1jKuJmjUhVgARuR8hPwLh">
+17:    --format json (default): {"success": true, "issue_number": N, ...}
+139:                            "issue_number": existing_issue,
+215:        if result.issue_number is not None:
+226:                            "issue_number": result.issue_number,
+246:        if result.issue_number is not None:
+247:            create_plan_saved_issue_marker(effective_session_id, repo_root, result.issue_number)
+252:        if result.issue_number is not None:
+271:                    github.add_comment(repo_root, result.issue_number, exchanges_block)
+293:    # At this point result.success is True, so issue_number must be set
+295:    if result.issue_number is None:
+296:        raise RuntimeError("Unexpected: issue_number is None after successful create_plan_issue")
+299:        click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
+305:        click.echo(format_next_steps_plain(result.issue_number))
+309:            "issue_number": result.issue_number,
+  </tool_result>
+  <thinking>Now I have a clear understanding. Let me look at the key issue: in `PlanRowData`, there's no explicit `branch_name` field, but there is:
+- `worktree_branch: str | None` - Branch name in the worktree (if exists locally)
+- `pr_head_branch: str | None` - Head branch from PR metadata
+
+Also, the `full_title` is available which could be used to infer the branch name.
+
+But actually, the user is asking me to change **copy** - the text that gets displayed/printed. They want everywhere that currently says `erk br co --for-plan 123` to instead say `erk br co &lt;branch-name&gt;`.
+
+
+The real problem is that the data structures don't consistently carry branch information where it's needed. `IssueNextSteps` only has the issue number, and the formatting functions that generate the command text don't have access to branch names either. I'd need to thread branch information through these data structures and update the formatting logic to use it.
+
+Actually, wait—let me reconsider the user's request. They want to "change all copy," which might mean the branch name is already computable at the point where these messages are displayed. In the issue-based flow, after saving the issue, I have both the issue number and title, so I can derive the branch name from the title. For the TUI, the `PlanRowData` has the full title too, so I could infer the branch name there as well. Let me check whether the branch name is actually available in these contexts...</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5050" cache_read_input_tokens="53602" cache_creation="{'ephemeral_5m_input_tokens': 5050, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ep4FKsQUDSXmEsRDferj9H">
+    <param name="pattern">infer_branch|branch.*from.*title|branch.*name.*issue|compute_branch</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5050" cache_read_input_tokens="53602" cache_creation="{'ephemeral_5m_input_tokens': 5050, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ep4FKsQUDSXmEsRDferj9H">
+src/erk/cli/commands/wt/create_cmd.py:651:    # Track linked branch name and setup for issue-based worktrees
+src/erk/cli/commands/pr/submit_pipeline.py:116:    """Resolve repo_root, branch_name, parent_branch, trunk_branch, issue_number.
+src/erk/cli/commands/pr/metadata_helpers.py:78:        branch_name: Branch name to extract issue number from
+packages/erk-shared/src/erk_shared/issue_workflow.py:115:        branch_name = generate_issue_branch_name(
+src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:295:        # Generate branch name from issue
+src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:297:        branch_name = generate_issue_branch_name(
+packages/erk-shared/src/erk_shared/naming.py:565:    """Generate branch name for issue-based worktree.
+packages/erk-shared/src/erk_shared/naming.py:651:def derive_branch_name_from_title(title: str) -&gt; str:
+packages/erk-shared/src/erk_shared/naming.py:652:    """Derive branch name from issue/plan title.
+packages/erk-shared/src/erk_shared/naming.py:672:        &gt;&gt;&gt; derive_branch_name_from_title("My Feature")
+packages/erk-shared/src/erk_shared/naming.py:674:        &gt;&gt;&gt; derive_branch_name_from_title("Fix Bug #123!")
+packages/erk-shared/src/erk_shared/naming.py:676:        &gt;&gt;&gt; derive_branch_name_from_title("A" * 40)
+src/erk/cli/commands/plan/view.py:259:            user_output("Or run from a branch named P{issue}-...")
+src/erk/cli/commands/plan/view.py:269:            user_output("Or run from a branch named P{issue}-...")
+src/erk/cli/commands/exec/scripts/plan_create_review_branch.py:161:    # Define branch and file names with timestamp (format: planned/review-{issue}-{MM-DD-HHMM})
+src/erk/cli/commands/exec/scripts/plan_create_review_branch.py:163:    branch_name = f"planned/review-{issue_number}{timestamp_suffix}"
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:65:            branch_issues: Mapping of branch name -&gt; issue number
+src/erk/cli/commands/implement_shared.py:491:        branch_name: The development branch name for this issue
+tests/commands/submit/test_graphite_linking.py:93:    # Pre-compute the expected branch name: P&lt;issue&gt;-&lt;sanitized-title&gt;-&lt;timestamp&gt;
+src/erk/cli/commands/branch/checkout_cmd.py:383:            "Use --for-plan to derive branch name from issue, or provide BRANCH directly."
+src/erk/cli/commands/branch/create_cmd.py:110:            "Use --for-plan to derive branch name from issue, or provide BRANCH directly."
+src/erk/cli/commands/learn/learn_cmd.py:87:    If not provided, infers from current branch name (P{issue}-...).
+src/erk/cli/commands/learn/learn_cmd.py:125:        user_output("Or run from a branch named P{issue}-...")
+tests/commands/test_create.py:129:        # Assert: Worktree created with branch name derived from issue title
+tests/commands/test_create.py:481:        # The branch name is derived from issue title with timestamp suffix
+tests/commands/test_create.py:492:        assert "500" in branch_name, f"Branch name should contain issue number: {branch_name}"
+src/erk/cli/commands/submit.py:124:        existing_branches: List of existing branch names matching the issue pattern
+src/erk/cli/commands/submit.py:643:    new_branch_name = generate_issue_branch_name(
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:212:    If not provided, infers from current branch name (P{issue}-...).
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:155:    If not provided, infers from current branch name (P{issue}-...).
+
+... [23 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QnTXAcFJQV1WCpBgQKJ5h4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/docs/learned/planning/branch-name-inference.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5050" cache_read_input_tokens="53602" cache_creation="{'ephemeral_5m_input_tokens': 5050, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QnTXAcFJQV1WCpBgQKJ5h4">
+     1→---
+     2→title: Branch Name Inference
+     3→last_audited: "2026-02-08 00:00 PT"
+     4→audit_result: clean
+     5→tripwires:
+     6→  - action: "changing branch naming convention (P{issue}- or plan- prefix)"
+     7→    warning: "The P{issue}- prefix (issue-based) and plan- prefix (draft-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers."
+     8→  - action: "adding branch_name to plan-header at creation time"
+     9→    warning: "branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below."
+    10→read_when:
+    11→  - "debugging missing branch_name in plan issues"
+    12→  - "implementing PR lookup from plan issues"
+    13→  - "modifying branch creation or naming conventions"
+    14→---
+    15→
+    16→# Branch Name Inference
+    17→
+    18→## The Temporal Gap Problem
+    19→
+    20→Plan metadata (`plan-header` block) intentionally omits `branch_name` at creation time because of a temporal gap in the plan lifecycle:
+    21→
+    22→1. **Plan saved** → GitHub issue created (no branch exists yet)
+    23→2. **Branch created** → User runs `erk br co --for-plan {issue}` (branch now exists)
+    24→3. **Implementation starts** → `impl-signal started` writes `branch_name` into the plan-header
+    25→
+    26→The gap between steps 1 and 2 is unavoidable: the plan must exist before the branch can be named after it (the branch name contains the issue number). Attempting to set `branch_name` during save would require either predicting the branch name (fragile — the user might choose a custom name) or creating the branch immediately (wrong — the user hasn't started work yet).
+    27→
+    28→## Two-Layer Resolution
+    29→
+    30→When code needs to look up a PR from a plan issue, `branch_name` may be missing from metadata. The system uses two layers:
+
+... [63 lines omitted] ...
+
+    39→- `impl-signal` failed (command errored but user continued working)
+    41→If neither layer produces a match, the command fails with an actionable error.
+    74→Common failure scenarios and their fixes:
+    87→- **Fallback mechanism**: Pattern matching against git context (enables manual workflows and recovers from signal failures)
+    88→- **Key distinction**: The fallback isn't just error recovery — it actively enables workflows where `impl-signal` was never intended to run (e.g., implementing a plan created by another developer, or plans created before `impl-signal` existed)
+  </tool_result>
+  <thinking>Now I understand the temporal gap problem. At plan-save time, the branch doesn't exist yet. The branch name includes the issue number (e.g., `P123-my-feature-02-22`), so the issue must be created first. This means at the time we print next steps after saving a plan, we don't have the branch name yet.
+
+However, we CAN derive the branch name from the issue title using `generate_issue_branch_name()` or at minimum `derive_branch_name_from_title()`. But the full branch name also includes a timestamp, so we can't fully predict it.
+
+Wait - let me re-read what the user is asking. 
+
+The user wants to change the copy from `erk br co --for-plan 123` to `erk br co &lt;&lt;name&gt;&gt;`. Since the branch name isn't known at plan-save time, I need to figure out what to show. The branch name IS predictable though - `generate_issue_branch_name` creates `P{issue}-{slug}-{timestamp}`. At plan-save time, I know the issue number and title, so the only unknown is the timestamp. I could show a partial form like `P123-my-feature-*` or use a placeholder instead.
+
+Actually, I think the user's point is simpler than I'm making it.
+
+The guidance currently tells users to run `erk br co --for-plan 123`, but `erk br co &lt;branch-name&gt;` is much more intuitive. They want all the messaging to show the branch name form instead. The challenge is that at many call sites, especially plan-save, I don't know the branch name yet. So I could show the branch name where it's available (TUI with existing worktree, draft PR path) and fall back to something else where it's not (issue save). But the `--for-plan` flag might actually solve this...
+
+Actually, looking at what these commands do differently: `erk br co &lt;name&gt;` just checks out the branch, while `erk br co --for-plan &lt;num&gt;` resolves the issue to a branch name, checks it out, and sets up `.impl/`. So they're doing different things. The user prefers the simpler form for messaging, probably because it's shorter and more direct, even though functionally they're different operations.
+
+I think I'm overthinking this. Let me look at what `extract_plan_header_branch_name` actually does in the TUI context—it might already be pulling the branch name from plan metadata for plans without worktrees.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4754" cache_read_input_tokens="58652" cache_creation="{'ephemeral_5m_input_tokens': 4754, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YRdAquZ8sdo7PvKehKyRx7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="offset">560</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4754" cache_read_input_tokens="58652" cache_creation="{'ephemeral_5m_input_tokens': 4754, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YRdAquZ8sdo7PvKehKyRx7">
+   560→    title: str,
+   561→    timestamp: datetime,
+   562→    *,
+   563→    objective_id: int | None,
+   564→) -&gt; str:
+   565→    """Generate branch name for issue-based worktree.
+   566→
+   567→    Format: P{issue_number}-{sanitized_title}-{timestamp}
+   568→    Or with objective: P{issue_number}-O{objective_id}-{sanitized_title}-{timestamp}
+   569→    Example: P123-fix-auth-bug-01-15-1430
+   570→    Example with objective: P123-O456-fix-auth-bug-01-15-1430
+   571→
+   572→    The branch name is constructed as:
+   573→    1. P prefix + issue number + hyphen
+   574→    2. If objective_id provided: O prefix + objective_id + hyphen
+   575→    3. Sanitized title (lowercased, special chars replaced)
+   576→    4. Truncated to 31 chars total (before timestamp)
+   577→    5. Timestamp suffix appended (format: -MM-DD-HHMM)
+   578→
+   579→    Args:
+   580→        issue_number: GitHub issue number
+   581→        title: Issue title to sanitize
+   582→        timestamp: Timestamp for the suffix
+   583→        objective_id: Optional objective ID to encode in branch name
+   584→
+   585→    Returns:
+   586→        Branch name in format P{num}-{slug}-{timestamp} or P{num}-O{obj}-{slug}-{timestamp}
+   587→
+   588→    Examples:
+   589→        &gt;&gt;&gt; from datetime import datetime
+
+... [100 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015t8WMMcwnLcAx9bc39KANk">
+    <param name="pattern">extract_plan_header_branch_name</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4754" cache_read_input_tokens="58652" cache_creation="{'ephemeral_5m_input_tokens': 4754, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015t8WMMcwnLcAx9bc39KANk">
+tests/shared/github/test_plan_header_extraction.py:13:    extract_plan_header_branch_name,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-14-    extract_plan_header_last_learn_at,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-15-    extract_plan_header_last_learn_session,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-16-    extract_plan_header_learn_materials_branch,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-17-    extract_plan_header_learn_plan_issue,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-18-    extract_plan_header_learn_plan_pr,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-19-    extract_plan_header_learn_status,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-20-    extract_plan_header_learned_from_issue,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-21-    extract_plan_header_objective_issue,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-22-    extract_plan_header_remote_impl_run_id,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-23-    extract_plan_header_remote_impl_session_id,
+--
+tests/shared/github/test_plan_header_extraction.py:761:def test_extract_plan_header_branch_name() -&gt; None:
+tests/shared/github/test_plan_header_extraction.py:762:    """extract_plan_header_branch_name extracts branch from body."""
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-763-    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py-764-        created_at="2024-01-15T10:30:00Z",
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-765-        created_by="user123",
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-766-        worktree_name=None,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-767-        branch_name="feature-branch",
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-768-        plan_comment_id=None,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-769-        last_dispatched_run_id=None,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-770-        last_dispatched_node_id=None,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-771-        last_dispatched_at=None,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-772-        last_local_impl_at=None,
+--
+tests/shared/github/test_plan_header_extraction.py:788:    branch = extract_plan_header_branch_name(body)
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-789-    assert branch == "feature-branch"
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-790-
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/tests/shared/github/test_plan_header_extraction.py-791-
+tests/shared/github/test_plan_header_extraction.py:792:def test_extract_plan_header_branch_name_returns_none_when_missing() -&gt; None:
+
+... [43 lines omitted] ...
+  </tool_result>
+  <thinking>OK I have a very clear picture now. Let me understand the key constraint:
+
+The temporal gap problem means that at plan-save time, the branch doesn't exist yet. The branch name contains the issue number (`P{issue}-{slug}-{timestamp}`), so the issue must be created first. At plan-save time we CAN compute the branch name slug portion from the title, but the timestamp will be the checkout time, not save time.
+
+However, looking at this more carefully, the user's ask is actually about the **copy/messaging**. They want the guidance text to say `erk br co &lt;name&gt;` instead of `erk br co --for-plan &lt;num&gt;`. 
+ 
+So the real question is what to show when the branch name isn't known yet—right after saving a plan, I could display a placeholder, compute the expected name with an unknown timestamp, or fall back to the `--for-plan` syntax. I should probably check what information the TUI actually has available at that point before deciding.
+
+Looking at the data structures, `worktree_branch` and `pr_head_branch` are only populated if there's an existing worktree or linked PR, which means fresh plans won't have a branch name. For those cases, I could either show the computed branch pattern like `P123-fix-auth-bug-*` or use the `--for-plan` fallback—the simplest approach is probably to use the actual branch name when available and fall back to `--for-plan` when it's not.
+
+Re-reading the user's request, they want the simpler `erk br co &lt;name&gt;` form everywhere instead of `--for-plan`. So I should map out all the places this copy appears and handle the edge case where the branch doesn't exist yet—maybe by showing the computed branch name or asking the user how they want to handle that scenario. the branch already exists, show the actual branch name instead of `--for-plan`. In contexts where the branch hasn't been created yet (like the initial plan-save output), fall back to `--for-plan &lt;num&gt;` since we don't know the branch name yet. The core insight is that `--for-plan` is only needed once to create the branch—after that, users should see and use the actual branch name.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7151" cache_read_input_tokens="63406" cache_creation="{'ephemeral_5m_input_tokens': 7151, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check one more thing - how the TUI constructs plan row data and what branch info is available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7151" cache_read_input_tokens="63406" cache_creation="{'ephemeral_5m_input_tokens': 7151, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KxbU5xp9PXomQBojcbyQbY">
+    <param name="pattern">worktree_branch|pr_head_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/data/provider.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7151" cache_read_input_tokens="63406" cache_creation="{'ephemeral_5m_input_tokens': 7151, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KxbU5xp9PXomQBojcbyQbY">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/data/provider.py. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FaXWvVnDaeb7J8jS1AHmjG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/plan/checkout_cmd.py</param>
+    <param name="offset">125</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7151" cache_read_input_tokens="63406" cache_creation="{'ephemeral_5m_input_tokens': 7151, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FaXWvVnDaeb7J8jS1AHmjG">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MGmkUjPmJBA3LW3okp5D5q">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/plan/create_cmd.py</param>
+    <param name="offset">110</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7151" cache_read_input_tokens="63406" cache_creation="{'ephemeral_5m_input_tokens': 7151, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MGmkUjPmJBA3LW3okp5D5q">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Uy44pGZ91WL7iWCnKYKoh1">
+    <param name="pattern">src/erk/tui/data/provider*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2107" cache_read_input_tokens="70557" cache_creation="{'ephemeral_5m_input_tokens': 2107, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uy44pGZ91WL7iWCnKYKoh1">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01XNTFUCwFtBRFwMEy6Xreqy">
+    <param name="pattern">src/erk/tui/data/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="79" cache_read_input_tokens="72664" cache_creation="{'ephemeral_5m_input_tokens': 79, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XNTFUCwFtBRFwMEy6Xreqy">
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/data/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/data/types.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XiDw1eQLYTkTsyAjK6vf1j">
+    <param name="pattern">worktree_branch|pr_head_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="72743" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XiDw1eQLYTkTsyAjK6vf1j">
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/widgets/plan_table.py-340-                objective_cell,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/widgets/plan_table.py-341-                location_cell,
+src/erk/tui/widgets/plan_table.py:342:                row.pr_head_branch or row.worktree_branch or "-",
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/widgets/plan_table.py-343-                run_id,
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/widgets/plan_table.py-344-                run_state_emoji,
+--
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py-801-        """
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py-802-        # Determine which command to use
+src/erk/tui/app.py:803:        if row.worktree_branch is not None:
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py-804-            # Local worktree exists - use branch checkout
+src/erk/tui/app.py:805:            cmd = f"erk br co {row.worktree_branch}"
+src/erk/tui/app.py-806-        elif row.pr_number is not None:
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py-807-            # No local worktree but PR exists - use PR checkout
+--
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py-976-
+src/erk/tui/app.py-977-        elif command_id == "land_pr":
+src/erk/tui/app.py:978:            if row.pr_number and row.pr_head_branch:
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py-979-                pr_num = row.pr_number
+src/erk/tui/app.py:980:                branch = row.pr_head_branch
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py-981-                objective_issue = row.objective_issue
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py-982-
+--
+src/erk/tui/commands/registry.py-85-def _display_copy_checkout(ctx: CommandContext) -&gt; str:
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/commands/registry.py-86-    """Display name for copy_checkout command."""
+src/erk/tui/commands/registry.py:87:    if ctx.row.worktree_branch:
+src/erk/tui/commands/registry.py:88:        return f"erk br co {ctx.row.worktree_branch}"
+src/erk/tui/commands/registry.py-89-    if ctx.row.pr_number:
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/commands/registry.py-90-        return f"erk pr co {ctx.row.pr_number}"
+--
+/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/commands/registry.py-301-            category=CommandCategory.COPY,
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018HsSUAfoQ4AMG4aWpxQYWv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/plan/checkout_cmd.py</param>
+    <param name="offset">125</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="72743" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018HsSUAfoQ4AMG4aWpxQYWv">
+   125→    prs = ctx.issues.get_prs_referencing_issue(repo.root, issue_number)
+   126→
+   127→    # Filter to OPEN PRs only
+   128→    open_prs = [pr for pr in prs if pr.state == "OPEN"]
+   129→
+   130→    if len(open_prs) == 0:
+   131→        # No local branches and no open PRs
+   132→        user_output(
+   133→            f"No local branch or open PR found for plan #{issue_number}\n\n"
+   134→            "This plan has not been implemented yet. To prepare it:\n"
+   135→            f"  • Run: erk br co --for-plan {issue_number}"
+   136→        )
+   137→        raise SystemExit(1)
+   138→
+   139→    if len(open_prs) == 1:
+   140→        # Single PR - fetch and checkout
+   141→        pr = open_prs[0]
+   142→        _checkout_pr(
+   143→            ctx,
+   144→            repo,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qh3iYyFtiK8rJheo9DEoBp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/plan/create_cmd.py</param>
+    <param name="offset">110</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="72743" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qh3iYyFtiK8rJheo9DEoBp">
+   110→            user_output(click.style("Error: ", fg="red") + str(result.error))
+   111→        raise SystemExit(1)
+   112→
+   113→    # Display success message with next steps
+   114→    user_output(f"Created plan #{result.issue_number}")
+   115→    user_output("")
+   116→    user_output(f"Issue: {result.issue_url}")
+   117→    user_output("")
+   118→    user_output("Next steps:")
+   119→    user_output(f"  View:       erk get {result.issue_number}")
+   120→    user_output(f"  Prepare:    erk br co --for-plan {result.issue_number}")
+   121→    user_output(f"  Submit:     erk plan submit {result.issue_number}")
+   122→
+  </tool_result>
+  <thinking>Now I have a very clear picture. Let me look at what `app.py` lines 800-890 do, since they already have the logic for choosing between `erk br co &lt;branch&gt;` and `erk br co --for-plan`:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5607" cache_read_input_tokens="72924" cache_creation="{'ephemeral_5m_input_tokens': 5607, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DmaEQhkkp6fkMKz8vah3z2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/app.py</param>
+    <param name="offset">795</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5607" cache_read_input_tokens="72924" cache_creation="{'ephemeral_5m_input_tokens': 5607, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DmaEQhkkp6fkMKz8vah3z2">
+   795→        If worktree exists locally, copies 'erk co {worktree_name}'.
+   796→        If only PR available, copies 'erk pr co {pr_number}'.
+   797→        Shows status message with result.
+   798→
+   799→        Args:
+   800→            row: The plan row data to generate command from
+   801→        """
+   802→        # Determine which command to use
+   803→        if row.worktree_branch is not None:
+   804→            # Local worktree exists - use branch checkout
+   805→            cmd = f"erk br co {row.worktree_branch}"
+   806→        elif row.pr_number is not None:
+   807→            # No local worktree but PR exists - use PR checkout
+   808→            cmd = f"erk pr co {row.pr_number}"
+   809→        else:
+   810→            # Neither available
+   811→            if self._status_bar is not None:
+   812→                self._status_bar.set_message("No worktree or PR available for checkout")
+   813→            return
+   814→
+   815→        # Copy to clipboard
+   816→        success = self._provider.clipboard.copy(cmd)
+   817→
+   818→        # Show status message
+   819→        if self._status_bar is not None:
+   820→            if success:
+   821→                self._status_bar.set_message(f"Copied: {cmd}")
+   822→            else:
+   823→                self._status_bar.set_message(f"Clipboard unavailable. Copy manually: {cmd}")
+   824→
+
+... [70 lines omitted] ...
+  </tool_result>
+</session>

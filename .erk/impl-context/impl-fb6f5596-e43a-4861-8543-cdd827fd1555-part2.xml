@@ -1,0 +1,747 @@
+<session>
+  <meta branch="planned/plan-unify-plan-next-st-02-21-2015" />
+  <meta model="claude-opus-4-6" />
+  <thinking>Now I see the full picture. Let me look at the TUI commands that use `--for-plan`:
+
+1. **`copy_prepare`** (line 870-873): `erk br co --for-plan {row.plan_id}` - This is for plans that might NOT have a branch yet (fresh plans). But it could also be used for plans that DO have a branch.
+
+2. **`copy_prepare_activate`** (line 875-881): Similar, with `--script` and `erk implement`.
+
+The TUI already has a separate `copy_checkout` command that uses the branch name when available. The `copy_prepare` command is specifically for preparing a plan (creating branch + .impl/).
+
+
+The TUI registry defines `copy_prepare` to generate the `--for-plan` command, but the user wants to switch it to use the branch name directly instead. So I need to modify the display function to pull the branch name from the worktree and construct the command that way.
+
+For cases where the branch doesn't exist yet (like plan-save), I'd fall back to `--for-plan` since we don't have a name to use. The real win here is replacing the verbose `--for-plan` syntax with the cleaner branch name form wherever possible.
+
+Actually, I can extract the branch name from the plan-header metadata using `extract_plan_header_branch_name()` on the plan body. So the priority would be: check the worktree branch first, then the PR head branch, then extract from the plan-header if it's been implemented before, and only use `--for-plan` as a last resort for completely new plans. This way the `copy_prepare` command shows the clean `erk br co &lt;name&gt;` syntax in almost all cases.
+
+Now I'm reconsidering what the user actually wants—they're asking for `erk br co &lt;name&gt;` instead of `erk br co --for-plan &lt;&lt;num&gt;&gt;` wherever possible. At plan-save time, I could generate the branch name upfront using the issue number and title, so even for new plans we'd tell the user the exact command to run when they're ready to start working.
+
+But there's a catch: `erk br co &lt;name&gt;` just checks out an existing branch, while `erk br co --for-plan &lt;num&gt;` does the heavy lifting—it resolves the issue, creates the branch if it doesn't exist, and sets up the `.impl/` directory. For a fresh plan where the branch hasn't been created yet, the user actually needs `--for-plan` to handle that setup. Without it, `erk br co &lt;name&gt;` would fail since the branch doesn't exist, and even if we created it beforehand, the command wouldn't initialize `.impl/`.
+
+I'm wondering if the design intent is different—maybe `erk br co &lt;name&gt;` is just meant to be a simple checkout, and `.impl/` setup happens elsewhere through `erk implement` or some auto-detection logic? Let me trace through what `_setup_impl_for_plan` does in the checkout code to understand the current flow better.
+
+Looking at how `copy_prepare_activate` chains `erk br co --for-plan &lt;num&gt; --script` with `erk implement --dangerous`, I see the user wants to simplify this to just `erk br co &lt;name&gt;`. The pragmatic solution seems to be using branch names wherever they're already known, but keeping `--for-plan` for new plans that don't have a branch yet. I should probably add a `branch_name` field to `PlanRowData` so the TUI can reference it when preparing commands.
+
+Now I'm mapping out where this change applies: the TUI's copy commands in `app.py`, `registry.py`, and `plan_detail_screen.py` should switch to branch names when `worktree_branch`, `pr_head_branch`, or plan-header metadata is available. For the post-save and post-create flows where no branch exists yet, I'll need to clarify with the user whether to keep `--for-plan` or handle it differently.
+
+Actually, there's a cleaner path here. At save time I can generate the branch name using the issue number, title, and timestamp, and since that same function gets called later during checkout, the timestamp would already be baked in from the save—so the branch name stays consistent across the workflow.
+
+But wait, that's not how it works. When `prepare_plan_for_worktree()` runs at checkout time, it calls `generate_issue_branch_name()` again with the current time, which means the timestamp suffix changes. So I can't predict the exact branch name at save time.
+
+This means `--for-plan` is still necessary for the save step, but I should use the actual branch name wherever it's already known—like in the TUI with an existing worktree or when drafting a PR with a confirmed branch. The user might be asking me to change all the copy I can, or they might want to rethink the whole workflow to eliminate `--for-plan` entirely. I should probably clarify what they're looking for.
+
+Actually, thinking about this from their perspective: they merged a PR that changed the copy from `erk prepare` to `erk br co --for-plan`, and now they're frustrated with how verbose it is. Maybe the solution is simpler—instead of `erk br co --for-plan 123`, I could show `erk br co P123-fix-auth-02-22`, assuming `erk br co &lt;name&gt;` can also resolve plan branches by name.
+
+The catch is that `--for-plan` is only needed the first time to create the branch and `.impl/` directory. After that, the branch exists and `erk br co &lt;name&gt;` works fine. But in the plan-save next-steps, the branch doesn't exist yet, so we'd still need the flag there.
+
+Let me focus on the plan-save case specifically and figure out what to recommend.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1568" cache_read_input_tokens="78531" cache_creation="{'ephemeral_5m_input_tokens': 1568, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete understanding. Let me read the registry and plan_detail_screen prepare commands to see the full TUI picture.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1568" cache_read_input_tokens="78531" cache_creation="{'ephemeral_5m_input_tokens': 1568, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011Xnak6sszKnVBa4JUU3EGF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/commands/registry.py</param>
+    <param name="offset">95</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1568" cache_read_input_tokens="78531" cache_creation="{'ephemeral_5m_input_tokens': 1568, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Xnak6sszKnVBa4JUU3EGF">
+    95→    """Display name for copy_pr_checkout command."""
+    96→    if ctx.row.pr_number:
+    97→        pr = ctx.row.pr_number
+    98→        return f'source "$(erk pr checkout {pr} --script)" &amp;&amp; erk pr sync --dangerous'
+    99→    return "checkout &amp;&amp; sync"
+   100→
+   101→
+   102→def _display_copy_prepare(ctx: CommandContext) -&gt; str:
+   103→    """Display name for copy_prepare command."""
+   104→    return f"erk br co --for-plan {ctx.row.plan_id}"
+   105→
+   106→
+   107→def _display_copy_prepare_activate(ctx: CommandContext) -&gt; str:
+   108→    """Display name for copy_prepare_activate command."""
+   109→    return (
+   110→        f'source "$(erk br co --for-plan {ctx.row.plan_id} --script)" &amp;&amp; erk implement --dangerous'
+   111→    )
+   112→
+   113→
+   114→def _display_copy_submit(ctx: CommandContext) -&gt; str:
+   115→    """Display name for copy_submit command."""
+   116→    return f"erk plan submit {ctx.row.plan_id}"
+   117→
+   118→
+   119→def _display_copy_replan(ctx: CommandContext) -&gt; str:
+   120→    """Display name for copy_replan command."""
+   121→    return f"erk plan replan {ctx.row.plan_id}"
+   122→
+   123→
+   124→# === Display Name Generators (Objective Commands) ===
+  </tool_result>
+  <tool_use name="Read" id="toolu_016yjCotdRE2vGyN8DhtoSHu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">335</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1568" cache_read_input_tokens="78531" cache_creation="{'ephemeral_5m_input_tokens': 1568, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016yjCotdRE2vGyN8DhtoSHu">
+   335→        if self._row.pr_number is not None:
+   336→            cmd = f"erk pr co {self._row.pr_number}"
+   337→            self._copy_and_notify(cmd)
+   338→
+   339→    def action_copy_prepare(self) -&gt; None:
+   340→        """Copy basic prepare command to clipboard."""
+   341→        cmd = f"erk br co --for-plan {self._row.plan_id}"
+   342→        self._copy_and_notify(cmd)
+   343→
+   344→    def action_copy_prepare_activate(self) -&gt; None:
+   345→        """Copy one-liner to prepare worktree and start implementation."""
+   346→        cmd = (
+   347→            f'source "$(erk br co --for-plan {self._row.plan_id} --script)"'
+   348→            " &amp;&amp; erk implement --dangerous"
+   349→        )
+   350→        self._copy_and_notify(cmd)
+   351→
+   352→    def action_copy_submit(self) -&gt; None:
+   353→        """Copy submit command to clipboard."""
+   354→        cmd = f"erk plan submit {self._row.plan_id}"
+  </tool_result>
+  <thinking>OK, I now have complete understanding. Let me also check where in the plan_detail_screen the `copy_prepare` commands are used via the palette execution path (lines 630-645).</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3458" cache_read_input_tokens="80099" cache_creation="{'ephemeral_5m_input_tokens': 3458, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012FPbF7BjPBP7YyxjjEZQgq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">628</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3458" cache_read_input_tokens="80099" cache_creation="{'ephemeral_5m_input_tokens': 3458, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012FPbF7BjPBP7YyxjjEZQgq">
+   628→
+   629→        elif command_id == "copy_pr_checkout":
+   630→            cmd = f"erk pr co {row.pr_number}"
+   631→            executor.copy_to_clipboard(cmd)
+   632→            executor.notify(f"Copied: {cmd}", severity=None)
+   633→
+   634→        elif command_id == "copy_prepare":
+   635→            cmd = f"erk br co --for-plan {row.plan_id}"
+   636→            executor.copy_to_clipboard(cmd)
+   637→            executor.notify(f"Copied: {cmd}", severity=None)
+   638→
+   639→        elif command_id == "copy_prepare_activate":
+   640→            cmd = (
+   641→                f'source "$(erk br co --for-plan {row.plan_id} --script)"'
+   642→                " &amp;&amp; erk implement --dangerous"
+   643→            )
+   644→            executor.copy_to_clipboard(cmd)
+   645→            executor.notify(f"Copied: {cmd}", severity=None)
+   646→
+   647→        elif command_id == "copy_submit":
+  </tool_result>
+  <tool_use name="Read" id="toolu_019rpd1GzQch9QJM7djgsGFb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">835</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3458" cache_read_input_tokens="80099" output_tokens="325" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3458}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019rpd1GzQch9QJM7djgsGFb">
+   835→            if self._row.pr_number is not None:
+   836→                pr_checkout_cmd = f"erk pr co {self._row.pr_number}"
+   837→                with Container(classes="command-row"):
+   838→                    yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
+   839→
+   840→            # Prepare commands
+   841→            prepare_cmd = f"erk br co --for-plan {self._row.plan_id}"
+   842→            with Container(classes="command-row"):
+   843→                yield Label("[1]", classes="command-key")
+   844→                yield CopyableLabel(prepare_cmd, prepare_cmd)
+   845→
+   846→            # Submit command
+   847→            submit_cmd = f"erk plan submit {self._row.plan_id}"
+   848→            with Container(classes="command-row"):
+   849→                yield Label("[3]", classes="command-key")
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>and this only makes sense for draft_pr backend use cases i think, where we create the branch first, and then the planned pr</user>
+  <thinking>The user is clarifying their intent. They're saying:
+
+1. `erk br co &lt;&lt;name&gt;&gt;` only makes sense for the **draft PR backend** use case, where the branch is created first (at plan-save time), and then the planned PR is created.
+
+2. For the **issue backend** (GitHub issues), the branch doesn't exist at plan-save time - it's created later at `erk br co --for-plan` time. So `erk br co &lt;&lt;name&gt;&gt;` can't work there since we don't know the branch name yet.
+
+So the scope is narrower than I initially thought:
+- **Draft PR backend**: Change copy from `erk br co --for-plan &lt;&lt;num&gt;&gt;` to `erk br co &lt;&lt;name&gt;&gt;` (because branch name IS known - it was created at plan-save time)
+
+
+- **Issue backend**: Keep `erk br co --for-plan &lt;&lt;num&gt;&gt;` (because branch doesn't exist yet)
+
+But wait, they said "change all copy" — let me reconsider. They're pointing out that the previous commit added `--for-plan` guidance everywhere, and they want `erk br co &lt;&lt;name&gt;&gt;` to be preferred instead, but only where it actually makes sense. So I need to update the copy selectively based on the backend type.
+
+For draft PR workflows, I can show `erk br co &lt;&lt;branch_name&gt;&gt;` since the branch exists before the plan is saved. For issue backends though, the branch doesn't exist at plan-save time, so those paths might need to stay as `--for-plan` or be handled differently. I should also check the TUI logic — if we have a known branch from a worktree or PR head, we can show the simpler command there too.
+
+Let me trace through where the draft PR versus issue backend distinction gets made in the copy and next steps.
+
+I'm seeing that `DraftPRNextSteps` already has `branch_name` as a field, but the `prepare` and `prepare_and_implement` properties are still using `--for-plan` with the PR number instead of the actual branch name. The `checkout_and_implement` property already uses the branch name correctly, so this is the exact inconsistency the user wants fixed. The TUI's `copy_prepare` commands are also using `--for-plan` even when the branch name might be available.
+
+Since the draft PR flow creates the branch before displaying next steps, the branch name is always known at that point. I need to update `DraftPRNextSteps` to use `branch_name` in all the prepare-related properties, and then update the TUI to pass the branch name when available instead of relying on `--for-plan`. I'm realizing there's a functional issue here—removing `--for-plan` means `.impl/` won't get set up, since that only happens in the `--for-plan` code path. I need to figure out if that's acceptable for draft PRs or if we need a different approach. I see that `DraftPRNextSteps` already has a checkout command that doesn't use `--for-plan`, followed by `erk implement --dangerous`. So the question becomes whether `erk implement` itself handles the `.impl/` setup, or if that's something that needs to happen during checkout.
+
+Looking at the different scenarios here: first-time prepare needs both the branch checkout and `.impl/` creation, while subsequent checkouts just need to switch to an existing branch and workspace. The key distinction is whether `.impl/` already exists from a previous run or needs to be created fresh.
+
+The user's point about `--for-plan` being mainly for the issue backend makes sense—for draft PRs, since the branch is already created at plan-save time, a simple `erk br co &lt;name&gt;` should suffice. But that still leaves the question of how `.impl/` gets set up initially. Maybe `erk implement` can handle that automatically by detecting the plan from the PR context, rather than requiring `--for-plan` upfront. I'm checking whether `plan_save.py` creates the `.impl/` directory for draft PRs, since that affects whether `erk br co &lt;name&gt;` can work without `--for-plan`. The core question is whether the user wants to change just the copy/guidance to prefer the branch name, or also change the actual behavior so that checking out a plan branch auto-detects and sets up `.impl/`. From re-reading their messages, it seems they want the user-facing guidance to shift toward `erk br co &lt;branch&gt;` as the primary command.
+
+Now I need to check what `erk implement` does to understand the full workflow.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="977" cache_read_input_tokens="83883" cache_creation="{'ephemeral_5m_input_tokens': 977, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good clarification. So the scope is specifically the **draft PR backend** paths, where the branch exists before the PR. Let me check what `erk implement` does for `.impl/` setup to understand the full picture.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="977" cache_read_input_tokens="83883" cache_creation="{'ephemeral_5m_input_tokens': 977, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JWrqmcn8euLBJnmbNCao2x">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/implement.py</param>
+    <param name="offset">390</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="977" cache_read_input_tokens="83883" cache_creation="{'ephemeral_5m_input_tokens': 977, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JWrqmcn8euLBJnmbNCao2x">
+   390→
+   391→    # Auto-detect plan number from branch name when TARGET is omitted
+   392→    if target is None:
+   393→        # Extract plan number from current branch
+   394→        detected_plan = extract_plan_from_current_branch(ctx)
+   395→        if detected_plan is None:
+   396→            current_branch = ctx.git.branch.get_current_branch(ctx.cwd) or "unknown"
+   397→            raise click.ClickException(
+   398→                f"Could not auto-detect plan number from branch '{current_branch}'.\n\n"
+   399→                f"Branch does not follow PXXXX-* pattern. Either:\n"
+   400→                f"  1. Provide TARGET explicitly: erk implement &lt;TARGET&gt;\n"
+   401→                f"  2. Switch to a plan branch: erk br checkout P&lt;num&gt;-...\n"
+   402→                f"  3. Checkout plan branch: erk br co --for-plan &lt;issue&gt;"
+   403→            )
+   404→
+   405→        # Use detected plan number as target
+   406→        target = detected_plan
+   407→        user_output(f"Auto-detected plan #{target} from branch name")
+   408→
+   409→    # Detect target type
+   410→    target_info = detect_target_type(target)
+   411→
+   412→    # Output target detection diagnostic
+   413→    if target_info.target_type in ("issue_number", "issue_url"):
+   414→        ctx.console.info(f"Detected plan #{target_info.issue_number}")
+   415→    elif target_info.target_type == "file_path":
+   416→        ctx.console.info(f"Detected plan file: {target}")
+   417→
+   418→    # Dispatch based on target type
+   419→    if target_info.target_type in ("issue_number", "issue_url"):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RBgY7THZCvjd8ZyAw8f6uT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/implement.py</param>
+    <param name="offset">418</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3396" cache_read_input_tokens="84860" cache_creation="{'ephemeral_5m_input_tokens': 3396, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RBgY7THZCvjd8ZyAw8f6uT">
+   418→    # Dispatch based on target type
+   419→    if target_info.target_type in ("issue_number", "issue_url"):
+   420→        if target_info.issue_number is None:
+   421→            user_output(
+   422→                click.style("Error: ", fg="red") + "Failed to extract issue number from target"
+   423→            )
+   424→            raise SystemExit(1) from None
+   425→
+   426→        _implement_from_issue(
+   427→            ctx,
+   428→            issue_number=target_info.issue_number,
+   429→            dry_run=dry_run,
+   430→            submit=submit,
+   431→            dangerous=dangerous,
+   432→            script=script,
+   433→            no_interactive=no_interactive,
+   434→            verbose=verbose,
+   435→            model=model,
+   436→            executor=ctx.prompt_executor,
+   437→        )
+   438→    else:
+   439→        plan_file = Path(target)
+   440→        _implement_from_file(
+   441→            ctx,
+   442→            plan_file=plan_file,
+   443→            dry_run=dry_run,
+   444→            submit=submit,
+   445→            dangerous=dangerous,
+   446→            script=script,
+   447→            no_interactive=no_interactive,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GQDSoap7rW2PWUpUENUj7e">
+    <param name="pattern">def _implement_from_issue</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/implement.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="88256" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQDSoap7rW2PWUpUENUj7e">
+71:def _implement_from_issue(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KPqxVy3VCZJUfNdCac1Vsf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/src/erk/cli/commands/implement.py</param>
+    <param name="offset">71</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="88788" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KPqxVy3VCZJUfNdCac1Vsf">
+    71→def _implement_from_issue(
+    72→    ctx: ErkContext,
+    73→    *,
+    74→    issue_number: str,
+    75→    dry_run: bool,
+    76→    submit: bool,
+    77→    dangerous: bool,
+    78→    script: bool,
+    79→    no_interactive: bool,
+    80→    verbose: bool,
+    81→    model: str | None,
+    82→    executor: PromptExecutor,
+    83→) -&gt; None:
+    84→    """Implement feature from plan in current directory.
+    85→
+    86→    Args:
+    87→        ctx: Erk context
+    88→        issue_number: GitHub issue number
+    89→        dry_run: Whether to perform dry run
+    90→        submit: Whether to auto-submit PR after implementation
+    91→        dangerous: Whether to skip permission prompts
+    92→        script: Whether to output activation script
+    93→        no_interactive: Whether to execute non-interactively
+    94→        verbose: Whether to show raw output or filtered output
+    95→        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+    96→        executor: Prompt executor for command execution
+    97→    """
+    98→    # Discover repo context for plan fetch
+    99→    repo = discover_repo_context(ctx, ctx.cwd)
+   100→    ensure_erk_metadata_dir(repo)
+
+... [50 lines omitted] ...
+
+   106→        user_output(click.style("Error: ", fg="red") + f"Plan #{issue_number} not found")
+   113→            click.style("Error: ", fg="red")
+  </tool_result>
+  <thinking>So `erk implement` does:
+1. Fetches the plan from GitHub
+2. Creates `.impl/` folder in the current directory
+3. Saves the plan content
+
+So `erk implement` DOES handle `.impl/` setup on its own! This means the workflow could be:
+1. `erk br co &lt;branch-name&gt;` (just checkout the branch)
+2. `erk implement` (creates `.impl/` and starts implementation)
+
+This makes `--for-plan` mostly redundant for the draft PR backend case, since:
+- The branch already exists (created at plan-save time)
+- `.impl/` can be set up by `erk implement`
+
+
+The user's request makes sense for draft PRs—just simplify the copy to `erk br co &lt;branch-name&gt;` and let `erk implement` handle the rest. But for the issue backend, `--for-plan` is still necessary since the branch doesn't exist until that command creates it, whereas `erk implement` alone would only fetch the plan and set up `.impl/` without creating the branch first.
+
+Now I'm mapping out the specific changes needed: updating the draft PR backend methods to use the simpler branch checkout syntax, and adjusting the TUI copy commands accordingly.
+
+For the TUI side, I need to check whether a plan has a branch available—either through `worktree_branch`, `pr_head_branch`, or the plan header—and use that branch name directly in the checkout command when it exists.
+
+The user was explicit that this change should only apply to draft PR backend cases, not to issue-backed plans even when their branch names are known. So I'll stick with that constraint and look for other places where `--for-plan` appears in draft PR contexts, like the `plan-save.md` command spec. Looking at `PlanRowData`, I see `pr_head_branch` gets set when there's a linked PR, which I can use to determine if we're dealing with a draft PR backend. For the TUI prepare commands, I should use the branch name directly when available and fall back to `--for-plan`, but only apply this change when `pr_head_branch` is present to stay conservative and aligned with the draft PR backend requirement.
+
+My cleanest approach is to update `DraftPRNextSteps` to use branch names as the source of truth, add logic in the TUI to resolve and use the best available branch name in prepare commands, keep `IssueNextSteps` unchanged with `--for-plan`, and update the relevant documentation. Now I'm mapping out the specific TUI locations that need changes across the app, registry, and plan detail screen files.
+
+For the prepare commands that work across both issue and draft PR plans, I can check if a branch name exists and use that for the checkout command, otherwise fall back to the plan ID approach. Using `pr_head_branch` or `worktree_branch` when available keeps this straightforward without needing to parse plan metadata.
+
+Now I'm reviewing the test files that need updates—the next steps tests, TUI app tests, and command registry tests—before I write out the implementation plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1243" cache_read_input_tokens="88973" cache_creation="{'ephemeral_5m_input_tokens': 1243, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good - so for draft PRs the branch already exists. And `erk implement` handles `.impl/` setup on its own, so `--for-plan` is redundant for draft PRs. Let me now write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1243" cache_read_input_tokens="88973" cache_creation="{'ephemeral_5m_input_tokens': 1243, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011mQfNSyRPMhvn3Ap1ibfXf">
+    <param name="file_path">/Users/schrockn/.claude/plans/reactive-questing-storm.md</param>
+    <param name="content"># Plan: Prefer `erk br co &lt;name&gt;` over `--for-plan` in Draft PR Copy
+
+## Context
+
+The prev...[truncated 4458 chars]...t packages/erk-shared/tests/unit/github/test_plan_issues.py -x`
+4. `ty` and `ruff` checks
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1243" cache_read_input_tokens="88973" cache_creation="{'ephemeral_5m_input_tokens': 1243, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011mQfNSyRPMhvn3Ap1ibfXf">
+File created successfully at: /Users/schrockn/.claude/plans/reactive-questing-storm.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01EJRWD8ZDHSfP2G9e2txr5i">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Plan: Prefer `erk br co &lt;name&gt;` over `--for-plan` in Draft PR Copy
+
+## Context
+
+The prev...[truncated 4458 chars]...t packages/erk-shared/tests/unit/github/test_plan_issues.py -x`
+4. `ty` and `ruff` checks
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3590" cache_read_input_tokens="90216" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3590}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EJRWD8ZDHSfP2G9e2txr5i">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/reactive-questing-storm.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Prefer `erk br co &lt;name&gt;` over `--for-plan` in Draft PR Copy
+Current context: (wt:plan-unify-plan-next-st-02-21-2015) (br:planned/plan-unify-plan-next-st-02-21-2015) (pr:#7795)\n\nWhat would you like to do with this plan?"
+  header: "br:planned/p"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id fb6f5596-e43a-4861-8543-cdd827fd1555 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0197N5kPKrSB7oBfaGQwe6e6">
+    <param name="file_path">/Users/schrockn/.claude/plans/reactive-questing-storm.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="93806" cache_creation="{'ephemeral_5m_input_tokens': 701, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0197N5kPKrSB7oBfaGQwe6e6">
+     1→# Plan: Prefer `erk br co &lt;name&gt;` over `--for-plan` in Draft PR Copy
+     2→
+     3→## Context
+     4→
+     5→The previous PR ("Unify plan checkout into `erk br co`") introduced `--for-plan` guidance throughout the codebase. For the **draft PR backend**, the branch already exists at plan-save time, so `erk br co &lt;branch-name&gt;` is simpler, shorter, and more natural than `erk br co --for-plan &lt;num&gt;`. The `--for-plan` flag remains necessary for the **issue backend** where the branch doesn't exist yet.
+     6→
+     7→## Changes
+     8→
+     9→### 1. `DraftPRNextSteps` properties — use branch name instead of `--for-plan`
+    10→
+    11→**File:** `packages/erk-shared/src/erk_shared/output/next_steps.py`
+    12→
+    13→Change these properties to use `self.branch_name`:
+    14→- `prepare` → `erk br co {self.branch_name}` (was `--for-plan {self.pr_number}`)
+    15→- `prepare_and_implement` → `source "$(erk br co {self.branch_name} --script)" &amp;&amp; erk implement --dangerous`
+    16→- `prepare_new_slot` → `erk br co --new-slot {self.branch_name}`
+    17→- `prepare_new_slot_and_implement` → similar
+    18→
+    19→Note: `DraftPRNextSteps` already has `branch_name: str` field (line 48).
+    20→
+    21→### 2. TUI prepare commands — use branch name when available
+    22→
+    23→For plans with a known branch name (`pr_head_branch` or `worktree_branch`), show `erk br co &lt;name&gt;`. Fall back to `--for-plan &lt;plan_id&gt;` only when no branch name is available.
+    24→
+    25→Add a helper to resolve branch name from `PlanRowData`:
+    26→```python
+    27→def _resolve_branch_name(row: PlanRowData) -&gt; str | None:
+    28→    return row.pr_head_branch or row.worktree_branch
+    29→```
+    30→
+
+... [78 lines omitted] ...
+
+    36→### 3. CLI error message in `plan/checkout_cmd.py`
+    40→Keep `--for-plan` here — this error fires when no branch exists yet, so `--for-plan` is the correct guidance.
+    48→### 5. `implement.py` error message
+    98→- `plan/checkout_cmd.py` error message
+   100→- `implement.py` error message
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+**Plan: Prefer `erk br co &lt;name&gt;` over `--for-plan` in Draft PR Copy**
+
+**Context:** The previous PR introduced `--for-plan` guidance everywhere. For the draft PR backend, the branch already exists at plan-save time, so `erk br co &lt;branch-name&gt;` is simpler and more natural. `--for-plan` remains for the issue backend where the branch doesn't exist yet.
+
+**What changes:**
+1. **`DraftPRNextSteps`** — switch `prepare`, `prepare_and_implement`, `prepare_new_slot`, `prepare_new_slot_and_implement` from `--for-plan {pr_number}` to `{branch_name}` (field already exists)
+2. **TUI prepare commands** — use `pr_head_branch` or `worktree_branch` when available, fall back to `--for-plan` only when no branch name is known (6 locations across `app.py`, `registry.py`, `plan_detail_screen.py`)
+3. **Skill/command specs** — update draft PR sections in `plan-save.md`, `migrate-plan-to-draft-pr.md`
+4. **Docs** — update draft PR examples in learned docs and tutorials
+5. **Tests** — update expected strings in ~6 test files
+
+**What stays as `--for-plan`:** All issue backend paths (`IssueNextSteps`, `plan/create_cmd.py`, `plan/checkout_cmd.py` error, `implement.py` error, `plan_create_review_pr.py`, `format_next_steps_markdown`)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2000" cache_read_input_tokens="94507" cache_creation="{'ephemeral_5m_input_tokens': 2000, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01VaZ6qfw1CukpQEjjfzPGDG">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:planned/p', 'opti...[truncated 342 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2000" cache_read_input_tokens="94507" output_tokens="579" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2000}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VaZ6qfw1CukpQEjjfzPGDG">
+User has answered your questions: "What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01KSXqDLigBKU6872Bqx7ipA">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="836" cache_read_input_tokens="96507" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 836}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KSXqDLigBKU6872Bqx7ipA">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --objective-issue=3679    # Plan linked to objective
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+```
+
+When creating a plan from an objective (via `/erk:objective-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
+
+The JSON output contract is the same for both backends (`issue_number`, `issue_url`, `title`, `branch_name`, `plan_backend`).
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--objective-issue` and `--plan-type` flags:
+
+```
+If  contains "--objective-issue=&lt;number&gt;":
+  - Extract the number
+  - Store as OBJECTIVE_ISSUE variable
+  - Set OBJECTIVE_FLAG to "--objective-issue=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+```
+
+### Step 2: Run Save Command
+
+Run this command with the session ID and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="fb6f5596-e43a-4861-8543-cdd827fd1555" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
+```
+
+Parse the JSON output to extract `issue_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `--objective-issue` was provided in arguments.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;issue_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;issue_number&gt; and re-run:
+  /erk:plan-save --objective-issue=&lt;expected&gt;
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `--objective-issue` was provided and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "fb6f5596-e43a-4861-8543-cdd827fd1555" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --plan "#&lt;issue_number&gt;"
+```
+
+This atomically fetches the issue body, finds the matching node row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;issue_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+On success, display based on `plan_backend` from JSON output:
+
+**Header (both backends):**
+
+```
+Plan "&lt;title&gt;" saved as &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;issue_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;issue_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;issue_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;issue_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;issue_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Submit to Queue: erk plan submit &lt;issue_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;issue_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;issue_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;issue_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;issue_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Submit to Queue: erk plan submit &lt;issue_number&gt;
+```
+
+
+**If `plan_backend` is `"draft_pr"`:**
+
+```
+Next steps:
+
+View PR: gh pr view &lt;issue_number&gt; --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk br create --for-plan &lt;issue_number&gt;
+  Prepare+Implement: source "$(erk br create --for-plan &lt;issue_number&gt; --script)" &amp;&amp; erk implement --dangerous
+  Submit to Queue: erk plan submit &lt;issue_number&gt;
+```
+
+**If `plan_backend` is `"github"` (or absent):**
+
+```
+Next steps:
+
+View Issue: gh issue view &lt;issue_number&gt; --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk br create --for-plan &lt;issue_number&gt;
+  Prepare+Implement: source "$(erk br create --for-plan &lt;issue_number&gt; --script)" &amp;&amp; erk implement --dangerous
+  Submit to Queue: erk plan submit &lt;issue_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved issue number:**
+
+```bash
+erk exec marker read --session-id "fb6f5596-e43a-4861-8543-cdd827fd1555" plan-saved-issue
+```
+
+This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <tool_use name="Bash" id="toolu_012Vw4vS75P1yyYrE3yLAFbX">
+    <param name="command">erk exec plan-save --format json --session-id="fb6f5596-e43a-4861-8543-cdd827fd1555"</param>
+    <param name="description">Save plan to GitHub as draft PR or issue</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2187" cache_read_input_tokens="97343" cache_creation="{'ephemeral_5m_input_tokens': 2187, 'ephemeral_1h_input_tokens': 0}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Vw4vS75P1yyYrE3yLAFbX">
+{"success": true, "issue_number": 7818, "issue_url": "https://github.com/dagster-io/erk/pull/7818", "title": "[erk-plan] Plan: Prefer `erk br co &lt;name&gt;` over `--for-plan` in Draft PR Copy", "branch_name": "planned/plan-prefer-erk-br-co-n-02-22-0538", "plan_backend": "draft_pr", "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/planned/plan-unify-plan-next-st-02-21-2015/.erk/scratch/sessions/fb6f5596-e43a-4861-8543-cdd827fd1555/plan_snapshots/000001-4e31890b"}
+  </tool_result>
+  <assistant>Plan saved successfully.
+
+**Plan "Prefer `erk br co &lt;name&gt;` over `--for-plan` in Draft PR Copy" saved as draft PR #7818**
+URL: https://github.com/dagster-io/erk/pull/7818
+
+Next steps:
+
+View PR: `gh pr view 7818 --web`
+
+In Claude Code:
+- Submit to queue: `/erk:plan-submit` — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+- Local: `erk br co planned/plan-prefer-erk-br-co-n-02-22-0538`
+- Implement: `source "$(erk br co planned/plan-prefer-erk-br-co-n-02-22-0538 --script)" &amp;&amp; erk implement --dangerous`
+- Submit to Queue: `erk plan submit 7818`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="99530" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
