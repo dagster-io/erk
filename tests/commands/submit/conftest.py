@@ -9,6 +9,7 @@ from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.plan_helpers import create_plan_store
 
 
@@ -153,6 +154,14 @@ def setup_submit_context(
     # for draft_pr backend, let context_for_test create a default FakeGitHubIssues
     fake_issues = fake_backing if isinstance(fake_backing, FakeGitHubIssues) else None
 
+    # Configure FakePromptExecutor to simulate failure so that
+    # generate_slug_or_fallback falls back to the raw title.
+    # This keeps branch name assertions stable in tests.
+    fake_prompt_executor = FakePromptExecutor(
+        available=True,
+        simulated_prompt_error="LLM unavailable in test",
+    )
+
     ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
@@ -163,6 +172,7 @@ def setup_submit_context(
         repo=repo,
         global_config=global_config,
         console=fake_console,
+        prompt_executor=fake_prompt_executor,
     )
 
     return ctx, fake_git, fake_github, fake_backing, fake_graphite, repo_root

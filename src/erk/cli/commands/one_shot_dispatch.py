@@ -13,7 +13,9 @@ import click
 
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.ensure import Ensure
+from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
@@ -62,26 +64,36 @@ def generate_branch_name(
     time: Time,
     plan_issue_number: int | None,
     objective_id: int | None,
+    prompt_executor: PromptExecutor | None,
 ) -> str:
     """Generate a branch name from the prompt.
 
     Format: P{N}-{slug}-{MM-DD-HHMM} (with optional O{M} objective encoding)
     when plan_issue_number is provided, otherwise oneshot-{slug}-{MM-DD-HHMM}.
 
+    When prompt_executor is provided, uses LLM to generate a concise slug
+    from the prompt. When None (e.g., dry-run mode), falls back to
+    sanitize_worktree_name.
+
     Args:
         prompt: The task description
         time: Time gateway for deterministic timestamps
         plan_issue_number: If provided, delegate to generate_issue_branch_name
         objective_id: If provided with plan_issue_number, encode O{N} in branch name
+        prompt_executor: PromptExecutor for LLM slug generation, or None to skip
 
     Returns:
         Branch name string
     """
+    title = prompt
+    if prompt_executor is not None:
+        title = generate_slug_or_fallback(prompt_executor, prompt)
+
     if plan_issue_number is not None:
         return generate_issue_branch_name(
-            plan_issue_number, prompt, time.now(), objective_id=objective_id
+            plan_issue_number, title, time.now(), objective_id=objective_id
         )
-    slug = sanitize_worktree_name(prompt)
+    slug = sanitize_worktree_name(title)
     prefix = "oneshot-"
     max_slug_len = 31 - len(prefix)
     if len(slug) > max_slug_len:
@@ -141,6 +153,7 @@ def dispatch_one_shot(
             time=ctx.time,
             plan_issue_number=None,
             objective_id=None,
+            prompt_executor=None,
         )
         user_output(
             click.style("Dry-run mode:", fg="cyan", bold=True) + " No changes will be made\n"
@@ -188,21 +201,23 @@ def dispatch_one_shot(
         )
         plan_issue_number = skeleton_result.issue_number
 
-    # Generate branch name
+    # Generate branch name with LLM-generated slug
+    slug = generate_slug_or_fallback(ctx.prompt_executor, params.prompt)
     if is_draft_pr:
         # draft_pr: plnd/ prefix (no issue number needed)
         branch_name = generate_draft_pr_branch_name(
-            params.prompt,
+            slug,
             ctx.time.now(),
             objective_id=objective_id,
         )
     else:
         # github: P<N>- prefix using skeleton issue number
         branch_name = generate_branch_name(
-            params.prompt,
+            slug,
             time=ctx.time,
             plan_issue_number=plan_issue_number,
             objective_id=objective_id,
+            prompt_executor=None,
         )
 
     # Save current branch for restoration after workflow trigger

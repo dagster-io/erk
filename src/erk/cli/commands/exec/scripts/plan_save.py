@@ -30,6 +30,7 @@ from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     plan_save_to_issue,
 )
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk_shared.context.helpers import (
     get_repo_identifier,
     require_branch_manager,
@@ -39,6 +40,7 @@ from erk_shared.context.helpers import (
     require_github,
     require_issues,
     require_local_config,
+    require_prompt_executor,
     require_repo_root,
     require_time,
 )
@@ -139,10 +141,12 @@ def _save_as_draft_pr(
 
     title = extract_title_from_plan(plan_content)
 
-    # Generate branch name
+    # Generate branch name with LLM-generated slug
+    executor = require_prompt_executor(ctx)
+    slug = generate_slug_or_fallback(executor, title)
     now = require_time(ctx).now()
     branch_name = generate_draft_pr_branch_name(
-        title,
+        slug,
         now,
         objective_id=objective_issue,
     )
