@@ -338,7 +338,7 @@ class TestObjectivesViewRowConversion:
     """Tests for row conversion in Objectives view."""
 
     def test_objectives_view_has_enriched_columns(self) -> None:
-        """Objectives view produces plan, slug, progress, state, updated, author."""
+        """Objectives view produces plan, slug, progress, state, deps, updated, author."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
@@ -346,14 +346,15 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        # Objectives view: plan, slug, progress, state, updated, author
-        assert len(values) == 6
+        # Objectives view: plan, slug, progress, state, deps, updated, author
+        assert len(values) == 7
         assert _text_to_str(values[0]) == "#42"
         assert values[1] == "-"  # slug_display
         assert values[2] == "-"  # progress_display
         assert _text_to_str(values[3]) == "-"  # state_display
-        assert values[4] == "-"  # updated_display
-        assert values[5] == "test-user"  # author
+        assert values[4] == "-"  # deps_display
+        assert values[5] == "-"  # updated_display
+        assert values[6] == "test-user"  # author
 
     def test_objectives_view_shows_slug_and_sparkline(self) -> None:
         """Objectives view shows slug and state sparkline from row data."""
@@ -376,7 +377,8 @@ class TestObjectivesViewRowConversion:
         assert values[1] == "build-feature"  # slug
         assert values[2] == "3/7"  # progress
         assert _text_to_str(values[3]) == "✓✓✓▶▶○○"  # state sparkline
-        assert values[4] == "2h ago"  # updated
+        assert values[4] == "-"  # deps_display
+        assert values[5] == "2h ago"  # updated
 
 
 class TestShowPrColumnFalse:
