@@ -529,9 +529,7 @@ def prepare_plan_source_from_issue(
     ctx.console.info(f"Plan: {plan.title}")
 
     # Prepare and validate using shared helper (returns union type)
-    result = prepare_plan_for_worktree(
-        plan, ctx.time.now(), warn_non_open=True
-    )
+    result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
 
     if isinstance(result, IssueValidationFailed):
         user_output(click.style("Error: ", fg="red") + result.message)

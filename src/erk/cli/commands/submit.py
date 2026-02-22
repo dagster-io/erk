@@ -1250,9 +1250,7 @@ def submit_cmd(
         validated_draft_prs.append(validated_pr)
 
     user_output("")
-    user_output(
-        click.style("✓", fg="green") + f" All {len(validated_draft_prs)} plan(s) validated"
-    )
+    user_output(click.style("✓", fg="green") + f" All {len(validated_draft_prs)} plan(s) validated")
     user_output("")
 
     for v in validated_draft_prs:

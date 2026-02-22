@@ -408,9 +408,7 @@ def branch_checkout(
             raise click.ClickException(f"Issue #{issue_number} not found")
         plan = result
 
-        plan_result = prepare_plan_for_worktree(
-            plan, ctx.time.now(), warn_non_open=True
-        )
+        plan_result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
         if isinstance(plan_result, IssueValidationFailed):
             user_output(f"Error: {plan_result.message}")
             raise SystemExit(1) from None

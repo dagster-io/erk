@@ -63,9 +63,7 @@ def get_pr_for_plan(
     # Draft-PR: plan_id IS the PR number — look up directly
     pr_result = github.get_pr(repo_root, issue_number)
     if isinstance(pr_result, PRNotFound):
-        return _exit_with_error(
-            error="no-pr-for-branch", message=f"PR #{issue_number} not found"
-        )
+        return _exit_with_error(error="no-pr-for-branch", message=f"PR #{issue_number} not found")
     pr_data = {
         "number": pr_result.number,
         "title": pr_result.title,

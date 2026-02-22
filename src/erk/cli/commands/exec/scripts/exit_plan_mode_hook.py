@@ -335,8 +335,7 @@ def build_blocking_message(
             "and stop. Does NOT proceed to implementation.",
             '  2. "Skip PR and implement here" - Skip creating a PR, implement directly '
             "in current worktree (for small PR iterations that don't need PR tracking).",
-            '  3. "View/Edit the plan" - Open plan in editor to review or modify '
-            "before deciding.",
+            '  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
         ]
     )
 
