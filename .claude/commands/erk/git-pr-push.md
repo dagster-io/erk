@@ -150,6 +150,11 @@ existing_pr=$(gh pr list --head "$(git branch --show-current)" --state open --js
 - If `existing_pr` is empty or null: No existing PR, proceed to Step 7
 - If `existing_pr` has data: PR exists, skip Step 7 and go directly to Step 7.5
 
+> **CRITICAL: When an existing PR is found, do NOT run `gh pr edit --body` or `gh pr edit --title`.**
+> The PR body may contain plan-header metadata blocks (`<!-- erk:metadata-block:plan-header -->`)
+> that must be preserved. The body will be updated by a later workflow step (`ci-update-pr-body`).
+> Only push code (Step 5) and add the checkout footer (Step 7.5).
+
 If an existing PR was found, extract its details for reporting:
 
 ```bash
@@ -201,6 +206,9 @@ Extract the PR number (from Step 7 if PR was created, or from Step 6.5 if existi
 - If Step 7 was skipped: Use `pr_number` extracted from `existing_pr` in Step 6.5
 
 **Generate and append footer:**
+
+> **Note:** When appending the footer, always read the current body first and append.
+> Never replace the entire body — only append the footer to the existing content.
 
 ```bash
 # Get issue number from .impl/issue.json if present (for proper issue linking)
