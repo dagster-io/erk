@@ -51,8 +51,6 @@ class FakePlanDataProvider(PlanDataProvider):
         self._plan_content_by_plan_id: dict[int, str] = {}
         self._objective_content_by_plan_id: dict[int, str] = {}
         self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
-        self._updated_objectives: list[tuple[int, int, str]] = []
-        self._update_objective_error: str | None = None
 
     @property
     def repo_root(self) -> Path:
@@ -116,29 +114,6 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         self._plans = [p for p in self._plans if p.plan_id != plan_id]
         return []
-
-    @property
-    def updated_objectives(self) -> list[tuple[int, int, str]]:
-        """Objectives that were updated (objective_issue, pr_num, branch)."""
-        return list(self._updated_objectives)
-
-    def update_objective_after_land(
-        self,
-        *,
-        objective_issue: int,
-        pr_num: int,
-        branch: str,
-    ) -> None:
-        """Track objective update call.
-
-        Args:
-            objective_issue: The objective issue number
-            pr_num: The PR number that was landed
-            branch: The PR head branch name
-        """
-        if self._update_objective_error is not None:
-            raise RuntimeError(self._update_objective_error)
-        self._updated_objectives.append((objective_issue, pr_num, branch))
 
     def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Fake submit to queue implementation.

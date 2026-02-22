@@ -82,23 +82,6 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
-    def update_objective_after_land(
-        self,
-        *,
-        objective_issue: int,
-        pr_num: int,
-        branch: str,
-    ) -> None:
-        """Update an objective after landing a PR.
-
-        Args:
-            objective_issue: The objective issue number to update
-            pr_num: The PR number that was landed
-            branch: The PR head branch name
-        """
-        ...
-
-    @abstractmethod
     def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
         """Fetch branch activity for plans that exist locally.
 

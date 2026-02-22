@@ -698,11 +698,19 @@ class PlanDetailScreen(ModalScreen):
                 def _on_land_success() -> None:
                     if self._executor is not None:
                         self._executor.refresh_data()
-                    if objective_issue is not None and self._executor is not None:
-                        self._executor.update_objective_after_land(
-                            objective_issue=objective_issue,
-                            pr_num=pr_num,
-                            branch=branch,
+                    if objective_issue is not None and self._repo_root is not None:
+                        self.run_streaming_command(
+                            [
+                                "erk",
+                                "exec",
+                                "objective-update-after-land",
+                                f"--objective={objective_issue}",
+                                f"--pr={pr_num}",
+                                f"--branch={branch}",
+                            ],
+                            cwd=self._repo_root,
+                            title=f"Update Objective #{objective_issue}",
+                            timeout=300.0,
                         )
 
                 self.run_streaming_command(
