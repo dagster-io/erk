@@ -27,6 +27,8 @@
 
 **CRITICAL: After creating an objective issue, ALWAYS run `erk objective check <number>` to validate it.** If validation fails, the objective's metadata is broken and `erk dash` will not display it correctly. Fix the issue before proceeding.
 
+**CRITICAL: When creating a plan for an objective, ALWAYS use `/erk:objective-plan` to ensure proper metadata linking.** Do not manually reference objectives in plan text without using the structured workflow. The objective-context marker created by this command is required for the plan-save pipeline to link the plan to its parent objective.
+
 ### Universal Tripwires
 
 These critical rules apply across all code areas.

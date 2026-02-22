@@ -48,6 +48,30 @@ def create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_numbe
     marker_file.write_text(str(issue_number), encoding="utf-8")
 
 
+def read_objective_context_marker(session_id: str, repo_root: Path) -> int | None:
+    """Read objective issue number from session's objective-context marker.
+
+    This reads the marker created by /erk:objective-plan to determine which
+    objective a plan is associated with. Used as a fallback in plan-save when
+    --objective-issue is not explicitly provided.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+
+    Returns:
+        The objective issue number if marker exists and is valid, None otherwise.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "objective-context.marker"
+    if not marker_file.exists():
+        return None
+    content = marker_file.read_text(encoding="utf-8").strip()
+    if not content.isdigit():
+        return None
+    return int(content)
+
+
 def get_existing_saved_issue(session_id: str, repo_root: Path) -> int | None:
     """Check if this session already saved a plan and return the issue number.
 

@@ -1011,6 +1011,130 @@ This plan is from Claude plans directory as fallback.
         assert output["title"] == "Fallback Plan"
 
 
+# --- Objective context marker fallback tests ---
+
+
+def test_plan_save_auto_links_objective_from_marker(tmp_path: Path) -> None:
+    """Test plan-save reads objective-context marker when --objective-issue not provided."""
+    fake_gh = FakeGitHubIssues()
+    test_session_id = "objective-marker-session"
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"objective-test": plan_content})
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        # Create objective-context marker
+        marker_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
+        marker_dir.mkdir(parents=True)
+        marker_file = marker_dir / "objective-context.marker"
+        marker_file.write_text("7823", encoding="utf-8")
+
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                claude_installation=fake_store,
+                repo_root=Path(td),
+                cwd=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        # Verify the auto-link message was emitted (on stderr, mixed into output)
+        assert "Auto-linked to objective #7823 from session context" in result.output
+
+        # Parse JSON from output (skip stderr lines mixed in by CliRunner)
+        json_line = [line for line in result.output.strip().splitlines() if line.startswith("{")][0]
+        output = json.loads(json_line)
+        assert output["success"] is True
+
+        # Verify objective_issue was auto-linked from marker
+        assert len(fake_gh.created_issues) == 1
+        _title, body, _labels = fake_gh.created_issues[0]
+        assert "objective_issue: 7823" in body
+
+
+def test_plan_save_explicit_flag_overrides_marker(tmp_path: Path) -> None:
+    """Test --objective-issue flag takes precedence over marker value."""
+    fake_gh = FakeGitHubIssues()
+    test_session_id = "override-marker-session"
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"override-test": plan_content})
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        # Create objective-context marker with value 7823
+        marker_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
+        marker_dir.mkdir(parents=True)
+        marker_file = marker_dir / "objective-context.marker"
+        marker_file.write_text("7823", encoding="utf-8")
+
+        # Pass --objective-issue=9999 explicitly (should override marker)
+        result = runner.invoke(
+            plan_save_to_issue,
+            [
+                "--format", "json",
+                "--session-id", test_session_id,
+                "--objective-issue", "9999",
+            ],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                claude_installation=fake_store,
+                repo_root=Path(td),
+                cwd=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+
+        # Verify explicit flag value was used, NOT marker value
+        assert len(fake_gh.created_issues) == 1
+        _title, body, _labels = fake_gh.created_issues[0]
+        assert "objective_issue: 9999" in body
+        assert "objective_issue: 7823" not in body
+
+        # No auto-link message because flag was provided
+        assert "Auto-linked" not in result.output
+
+
+def test_plan_save_no_marker_no_flag(tmp_path: Path) -> None:
+    """Test objective_issue stays None when neither marker nor flag provided."""
+    fake_gh = FakeGitHubIssues()
+    test_session_id = "no-objective-session"
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"no-objective-test": plan_content})
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        # No marker file created, no --objective-issue flag
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                claude_installation=fake_store,
+                repo_root=Path(td),
+                cwd=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+
+        # Verify no objective_issue in metadata
+        assert len(fake_gh.created_issues) == 1
+        _title, body, _labels = fake_gh.created_issues[0]
+        assert "objective_issue" not in body
+
+        # No auto-link message
+        assert "Auto-linked" not in result.output
+
+
 def test_plan_save_to_issue_scratch_not_checked_without_session_id() -> None:
     """Test that scratch is not checked when no session_id is provided."""
     fake_gh = FakeGitHubIssues()

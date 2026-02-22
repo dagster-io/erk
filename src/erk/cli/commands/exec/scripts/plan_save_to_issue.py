@@ -49,6 +49,7 @@ from erk_shared.scratch.session_markers import (
     create_plan_saved_issue_marker,
     create_plan_saved_marker,
     get_existing_saved_issue,
+    read_objective_context_marker,
 )
 
 
@@ -181,6 +182,16 @@ def plan_save_to_issue(
                 )
             )
         raise SystemExit(2)
+
+    # Auto-link to objective from session context marker (fallback)
+    if objective_issue is None and effective_session_id is not None:
+        marker_value = read_objective_context_marker(effective_session_id, repo_root)
+        if marker_value is not None:
+            objective_issue = marker_value
+            click.echo(
+                f"Auto-linked to objective #{marker_value} from session context",
+                err=True,
+            )
 
     # Determine source_repo for cross-repo plans
     # When plans_repo is configured, plans are stored in a separate repo
