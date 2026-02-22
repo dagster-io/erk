@@ -209,10 +209,10 @@ def test_land_no_pull_flag_skips_git_pull() -> None:
             issues=issues_ops,
         )
 
-        # --no-pull flag
+        # --no-pull flag, --down to test deferred script path
         result = runner.invoke(
             cli,
-            ["land", "--script", "--no-pull", "--force"],
+            ["land", "--script", "--no-pull", "--force", "--down"],
             obj=test_ctx,
             catch_exceptions=False,
         )
