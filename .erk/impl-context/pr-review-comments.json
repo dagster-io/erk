@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "pr_number": 7786,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5v-wzC",
+      "path": "docs/learned/architecture/plan-save-branch-restoration.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific internal implementation steps that will change.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py`, `RealGitCommitOps.commit_files_to_branch`\n\nRisk: This numbered list reproduces the exact git plumbing sequence from the source implementation. If the method adds, removes, or reorders steps (e.g., to handle edge cases), this list silently goes stale. The existing source pointer on line 45 already directs agents to the full implementation \u2014 the list is redundant with the code.\n\nConsider replacing with a conceptual description (e.g., \"uses a temporary GIT_INDEX_FILE environment variable to create a commit without touching HEAD or the working tree\") and relying on the source pointer for the detailed step sequence.",
+          "created_at": "2026-02-22T10:37:21Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed \u2014 replaced numbered git plumbing steps with a conceptual one-liner. The source pointer on line 45 already directs agents to the full implementation.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 05:42 EST_",
+          "created_at": "2026-02-22T10:42:23Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5v-w1H",
+      "path": "docs/learned/architecture/plan-save-branch-restoration.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific test function names that will change.\n\nSource: `tests/unit/cli/commands/exec/scripts/test_plan_save.py`\n\nRisk: Test function names (`test_draft_pr_does_not_checkout_branch`, `test_draft_pr_commits_plan_file`) and internal attributes (`fake_git.branch_commits`) are among the most volatile identifiers in a codebase. Per the learned-docs standards, symbol names in prose should default to NOT being named \u2014 especially for specific test functions.\n\nConsider replacing with a prose description of what the tests verify, without naming specific functions:\n> Tests verify the plumbing approach \u2014 that no branch checkout occurs during plan commits, and that files are committed directly via `branch_commits` tracking.\n\nSee `tests/unit/cli/commands/exec/scripts/test_plan_save.py` for the full test suite.",
+          "created_at": "2026-02-22T10:37:29Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed \u2014 replaced specific test function names and internal attribute references with prose describing what the tests verify.\n\n_Addressed via `/erk:pr-address` at 2026-02-22 05:42 EST_",
+          "created_at": "2026-02-22T10:42:25Z"
+        }
+      ]
+    }
+  ]
+}

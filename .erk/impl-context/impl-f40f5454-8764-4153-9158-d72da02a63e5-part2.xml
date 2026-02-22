@@ -1,0 +1,1181 @@
+<session>
+  <meta branch="planned/eliminate-checkout-race-02-21-1840" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01RGFQmfXm965uD6k3MyB9vv">
+     1→"""Tests for erk one-shot command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.git.remote_ops.types import PushError
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_one_shot_happy_path() -&gt; None:
+    14→    """Test one-shot command creates branch, PR, and triggers workflow."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        env.setup_repo_structure()
+    18→
+    19→        git = FakeGit(
+    20→            git_common_dirs={env.cwd: env.git_dir},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "main"},
+    24→        )
+    25→        github = FakeGitHub(authenticated=True)
+    26→
+    27→        ctx = build_workspace_test_context(env, git=git, github=github)
+    28→
+    29→        result = runner.invoke(
+    30→            cli,
+
+... [340 lines omitted] ...
+
+    33→            catch_exceptions=False,
+    36→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   119→            catch_exceptions=False,
+   122→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   155→            catch_exceptions=False,
+   158→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   186→            catch_exceptions=False,
+   189→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   216→            catch_exceptions=False,
+   219→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   227→def test_one_shot_restores_branch_on_error() -&gt; None:
+   238→            push_to_remote_error=PushError(message="network error"),
+   250→        # Verify command failed
+   253→        # Verify we're back on original branch despite error
+   307→            catch_exceptions=False,
+   310→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <assistant>I see — there's a separate `test_one_shot.py` file (the CLI command test) that also has assertions about `git.commits` (line 52) and branch restoration (line 227). Let me fix both affected tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4946" cache_read_input_tokens="75087" cache_creation="{'ephemeral_5m_input_tokens': 4946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TpYPDRvBrYs6h5eUA9GY7J">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/commands/one_shot/test_one_shot.py</param>
+    <param name="old_string">        # Verify commit was made
+        assert len(git.commits) == 1
+        assert "fix the import in config.py" in git.commits[0].message</param>
+    <param name="new_string">        # Verify prompt was committed directly to branch (no checkout)
+        assert len(git.branch_commits) == 1
+        assert "fix the import in config.py" in git.branch_commits[0].message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4946" cache_read_input_tokens="75087" cache_creation="{'ephemeral_5m_input_tokens': 4946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TpYPDRvBrYs6h5eUA9GY7J">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/commands/one_shot/test_one_shot.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NoXjSnUGPYNNC6xF3BTkp9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/commands/one_shot/test_one_shot.py</param>
+    <param name="old_string">def test_one_shot_restores_branch_on_error() -&gt; None:
+    """Test that original branch is ...[truncated 798 chars]...ginal branch despite error
+        assert git.branch.get_current_branch(env.cwd) == "main"</param>
+    <param name="new_string">def test_one_shot_stays_on_original_branch_on_error() -&gt; None:
+    """Test that we stay on...[truncated 848 chars]...nch (no checkout occurred)
+        assert git.branch.get_current_branch(env.cwd) == "main"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="80033" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NoXjSnUGPYNNC6xF3BTkp9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/tests/commands/one_shot/test_one_shot.py has been updated successfully.
+  </tool_result>
+  <assistant>Now re-run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="809" cache_read_input_tokens="80385" cache_creation="{'ephemeral_5m_input_tokens': 809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01MrbVdgRQXKgdk8nqC6uQXS">
+    <param name="description">Re-run full py-fast-ci</param>
+    <param name="prompt">Run the following command from the repository root and report results:
+make py-fast-ci</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="809" cache_read_input_tokens="80385" cache_creation="{'ephemeral_5m_input_tokens': 809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MrbVdgRQXKgdk8nqC6uQXS">
+Success: all checks passed
+
+**make py-fast-ci passed**
+
+Summary:
+- Lint: All checks passed
+- Format check: 1505 files already formatted
+- Type check (ty): All checks passed
+- Unit tests (erk): 5301 passed in 13.44s
+- Unit tests (erk-dev): 136 passed in 3.31s
+- Unit tests (erk-statusline): 126 passed in 0.71s
+
+All 5563 total tests passed with no failures.
+agentId: a8d9b45e084abdbc9 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14258
+tool_uses: 1
+duration_ms: 21803&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 5,563 tests pass. Python fast CI is green.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="81194" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_011coEVdz7Gxy7ZWXBq4ts2P">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="81194" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 313}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011coEVdz7Gxy7ZWXBq4ts2P">
+Updated task #3 status
+  </tool_result>
+  <assistant>All CI checks pass. Let me finalize by running the remaining plan-implement steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="104" cache_read_input_tokens="81507" cache_creation="{'ephemeral_5m_input_tokens': 104, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HM36EE7wgof1J31zLJBqLy">
+    <param name="command">erk exec impl-signal ended --session-id="f40f5454-8764-4153-9158-d72da02a63e5" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="104" cache_read_input_tokens="81507" cache_creation="{'ephemeral_5m_input_tokens': 104, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HM36EE7wgof1J31zLJBqLy">
+{
+  "success": true,
+  "event": "ended",
+  "issue_number": 7786
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Ld9ezpV4ZQtz25pLEMneC4">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(jq -r '.issue_number // empty' ....[truncated 154 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="81611" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ld9ezpV4ZQtz25pLEMneC4">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AojSqJGxfwGAqmNe5Ap62z">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="217" cache_read_input_tokens="81785" cache_creation="{'ephemeral_5m_input_tokens': 217, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AojSqJGxfwGAqmNe5Ap62z">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/.impl"}
+  </tool_result>
+  <assistant>Now submitting the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="82002" cache_creation="{'ephemeral_5m_input_tokens': 132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SPi9DyKrRbCgq4q8mRmuUS">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="82002" cache_creation="{'ephemeral_5m_input_tokens': 132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SPi9DyKrRbCgq4q8mRmuUS">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015mVgyMGUsTRYiN911z8zCi">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal submitted lifecycle transition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="82134" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 127}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015mVgyMGUsTRYiN911z8zCi">
+{
+  "success": true,
+  "event": "submitted",
+  "issue_number": 7786
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019mC678nikzqQGZeGoSXgCV">
+    <param name="command">erk pr check 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="124" cache_read_input_tokens="82261" cache_creation="{'ephemeral_5m_input_tokens': 124, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019mC678nikzqQGZeGoSXgCV">
+
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of what was done:
+
+**Source change** (`src/erk/cli/commands/one_shot_dispatch.py`):
+- Replaced the `checkout_branch` → write file → `stage_files` → `commit` → restore pattern with a single `commit_files_to_branch` call
+- Removed the `try`/`finally` block that restored the original branch on error
+- Removed the happy-path `checkout_branch(repo.root, original_branch)` call
+- The `original_branch` variable is kept since it's still used for the detached HEAD check
+
+**Test changes** (2 files):
+- `tests/commands/one_shot/test_one_shot_dispatch.py`: Updated 3 tests to assert on `git.branch_commits` instead of `git.commits[0].staged_files` and filesystem assertions
+- `tests/commands/one_shot/test_one_shot.py`: Updated happy-path to check `git.branch_commits` instead of `git.commits`; renamed error test to reflect race-free behavior
+
+All 5,563 tests pass. PR submitted.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="109" cache_read_input_tokens="82385" output_tokens="268" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 109}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="600" cache_read_input_tokens="82494" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_011eiXgqHHaR3Gq7fA9cbYHJ">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1222" cache_read_input_tokens="83094" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1222}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011eiXgqHHaR3Gq7fA9cbYHJ">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+{"success":true,"pr_number":7786,"pr_title":"Eliminate checkout race condition in one_shot_dispatch.py","pr_url":"https://github.com/dagster-io/erk/pull/7786","actionable_threads":[{"thread_id":"PRRT_kwDOPxC3hc5v-wzC","type":"review","path":"docs/learned/architecture/plan-save-branch-restoration.md","line":35,"is_outdated":false,"classification":"actionable","action_summary":"Replace numbered git plumbing steps with a conceptual description to avoid drift risk; the source pointer on line 45 already covers the detail","complexity":"local","original_comment":"**Audit PR Docs**: Drift risk — documents specific internal implementation steps that will change.\n\nSource: `packages/erk-shared/src/erk_shared/gateway"},{"thread_id":"PRRT_kwDOPxC3hc5v-w1H","type":"review","path":"docs/learned/architecture/plan-save-branch-restoration.md","line":55,"is_outdated":false,"classification":"actionable","action_summary":"Replace named test functions and internal attribute references with prose describing what the tests verify, without naming specific functions","complexity":"local","original_comment":"**Audit PR Docs**: Drift risk — documents specific test function names that will change.\n\nSource: `tests/unit/cli/commands/exec/scripts/test_plan_save.py`\n\nRisk: Test function names"}],"discussion_actions":[],"informational_count":7,"batches":[{"name":"Local Fixes","complexity":"local","auto_proceed":true,"item_indices":[0,1]}],"error":null}
+  </tool_result>
+  <thinking>Let me display the preview results.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="84316" cache_creation="{'ephemeral_5m_input_tokens': 497, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>## PR #7786: "Eliminate checkout race condition in one_shot_dispatch.py"
+
+### Actionable Items (2 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | plan-save-branch-restoration.md:35 | actionable | Replace numbered git plumbing steps with conceptual description to avoid drift risk | local |
+| 2 | review | plan-save-branch-restoration.md:55 | actionable | Replace named test functions and internal attribute references with prose | local |
+
+### Informational Items (7 total)
+
+Not shown — these are informational-only discussion comments.
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: plan-save-branch-restoration.md:35 - Replace specific git plumbing steps with conceptual description
+- Item #2: plan-save-branch-restoration.md:55 - Replace specific test function names with prose describing what tests verify
+
+### Statistics
+- Actionable items: 2
+- Informational items: 7
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="84316" cache_creation="{'ephemeral_5m_input_tokens': 497, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/7786&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Plan Review Detection
+
+Before classifying feedback, determine if this is a plan review PR:
+
+1. Get PR data using REST API (avoids GraphQL rate limits):
+   - **If `--pr &lt;number&gt;` specified in ``**: `erk exec get-pr-view &lt;number&gt;`
+   - **Otherwise** (auto-detect from current branch): `erk exec get-pr-view`
+
+   Parse the JSON output to extract `number`, `labels`, and `body`.
+
+2. Check if the PR has the `erk-plan-review` label (from the `labels` array in the output).
+
+3. If YES: extract the plan issue number from the `body` field (which contains `**Plan Issue:** #NNN`):
+   - Parse the issue number from the `**Plan Issue:** #NNN` line
+   - Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
+
+4. If NO: proceed with standard code review flow (Phase 1)
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+**Skip this phase in Plan Review Mode** - plan PRs don't have meaningful code diffs to summarize.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "f40f5454-8764-4153-9158-d72da02a63e5"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+---
+
+## Plan Review Mode
+
+When Phase 0 detects the `erk-plan-review` label on the current PR, the entire flow switches to plan review mode. This mode edits plan text instead of source code.
+
+### Key Differences: Plan Mode vs Code Mode
+
+| Aspect            | Code Mode                    | Plan Mode                              |
+| ----------------- | ---------------------------- | -------------------------------------- |
+| File edited       | Source code files            | `PLAN-REVIEW-{issue}.md`               |
+| What changes      | Code implementation          | Plan text/structure                    |
+| CI checks         | Run tests                    | Skip (no code to test)                 |
+| Extra step        | None                         | `plan-update-issue` to sync plan issue |
+| Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
+| Thread resolution | What code change was made    | How plan was updated                   |
+
+### Plan Review Phase 1: Save Current Branch
+
+Before processing feedback, record the current branch so we can return to it later:
+
+```bash
+git branch --show-current
+```
+
+Store the result as `ORIGINAL_BRANCH`.
+
+### Plan Review Phase 2: Classify Feedback
+
+Same as standard Phase 1 — use the Task tool (NOT skill invocation, for `--print` mode isolation) to run the classifier in a subagent (see Phase 1 above for the Task tool pattern). Pass `[--pr &lt;number&gt; if specified]` as arguments.
+
+### Plan Review Phase 3: Display Batched Plan
+
+Same as standard Phase 2, but note at the top of the display:
+
+```
+**Plan Review Mode** (erk-plan-review label detected) — changes apply to plan text, not source code.
+```
+
+### Plan Review Phase 4: Execute by Batch (Plan Mode)
+
+For each batch:
+
+#### Step 1: Edit the Plan
+
+1. Read `PLAN-REVIEW-{issue}.md` from the repo root
+2. For each comment in the batch, incorporate reviewer feedback by editing the plan markdown text
+   - Restructure sections, add detail, clarify language, update design decisions as requested
+   - If feedback applies to implementation (not the plan itself), add a note to the relevant plan section rather than making structural changes
+3. Write the updated `PLAN-REVIEW-{issue}.md`
+
+#### Step 2: Commit and Push
+
+```bash
+git add PLAN-REVIEW-{issue}.md
+git commit -m "Incorporate review feedback (batch N/M)
+
+- &lt;summary of change 1&gt;
+- &lt;summary of change 2&gt;
+..."
+git push
+```
+
+#### Step 3: Sync Plan to GitHub Issue
+
+```bash
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
+```
+
+#### Step 4: Resolve Threads
+
+Resolve each thread using the appropriate command (see `pr-operations` skill):
+
+**For review threads** - use the batch command to resolve all at once:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Incorporated feedback into plan. Updated the relevant section in PLAN-REVIEW-{issue}.md.\n\nSummary of change: {brief description}"}]' | erk exec resolve-review-threads
+```
+
+**For discussion comments** (`reply-to-discussion-comment`):
+
+Use a message like:
+
+```
+Addressed in plan update. {description of how feedback was incorporated or why it was noted for implementation phase}
+```
+
+**For feedback that applies to implementation, not the plan itself:**
+
+Use a message like:
+
+```
+Noted for implementation phase. This feedback applies to the code implementation rather than the plan structure — it will be addressed when implementing the plan.
+```
+
+#### Step 5: Report Progress
+
+Same as standard Phase 4 Step 5 — report what was addressed and what remains.
+
+### Plan Review Phase 5: Final Verification
+
+Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
+
+### Return to Original Branch
+
+After all batches are complete and pushed:
+
+1. Switch back to the branch saved in Phase 1: `git checkout &lt;ORIGINAL_BRANCH&gt;`
+2. The plan-review branch work is complete — the user should not remain on it.
+</user>
+  <assistant>
+
+Let me load the pr-operations skill first, then classify the feedback.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="4784" cache_read_input_tokens="84813" cache_creation="{'ephemeral_5m_input_tokens': 4784, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01ADTqxoyePYa5fshqiRvUxa">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4784" cache_read_input_tokens="84813" output_tokens="71" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4784}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ADTqxoyePYa5fshqiRvUxa">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <thinking>Now let me check if this is a plan review PR, then classify the feedback.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1519" cache_read_input_tokens="89597" cache_creation="{'ephemeral_5m_input_tokens': 1519, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check if this is a plan review PR and classify the feedback.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1519" cache_read_input_tokens="89597" cache_creation="{'ephemeral_5m_input_tokens': 1519, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Eg2Vsmi3pe8RdsgSvuFprq">
+    <param name="command">erk exec get-pr-view</param>
+    <param name="description">Get PR metadata for current branch</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1519" cache_read_input_tokens="89597" cache_creation="{'ephemeral_5m_input_tokens': 1519, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Eg2Vsmi3pe8RdsgSvuFprq">
+{"success": true, "number": 7786, "title": "Eliminate checkout race condition in one_shot_dispatch.py", "url": "https://github.com/dagster-io/erk/pull/7786", "body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-21T18:40:39.834404+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22268049975'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFL0d6Nw\nlast_dispatched_at: '2026-02-21T20:27:54.526279'\nlast_local_impl_at: '2026-02-22T10:34:58.050474+00:00'\nlast_local_impl_event: ended\nlast_local_impl_session: f40f5454-8764-4153-9158-d72da02a63e5\nlast_local_impl_user: schrockn\nlast_remote_impl_at: null\nlast_remote_impl_run_id: null\nlast_remote_impl_session_id: null\nbranch_name: planned/eliminate-checkout-race-02-21-1840\ncreated_from_session: 25b1b31a-451f-438b-a3e1-1edf2236f07e\nlifecycle_stage: implemented\nworktree_name: erk-slot-27\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n\n\n---\n\nReplace branch checkout pattern with commit_files_to_branch to eliminate race condition\nduring one-shot workflow dispatch. The new approach commits .worker-impl/prompt.md directly\nto the branch without checking it out, eliminating the race window (lines 222-424) where\nHEAD could diverge due to concurrent operations. This completes the elimination started\nin PR #7783.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified (3 files)\n- `src/erk/cli/commands/one_shot_dispatch.py` - Replace checkout/restore pattern with commit_files_to_branch\n- `tests/commands/one_shot/test_one_shot_dispatch.py` - Update assertions to verify branch commits instead of staged files\n- `docs/learned/architecture/plan-save-branch-restoration.md` - Document git plumbing approach with 7-step process\n\n&lt;/details&gt;\n\n## Key Changes\n\n- Eliminate branch checkout during dispatch using `commit_files_to_branch()` method from git commit ops\n- Remove try/finally block for branch restoration, eliminating ~226 lines of checkout/error handling code\n- Update test assertions from `git.commits` (staged files) to `git.branch_commits` (direct branch commits)\n- Document git plumbing approach: rev-parse \u2192 read-tree \u2192 hash-object \u2192 update-index \u2192 write-tree \u2192 commit-tree \u2192 update-ref\n- Rename tests to reflect new behavior: \"stays_on_original_branch\" instead of \"restores_branch\"\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Eliminate checkout race condition in one_shot_dispatch.py\n\n## Context\n\n`one_shot_dispatch.py` has the same race condition we just fixed in `plan_save.py` \u2014 it temporarily checks out a branch to commit `.worker-impl/prompt.md`, but the checkout window spans **multiple network calls** (push, create PR, trigger workflow, post comments \u2014 lines 222-424), making it far more likely to race than plan_save ever was.\n\nWith `commit_files_to_branch` now available (from PR #7783), we can eliminate this checkout entirely. The only reason the branch is checked out is to write/stage/commit a single file. Everything else (push, GitHub API calls) doesn't need HEAD on the branch.\n\n## Implementation\n\n### 1. Refactor `dispatch_one_shot` in `one_shot_dispatch.py`\n\n**File:** `src/erk/cli/commands/one_shot_dispatch.py`\n\nReplace the checkout/write/stage/commit/restore pattern (lines 221-234 + 441-446) with a single `commit_files_to_branch` call:\n\n**Before** (lines 221-234):\n```python\ntry:\n    ctx.branch_manager.checkout_branch(repo.root, branch_name)\n    worker_impl_dir = repo.root / \".worker-impl\"\n    worker_impl_dir.mkdir(parents=True, exist_ok=True)\n    prompt_file = worker_impl_dir / \"prompt.md\"\n    prompt_file.write_text(params.prompt + \"\\n\", encoding=\"utf-8\")\n    ctx.git.commit.stage_files(repo.root, [\".worker-impl/prompt.md\"])\n    ctx.git.commit.commit(repo.root, f\"One-shot: {params.prompt[:60]}\")\n```\n\n**After:**\n```python\nctx.git.commit.commit_files_to_branch(\n    repo.root,\n    branch=branch_name,\n    files={\".worker-impl/prompt.md\": params.prompt + \"\\n\"},\n    message=f\"One-shot: {params.prompt[:60]}\",\n)\n```\n\nAlso:\n- Remove the happy-path restore on line 424 (`ctx.branch_manager.checkout_branch(repo.root, original_branch)`)\n- Remove the `finally` block (lines 441-446) that restores the branch on error\n- Remove the `try:` on line 221 (no longer needed)\n- The `original_branch` variable (line 208-209) is no longer needed for restoration but is still used for detached HEAD check (line 210-215), so keep it\n\n### 2. Update tests\n\n**File:** `tests/commands/one_shot/test_one_shot_dispatch.py`\n\n**`test_dispatch_happy_path`** (line 21):\n- Lines 60-62: Change `git.commits[0].staged_files` \u2192 `git.branch_commits[0].files` with key check\n- Lines 64-67: Remove filesystem assertions (`prompt_file.exists()`, `read_text`). Files are no longer written to the working tree \u2014 verify content via `branch_commits[0].files[\".worker-impl/prompt.md\"]` instead\n- Line 102: Keep as-is \u2014 we're still on \"main\" (trivially true since no checkout occurs)\n\n**`test_dispatch_restores_branch_on_error`** (line 180):\n- Rename to `test_dispatch_stays_on_original_branch_on_error`\n- Remove assertions about branch restoration (no checkout = nothing to restore)\n- Keep the assertion that we're still on \"main\" \u2014 validates the race-free behavior\n- Keep the push error injection to verify error handling still works\n\n**`test_dispatch_long_prompt_truncates_workflow_input`** (line 412):\n- Lines 447-450: Replace filesystem assertions with `branch_commits` check for full prompt content\n- Line 453: Change `git.commits[0].staged_files` \u2192 `git.branch_commits[0].files`\n\nOther tests (`test_dispatch_with_extra_inputs`, `test_dispatch_dry_run`, `test_dispatch_creates_skeleton_plan_issue`, `test_dispatch_posts_queued_event_comment`, `test_dispatch_writes_metadata_to_plan_issue`, `test_dispatch_draft_pr_lifecycle`) have no commit/filesystem assertions and need no changes.\n\n## Files to modify\n\n1. `src/erk/cli/commands/one_shot_dispatch.py` \u2014 Replace checkout pattern with `commit_files_to_branch`\n2. `tests/commands/one_shot/test_one_shot_dispatch.py` \u2014 Update 3 tests\n\n## Verification\n\n1. Run unit tests: `uv run pytest tests/commands/one_shot/test_one_shot_dispatch.py -v`\n2. Run full fast-ci: `make fast-ci`\n\n\n&lt;/details&gt;\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 7786 --script)\" &amp;&amp; erk pr sync --dangerous\n```\n", "state": "OPEN", "is_draft": false, "head_ref_name": "planned/eliminate-checkout-race-02-21-1840", "base_ref_name": "master", "labels": ["erk-plan"], "author": "schrockn", "mergeable": "UNKNOWN", "merge_state_status": "UNKNOWN", "is_cross_repository": false, "created_at": "2026-02-21T23:40:40+00:00", "updated_at": "2026-02-22T10:37:43+00:00"}
+  </tool_result>
+  <assistant>Not a plan review PR (no `erk-plan-review` label). Let me classify the feedback.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2628" cache_read_input_tokens="91116" cache_creation="{'ephemeral_5m_input_tokens': 2628, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01MuU4uMhpfUEMpzwfYJi2gk">
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: (no extra arguments - use current branch PR)
+Return the complete JSON output as your final message.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2628" cache_read_input_tokens="91116" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2628}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MuU4uMhpfUEMpzwfYJi2gk">
+Now I'll classify the comments according to the skill instructions and generate the JSON output.
+
+Based on the skill instructions, I need to classify each comment:
+
+**Review Comments (2 threads):**
+1. Line 35 - "Audit PR Docs: Drift risk" - This is actionable feedback requesting documentation simplification
+2. Line 55 - "Audit PR Docs: Drift risk" - This is actionable feedback requesting test function name removal from docs
+
+**Discussion Comments (7 comments):**
+1. "Remote rebase completed" - Informational (CI status)
+2. "Graphite stack comment" - Informational (Graphite stack)
+3. "Starting implementation" - Informational (status update)
+4. "Test Coverage Review: No violations" - Informational (CI status)
+5. "Dignified Code Simplifier Review: No violations" - Informational (CI status)
+6. "Dignified Python Review: No violations" - Informational (CI status)
+7. "Tripwires Review: No violations" - Informational (CI status)
+
+The 2 review thread comments are actionable (they request changes to documentation). The 7 discussion comments are all informational (CI status updates and bot acknowledgments).
+
+```json
+{
+  "success": true,
+  "pr_number": 7786,
+  "pr_title": "Eliminate checkout race condition in one_shot_dispatch.py",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7786",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5v-wzC",
+      "type": "review",
+      "path": "docs/learned/architecture/plan-save-branch-restoration.md",
+
+... [36 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>## Execution Plan
+
+### Batch 1: Single-File Fixes (2 comments) — auto-proceed
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | plan-save-branch-restoration.md:35 | Remove numbered git plumbing steps, replace with conceptual description |
+| 2 | plan-save-branch-restoration.md:55 | Remove specific test function names, use prose description |
+
+Both comments target the same file. Let me read it and address both.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1269" cache_read_input_tokens="93744" cache_creation="{'ephemeral_5m_input_tokens': 1269, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FzoYBL6SnABsxYaxzuisSG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/architecture/plan-save-branch-restoration.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1269" cache_read_input_tokens="93744" cache_creation="{'ephemeral_5m_input_tokens': 1269, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FzoYBL6SnABsxYaxzuisSG">
+     1→---
+     2→title: Plan Save Branch Restoration
+     3→read_when:
+     4→  - "modifying plan_save.py branch commit behavior"
+     5→  - "understanding git plumbing patterns in erk"
+     6→  - "working with commit_files_to_branch"
+     7→tripwires:
+     8→  - action: "checking out a branch in plan_save to commit files"
+     9→    warning: "Plan save uses git plumbing (commit_files_to_branch) to commit without checkout. Do NOT add checkout_branch calls. See plan-save-branch-restoration.md."
+    10→---
+    11→
+    12→# Plan Save Branch Restoration
+    13→
+    14→`plan_save.py` commits plan files to the plan branch using git plumbing commands (`commit_files_to_branch`), avoiding any branch checkout. This eliminates race conditions when multiple sessions share the same worktree.
+    15→
+    16→## Pattern
+    17→
+    18→Located in `src/erk/cli/commands/exec/scripts/plan_save.py`, the `_save_as_draft_pr()` function:
+    19→
+    20→&lt;!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py, _save_as_draft_pr --&gt;
+    21→
+    22→See `_save_as_draft_pr()` in `src/erk/cli/commands/exec/scripts/plan_save.py` — uses `git.commit.commit_files_to_branch()` to create a commit directly on the plan branch without modifying HEAD or the working tree.
+    23→
+    24→Key properties:
+    25→
+    26→- Creates plan branch from current branch via `branch_manager.create_branch()`
+    27→- Commits plan files directly to the branch using git plumbing (no checkout)
+    28→- Pushes to origin with upstream tracking
+    29→- **Never checks out the plan branch** — HEAD and working tree remain untouched
+    30→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>I can see both issues clearly. Let me fix them:
+
+1. **Lines 35-41**: Replace numbered git plumbing steps with conceptual description (the source pointer on line 45 already covers the detail)
+2. **Line 55**: Replace specific test function names with prose</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1355" cache_read_input_tokens="95013" cache_creation="{'ephemeral_5m_input_tokens': 1355, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Df816N1BzYWRsWtPXJ4Vfg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/architecture/plan-save-branch-restoration.md</param>
+    <param name="old_string">1. `git rev-parse &lt;branch&gt;` — resolve parent commit
+2. `git read-tree &lt;parent&gt;` — read par...[truncated 192 chars]...it-tree` — create commit with parent
+7. `git update-ref` — update branch ref to new commit</param>
+    <param name="new_string">The method creates a temporary index, hashes file contents into it, writes a tree and commit object, and updates the branch ref — all without touching HEAD, the working tree, or the real index.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1355" cache_read_input_tokens="95013" output_tokens="372" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1355}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Df816N1BzYWRsWtPXJ4Vfg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/architecture/plan-save-branch-restoration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01V8Bb2mwaSZRrRjKUTBq54u">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/architecture/plan-save-branch-restoration.md</param>
+    <param name="old_string">Tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` verify the plumbing appr...[truncated 116 chars]... and `test_draft_pr_commits_plan_file` which verifies files via `fake_git.branch_commits`.</param>
+    <param name="new_string">Tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` verify that plan save do...[truncated 6 chars]...branch and that plan files are committed directly to the branch via the plumbing approach.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3536" cache_read_input_tokens="96368" output_tokens="290" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3536}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V8Bb2mwaSZRrRjKUTBq54u">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/docs/learned/architecture/plan-save-branch-restoration.md has been updated successfully.
+  </tool_result>
+  <assistant>Now commit the batch and resolve the threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="99904" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0138btG1UAGfVeRQc2y1bvTh">
+    <param name="command">git add docs/learned/architecture/plan-save-branch-restoration.md &amp;&amp; git commit -m "$(cat ...[truncated 144 chars]...mes with prose description
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit doc changes for PR review comments</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="99904" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0138btG1UAGfVeRQc2y1bvTh">
+[planned/eliminate-checkout-race-02-21-1840 85a7db2d7] Address PR review comments (batch 1/1)
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X7czxvGrEszWZwe2kJaSXj">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5v-wzC", "comment": "Fixed — replaced numbered git pl...[truncated 229 chars]...erences with prose describing what the tests verify."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Batch resolve both review threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="100254" output_tokens="200" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 249}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X7czxvGrEszWZwe2kJaSXj">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5v-wzC",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5v-w1H",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>## Batch 1 Complete
+
+Addressed:
+- plan-save-branch-restoration.md:35 - Replaced numbered git plumbing steps with conceptual description
+- plan-save-branch-restoration.md:55 - Replaced specific test function names with prose
+
+Committed: `85a7db2d7` "Address PR review comments (batch 1/1)"
+Resolved threads: 2
+
+Now let me verify all threads are resolved and update the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="100503" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01AyQU5FDgrFe78H3DqwKhnu">
+    <param name="description">Verify PR feedback resolved</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: (no extra arguments - use current branch PR)
+Return the complete JSON output as your final message.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="100503" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01S7YgoECPTMYYv4N4qvWogL">
+    <param name="command">erk exec update-pr-description --session-id "f40f5454-8764-4153-9158-d72da02a63e5"</param>
+    <param name="description">Update PR title and body from diff</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="100503" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AyQU5FDgrFe78H3DqwKhnu">
+Perfect! I now have all the information needed. Let me classify these comments according to the skill's classification model.
+
+From the data collected:
+- **PR #7786**: "Eliminate checkout race condition in one_shot_dispatch.py"
+- **Review comments**: 0 threads
+- **Discussion comments**: 7 total
+
+Let me classify each discussion comment:
+
+1. **Remote rebase completed** (3939880569) - Bot-generated notification about rebase completion. This is CI status information → **Informational**
+
+2. **Graphite stack comment** (3940663933) - Graphite stack management comment, purely informational → **Informational**
+
+3. **Starting implementation** (3940669919) - Metadata comment about implementation start → **Informational**
+
+4. **Test Coverage Review** (3940677386) - Bot status check showing all tests pass and coverage is good. CI-generated status update → **Informational**
+
+5. **Dignified Code Simplifier Review** (3940677587) - Bot style/code quality check showing 0 violations. CI-generated status report → **Informational**
+
+6. **Dignified Python Review** (3940677687) - Bot code standards check showing 0 violations. CI-generated status report → **Informational**
+
+7. **Tripwires Review** (3940677806) - Bot tripwire safety check showing 0 violations. CI-generated status report → **Informational**
+
+8. **Audit PR Docs** (3940679196) - Bot audit finding 2 violations with drift risk in documentation. This IS actionable - there are 2 violations that need to be addressed. Let me assess the complexity and create an actionable thread entry.
+
+Looking at the audit comment, it identifies 2 specific violations with line numbers in `docs/learned/architecture/plan-save-branch-restoration.md` (lines 35 and 55). These are specific, localized issues in a single file with clear action items.
+
+```json
+{
+  "success": true,
+
+... [40 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <tool_result tool="toolu_01S7YgoECPTMYYv4N4qvWogL">
+
+  </tool_result>
+  <assistant>All review threads are resolved. The classifier found one discussion comment (the Audit PR Docs bot) that mentioned the same issues we already fixed — those were the review threads we just resolved. The remaining discussion comments are all informational bot status messages (CI, Graphite, etc.).
+
+Now let me push the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1482" cache_read_input_tokens="100829" cache_creation="{'ephemeral_5m_input_tokens': 1482, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MPQzFEgFuZfxm1scAwe8Wh">
+    <param name="command">git push origin planned/eliminate-checkout-race-02-21-1840</param>
+    <param name="description">Push review comment fixes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1482" cache_read_input_tokens="100829" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1482}" inference_geo="" iterations="[]" speed="standard" />
+</session>

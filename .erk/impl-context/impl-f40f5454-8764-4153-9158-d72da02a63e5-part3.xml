@@ -1,0 +1,480 @@
+<session>
+  <meta branch="planned/eliminate-checkout-race-02-21-1840" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01MPQzFEgFuZfxm1scAwe8Wh">
+Exit code 1
+To https://github.com/dagster-io/erk.git
+ ! [rejected]            planned/eliminate-checkout-race-02-21-1840 -&gt; planned/eliminate-checkout-race-02-21-1840 (non-fast-forward)
+error: failed to push some refs to 'https://github.com/dagster-io/erk.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+To https://github.com/dagster-io/erk.git
+ ! [rejected]            planned/eliminate-checkout-race-02-21-1840 -&gt; planned/eliminate-checkout-race-02-21-1840 (non-fast-forward)
+error: failed to push some refs to 'https://github.com/dagster-io/erk.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+  </tool_result>
+  <assistant>Push rejected (non-fast-forward). Let me use the sync-divergence skill as instructed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="102311" cache_creation="{'ephemeral_5m_input_tokens': 606, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01VnVQQsFqzaXNmszbSBTVsG">
+    <param name="skill">erk:sync-divergence</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="102311" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 606}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VnVQQsFqzaXNmszbSBTVsG">
+Launching skill: erk:sync-divergence
+  </tool_result>
+  <user># Sync Divergence
+
+Resolve "Branch X has been updated remotely" errors by syncing with remote and handling any resulting conflicts.
+
+## Steps
+
+1. **Fetch remote state**
+
+   ```bash
+   git fetch origin
+   ```
+
+2. **Get current branch name**
+
+   ```bash
+   BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   ```
+
+3. **Diagnose divergence** - Understand what changed on each side:
+
+   ```bash
+   # Commits only on remote (what we need to incorporate)
+   git log --oneline HEAD..origin/$BRANCH
+
+   # Commits only on local (our work that might be lost)
+   git log --oneline origin/$BRANCH..HEAD
+
+   # Visual comparison of both
+   git log --oneline --left-right --graph HEAD...origin/$BRANCH
+   ```
+
+4. **Analyze and decide:**
+
+   | Remote-only commits | Local-only commits | Action                                             |
+   | ------------------- | ------------------ | -------------------------------------------------- |
+   | 0                   | 0                  | No divergence - just retry `gt submit`             |
+   | 1+                  | 0                  | Fast-forward: `git merge --ff-only origin/$BRANCH` |
+   | 0                   | 1+                 | Already ahead (shouldn't trigger this error)       |
+   | 1+                  | 1+                 | **Rebase required** - continue to step 5           |
+
+5. **Execute rebase** (when both sides have commits):
+
+   ```bash
+   git rebase origin/$BRANCH
+   ```
+
+   &gt; **Note:** `gt restack` alone won't fix remote divergence — it only handles parent branch relationships. You need `git rebase origin/$BRANCH` first to sync the PR commits with remote. However, `gt restack` IS needed afterward (step 8) to re-base onto the current parent branch.
+
+6. **If rebase causes conflicts:**
+
+   For each conflicted file:
+
+   a. **Read the file** - Understand both sides of the conflict by examining the conflict markers:
+   - `&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD` marks the start of your local changes
+   - `=======` separates local from incoming changes
+   - `&gt;&gt;&gt;&gt;&gt;&gt;&gt; &lt;commit&gt;` marks the end of incoming changes
+
+   b. **Understand intent** - Determine what each side was trying to accomplish:
+   - What was the local change trying to do?
+   - What was the remote change trying to do?
+   - Are they complementary or contradictory?
+
+   c. **Resolve intelligently:**
+   - If changes are complementary -&gt; merge both
+   - If changes conflict semantically -&gt; prefer the more recent/complete version
+   - If unclear -&gt; ask the user for guidance
+
+   d. **Remove all conflict markers** - The resolved file should have no `&lt;&lt;&lt;&lt;&lt;&lt;&lt;`, `=======`, or `&gt;&gt;&gt;&gt;&gt;&gt;&gt;` markers
+
+   e. **Stage the resolution** - `git add &lt;file&gt;`
+
+7. **Re-track branch with Graphite** (when using Graphite):
+
+   The raw `git rebase` in step 5 changed commit SHAs outside Graphite's awareness. Graphite's internal cache (`.graphite_cache_persist`) still points to the old pre-rebase SHAs. Re-track the branch so Graphite recognizes the new commits before restacking:
+
+   ```bash
+   gt track
+   ```
+
+   &gt; Without this step, `gt restack` will fail with a "diverged from tracking" error because Graphite's cached SHAs no longer match the rebased commits.
+
+8. **Re-restack onto parent branch** (when using Graphite):
+
+   After the rebase resolves the remote divergence, the branch may be based on an older master. Re-restack to ensure the branch sits on top of the current parent:
+
+   ```bash
+   gt restack --no-interactive
+   ```
+
+   &gt; This is separate from step 5. The `git rebase origin/$BRANCH` in step 5 syncs the PR commits with remote. This `gt restack` ensures the branch base is current master, not the remote's older master.
+
+9. **After successful sync:**
+   - For Graphite: `gt submit` (or `gt ss`)
+   - For git-only: `git push --force-with-lease`
+
+10. **Verify completion** - Run `git status` and `git log --oneline -5` to confirm sync succeeded
+
+## Edge Cases
+
+### Remote has force-pushed (history rewritten)
+
+If the commit SHAs don't match at all (not just diverged, but completely different):
+
+- This indicates someone rewrote history on remote
+- **Ask user** before proceeding - they may want to manually inspect
+- Options: hard reset to remote (lose local), or carefully cherry-pick local commits
+
+### Uncommitted local changes
+
+If there are uncommitted changes when starting:
+
+1. Stash changes: `git stash push -m "sync-divergence: uncommitted work"`
+2. Perform sync
+3. Pop stash: `git stash pop`
+4. Handle any stash conflicts
+
+### Multiple branches in stack affected
+
+After syncing one branch, other branches in the stack may need rebasing onto their parents:
+
+1. First: Sync the diverged branch using `git rebase origin/$BRANCH`
+2. Then: Run `gt restack --no-interactive` to cascade changes through the stack
+3. Conflicts may appear in multiple branches - resolve each in order (downstack to upstack)
+</user>
+  <assistant>
+
+Let me diagnose the divergence.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1382" cache_read_input_tokens="102917" cache_creation="{'ephemeral_5m_input_tokens': 1382, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KaJPmLJ3u12pXESx1MbRCE">
+    <param name="command">git fetch origin</param>
+    <param name="description">Fetch remote state</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1382" cache_read_input_tokens="102917" cache_creation="{'ephemeral_5m_input_tokens': 1382, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KaJPmLJ3u12pXESx1MbRCE">
+From https://github.com/dagster-io/erk
+ * [new branch]          P7618-plan-publish-draft-prs-in-02-19-1419 -&gt; origin/P7618-plan-publish-draft-prs-in-02-19-1419
+ * [new branch]          P7625-add-no-interactive-to-all-02-19-1600 -&gt; origin/P7625-add-no-interactive-to-all-02-19-1600
+ * [new branch]          P7626-fix-setup-impl-from-issue-02-19-1559 -&gt; origin/P7626-fix-setup-impl-from-issue-02-19-1559
+ * [new branch]          P7638-erk-plan-plan-skip-impl-f-02-19-1839 -&gt; origin/P7638-erk-plan-plan-skip-impl-f-02-19-1839
+ * [new branch]          P7648-erk-plan-plan-support-dra-02-20-0538 -&gt; origin/P7648-erk-plan-plan-support-dra-02-20-0538
+ * [new branch]          P7659-erk-plan-rename-instructi-02-20-1132 -&gt; origin/P7659-erk-plan-rename-instructi-02-20-1132
+ * [new branch]          P7662-erk-plan-restore-missing-02-20-1145 -&gt; origin/P7662-erk-plan-restore-missing-02-20-1145
+ * [new branch]          P7670-erk-plan-fix-learn-pipeli-02-20-1350 -&gt; origin/P7670-erk-plan-fix-learn-pipeli-02-20-1350
+ * [new branch]          async-learn/7802 -&gt; origin/async-learn/7802
+ + 5342c42dc...dc14d1f57 gh-pages         -&gt; origin/gh-pages  (forced update)
+ * [new branch]          plan-add-no-interactive-to-all-02-19-1557 -&gt; origin/plan-add-no-interactive-to-all-02-19-1557
+ * [new branch]          plan-add-print-statement-to-fir-02-19-0846 -&gt; origin/plan-add-print-statement-to-fir-02-19-0846
+ * [new branch]          planned/documentation-plan-add-02-22-0933 -&gt; origin/planned/documentation-plan-add-02-22-0933
+ * [new branch]          planned/documentation-plan-add-02-22-0934 -&gt; origin/planned/documentation-plan-add-02-22-0934
+ * [new branch]          planned/documentation-plan-add-02-22-0935 -&gt; origin/planned/documentation-plan-add-02-22-0935
+ * [new branch]          planned/documentation-plan-add-02-22-1007 -&gt; origin/planned/documentation-plan-add-02-22-1007
+ * [new branch]          planned/documentation-plan-elim-02-22-1014 -&gt; origin/planned/documentation-plan-elim-02-22-1014
+ * [new branch]          planned/documentation-plan-elim-02-22-1015 -&gt; origin/planned/documentation-plan-elim-02-22-1015
+ * [new branch]          planned/documentation-plan-fix-02-22-1001 -&gt; origin/planned/documentation-plan-fix-02-22-1001
+ * [new branch]          planned/documentation-plan-remo-02-22-0902 -&gt; origin/planned/documentation-plan-remo-02-22-0902
+ * [new branch]          planned/plan-add-worker-impl-cl-02-22-0450 -&gt; origin/planned/plan-add-worker-impl-cl-02-22-0450
+ * [new branch]          session/7790     -&gt; origin/session/7790
+ + f8a053d09...b810928ba session/7793     -&gt; origin/session/7793  (forced update)
+ * [new branch]          session/7795     -&gt; origin/session/7795
+ * [new branch]          session/7799     -&gt; origin/session/7799
+ * [new branch]          session/7800     -&gt; origin/session/7800
+ * [new branch]          session/7805     -&gt; origin/session/7805
+ * [new branch]          session/7806     -&gt; origin/session/7806
+ * [new branch]          session/7807     -&gt; origin/session/7807
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019NzpgGWD17uMjvXfF2t2uB">
+    <param name="command">BRANCH=$(git rev-parse --abbrev-ref HEAD) &amp;&amp; echo "Branch: $BRANCH" &amp;&amp; echo "--- Remote-on...[truncated 26 chars]...gin/$BRANCH &amp;&amp; echo "--- Local-only commits ---" &amp;&amp; git log --oneline origin/$BRANCH..HEAD</param>
+    <param name="description">Diagnose divergence between local and remote</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1241" cache_read_input_tokens="104299" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1241}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019NzpgGWD17uMjvXfF2t2uB">
+Branch: planned/eliminate-checkout-race-02-21-1840
+--- Remote-only commits ---
+bb0113190 WIP: Prepare for PR submission
+88e05ed55 Remove .erk/impl-context/ before implementation
+c1236b79b [erk-plan] Eliminate checkout race condition in one_shot_dispatch.py
+--- Local-only commits ---
+85a7db2d7 Address PR review comments (batch 1/1)
+200d594ee Eliminate checkout race condition in one_shot_dispatch.py
+87439d959 Remove .erk/impl-context/ before implementation
+fa892f9ba [erk-plan] Eliminate checkout race condition in one_shot_dispatch.py
+f44fd5c11 Unify plan checkout with `erk br co --for-plan` and `--new-slot` (#7795)
+dedcb0d1f Fix ci-update-pr-body plan-header metadata preservation on draft PR plans (#7815)
+  </tool_result>
+  <assistant>Remote has 3 commits, local has 6 (including 2 from master that got rebased in). This is a true divergence — need to rebase.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="105540" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AtpcWuo75bMpKVCDfMnYS7">
+    <param name="command">git rebase origin/planned/eliminate-checkout-race-02-21-1840</param>
+    <param name="description">Rebase local onto remote to resolve divergence</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="105540" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AtpcWuo75bMpKVCDfMnYS7">
+warning: skipped previously applied commit fa892f9ba
+warning: skipped previously applied commit 87439d959
+warning: skipped previously applied commit 200d594ee
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config set advice.skippedCherryPicks false"
+Rebasing (1/3)Rebasing (2/3)Rebasing (3/3)Successfully rebased and updated refs/heads/planned/eliminate-checkout-race-02-21-1840.
+  </tool_result>
+  <assistant>Rebase succeeded cleanly. Now re-track and restack with Graphite.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="105926" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_0171QU9R1zca26CTBjhnDzkD">
+    <param name="description">Re-track and restack branch</param>
+    <param name="prompt">Run the following commands sequentially and report results:
+gt track --no-interactive &amp;&amp; gt restack --no-interactive</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="105926" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0171QU9R1zca26CTBjhnDzkD">
+Success: gt commands completed
+
+- **gt track**: Tracked branch `planned/eliminate-checkout-race-02-21-1840` with parent `master` (6 commits)
+- **gt restack**: Restacked `planned/eliminate-checkout-race-02-21-1840` on `master`
+
+Both commands executed without errors.
+agentId: aa230796abf3f95dd (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13678
+tool_uses: 1
+duration_ms: 5591&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+Now let me submit via Graphite.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3389" cache_read_input_tokens="106199" cache_creation="{'ephemeral_5m_input_tokens': 3389, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_016B4mtp4nujNmTSX3HTYWs7">
+    <param name="description">Submit via Graphite</param>
+    <param name="prompt">Run the following command and report results:
+gt submit --no-interactive</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3389" cache_read_input_tokens="106199" cache_creation="{'ephemeral_5m_input_tokens': 3389, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016B4mtp4nujNmTSX3HTYWs7">
+Success: gt submit completed
+
+The command successfully submitted the branch via Graphite:
+
+- **Branch**: `planned/eliminate-checkout-race-02-21-1840`
+- **Action**: Updated existing PR
+- **PR Link**: https://app.graphite.com/github/pr/dagster-io/erk/7786
+- **Status**: Non-interactive mode; PR was updated (not created as draft since it already exists)
+agentId: a070bd9968db063cb (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13546
+tool_uses: 1
+duration_ms: 8283&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+## All PR Comments Addressed
+
+Total comments: 2 actionable review threads
+Batches: 1
+Commits: 1
+
+All review threads resolved. PR updated via Graphite.
+
+**PR**: https://github.com/dagster-io/erk/pull/7786</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="398" cache_read_input_tokens="109588" cache_creation="{'ephemeral_5m_input_tokens': 398, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="404" cache_read_input_tokens="109986" cache_creation="{'ephemeral_5m_input_tokens': 404, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="345" cache_read_input_tokens="110390" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>do we need to do anything to PR to conform to standards laid down in 29a811918c8742d265cad44e63a5192ee8902ef6</user>
+  <thinking>The user is asking me to check if the current PR conforms to standards from commit 29a811918. Let me look at that commit to understand what standards it established.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="205" cache_read_input_tokens="110735" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what that commit established.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="205" cache_read_input_tokens="110735" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DEjyphwrxtvayRnh4Lomxq">
+    <param name="command">git log --format="%s%n%n%b" 29a811918 -1</param>
+    <param name="description">Show commit message for 29a811918</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="205" cache_read_input_tokens="110735" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DEjyphwrxtvayRnh4Lomxq">
+planned/ Eliminate checkout from gt track operations (#7790)
+
+Removes all git checkout calls from GraphiteBranchManager.create_branch() by passing the branch name positionally to `gt track` instead of using `--branch`. This means `gt track &lt;branch&gt;` works without the branch being checked out, eliminating temporary checkout/restore cycles.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Modified (34 files)
+- `.claude/commands/erk/plan-save.md` - Simplified slot options display (removed trunk detection logic)
+- `.claude/skills/erk-exec/reference.md` - Added --show-prs and --show-runs flags to dash-data
+- `packages/erk-shared/.../graphite.py` - Removed checkout/restore in create_branch and retrack paths
+- `packages/erk-shared/.../branch_ops/abc.py` - Updated retrack_branch docstring (no checkout required)
+- `packages/erk-shared/.../branch_ops/printing.py` - Updated track/retrack print formatting to positional syntax
+- `packages/erk-shared/.../branch_ops/real.py` - Changed `--branch` flag to positional arg in track/retrack commands
+- `packages/erk-shared/.../metadata/schemas.py` - Replaced warnings.warn with ValueError for unknown fields
+- `packages/erk-shared/.../plan_data_provider/lifecycle.py` - Removed compute_pr_status_display, used full stage names
+- `packages/erk-shared/.../plan_data_provider/real.py` - Made workflow run fetching conditional on --show-runs flag
+- `packages/erk-shared/.../plan_data_provider/fake.py` - Removed pr_has_conflicts and pr_status_display params
+- `src/erk/cli/commands/admin.py` - Simplified gh-actions-api-key to single ANTHROPIC_API_KEY management
+- `src/erk/cli/commands/exec/scripts/dash_data.py` - Added --show-prs and --show-runs CLI options
+- `src/erk/cli/commands/land_cmd.py` - Removed worktree_root parameter from cleanup
+- `src/erk/cli/commands/land_pipeline.py` - Removed worktree_root from _cleanup_and_navigate_after_land
+- `src/erk/cli/commands/plan/list_cmd.py` - Added --prs and --runs flags for selective data loading
+- `src/erk/tui/app.py` - Added --show-prs/--show-runs pass-through to dash-data subprocess
+- `src/erk/tui/data/types.py` - Removed pr_has_conflicts and pr_status_display from PlanRowData
+- `src/erk/tui/widgets/plan_table.py` - Removed sts column, consolidated PR status into lifecycle column
+
+&lt;/details&gt;
+
+... [16 lines omitted] ...
+
+- **Strict unknown field validation**: Metadata schemas now raise ValueError instead of warnings.warn for unknown fields
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013BtkSTuU2SWBUofTCf1dSW">
+    <param name="command">git diff --name-only 29a811918^..29a811918</param>
+    <param name="description">Show files changed in commit 29a811918</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="205" cache_read_input_tokens="110735" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013BtkSTuU2SWBUofTCf1dSW">
+.claude/commands/erk/plan-save.md
+.claude/skills/erk-exec/reference.md
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/tests/unit/branch_manager/test_graphite_branch_manager.py
+packages/erk-shared/tests/unit/github/metadata/test_objective_header_schema.py
+src/erk/cli/commands/admin.py
+src/erk/cli/commands/exec/scripts/dash_data.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/plan/list_cmd.py
+src/erk/tui/app.py
+src/erk/tui/data/types.py
+src/erk/tui/widgets/plan_table.py
+tests/commands/dash/test_impl_columns.py
+tests/commands/plan/test_list.py
+tests/commands/test_dash_workflow_runs.py
+tests/integration/test_real_graphite_branch_ops.py
+tests/shared/github/test_metadata_schemas.py
+tests/tui/commands/test_execute_command.py
+tests/tui/test_app.py
+tests/tui/test_plan_table.py
+tests/unit/cli/commands/exec/scripts/test_dash_data.py
+tests/unit/cli/commands/exec/scripts/test_plan_save.py
+
+... [3 lines omitted] ...
+  </tool_result>
+  <thinking>The key relevant part of that commit for our PR is: "Eliminated checkout from gt track". The commit removed checkout from GraphiteBranchManager.create_branch(). Let me check if our `one_shot_dispatch.py` uses `create_branch` from the branch manager or from git directly.
+
+Looking back at the code I modified, line 219 has:
+```python
+ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
+```
+
+This is `git.branch.create_branch`, which is the git-level branch creation (not Graphite). The checkout we eliminated was `ctx.branch_manager.checkout_branch`, which was already different from the graphite branch manager.
+
+
+So the commit 29a811918 was addressing a different checkout path in `gt track`, while our PR is removing checkout from one_shot_dispatch. I should verify whether one_shot_dispatch uses the branch_manager anywhere else beyond the checkout we already removed.
+
+Looking at the changes we made, we eliminated the checkout calls at lines 222 and 424, plus the finally block that restored the original branch. The git-level branch creation at line 219 is still there since that's separate from the graphite branch manager. Now I need to check the current state of graphite.py to see what the create_branch method looks like now.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1844" cache_read_input_tokens="110940" cache_creation="{'ephemeral_5m_input_tokens': 1844, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The key change in that commit was eliminating checkout from `GraphiteBranchManager.create_branch()`. Let me check if our `one_shot_dispatch.py` has any remaining interactions with the branch manager that need to align.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1844" cache_read_input_tokens="110940" cache_creation="{'ephemeral_5m_input_tokens': 1844, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HxKqHHnqybjvGUw1WARgHB">
+    <param name="pattern">branch_manager</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-27/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1844" cache_read_input_tokens="110940" cache_creation="{'ephemeral_5m_input_tokens': 1844, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HxKqHHnqybjvGUw1WARgHB">
+No matches found
+  </tool_result>
+  <assistant>No `branch_manager` references remain in `one_shot_dispatch.py` — we already removed them all. Our PR is fully aligned with the pattern from 29a811918: both PRs eliminate checkout-based patterns in favor of direct operations that don't touch HEAD.
+
+No changes needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="736" cache_read_input_tokens="112784" cache_creation="{'ephemeral_5m_input_tokens': 736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
