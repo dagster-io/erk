@@ -161,7 +161,6 @@ Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store
 | `packages/erk-shared/src/erk_shared/plan_store/types.py`          | `PlanNotFound`, `PlanHeaderNotFoundError`  |
 | `packages/erk-shared/src/erk_shared/context/helpers.py`           | `require_plan_backend()`, `require_time()` |
 | `src/erk/cli/commands/exec/scripts/upload_session.py`             | LBYL pattern with partial success          |
-| `src/erk/cli/commands/exec/scripts/update_plan_remote_session.py` | LBYL pattern with error output             |
 
 ## get_metadata_field Returns object | PlanNotFound
 
