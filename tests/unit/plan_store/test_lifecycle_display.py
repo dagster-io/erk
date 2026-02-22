@@ -321,7 +321,7 @@ def test_planned_draft_shows_construction_emoji() -> None:
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[dim]🚧 planned[/dim]"
+    assert result == "[dim]planned 🚧[/dim]"
 
 
 def test_planned_published_shows_eyes_emoji() -> None:
@@ -332,7 +332,7 @@ def test_planned_published_shows_eyes_emoji() -> None:
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[dim]👀 planned[/dim]"
+    assert result == "[dim]planned 👀[/dim]"
 
 
 def test_implementing_draft_shows_construction_emoji() -> None:
@@ -343,7 +343,7 @@ def test_implementing_draft_shows_construction_emoji() -> None:
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[yellow]🚧 impling[/yellow]"
+    assert result == "[yellow]impling 🚧[/yellow]"
 
 
 def test_implementing_published_shows_eyes_emoji() -> None:
@@ -354,7 +354,7 @@ def test_implementing_published_shows_eyes_emoji() -> None:
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[yellow]👀 impling[/yellow]"
+    assert result == "[yellow]impling 👀[/yellow]"
 
 
 def test_review_published_shows_eyes_emoji() -> None:
@@ -365,7 +365,7 @@ def test_review_published_shows_eyes_emoji() -> None:
         has_conflicts=False,
         review_decision=None,
     )
-    assert result == "[cyan]👀 review[/cyan]"
+    assert result == "[cyan]review 👀[/cyan]"
 
 
 def test_review_published_with_conflicts_shows_both() -> None:
@@ -376,7 +376,7 @@ def test_review_published_with_conflicts_shows_both() -> None:
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[cyan]👀 review 💥[/cyan]"
+    assert result == "[cyan]review 👀 💥[/cyan]"
 
 
 def test_review_published_with_approved_shows_both() -> None:
@@ -387,7 +387,7 @@ def test_review_published_with_approved_shows_both() -> None:
         has_conflicts=False,
         review_decision="APPROVED",
     )
-    assert result == "[cyan]👀 review ✔[/cyan]"
+    assert result == "[cyan]review 👀 ✔[/cyan]"
 
 
 def test_merged_draft_false_no_prefix() -> None:
@@ -420,7 +420,7 @@ def test_plain_text_stage_with_draft_prefix() -> None:
         has_conflicts=False,
         review_decision=None,
     )
-    assert result == "👀 review"
+    assert result == "review 👀"
 
 
 def test_implementing_draft_with_conflicts_shows_both() -> None:
@@ -431,7 +431,88 @@ def test_implementing_draft_with_conflicts_shows_both() -> None:
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[yellow]🚧 impling 💥[/yellow]"
+    assert result == "[yellow]impling 🚧 💥[/yellow]"
+
+
+# --- Ready-to-merge (rocket) indicator tests ---
+
+
+def test_implemented_checks_passing_no_comments_shows_rocket() -> None:
+    """Implemented with passing checks and no unresolved comments shows rocket."""
+    result = format_lifecycle_with_status(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "[cyan]impld 🚀[/cyan]"
+
+
+def test_implemented_checks_failing_no_rocket() -> None:
+    """Implemented with failing checks does not show rocket."""
+    result = format_lifecycle_with_status(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=False,
+        has_unresolved_comments=False,
+    )
+    assert result == "[cyan]impld[/cyan]"
+
+
+def test_implemented_checks_none_no_rocket() -> None:
+    """Implemented with unknown checks does not show rocket."""
+    result = format_lifecycle_with_status(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=None,
+        has_unresolved_comments=False,
+    )
+    assert result == "[cyan]impld[/cyan]"
+
+
+def test_implemented_unresolved_comments_no_rocket() -> None:
+    """Implemented with unresolved comments does not show rocket."""
+    result = format_lifecycle_with_status(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=True,
+    )
+    assert result == "[cyan]impld[/cyan]"
+
+
+def test_implemented_conflicts_no_rocket() -> None:
+    """Implemented with conflicts shows conflict emoji, not rocket."""
+    result = format_lifecycle_with_status(
+        "[cyan]impld[/cyan]",
+        is_draft=None,
+        has_conflicts=True,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "[cyan]impld 💥[/cyan]"
+
+
+def test_implementing_checks_passing_no_rocket() -> None:
+    """Implementing stage does not show rocket even with passing checks."""
+    result = format_lifecycle_with_status(
+        "[yellow]impling[/yellow]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "[yellow]impling[/yellow]"
 
 
 # --- Workflow run inference tests ---
