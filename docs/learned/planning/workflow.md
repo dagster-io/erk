@@ -300,7 +300,7 @@ This command:
 The GitHub Actions workflow will:
 
 1. Create a dedicated branch from trunk
-2. Set up the `.worker-impl/` folder with the plan from the issue
+2. Set up the `.erk/impl-context/` folder with the plan from the issue
 3. Create a draft PR
 4. Execute the implementation automatically
 5. Mark the PR as ready for review

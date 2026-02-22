@@ -23,14 +23,14 @@ from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
 from erk.cli.commands.exec.scripts.close_issue_with_comment import (
     close_issue_with_comment,
 )
+from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    create_impl_context_from_plan,
+)
 from erk.cli.commands.exec.scripts.create_issue_from_session import (
     create_issue_from_session,
 )
 from erk.cli.commands.exec.scripts.create_plan_from_context import (
     create_plan_from_context,
-)
-from erk.cli.commands.exec.scripts.create_worker_impl_from_issue import (
-    create_worker_impl_from_issue,
 )
 from erk.cli.commands.exec.scripts.dash_data import dash_data
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
@@ -194,7 +194,7 @@ exec_group.add_command(check_impl, name="check-impl")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(dash_data, name="dash-data")
-exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
+exec_group.add_command(create_impl_context_from_plan, name="create-impl-context-from-plan")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
 exec_group.add_command(discover_reviews, name="discover-reviews")
 exec_group.add_command(download_remote_session, name="download-remote-session")

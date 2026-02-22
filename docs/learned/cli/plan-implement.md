@@ -9,9 +9,9 @@ read_when:
   - "debugging plan execution failures"
 tripwires:
   - action: "editing or deleting .impl/ folder during implementation"
-    warning: ".impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .worker-impl/ should be auto-deleted."
+    warning: ".impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .erk/impl-context/ should be auto-deleted."
   - action: "committing .impl/ folder to git"
-    warning: ".impl/ lives in .gitignore and should never be committed. Only .worker-impl/ (remote execution artifact) gets committed and later removed."
+    warning: ".impl/ lives in .gitignore and should never be committed. Only .erk/impl-context/ (remote execution artifact) gets committed and later removed."
   - action: "skipping session upload after local implementation"
     warning: "Local implementations must upload session via capture-session-info + upload-session. This enables async learn workflow. See session upload section below."
 ---
@@ -43,11 +43,11 @@ The command follows a priority-based source resolution pattern that determines w
 
 This priority order prevents destructive operations (saving plans when `.impl/` exists) and enables flexible workflow restart.
 
-## `.impl/` vs `.worker-impl/` Distinction
+## `.impl/` vs `.erk/impl-context/` Distinction
 
 The system uses two folders with fundamentally different lifecycles:
 
-| Aspect         | `.impl/`                      | `.worker-impl/`                  |
+| Aspect         | `.impl/`                      | `.erk/impl-context/`             |
 | -------------- | ----------------------------- | -------------------------------- |
 | **Context**    | Local + remote (Claude reads) | Remote only (GitHub Actions)     |
 | **Git Status** | In `.gitignore`, never staged | Committed, then auto-deleted     |
@@ -60,15 +60,15 @@ The system uses two folders with fundamentally different lifecycles:
 
 In GitHub Actions workflow:
 
-1. `.worker-impl/` is committed to branch (for git-based transport)
-2. Workflow copies `.worker-impl/` → `.impl/` (Claude's read location)
+1. `.erk/impl-context/` is committed to branch (for git-based transport)
+2. Workflow copies `.erk/impl-context/` → `.impl/` (Claude's read location)
 3. Claude executes with `.impl/` folder
-4. After CI passes, workflow removes `.worker-impl/` in separate commit
+4. After CI passes, workflow removes `.erk/impl-context/` in separate commit
 5. `.impl/` is never committed (stays local-only in workflow runner)
 
 <!-- Source: src/erk/cli/commands/exec/scripts/impl_verify.py, impl_verify() -->
 
-The distinction exists because `.worker-impl/` is a git-based transport mechanism while `.impl/` is Claude's working directory.
+The distinction exists because `.erk/impl-context/` is a git-based transport mechanism while `.impl/` is Claude's working directory.
 
 ## Session Upload for Async Learn
 
@@ -96,7 +96,7 @@ The command uses `capture-session-info` to extract session ID and file path from
 
 See `capture_session_info()` in `src/erk/cli/commands/exec/scripts/capture_session_info.py` for session discovery logic.
 
-**Critical detail:** Session upload happens **after** implementation completes but **before** `.worker-impl/` cleanup. This ensures the session capture reflects the complete implementation.
+**Critical detail:** Session upload happens **after** implementation completes but **before** `.erk/impl-context/` cleanup. This ensures the session capture reflects the complete implementation.
 
 ## Common Failure Patterns
 
@@ -155,7 +155,7 @@ git commit -m "Clean up after implementation"
 
 **Why wrong:** `.impl/` is in `.gitignore` (never staged), so this command fails. More importantly, `.impl/` must be preserved for user review of what-was-planned vs what-was-implemented.
 
-**Correct:** Only delete `.worker-impl/` (committed artifact), never `.impl/` (gitignored artifact).
+**Correct:** Only delete `.erk/impl-context/` (committed artifact), never `.impl/` (gitignored artifact).
 
 ### Anti-Pattern: Committing `.impl/` for "Documentation"
 

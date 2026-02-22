@@ -1,7 +1,7 @@
 ---
 title: Implementation Folder Lifecycle
 read_when:
-  - "working with .impl/ or .worker-impl/ folders"
+  - "working with .impl/ or .erk/impl-context/ folders"
   - "understanding remote implementation workflow"
   - "debugging plan visibility in PRs"
 last_audited: "2026-02-16 14:20 PT"
@@ -12,7 +12,7 @@ audit_result: edited
 
 The erk system uses two distinct folders for implementation plans, each with different visibility and lifecycle characteristics.
 
-## .worker-impl/ (Committed, Visible)
+## .erk/impl-context/ (Committed, Visible)
 
 | Property   | Value                                                |
 | ---------- | ---------------------------------------------------- |
@@ -24,29 +24,29 @@ The erk system uses two distinct folders for implementation plans, each with dif
 
 ## .impl/ (Local, Never Committed)
 
-| Property   | Value                                              |
-| ---------- | -------------------------------------------------- |
-| Created by | Copy of .worker-impl/ OR local `erk implement`     |
-| Purpose    | Working directory for implementation               |
-| Contains   | Same structure as .worker-impl/ plus run-info.json |
-| Lifecycle  | Exists during implementation only                  |
-| Committed  | Never (in .gitignore)                              |
+| Property   | Value                                                   |
+| ---------- | ------------------------------------------------------- |
+| Created by | Copy of .erk/impl-context/ OR local `erk implement`     |
+| Purpose    | Working directory for implementation                    |
+| Contains   | Same structure as .erk/impl-context/ plus run-info.json |
+| Lifecycle  | Exists during implementation only                       |
+| Committed  | Never (in .gitignore)                                   |
 
 ## Copy Step (Remote Only)
 
-The workflow copies `.worker-impl/` to `.impl/` before implementation:
+The workflow copies `.erk/impl-context/` to `.impl/` before implementation:
 
 ```bash
-cp -r .worker-impl .impl
+cp -r .erk/impl-context .impl
 ```
 
 This ensures the implementation environment is identical whether local or remote.
 
 ## Why Two Folders?
 
-1. **Visibility:** `.worker-impl/` appears in PR diffs, showing the plan to reviewers
+1. **Visibility:** `.erk/impl-context/` appears in PR diffs, showing the plan to reviewers
 2. **Consistency:** `.impl/` provides a consistent working directory for all implementation code
-3. **Cleanup:** `.worker-impl/` deletion signals completion; `.impl/` remains for user review
+3. **Cleanup:** `.erk/impl-context/` deletion signals completion; `.impl/` remains for user review
 
 ## Related Topics
 

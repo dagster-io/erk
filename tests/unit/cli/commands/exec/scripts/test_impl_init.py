@@ -108,10 +108,12 @@ def test_impl_init_with_issue_tracking(impl_folder: Path, monkeypatch: pytest.Mo
     assert data["issue_number"] == 123
 
 
-def test_impl_init_detects_worker_impl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test impl-init detects .worker-impl/ folder."""
-    # Create .worker-impl/ folder instead of .impl/
-    impl_dir = tmp_path / ".worker-impl"
+def test_impl_init_detects_impl_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test impl-init detects .erk/impl-context/ folder."""
+    # Create .erk/impl-context/ folder instead of .impl/
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    impl_dir = erk_dir / "impl-context"
     impl_dir.mkdir()
 
     plan_md = impl_dir / "plan.md"
@@ -125,7 +127,7 @@ def test_impl_init_detects_worker_impl(tmp_path: Path, monkeypatch: pytest.Monke
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["valid"] is True
-    assert data["impl_type"] == "worker-impl"
+    assert data["impl_type"] == "impl-context"
 
 
 def test_impl_init_errors_missing_impl_folder(

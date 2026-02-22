@@ -284,7 +284,7 @@ If this fails, you have violated instructions. The .impl/ folder must be preserv
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
 
-**Note:** `.worker-impl/` and `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
 
 **CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
 

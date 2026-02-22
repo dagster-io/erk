@@ -169,10 +169,10 @@ def test_ended_missing_impl_folder(tmp_path: Path) -> None:
     assert data["error_type"] == "no-issue-reference"
 
 
-def test_worker_impl_fallback(tmp_path: Path) -> None:
-    """Detects .worker-impl/ folder when .impl/ is missing."""
-    impl_dir = tmp_path / ".worker-impl"
-    impl_dir.mkdir()
+def test_impl_context_fallback(tmp_path: Path) -> None:
+    """Detects .erk/impl-context/ folder when .impl/ is missing."""
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Plan", encoding="utf-8")
     # No plan-ref.json — should fail on that, not folder detection
 

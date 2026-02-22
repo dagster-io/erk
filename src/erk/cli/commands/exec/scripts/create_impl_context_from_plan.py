@@ -1,23 +1,23 @@
-"""Create .worker-impl/ folder from plan content.
+"""Create .erk/impl-context/ folder from plan content.
 
-This exec command fetches a plan via PlanBackend and creates the .worker-impl/
+This exec command fetches a plan via PlanBackend and creates the .erk/impl-context/
 folder structure, providing a testable alternative to inline workflow scripts.
 
 Usage:
-    erk exec create-worker-impl-from-issue <plan-id>
+    erk exec create-impl-context-from-plan <plan-id>
 
 Output:
     Structured JSON output with success status and folder details
 
 Exit Codes:
-    0: Success (.worker-impl/ folder created)
+    0: Success (.erk/impl-context/ folder created)
     1: Error (plan not found, fetch failed, folder creation failed)
 
 Examples:
-    $ erk exec create-worker-impl-from-issue 1028
-    {"success": true, "worker_impl_path": "/path/to/.worker-impl", "plan_id": 1028}
+    $ erk exec create-impl-context-from-plan 1028
+    {"success": true, "impl_context_path": "/path/to/.erk/impl-context", "plan_id": 1028}
 
-    $ erk exec create-worker-impl-from-issue 999
+    $ erk exec create-impl-context-from-plan 999
     {"success": false, "error": "plan_not_found", "message": "..."}
 """
 
@@ -29,21 +29,22 @@ from erk_shared.context.helpers import (
     require_plan_backend,
     require_repo_root,
 )
+from erk_shared.impl_context import create_impl_context
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
-from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 
-@click.command(name="create-worker-impl-from-issue")
+@click.command(name="create-impl-context-from-plan")
 @click.argument("plan_id", type=int)
 @click.pass_context
-def create_worker_impl_from_issue(
+def create_impl_context_from_plan(
     ctx: click.Context,
     plan_id: int,
 ) -> None:
-    """Create .worker-impl/ folder from plan content.
+    """Create .erk/impl-context/ folder from plan content.
 
-    Fetches plan content via PlanBackend and creates .worker-impl/ folder structure
-    with plan.md, issue.json, and metadata.
+    Fetches plan content via PlanBackend and creates .erk/impl-context/ folder structure
+    with plan.md and ref.json metadata.
 
     PLAN_ID: Plan identifier (e.g., GitHub issue number or PR number)
     """
@@ -65,9 +66,9 @@ def create_worker_impl_from_issue(
         raise SystemExit(1)
     plan = result
 
-    # Create .worker-impl/ folder with plan content
-    worker_impl_path = repo_root / ".worker-impl"
-    create_worker_impl_folder(
+    # Create .erk/impl-context/ folder with plan content
+    impl_context_path = repo_root / IMPL_CONTEXT_DIR
+    create_impl_context(
         plan_content=plan.body,
         plan_id=plan_id_str,
         url=plan.url,
@@ -79,7 +80,7 @@ def create_worker_impl_from_issue(
     # Output structured success result
     output = {
         "success": True,
-        "worker_impl_path": str(worker_impl_path),
+        "impl_context_path": str(impl_context_path),
         "plan_id": plan_id,
         "plan_url": plan.url,
     }

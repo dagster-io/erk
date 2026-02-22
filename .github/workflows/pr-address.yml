@@ -72,10 +72,6 @@ jobs:
       - name: Clean up plan staging dirs if present
         run: |
           NEEDS_CLEANUP=false
-          if [ -d .worker-impl/ ] && git ls-files --error-unmatch .worker-impl/ >/dev/null 2>&1; then
-            git rm -rf .worker-impl/
-            NEEDS_CLEANUP=true
-          fi
           if [ -d .erk/impl-context/ ] && git ls-files --error-unmatch .erk/impl-context/ >/dev/null 2>&1; then
             git rm -rf .erk/impl-context/
             NEEDS_CLEANUP=true

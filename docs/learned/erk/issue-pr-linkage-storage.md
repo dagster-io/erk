@@ -28,7 +28,7 @@ When a plan becomes a PR, erk establishes a linkage that allows:
 The primary path for creating issue-PR linkages:
 
 1. Creates branch from plan issue (e.g., `P123-feature-12-11-0948`)
-2. Creates `.worker-impl/` folder with `issue.json` containing issue reference
+2. Creates `.erk/impl-context/` folder with `issue.json` containing issue reference
 3. Creates draft PR with `Closes #N` in **initial** body
 4. GitHub registers the `CrossReferencedEvent` with `willCloseTarget: true`
 
@@ -38,7 +38,7 @@ The primary path for creating issue-PR linkages:
 
 Slash commands that create PRs read the issue reference from local storage:
 
-1. Check for `.impl/issue.json` or `.worker-impl/issue.json`
+1. Check for `.impl/issue.json` or `.erk/impl-context/issue.json`
 2. If found, append `Closes #N` to PR body
 3. Uses `erk exec get-closing-text` to read the reference
 
@@ -59,7 +59,7 @@ Slash commands that create PRs read the issue reference from local storage:
 
 This file maps the current worktree to its source GitHub issue.
 
-- Created by `erk plan submit` (as `.worker-impl/`)
+- Created by `erk plan submit` (as `.erk/impl-context/`)
 - Created by `erk wt create --from-plan` (as `.impl/`)
 - Read by slash commands when creating PRs
 

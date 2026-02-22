@@ -103,10 +103,10 @@ jobs:
         env:
           PROMPT: ${{ inputs.prompt }}
         run: |
-          if [ -f .worker-impl/prompt.md ]; then
-            echo "Prompt already committed to .worker-impl/prompt.md"
+          if [ -f .erk/impl-context/prompt.md ]; then
+            echo "Prompt already committed to .erk/impl-context/prompt.md"
             mkdir -p .impl
-            cp .worker-impl/prompt.md .impl/prompt.md
+            cp .erk/impl-context/prompt.md .impl/prompt.md
           else
             mkdir -p .impl
             printf '%s\n' "$PROMPT" > .impl/prompt.md
