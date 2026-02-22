@@ -535,37 +535,6 @@ class ErkDashApp(App):
                 timeout=5,
             )
 
-    @work(thread=True)
-    def _update_objective_async(
-        self,
-        *,
-        objective_issue: int,
-        pr_num: int,
-        branch: str,
-    ) -> None:
-        """Update objective after landing a PR in background thread.
-
-        Args:
-            objective_issue: The objective issue number to update
-            pr_num: The PR number that was landed
-            branch: The PR head branch name
-        """
-        self.call_from_thread(self.notify, f"Updating objective #{objective_issue}...")
-        try:
-            self._provider.update_objective_after_land(
-                objective_issue=objective_issue,
-                pr_num=pr_num,
-                branch=branch,
-            )
-            self.call_from_thread(self.notify, f"Objective #{objective_issue} updated", timeout=5)
-        except Exception:
-            self.call_from_thread(
-                self.notify,
-                "Objective update failed",
-                severity="error",
-                timeout=8,
-            )
-
     def _push_streaming_detail(
         self,
         *,
@@ -574,7 +543,7 @@ class ErkDashApp(App):
         title: str,
         timeout: float,
         on_success: Callable[[], None] | None,
-    ) -> None:
+    ) -> PlanDetailScreen:
         """Push a detail screen and run a streaming command after refresh."""
         executor = RealCommandExecutor(
             browser_launch=self._provider.browser.launch,
@@ -583,11 +552,6 @@ class ErkDashApp(App):
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             submit_to_queue_fn=self._provider.submit_to_queue,
-            update_objective_fn=lambda oi, pn, br: self._update_objective_async(
-                objective_issue=oi,
-                pr_num=pn,
-                branch=br,
-            ),
         )
         detail_screen = PlanDetailScreen(
             row=row,
@@ -606,6 +570,7 @@ class ErkDashApp(App):
                 on_success=on_success,
             )
         )
+        return detail_screen
 
     def action_show_detail(self) -> None:
         """Show plan detail modal for selected row."""
@@ -621,11 +586,6 @@ class ErkDashApp(App):
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             submit_to_queue_fn=self._provider.submit_to_queue,
-            update_objective_fn=lambda oi, pn, br: self._update_objective_async(
-                objective_issue=oi,
-                pr_num=pn,
-                branch=br,
-            ),
         )
 
         self.push_screen(
@@ -899,11 +859,6 @@ class ErkDashApp(App):
                     notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
-                    update_objective_fn=lambda oi, pn, br: self._update_objective_async(
-                        objective_issue=oi,
-                        pr_num=pn,
-                        branch=br,
-                    ),
                 )
                 detail_screen = PlanDetailScreen(
                     row=row,
@@ -936,11 +891,6 @@ class ErkDashApp(App):
                     notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
-                    update_objective_fn=lambda oi, pn, br: self._update_objective_async(
-                        objective_issue=oi,
-                        pr_num=pn,
-                        branch=br,
-                    ),
                 )
                 detail_screen = PlanDetailScreen(
                     row=row,
@@ -983,13 +933,21 @@ class ErkDashApp(App):
                 def _on_land_success() -> None:
                     self.action_refresh()
                     if objective_issue is not None:
-                        self._update_objective_async(
-                            objective_issue=objective_issue,
-                            pr_num=pr_num,
-                            branch=branch,
+                        detail_screen.run_streaming_command(
+                            [
+                                "erk",
+                                "exec",
+                                "objective-update-after-land",
+                                f"--objective={objective_issue}",
+                                f"--pr={pr_num}",
+                                f"--branch={branch}",
+                            ],
+                            cwd=self._provider.repo_root,
+                            title=f"Update Objective #{objective_issue}",
+                            timeout=300.0,
                         )
 
-                self._push_streaming_detail(
+                detail_screen = self._push_streaming_detail(
                     row=row,
                     command=[
                         "erk",

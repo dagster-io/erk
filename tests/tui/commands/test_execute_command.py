@@ -16,6 +16,7 @@ class _CapturingPlanDetailScreen(PlanDetailScreen):
     def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)  # type: ignore[arg-type]
         self.captured_on_success: Callable[[], None] | None = None
+        self.streaming_commands: list[tuple[list[str], str]] = []
 
     def run_streaming_command(
         self,
@@ -26,8 +27,9 @@ class _CapturingPlanDetailScreen(PlanDetailScreen):
         timeout: float = 30.0,
         on_success: Callable[[], None] | None = None,
     ) -> None:
-        """Capture on_success instead of spawning a subprocess."""
+        """Capture on_success and track streaming commands."""
         self.captured_on_success = on_success
+        self.streaming_commands.append((command, title))
 
 
 class TestExecuteCommandBrowserCommands:
@@ -337,8 +339,8 @@ class TestExecuteCommandLandPR:
         screen.captured_on_success()
         assert executor.refresh_count == 1
 
-    def test_land_pr_on_success_calls_update_objective(self) -> None:
-        """_on_land_success calls executor.update_objective_after_land when objective exists."""
+    def test_land_pr_on_success_streams_objective_update(self) -> None:
+        """_on_land_success chains a streaming objective update command when objective exists."""
         row = make_plan_row(
             123,
             "Test",
@@ -354,12 +356,25 @@ class TestExecuteCommandLandPR:
         )
         screen.execute_command("land_pr")
         assert screen.captured_on_success is not None
+        # First streaming command is the land-execute itself
+        assert len(screen.streaming_commands) == 1
         screen.captured_on_success()
         assert executor.refresh_count == 1
-        assert executor.updated_objectives == [(789, 456, "P123-test-branch")]
+        # Second streaming command is the objective update
+        assert len(screen.streaming_commands) == 2
+        cmd, title = screen.streaming_commands[1]
+        assert cmd == [
+            "erk",
+            "exec",
+            "objective-update-after-land",
+            "--objective=789",
+            "--pr=456",
+            "--branch=P123-test-branch",
+        ]
+        assert title == "Update Objective #789"
 
     def test_land_pr_on_success_skips_update_without_objective(self) -> None:
-        """_on_land_success does NOT call update_objective_after_land without objective."""
+        """_on_land_success does NOT chain objective update without objective."""
         row = make_plan_row(
             123,
             "Test",
@@ -374,9 +389,12 @@ class TestExecuteCommandLandPR:
         )
         screen.execute_command("land_pr")
         assert screen.captured_on_success is not None
+        # First streaming command is the land-execute itself
+        assert len(screen.streaming_commands) == 1
         screen.captured_on_success()
         assert executor.refresh_count == 1
-        assert executor.updated_objectives == []
+        # No additional streaming command for objective update
+        assert len(screen.streaming_commands) == 1
 
 
 class TestExecuteCommandFixConflictsRemote:
