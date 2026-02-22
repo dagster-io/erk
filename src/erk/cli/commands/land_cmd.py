@@ -1288,7 +1288,6 @@ def _execute_land_directly(
         no_delete: Preserve branch after landing
         cleanup_confirmed: Whether user confirmed cleanup during validation
     """
-    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
     branch = target.branch
     pr_number = target.pr_details.number
 
@@ -1298,6 +1297,8 @@ def _execute_land_directly(
         user_output(f"Would delete branch '{branch}'")
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
+
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     # Build execution state and run the pipeline directly
     state = make_execution_state(
@@ -1931,14 +1932,12 @@ def land(
         # Only recreate when InteractiveConsole - preserve FakeConsole for tests.
         ctx = create_context(dry_run=False, script=True)
 
-    # Validate flag constraints
     Ensure.invariant(
         not (up_flag and down_flag),
         "--up and --down are mutually exclusive.\n"
         "--up navigates to child branch, --down navigates to trunk.",
     )
 
-    # Validate prerequisites
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -1965,7 +1964,6 @@ def land(
     assert not isinstance(result, LandError)
     assert result.pr_details is not None
 
-    # Build LandTarget for downstream functions
     land_target = LandTarget(
         branch=result.branch,
         pr_details=result.pr_details,
