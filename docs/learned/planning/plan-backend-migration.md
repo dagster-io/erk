@@ -154,13 +154,13 @@ Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store
 
 ## Source Code References
 
-| File                                                              | Key Components                             |
-| ----------------------------------------------------------------- | ------------------------------------------ |
-| `packages/erk-shared/src/erk_shared/plan_store/backend.py`        | `PlanBackend` ABC                          |
-| `packages/erk-shared/src/erk_shared/plan_store/github.py`         | `GitHubPlanStore` implementation           |
-| `packages/erk-shared/src/erk_shared/plan_store/types.py`          | `PlanNotFound`, `PlanHeaderNotFoundError`  |
-| `packages/erk-shared/src/erk_shared/context/helpers.py`           | `require_plan_backend()`, `require_time()` |
-| `src/erk/cli/commands/exec/scripts/upload_session.py`             | LBYL pattern with partial success          |
+| File                                                       | Key Components                             |
+| ---------------------------------------------------------- | ------------------------------------------ |
+| `packages/erk-shared/src/erk_shared/plan_store/backend.py` | `PlanBackend` ABC                          |
+| `packages/erk-shared/src/erk_shared/plan_store/github.py`  | `GitHubPlanStore` implementation           |
+| `packages/erk-shared/src/erk_shared/plan_store/types.py`   | `PlanNotFound`, `PlanHeaderNotFoundError`  |
+| `packages/erk-shared/src/erk_shared/context/helpers.py`    | `require_plan_backend()`, `require_time()` |
+| `src/erk/cli/commands/exec/scripts/upload_session.py`      | LBYL pattern with partial success          |
 
 ## get_metadata_field Returns object | PlanNotFound
 
