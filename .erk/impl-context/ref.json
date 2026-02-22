@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: erk dash TUI not displaying merge conflict state"
+}
