@@ -6,6 +6,7 @@ import pytest
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     InvalidObjectiveSlug,
+    ValidObjectiveSlug,
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
@@ -647,8 +648,10 @@ def test_generate_draft_pr_branch_name_with_objective_truncates() -> None:
     ],
 )
 def test_validate_objective_slug_valid(slug: str) -> None:
-    """Valid slugs return None."""
-    assert validate_objective_slug(slug) is None
+    """Valid slugs return ValidObjectiveSlug."""
+    result = validate_objective_slug(slug)
+    assert isinstance(result, ValidObjectiveSlug)
+    assert result.slug == slug
 
 
 @pytest.mark.parametrize(
@@ -670,7 +673,6 @@ def test_validate_objective_slug_valid(slug: str) -> None:
 def test_validate_objective_slug_invalid(slug: str, reason_fragment: str) -> None:
     """Invalid slugs return InvalidObjectiveSlug with matching reason."""
     result = validate_objective_slug(slug)
-    assert result is not None
     assert isinstance(result, InvalidObjectiveSlug)
     assert reason_fragment in result.reason
 
@@ -678,6 +680,6 @@ def test_validate_objective_slug_invalid(slug: str, reason_fragment: str) -> Non
 def test_validate_objective_slug_error_message_includes_pattern() -> None:
     """Error message includes the regex pattern for agent self-correction."""
     result = validate_objective_slug("INVALID")
-    assert result is not None
+    assert isinstance(result, InvalidObjectiveSlug)
     assert "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" in result.message
     assert "INVALID" in result.message

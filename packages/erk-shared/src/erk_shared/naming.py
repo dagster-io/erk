@@ -71,6 +71,17 @@ _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
 
 @dataclass(frozen=True)
+class ValidObjectiveSlug:
+    """Validation success for an objective slug.
+
+    Attributes:
+        slug: The validated slug value.
+    """
+
+    slug: str
+
+
+@dataclass(frozen=True)
 class InvalidObjectiveSlug:
     """Validation failure for an objective slug.
 
@@ -102,20 +113,20 @@ class InvalidObjectiveSlug:
         )
 
 
-def validate_objective_slug(slug: str) -> InvalidObjectiveSlug | None:
+def validate_objective_slug(slug: str) -> ValidObjectiveSlug | InvalidObjectiveSlug:
     """Validate an objective slug against the required format.
 
-    Returns None on success, or an InvalidObjectiveSlug describing the failure.
+    Returns ValidObjectiveSlug on success, or InvalidObjectiveSlug describing the failure.
 
     Args:
         slug: The slug string to validate.
 
     Returns:
-        None if valid, InvalidObjectiveSlug if invalid.
+        ValidObjectiveSlug if valid, InvalidObjectiveSlug if invalid.
 
     Examples:
         >>> validate_objective_slug("build-auth-system")  # valid
-        None
+        ValidObjectiveSlug(slug='build-auth-system')
         >>> validate_objective_slug("AB")  # invalid
         InvalidObjectiveSlug(raw_slug='AB', reason='...')
     """
@@ -127,7 +138,7 @@ def validate_objective_slug(slug: str) -> InvalidObjectiveSlug | None:
         return InvalidObjectiveSlug(
             raw_slug=slug, reason="Does not match required pattern"
         )
-    return None
+    return ValidObjectiveSlug(slug=slug)
 
 
 def sanitize_worktree_name(name: str) -> str:

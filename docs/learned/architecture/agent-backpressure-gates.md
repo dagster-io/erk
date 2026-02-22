@@ -64,7 +64,7 @@ A gate can be:
 
 The objective slug migration demonstrates this pattern:
 
-- **Before (silent transformation):** `sanitize_objective_slug()` accepted any string, lowercased it, replaced special characters, collapsed hyphens, and returned a valid slug. The agent never knew if its input was wrong.
-- **After (validation gate):** `validate_objective_slug()` checks the slug against `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` and 3-40 character length. On failure, it returns an `InvalidObjectiveSlug` with the pattern, rules, actual value, and examples. The agent receives this feedback and retries.
+- **Before (silent transformation):** The previous implementation, `sanitize_objective_slug()` (now removed), accepted any string, lowercased it, replaced special characters, collapsed hyphens, and returned a valid slug. The agent never knew if its input was wrong.
+- **After (validation gate):** `validate_objective_slug()` checks the slug against `_OBJECTIVE_SLUG_PATTERN` (defined in `naming.py`) and 3-40 character length. On failure, it returns an `InvalidObjectiveSlug` with the pattern, rules, actual value, and examples. The agent receives this feedback and retries.
 - **Guidance:** The `objective-create` skill includes the exact regex pattern, length constraints, rules, and valid/invalid examples.
 - **Gate:** `validate_objective_slug()` in `naming.py` enforces the invariant programmatically.

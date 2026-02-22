@@ -35,7 +35,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
 )
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
-from erk_shared.naming import validate_objective_slug
+from erk_shared.naming import InvalidObjectiveSlug, validate_objective_slug
 from erk_shared.plan_utils import extract_title_from_plan
 
 # Label configurations
@@ -340,14 +340,14 @@ def create_objective_issue(
 
     # Step 2b: Validate slug if provided (gate - reject invalid, don't transform)
     if slug is not None:
-        slug_error = validate_objective_slug(slug)
-        if slug_error is not None:
+        slug_result = validate_objective_slug(slug)
+        if isinstance(slug_result, InvalidObjectiveSlug):
             return CreatePlanIssueResult(
                 success=False,
                 issue_number=None,
                 issue_url=None,
                 title=title,
-                error=slug_error.message,
+                error=slug_result.message,
             )
 
     # Step 3: Build labels - objectives only use erk-objective (NOT erk-plan)
