@@ -322,10 +322,10 @@ def test_close_plan_with_objective_invokes_update() -> None:
         assert "Closed plan #42" in result.output
         # Verify the objective update command was invoked
         assert len(executor.executed_commands) == 1
-        cmd, _, _, _, _ = executor.executed_commands[0]
-        assert "/erk:objective-update-with-closed-plan" in cmd
-        assert "--plan 42" in cmd
-        assert "--objective 99" in cmd
+        executed_cmd = executor.executed_commands[0][0]
+        assert "/erk:objective-update-with-closed-plan" in executed_cmd
+        assert "--plan 42" in executed_cmd
+        assert "--objective 99" in executed_cmd
 
 
 def test_close_plan_without_objective_skips_update() -> None:
