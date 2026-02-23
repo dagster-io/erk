@@ -30,6 +30,7 @@ The `ERK_PLAN_BACKEND` environment variable is no longer read by application cod
 **Note:** Some code still contains `PLAN_BACKEND_SPLIT` comment blocks marking dead branches (e.g., `if "draft_pr" != "draft_pr":` in plan_save.py). These are intentionally preserved for node 1.2 cleanup.
 
 <!-- Source: src/erk/core/context.py, create_context -->
+
 ## Architecture
 
 DraftPRPlanBackend uses **composition** — it wraps the top-level GitHub gateway, not inheritance. The class is at `packages/erk-shared/src/erk_shared/plan_store/draft_pr.py`.
