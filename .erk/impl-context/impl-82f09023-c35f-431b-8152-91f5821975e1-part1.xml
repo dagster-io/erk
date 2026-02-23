@@ -1,0 +1,1094 @@
+<session>
+  <meta branch="plnd/plan-local-review-marker-t-02-23-1500" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="82f09023-c35f-431b-8152-91f5821975e1"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="82f09023-c35f-431b-8152-91f5821975e1" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="82f09023-c35f-431b-8152-91f5821975e1" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the steps outlined in the command instructions.
+
+Step 0: No arguments provided, so no ISSUE_ARG or FILE_ARG.
+
+Step 1b: Check if `.impl/` already exists by running `erk exec impl-init --json`.
+
+Let me start by checking if `.impl/` exists and is valid.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12954}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12954}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017uyZnwWtj7EjzC5XPkzWMb">
+    <param name="command">erk exec impl-init --json</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12954" cache_read_input_tokens="19041" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12954, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017uyZnwWtj7EjzC5XPkzWMb">
+{"valid": true, "impl_type": "impl", "has_plan_tracking": true, "related_docs": {"skills": [], "docs": []}, "plan_number": 7965}
+  </tool_result>
+  <assistant>`.impl/` is valid with issue tracking (plan #7965). Let me sync with remote and read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="31995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YYXqZExCksoCsdYuQS1Rkc">
+    <param name="command">erk exec setup-impl-from-issue 7965</param>
+    <param name="description">Sync local branch with remote for plan #7965</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="31995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01At6P8BuA69AajLuF8uMHM2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="31995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YYXqZExCksoCsdYuQS1Rkc">
+Found existing .impl/ for plan #7965, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl", "plan_number": 7965, "plan_url": "https://github.com/dagster-io/erk/pull/7965", "branch": "plnd/plan-local-review-marker-t-02-23-1500", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <tool_result tool="toolu_01At6P8BuA69AajLuF8uMHM2">
+     1→# Plan: Local Review Marker to Skip CI Reviews
+     2→
+     3→## Context
+     4→
+     5→Running `/local:code-review` locally produces the same results as CI code reviews, but there's no way to signal this to CI. Every push triggers full CI reviews even when the developer just ran them locally. This wastes CI minutes and slows down the feedback loop.
+     6→
+     7→The goal: after local code review passes, mark the PR so CI skips redundant reviews. The marker is tied to a specific commit SHA so it auto-invalidates when new commits are pushed.
+     8→
+     9→## Marker Format
+    10→
+    11→HTML comment appended to PR body (invisible in rendered description):
+    12→
+    13→```
+    14→&lt;!-- erk:local-review-passed:&lt;full-40-char-sha&gt; --&gt;
+    15→```
+    16→
+    17→## Changes
+    18→
+    19→### 1. New exec script: `set-local-review-marker`
+    20→
+    21→**File:** `src/erk/cli/commands/exec/scripts/set_local_review_marker.py`
+    22→
+    23→- Click command `set-local-review-marker` with `@click.pass_context`
+    24→- Auto-detects current branch via `require_git(ctx).branches.get_current_branch(cwd)`
+    25→- Gets HEAD SHA via `require_git(ctx).branches.get_branch_head(repo_root, branch)`
+    26→- Finds PR via `require_github(ctx).get_pr_for_branch(repo_root, branch)`
+    27→- If no PR found: outputs `{"success": false, "reason": "no_pr"}` and exits 0 (not an error)
+    28→- Reads current PR body from `PRDetails.body`
+    29→- Strips any existing `&lt;!-- erk:local-review-passed:... --&gt;` line via regex
+    30→- Appends new marker line
+
+... [79 lines omitted] ...
+
+    89→- Detached HEAD: graceful failure
+  </tool_result>
+  <thinking>Good, I have the plan. Let me now:
+
+1. Check if `.erk/impl-context/` exists (Step 2d)
+2. Load related documentation and tripwires
+3. Create todo entries
+4. Signal started
+5. Start implementing
+
+Let me first check for impl-context cleanup and read the existing files I'll need to modify.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2033" cache_read_input_tokens="32263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2033}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan...
+
+Let me clean up impl-context if it exists, signal start, and begin loading context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2033" cache_read_input_tokens="32263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2033}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MkEhhkxq8y7YYvBhfwphRk">
+    <param name="command">if [ -d .erk/impl-context/ ]; then git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove ...[truncated 26 chars]...it push origin "$(git branch --show-current)"; else echo "No impl-context to clean up"; fi</param>
+    <param name="description">Clean up impl-context directory if it exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2033" cache_read_input_tokens="32263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2033}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017tkS1u8iW4krwSdidNkPxr">
+    <param name="command">erk exec impl-signal started --session-id="82f09023-c35f-431b-8152-91f5821975e1" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2033" cache_read_input_tokens="32263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2033}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MkEhhkxq8y7YYvBhfwphRk">
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plnd/plan-local-review-marker-t-02-23-1500 465dc7384] Remove .erk/impl-context/ before implementation
+ 2 files changed, 112 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   6850fcb51..465dc7384  plnd/plan-local-review-marker-t-02-23-1500 -&gt; plnd/plan-local-review-marker-t-02-23-1500
+  </tool_result>
+  <tool_result tool="toolu_017tkS1u8iW4krwSdidNkPxr">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 7965
+}
+  </tool_result>
+  <assistant>Now let me load the relevant tripwires and explore existing patterns I'll need to follow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="34296" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 712}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019KUJii8G3ji2mWn6fw1w6Z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/docs/learned/cli/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="34296" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 712}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019KUJii8G3ji2mWn6fw1w6Z">
+     1→---
+     2→title: Cli Tripwires
+     3→read_when:
+     4→  - "working on cli code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from cli/*.md frontmatter --&gt;
+    10→
+    11→# Cli Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
+    16→
+    17→**Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
+    18→
+    19→**Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
+    20→
+    21→**Using RuntimeError for expected CLI failures** → Read [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) first. RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message.
+    22→
+    23→**WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-fix-conflicts → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
+    24→
+    25→**adding a new exec script that produces JSON consumed by another exec script** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Define shared TypedDict in packages/erk-shared/ for type-safe schema. Both producer and consumer import from the same schema definition.
+    26→
+    27→**adding a new step to the submit pipeline** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to \_submit_pipeline() tuple.
+    28→
+    29→**adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md.
+    30→
+
+... [116 lines omitted] ...
+
+    49→**calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
+    51→**choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
+    69→**flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
+    93→**plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk plan submit instead
+   111→**testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
+   113→**using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
+   125→**using dict .get() to access fields from exec script JSON output without a TypedDict schema** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering failures occur when field names are mistyped. Define TypedDict in erk_shared and use cast() in consumers.
+   145→**writing multi-line error messages in Ensure method calls** → Read [CLI Output Styling Guide](output-styling.md) first. Use implicit string concatenation with \n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \n\n (double newline) — Ensure handles spacing.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JVNNFWCV64WeWfcZwPEPpy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="34296" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 712}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JVNNFWCV64WeWfcZwPEPpy">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    22→
+    23→**adding a tracking list without documenting the tuple field order** → Read [FakeGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    24→
+    25→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    26→
+    27→**allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules.
+    28→
+    29→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    30→
+
+... [100 lines omitted] ...
+
+    47→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    55→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    57→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. If set to 'draft_pr' in the environment, context_for_test() in erk-shared will use DraftPRPlanBackend instead of the default, causing widespread failures in tests that expect the issue-based backend. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures.
+    65→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    81→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+    95→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(mix_stderr=False, env={}) to isolate completely. Never rely on ambient env being clean.
+   105→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   117→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   119→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+   125→**using vi.useFakeTimers() without restoring in afterEach** → Read [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md) first. Always call vi.useRealTimers() in afterEach(). Fake timers leak across tests and cause unpredictable failures in unrelated test suites.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LrxBx83qTkJZzU1TMeFUqX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/docs/learned/ci/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="34296" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 712}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LrxBx83qTkJZzU1TMeFUqX">
+     1→---
+     2→title: Ci Tripwires
+     3→read_when:
+     4→  - "working on ci code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from ci/*.md frontmatter --&gt;
+    10→
+    11→# Ci Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing
+    16→
+    17→**Creating or modifying .prettierignore** → Read [Makefile Prettier Ignore Path](makefile-prettier-ignore-path.md) first. The Makefile uses `prettier --ignore-path .gitignore`, NOT `.prettierignore`. Adding rules to .prettierignore has no effect. Modify .gitignore to control what Prettier ignores.
+    18→
+    19→**GitHub Actions cannot interpolate Python constants** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. label strings must be hardcoded in YAML
+    20→
+    21→**GitHub Actions workflow needs to perform operations like gist creation, or session uploads fail in CI** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. GitHub Actions GITHUB_TOKEN has restricted scope by default. Check token capabilities or use personal access token (PAT) for elevated permissions like gist creation.
+    22→
+    23→**Include cache keys for downloaded binaries** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run.
+    24→
+    25→**Label checks in push event workflows** → Read [GitHub Actions Label Queries](github-actions-label-queries.md) first. Job-level label access via github.event.pull_request.labels is ONLY available in pull_request events, NOT push events. For push events, you must use step-level GitHub API queries with gh cli or REST API.
+    26→
+    27→**Renaming a GitHub label used in CI automation** → Read [CI Label Rename Checklist](label-rename-checklist.md) first. Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates.
+    28→
+    29→**Use !contains() pattern for label-based gating** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Negation is critical — contains() without ! skips all push events
+    30→
+
+... [74 lines omitted] ...
+
+    41→**adding a test job to autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Test jobs (erkdesk-tests, unit-tests, integration-tests) must NEVER block autofix. Only jobs whose failures can be auto-resolved (format, lint, prettier, docs-check, ty) should be dependencies. Adding test jobs creates a deadlock: tests fail → autofix blocked → format/lint issues never fixed → developer must manually fix both.
+    47→**asking devrun agent to fix errors** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output.
+    65→**editing markdown files in docs/** → Read [Markdown Formatting in CI Workflows](markdown-formatting.md) first. Run `make prettier` via devrun after markdown edits. Multi-line edits trigger Prettier failures. Never manually format - use the command.
+    95→**using heredoc (&lt;&lt;) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
+  </tool_result>
+  <tool_use name="Read" id="toolu_019iz9Lk3pnJdhdMHU1sLFME">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="34296" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 712}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019iz9Lk3pnJdhdMHU1sLFME">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding Closes #N for draft-PR backend** → Read [PR Body Assembly](pr-body-assembly.md) first. Set issue_number=None for draft-PR backend. The draft PR IS the plan — Closes #N would be self-referential.
+    24→
+    25→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    26→
+    27→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    28→
+    29→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    30→
+
+... [274 lines omitted] ...
+
+    43→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    63→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    73→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+    87→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+    89→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+    97→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   101→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   105→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   119→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   129→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   133→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   145→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   181→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   183→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   185→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   187→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   199→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   215→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+   223→**setting PR reference without providing --plan** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The CLI requires --plan when --pr is set (error: plan_required_with_pr). Use --plan '#NNN' to preserve or --plan '' to explicitly clear. Read roadmap-mutation-semantics.md for the None/empty/value semantics.
+   229→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   237→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   245→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   247→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   251→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   253→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   273→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   277→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   301→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <thinking>Now let me explore the existing patterns for exec scripts, the code-review command, and the CI workflow to understand what I need to implement.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="25959" cache_read_input_tokens="35008" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me explore the existing patterns and files I need to work with.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="25959" cache_read_input_tokens="35008" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01QvhfrrLEpLG3t8xcs5yCcB">
+    <param name="subject">Create set-local-review-marker exec script</param>
+    <param name="description">Create src/erk/cli/commands/exec/scripts/set_local_review_marker.py with Click command tha...[truncated 16 chars]... SHA, finds PR, strips existing marker, appends new marker, updates PR body. Outputs JSON.</param>
+    <param name="activeForm">Creating set-local-review-marker exec script</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25959" cache_read_input_tokens="35008" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QvhfrrLEpLG3t8xcs5yCcB">
+Task #1 created successfully: Create set-local-review-marker exec script
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01FkREHhPHdRPPZN1KBgempY">
+    <param name="subject">Register exec script in group.py</param>
+    <param name="description">Import and register set_local_review_marker in src/erk/cli/commands/exec/group.py</param>
+    <param name="activeForm">Registering exec script</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25959" cache_read_input_tokens="35008" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FkREHhPHdRPPZN1KBgempY">
+Task #2 created successfully: Register exec script in group.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014ujhQxYpT4BDCLqrqF2DyG">
+    <param name="subject">Update local code-review command</param>
+    <param name="description">Add Phase 4: Mark PR as Reviewed to .claude/commands/local/code-review.md. Only runs if ALL reviews passed (0 total violations).</param>
+    <param name="activeForm">Updating code-review command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25959" cache_read_input_tokens="35008" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014ujhQxYpT4BDCLqrqF2DyG">
+Task #3 created successfully: Update local code-review command
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01M1JpCZDqpzH7jfWtrVzCJR">
+    <param name="subject">Update CI code-reviews workflow</param>
+    <param name="description">Add local review marker check step to .github/workflows/code-reviews.yml discover job. Skip all reviews when marker matches HEAD SHA.</param>
+    <param name="activeForm">Updating CI workflow</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25959" cache_read_input_tokens="35008" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M1JpCZDqpzH7jfWtrVzCJR">
+Task #4 created successfully: Update CI code-reviews workflow
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_016Yo7bduU4xebwrSTtuNbnR">
+    <param name="subject">Write unit tests for set-local-review-marker</param>
+    <param name="description">Create tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py with test cases: happy path, no PR, existing marker replaced, PR body with footer.</param>
+    <param name="activeForm">Writing unit tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25959" cache_read_input_tokens="35008" output_tokens="667" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 25959, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Yo7bduU4xebwrSTtuNbnR">
+Task #5 created successfully: Write unit tests for set-local-review-marker
+  </tool_result>
+  <assistant>Let me load the necessary skills and explore existing patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="875" cache_read_input_tokens="60967" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 875}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01VLur1SfuqoHXPfXptBurWR">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="875" cache_read_input_tokens="60967" output_tokens="67" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 875, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VLur1SfuqoHXPfXptBurWR">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me read the core rules and the version-specific file, plus explore existing exec scripts for patterns.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="901" cache_read_input_tokens="61842" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 901}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WKhMhpgr2nciJ4d4mpEtz2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="901" cache_read_input_tokens="61842" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 901}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WKhMhpgr2nciJ4d4mpEtz2">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [463 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→For detailed exception handling patterns including B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   101→The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+   113→- `.resolve()` raises `OSError` for non-existent paths
+   114→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   115→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   130→# WRONG: Using exceptions for path validation
+   135→except (OSError, ValueError):
+   175→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   206→**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+   215→# CORRECT (rare exception): Resolving genuine collision
+   446→    log.warning("Non-numeric plan_id")
+   460→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   487→- **Exception chaining (B904)**: `references/exception-handling.md`
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XmsPt5TBdwRpcSXTYiYBfW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/skills/dignified-python/versions/python-3.10.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="901" cache_read_input_tokens="61842" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 901}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XmsPt5TBdwRpcSXTYiYBfW">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.10
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.10. This is the baseline for modern Python type syntax.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.10 introduced major improvements to type annotation syntax through PEP 604 (union types via `|`) and PEP 585 (generic types in standard collections). These features eliminated the need for most `typing` module imports and made type annotations more concise and readable.
+    11→
+    12→**What's new in 3.10:**
+    13→
+    14→- Union types with `|` operator (PEP 604)
+    15→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    16→- No more need for `List`, `Dict`, `Union`, `Optional` from typing
+    17→
+    18→**What you need from typing module:**
+    19→
+    20→- `TypeVar` for generic functions/classes
+    21→- `Protocol` for structural typing (rare - prefer ABC)
+    22→- `TYPE_CHECKING` for conditional imports
+    23→- `Any` (use sparingly)
+    24→
+    25→## Complete Type Annotation Syntax for Python 3.10
+    26→
+    27→### Basic Collection Types
+    28→
+    29→✅ **PREFERRED** - Use built-in generic types:
+    30→
+
+... [488 lines omitted] ...
+
+   303→            raise ValueError("Entity must have id")
+   375→        raise FileNotFoundError(f"Config not found: {path}")
+   385→### API Client with Error Handling
+   394→    """Container for API response with data or error."""
+   396→    def __init__(self, data: T | None = None, error: str | None = None) -&gt; None:
+   398→        self.error = error
+   401→        return self.error is None
+   407→        return ApiResponse(error=self.error)
+   445→All code should pass type checking without errors.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FCh6MQp1X4Me2of6UNcvgu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="901" cache_read_input_tokens="61842" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 901}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FCh6MQp1X4Me2of6UNcvgu">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    11→from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
+    12→    add_reaction_to_comment,
+    13→)
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.check_impl import check_impl
+    21→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    22→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    23→from erk.cli.commands.exec.scripts.close_issue_with_comment import (
+    24→    close_issue_with_comment,
+    25→)
+    26→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    27→    create_impl_context_from_plan,
+    28→)
+    29→from erk.cli.commands.exec.scripts.create_issue_from_session import (
+    30→    create_issue_from_session,
+
+... [247 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me look at an existing exec script to understand the patterns used, especially one that interacts with GitHub PRs. Let me look at `set_pr_description.py` or `update_pr_description.py` since they update PR bodies.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="16510" cache_read_input_tokens="62743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16510}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at existing exec scripts that interact with PR bodies and understand the gateway patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16510" cache_read_input_tokens="62743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16510}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CG2v1bsUAy2AZf2VfoTFrz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/scripts/update_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16510" cache_read_input_tokens="62743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16510}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CG2v1bsUAy2AZf2VfoTFrz">
+     1→"""Update PR title and body using AI-generated description.
+     2→
+     3→This exec command generates an AI-powered PR title and body from the full diff
+     4→between the current branch and its parent, then updates the PR on GitHub.
+     5→
+     6→Unlike `erk pr submit`, this does NOT amend the local commit or push changes.
+     7→It only updates the PR's title and body, preserving existing header and footer
+     8→metadata.
+     9→
+    10→Usage:
+    11→    erk exec update-pr-description
+    12→    erk exec update-pr-description --session-id "abc123"
+    13→
+    14→Exit Codes:
+    15→    0: Success
+    16→    1: Error (no PR, Claude unavailable, diff extraction failure)
+    17→"""
+    18→
+    19→import uuid
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk.cli.commands.pr.shared import (
+    25→    IssueLinkageMismatch,
+    26→    assemble_pr_body,
+    27→    cleanup_diff_file,
+    28→    discover_branch_context,
+    29→    discover_issue_for_footer,
+    30→    echo_plan_context_status,
+
+... [168 lines omitted] ...
+
+    78→        raise click.ClickException(
+   102→        raise click.ClickException("Failed to extract diff for AI analysis")
+   137→        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
+   169→            raise click.ClickException(issue_discovery.message)
+  </tool_result>
+  <tool_use name="Task" id="toolu_017WiaJMt1vPXxXzdswpJB3r">
+    <param name="description">Explore PR gateway patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 594 chars]...s that work with PRs
+
+Return the key method signatures, import paths, and patterns I need.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16510" cache_read_input_tokens="62743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16510}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014tRnJCHrTcwZ1uGyk2XxFM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/commands/local/code-review.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16510" cache_read_input_tokens="62743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16510}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014tRnJCHrTcwZ1uGyk2XxFM">
+     1→---
+     2→description: Run all applicable code reviews locally against the current branch
+     3→---
+     4→
+     5→# /local:code-review
+     6→
+     7→Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
+     8→
+     9→## Instructions
+    10→
+    11→### Phase 1: Discover Changed Files and Match Reviews
+    12→
+    13→**Get changed files:**
+    14→
+    15→```bash
+    16→git diff --name-only $(git merge-base master HEAD)...HEAD
+    17→```
+    18→
+    19→If no changed files, report "No changes found relative to master" and stop.
+    20→
+    21→**Read review definitions:**
+    22→
+    23→Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+    24→
+    25→- `name`: Review name
+    26→- `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
+    27→- `enabled`: Whether the review is active (skip if `false`)
+    28→- `model`: Which model to use
+    29→
+    30→**Match reviews to changed files:**
+
+... [104 lines omitted] ...
+
+   104→**Verify output files exist** before reading. If any are missing, report which review failed.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KDpuQ6t5ce9cs8t6agXfFW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/code-reviews.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16510" cache_read_input_tokens="62743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16510}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KDpuQ6t5ce9cs8t6agXfFW">
+     1→# Convention-based code reviews
+     2→# Add a new review by dropping a markdown file in .erk/reviews/
+     3→name: code-reviews
+     4→
+     5→on:
+     6→  pull_request:
+     7→    types: [opened, synchronize, ready_for_review]
+     8→
+     9→jobs:
+    10→  discover:
+    11→    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    12→    runs-on: ubuntu-latest
+    13→    timeout-minutes: 5
+    14→    outputs:
+    15→      matrix: ${{ steps.discover.outputs.matrix }}
+    16→      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    17→    permissions:
+    18→      contents: read
+    19→      pull-requests: read
+    20→
+    21→    steps:
+    22→      - name: Checkout repository
+    23→        uses: actions/checkout@v4
+    24→        with:
+    25→          fetch-depth: 1
+    26→
+    27→      - name: Install uv
+    28→        uses: astral-sh/setup-uv@v5
+    29→
+    30→      - name: Install erk
+
+... [78 lines omitted] ...
+
+    46→            echo "Discovery failed"
+  </tool_result>
+</session>

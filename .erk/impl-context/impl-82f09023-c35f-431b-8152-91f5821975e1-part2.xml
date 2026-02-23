@@ -1,0 +1,1002 @@
+<session>
+  <meta branch="plnd/plan-local-review-marker-t-02-23-1500" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_017WiaJMt1vPXxXzdswpJB3r">
+Perfect! Now let me create a comprehensive summary document:
+
+## Summary
+
+I've thoroughly explored the erk codebase and found all the patterns you need. Here's the complete reference:
+
+### 1. **GitHub Gateway's `update_pr_body` Method**
+
+**Location**: `packages/erk-shared/src/erk_shared/gateway/github/abc.py` (lines 54-63)
+
+**Signature**:
+```python
+@abstractmethod
+def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -&gt; None:
+    """Update body of a PR on GitHub.
+
+    Args:
+        repo_root: Repository root directory
+        pr_number: PR number to update
+        body: New PR body (markdown)
+    """
+    ...
+```
+
+**Real Implementation** (`real.py`, lines 168-197):
+```python
+def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -&gt; None:
+    """Update body of a PR on GitHub.
+    
+    Uses REST API to preserve GraphQL quota.
+
+... [299 lines omitted] ...
+
+    except (RuntimeError, FileNotFoundError):
+        # gh not installed, not authenticated, or command failed
+    Used as part of union return types for LBYL-style error handling.
+    raise click.ClickException(
+    """Get Git from context, exiting with error if not initialized.
+        click.echo("Error: Context not initialized", err=True)
+    """Get GitHub from context, exiting with error if not initialized.
+        click.echo("Error: Context not initialized", err=True)
+        return _exit_with_error(
+            error="no-pr-for-branch",
+  </tool_result>
+  <assistant>
+
+Now let me look at a simpler exec script for a good pattern to follow, and check the fake GitHub gateway for `update_pr_body`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10205" cache_read_input_tokens="79253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10205}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019xQYPHLMAjekJaEnY9DSuT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/scripts/get_pr_for_plan.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10205" cache_read_input_tokens="79253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10205}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019xQYPHLMAjekJaEnY9DSuT">
+     1→"""Get PR details for a plan issue.
+     2→
+     3→Usage:
+     4→    erk exec get-pr-for-plan &lt;issue-number&gt;
+     5→
+     6→Extracts branch_name from plan metadata, then fetches PR for that branch.
+     7→
+     8→Output:
+     9→    JSON with PR details or error if not found.
+    10→"""
+    11→
+    12→import json
+    13→from dataclasses import asdict, dataclass
+    14→from typing import NoReturn
+    15→
+    16→import click
+    17→
+    18→from erk_shared.context.helpers import (
+    19→    require_git,
+    20→    require_plan_backend,
+    21→    require_repo_root,
+    22→)
+    23→from erk_shared.context.helpers import (
+    24→    require_github as require_github_gateway,
+    25→)
+    26→from erk_shared.context.helpers import (
+    27→    require_issues as require_github_issues,
+    28→)
+    29→from erk_shared.gateway.github.issues.types import IssueNotFound
+    30→from erk_shared.gateway.github.metadata.core import find_metadata_block
+
+... [114 lines omitted] ...
+
+    43→class GetPrForPlanError:
+    44→    """Error response for PR lookup."""
+    47→    error: str
+    51→def _exit_with_error(*, error: str, message: str) -&gt; NoReturn:
+    52→    """Output error JSON to stderr and exit with code 1."""
+    53→    result = GetPrForPlanError(success=False, error=error, message=message)
+    80→            return _exit_with_error(
+    81→                error="no-pr-for-branch", message=f"PR #{issue_number} not found"
+    98→        return _exit_with_error(error="plan-not-found", message=f"Issue #{issue_number} not found")
+   103→        return _exit_with_error(
+   104→            error="no-branch-in-plan",
+   112→        # This handles cases where impl-signal failed to set branch_name
+   117→            return _exit_with_error(
+   118→                error="no-branch-in-plan",
+   128→        return _exit_with_error(
+   129→            error="no-pr-for-branch",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01KhkFJtUjDQr9AVTr4giXCZ">
+    <param name="pattern">def update_pr_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10205" cache_read_input_tokens="79253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10205}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KhkFJtUjDQr9AVTr4giXCZ">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/github/printing.py
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/fake.py
+packages/erk-shared/src/erk_shared/gateway/github/abc.py
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CzveJ8J8QLg7KBfpPt1BLw">
+    <param name="pattern">def get_branch_head</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10205" cache_read_input_tokens="79253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10205}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CzveJ8J8QLg7KBfpPt1BLw">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:70:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:132:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:150:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:77:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:283:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LhzEsbSQejEe1YrDqg6FFr">
+    <param name="pattern">def get_current_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10205" cache_read_input_tokens="79253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10205}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LhzEsbSQejEe1YrDqg6FFr">
+packages/erk-shared/src/erk_shared/context/helpers.py:275:def get_current_branch(ctx: click.Context) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:58:    def get_current_branch(self, cwd: Path) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:93:    def get_current_branch(self, cwd: Path) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:65:    def get_current_branch(self, cwd: Path) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:113:    def get_current_branch(self, cwd: Path) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:271:    def get_current_branch(self, cwd: Path) -&gt; str | None:
+  </tool_result>
+  <thinking>Now let me look at the FakeGitHub to understand update_pr_body and how it's tracked, and also understand the `git.branch.get_current_branch` and `git.branch.get_branch_head` patterns better.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="89458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3151}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the fake GitHub's `update_pr_body` method and look at a simpler exec script test for patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="89458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3151}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01L1mcfntBRi3QTYJJv3QGRx">
+    <param name="pattern">def update_pr_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="89458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3151}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L1mcfntBRi3QTYJJv3QGRx">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:86:    def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -&gt; None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/printing.py-87-        """Update PR body with printed output."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/printing.py-88-        self._emit(self._format_command(f"gh pr edit {pr_number} --body &lt;body&gt;"))
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/printing.py-89-        self._wrapped.update_pr_body(repo_root, pr_number, body)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/printing.py-90-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/printing.py-91-    def merge_pr(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/printing.py-92-        self,
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-93-        repo_root: Path,
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-94-        pr_number: int,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/printing.py-95-        *,
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-96-        squash: bool,
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-97-        verbose: bool,
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-98-        subject: str | None = None,
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-99-        body: str | None = None,
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-100-    ) -&gt; MergeResult | MergeError:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/printing.py-101-        """Merge PR with printed output."""
+--
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:55:    def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -&gt; None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/abc.py-56-        """Update body of a PR on GitHub.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/abc.py-57-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-58-        Args:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-59-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-60-            pr_number: PR number to update
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-61-            body: New PR body (markdown)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/abc.py-62-        """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/abc.py-63-        ...
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/abc.py-64-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/abc.py-65-    @abstractmethod
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/abc.py-66-    def merge_pr(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/abc.py-67-        self,
+
+... [54 lines omitted] ...
+
+packages/erk-shared/src/erk_shared/gateway/github/real.py-177-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/real.py-178-        availability. Genuine command failures (invalid PR) should be
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/fake.py-205-        Raises RuntimeError if pr_update_should_succeed is False.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/fake.py-208-            raise RuntimeError("PR update failed (configured to fail)")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TcZAiKnUSjBDYhLULqpUhU">
+    <param name="pattern">_updated_pr_bodies</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="89458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3151}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TcZAiKnUSjBDYhLULqpUhU">
+151-        self._downloaded_artifacts: list[tuple[str, str, Path]] = []
+152-        self._next_pr_number = 999
+153-        self._updated_pr_bases: list[tuple[int, str]] = []
+154:        self._updated_pr_bodies: list[tuple[int, str]] = []
+155-        self._updated_pr_titles: list[tuple[int, str]] = []
+156-        self._merged_prs: list[int] = []
+157-        self._closed_prs: list[int] = []
+--
+206-        """
+207-        if not self._pr_update_should_succeed:
+208-            raise RuntimeError("PR update failed (configured to fail)")
+209:        self._updated_pr_bodies.append((pr_number, body))
+210-
+211-        if pr_number in self._pr_details:
+212-            old = self._pr_details[pr_number]
+--
+359-    @property
+360-    def updated_pr_bodies(self) -&gt; list[tuple[int, str]]:
+361-        """Read-only access to tracked PR body updates for test assertions."""
+362:        return self._updated_pr_bodies
+363-
+364-    @property
+365-    def updated_pr_titles(self) -&gt; list[tuple[int, str]]:
+--
+752-            body_content = str(body)
+753-
+754-        self._updated_pr_titles.append((pr_number, title))
+755:        self._updated_pr_bodies.append((pr_number, body_content))
+756-
+757-        # Update in-memory state so subsequent get_pr() reflects the change
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01QpxBqyWLr1pGiPjLTrNGb4">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/test_get_pr_*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="89458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3151}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QpxBqyWLr1pGiPjLTrNGb4">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_get_pr_commits.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_get_pr_view.py
+  </tool_result>
+  <assistant>Let me look at an existing test for exec scripts to understand the test pattern, plus the `build_workspace_test_context` helper.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5345" cache_read_input_tokens="92609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5345}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014hDV6heTySiWDA1FbL3sBd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5345" cache_read_input_tokens="92609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5345}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014hDV6heTySiWDA1FbL3sBd">
+     1→"""Unit tests for get_pr_for_plan exec command.
+     2→
+     3→Tests GitHub issue plan-header metadata extraction and PR lookup by branch.
+     4→Uses FakeGitHub and FakeGitHubIssues for fast, reliable testing.
+     5→"""
+     6→
+     7→import json
+     8→from datetime import UTC, datetime
+     9→from pathlib import Path
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
+    14→from erk_shared.context.context import ErkContext
+    15→from erk_shared.context.testing import context_for_test
+    16→from erk_shared.gateway.git.fake import FakeGit
+    17→from erk_shared.gateway.github.fake import FakeGitHub
+    18→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    19→from erk_shared.gateway.github.issues.types import IssueInfo
+    20→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    21→from erk_shared.gateway.time.fake import FakeTime
+    22→from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+    23→
+    24→
+    25→def make_plan_header_body(
+    26→    *,
+    27→    branch_name: str | None = "P5103-feature-branch",
+    28→) -&gt; str:
+    29→    """Create a test issue body with plan-header metadata block."""
+    30→    branch_line = f"branch_name: {branch_name}" if branch_name is not None else "branch_name: null"
+
+... [389 lines omitted] ...
+
+    32→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   146→# Error Cases
+   151→    """Test error when plan-header has no branch_name field."""
+   167→    assert output["error"] == "no-branch-in-plan"
+   172→    """Test error when branch exists but no PR for it."""
+   189→    assert output["error"] == "no-pr-for-branch"
+   194→    """Test error when plan issue doesn't exist."""
+   208→    assert output["error"] == "plan-not-found"
+   213→    """Test error when issue has no plan-header block."""
+   231→    assert output["error"] == "no-branch-in-plan"
+   282→def test_json_output_structure_error() -&gt; None:
+   283→    """Test JSON output structure on error."""
+   299→    assert "error" in output
+   304→    assert isinstance(output["error"], str)
+   358→    # Should fail with error
+   362→    assert output["error"] == "no-branch-in-plan"
+   398→    """Test that draft-PR backend returns error when PR doesn't exist."""
+   413→    # Error goes to stderr for _exit_with_error
+   414→    error_output = result.stderr if result.stderr else result.output
+   415→    output = json.loads(error_output)
+   417→    assert output["error"] == "no-pr-for-branch"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Np1e5Xjn6LrMwFF6oSgEHp">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5345" cache_read_input_tokens="92609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5345}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Np1e5Xjn6LrMwFF6oSgEHp">
+Found 1 file
+tests/test_utils/context_builders.py
+  </tool_result>
+  <thinking>I have a thorough understanding of the patterns now. Let me check the FakeGit to understand `current_branches` and `branch_heads` patterns for testing.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10302" cache_read_input_tokens="97954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10302}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture of all the patterns. Let me check how `FakeGit` handles `current_branches` and `branch_heads` for the test setup.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10302" cache_read_input_tokens="97954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10302}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ReqCc4V3jxjccaxYcAXNGi">
+    <param name="pattern">current_branches|branch_heads</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10302" cache_read_input_tokens="97954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10302}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ReqCc4V3jxjccaxYcAXNGi">
+98:            current_branches={wt1: "main"},
+120:        current_branches: dict[Path, str | None] | None = None,
+124:        branch_heads: dict[str, str] | None = None,
+174:            current_branches: Mapping of cwd -&gt; current branch
+178:            branch_heads: Mapping of branch name -&gt; commit SHA
+232:        self._current_branches = current_branches or {}
+236:        self._branch_heads = branch_heads or {}
+342:            current_branches=self._current_branches,
+345:            branch_heads=self._branch_heads,
+
+[Showing results with pagination = limit: 15, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015Wv9ZmS7YYsNDgbJVUMihV">
+    <param name="pattern">class FakeGit</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10302" cache_read_input_tokens="97954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10302}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Wv9ZmS7YYsNDgbJVUMihV">
+64:class FakeGit(Git):
+65-    """In-memory fake implementation of git operations.
+66-
+67-    State Management:
+68-    -----------------
+69-    This fake maintains mutable state to simulate git's stateful behavior.
+70-    Operations like add_worktree, checkout_branch modify internal state.
+71-    State changes are visible to subsequent method calls within the same test.
+72-
+73-    When to Use Mutation:
+74-    --------------------
+75-    - Operations that simulate stateful external systems (git, databases)
+76-    - When tests need to verify sequences of operations
+77-    - When simulating side effects visible to production code
+78-
+79-    Constructor Injection:
+80-    ---------------------
+81-    All INITIAL state is provided via constructor (immutable after construction).
+82-    Runtime mutations occur through operation methods.
+83-    Tests should construct fakes with complete initial state.
+84-
+85-    Mutation Tracking:
+86-    -----------------
+87-    This fake tracks mutations for test assertions via read-only properties:
+88-    - deleted_branches: Branches deleted via delete_branch()
+89-    - added_worktrees: Worktrees added via add_worktree()
+90-    - removed_worktrees: Worktrees removed via remove_worktree()
+91-    - checked_out_branches: Branches checked out via checkout_branch()
+92-
+93-    Examples:
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now I have all the context I need. Let me start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="999" cache_read_input_tokens="108256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 999}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_0172Q9C2ZFxF9w8JV8FyQc8V">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="999" cache_read_input_tokens="108256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 999}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0172Q9C2ZFxF9w8JV8FyQc8V">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 1: Create the exec script**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="109255" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 107}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Ey36vaW32ZaeHiEmtvqfA9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/scripts/set_local_review_marker.py</param>
+    <param name="content">"""Set local review marker on PR to skip CI reviews.
+
+Appends an HTML comment to the PR bo...[truncated 2580 chars]...number": pr_result.number,
+                "sha": head_sha,
+            }
+        )
+    )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="109255" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 107}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ey36vaW32ZaeHiEmtvqfA9">
+File created successfully at: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/scripts/set_local_review_marker.py
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_018xSZ3oFFvn56WZ3vr4L9F3">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1041" cache_read_input_tokens="109362" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1041}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018xSZ3oFFvn56WZ3vr4L9F3">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01AvkF68M9nPaAnz9b5hFzC2">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1041" cache_read_input_tokens="109362" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1041}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AvkF68M9nPaAnz9b5hFzC2">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 2: Register exec script in group.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="110403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CpJbyJmHxCCcj3uH2s8CMH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.set_local_review_marker import (
+    set_local_review_marker,
+)
+from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="110403" output_tokens="223" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CpJbyJmHxCCcj3uH2s8CMH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EqFwcrdrDMyqH3ESbTGo6S">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">exec_group.add_command(set_pr_description, name="set-pr-description")</param>
+    <param name="new_string">exec_group.add_command(set_local_review_marker, name="set-local-review-marker")
+exec_group.add_command(set_pr_description, name="set-pr-description")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="110601" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EqFwcrdrDMyqH3ESbTGo6S">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014GzYnfS9tMYLDd6PrFRtEK">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="110902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 278}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014GzYnfS9tMYLDd6PrFRtEK">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_018XTUDvwUuZngJxWW56jM4t">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="110902" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018XTUDvwUuZngJxWW56jM4t">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 3: Update local code-review command**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="111180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012AgMTmf6rcfJiXfBGFBgN2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/commands/local/code-review.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="111180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012AgMTmf6rcfJiXfBGFBgN2">
+     1→---
+     2→description: Run all applicable code reviews locally against the current branch
+     3→---
+     4→
+     5→# /local:code-review
+     6→
+     7→Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
+     8→
+     9→## Instructions
+    10→
+    11→### Phase 1: Discover Changed Files and Match Reviews
+    12→
+    13→**Get changed files:**
+    14→
+    15→```bash
+    16→git diff --name-only $(git merge-base master HEAD)...HEAD
+    17→```
+    18→
+    19→If no changed files, report "No changes found relative to master" and stop.
+    20→
+    21→**Read review definitions:**
+    22→
+    23→Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+    24→
+    25→- `name`: Review name
+    26→- `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
+    27→- `enabled`: Whether the review is active (skip if `false`)
+    28→- `model`: Which model to use
+    29→
+    30→**Match reviews to changed files:**
+
+... [104 lines omitted] ...
+
+   104→**Verify output files exist** before reading. If any are missing, report which review failed.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EMrjXU56fDKNvZpsKLi15S">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/commands/local/code-review.md</param>
+    <param name="old_string">If all reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations.
+```</param>
+    <param name="new_string">If all reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations....[truncated 544 chars]...g marker."
+- If the command fails: Report the error but don't fail the overall review run.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1611" cache_read_input_tokens="111378" output_tokens="348" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1611, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EMrjXU56fDKNvZpsKLi15S">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/commands/local/code-review.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01DBFxSVcadLqj2YZEidbRcR">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="423" cache_read_input_tokens="112989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 423}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DBFxSVcadLqj2YZEidbRcR">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JDab96Ucbdx3tnwSYxrknE">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="423" cache_read_input_tokens="112989" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 423, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JDab96Ucbdx3tnwSYxrknE">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Update CI code-reviews workflow**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3427" cache_read_input_tokens="113412" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3427}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VckqpdzLKifHdVZ9qWSvKe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/code-reviews.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3427" cache_read_input_tokens="113412" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3427, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VckqpdzLKifHdVZ9qWSvKe">
+     1→# Convention-based code reviews
+     2→# Add a new review by dropping a markdown file in .erk/reviews/
+     3→name: code-reviews
+     4→
+     5→on:
+     6→  pull_request:
+     7→    types: [opened, synchronize, ready_for_review]
+     8→
+     9→jobs:
+    10→  discover:
+    11→    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    12→    runs-on: ubuntu-latest
+    13→    timeout-minutes: 5
+    14→    outputs:
+    15→      matrix: ${{ steps.discover.outputs.matrix }}
+    16→      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    17→    permissions:
+    18→      contents: read
+    19→      pull-requests: read
+    20→
+    21→    steps:
+    22→      - name: Checkout repository
+    23→        uses: actions/checkout@v4
+    24→        with:
+    25→          fetch-depth: 1
+    26→
+    27→      - name: Install uv
+    28→        uses: astral-sh/setup-uv@v5
+    29→
+    30→      - name: Install erk
+
+... [78 lines omitted] ...
+
+    46→            echo "Discovery failed"
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RiqaRbSqwsZ8swpmPVE2TR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/code-reviews.yml</param>
+    <param name="old_string">    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        wit...[truncated 139 chars]...th ./packages/erk-shared erk
+
+      - name: Discover matching reviews
+        id: discover</param>
+    <param name="new_string">    steps:
+      - name: Check local review marker
+        id: check_local_review
+        ...[truncated 1067 chars]...g reviews
+        if: steps.check_local_review.outputs.skip != 'true'
+        id: discover</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1419" cache_read_input_tokens="116839" output_tokens="632" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1419, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RiqaRbSqwsZ8swpmPVE2TR">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/code-reviews.yml has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to update the `has_reviews` output to account for the skip, and the discover step's env/run sections need the condition too. Let me read the current state.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="118258" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 686}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0146MWaWvvwGpMJackyxjgDt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.github/workflows/code-reviews.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="118258" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 686, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0146MWaWvvwGpMJackyxjgDt">
+     1→# Convention-based code reviews
+     2→# Add a new review by dropping a markdown file in .erk/reviews/
+     3→name: code-reviews
+     4→
+     5→on:
+     6→  pull_request:
+     7→    types: [opened, synchronize, ready_for_review]
+     8→
+     9→jobs:
+    10→  discover:
+    11→    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    12→    runs-on: ubuntu-latest
+    13→    timeout-minutes: 5
+    14→    outputs:
+    15→      matrix: ${{ steps.discover.outputs.matrix }}
+    16→      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    17→    permissions:
+    18→      contents: read
+    19→      pull-requests: read
+    20→
+    21→    steps:
+    22→      - name: Check local review marker
+    23→        id: check_local_review
+    24→        env:
+    25→          GH_TOKEN: ${{ github.token }}
+    26→        run: |
+    27→          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+    28→          MARKER="&lt;!-- erk:local-review-passed:${HEAD_SHA} --&gt;"
+    29→          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} \
+    30→            --repo ${{ github.repository }} --json body -q .body)
+
+... [98 lines omitted] ...
+
+    66→            echo "Discovery failed"
+  </tool_result>
+  <assistant>Now update the `has_reviews` output to account for the skip. When skip is true, the discover step doesn't run, so `has_reviews` is empty/unset. The `review` job already checks `has_reviews == 'true'`, which won't match when the discover step is skipped (outputs are empty). This means the review job won't run when local review marker is found. This is correct behavior - no further changes needed for the `has_reviews` output.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1794" cache_read_input_tokens="118944" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1794}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01TCteZQTpbJ9Lpo85YvRZ8Q">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1794" cache_read_input_tokens="118944" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1794}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TCteZQTpbJ9Lpo85YvRZ8Q">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01EaDhFfj1pxKMWUa3PMaT31">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1794" cache_read_input_tokens="118944" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1794}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EaDhFfj1pxKMWUa3PMaT31">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 5: Write unit tests**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="120738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 304}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EuBC95bXxKDUTRG95eE8JV">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/__init__.py 2&gt;/dev/null &amp;&amp; echo "exists" || echo "missing"</param>
+    <param name="description">Check if __init__.py exists in test dir</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="120738" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EuBC95bXxKDUTRG95eE8JV">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/__init__.py
+exists
+  </tool_result>
+  <tool_use name="Write" id="toolu_01FiRfnmqtYBHPbwCvvMnm1m">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py</param>
+    <param name="content">"""Unit tests for set-local-review-marker exec command.
+
+Tests PR body marker setting for ...[truncated 10035 chars]...put)
+    assert output["success"] is False
+    assert output["reason"] == "detached_head"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="201" cache_read_input_tokens="121042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 201}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FiRfnmqtYBHPbwCvvMnm1m">
+File created successfully at: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py
+  </tool_result>
+  <assistant>Now let me run the tests to make sure they pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3236" cache_read_input_tokens="121243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3236}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01UtuBpn9qcicZXCLWkCrVjn">
+    <param name="description">Run unit tests for marker</param>
+    <param name="prompt">Run this command and report the results:
+
+```
+uv run pytest tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py -v
+```
+
+Report any test failures with full output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3236" cache_read_input_tokens="121243" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3236, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UtuBpn9qcicZXCLWkCrVjn">
+pytest passed: All 10 tests in test_set_local_review_marker.py passed in 0.44s
+
+**Summary:**
+- **Status**: PASS
+- **Tests passed**: 10
+- **Time**: 0.44s
+- **File location**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py`
+agentId: a097ab9a66b107012 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13903
+tool_uses: 1
+duration_ms: 5274&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 10 tests pass. Let me also run the broader test suite for the exec scripts to make sure nothing is broken.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="124479" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 336}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01YDnooH3kNRFGFSLrMx69mi">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="124479" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 336}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YDnooH3kNRFGFSLrMx69mi">
+Updated task #5 status
+  </tool_result>
+  <assistant>Now let me run the broader CI checks and verify the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="124815" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 115}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01EybCincPTh39D7aB22wqPp">
+    <param name="description">Run lint and type checks</param>
+    <param name="prompt">Run these commands and report results:
+
+1. `uv run ruff check src/erk/cli/commands/exec/sc...[truncated 248 chars]...mands/exec/scripts/test_set_local_review_marker.py`
+
+Report any failures with full output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="124815" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 115}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EybCincPTh39D7aB22wqPp">
+## Results Summary
+
+**Command 1: ruff check set_local_review_marker.py** ✓ PASSED
+- All checks passed!
+
+**Command 2: ruff format --check set_local_review_marker.py** ✓ PASSED
+- 1 file already formatted
+
+**Command 3: ruff check test_set_local_review_marker.py** ✓ PASSED
+- All checks passed!
+
+**Command 4: ruff format --check test_set_local_review_marker.py** ✗ FAILED
+
+**Failure Details:**
+
+One line is too long (exceeds 100 character limit):
+
+- **File:** `tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py`
+- **Line 72:** 104 characters (exceeds max 100)
+- **Issue:** Long comment string in test body containing an example marker with a commit hash
+
+The problematic line:
+```python
+body = "PR description\n&lt;!-- erk:local-review-passed:abc123def456789012345678901234567890abcd --&gt;\n"
+```
+
+This needs to be reformatted to comply with the 100-character line length limit.
+agentId: a7d46f1de2fb8414c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14625
+tool_uses: 4
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Let me fix the formatting issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="124930" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BZa28uBguV3aCZPrrukKz9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py</param>
+    <param name="offset">68</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="124930" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 614, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BZa28uBguV3aCZPrrukKz9">
+    68→
+    69→
+    70→def test_strip_existing_marker_removes_marker() -&gt; None:
+    71→    """Test that existing marker is stripped from body."""
+    72→    body = "PR description\n&lt;!-- erk:local-review-passed:abc123def456789012345678901234567890abcd --&gt;\n"
+    73→    result = _strip_existing_marker(body)
+    74→    assert "erk:local-review-passed" not in result
+    75→    assert "PR description" in result
+    76→
+    77→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JqknvKc3qbdqgddaNyh645">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py</param>
+    <param name="old_string">    body = "PR description\n&lt;!-- erk:local-review-passed:abc123def456789012345678901234567890abcd --&gt;\n"</param>
+    <param name="new_string">    sha = "abc123def456789012345678901234567890abcd"
+    body = f"PR description\n&lt;!-- erk:local-review-passed:{sha} --&gt;\n"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="125544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 293}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JqknvKc3qbdqgddaNyh645">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01KwWgz1po9tQQRBr9w5z9K9">
+    <param name="description">Re-run format and tests</param>
+    <param name="prompt">Run these commands and report results:
+
+1. `uv run ruff format --check tests/unit/cli/comm...[truncated 70 chars]...ds/exec/scripts/test_set_local_review_marker.py -v`
+
+Report any failures with full output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="306" cache_read_input_tokens="125837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 306}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KwWgz1po9tQQRBr9w5z9K9">
+**Results:**
+
+**ruff format:** Passed - File is already properly formatted
+
+**pytest:** Passed - 10 tests passed in 0.44s
+
+All checks passed successfully. The test file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py` is properly formatted and all 10 tests execute without errors.
+agentId: aefcaef489e02656e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14011
+tool_uses: 2
+duration_ms: 4046&lt;/usage&gt;
+  </tool_result>
+  <assistant>All checks pass. Now let me also run the exec reference docs generation since the tripwires mentioned it's required after CLI changes, and run a broader test to make sure nothing else is broken.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="126143" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 353}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Pa1yLNbmW55suQEhnv4NAM">
+    <param name="description">Run broader exec tests</param>
+    <param name="prompt">Run this command and report results:
+
+```
+uv run pytest tests/unit/cli/commands/exec/ -v --timeout=30
+```
+
+Report any failures (show full traceback for failures). Just summarize if all pass.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="126143" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 353}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01VQYZyTrV2JbGragpJzh4x1">
+    <param name="description">Generate exec reference docs</param>
+    <param name="prompt">Run this command and report results:
+
+```
+uv run erk-dev gen-exec-reference-docs
+```
+
+Report any output or errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="126143" output_tokens="290" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 353, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VQYZyTrV2JbGragpJzh4x1">
+**Success**: The command completed successfully.
+
+**Summary:**
+- Generated `.claude/skills/erk-exec/reference.md` (formatted)
+- Documented 89 top-level commands
+
+The reference documentation for the `erk exec` command has been regenerated with all available command documentation.
+agentId: acd9c9697dbff9a0d (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13505
+tool_uses: 1
+duration_ms: 3638&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Pa1yLNbmW55suQEhnv4NAM">
+pytest passed: All 1021 tests in the exec CLI commands test suite passed in 2.68s
+agentId: aeac30c67b4012651 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17069
+tool_uses: 2
+duration_ms: 8095&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 1021 exec tests pass and the reference docs have been regenerated. Let me now run the prettier check on the markdown files I edited, and verify `.impl/` is preserved.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3795" cache_read_input_tokens="126496" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3795}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_014Xd9BCUUxtKzi5k5JT7BGD">
+    <param name="description">Run prettier on markdown</param>
+    <param name="prompt">Run these commands and report results:
+
+1. `uv run prettier --check .claude/commands/local...[truncated 174 chars]....md`
+- `uv run prettier --write .github/workflows/code-reviews.yml`
+
+Report what happened.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3795" cache_read_input_tokens="126496" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3795}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RMgJxDeQBc9f2N8DNxzNpg">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3795" cache_read_input_tokens="126496" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3795}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Xd9BCUUxtKzi5k5JT7BGD">
+Both files are properly formatted. No fixes needed.
+
+prettier passed: All matched files use Prettier code style!
+
+- `.claude/commands/local/code-review.md` — formatted correctly
+- `.github/workflows/code-reviews.yml` — formatted correctly
+agentId: a7b6ec8c16032ddda (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13709
+tool_uses: 2
+duration_ms: 3408&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01RMgJxDeQBc9f2N8DNxzNpg">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl"}
+  </tool_result>
+  <assistant>All checks pass and `.impl/` is preserved. Now let me signal completion, upload the session, and submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="130291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 638}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LZ7h46N8vkWRSq6WLKCZXg">
+    <param name="command">erk exec impl-signal ended --session-id="82f09023-c35f-431b-8152-91f5821975e1" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="130291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 638}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LZ7h46N8vkWRSq6WLKCZXg">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 7965
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KH5X6Pf5bfsBVPmP2XmUTX">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(python3 -c "import json; print(j...[truncated 191 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="178" cache_read_input_tokens="130929" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 178}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KH5X6Pf5bfsBVPmP2XmUTX">
+
+  </tool_result>
+  <assistant>Now let me submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="131107" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 229}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VQJrn5adDbV6zu3MVfxMQm">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk submit pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="131107" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 229}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VQJrn5adDbV6zu3MVfxMQm">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017SXrAE2yMKEeoEbxZBcRNe">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="131336" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 130, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017SXrAE2yMKEeoEbxZBcRNe">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 7965
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TnGLjh95UQ7fikpAAW1err">
+    <param name="command">erk pr check 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="131466" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 123}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TnGLjh95UQ7fikpAAW1err">
+
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of what was implemented:
+
+## Summary
+
+### Changes Made
+
+1. **New exec script: `set-local-review-marker`** (`src/erk/cli/commands/exec/scripts/set_local_review_marker.py`)
+   - Auto-detects current branch and HEAD SHA via gateway injection
+   - Finds PR for the branch using `get_pr_for_branch`
+   - Strips any existing marker from PR body, appends new one with current SHA
+   - Marker format: `&lt;!-- erk:local-review-passed:&lt;sha&gt; --&gt;`
+   - Graceful handling for no-PR, detached HEAD cases (exits 0 with JSON reason)
+
+2. **Registered in exec group** (`src/erk/cli/commands/exec/group.py`)
+   - Added import and `add_command` registration as `set-local-review-marker`
+
+3. **Updated local code-review command** (`.claude/commands/local/code-review.md`)
+   - Added Phase 4: Mark PR as Reviewed (only runs when 0 violations)
+   - Reports marker status to the user
+
+4. **Updated CI workflow** (`.github/workflows/code-reviews.yml`)
+   - Added `Check local review marker` step as first step in `discover` job
+   - Compares marker SHA against PR head SHA
+   - All subsequent steps gated with `if: steps.check_local_review.outputs.skip != 'true'`
+   - When marker matches, entire review pipeline is skipped
+
+5. **Unit tests** (`tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py`)
+   - 10 tests covering: happy path, no PR, existing marker replacement, PR with footer, detached HEAD, helper functions
+
+6. **Regenerated exec reference docs** (`.claude/skills/erk-exec/reference.md`)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="109" cache_read_input_tokens="131589" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 109}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+</session>
