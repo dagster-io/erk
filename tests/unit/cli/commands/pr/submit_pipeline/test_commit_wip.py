@@ -43,6 +43,7 @@ def _make_state(
         debug=debug,
         session_id=session_id,
         skip_description=False,
+        quiet=False,
         issue_number=issue_number,
         pr_number=pr_number,
         pr_url=pr_url,

@@ -25,7 +25,7 @@ Automatically create a git commit with a helpful summary message and submit the 
 
 This command uses a three-step flow to avoid nested Claude subprocess calls:
 
-1. **Push + create PR** (no AI) via `erk pr submit --skip-description`
+1. **Push + create PR** (no AI) via `erk exec push-and-create-pr`
 2. **Gather context** via `erk exec get-pr-context` (returns JSON)
 3. **Generate title + body** natively (you are the agent — no subprocess)
 4. **Apply description** via `erk exec set-pr-description`
@@ -33,12 +33,12 @@ This command uses a three-step flow to avoid nested Claude subprocess calls:
 ### Step 1: Push and Create PR
 
 ```bash
-erk pr submit --skip-description
+erk exec push-and-create-pr
 ```
 
-This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title.
+This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title. Outputs JSON with `pr.number` and `pr.url`.
 
-If this fails, display the error and stop.
+If this fails (exit code 1), display the error from the JSON output and stop.
 
 ### Step 2: Get PR Context
 

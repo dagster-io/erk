@@ -138,6 +138,7 @@ def pr_submit(
         debug=debug,
         session_id=session_id,
         skip_description=skip_description,
+        quiet=False,
     )
 
     result = run_submit_pipeline(ctx, state)

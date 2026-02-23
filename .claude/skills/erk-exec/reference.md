@@ -85,6 +85,7 @@ Quick reference for all `erk exec` subcommands.
 | `pr-sync-commit`                  | Sync PR title and body from the latest git commit.                          |
 | `pre-tool-use-hook`               | PreToolUse hook for dignified-python reminders on .py file edits.           |
 | `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                      |
+| `push-and-create-pr`              | Push branch and create/find PR, outputting JSON.                            |
 | `quick-submit`                    | Quick commit all changes and submit.                                        |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                |
 | `register-one-shot-plan`          | Register a one-shot plan with issue metadata, comment, and PR closing ref.  |
@@ -1039,6 +1040,20 @@ Preprocess session log JSONL to compressed XML format.
 | `--max-tokens`     | INTEGER | No       | -       | Split output into multiple files of ~max-tokens each    |
 | `--output-dir`     | PATH    | No       | -       | Directory to write output files (requires --prefix)     |
 | `--prefix`         | TEXT    | No       | -       | Prefix for output filenames (requires --output-dir)     |
+
+### push-and-create-pr
+
+Push branch and create/find PR, outputting JSON.
+
+**Usage:** `erk exec push-and-create-pr`
+
+**Options:**
+
+| Flag            | Type | Required | Default | Description                       |
+| --------------- | ---- | -------- | ------- | --------------------------------- |
+| `-f`, `--force` | FLAG | No       | -       | Force push                        |
+| `--no-graphite` | FLAG | No       | -       | Skip Graphite (use git + gh only) |
+| `--session-id`  | TEXT | No       | -       | Claude session ID for tracing     |
 
 ### quick-submit
 

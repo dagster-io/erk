@@ -84,6 +84,7 @@ class SubmitState:
     debug: bool
     session_id: str
     skip_description: bool
+    quiet: bool
     issue_number: int | None
     pr_number: int | None
     pr_url: str | None
@@ -177,7 +178,8 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
 def commit_wip(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Check for uncommitted changes; if present, add_all + commit."""
     if ctx.git.status.has_uncommitted_changes(state.cwd):
-        click.echo(click.style("   Committing uncommitted changes...", dim=True))
+        if not state.quiet:
+            click.echo(click.style("   Committing uncommitted changes...", dim=True))
         ctx.git.commit.add_all(state.cwd)
         ctx.git.commit.commit(state.cwd, "WIP: Prepare for PR submission")
     return state
@@ -200,7 +202,8 @@ def push_and_create_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
 
 def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Graphite-first flow: gt submit handles push + PR creation."""
-    click.echo(click.style("Phase 1: Graphite Submit", bold=True))
+    if not state.quiet:
+        click.echo(click.style("Phase 1: Graphite Submit", bold=True))
 
     # Auto-force for plan implementations (branches always diverge from remote)
     is_plan_impl = state.issue_number is not None
@@ -234,9 +237,11 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
                 },
             )
         if is_plan_impl and not state.force and divergence.behind > 0:
-            click.echo(click.style("   Auto-forcing: plan implementation branch", dim=True))
+            if not state.quiet:
+                click.echo(click.style("   Auto-forcing: plan implementation branch", dim=True))
 
-    click.echo(click.style("   Running gt submit...", dim=True))
+    if not state.quiet:
+        click.echo(click.style("   Running gt submit...", dim=True))
     try:
         ctx.graphite.submit_stack(
             state.repo_root,
@@ -265,11 +270,13 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
             message=f"Graphite submit failed: {e}",
             details={},
         )
-    click.echo(click.style("   Graphite submit completed", fg="green"))
-    click.echo("")
+    if not state.quiet:
+        click.echo(click.style("   Graphite submit completed", fg="green"))
+        click.echo("")
 
     # Query GitHub for PR info
-    click.echo(click.style("   Getting PR info...", dim=True))
+    if not state.quiet:
+        click.echo(click.style("   Getting PR info...", dim=True))
     pr_info = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)
     if isinstance(pr_info, PRNotFound):
         return SubmitError(
@@ -289,8 +296,9 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     repo_id = GitHubRepoId(owner=owner, repo=repo_name)
     graphite_url = ctx.graphite.get_graphite_url(repo_id, pr_info.number)
 
-    click.echo(click.style(f"   PR #{pr_info.number} ready", fg="green"))
-    click.echo("")
+    if not state.quiet:
+        click.echo(click.style(f"   PR #{pr_info.number} ready", fg="green"))
+        click.echo("")
 
     return dataclasses.replace(
         state,
@@ -304,7 +312,8 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
 
 def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Core submit flow: git push + gh pr create."""
-    click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
+    if not state.quiet:
+        click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
 
     # Check GitHub authentication
     is_gh_authed, gh_username, _ = ctx.github.check_auth_status()
@@ -315,7 +324,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
             message="GitHub CLI is not authenticated. Run 'gh auth login'.",
             details={},
         )
-    if state.debug:
+    if state.debug and not state.quiet:
         click.echo(click.style(f"   Authenticated as {gh_username}", dim=True))
 
     # Verify commits to push
@@ -333,7 +342,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
         state.cwd, state.branch_name, "origin"
     )
     if divergence.behind > 0:
-        if state.debug:
+        if state.debug and not state.quiet:
             click.echo(
                 click.style(
                     f"   Branch is {divergence.behind} commit(s) behind remote, rebasing...",
@@ -451,8 +460,9 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
         )
         ctx.github.update_pr_body(state.repo_root, pr_number, "" + updated_footer)
 
-        click.echo(click.style(f"   PR #{pr_number} created", fg="green"))
-        click.echo("")
+        if not state.quiet:
+            click.echo(click.style(f"   PR #{pr_number} created", fg="green"))
+            click.echo("")
 
         return dataclasses.replace(
             state,
@@ -478,8 +488,9 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
         )
         ctx.github.update_pr_body(state.repo_root, pr_number, current_body + footer)
 
-    click.echo(click.style(f"   PR #{pr_number} found (already exists)", fg="green"))
-    click.echo("")
+    if not state.quiet:
+        click.echo(click.style(f"   PR #{pr_number} found (already exists)", fg="green"))
+        click.echo("")
 
     return dataclasses.replace(
         state,
@@ -810,6 +821,34 @@ def _extract_closing_ref_from_pr(
 
 
 @cache
+def _push_and_create_pipeline() -> tuple[SubmitStep, ...]:
+    return (
+        prepare_state,
+        commit_wip,
+        push_and_create_pr,
+    )
+
+
+def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
+    """Run only the push-and-create portion of the submit pipeline."""
+    for step in _push_and_create_pipeline():
+        try:
+            result = step(ctx, state)
+        except Exception as e:
+            step_name = getattr(step, "__name__", repr(step))
+            return SubmitError(
+                phase=step_name,
+                error_type="unhandled_exception",
+                message=f"Unexpected error in {step_name}: {e}",
+                details={},
+            )
+        if isinstance(result, SubmitError):
+            return result
+        state = result
+    return state
+
+
+@cache
 def _submit_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
@@ -850,6 +889,7 @@ def make_initial_state(
     debug: bool,
     session_id: str | None,
     skip_description: bool,
+    quiet: bool,
 ) -> SubmitState:
     """Create initial SubmitState with only CLI-provided values.
 
@@ -867,6 +907,7 @@ def make_initial_state(
         debug=debug,
         session_id=resolved_session_id,
         skip_description=skip_description,
+        quiet=quiet,
         issue_number=None,
         pr_number=None,
         pr_url=None,

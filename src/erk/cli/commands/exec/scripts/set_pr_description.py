@@ -66,7 +66,7 @@ def set_pr_description(
     if isinstance(pr_result, PRNotFound):
         raise click.ClickException(
             f"No pull request found for branch '{discovery.current_branch}'\n\n"
-            "Create a PR first with `erk pr submit --skip-description`."
+            "Create a PR first with `erk exec push-and-create-pr`."
         )
 
     pr_number = pr_result.number
