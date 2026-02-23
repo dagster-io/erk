@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Clear error when trigger_workflow finds a skipped/cancelled run"
-}
