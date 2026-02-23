@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Restrict CI to impl-stage PRs only"
+}
