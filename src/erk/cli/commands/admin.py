@@ -14,6 +14,16 @@ from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import GitHubRepoLocation
 from erk_shared.output.output import user_output
 
+CLAUDE_CI_WORKFLOWS = (
+    "code-reviews",
+    "autofix",
+    "learn",
+    "one-shot",
+    "plan-implement",
+    "pr-address",
+    "pr-fix-conflicts",
+)
+
 
 @dataclass(frozen=True)
 class _SecretConfig:
@@ -523,16 +533,7 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
             user_output(f"Status: {click.style('Disabled', fg='red')}")
         user_output("")
         user_output("Affected workflows:")
-        affected_workflows = [
-            "code-reviews",
-            "autofix",
-            "learn",
-            "one-shot",
-            "plan-implement",
-            "pr-address",
-            "pr-fix-conflicts",
-        ]
-        for workflow in affected_workflows:
+        for workflow in CLAUDE_CI_WORKFLOWS:
             user_output(f"  - {workflow}")
 
     elif action == "enable":

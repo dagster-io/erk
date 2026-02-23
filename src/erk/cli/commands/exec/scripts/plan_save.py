@@ -325,7 +325,7 @@ def _save_plan_via_draft_pr(
                     err=True,
                 )
             else:
-                dedup_response: dict[str, str | int | bool] = {
+                dedup_response = {
                     "success": True,
                     "plan_number": existing_issue,
                     "skipped_duplicate": True,
