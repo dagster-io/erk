@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+from dataclasses import dataclass
 from typing import Literal
 
 import click
@@ -12,6 +13,27 @@ from erk.core.context import ErkContext
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import GitHubRepoLocation
 from erk_shared.output.output import user_output
+
+
+@dataclass(frozen=True)
+class _SecretConfig:
+    github_secret_name: str
+    local_env_var: str
+    other_github_secret_name: str
+
+
+def _resolve_secret_config(*, oauth: bool) -> _SecretConfig:
+    if oauth:
+        return _SecretConfig(
+            github_secret_name="CLAUDE_CODE_OAUTH_TOKEN",
+            local_env_var="GH_ACTIONS_CLAUDE_CODE_OAUTH_TOKEN",
+            other_github_secret_name="ANTHROPIC_API_KEY",
+        )
+    return _SecretConfig(
+        github_secret_name="ANTHROPIC_API_KEY",
+        local_env_var="GH_ACTIONS_ANTHROPIC_API_KEY",
+        other_github_secret_name="CLAUDE_CODE_OAUTH_TOKEN",
+    )
 
 
 @click.group("admin")
@@ -120,30 +142,71 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             raise UserFacingCliError(str(e)) from e
 
 
+def _compute_active_label(*, api_key_exists: bool, oauth_exists: bool) -> str | None:
+    if api_key_exists:
+        return "ANTHROPIC_API_KEY (takes precedence)"
+    if oauth_exists:
+        return "CLAUDE_CODE_OAUTH_TOKEN"
+    return None
+
+
+def _display_secret_row(
+    *,
+    secret_name: str,
+    github_exists: bool | None,
+    local_env_var: str,
+    local_env_value: str | None,
+    is_active: bool,
+) -> None:
+    if github_exists is True:
+        gh_status = click.style("Set", fg="green")
+    elif github_exists is False:
+        gh_status = click.style("Not set", fg="yellow")
+    else:
+        gh_status = click.style("Error", fg="red")
+
+    if local_env_value:
+        local_status = click.style("Set", fg="green")
+    else:
+        local_status = click.style("Not set", fg="yellow")
+    active_marker = "  ←" if is_active else "   "
+
+    user_output(
+        f"  {secret_name:<25} {gh_status:<14}{active_marker}    {local_env_var}: {local_status}"
+    )
+
+
 @admin_group.command("gh-actions-api-key")
 @click.option(
     "--enable",
     "action",
     flag_value="enable",
-    help="Set ANTHROPIC_API_KEY secret from GH_ACTIONS_ANTHROPIC_API_KEY env var or prompt",
+    help="Set secret from local env var or prompt",
 )
 @click.option(
     "--disable",
     "action",
     flag_value="disable",
-    help="Delete ANTHROPIC_API_KEY secret from GitHub Actions",
+    help="Delete secret from GitHub Actions",
+)
+@click.option(
+    "--oauth",
+    is_flag=True,
+    help="Target CLAUDE_CODE_OAUTH_TOKEN instead of ANTHROPIC_API_KEY",
 )
 @click.pass_obj
 def gh_actions_api_key(
     ctx: ErkContext,
     action: Literal["enable", "disable"] | None,
+    oauth: bool,
 ) -> None:
-    """Manage ANTHROPIC_API_KEY secret in GitHub Actions.
+    """Manage authentication secrets in GitHub Actions.
 
-    Without flags: Check if ANTHROPIC_API_KEY secret exists
-    With --enable: Set ANTHROPIC_API_KEY secret from GH_ACTIONS_ANTHROPIC_API_KEY env var
-                   (prompts interactively if env var is not set)
-    With --disable: Delete ANTHROPIC_API_KEY secret
+    \b
+    Without flags: Show status of both ANTHROPIC_API_KEY and CLAUDE_CODE_OAUTH_TOKEN
+    With --enable: Set target secret from local env var (prompts if not set)
+    With --disable: Delete target secret
+    With --oauth: Target CLAUDE_CODE_OAUTH_TOKEN instead of ANTHROPIC_API_KEY
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
@@ -155,40 +218,77 @@ def gh_actions_api_key(
 
     admin = ctx.github_admin
     location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
-    github_secret_name = "ANTHROPIC_API_KEY"
-    local_env_var = "GH_ACTIONS_ANTHROPIC_API_KEY"
+    config = _resolve_secret_config(oauth=oauth)
 
     if action is None:
-        exists = admin.secret_exists(location, github_secret_name)
-        user_output(click.style("GitHub Actions API Key", bold=True))
+        api_key_exists = admin.secret_exists(location, "ANTHROPIC_API_KEY")
+        oauth_exists = admin.secret_exists(location, "CLAUDE_CODE_OAUTH_TOKEN")
+
+        user_output(click.style("GitHub Actions Authentication", bold=True))
         user_output("")
-        if exists is True:
-            user_output(f"Status: {click.style('Enabled', fg='green')}")
-        elif exists is False:
-            user_output(f"Status: {click.style('Not found', fg='yellow')}")
+        user_output(f"  {'Secret':<25} {'GitHub':<14}       {'Local Env'}")
+
+        api_key_env = os.environ.get("GH_ACTIONS_ANTHROPIC_API_KEY")
+        oauth_env = os.environ.get("GH_ACTIONS_CLAUDE_CODE_OAUTH_TOKEN")
+
+        api_key_is_set = api_key_exists is True
+        oauth_is_set = oauth_exists is True
+        active_label = _compute_active_label(
+            api_key_exists=api_key_is_set, oauth_exists=oauth_is_set
+        )
+
+        api_key_active = active_label is not None and active_label.startswith("ANTHROPIC_API_KEY")
+        _display_secret_row(
+            secret_name="ANTHROPIC_API_KEY",
+            github_exists=api_key_exists,
+            local_env_var="GH_ACTIONS_ANTHROPIC_API_KEY",
+            local_env_value=api_key_env,
+            is_active=api_key_active,
+        )
+        oauth_active = active_label is not None and active_label.startswith(
+            "CLAUDE_CODE_OAUTH_TOKEN"
+        )
+        _display_secret_row(
+            secret_name="CLAUDE_CODE_OAUTH_TOKEN",
+            github_exists=oauth_exists,
+            local_env_var="GH_ACTIONS_CLAUDE_CODE_OAUTH_TOKEN",
+            local_env_value=oauth_env,
+            is_active=oauth_active,
+        )
+
+        user_output("")
+        if active_label is not None:
+            user_output(f"  Active: {active_label}")
         else:
-            user_output(f"Status: {click.style('Error checking secret', fg='red')}")
+            user_output("  No authentication configured. Use --enable to set a secret.")
 
     elif action == "enable":
-        secret_value = os.environ.get(local_env_var)
+        secret_value = os.environ.get(config.local_env_var)
         if secret_value is None:
             secret_value = click.prompt(
-                f"{local_env_var} not set. Enter the API key", hide_input=True
+                f"{config.local_env_var} not set. Enter the API key", hide_input=True
             )
         try:
-            admin.set_secret(location, github_secret_name, secret_value)
+            admin.set_secret(location, config.github_secret_name, secret_value)
             user_output(
-                click.style("✓", fg="green") + f" Set {github_secret_name} secret in GitHub Actions"
+                click.style("✓", fg="green")
+                + f" Set {config.github_secret_name} secret in GitHub Actions"
+            )
+            # Delete the other secret to prevent ambiguity
+            admin.delete_secret(location, config.other_github_secret_name)
+            user_output(
+                click.style("✓", fg="green")
+                + f" Deleted {config.other_github_secret_name} to prevent ambiguity"
             )
         except RuntimeError as e:
             raise UserFacingCliError(str(e)) from e
 
     elif action == "disable":
         try:
-            admin.delete_secret(location, github_secret_name)
+            admin.delete_secret(location, config.github_secret_name)
             user_output(
                 click.style("✓", fg="green")
-                + f" Deleted {github_secret_name} secret from GitHub Actions"
+                + f" Deleted {config.github_secret_name} secret from GitHub Actions"
             )
         except RuntimeError as e:
             raise UserFacingCliError(str(e)) from e
