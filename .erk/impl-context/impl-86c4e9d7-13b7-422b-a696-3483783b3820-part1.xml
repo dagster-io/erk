@@ -1,0 +1,1263 @@
+<session>
+  <meta branch="plnd/in-the-prs-that-get-genera-02-22-1808" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="86c4e9d7-13b7-422b-a696-3483783b3820"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="86c4e9d7-13b7-422b-a696-3483783b3820" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="86c4e9d7-13b7-422b-a696-3483783b3820" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the instructions:
+
+1. Step 0: No arguments provided (empty), so no ISSUE_ARG or FILE_ARG
+2. Step 1b: Check if `.impl/` already exists
+
+Let me start by checking if `.impl/` exists and running `erk exec impl-init --json`.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12887" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12887}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12887" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12887}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BQJdpYibFoFNTkix3zDUGA">
+    <param name="command">erk exec impl-init --json 2&gt;&amp;1</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12887" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12887}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BQJdpYibFoFNTkix3zDUGA">
+{"valid": true, "impl_type": "impl", "has_plan_tracking": true, "related_docs": {"skills": [], "docs": []}, "plan_number": 7934}
+  </tool_result>
+  <thinking>The `.impl/` folder exists and is valid. It has issue tracking (`has_plan_tracking: true`) with issue number 7934. According to the instructions:
+
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d.
+
+Wait, the field is `has_plan_tracking` not `has_issue_tracking`. Let me re-read. The instruction says "If `has_issue_tracking: true`" but the actual JSON has `has_plan_tracking`. These likely map to the same concept. Since it's true, I should call `setup-impl-from-issue` to sync.
+
+
+I have the issue number from the init output (7934), so I'll go ahead and call `setup-impl-from-issue 7934` to sync the local branch with the remote.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="31928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>`.impl/` exists and is valid with plan #7934. Syncing with remote...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="31928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VfjcjtvqK27e3V6AXGDCTq">
+    <param name="command">erk exec setup-impl-from-issue 7934 2&gt;&amp;1</param>
+    <param name="description">Sync local branch with remote for issue 7934</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="31928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VfjcjtvqK27e3V6AXGDCTq">
+Found existing .impl/ for plan #7934, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.impl", "plan_number": 7934, "plan_url": "https://github.com/dagster-io/erk/pull/7934", "branch": "plnd/in-the-prs-that-get-genera-02-22-1808", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <thinking>Good, the setup is already done. Now I need to:
+
+1. Step 2d: Clean up `.erk/impl-context/` if it exists
+2. Step 3: Read the plan
+3. Continue with implementation
+
+Let me check for `.erk/impl-context/` and read the plan in parallel.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="32196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, synced. Now let me clean up staging and read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="32196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Bfdc7E8nqM6JWj6pSkqp1u">
+    <param name="command">if [ -d .erk/impl-context/ ] &amp;&amp; git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null...[truncated 99 chars]...h origin "$(git branch --show-current)"; else echo "No .erk/impl-context/ to clean up"; fi</param>
+    <param name="description">Clean up .erk/impl-context/ if tracked by git</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="32196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dg3ZnQ7YfM6Vevi1VAWdBj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="32196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bfdc7E8nqM6JWj6pSkqp1u">
+rm '.erk/impl-context/prompt.md'
+[plnd/in-the-prs-that-get-genera-02-22-1808 6c5e8ffe7] Remove .erk/impl-context/ before implementation
+ 1 file changed, 4 deletions(-)
+ delete mode 100644 .erk/impl-context/prompt.md
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   d3bf6bd2b..6c5e8ffe7  plnd/in-the-prs-that-get-genera-02-22-1808 -&gt; plnd/in-the-prs-that-get-genera-02-22-1808
+  </tool_result>
+  <tool_result tool="toolu_01Dg3ZnQ7YfM6Vevi1VAWdBj">
+     1→# Move plan-header section to bottom of PR descriptions
+     2→
+     3→## Context
+     4→
+     5→In PRs generated by erk workflows, the plan-header section (a collapsed `&lt;details&gt;` block containing YAML metadata) appears at the **top** of the PR description. This creates visual noise — reviewers opening a PR see metadata before the actual summary. The request is to move this section to the **bottom** of the PR body, just above the footer.
+     6→
+     7→Reference PR: https://github.com/dagster-io/erk/pull/7930
+     8→
+     9→### Current PR body structure (draft-PR backend)
+    10→
+    11→```
+    12→[plan-header metadata block]    ← metadata_prefix (visual noise at top)
+    13→\n\n---\n\n
+    14→[AI-generated summary]          ← body content
+    15→[original-plan &lt;details&gt;]       ← plan section
+    16→\n---\n
+    17→[Closes #N + checkout footer]   ← footer
+    18→```
+    19→
+    20→### Desired PR body structure
+    21→
+    22→```
+    23→[AI-generated summary]          ← body content (now at top)
+    24→[original-plan &lt;details&gt;]       ← plan section
+    25→[plan-header metadata block]    ← metadata_prefix (moved to bottom)
+    26→\n---\n
+    27→[Closes #N + checkout footer]   ← footer
+    28→```
+    29→
+    30→### Current PR body structure (issue-based backend)
+
+... [315 lines omitted] ...
+  </tool_result>
+  <thinking>I've read the plan. Now let me understand the scope:
+
+1. `src/erk/cli/commands/pr/shared.py` — `assemble_pr_body()` - reorder to put metadata at bottom
+2. `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py` — No change needed (just understanding)
+3. `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py` — `_update_pr_body_impl()` - reorder metadata
+4. `src/erk/cli/commands/submit.py` — Two locations for initial PR body
+
+
+5. `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` — Need to update the functions that extract and rebuild PR body structure to handle the new metadata-at-bottom layout
+6. Test updates
+
+Let me start mapping out the task entries and reviewing all the relevant files.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5811" cache_read_input_tokens="32674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5811}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan... The plan moves the plan-header metadata section from the top to the bottom of PR descriptions across several files. Let me set up the tasks and start reading the source files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5811" cache_read_input_tokens="32674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5811}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01GbfX6TDrzxfz1EpsRxyTsc">
+    <param name="subject">Update pr_footer.py — extract_header_from_body, extract_main_content, rebuild_pr_body</param>
+    <param name="description">Rewrite these functions so headers are expected at the bottom (above footer) instead of the top. This is the foundational change — other files depend on this.</param>
+    <param name="activeForm">Updating pr_footer.py header extraction</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5811" cache_read_input_tokens="32674" output_tokens="439" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5811, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GbfX6TDrzxfz1EpsRxyTsc">
+Task #1 created successfully: Update pr_footer.py — extract_header_from_body, extract_main_content, rebuild_pr_body
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_018aj8rAbz2mLpyssupmCBxh">
+    <param name="subject">Update shared.py — assemble_pr_body() to place metadata at bottom</param>
+    <param name="description">Change the return statement in assemble_pr_body to place metadata_prefix and header after pr_body_content, before footer.</param>
+    <param name="activeForm">Updating assemble_pr_body ordering</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="38485" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 480, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018aj8rAbz2mLpyssupmCBxh">
+Task #2 created successfully: Update shared.py — assemble_pr_body() to place metadata at bottom
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01DHerV4L5ius97Ln2upT9mf">
+    <param name="subject">Update ci_update_pr_body.py — move metadata_prefix after summary</param>
+    <param name="description">In _update_pr_body_impl(), reorder so metadata_prefix comes after the summary and plan section, not before.</param>
+    <param name="activeForm">Updating ci_update_pr_body.py ordering</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="173" cache_read_input_tokens="38965" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 173}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DHerV4L5ius97Ln2upT9mf">
+Task #3 created successfully: Update ci_update_pr_body.py — move metadata_prefix after summary
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_019xA4mF1sjdju34C8cM3vjq">
+    <param name="subject">Update submit.py — move Plan header in initial PR bodies</param>
+    <param name="description">Two locations in submit.py where **Plan:** line appears at the top of initial PR bodies. Move to bottom in both.</param>
+    <param name="activeForm">Updating submit.py PR body ordering</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="39138" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019xA4mF1sjdju34C8cM3vjq">
+Task #4 created successfully: Update submit.py — move Plan header in initial PR bodies
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_016AE3JBAg6DTtf5SnyguBXE">
+    <param name="subject">Update all test files for new header positioning</param>
+    <param name="description">Update test_pr_footer.py, test_ci_update_pr_body.py, test_update_pr_description.py, and test_finalize_pr.py to expect headers at bottom.</param>
+    <param name="activeForm">Updating tests for new header positioning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="39313" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 160, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016AE3JBAg6DTtf5SnyguBXE">
+Task #5 created successfully: Update all test files for new header positioning
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01VpagV33ympZ9b8TVSZ1FcG">
+    <param name="subject">Run CI and verify all tests pass</param>
+    <param name="description">Run the full test suite focusing on pr_footer, ci_update_pr_body, update_pr_description, and finalize_pr tests. Also run ty and ruff.</param>
+    <param name="activeForm">Running CI verification</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="39473" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 171}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VpagV33ympZ9b8TVSZ1FcG">
+Task #6 created successfully: Run CI and verify all tests pass
+  </tool_result>
+  <assistant>Now let me signal start and read all the source files I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="39644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TsnGS4SKwE7Nm1jYgHS2Mu">
+    <param name="command">erk exec impl-signal started --session-id="86c4e9d7-13b7-422b-a696-3483783b3820" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="39644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XMpmgZ4HabkgEpUYC7pUXx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="39644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FboHcLGpbHsmDfr8tro8ng">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="39644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ef8mKwHHhHHLMYaA5HrZgM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="39644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0115Yrkkg9kWkyyiHReSTvbn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/submit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="39644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TsnGS4SKwE7Nm1jYgHS2Mu">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 7934
+}
+  </tool_result>
+  <tool_result tool="toolu_01FboHcLGpbHsmDfr8tro8ng">
+     1→"""Shared utilities for PR commands.
+     2→
+     3→This module contains common functionality used by multiple PR commands
+     4→(rewrite, submit) to avoid code duplication.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→
+    12→import click
+    13→
+    14→from erk.core.commit_message_generator import (
+    15→    CommitMessageGenerator,
+    16→    CommitMessageRequest,
+    17→    CommitMessageResult,
+    18→)
+    19→from erk.core.context import ErkContext
+    20→from erk.core.plan_context_provider import PlanContext
+    21→from erk_shared.gateway.github.pr_footer import (
+    22→    build_pr_body_footer,
+    23→    extract_closing_reference,
+    24→    extract_footer_from_body,
+    25→)
+    26→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    27→from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
+    28→from erk_shared.impl_folder import read_plan_ref
+    29→from erk_shared.naming import extract_leading_issue_number
+    30→from erk_shared.plan_store.draft_pr_lifecycle import build_original_plan_section
+
+... [335 lines omitted] ...
+
+    51→        click.ClickException: If in detached HEAD state
+    55→        raise click.ClickException("Not on a branch (detached HEAD state)")
+    94→        Path to diff file, or None if extraction failed
+   141→        except OSError:
+   290→    elif event.style == "warning":
+   292→    elif event.style == "error":
+   299→    """Verify Claude CLI is available, raising ClickException if not.
+   305→        click.ClickException: If Claude CLI is not available
+   308→        raise click.ClickException(
+   337→        CommitMessageResult with the generated title/body or error info
+   361→            error_message="Commit message generation did not complete",
+  </tool_result>
+  <tool_result tool="toolu_01XMpmgZ4HabkgEpUYC7pUXx">
+     1→"""PR body footer generation utilities."""
+     2→
+     3→import re
+     4→from dataclasses import dataclass
+     5→
+     6→
+     7→@dataclass(frozen=True)
+     8→class ClosingReference:
+     9→    """Represents a parsed closing reference from a PR footer."""
+    10→
+    11→    issue_number: int
+    12→    plans_repo: str | None  # None for same-repo, "owner/repo" for cross-repo
+    13→
+    14→
+    15→def extract_footer_from_body(body: str) -&gt; str | None:
+    16→    """Extract the footer section from a PR body.
+    17→
+    18→    The footer is the content after the last `---` delimiter (horizontal rule).
+    19→
+    20→    Args:
+    21→        body: Full PR body content
+    22→
+    23→    Returns:
+    24→        Footer content (without the delimiter) or None if no footer found
+    25→    """
+    26→    # Split on horizontal rule delimiter
+    27→    parts = body.rsplit("\n---\n", 1)
+    28→    if len(parts) &lt; 2:
+    29→        return None
+    30→    return parts[1]
+
+... [198 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Ef8mKwHHhHHLMYaA5HrZgM">
+     1→#!/usr/bin/env python3
+     2→"""Update PR body with AI-generated summary and footer.
+     3→
+     4→This command generates a PR summary from the diff using Claude, then updates
+     5→the PR body with the summary, optional workflow link, and standardized footer.
+     6→
+     7→This combines generate-pr-summary + footer construction + gh pr edit in one step,
+     8→replacing ~30 lines of bash in GitHub Actions workflows.
+     9→
+    10→Usage:
+    11→    erk exec ci-update-pr-body \\
+    12→        --plan-id 123 \\
+    13→        [--run-id 456789] \\
+    14→        [--run-url https://github.com/owner/repo/actions/runs/456789]
+    15→
+    16→Output:
+    17→    JSON object with success status
+    18→
+    19→Exit Codes:
+    20→    0: Success (PR body updated)
+    21→    1: Error (no PR for branch, empty diff, Claude failure, or GitHub API failed)
+    22→
+    23→Examples:
+    24→    $ erk exec ci-update-pr-body --plan-id 123
+    25→    {
+    26→      "success": true,
+    27→      "pr_number": 789
+    28→    }
+    29→
+    30→    $ erk exec ci-update-pr-body \\
+
+... [312 lines omitted] ...
+
+    76→class UpdateError:
+    77→    """Error result when PR body update fails."""
+    80→    error: Literal[
+    83→        "diff-fetch-failed",
+    84→        "claude-execution-failed",
+    86→        "github-api-failed",
+   166→) -&gt; UpdateSuccess | UpdateError:
+   181→        UpdateSuccess on success, UpdateError on failure
+   186→        return UpdateError(
+   188→            error="pr-not-found",
+   196→        return UpdateError(
+   198→            error="pr-not-found",
+   208→    except RuntimeError as e:
+   209→        return UpdateError(
+   211→            error="diff-fetch-failed",
+   212→            message=f"Failed to get PR diff: {e}",
+   217→        return UpdateError(
+   219→            error="empty-diff",
+   236→    # Separate failure modes for better diagnostics
+   238→        stderr_preview = result.error[:500] if result.error else None
+   239→        return UpdateError(
+   241→            error="claude-execution-failed",
+   248→        stderr_preview = result.error[:500] if result.error else None
+   249→        return UpdateError(
+   251→            error="claude-empty-output",
+   285→    except RuntimeError as e:
+   286→        return UpdateError(
+   288→            error="github-api-failed",
+   289→            message=f"Failed to update PR: {e}",
+   339→    # Exit with error code if update failed
+   340→    if isinstance(result, UpdateError):
+  </tool_result>
+  <tool_result tool="toolu_0115Yrkkg9kWkyyiHReSTvbn">
+     1→"""Submit issue for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from collections.abc import Iterator
+     6→from contextlib import contextmanager
+     7→from dataclasses import dataclass
+     8→from datetime import UTC, datetime
+     9→from pathlib import Path
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.commands.submit_helpers import ensure_trunk_synced
+    16→from erk.cli.constants import (
+    17→    DISPATCH_WORKFLOW_METADATA_NAME,
+    18→    DISPATCH_WORKFLOW_NAME,
+    19→    ERK_PLAN_LABEL,
+    20→    ERK_PLAN_TITLE_PREFIX,
+    21→    PLAN_HEADING_PREFIX,
+    22→    PLANNED_PR_TITLE_PREFIX,
+    23→)
+    24→from erk.cli.core import discover_repo_context
+    25→from erk.cli.ensure import Ensure, UserFacingCliError
+    26→from erk.core.branch_slug_generator import generate_slug_or_fallback
+    27→from erk.core.context import ErkContext
+    28→from erk.core.repo_discovery import RepoContext
+    29→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    30→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+
+... [1314 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+    75→    """Context manager that restores original branch on exception.
+    78→    On exception, checks out original_branch and re-raises.
+    82→    except Exception:
+    84→            click.style("Error: ", fg="red") + "Operation failed, restoring original branch..."
+   364→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   370→            click.style("Error: ", fg="red")
+   379→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   427→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   444→    if isinstance(pull_result, PullRebaseError):
+   445→        raise UserFacingCliError(
+   446→            f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+   449→    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
+   472→    if isinstance(push_result, PushError):
+   473→        raise UserFacingCliError(push_result.message)
+   521→    except Exception as e:
+   523→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   533→    except Exception as e:
+   534→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   565→    except Exception as e:
+   567→            click.style("Warning: ", fg="yellow")
+   568→            + f"Failed to post queued comment: {e}\n"
+   610→        user_output(click.style("Error: ", fg="red") + f"Issue #{issue.issue_number} not found")
+   616→            click.style("Error: ", fg="red")
+   626→            click.style("Error: ", fg="red") + f"Issue #{issue_number} is {issue.state}\n\n"
+   698→    On any exception, the context manager will restore the original branch.
+   721→        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+   725→    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
+   747→    if isinstance(push_result, PushError):
+   748→        raise UserFacingCliError(push_result.message)
+   805→        if isinstance(submit_result, SubmitBranchError):
+   808→                + f" Failed to link PR with Graphite: {submit_result.message}"
+   887→            if isinstance(push_result, PushError):
+   888→                raise UserFacingCliError(push_result.message)
+   933→                if isinstance(submit_result, SubmitBranchError):
+   936→                        + f" Failed to link PR with Graphite: {submit_result.message}"
+   970→            # Use context manager to restore original branch on failure
+   998→                    user_output(click.style("Error: ", fg="red") + msg)
+  1005→                user_output(click.style("Error: ", fg="red") + create_result.message)
+  1009→            # Use context manager to restore original branch on failure
+  1027→            click.style("Error: ", fg="red")
+  1028→            + "Failed to create or find PR. Cannot trigger workflow."
+  1069→    except Exception as e:
+  1070→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+  1084→    except Exception as e:
+  1085→        # Log warning but don't block - workflow is already triggered
+  1087→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+  1120→    except Exception as e:
+  1121→        # Log warning but don't block - workflow is already triggered
+  1123→            click.style("Warning: ", fg="yellow")
+  1124→            + f"Failed to post queued comment: {e}\n"
+  1193→            click.style("Error: ", fg="red")
+  1202→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  1237→                    click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <thinking>Now I have a good understanding of all the files. Let me also read the test files and the `PLAN_CONTENT_SEPARATOR` from draft_pr_lifecycle.py to understand the full picture.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="31277" cache_read_input_tokens="39802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31277}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the test files and the draft_pr_lifecycle module to understand `PLAN_CONTENT_SEPARATOR`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="31277" cache_read_input_tokens="39802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31277}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JiC446aXvscZ7ijhhkhGLK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31277" cache_read_input_tokens="39802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31277}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JiC446aXvscZ7ijhhkhGLK">
+     1→"""Draft PR Lifecycle.
+     2→
+     3→Draft PRs serve as the backing store for plans when the plan backend is
+     4→"github-draft-pr". Unlike issue-based plans (where the plan issue and
+     5→implementation PR are separate), draft-PR-backed plans evolve through
+     6→lifecycle stages within a single PR.
+     7→
+     8→Branch Files
+     9→------------
+    10→Draft PR branches contain ``{IMPL_CONTEXT_DIR}/plan.md`` and
+    11→``{IMPL_CONTEXT_DIR}/ref.json``, committed before PR creation to avoid
+    12→GitHub's "empty branch" rejection. ``plan.md`` enables inline review
+    13→comments on the plan via the PR's "Files Changed" tab and gets replaced
+    14→when implementation begins. ``ref.json`` carries plan reference metadata
+    15→(provider, objective_id).
+    16→
+    17→Stages
+    18→------
+    19→
+    20→0. One-Shot Dispatch (optional, UNIMPLEMENTED for draft_pr backend)
+    21→   Currently one-shot uses issue-based storage: it creates a skeleton plan
+    22→   issue, creates a draft PR referencing it, and dispatches to GitHub Actions
+    23→   for remote planning + implementation. Adapting one-shot to the draft_pr
+    24→   backend would mean the draft PR IS the plan (no separate issue), and the
+    25→   workflow would update the PR body through stages 1-3 below.
+    26→
+    27→   Status: Not yet implemented. One-shot continues to use issue-based storage.
+    28→
+    29→1. Plan Creation
+    30→   ``plan_save`` / ``DraftPRPlanBackend.create_plan()`` creates a draft PR.
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011Jkia2QzJcaUDqs3P64tv6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31277" cache_read_input_tokens="39802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31277}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Jkia2QzJcaUDqs3P64tv6">
+     1→"""Unit tests for PR body footer generation.
+     2→
+     3→Tests the canonical build_pr_body_footer, build_remote_execution_note, and
+     4→header/footer extraction functions.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.pr_footer import (
+     8→    build_pr_body_footer,
+     9→    build_remote_execution_note,
+    10→    extract_footer_from_body,
+    11→    extract_header_from_body,
+    12→    extract_main_content,
+    13→    rebuild_pr_body,
+    14→)
+    15→
+    16→
+    17→def test_build_pr_body_footer_without_issue_number() -&gt; None:
+    18→    """Test footer generation without issue number."""
+    19→    result = build_pr_body_footer(pr_number=1895, issue_number=None, plans_repo=None)
+    20→
+    21→    assert "---" in result
+    22→    assert 'source "$(erk pr checkout 1895 --script)" &amp;&amp; erk pr sync --dangerous' in result
+    23→    assert "Closes #" not in result
+    24→
+    25→
+    26→def test_build_pr_body_footer_with_issue_number() -&gt; None:
+    27→    """Test footer includes Closes #N when issue_number is provided."""
+    28→    result = build_pr_body_footer(pr_number=1895, issue_number=123, plans_repo=None)
+    29→
+    30→    assert "---" in result
+
+... [268 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FZpxgqvYp6ZwH5mnZAj1yF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31277" cache_read_input_tokens="39802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31277}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FZpxgqvYp6ZwH5mnZAj1yF">
+     1→"""Unit tests for ci_update_pr_body kit CLI command.
+     2→
+     3→Tests the PR body update with AI-generated summary and footer.
+     4→Uses FakeGit, FakeGitHub, and FakePromptExecutor for dependency injection.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.ci_update_pr_body import (
+    13→    UpdateError,
+    14→    UpdateSuccess,
+    15→    _build_pr_body,
+    16→    _build_prompt,
+    17→    _update_pr_body_impl,
+    18→)
+    19→from erk.cli.commands.exec.scripts.ci_update_pr_body import (
+    20→    ci_update_pr_body as ci_update_pr_body_command,
+    21→)
+    22→from erk_shared.context.context import ErkContext
+    23→from erk_shared.core.fakes import FakePromptExecutor
+    24→from erk_shared.core.prompt_executor import PromptResult
+    25→from erk_shared.gateway.git.fake import FakeGit
+    26→from erk_shared.gateway.github.fake import FakeGitHub
+    27→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    28→
+    29→# ============================================================================
+    30→# 1. Helper Function Tests
+
+... [838 lines omitted] ...
+
+   143→        prompt_results=[PromptResult(success=True, output="Generated PR summary", error=None)]
+   164→    """Test error when no PR exists for the current branch."""
+   182→    assert isinstance(result, UpdateError)
+   184→    assert result.error == "pr-not-found"
+   188→    """Test error when PR diff is empty."""
+   238→    assert isinstance(result, UpdateError)
+   240→    assert result.error == "empty-diff"
+   243→def test_impl_claude_failure(tmp_path: Path) -&gt; None:
+   244→    """Test error when Claude execution fails."""
+   281→        prompt_results=[PromptResult(success=False, output="", error="API error")]
+   296→    assert isinstance(result, UpdateError)
+   298→    assert result.error == "claude-execution-failed"
+   300→    assert result.stderr == "API error"
+   303→def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -&gt; None:
+   340→    # Create a very long error message (&gt; 500 chars)
+   341→    long_error = "x" * 600
+   343→        prompt_results=[PromptResult(success=False, output="", error=long_error)]
+   358→    assert isinstance(result, UpdateError)
+   360→    assert result.error == "claude-execution-failed"
+   367→    """Test error when Claude returns success but with empty output."""
+   404→        prompt_results=[PromptResult(success=True, output="", error=None)]
+   419→    assert isinstance(result, UpdateError)
+   421→    assert result.error == "claude-empty-output"
+   469→        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+   527→        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+   553→def test_cli_error_exit_code(tmp_path: Path) -&gt; None:
+   554→    """Test CLI command exits with error code on failure."""
+   574→    assert output["error"] == "pr-not-found"
+   625→        prompt_results=[PromptResult(success=True, output="Summary", error=None)]
+   651→def test_cli_json_output_structure_error(tmp_path: Path) -&gt; None:
+   652→    """Test that JSON output has expected structure on error."""
+   673→    assert "error" in output
+   679→    assert isinstance(output["error"], str)
+   755→        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+   837→        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01BcxFSh172fPqsDK9kpknXg">
+    <param name="pattern">**/test_update_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31277" cache_read_input_tokens="39802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31277}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012VE1VsdK59zRQtH7PtS76i">
+    <param name="pattern">**/test_finalize_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31277" cache_read_input_tokens="39802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31277}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BcxFSh172fPqsDK9kpknXg">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+  </tool_result>
+  <tool_result tool="toolu_012VE1VsdK59zRQtH7PtS76i">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+  </tool_result>
+  <thinking>Now let me read the remaining test files and the PLAN_CONTENT_SEPARATOR constant.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="19827" cache_read_input_tokens="71079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19827}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NZEzd9wZypSf2sjtoZLqZH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19827" cache_read_input_tokens="71079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19827}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NZEzd9wZypSf2sjtoZLqZH">
+     1→"""Tests for erk exec update-pr-description command.
+     2→
+     3→These tests verify the CLI layer behavior of the update-pr-description exec command.
+     4→The command generates an AI-powered PR title/body and updates the PR on GitHub,
+     5→preserving existing header and footer metadata.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    16→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    17→from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+    18→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    19→from erk_shared.gateway.github.types import PRDetails
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.graphite.types import BranchMetadata
+    22→from erk_shared.gateway.time.fake import FakeTime
+    23→from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+    24→from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+    25→from tests.fakes.prompt_executor import FakePromptExecutor
+    26→from tests.test_utils.context_builders import build_workspace_test_context
+    27→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    28→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    29→
+    30→
+
+... [404 lines omitted] ...
+
+    87→    prompt_error: str | None = None,
+   135→        simulated_prompt_output=prompt_output if prompt_error is None else None,
+   136→        simulated_prompt_error=prompt_error,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XEpXSyYe1WHnGURk3DBzQ2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19827" cache_read_input_tokens="71079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19827}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XEpXSyYe1WHnGURk3DBzQ2">
+     1→"""Unit tests for finalize_pr pipeline step."""
+     2→
+     3→import dataclasses
+     4→import json
+     5→from pathlib import Path
+     6→
+     7→from erk.cli.commands.pr.submit_pipeline import (
+     8→    SubmitError,
+     9→    SubmitState,
+    10→    finalize_pr,
+    11→)
+    12→from erk.core.context import context_for_test
+    13→from erk.core.plan_context_provider import PlanContext
+    14→from erk_shared.context.types import GlobalConfig
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.types import PRDetails
+    18→from erk_shared.gateway.time.fake import FakeTime
+    19→from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+    20→from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+    21→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    22→
+    23→
+    24→def _make_state(
+    25→    *,
+    26→    cwd: Path,
+    27→    repo_root: Path | None = None,
+    28→    branch_name: str = "feature",
+    29→    parent_branch: str = "main",
+    30→    trunk_branch: str = "main",
+
+... [442 lines omitted] ...
+
+    93→def test_no_pr_number_returns_error(tmp_path: Path) -&gt; None:
+    94→    """SubmitError(error_type='no_pr_number') when pr_number is None."""
+   100→    assert isinstance(result, SubmitError)
+   101→    assert result.error_type == "no_pr_number"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AyiV9fujncJ3Z8VpoGjCzg">
+    <param name="pattern">PLAN_CONTENT_SEPARATOR</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19827" cache_read_input_tokens="71079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19827}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AyiV9fujncJ3Z8VpoGjCzg">
+88:PLAN_CONTENT_SEPARATOR = "\n\n---\n\n"
+108:        metadata_body + "\n" + PLAN_CONTENT_SEPARATOR + DETAILS_OPEN + plan_content + DETAILS_CLOSE
+147:    ``PLAN_CONTENT_SEPARATOR``) for backward compatibility.
+165:    separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
+171:    return pr_body[separator_index + len(PLAN_CONTENT_SEPARATOR) :]
+186:    separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
+189:    prefix = pr_body[: separator_index + len(PLAN_CONTENT_SEPARATOR)]
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me also read the finalize_pr.py source to understand how `assemble_pr_body` is called there.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13407" cache_read_input_tokens="90906" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13407}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also read the finalize_pr source and the update_pr_description source to understand how they call assemble_pr_body.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13407" cache_read_input_tokens="90906" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13407}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PiMQVTvT3aSsj6vS2kt9UQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/submit_pipeline/finalize_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13407" cache_read_input_tokens="90906" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13407}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PiMQVTvT3aSsj6vS2kt9UQ">
+File does not exist. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AjwZwZvWfLKVefV55Hp1YH">
+    <param name="pattern">assemble_pr_body|extract_header_from_body|extract_main_content|rebuild_pr_body|metadata_prefix</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/update_pr_description.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13407" cache_read_input_tokens="90906" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13407}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AjwZwZvWfLKVefV55Hp1YH">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Q2awppSyp5cn8Hm3vJRVkE">
+    <param name="pattern">**/submit_pipeline/finalize_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="104313" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 461}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q2awppSyp5cn8Hm3vJRVkE">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01CHEthosV6M6fFCJmFCJvsx">
+    <param name="pattern">**/submit_pipeline/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="104313" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CHEthosV6M6fFCJmFCJvsx">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/pr/submit_pipeline/__init__.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019ZTAAdZVbFkCU4BsgpX4R2">
+    <param name="pattern">assemble_pr_body</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="213" cache_read_input_tokens="104774" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 213}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ZTAAdZVbFkCU4BsgpX4R2">
+&lt;persisted-output&gt;
+Output too large (30.5KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-36/86c4e9d7-13b7-422b-a696-3483783b3820/tool-results/toolu_019ZTAAdZVbFkCU4BsgpX4R2.txt
+
+Preview (first 2KB):
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py-235-                effective_plans_repo = closing_ref.plans_repo
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py-236-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py-237-    return IssueDiscovery(issue_number=issue_number, plans_repo=effective_plans_repo)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py-238-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py-239-
+src/erk/cli/commands/pr/shared.py:240:def assemble_pr_body(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py-241-    *,
+src/erk/cli/commands/pr/shared.py-242-    body: str,
+src/erk/cli/commands/pr/shared.py-243-    plan_context: PlanContext | None,
+src/erk/cli/commands/pr/shared.py-244-    pr_number: int,
+src/erk/cli/commands/pr/shared.py-245-    issue_number: int | None,
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/rewrite_cmd.py-10-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/rewrite_cmd.py-11-import click
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/rewrite_cmd.py-12-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/rewrite_cmd.py-13-from erk.cli.commands.pr.shared import (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/rewrite_cmd.py-14-    IssueLinkageMismatch,
+src/erk/cli/commands/pr/rewrite_cmd.py:15:    assemble_pr_body,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/rewrite_cmd.py-16-    cleanup_diff_file,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/rewrite_cmd.py-17-    discover_branch_context,
+...
+&lt;/persisted-output&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BmqT75oFcRzANXXrj4jCXJ">
+    <param name="pattern">assemble_pr_body|finalize_pr|from erk.cli.commands.pr.submit_pipeline"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1084" cache_read_input_tokens="104987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1084}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BmqT75oFcRzANXXrj4jCXJ">
+Found 3 files
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/pr/shared.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JBQCBw6DFVwSqkTyRxGWA4">
+    <param name="pattern">assemble_pr_body|finalize_pr|extract_header|extract_main_content|rebuild_pr_body|metadata_prefix</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="106071" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 466}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JBQCBw6DFVwSqkTyRxGWA4">
+16-import click
+17-
+18-from erk.cli.commands.pr.shared import (
+19:    assemble_pr_body,
+20-    echo_plan_context_status,
+21-    run_commit_message_generation,
+22-)
+--
+43-    save_plan_ref,
+44-    validate_plan_linkage,
+45-)
+46:from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
+47-from erk_shared.scratch.scratch import write_scratch_file
+48-
+49-# ---------------------------------------------------------------------------
+--
+656-    return dataclasses.replace(state, graphite_url=graphite_url)
+657-
+658-
+659:def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+660-    """Update PR title/body with footer, add labels, amend local commit, clean up diff file."""
+661-    click.echo(click.style("Phase 6: Updating PR metadata", bold=True))
+662-
+663-    if state.pr_number is None:
+664-        return SubmitError(
+665:            phase="finalize_pr",
+666-            error_type="no_pr_number",
+667-            message="No PR number available for finalization",
+668-            details={},
+--
+
+... [37 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to also read the update_pr_description.py exec script to understand how it uses assemble_pr_body and header extraction.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="938" cache_read_input_tokens="106537" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 938}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JUfozw51nFVaP5iKqHaioh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/update_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="938" cache_read_input_tokens="106537" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 938, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JUfozw51nFVaP5iKqHaioh">
+     1→"""Update PR title and body using AI-generated description.
+     2→
+     3→This exec command generates an AI-powered PR title and body from the full diff
+     4→between the current branch and its parent, then updates the PR on GitHub.
+     5→
+     6→Unlike `erk pr submit`, this does NOT amend the local commit or push changes.
+     7→It only updates the PR's title and body, preserving existing header and footer
+     8→metadata.
+     9→
+    10→Usage:
+    11→    erk exec update-pr-description
+    12→    erk exec update-pr-description --session-id "abc123"
+    13→
+    14→Exit Codes:
+    15→    0: Success
+    16→    1: Error (no PR, Claude unavailable, diff extraction failure)
+    17→"""
+    18→
+    19→import uuid
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk.cli.commands.pr.shared import (
+    25→    IssueLinkageMismatch,
+    26→    assemble_pr_body,
+    27→    cleanup_diff_file,
+    28→    discover_branch_context,
+    29→    discover_issue_for_footer,
+    30→    echo_plan_context_status,
+
+... [168 lines omitted] ...
+
+    78→        raise click.ClickException(
+   102→        raise click.ClickException("Failed to extract diff for AI analysis")
+   137→        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
+   169→            raise click.ClickException(issue_discovery.message)
+  </tool_result>
+  <thinking>Now I have a thorough understanding of all the files. Let me also read the `submit_pipeline.py` finalize_pr function more carefully to understand the full flow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2769" cache_read_input_tokens="107475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2769}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete understanding of all the code. Let me start implementing the changes. The key insight is:
+
+1. **`pr_footer.py`**: `extract_header_from_body` needs to scan from bottom (above footer), `extract_main_content` needs to strip header from bottom, `rebuild_pr_body` needs to place header between content and footer.
+2. **`shared.py`**: `assemble_pr_body()` changes ordering.
+3. **`ci_update_pr_body.py`**: Reorder metadata_prefix placement.
+4. **`submit.py`**: Move `**Plan:**` line in two PR body constructions.
+5. **Tests**: Update accordingly.
+
+Let me start with the foundational change in `pr_footer.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2769" cache_read_input_tokens="107475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2769}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01V8yfjtpoPoDXxGAmjfqrG2">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2769" cache_read_input_tokens="107475" output_tokens="304" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2769, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V8yfjtpoPoDXxGAmjfqrG2">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 1: Update pr_footer.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="110244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 322}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EL2wrBxG1kAM7LPA8V8fbF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="old_string">def extract_header_from_body(body: str) -&gt; str:
+    """Extract header lines from the begin...[truncated 1164 chars]...content
+    if header_lines:
+        return "\n".join(header_lines) + "\n\n"
+    return ""</param>
+    <param name="new_string">def extract_header_from_body(body: str) -&gt; str:
+    """Extract header lines from the PR bo...[truncated 1226 chars]....pop()
+
+    if header_lines:
+        return "\n".join(header_lines) + "\n\n"
+    return ""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="110244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 322}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EL2wrBxG1kAM7LPA8V8fbF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019FCMcpF73qRhsNxmCvZNBR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="old_string">def extract_main_content(body: str) -&gt; str:
+    """Extract the main content between header...[truncated 457 chars]...- 1 :].lstrip("\n")
+    else:
+        content = content_without_footer
+
+    return content</param>
+    <param name="new_string">def extract_main_content(body: str) -&gt; str:
+    """Extract the main content between start-...[truncated 682 chars]...- len(header_text)]
+            return content.rstrip()
+
+    return content_without_footer</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="977" cache_read_input_tokens="110566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 977}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019FCMcpF73qRhsNxmCvZNBR">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py has been updated successfully.
+  </tool_result>
+</session>

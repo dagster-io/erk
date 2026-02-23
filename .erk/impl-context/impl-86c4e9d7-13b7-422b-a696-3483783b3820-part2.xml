@@ -1,0 +1,886 @@
+<session>
+  <meta branch="plnd/in-the-prs-that-get-genera-02-22-1808" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_019H9zQXZ19nufzjvyCtiuW6">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="old_string">def rebuild_pr_body(
+    *,
+    header: str,
+    content: str,
+    footer: str,
+) -&gt; str:
+...[truncated 598 chars]...        parts.append("")
+        parts.append(footer.strip())
+
+    return "\n".join(parts)</param>
+    <param name="new_string">def rebuild_pr_body(
+    *,
+    header: str,
+    content: str,
+    footer: str,
+) -&gt; str:
+...[truncated 666 chars]...        parts.append("")
+        parts.append(footer.strip())
+
+    return "\n".join(parts)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="643" cache_read_input_tokens="111543" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 643}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019H9zQXZ19nufzjvyCtiuW6">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013Ssxx7PjysxfQs23qv7EoE">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="675" cache_read_input_tokens="112186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 675}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Ssxx7PjysxfQs23qv7EoE">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01VZKiassFPHm7gs55VRdW61">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="675" cache_read_input_tokens="112186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 675}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VZKiassFPHm7gs55VRdW61">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 2: Update `assemble_pr_body()` in shared.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="112861" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AbxXzps7hYijxL9vpVQ25B">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">    pr_body_content = body
+    if plan_context is not None:
+        if metadata_prefix:
+  ...[truncated 381 chars]...lans_repo=plans_repo,
+    )
+    return metadata_prefix + header + pr_body_content + footer</param>
+    <param name="new_string">    pr_body_content = body
+    if plan_context is not None:
+        if metadata_prefix:
+  ...[truncated 800 chars]...ffix = "\n\n" + header.rstrip("\n") + suffix
+
+    return pr_body_content + suffix + footer</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="112861" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AbxXzps7hYijxL9vpVQ25B">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to add the import of `PLAN_CONTENT_SEPARATOR`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="113059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 661}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01J7N5Cc69UchXBTTTjwLXnQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">from erk_shared.plan_store.draft_pr_lifecycle import build_original_plan_section</param>
+    <param name="new_string">from erk_shared.plan_store.draft_pr_lifecycle import PLAN_CONTENT_SEPARATOR, build_original_plan_section</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="113059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 661}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J7N5Cc69UchXBTTTjwLXnQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Ms6deepR1VFjGUQBWqZq72">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="113720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ms6deepR1VFjGUQBWqZq72">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01UJRtR1TMCjiYgRUhVnSVA8">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="113720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UJRtR1TMCjiYgRUhVnSVA8">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 3: Update `ci_update_pr_body.py`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="114001" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018BCnvf64ABMM4fJFQ4jpkC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">from erk_shared.plan_store.draft_pr_lifecycle import (
+    build_original_plan_section,
+    extract_metadata_prefix,
+    extract_plan_content,
+)</param>
+    <param name="new_string">from erk_shared.plan_store.draft_pr_lifecycle import (
+    PLAN_CONTENT_SEPARATOR,
+    build_original_plan_section,
+    extract_metadata_prefix,
+    extract_plan_content,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="114001" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018BCnvf64ABMM4fJFQ4jpkC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MszDeaF5s1im9vVMsTuuoq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">    # Build full PR body
+    if is_draft_pr:
+        # For draft-PR plans: preserve metada...[truncated 443 chars]...s_repo,
+        )
+        pr_body = metadata_prefix + summary_body + original_plan_section</param>
+    <param name="new_string">    # Build full PR body
+    if is_draft_pr:
+        # For draft-PR plans: preserve metada...[truncated 721 chars]...        )
+        pr_body = summary_body + original_plan_section + "\n\n" + metadata_block</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="341" cache_read_input_tokens="114199" output_tokens="591" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 341, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MszDeaF5s1im9vVMsTuuoq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XKL3BXnkhbbptHJV3H6Evi">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="114540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 658}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XKL3BXnkhbbptHJV3H6Evi">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01SGGoJKJvtEzqRPynxVUvyw">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="114540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 658}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SGGoJKJvtEzqRPynxVUvyw">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Update `submit.py` — two locations**
+
+Location 1 (line 759-771):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="115198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LLtL7ivyMx5KAcibQ2PutQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">    pr_body = (
+        f"**Author:** @{submitted_by}\n"
+        f"**Plan:** {issue_ref}\n...[truncated 297 chars]...ody}\n\n"
+        f"&lt;/details&gt;\n\n"
+        f"---\n\n"
+        f"Closes {issue_ref}"
+    )</param>
+    <param name="new_string">    pr_body = (
+        f"**Author:** @{submitted_by}\n"
+        f"**Status:** Queued for ...[truncated 297 chars]...       f"**Plan:** {issue_ref}\n\n"
+        f"---\n\n"
+        f"Closes {issue_ref}"
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="115198" output_tokens="516" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LLtL7ivyMx5KAcibQ2PutQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Location 2 (line 898-904):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="573" cache_read_input_tokens="115396" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 573}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MkPMBD3eCvCQ3UB6yynfJs">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">            pr_body = (
+                f"**Author:** @{submitted_by}\n"
+                f...[truncated 152 chars]...letes.\n\n"
+                f"---\n\n"
+                f"Closes {issue_ref}"
+            )</param>
+    <param name="new_string">            pr_body = (
+                f"**Author:** @{submitted_by}\n"
+                f...[truncated 152 chars]...e_ref}\n\n"
+                f"---\n\n"
+                f"Closes {issue_ref}"
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="573" cache_read_input_tokens="115396" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 573}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MkPMBD3eCvCQ3UB6yynfJs">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01CH7YCNG4GdJQKJb6N7GyUd">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="115969" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 413}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CH7YCNG4GdJQKJb6N7GyUd">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_012tcx7CrNHkdoJVH7GRcsNe">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="115969" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 413}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012tcx7CrNHkdoJVH7GRcsNe">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 5: Update tests**
+
+Now I need to update the tests. The key changes:
+
+1. **test_pr_footer.py**: Headers are now at the bottom (above footer), not at the top
+2. **test_ci_update_pr_body.py**: Metadata prefix now at bottom, not top
+3. **test_update_pr_description.py**: Header in body at bottom
+4. **test_finalize_pr.py**: Metadata at bottom
+
+Let me start with `test_pr_footer.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="116382" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01FpmUsayrf8EGpGg2Guew7w">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py</param>
+    <param name="content">"""Unit tests for PR body footer generation.
+
+Tests the canonical build_pr_body_footer, bu...[truncated 10761 chars]...footer_pos = rebuilt.find("Closes #123")
+    assert content_pos &lt; header_pos &lt; footer_pos
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="116382" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FpmUsayrf8EGpGg2Guew7w">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `test_ci_update_pr_body.py` — the key tests that need changing are the draft-PR ones that assert `updated_body.startswith(metadata_prefix)`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3342" cache_read_input_tokens="116580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3342}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011YgeFQEX45xV4HutmhUErC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    # Should have metadata prefix preserved
+    assert updated_body.startswith(metadata_pr...[truncated 2725 chars]...an section
+    assert "original-plan" in updated_body
+    assert "My Plan" in updated_body</param>
+    <param name="new_string">    # Should have metadata block at the bottom (not the top)
+    assert not updated_body.s...[truncated 3059 chars]...an section
+    assert "original-plan" in updated_body
+    assert "My Plan" in updated_body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3342" cache_read_input_tokens="116580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3342}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011YgeFQEX45xV4HutmhUErC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `test_update_pr_description.py`. The `test_preserves_header_and_footer` test constructs a body with header at the TOP but now headers are at the BOTTOM. Let me update it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2155" cache_read_input_tokens="119922" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2155}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0117RmorvDY4fEsPVimWkzjB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_preserves_header_and_footer() -&gt; None:
+    """Test that existing header and foote...[truncated 814 chars]...  assert "**Plan:** #123" in updated_body
+        assert "erk pr checkout" in updated_body</param>
+    <param name="new_string">def test_preserves_header_and_footer() -&gt; None:
+    """Test that existing header and foote...[truncated 888 chars]...  assert "**Plan:** #123" in updated_body
+        assert "erk pr checkout" in updated_body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2155" cache_read_input_tokens="119922" output_tokens="809" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2155, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0117RmorvDY4fEsPVimWkzjB">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the `test_finalize_pr.py` — the `test_finalize_pr_draft_pr_backend_extracts_metadata` test checks that `"plan-header" in updated_body` and `"Closes #" not in updated_body`. These assertions should still pass since the metadata is still present, just at the bottom. Let me verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="875" cache_read_input_tokens="122077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 875}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Kj8nJwdK9yBmy2zbYErfjy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py</param>
+    <param name="offset">336</param>
+    <param name="limit">32</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="875" cache_read_input_tokens="122077" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 875, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kj8nJwdK9yBmy2zbYErfjy">
+   336→def test_finalize_pr_draft_pr_backend_extracts_metadata(tmp_path: Path) -&gt; None:
+   337→    """Draft PR backend: metadata prefix extracted, no self-close."""
+   338→    metadata_body = format_plan_header_body_for_test()
+   339→    plan_content = "# My Plan\n\nImplement the thing."
+   340→    pr_body = build_plan_stage_body(metadata_body, plan_content)
+   341→
+   342→    pr = _pr_details(number=42, body=pr_body)
+   343→    fake_git = FakeGit(
+   344→        repository_roots={tmp_path: tmp_path},
+   345→        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+   346→    )
+   347→    fake_github = FakeGitHub(
+   348→        prs_by_branch={"feature": pr},
+   349→        pr_details={42: pr},
+   350→    )
+   351→    ctx = context_for_test(
+   352→        git=fake_git,
+   353→        github=fake_github,
+   354→        plan_store=DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime()),
+   355→        cwd=tmp_path,
+   356→    )
+   357→    state = _make_state(cwd=tmp_path, title="Implement feature", body="Summary of work")
+   358→
+   359→    result = finalize_pr(ctx, state)
+   360→
+   361→    assert isinstance(result, SubmitState)
+   362→    # Draft PR backend sets issue_number to None (no self-close)
+   363→    assert result.issue_number is None
+   364→    # PR body should contain metadata prefix
+   365→    updated_body = fake_github.updated_pr_bodies[0][1]
+
+... [2 lines omitted] ...
+  </tool_result>
+  <thinking>The `test_finalize_pr_draft_pr_backend_extracts_metadata` test just checks that "plan-header" is present in the body and "Closes #" is not. These assertions should still pass. The test doesn't check position, so it should be fine.
+
+Now let me run the tests to see if they pass.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="122952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 751}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, the `test_finalize_pr.py` tests don't assert position, just presence — they should pass as-is.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="122952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 751}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01VEaaT1iWKq4vQMLq1sjVAT">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="122952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 751}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VEaaT1iWKq4vQMLq1sjVAT">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Vx6pWTju3DG2KUaS2LaR9D">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="122952" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vx6pWTju3DG2KUaS2LaR9D">
+Updated task #6 status
+  </tool_result>
+  <assistant>**Phase 6: Run CI and verify all tests pass**
+
+Let me run the targeted test files first.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="318" cache_read_input_tokens="123703" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 318}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_018eXDH2umWBtA5mKTZjTiDQ">
+    <param name="description">Run targeted test files</param>
+    <param name="prompt">Run these test files and report results:
+
+1. `uv run pytest packages/erk-shared/tests/unit...[truncated 263 chars]...e_pr.py -xvs`
+
+Run each one and report ALL output including failures. Do NOT fix anything.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="318" cache_read_input_tokens="123703" output_tokens="277" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 318, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018eXDH2umWBtA5mKTZjTiDQ">
+## Test Results Summary
+
+### 1. `packages/erk-shared/tests/unit/github/test_pr_footer.py`
+**Status: FAILED** (1 failure, 16 passed)
+
+**Failure:**
+- `test_extract_main_content_no_header` — Assertion error comparing strings
+  - Expected: `"Main content here."`
+  - Got: `"Main content here.\n"` (has trailing newline)
+  - File: `packages/erk-shared/tests/unit/github/test_pr_footer.py:175`
+
+### 2. `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`
+**Status: PASSED** (19 passed)
+
+No failures.
+
+### 3. `tests/unit/cli/commands/exec/scripts/test_update_pr_description.py`
+**Status: FAILED** (1 failure, 4 passed)
+
+**Failure:**
+- `test_preserves_header_and_footer` — Assertion error
+  - Expected: `"**Plan:** #123"` to be in the updated PR body
+  - Got updated body without the plan header:
+    ```
+    This PR adds an awesome new feature.
+    ---
+    
+    
+    Closes #123
+    
+
+... [19 lines omitted] ...
+
+No failures.
+**Summary:** 3 passed test files, 2 failed test files with 2 failures total.
+  </tool_result>
+  <thinking>Two issues to fix:
+
+1. **`test_extract_main_content_no_header`**: The function returns "Main content here.\n" instead of "Main content here." — there's an extra trailing newline when there's a footer but no header.
+
+2. **`test_preserves_header_and_footer`**: The `**Plan:** #123` header is being lost during the update-pr-description flow. The issue is that `extract_header_from_body` is now looking at the bottom of the body (above footer) but the test_preserves_header_and_footer test has the header at the bottom and it's being extracted correctly from the existing body. But then during `assemble_pr_body`, it's not being included.
+   
+Let me trace through the second issue more carefully. The test constructs a body with the header at the bottom before the footer separator, then `extract_header_from_body` correctly pulls out `**Plan:** #123\n\n` from the existing body. But when `assemble_pr_body` is called with the new body content and plan context, the header isn't making it into the final result — I need to check whether the header is being passed through to the assembly function or if it's getting lost in the parameters. So the suffix should be `"\n\n**Plan:** #123"`, which gets appended to the PR body content and footer. But the test is failing even though the header should be included in the final output. Let me trace through what the test is actually checking — it's looking for `"**Plan:** #123"` in the updated body, and the existing body already has that header in it. The problem might be in how `extract_header_from_body` is parsing the existing content when updating the PR description. I'm tracing through the footer construction more carefully—the `build_pr_body_footer` function starts with `"\n---\n"`, and when I call `lstrip()` on it, that removes the leading newline, leaving just `"---\n"` followed by the rest of the content. So when I construct `existing_body` with the pattern `"Old content\n\n**Plan:** #123\n\n---\n{footer_content.lstrip()}"`, I end up with two consecutive `---` separators, which isn't right. I'm tracing through how the string gets built with the `join` operation — each part gets separated by a newline, so I end up with multiple consecutive newlines between sections. When I apply `lstrip()` to remove leading whitespace, it cleans up the start but leaves the internal spacing intact, creating that pattern of `\n\n\n` between the different footer components.
+
+Now I'm working through the `rsplit` logic to find where it actually splits on the last occurrence of `\n---\n`. Looking at the character sequence around the divider, there are two dashes appearing consecutively because the format string adds one and the footer starts with another, so I need to figure out exactly where that split happens. I need to carefully trace through where the `\n---\n` delimiter appears in this test string. The body contains `\n---\n---\n`, which means there are two consecutive occurrences of the delimiter, and when I use `rsplit` to split on the last one, I need to identify which position it's actually splitting at. I see the issue now—the test's body format has two consecutive `---` delimiters, and when `rsplit("\n---\n", 1)` splits on the last occurrence, it leaves both separators in the content without the footer. Then when `extract_header_from_body()` scans backward looking for header patterns, it finds neither `---` line starts with a valid header marker, so the function returns no header at all. The test was written assuming the old behavior would handle this double-delimiter case differently. I see the issue now—`build_pr_body_footer` starts with `\n---\n`, and when the test calls `.lstrip()` on the footer content, it only removes leading whitespace, leaving `---\n\nCloses...`. This means the constructed body ends up with `---\n---`, creating a duplicate delimiter that breaks the formatting. I see the issue now—the original test had duplicate separator lines because the footer was being appended with its own leading newline, and when joined together, it created that awkward `---\n---` pattern. But the test still passed because the header extraction only looked at the beginning of the body before hitting the first separator, so it correctly found `**Plan:** #123` regardless of what came after.
+
+In my updated test, I moved the old content to the beginning, which changes where the header appears relative to the separators. When `rsplit` looks for the last `\n---\n` to extract the footer, it's now splitting at a different position because of that double separator—it's catching the wrong boundary and leaving part of the separator in the content section instead of cleanly separating the footer. I see the issue now — when scanning from the end, the first line is `---` which doesn't match any header pattern, so the scan breaks immediately and no header gets found. The real problem is that the test is constructing a malformed body with an extra `---` separator. I need to fix the test to build a properly formatted body instead, either by using the rebuild function or constructing it correctly from the start. I need to debug why `test_extract_main_content_no_header` is returning an extra newline. Looking at the test, it's splitting on `\n---\n` which leaves a trailing newline in the content part, so I need to strip that before returning from `extract_main_content`. The issue is that `content_without_footer` retains a trailing newline from the split, so I need to strip it. I'll add `.rstrip()` to clean up trailing whitespace when returning the content in the no-header case, since trailing whitespace in PR bodies is typically noise anyway. I'm tracing through the rsplit operation more carefully — when I split `"Main content here.\n\n---\n\nCloses #123"` on `"\n---\n"`, the delimiter sits between the double newline after "here." and the newline before "Closes", leaving me with `"Main content here.\n"` as the first part. I'm working through the string positions to understand where `rsplit` will split on the `\n---\n` separator—it should match at position 19, giving me the main content before the separator and the footer content after it. I'm realizing the old code would have failed this test too—when there's no header detected, it returns the content with the trailing newline intact, which doesn't match the expected assertion. The key difference is that the old version passes `content_without_footer` to `extract_header_from_body`, while the new version passes the full `body`, which changes what gets detected. I'm tracing through the string character by character to find where `\n---\n` actually appears in the body, since the initial split pattern doesn't seem to match where I expected it to. Let me reconsider this. The string body is `"Main content here.\n\n---\n\nCloses #123"`, and I'm looking for where `\n---\n` actually appears. There's only one occurrence of that exact pattern, so `rsplit` with maxsplit=1 will split there, leaving `"Main content here.\n"` as the content before the footer. But the old test expected `"Main content here."` without the trailing newline, so either the test was already failing or I'm misunderstanding how the split is supposed to work. I'm realizing the test might have been passing before because I'm not accounting for how Python's rsplit actually behaves with this string. Let me trace through what rsplit returns when splitting on the separator — I need to verify my assumptions about where the split occurs and what gets returned, since the test expects a specific output without trailing whitespace. I'm working through the string positions to find where the `\n---\n` pattern actually appears. Let me trace through the character indices carefully — the pattern starts at position 19, which means the content before the footer is everything up to that point, giving me `"Main content here.\n"`. So `content_without_footer` ends up being `"Main content here.\n"` with that trailing newline intact. But then the test expects it without the newline, which is where the mismatch comes from.
+
+Let me fix `extract_main_content` by stripping trailing whitespace from the result, and I'll also need to review the original implementation to understand why this discrepancy exists in the first place. I'm tracing through the exact string positions to find where `\n---\n` appears when searching from the right side of the string.
+
+The pattern only matches at position 19, which means `s[:19]` gives me `"Main content here.\n"` — so I need to add `.rstrip()` to remove that trailing newline and get the clean content.
+
+Now I'll apply two fixes: stripping trailing whitespace in the no-header fallback path of `extract_main_content`, and fixing how the test body is constructed in `test_preserves_header_and_footer`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="124021" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 806}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Two failures to fix. Let me address them:
+
+**Fix 1:** `extract_main_content` returns trailing newline in the no-header case — need to strip.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="124021" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 806}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LwHrQv2mwU1J65KW5AypHK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="offset">118</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="124021" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 806}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LwHrQv2mwU1J65KW5AypHK">
+   118→    if header_lines:
+   119→        return "\n".join(header_lines) + "\n\n"
+   120→    return ""
+   121→
+   122→
+   123→def extract_main_content(body: str) -&gt; str:
+   124→    """Extract the main content between start-of-body and header/footer.
+   125→
+   126→    The header sits just above the footer separator. Main content is
+   127→    everything before the header (or before the footer if no header).
+   128→
+   129→    Args:
+   130→        body: Full PR body content
+   131→
+   132→    Returns:
+   133→        Main content without header or footer
+   134→    """
+   135→    if not body:
+   136→        return ""
+   137→
+   138→    # Remove footer first
+   139→    parts = body.rsplit("\n---\n", 1)
+   140→    content_without_footer = parts[0]
+   141→
+   142→    # Remove header from end of content
+   143→    header = extract_header_from_body(body)
+   144→    if header:
+   145→        header_text = header.rstrip("\n")
+   146→        stripped = content_without_footer.rstrip()
+   147→        if stripped.endswith(header_text):
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MahqDH8HgdJTyJ6YmVYHjQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="old_string">    return content_without_footer</param>
+    <param name="new_string">    return content_without_footer.rstrip()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9244" cache_read_input_tokens="124827" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9244, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MahqDH8HgdJTyJ6YmVYHjQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py has been updated successfully.
+  </tool_result>
+  <assistant>**Fix 2:** The `test_preserves_header_and_footer` test constructs a body with a double `---` delimiter because `build_pr_body_footer` already includes its own `---`. I need to construct the existing body properly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="134071" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 243}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01368D785zyMdN15YUR5bHCs">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_preserves_header_and_footer() -&gt; None:
+    """Test that existing header and foote...[truncated 888 chars]...  assert "**Plan:** #123" in updated_body
+        assert "erk pr checkout" in updated_body</param>
+    <param name="new_string">def test_preserves_header_and_footer() -&gt; None:
+    """Test that existing header and foote...[truncated 988 chars]...  assert "**Plan:** #123" in updated_body
+        assert "erk pr checkout" in updated_body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="134071" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 243}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01368D785zyMdN15YUR5bHCs">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run the failing tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="930" cache_read_input_tokens="134314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 930}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01X8GYc87L9kbS15FDBHd9Ws">
+    <param name="description">Re-run failing test files</param>
+    <param name="prompt">Run these test files and report results:
+
+1. `uv run pytest packages/erk-shared/tests/unit...[truncated 89 chars]...tion.py -xvs`
+
+Run each one and report ALL output including failures. Do NOT fix anything.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="930" cache_read_input_tokens="134314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 930}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X8GYc87L9kbS15FDBHd9Ws">
+Both test files passed successfully:
+
+**Test 1: `packages/erk-shared/tests/unit/github/test_pr_footer.py`**
+- Result: 28 passed in 0.02s
+
+**Test 2: `tests/unit/cli/commands/exec/scripts/test_update_pr_description.py`**
+- Result: 8 passed in 0.49s
+
+All tests are passing with no failures.
+agentId: a6c6f2754e4e99979 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14160
+tool_uses: 2
+duration_ms: 4787&lt;/usage&gt;
+  </tool_result>
+  <assistant>All targeted tests pass. Now let me also check if `extract_metadata_prefix()` still works correctly when the metadata is at the bottom. Let me read the function to understand if it position-dependent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="135244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 367}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QfaYnhPnZ4Fqk2QGEXZUcZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py</param>
+    <param name="offset">140</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="135244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 367}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QfaYnhPnZ4Fqk2QGEXZUcZ">
+   140→
+   141→
+   142→def extract_plan_content(pr_body: str) -&gt; str:
+   143→    """Extract plan content from a PR body at any lifecycle stage.
+   144→
+   145→    Looks for ``DETAILS_OPEN`` / ``DETAILS_CLOSE`` tags and extracts the
+   146→    content between them. Falls back to the old flat format (content after
+   147→    ``PLAN_CONTENT_SEPARATOR``) for backward compatibility.
+   148→
+   149→    Args:
+   150→        pr_body: Full PR body string
+   151→
+   152→    Returns:
+   153→        Plan content portion of the body
+   154→    """
+   155→    # Try new &lt;code&gt;-tagged format first, then legacy plain-text format
+   156→    for details_open in (DETAILS_OPEN, _LEGACY_DETAILS_OPEN):
+   157→        open_idx = pr_body.find(details_open)
+   158→        if open_idx != -1:
+   159→            content_start = open_idx + len(details_open)
+   160→            close_idx = pr_body.find(DETAILS_CLOSE, content_start)
+   161→            if close_idx != -1:
+   162→                return pr_body[content_start:close_idx]
+   163→
+   164→    # Backward compat: old flat format (metadata + separator + plan content)
+   165→    separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
+   166→    if separator_index == -1:
+   167→        return pr_body
+   168→    candidate_prefix = pr_body[:separator_index]
+   169→    if "&lt;!-- erk:metadata-block:" not in candidate_prefix:
+
+... [24 lines omitted] ...
+  </tool_result>
+  <thinking>The `extract_metadata_prefix` function uses `pr_body.find(PLAN_CONTENT_SEPARATOR)` which scans forward from the start. This function is used to extract the metadata from the EXISTING PR body (before any rewrite). At that point, the metadata is still at the top (because that's how `build_plan_stage_body` creates it). After the rewrite, the metadata gets moved to the bottom. So the function is fine — it's called on the old body to extract the metadata, then the metadata gets placed at the bottom in the new body.
+
+Now let me run the broader CI to make sure everything works. I should also check if there are any other callers of these functions that I might have missed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="135611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good — `extract_metadata_prefix` uses `find()` which scans forward. It's always called on the existing/old PR body where metadata IS at the top (Stage 1 format), so this is fine.
+
+Let me now run the broader CI suite.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="135611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01LRzSLTpaD81bWNJv3sAnDc">
+    <param name="description">Run broader CI checks</param>
+    <param name="prompt">Run these commands and report results. Do NOT fix anything.
+
+1. `uv run pytest packages/er...[truncated 467 chars]...mit.py packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py`
+
+Report ALL output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="135611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LRzSLTpaD81bWNJv3sAnDc">
+Excellent! Now let me compile a complete report of all the test results:
+
+## Summary Report
+
+### 1. pytest packages/erk-shared/tests/unit/github/ - FAILED
+
+**Error:** Import error in test file
+```
+ImportError: cannot import name 'extract_plan_header_review_pr' from 'erk_shared.gateway.github.metadata.plan_header'
+```
+
+**Issue Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/metadata/test_plan_header.py:8-10`
+
+**Problem:** The test file tries to import two functions that don't exist in the `plan_header.py` module:
+- `extract_plan_header_review_pr` 
+- `update_plan_header_review_pr`
+
+These functions are being tested but are not defined in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
+
+---
+
+### 2. pytest tests/unit/cli/commands/exec/scripts/ - FAILED
+
+**1 test failed, 624 passed**
+
+**Failed Test:** `test_impl_preserves_header`
+- **Location:** `tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py::test_impl_preserves_header`
+- **Error:** AssertionError - `header_preserved` is False but expected True
+- **Code Location:** Line 121 in test file
+
+
+... [47 lines omitted] ...
+
+### 4. ruff check - FAILED
+**2 linting errors found in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py`**
+  </tool_result>
+  <thinking>Three issues to fix:
+
+1. **Import error in test_plan_header.py** — This is a pre-existing issue, not related to my changes. I'll skip it.
+
+2. **`test_impl_preserves_header`** — A test in `test_pr_sync_commit.py` that checks header preservation. I need to look at this and understand what it does.
+
+3. **Ruff linting errors** — Need to fix the import formatting in `shared.py`.
+
+Let me fix the ruff issues first, then investigate the test_pr_sync_commit.py failure.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1598" cache_read_input_tokens="136769" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1598}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Three issues found. The import error in `test_plan_header.py` is pre-existing (not my change). Let me fix the ruff issues and the `test_impl_preserves_header` failure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1598" cache_read_input_tokens="136769" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1598}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01No9zAcuDgPE8opHyLb7AVo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">from erk_shared.plan_store.draft_pr_lifecycle import PLAN_CONTENT_SEPARATOR, build_original_plan_section</param>
+    <param name="new_string">from erk_shared.plan_store.draft_pr_lifecycle import (
+    PLAN_CONTENT_SEPARATOR,
+    build_original_plan_section,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1598" cache_read_input_tokens="136769" output_tokens="417" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1598, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01No9zAcuDgPE8opHyLb7AVo">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me investigate the `test_impl_preserves_header` failure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="138367" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 475}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JrzauiARGvG7K6pEh56QUY">
+    <param name="pattern">test_impl_preserves_header</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="138367" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 475}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JrzauiARGvG7K6pEh56QUY">
+39-        url="https://github.com/owner/repo/pull/456",
+40-        title="Old title",
+41-        body="Old body content",
+42-        state="OPEN",
+43-        is_draft=False,
+44-        base_ref_name="main",
+45-        head_ref_name="feature-branch",
+46-        is_cross_repository=False,
+47-        mergeable="MERGEABLE",
+48-        merge_state_status="CLEAN",
+49-        owner="test-owner",
+50-        repo="test-repo",
+51-    )
+52-
+53-    github = FakeGitHub(
+54-        prs={
+55-            "feature-branch": PullRequestInfo(
+56-                number=456,
+57-                state="OPEN",
+58-                url="https://github.com/owner/repo/pull/456",
+59-                is_draft=False,
+60-                title="Old title",
+61-                checks_passing=True,
+62-                owner="test-owner",
+63-                repo="test-repo",
+64-            )
+65-        },
+66-        pr_details={456: pr_details},
+67-    )
+68-
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q8hftRJeuGzZjxWjAtAa8p">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py</param>
+    <param name="offset">119</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1062" cache_read_input_tokens="138842" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1062}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q8hftRJeuGzZjxWjAtAa8p">
+   119→
+   120→    assert isinstance(result, SyncSuccess)
+   121→    assert result.header_preserved is True
+   122→
+   123→    # Verify the updated body contains the header
+   124→    assert len(github.updated_pr_bodies) == 1
+   125→    _pr_num, updated_body = github.updated_pr_bodies[0]
+   126→    assert "**Plan:** #123" in updated_body
+   127→    assert "New body content" in updated_body
+   128→
+   129→
+   130→def test_impl_preserves_footer(tmp_path: Path) -&gt; None:
+   131→    """Test that footer is preserved during sync."""
+   132→    git = FakeGit(
+   133→        current_branches={tmp_path: "feature-branch"},
+   134→        head_commit_messages_full={tmp_path: "New title\n\nNew body content"},
+   135→    )
+   136→
+   137→    pr_details = PRDetails(
+   138→        number=456,
+   139→        url="https://github.com/owner/repo/pull/456",
+   140→        title="Old title",
+   141→        body="Old body\n\n---\n\nCloses #789\n\nCheckout instructions",
+   142→        state="OPEN",
+   143→        is_draft=False,
+   144→        base_ref_name="main",
+   145→        head_ref_name="feature-branch",
+   146→        is_cross_repository=False,
+   147→        mergeable="MERGEABLE",
+   148→        merge_state_status="CLEAN",
+  </tool_result>
+  <thinking>The test at line 90 has:```python
+body="**Plan:** #123\n\nOld body content",```This PR body has `**Plan:** #123` at the TOP with no footer. My updated `extract_header_from_body` now looks at the bottom (above the footer), but when there's no footer at all, it scans from the end of the whole body. Let me trace through:
+
+`body = "**Plan:** #123\n\nOld body content"`
+
+In `extract_header_from_body`:1. `parts = body.rsplit("\n---\n", 1)` — No `\n---\n` in the body, so `parts = ["**Plan:** #123\n\nOld body content"]`2. 
+
+When there's no footer separator, the function splits the body into lines and scans from the bottom upward looking for a header pattern, but "Old body content" doesn't match any header format so it stops immediately and returns nothing—missing the `**Plan:** #123` header that's actually at the top of the body.
+
+The test for `_sync_pr_from_commit` assumes the old format where headers sit at the top, but my changes expect them at the bottom. I need to decide whether to update just the test or support both old and new formats during a transition period. Looking at the plan, it only mentions scanning backwards from the footer without mentioning backward compatibility, so I should probably just update the test to match the new expected format.
+
+When `extract_header_from_body` can't find a header at the top, it won't extract it, which means old PR bodies would lose their headers during rewrites. For the rewrite flow that's fine since the whole body gets regenerated anyway, but for commit-to-PR syncing it would mean headers aren't preserved. That said, the plan is to move headers to the bottom, so losing headers from old PRs during the next sync is acceptable — they'll be properly positioned going forward once the migration happens.
+
+For this test, I need to update the body so the header sits at the bottom, either above a footer or at the very end.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="139904" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 552}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The test has a PR body with `**Plan:** #123` at the TOP (old format). I need to update it to place the header at the bottom.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="139904" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 552}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ARcKUSx62Wt82kDFAWbvH7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py</param>
+    <param name="old_string">        body="**Plan:** #123\n\nOld body content",</param>
+    <param name="new_string">        body="Old body content\n\n**Plan:** #123\n\n---\n\nCloses #123",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="139904" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 552}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ARcKUSx62Wt82kDFAWbvH7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if there are other tests in this file that might have headers at the top:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1085" cache_read_input_tokens="140456" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1085}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Lq81FQQ6644g62cnF3pTyP">
+    <param name="pattern">"\\*\\*Plan:\\*\\*|\\*\\*Remotely executed:\\*\\*"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1085" cache_read_input_tokens="140456" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1085}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lq81FQQ6644g62cnF3pTyP">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01R3BU51goTjMyarQ8zir2iY">
+    <param name="pattern">\*\*Plan:\*\*</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="141541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 461}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R3BU51goTjMyarQ8zir2iY">
+87-        number=456,
+88-        url="https://github.com/owner/repo/pull/456",
+89-        title="Old title",
+90:        body="Old body content\n\n**Plan:** #123\n\n---\n\nCloses #123",
+91-        state="OPEN",
+92-        is_draft=False,
+93-        base_ref_name="main",
+--
+123-    # Verify the updated body contains the header
+124-    assert len(github.updated_pr_bodies) == 1
+125-    _pr_num, updated_body = github.updated_pr_bodies[0]
+126:    assert "**Plan:** #123" in updated_body
+127-    assert "New body content" in updated_body
+128-
+129-
+--
+190-        url="https://github.com/owner/repo/pull/456",
+191-        title="Old title",
+192-        body=(
+193:            "**Plan:** #123\n"
+194-            "**Remotely executed:** [Run #999](https://example.com)\n\n"
+195-            "Old body\n"
+196-            "\n---\n"
+--
+231-
+232-    # Verify updated body structure
+233-    _pr_num, updated_body = github.updated_pr_bodies[0]
+234:    assert "**Plan:** #123" in updated_body
+235-    assert "**Remotely executed:**" in updated_body
+236-    assert "New body content" in updated_body
+
+... [9 lines omitted] ...
+  </tool_result>
+  <thinking>I see more tests with headers at the top. Let me look at all of them and update them to the new format.
+
+Let me look at the full test file to understand all the cases:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="649" cache_read_input_tokens="142002" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 649}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>There are more tests with headers at the top. Let me read the full file and fix all of them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="649" cache_read_input_tokens="142002" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 649}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qg2GvyEbb8FA9C4W7GF3Rh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="649" cache_read_input_tokens="142002" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 649, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qg2GvyEbb8FA9C4W7GF3Rh">
+     1→"""Unit tests for pr-sync-commit exec CLI command.
+     2→
+     3→Tests the PR sync from commit functionality using FakeGit and FakeGitHub
+     4→for dependency injection.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.pr_sync_commit import (
+    13→    SyncError,
+    14→    SyncSuccess,
+    15→    _sync_pr_from_commit,
+    16→)
+    17→from erk.cli.commands.exec.scripts.pr_sync_commit import (
+    18→    pr_sync_commit as pr_sync_commit_command,
+    19→)
+    20→from erk_shared.context.context import ErkContext
+    21→from erk_shared.gateway.git.fake import FakeGit
+    22→from erk_shared.gateway.github.fake import FakeGitHub
+    23→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    24→
+    25→# ============================================================================
+    26→# Implementation Logic Tests
+    27→# ============================================================================
+    28→
+    29→
+    30→def test_impl_success_basic(tmp_path: Path) -&gt; None:
+
+... [489 lines omitted] ...
+
+   290→    """Test error when no PR exists for the branch."""
+   300→    assert isinstance(result, SyncError)
+   302→    assert result.error == "pr-not-found"
+   306→    """Test error when in detached HEAD state."""
+   316→    assert isinstance(result, SyncError)
+   318→    assert result.error == "not-on-branch"
+   430→def test_cli_error_exit_code(tmp_path: Path) -&gt; None:
+   431→    """Test CLI command exits with error code on failure."""
+   447→def test_cli_error_json_structure(tmp_path: Path) -&gt; None:
+   448→    """Test CLI command JSON error output structure."""
+   464→    assert "error" in output
+  </tool_result>
+  <thinking>I need to update the `test_impl_preserves_both_header_and_footer` test (lines 181-237) which has headers at the top, and the `test_cli_success_json` test (lines 377-427) which has `**Plan:** #456` at the top.
+
+For `test_impl_preserves_both_header_and_footer`, the body is:
+```python
+body=(
+    "**Plan:** #123\n"
+    "**Remotely executed:** [Run #999](https://example.com)\n\n"
+    "Old body\n"
+    "\n---\n"
+
+
+```
+
+I need to move the header lines to below the content, above the footer:
+```python
+body=(
+    "Old body\n\n"
+    "**Plan:** #123\n"
+    "**Remotely executed:** [Run #999](https://example.com)\n"
+    "\n---\n"
+    "Closes #789"
+),
+```
+
+For `test_cli_success_json`, the body is `"**Plan:** #456\n\nOld body"`. I need to move the header to the bottom. Since there's no footer, I'll put it at the end.
+
+Updating the test body strings... So the extraction logic correctly identifies `**Plan:** #456` as the header by scanning from the end and stopping when it hits non-matching content, then reversing and cleaning up the blank lines. Now I need to update those two tests to reflect this behavior.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6559" cache_read_input_tokens="142651" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6559}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FgbHVJ9kyPyWcVrG36NYuv">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py</param>
+    <param name="old_string">        body=(
+            "**Plan:** #123\n"
+            "**Remotely executed:** [Run #99...[truncated 2 chars]...)\n\n"
+            "Old body\n"
+            "\n---\n"
+            "Closes #789"
+        ),</param>
+    <param name="new_string">        body=(
+            "Old body\n\n"
+            "**Plan:** #123\n"
+            "**Re...[truncated 2 chars]...n #999](https://example.com)\n"
+            "\n---\n"
+            "Closes #789"
+        ),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6559" cache_read_input_tokens="142651" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6559}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>

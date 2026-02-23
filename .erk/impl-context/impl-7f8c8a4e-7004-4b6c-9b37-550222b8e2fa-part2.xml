@@ -1,0 +1,428 @@
+<session>
+  <meta branch="plnd/in-the-prs-that-get-genera-02-22-1808" />
+  <meta model="claude-opus-4-6" />
+  <thinking>Now I understand the full picture. The review thread has:
+1. Bot: Phase-zero detection needed (we already implemented this)
+2. schrockn: "i think we can assume there is only one header"
+3. schrockn: "can we add that to erk pr check"
+
+So schrockn wants a check added to `erk pr check` that validates the header position (presumably checking that the header is at the bottom, or at least flagging if it's at the top as a legacy format). Let me think about what exactly this check would be:
+
+Looking at `erk pr check`, it currently has:
+
+
+- Check 0: Branch/plan-ref agreement
+- Check 1: Issue closing reference
+- Check 2: Checkout footer
+
+schrockn is asking to add a new check that enforces the assumption of a single header, likely validating that headers appear in the correct position rather than the legacy top format. This would catch PRs that haven't been migrated to the new structure yet.
+
+Since we've already added backward compatibility for parsing headers at both positions, the check would serve as a soft validation—flagging cases where a header exists at the top position and suggesting migration to the bottom. Let me look more carefully at what schrockn actually meant by their comment.
+
+They're saying the parser can assume only one header block exists, and they want a validation added to `erk pr check` that enforces the header is in the correct bottom position. So if a PR still has a legacy top-positioned header, the check should catch it.
+
+Now I need to fit this into the workflow: I've already handled the phase-zero detection, so the remaining work is adding this `erk pr check` enhancement, running CI, and committing.
+
+For the implementation, I'll need a helper function to distinguish between legacy (top) and new (bottom) header positions, then add a new check to the command and write tests for it. Let me sketch this out in the plan and confirm my interpretation with the user if needed—though given the context, I'm fairly confident this is what they're asking for.
+
+Now I should look at the existing check_cmd.py structure to understand how to integrate this properly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2689" cache_read_input_tokens="62633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2689}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the check command implementation and the pr-footer-validation doc to understand the full picture.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2689" cache_read_input_tokens="62633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2689}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012besjbRu9vsULCwVHSL28a">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2689" cache_read_input_tokens="62633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2689}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MLTNkULqUymjNCPq1y6P4T">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/docs/learned/architecture/pr-footer-validation.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2689" cache_read_input_tokens="62633" output_tokens="1140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2689, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MLTNkULqUymjNCPq1y6P4T">
+     1→---
+     2→title: PR Footer Format Validation
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→tripwires:
+     6→  - action: "modifying PR footer format"
+     7→    warning: "Update generator, parser, AND validator in sync. Add support for new format BEFORE deprecating old format. Never break parsing of existing PRs."
+     8→read_when:
+     9→  - "working with PR metadata footer format"
+    10→  - "modifying PR footer generation or parsing"
+    11→  - "debugging PR footer extraction errors"
+    12→---
+    13→
+    14→# PR Footer Format Validation
+    15→
+    16→## Why Strict Format Matters
+    17→
+    18→PR footers enable automated workflows that depend on reliable parsing. The footer contains:
+    19→
+    20→1. **Closing references** — GitHub auto-closes linked issues when PR merges
+    21→2. **Checkout commands** — Copy-paste instructions for `erk pr checkout`
+    22→3. **Cross-repo references** — `owner/repo#N` format for plans in external repos
+    23→
+    24→**Strict format enforcement prevents:**
+    25→
+    26→- Silent parser failures (footer exists but data not extracted)
+    27→- Workflow breakage (wrong issue closed, checkout command fails)
+    28→- Migration confusion (format changes break old PRs)
+    29→
+    30→The format is validated at multiple points: generation, parsing, and when extracting closing references. This defense-in-depth ensures consistency across the entire PR lifecycle.
+
+... [124 lines omitted] ...
+
+   101→## Common Parsing Failures
+   111→### Closing Reference Format Error
+  </tool_result>
+  <tool_result tool="toolu_012besjbRu9vsULCwVHSL28a">
+     1→"""Command to validate PR rules for the current branch."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.ensure import Ensure
+     6→from erk.core.context import ErkContext
+     7→from erk_shared.gateway.github.types import PRNotFound
+     8→from erk_shared.gateway.pr.submit import (
+     9→    has_checkout_footer_for_pr,
+    10→    has_issue_closing_reference,
+    11→)
+    12→from erk_shared.impl_folder import read_plan_ref, validate_plan_linkage
+    13→from erk_shared.output.output import user_output
+    14→
+    15→
+    16→@click.command("check")
+    17→@click.pass_obj
+    18→def pr_check(ctx: ErkContext) -&gt; None:
+    19→    """Validate PR rules for the current branch.
+    20→
+    21→    Checks that the PR:
+    22→    1. Has issue closing reference (Closes #N) when .impl/issue.json exists
+    23→    2. Has the standard checkout command footer
+    24→    """
+    25→    # Get current branch
+    26→    branch = Ensure.not_none(
+    27→        ctx.git.branch.get_current_branch(ctx.cwd),
+    28→        "Not on a branch (detached HEAD)",
+    29→    )
+    30→
+
+... [87 lines omitted] ...
+
+    38→            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
+    63→    except ValueError as e:
+   109→    failed_count = sum(1 for passed, _ in checks if not passed)
+   110→    if failed_count == 0:
+   114→        check_word = "check" if failed_count == 1 else "checks"
+   115→        user_output(click.style(f"{failed_count} {check_word} failed", fg="red"))
+  </tool_result>
+  <thinking>Now I understand the full picture. Let me also look at what functions exist for detecting header position, since I'll need to add one for the `erk pr check` enhancement.
+
+The current code has:
+- `extract_header_from_body()` - extracts header from either position
+- `_scan_header_from_top()` - scans from top (legacy)
+- Bottom scan is inline in `extract_header_from_body()`
+
+For the check, I need a function like `has_header_at_bottom_position()` or `is_header_at_legacy_position()` that can detect which position the header is in.
+
+
+So the new check would validate that if a PR has a plan-header metadata block, it's in the bottom position (new format) rather than the top (legacy), which would help identify PRs needing migration. I'll need to add a function that detects whether a header exists at the top of the body to power this check.
+
+Writing the helper function...</thinking>
+  <usage input_tokens="1952" cache_creation_input_tokens="2769" cache_read_input_tokens="65322" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2769}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01LQn462fkNDTJxfRrhqz7Jq">
+    <param name="pattern">**/test_check_cmd*</param>
+  </tool_use>
+  <usage input_tokens="1952" cache_creation_input_tokens="2769" cache_read_input_tokens="65322" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2769}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LQn462fkNDTJxfRrhqz7Jq">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/docs/test_check_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/init/capability/test_check_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/objective/test_check_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/docs/__pycache__/test_check_cmd.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/init/capability/__pycache__/test_check_cmd.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/objective/__pycache__/test_check_cmd.cpython-313-pytest-9.0.2.pyc
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NBx1dUNevhRcxfpHcQTvxa">
+    <param name="pattern">is_header_at|header_position</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared</param>
+  </tool_use>
+  <usage input_tokens="1952" cache_creation_input_tokens="2769" cache_read_input_tokens="65322" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2769}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NBx1dUNevhRcxfpHcQTvxa">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01RhFc5NjVU7wBhn1B3dkVJ9">
+    <param name="pattern">tests/unit/cli/commands/pr/*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3277" cache_read_input_tokens="68091" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3277}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RhFc5NjVU7wBhn1B3dkVJ9">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/unit/cli/commands/pr/__init__.py
+  </tool_result>
+  <thinking>There's no existing test file for `pr check`. Let me check if there are integration tests or if the tests are elsewhere.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="71368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 112}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ko4bXef3sibo8XivRsYXu9">
+    <param name="pattern">pr_check|pr check</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="71368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 112}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ko4bXef3sibo8XivRsYXu9">
+Found 17 files
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+tests/unit/test_pr_footer.py
+tests/unit/services/test_plan_list_service.py
+tests/unit/plan_store/test_draft_pr_plan_backend.py
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/tui/test_app.py
+tests/tui/commands/test_execute_command.py
+tests/tui/commands/test_registry.py
+tests/commands/submit/test_pr_creation.py
+tests/commands/submit/test_learn_plans.py
+tests/commands/pr/test_checkout_graphite_linking.py
+tests/commands/pr/test_check.py
+tests/commands/pr/test_checkout.py
+tests/commands/plan/test_checkout_cmd.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AceCdfNYusJaxrwvSr4qMY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/commands/pr/test_check.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="71480" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 464}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AceCdfNYusJaxrwvSr4qMY">
+     1→"""Tests for erk pr check command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.pr import pr_group
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeGitHub
+    11→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    14→
+    15→
+    16→def test_pr_check_passes_with_valid_footer_and_issue_reference(tmp_path: Path) -&gt; None:
+    17→    """Test PR with valid footer and issue reference passes all checks."""
+    18→    runner = CliRunner()
+    19→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    20→        env.setup_repo_structure()
+    21→
+    22→        # Create .impl/issue.json at repo root
+    23→        impl_dir = env.cwd / ".impl"
+    24→        impl_dir.mkdir()
+    25→        issue_json = impl_dir / "issue.json"
+    26→        issue_json.write_text(
+    27→            json.dumps(
+    28→                {
+    29→                    "issue_number": 456,
+    30→                    "issue_url": "https://github.com/owner/repo/issues/456",
+
+... [766 lines omitted] ...
+
+   178→        assert "1 check failed" in result.output
+   234→        assert "1 check failed" in result.output
+   304→    """Test error when branch has no PR."""
+   326→    """Test error when on detached HEAD."""
+   474→def test_pr_check_reports_multiple_failures(tmp_path: Path) -&gt; None:
+   475→    """Test that multiple failures are counted correctly."""
+   543→        assert "2 checks failed" in result.output
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the codebase. Let me also check if there's an existing function like `has_header_at_top` or similar in the pr_footer module, and look at the current state of our modified file.
+
+Actually, I already have all the context I need. Let me now create the plan. The pr-address workflow requires:
+
+1. Phase-zero detection code is already implemented (done earlier in this conversation)
+2. A new `erk pr check` check for header position validation
+3. Tests for the new check
+
+Let me also read the pr-operations skill before planning, since the pr-address command says to load it first.
+
+
+Actually wait - I'm in plan mode. The user ran `/erk:pr-address`, which is meant to address PR review comments. But plan mode is active. I need to plan what I'm going to do to address the review comment, including the code changes already made for phase-zero detection in `pr_footer.py`, adding a header position check to `erk pr check`, resolving the review thread, and committing and pushing. Let me think through schrockn's comment more carefully - he mentioned we can assume there's only one header.
+
+He's asking to add header position validation to `erk pr check`. So I need to verify that if a PR has a plan-header, it's positioned at the bottom (not the legacy top position). I've already got the backward-compatibility helpers and tests in place, so now I need to add a function to detect when a header is at the legacy top position, then wire that into a new check.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="14812" cache_read_input_tokens="71944" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14812}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have full context. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14812" cache_read_input_tokens="71944" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14812}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014Xs8vqVgFjV3N5U6dEH5bE">
+    <param name="file_path">/Users/schrockn/.claude/plans/greedy-wandering-wreath.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14812" cache_read_input_tokens="71944" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14812}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Xs8vqVgFjV3N5U6dEH5bE">
+     1→# Plan: Address PR #7934 Review Comment — Phase-Zero Detection for Header Extraction
+     2→
+     3→## Context
+     4→
+     5→PR #7934 moved the plan-header metadata block (`**Plan:** #123`, `**Remotely executed:**`) from the top of PR descriptions to the bottom (just above the `---` footer separator). However, the current implementation of `extract_header_from_body()` now **only** scans from the bottom, which breaks parsing of existing PRs that still have headers at the top.
+     6→
+     7→The review comment (tripwires review) correctly flags this as a violation of the migration strategy from `docs/learned/architecture/pr-footer-validation.md`:
+     8→&gt; Add support for new format BEFORE deprecating old format. Never break parsing of existing PRs.
+     9→
+    10→## Changes
+    11→
+    12→### 1. Add phase-zero detection to `extract_header_from_body()`
+    13→
+    14→**File:** `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` (lines 72-120)
+    15→
+    16→Add a helper `_scan_header_from_top()` that implements the old top-scanning logic. Then modify `extract_header_from_body()` to:
+    17→1. First try scanning from bottom (current code — new format)
+    18→2. If no header found, fall back to scanning from top (old format)
+    19→3. Return whichever found a header
+    20→
+    21→### 2. Update `extract_main_content()` to handle both header positions
+    22→
+    23→**File:** `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` (lines 123-151)
+    24→
+    25→Currently only strips header from the end of content. Add fallback logic:
+    26→1. Try removing header from end (bottom position — new format)
+    27→2. If `endswith` check fails, try removing header from beginning (top position — old format)
+    28→
+    29→### 3. Add backward-compatibility tests
+    30→
+
+... [13 lines omitted] ...
+  </tool_result>
+  <tool_use name="Write" id="toolu_01YY3uQDDPfScdoobmc1xL4j">
+    <param name="file_path">/Users/schrockn/.claude/plans/greedy-wandering-wreath.md</param>
+    <param name="content"># Plan: Address PR #7934 Review Thread — Header Position Check
+
+## Context
+
+PR #7934 has o...[truncated 3083 chars]...tests/commands/pr/test_check.py` — CLI tests for pr check
+3. All existing tests unchanged
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1641" cache_read_input_tokens="86756" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1641}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YY3uQDDPfScdoobmc1xL4j">
+The file /Users/schrockn/.claude/plans/greedy-wandering-wreath.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_019dDzqt7yoXDZoNMPxYAzuK">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for PR thread resolution'}, {'tool': 'B...[truncated 19 chars]...ommitting and pushing'}, {'tool': 'Bash', 'prompt': 'run erk exec update-pr-description'}]</param>
+    <param name="plan"># Plan: Address PR #7934 Review Thread — Header Position Check
+
+## Context
+
+PR #7934 has o...[truncated 3083 chars]...tests/commands/pr/test_check.py` — CLI tests for pr check
+3. All existing tests unchanged
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1119" cache_read_input_tokens="88397" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1119, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019dDzqt7yoXDZoNMPxYAzuK">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/greedy-wandering-wreath.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Address PR #7934 Review Thread — Header Position Check
+Current context: (wt:erk-slot-36) (br:plnd/in-the-prs-that-get-genera-02-22-1808) (pr:#7934) (plan:#7934)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/in-t"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 7f8c8a4e-7004-4b6c-9b37-550222b8e2fa \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Address PR #7934 Review Thread — Header Position Check
+
+## Context
+
+PR #7934 has one unresolved review thread (`PRRT_kwDOPxC3hc5wH99s`) from the tripwires review bot at `pr_footer.py:96`. The bot flagged that `extract_header_from_body()` only scans from the bottom, breaking parsing of existing PRs with headers at the top.
+
+schrockn replied with two follow-ups:
+1. "i think we can assume there is only one header" — affirming the single-header assumption
+2. "can we add that to erk pr check" — requesting a new validation check
+
+### Already completed (earlier in this session)
+
+Phase-zero backward compatibility is already implemented:
+- `_scan_header_from_top()` helper in `pr_footer.py`
+- `extract_header_from_body()` falls back to top scan when bottom scan finds nothing
+- `extract_main_content()` handles header at both positions
+- 6 new backward-compatibility unit tests (all 34 tests pass)
+
+### Remaining work
+
+Add a header-position check to `erk pr check` so PRs with legacy top-position headers get flagged.
+
+## Changes
+
+### 1. Add `is_header_at_legacy_position()` to pr_footer.py
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py`
+
+Add a public function that returns `True` when a header exists at the top of the body but **not** at the bottom. This is the detection function the check command will call.
+
+### 2. Add Check 3 (header position) to `erk pr check`
+
+**File:** `src/erk/cli/commands/pr/check_cmd.py`
+
+After Check 2 (checkout footer), add a check that flags PRs with headers at the legacy top position.
+
+### 3. Add unit tests for `is_header_at_legacy_position()` and CLI tests for Check 3
+
+**Files:** `packages/erk-shared/tests/unit/github/test_pr_footer.py` and `tests/commands/pr/test_check.py`
+
+### 4. Resolve review thread and commit
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="89516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 752}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_013Q4h1ogRnTqQi7eGDAvkGC">
+    <param name="questions">[{'question': '📋 Plan: Address PR #7934 Review Thread — Header Position Check\nCurrent con...[truncated 515 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="89516" output_tokens="816" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 752, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Q4h1ogRnTqQi7eGDAvkGC">
+User has answered your questions: "📋 Plan: Address PR #7934 Review Thread — Header Position Check
+Current context: (wt:erk-slot-36) (br:plnd/in-the-prs-that-get-genera-02-22-1808) (pr:#7934) (plan:#7934)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ThfspJHD448LcFjmELK3Bg">
+    <param name="command">erk exec marker create --session-id 7f8c8a4e-7004-4b6c-9b37-550222b8e2fa exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="934" cache_read_input_tokens="90268" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 934}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ThfspJHD448LcFjmELK3Bg">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01T1YG1TK1LVdSEPDe62FJ9F">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for PR thread resolution'}, {'tool': 'B...[truncated 19 chars]...ommitting and pushing'}, {'tool': 'Bash', 'prompt': 'run erk exec update-pr-description'}]</param>
+    <param name="plan"># Plan: Address PR #7934 Review Thread — Header Position Check
+
+## Context
+
+PR #7934 has o...[truncated 3083 chars]...tests/commands/pr/test_check.py` — CLI tests for pr check
+3. All existing tests unchanged
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="91202" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T1YG1TK1LVdSEPDe62FJ9F">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

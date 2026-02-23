@@ -1,0 +1,1113 @@
+<session>
+  <meta branch="plnd/in-the-prs-that-get-genera-02-22-1808" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Plan: Address PR #7934 Review Comment — Phase-Zero Detection for Header Extraction
+
+## Context
+
+PR #7934 moved the plan-header metadata block (`**Plan:** #123`, `**Remotely executed:**`) from the top of PR descriptions to the bottom (just above the `---` footer separator). However, the current implementation of `extract_header_from_body()` now **only** scans from the bottom, which breaks parsing of existing PRs that still have headers at the top.
+
+The review comment (tripwires review) correctly flags this as a violation of the migration strategy from `docs/learned/architecture/pr-footer-validation.md`:
+&gt; Add support for new format BEFORE deprecating old format. Never break parsing of existing PRs.
+
+## Changes
+
+### 1. Add phase-zero detection to `extract_header_from_body()`
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` (lines 72-120)
+
+Add a helper `_scan_header_from_top()` that implements the old top-scanning logic. Then modify `extract_header_from_body()` to:
+1. First try scanning from bottom (current code — new format)
+2. If no header found, fall back to scanning from top (old format)
+3. Return whichever found a header
+
+### 2. Update `extract_main_content()` to handle both header positions
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` (lines 123-151)
+
+Currently only strips header from the end of content. Add fallback logic:
+1. Try removing header from end (bottom position — new format)
+2. If `endswith` check fails, try removing header from beginning (top position — old format)
+
+### 3. Add backward-compatibility tests
+
+**File:** `packages/erk-shared/tests/unit/github/test_pr_footer.py`
+
+Add tests for old-format PRs (header at top):
+- `test_extract_header_from_body_legacy_top_position` — header at top is still extracted
+- `test_extract_main_content_legacy_top_header` — main content correctly extracted when header is at top
+- `test_roundtrip_legacy_top_header` — round-trip preserves structure (note: rebuild places header at bottom, which is the migration path)
+
+## Verification
+
+1. Run existing tests: `pytest packages/erk-shared/tests/unit/github/test_pr_footer.py`
+2. Verify all existing tests still pass (new bottom-format behavior unchanged)
+3. Verify new backward-compatibility tests pass (old top-format PRs parseable)
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-36/ae2958ba-43fc-4b9c-a71d-4fc21d068ae2.jsonl</user>
+  <thinking>Let me start by reading the relevant files to understand the current implementation before making changes.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7496" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7496}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by reading the relevant files to understand the current code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7496" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7496}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NSUveGRu1scxRKtqb7isTp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7496" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7496}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NSUveGRu1scxRKtqb7isTp">
+     1→"""PR body footer generation utilities."""
+     2→
+     3→import re
+     4→from dataclasses import dataclass
+     5→
+     6→
+     7→@dataclass(frozen=True)
+     8→class ClosingReference:
+     9→    """Represents a parsed closing reference from a PR footer."""
+    10→
+    11→    issue_number: int
+    12→    plans_repo: str | None  # None for same-repo, "owner/repo" for cross-repo
+    13→
+    14→
+    15→def extract_footer_from_body(body: str) -&gt; str | None:
+    16→    """Extract the footer section from a PR body.
+    17→
+    18→    The footer is the content after the last `---` delimiter (horizontal rule).
+    19→
+    20→    Args:
+    21→        body: Full PR body content
+    22→
+    23→    Returns:
+    24→        Footer content (without the delimiter) or None if no footer found
+    25→    """
+    26→    # Split on horizontal rule delimiter
+    27→    parts = body.rsplit("\n---\n", 1)
+    28→    if len(parts) &lt; 2:
+    29→        return None
+    30→    return parts[1]
+
+... [210 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WsTXKm3AGHQcdzGM456BCe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7496" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7496}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WsTXKm3AGHQcdzGM456BCe">
+     1→"""Unit tests for PR body footer generation.
+     2→
+     3→Tests the canonical build_pr_body_footer, build_remote_execution_note, and
+     4→header/footer extraction functions.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.pr_footer import (
+     8→    build_pr_body_footer,
+     9→    build_remote_execution_note,
+    10→    extract_footer_from_body,
+    11→    extract_header_from_body,
+    12→    extract_main_content,
+    13→    rebuild_pr_body,
+    14→)
+    15→
+    16→
+    17→def test_build_pr_body_footer_without_issue_number() -&gt; None:
+    18→    """Test footer generation without issue number."""
+    19→    result = build_pr_body_footer(pr_number=1895, issue_number=None, plans_repo=None)
+    20→
+    21→    assert "---" in result
+    22→    assert 'source "$(erk pr checkout 1895 --script)" &amp;&amp; erk pr sync --dangerous' in result
+    23→    assert "Closes #" not in result
+    24→
+    25→
+    26→def test_build_pr_body_footer_with_issue_number() -&gt; None:
+    27→    """Test footer includes Closes #N when issue_number is provided."""
+    28→    result = build_pr_body_footer(pr_number=1895, issue_number=123, plans_repo=None)
+    29→
+    30→    assert "---" in result
+
+... [282 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01N9YwRW4d7U9bktHzp26QaC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/docs/learned/planning/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7496" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7496}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N9YwRW4d7U9bktHzp26QaC">
+     1→---
+     2→title: Planning Tripwires
+     3→read_when:
+     4→  - "working on planning code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from planning/*.md frontmatter --&gt;
+    10→
+    11→# Planning Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding &lt;code&gt; inside &lt;summary&gt; elements in PR bodies** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Graphite doesn't render &lt;code&gt; inside &lt;summary&gt; — use plain text instead. GitHub renders it but Graphite does not. The correct format is &lt;summary&gt;original-plan&lt;/summary&gt; not &lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;.
+    16→
+    17→**adding Closes #N to a draft PR footer** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Draft PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for draft-PR backend.
+    18→
+    19→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+    20→
+    21→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+    22→
+    23→**adding a new pipeline stage to trigger-async-learn** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md.
+    24→
+    25→**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+    26→
+    27→**adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+    28→
+    29→**adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
+    30→
+
+... [206 lines omitted] ...
+
+    43→**after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier).
+    59→**calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
+    67→**capturing subagent output inline when it may exceed 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents.
+    69→**catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
+    79→**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+    81→**committing to draft-PR plan branches after checkout without pulling remote** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Both setup_impl_from_issue.py and submit.py use the same three-step sync: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+   117→**grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
+   137→**making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
+   139→**making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
+   169→**pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
+   175→**reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
+   183→**renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
+   189→**reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit -m 'Remove leaked impl-context'
+   199→**saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
+   207→**treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+   231→**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+  </tool_result>
+  <thinking>Now I have a good understanding of the current code. Let me create tasks and implement the changes.
+
+The plan is:
+1. Add a `_scan_header_from_top()` helper that scans from the top of the body for header pattern lines
+2. Modify `extract_header_from_body()` to try bottom first, then fall back to top
+3. Modify `extract_main_content()` to handle header at both positions
+4. Add backward-compatibility tests
+
+Let me implement these changes.
+
+Looking at the current `extract_header_from_body()`:
+- It removes the footer, then scans from the END of the remaining content for header pattern lines
+
+
+- This works for the new format where the header sits at the bottom just above the footer
+
+For the old format, the header was at the TOP of the body, so I need to scan forward from the beginning instead. The `_scan_header_from_top()` helper will start at the content beginning, collect consecutive lines matching header patterns while skipping blanks, and stop when hitting non-header content. Then `extract_main_content()` needs to handle removing the header from either position depending on where it's found.
+
+Writing the helper function... I'm refactoring the header extraction logic to separate the bottom-scan logic into its own function, then fall back to scanning from the top if nothing's found at the bottom. I need to handle both cases in `extract_main_content()` — after extracting the header, I'll try removing it from the end first (new format), and if that doesn't work, try removing it from the beginning (legacy format).</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="18947" cache_read_input_tokens="26537" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18947}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture of the code. Let me implement the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="18947" cache_read_input_tokens="26537" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18947}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01P3c5iSiVhqYzBGndSw8AdV">
+    <param name="subject">Add _scan_header_from_top() helper and update extract_header_from_body()</param>
+    <param name="description">Add a helper that scans from the top of content for legacy header patterns, and modify extract_header_from_body() to fall back to it when bottom scan finds nothing.</param>
+    <param name="activeForm">Adding phase-zero header detection</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18947" cache_read_input_tokens="26537" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18947}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P3c5iSiVhqYzBGndSw8AdV">
+Task #1 created successfully: Add _scan_header_from_top() helper and update extract_header_from_body()
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01M4mbBatWENsR4mkpSoGNK7">
+    <param name="subject">Update extract_main_content() to handle both header positions</param>
+    <param name="description">Add fallback logic to strip header from the beginning of content (top position) when endswith check fails.</param>
+    <param name="activeForm">Updating extract_main_content for both positions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1515" cache_read_input_tokens="45484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1515}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M4mbBatWENsR4mkpSoGNK7">
+Task #2 created successfully: Update extract_main_content() to handle both header positions
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01PJ4boeCuJSAKbNx9ccDtv9">
+    <param name="subject">Add backward-compatibility tests for legacy top-position headers</param>
+    <param name="description">Add tests: test_extract_header_from_body_legacy_top_position, test_extract_main_content_legacy_top_header, test_roundtrip_legacy_top_header</param>
+    <param name="activeForm">Adding backward-compatibility tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="46999" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PJ4boeCuJSAKbNx9ccDtv9">
+Task #3 created successfully: Add backward-compatibility tests for legacy top-position headers
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XZZVYoYApU4scH64hBnCmo">
+    <param name="subject">Run tests to verify all pass</param>
+    <param name="description">Run pytest on test_pr_footer.py to verify existing and new tests all pass.</param>
+    <param name="activeForm">Running tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="47157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 174}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XZZVYoYApU4scH64hBnCmo">
+Task #4 created successfully: Run tests to verify all pass
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TFHYX6fAsPbJkBe3sKNyEq">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="47331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 135}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TFHYX6fAsPbJkBe3sKNyEq">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now let me add the `_scan_header_from_top()` helper and update `extract_header_from_body()` to fall back to it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="47466" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AX4FNRUxrH6Hx6jyXDcj1K">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="old_string">def extract_header_from_body(body: str) -&gt; str:
+    """Extract header lines from the PR bo...[truncated 1226 chars]....pop()
+
+    if header_lines:
+        return "\n".join(header_lines) + "\n\n"
+    return ""</param>
+    <param name="new_string">def _scan_header_from_top(content: str) -&gt; str:
+    """Scan from the top of content for he...[truncated 2467 chars]....pop()
+
+    if header_lines:
+        return "\n".join(header_lines) + "\n\n"
+    return ""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="47466" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AX4FNRUxrH6Hx6jyXDcj1K">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014kKaXGtEAAhbK6q5Cw5kHt">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1371" cache_read_input_tokens="47556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1371}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014kKaXGtEAAhbK6q5Cw5kHt">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TgXP12GiANFMgRDL7Hc9xa">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1371" cache_read_input_tokens="47556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1371}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TgXP12GiANFMgRDL7Hc9xa">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now update `extract_main_content()` to handle headers at both positions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="48927" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Jxo2QjpAiE8hFpxCzmmHFd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="old_string">    # Remove header from end of content
+    header = extract_header_from_body(body)
+    if...[truncated 181 chars]...der_text)]
+            return content.rstrip()
+
+    return content_without_footer.rstrip()</param>
+    <param name="new_string">    # Remove header from content (may be at end or beginning)
+    header = extract_header_...[truncated 520 chars]...er_text) :]
+            return content.strip()
+
+    return content_without_footer.rstrip()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="48927" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jxo2QjpAiE8hFpxCzmmHFd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013AWKMyUYC4puFHECCdbjwL">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="49125" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 535}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013AWKMyUYC4puFHECCdbjwL">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TxPtU5B2HuBJZCAQf7UioZ">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="49125" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 535}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TxPtU5B2HuBJZCAQf7UioZ">
+Updated task #3 status
+  </tool_result>
+  <assistant>Now add the backward-compatibility tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="49660" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01T6kZjKvyPKop1GWrmiSBXn">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py</param>
+    <param name="old_string"># ============================================================================
+# extract_main_content Tests
+# ============================================================================</param>
+    <param name="new_string"># ============================================================================
+# extract_h...[truncated 1249 chars]...ntent Tests
+# ============================================================================</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="49660" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T6kZjKvyPKop1GWrmiSBXn">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `extract_main_content` legacy test and round-trip test at the end of the file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="49858" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 620}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016xZexyzGVFYGzvZpUytWUo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py</param>
+    <param name="old_string">def test_extract_main_content_empty_body() -&gt; None:
+    """Test extraction from empty body...[truncated 142 chars]..._body Tests
+# ============================================================================</param>
+    <param name="new_string">def test_extract_main_content_empty_body() -&gt; None:
+    """Test extraction from empty body...[truncated 710 chars]..._body Tests
+# ============================================================================</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="49858" output_tokens="461" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 620, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016xZexyzGVFYGzvZpUytWUo">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the round-trip legacy test at the end of the file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="50478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 526}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WdJhu3c2eSW6pYKCfJCHct">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py</param>
+    <param name="old_string">    # Verify ordering: content before header before footer
+    content_pos = rebuilt.find(...[truncated 52 chars]... footer_pos = rebuilt.find("Closes #123")
+    assert content_pos &lt; header_pos &lt; footer_pos</param>
+    <param name="new_string">    # Verify ordering: content before header before footer
+    content_pos = rebuilt.find(...[truncated 1203 chars]... footer_pos = rebuilt.find("Closes #123")
+    assert content_pos &lt; header_pos &lt; footer_pos</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="50478" output_tokens="630" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 526, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WdJhu3c2eSW6pYKCfJCHct">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/tests/unit/github/test_pr_footer.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01HBgqDzsFqUTN2rn31G3mcu">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="695" cache_read_input_tokens="51004" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 695}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HBgqDzsFqUTN2rn31G3mcu">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XwWxDqKgGtxt2aSJPpZDpG">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="695" cache_read_input_tokens="51004" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 695, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XwWxDqKgGtxt2aSJPpZDpG">
+Updated task #4 status
+  </tool_result>
+  <assistant>Now let me run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="51699" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Wk7F5fKoceGtUpiuV9gX8s">
+    <param name="description">Run pr_footer tests</param>
+    <param name="prompt">Run the following command and report results:
+
+pytest packages/erk-shared/tests/unit/github/test_pr_footer.py -v
+
+Report all test names and their pass/fail status.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="51699" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wk7F5fKoceGtUpiuV9gX8s">
+pytest passed: 34 tests passed in 0.03s
+
+All 34 tests passed. Here are the test details:
+
+**Test File:** `packages/erk-shared/tests/unit/github/test_pr_footer.py`
+
+**Summary:** 34 passed
+
+The verbose output shows all tests passed (indicated by the dots in the progress line `......................`) with no failures or errors.
+agentId: a9d45948b54553ded (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13746
+tool_uses: 1
+duration_ms: 6351&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 34 tests pass. Let me verify the final state of the files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="51897" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014HYmHJVN4QUyn8cNeMvpQg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="offset">72</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="51897" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014HYmHJVN4QUyn8cNeMvpQg">
+    72→def _scan_header_from_top(content: str) -&gt; str:
+    73→    """Scan from the top of content for header pattern lines (legacy format).
+    74→
+    75→    In the old format, header lines appeared at the top of the PR body
+    76→    rather than just above the footer separator.
+    77→    """
+    78→    lines = content.split("\n")
+    79→    header_lines: list[str] = []
+    80→
+    81→    for line in lines:
+    82→        if not line.strip():
+    83→            if header_lines:
+    84→                header_lines.append(line)
+    85→            continue
+    86→        if any(line.startswith(pattern) for pattern in HEADER_PATTERNS):
+    87→            header_lines.append(line)
+    88→        else:
+    89→            break
+    90→
+    91→    if not header_lines:
+    92→        return ""
+    93→
+    94→    # Remove leading/trailing blank lines
+    95→    while header_lines and not header_lines[0].strip():
+    96→        header_lines.pop(0)
+    97→    while header_lines and not header_lines[-1].strip():
+    98→        header_lines.pop()
+    99→
+   100→    if header_lines:
+   101→        return "\n".join(header_lines) + "\n\n"
+
+... [60 lines omitted] ...
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01PnngMuUCBwSXr6KcT4ovpe">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1190" cache_read_input_tokens="52198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1190}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PnngMuUCBwSXr6KcT4ovpe">
+Updated task #4 status
+  </tool_result>
+  <assistant>All done. Here's a summary of the changes:
+
+### `pr_footer.py` — Two changes
+
+1. **Added `_scan_header_from_top()` helper** (lines 72-102) — Mirrors the bottom-scan logic but iterates forward from the start of content, collecting header pattern lines until a non-header line is hit.
+
+2. **Modified `extract_header_from_body()`** (line 143-145) — When the bottom scan finds no header lines, falls back to `_scan_header_from_top()` for legacy PRs.
+
+3. **Modified `extract_main_content()`** — After the existing `endswith` check (bottom position), added a `startswith` check to strip headers from the beginning of content (top position).
+
+### `test_pr_footer.py` — Six new tests
+
+- `test_extract_header_from_body_legacy_top_position` — single header at top
+- `test_extract_header_from_body_legacy_top_multiple_headers` — multiple headers at top
+- `test_extract_header_from_body_legacy_top_no_footer` — top header without footer
+- `test_extract_main_content_legacy_top_header` — content extraction with top header + footer
+- `test_extract_main_content_legacy_top_header_no_footer` — content extraction with top header, no footer
+- `test_roundtrip_legacy_top_header` — extract→rebuild migrates header from top to bottom
+
+All **34 tests pass** (28 existing + 6 new).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="53388" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user wants me to run the pr-preview-address command. Let me first figure out what PR is associated with the current branch, then use the pr-feedback-classifier skill to fetch and classify feedback.
+
+Let me start by finding the PR for the current branch.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1108" cache_read_input_tokens="53844" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1108}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find the PR for the current branch and fetch the review comments.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1108" cache_read_input_tokens="53844" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1108}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01G7s8NYxtLDxGQdZcMDwG6f">
+    <param name="command">gh pr view --json number,title,url 2&gt;&amp;1</param>
+    <param name="description">Get PR info for current branch</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1108" cache_read_input_tokens="53844" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1108, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G7s8NYxtLDxGQdZcMDwG6f">
+{"number":7934,"title":"Move plan-header metadata block to bottom of PR descriptions","url":"https://github.com/dagster-io/erk/pull/7934"}
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Gacwkex2NPZtbP6t7S4hpy">
+    <param name="skill">pr-feedback-classifier</param>
+    <param name="args">--pr 7934</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="228" cache_read_input_tokens="54952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 228}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gacwkex2NPZtbP6t7S4hpy">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Now I have all the information needed to classify the feedback. Let me analyze the comments:
+
+**Review threads (1 total):**
+- Thread `PRRT_kwDOPxC3hc5wH99s` at `pr_footer.py:96`: Bot (github-actions) flagged a breaking change, then schrockn replied with two follow-up comments ("i think we can assume there is only one header" and "can we add that to erk pr check"). This is an unresolved review thread with actionable follow-up from the author.
+
+**Discussion comments (7 total):**
+- One-shot dispatch metadata - informational
+- Graphite stack comment - informational
+- Implementation start notification - informational
+- Dignified Python Review (0 violations) - informational
+- Test Coverage Review (all good) - informational
+- Dignified Code Simplifier Review (0 violations) - informational
+- Tripwires Review (1 violation) - this is captured already in the review thread above; the discussion comment itself is informational (it's a CI summary linking to the inline review thread)
+
+The review thread is actionable - schrockn's replies suggest a direction ("assume there is only one header" and "add that to erk pr check") but this is still an open unresolved thread requiring a decision or code change.
+
+The complexity: schrockn's comment about adding something to `erk pr check` suggests a cross-cutting change (adding a new check command or functionality), but the primary resolution could be a local/single-file change to `pr_footer.py` to add fallback scanning. Given the context that it might involve `erk pr check`, this is cross-cutting.
+
+```json
+{
+  "success": true,
+  "pr_number": 7934,
+  "pr_title": "Move plan-header metadata block to bottom of PR descriptions",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7934",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wH99s",
+
+... [23 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <thinking>Now let me format the results as the preview command specifies. Based on the classifier output:
+
+- 1 actionable review thread (cross_cutting)
+- 0 discussion actions
+- 7 informational discussion comments
+
+Let me format this nicely.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="55180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 899}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>## PR #7934: "Move plan-header metadata block to bottom of PR descriptions"
+
+### Actionable Items (1 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | pr_footer.py:96 | actionable | Bot flagged `extract_header_from_body()` only scans from bottom, breaking existing PRs with top headers. Author says: assume one header, add check to `erk pr check`. | cross_cutting |
+
+### Informational Items (0 actionable)
+
+No informational review threads. 7 informational discussion comments (CI bots, stack notifications).
+
+### Execution Plan Preview
+
+**Batch 1: Cross-Cutting** (user confirmation)
+- Item #1: pr_footer.py:96 - Add phase-zero detection for legacy top-position headers + potential `erk pr check` enhancement
+
+### Statistics
+- Actionable items: 1
+- Informational items: 0
+- Informational discussion comments: 7
+- Estimated batches: 1
+- Auto-proceed batches: 0
+- User confirmation batches: 1
+
+---
+
+**Note:** The primary ask from this thread (backward-compatible header extraction) has already been implemented in the changes we just made. The remaining piece is schrockn's suggestion to "add that to `erk pr check`" — which would be a separate enhancement to validate header position consistency.
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="55180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 899}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "7f8c8a4e-7004-4b6c-9b37-550222b8e2fa"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <thinking>The user invoked `/erk:pr-address` which is a skill for addressing PR review comments. Let me follow the instructions carefully.
+
+But wait - I'm in plan mode. The system says I must not make any edits or run non-readonly tools. However, the user just invoked a skill command. Let me re-read the plan mode instructions...
+
+"Plan mode is active. The user indicated that they do not want you to execute yet -- you MUST NOT make any edits (with the exception of the plan file mentioned below), run any non-readonly tools (including changing configs or making commits), or otherwise make any changes to the system."
+
+But the user explicitly invoked `/erk:pr-address` which is a command to address PR review comments. 
+
+I see the tension here - plan mode was triggered automatically by the system, but the user's explicit command suggests they want to execute the pr-address workflow. I should check the existing plan file first, then create a plan for addressing the PR comments so I can exit plan mode and actually run it.
+
+Looking at what we already know from the preview, there's one actionable thread about backward-compatible header extraction in pr_footer.py, and we've already implemented the fix. So the workflow is straightforward: classify the feedback, resolve the thread since the fix is done, and push the changes.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="4538" cache_read_input_tokens="56509" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4538}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the existing plan file and then update it for this pr-address workflow.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="4538" cache_read_input_tokens="56509" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4538}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RQ8Fj1QE1bs4wqANzDomaB">
+    <param name="file_path">/Users/schrockn/.claude/plans/greedy-wandering-wreath.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4538" cache_read_input_tokens="56509" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4538}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RQ8Fj1QE1bs4wqANzDomaB">
+     1→# Plan: Address PR #7934 Review Comment — Phase-Zero Detection for Header Extraction
+     2→
+     3→## Context
+     4→
+     5→PR #7934 moved the plan-header metadata block (`**Plan:** #123`, `**Remotely executed:**`) from the top of PR descriptions to the bottom (just above the `---` footer separator). However, the current implementation of `extract_header_from_body()` now **only** scans from the bottom, which breaks parsing of existing PRs that still have headers at the top.
+     6→
+     7→The review comment (tripwires review) correctly flags this as a violation of the migration strategy from `docs/learned/architecture/pr-footer-validation.md`:
+     8→&gt; Add support for new format BEFORE deprecating old format. Never break parsing of existing PRs.
+     9→
+    10→## Changes
+    11→
+    12→### 1. Add phase-zero detection to `extract_header_from_body()`
+    13→
+    14→**File:** `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` (lines 72-120)
+    15→
+    16→Add a helper `_scan_header_from_top()` that implements the old top-scanning logic. Then modify `extract_header_from_body()` to:
+    17→1. First try scanning from bottom (current code — new format)
+    18→2. If no header found, fall back to scanning from top (old format)
+    19→3. Return whichever found a header
+    20→
+    21→### 2. Update `extract_main_content()` to handle both header positions
+    22→
+    23→**File:** `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` (lines 123-151)
+    24→
+    25→Currently only strips header from the end of content. Add fallback logic:
+    26→1. Try removing header from end (bottom position — new format)
+    27→2. If `endswith` check fails, try removing header from beginning (top position — old format)
+    28→
+    29→### 3. Add backward-compatibility tests
+    30→
+
+... [13 lines omitted] ...
+  </tool_result>
+  <thinking>This is the plan from the previous implementation which we already completed. Now the user is running `/erk:pr-address` to address the PR review comments. The code changes are already done. The plan needs to be updated to reflect the pr-address workflow.
+
+Let me also check the second part of schrockn's comment about adding to `erk pr check`. Let me explore what that means before planning.
+
+Actually, I'm in plan mode. Let me look at the review thread more carefully. From the pr-preview-address output, the thread had:
+- Bot flagged the breaking change
+- schrockn said "i think we can assume there is only one header"
+
+
+- schrockn also asked about adding something to `erk pr check`
+
+The code fix for phase-zero detection is already implemented. Now I need to figure out whether schrockn's suggestion about `erk pr check` is a separate follow-up task or part of the current fix, and what exactly needs to be added there.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1586" cache_read_input_tokens="61047" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1586}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The existing plan was for the implementation we already completed. Now `/erk:pr-address` needs to handle the review thread resolution. Let me explore what schrockn's comment about "erk pr check" entails.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1586" cache_read_input_tokens="61047" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1586}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01D4baBiqf3156XDpS2F21PF">
+    <param name="description">Explore erk pr check command</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 415 chars]...unctions.
+
+Be thorough — find the actual implementation code, not just the CLI entrypoint.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1586" cache_read_input_tokens="61047" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1586}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01A2NsPhQCBDLmnPgpnn4Zis">
+    <param name="command">gh api repos/dagster-io/erk/pulls/7934/comments --jq '.[].body' 2&gt;&amp;1 | head -200</param>
+    <param name="description">Fetch PR review comments for thread context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1586" cache_read_input_tokens="61047" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1586}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D4baBiqf3156XDpS2F21PF">
+Perfect! I now have a comprehensive understanding. Let me compile the complete analysis:
+
+## Understanding `erk pr check` Command
+
+I've thoroughly explored the CLI definition, implementation, and supporting validation functions. Here's what the command does:
+
+### 1. **CLI Definition &amp; Structure**
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/check_cmd.py`
+
+The command is a Click command registered in the `pr_group()` command group (defined in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/__init__.py`):
+
+```python
+@click.command("check")
+@click.pass_obj
+def pr_check(ctx: ErkContext) -&gt; None:
+    """Validate PR rules for the current branch.
+    
+    Checks that the PR:
+    1. Has issue closing reference (Closes #N) when .impl/issue.json exists
+    2. Has the standard checkout command footer
+    """
+```
+
+### 2. **What Checks It Currently Performs**
+
+The command runs **three sequential checks** on the current branch's PR:
+
+| Check | What it validates | Location in code | Why it exists |
+|-------|------------------|------------------|---------------|
+
+... [71 lines omitted] ...
+
+if failed_count == 0:
+    raise SystemExit(1)  # One or more checks failed
+  </tool_result>
+  <tool_result tool="toolu_01A2NsPhQCBDLmnPgpnn4Zis">
+**Tripwires Review**: Breaking change detected - extract_header_from_body() now only scans from bottom, breaking parsing of existing PRs with headers at top.
+
+This violates the migration strategy tripwire from docs/learned/architecture/pr-footer-validation.md:
+
+&gt; Add support for new format BEFORE deprecating old format. Never break parsing of existing PRs.
+
+**Recommendation**: Implement phase-zero detection - scan from bottom first (new format), then fall back to scanning from top (old format) if no header found. This ensures both old and new PR bodies parse correctly during migration.
+i think we can assume there is only one header
+
+
+can we add that to erk pr check
+  </tool_result>
+</session>
