@@ -20,6 +20,9 @@ from erk.capabilities.skills.bundled import bundled_skills
 from erk.capabilities.statusline import StatuslineCapability
 from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
+from erk.capabilities.workflows.one_shot import OneShotWorkflowCapability
+from erk.capabilities.workflows.pr_address import PrAddressWorkflowCapability
+from erk.capabilities.workflows.pr_fix_conflicts import PrFixConflictsWorkflowCapability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -529,6 +532,165 @@ def test_learn_workflow_capability_registered() -> None:
     cap = get_capability("learn-workflow")
     assert cap is not None
     assert cap.name == "learn-workflow"
+
+
+# =============================================================================
+# Tests for One-Shot Workflow Capability
+# =============================================================================
+
+
+def test_one_shot_workflow_capability_properties() -> None:
+    """Test OneShotWorkflowCapability has correct properties."""
+    cap = OneShotWorkflowCapability()
+    assert cap.name == "one-shot-workflow"
+    assert "one-shot" in cap.description.lower()
+    assert "one-shot.yml" in cap.installation_check_description
+
+
+def test_one_shot_workflow_artifacts() -> None:
+    """Test OneShotWorkflowCapability lists correct artifacts."""
+    cap = OneShotWorkflowCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    paths = [a.path for a in artifacts]
+    assert ".github/workflows/one-shot.yml" in paths
+
+
+def test_one_shot_workflow_is_installed(tmp_path: Path) -> None:
+    """Test workflow is_installed checks for workflow file."""
+    cap = OneShotWorkflowCapability()
+
+    # Not installed when workflow file missing
+    assert cap.is_installed(tmp_path, backend="claude") is False
+
+    # Installed when workflow file exists
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "one-shot.yml").write_text("", encoding="utf-8")
+    assert cap.is_installed(tmp_path, backend="claude") is True
+
+
+def test_one_shot_workflow_capability_registered() -> None:
+    """Test that one-shot workflow capability is registered."""
+    cap = get_capability("one-shot-workflow")
+    assert cap is not None
+    assert cap.name == "one-shot-workflow"
+
+
+def test_one_shot_workflow_managed_artifacts() -> None:
+    """Test that OneShotWorkflowCapability declares its managed artifacts."""
+    cap = OneShotWorkflowCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 1
+    assert managed[0].name == "one-shot"
+    assert managed[0].artifact_type == "workflow"
+
+
+# =============================================================================
+# Tests for PR Address Workflow Capability
+# =============================================================================
+
+
+def test_pr_address_workflow_capability_properties() -> None:
+    """Test PrAddressWorkflowCapability has correct properties."""
+    cap = PrAddressWorkflowCapability()
+    assert cap.name == "pr-address-workflow"
+    assert "pr" in cap.description.lower() or "review" in cap.description.lower()
+    assert "pr-address.yml" in cap.installation_check_description
+
+
+def test_pr_address_workflow_artifacts() -> None:
+    """Test PrAddressWorkflowCapability lists correct artifacts."""
+    cap = PrAddressWorkflowCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    paths = [a.path for a in artifacts]
+    assert ".github/workflows/pr-address.yml" in paths
+
+
+def test_pr_address_workflow_is_installed(tmp_path: Path) -> None:
+    """Test workflow is_installed checks for workflow file."""
+    cap = PrAddressWorkflowCapability()
+
+    # Not installed when workflow file missing
+    assert cap.is_installed(tmp_path, backend="claude") is False
+
+    # Installed when workflow file exists
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "pr-address.yml").write_text("", encoding="utf-8")
+    assert cap.is_installed(tmp_path, backend="claude") is True
+
+
+def test_pr_address_workflow_capability_registered() -> None:
+    """Test that pr-address workflow capability is registered."""
+    cap = get_capability("pr-address-workflow")
+    assert cap is not None
+    assert cap.name == "pr-address-workflow"
+
+
+def test_pr_address_workflow_managed_artifacts() -> None:
+    """Test that PrAddressWorkflowCapability declares its managed artifacts."""
+    cap = PrAddressWorkflowCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 1
+    assert managed[0].name == "pr-address"
+    assert managed[0].artifact_type == "workflow"
+
+
+# =============================================================================
+# Tests for PR Fix-Conflicts Workflow Capability
+# =============================================================================
+
+
+def test_pr_fix_conflicts_workflow_capability_properties() -> None:
+    """Test PrFixConflictsWorkflowCapability has correct properties."""
+    cap = PrFixConflictsWorkflowCapability()
+    assert cap.name == "pr-fix-conflicts-workflow"
+    assert "conflict" in cap.description.lower()
+    assert "pr-fix-conflicts.yml" in cap.installation_check_description
+
+
+def test_pr_fix_conflicts_workflow_artifacts() -> None:
+    """Test PrFixConflictsWorkflowCapability lists correct artifacts."""
+    cap = PrFixConflictsWorkflowCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    paths = [a.path for a in artifacts]
+    assert ".github/workflows/pr-fix-conflicts.yml" in paths
+
+
+def test_pr_fix_conflicts_workflow_is_installed(tmp_path: Path) -> None:
+    """Test workflow is_installed checks for workflow file."""
+    cap = PrFixConflictsWorkflowCapability()
+
+    # Not installed when workflow file missing
+    assert cap.is_installed(tmp_path, backend="claude") is False
+
+    # Installed when workflow file exists
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "pr-fix-conflicts.yml").write_text("", encoding="utf-8")
+    assert cap.is_installed(tmp_path, backend="claude") is True
+
+
+def test_pr_fix_conflicts_workflow_capability_registered() -> None:
+    """Test that pr-fix-conflicts workflow capability is registered."""
+    cap = get_capability("pr-fix-conflicts-workflow")
+    assert cap is not None
+    assert cap.name == "pr-fix-conflicts-workflow"
+
+
+def test_pr_fix_conflicts_workflow_managed_artifacts() -> None:
+    """Test that PrFixConflictsWorkflowCapability declares its managed artifacts."""
+    cap = PrFixConflictsWorkflowCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 1
+    assert managed[0].name == "pr-fix-conflicts"
+    assert managed[0].artifact_type == "workflow"
 
 
 # =============================================================================
