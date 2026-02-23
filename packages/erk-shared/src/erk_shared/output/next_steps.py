@@ -14,7 +14,7 @@ class IssueNextSteps:
         return f"gh issue view {self.issue_number} --web"
 
     @property
-    def prepare(self) -> str:
+    def checkout(self) -> str:
         return f"erk br co --for-plan {self.issue_number}"
 
     @property
@@ -22,18 +22,18 @@ class IssueNextSteps:
         return f"erk plan submit {self.issue_number}"
 
     @property
-    def prepare_and_implement(self) -> str:
+    def checkout_and_implement(self) -> str:
         return (
             f'source "$(erk br co --for-plan {self.issue_number} --script)"'
             " && erk implement --dangerous"
         )
 
     @property
-    def prepare_new_slot(self) -> str:
+    def checkout_new_slot(self) -> str:
         return f"erk br co --new-slot --for-plan {self.issue_number}"
 
     @property
-    def prepare_new_slot_and_implement(self) -> str:
+    def checkout_new_slot_and_implement(self) -> str:
         return (
             f'source "$(erk br co --new-slot --for-plan {self.issue_number} --script)"'
             " && erk implement --dangerous"
@@ -56,26 +56,26 @@ class DraftPRNextSteps:
         return f"erk plan submit {self.pr_number}"
 
     @property
-    def checkout_and_implement(self) -> str:
+    def checkout_branch_and_implement(self) -> str:
         return f'source "$(erk br co {self.branch_name} --script)" && erk implement --dangerous'
 
     @property
-    def prepare(self) -> str:
+    def checkout(self) -> str:
         return f"erk br co --for-plan {self.pr_number}"
 
     @property
-    def prepare_and_implement(self) -> str:
+    def checkout_and_implement(self) -> str:
         return (
             f'source "$(erk br co --for-plan {self.pr_number} --script)"'
             " && erk implement --dangerous"
         )
 
     @property
-    def prepare_new_slot(self) -> str:
+    def checkout_new_slot(self) -> str:
         return f"erk br co --new-slot --for-plan {self.pr_number}"
 
     @property
-    def prepare_new_slot_and_implement(self) -> str:
+    def checkout_new_slot_and_implement(self) -> str:
         return (
             f'source "$(erk br co --new-slot --for-plan {self.pr_number} --script)"'
             " && erk implement --dangerous"
@@ -84,7 +84,7 @@ class DraftPRNextSteps:
 
 # Slash commands (static, don't need issue number)
 SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
-PREPARE_SLASH_COMMAND = "/erk:prepare"
+CHECKOUT_SLASH_COMMAND = "/erk:prepare"
 
 
 def format_next_steps_plain(issue_number: int) -> str:
@@ -98,7 +98,8 @@ In Claude Code:
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
-  Checkout: {s.prepare}
+  Checkout: {s.checkout}
+  Implement: {s.checkout_and_implement}
   Submit to Queue: {s.submit}"""
 
 
@@ -113,7 +114,8 @@ In Claude Code:
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
-  Checkout: {s.prepare}
+  Checkout: {s.checkout}
+  Implement: {s.checkout_new_slot_and_implement}
   Submit to Queue: {s.submit}"""
 
 
@@ -133,5 +135,5 @@ def format_next_steps_markdown(issue_number: int) -> str:
 
 **Checkout plan branch:**
 ```bash
-{s.prepare}
+{s.checkout}
 ```"""
