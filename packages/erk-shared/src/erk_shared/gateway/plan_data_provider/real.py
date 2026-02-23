@@ -598,9 +598,8 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_has_conflicts = selected_pr.has_conflicts
                 pr_review_decision = selected_pr.review_decision
                 pr_checks_passing = selected_pr.checks_passing
-                base_ref_name = selected_pr.base_ref_name
-                if base_ref_name is not None:
-                    pr_is_stacked = base_ref_name not in ("master", "main")
+                if selected_pr.base_ref_name is not None:
+                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
 
                 # Get review thread counts from batched PR data
                 if selected_pr.review_thread_counts is not None:
