@@ -145,9 +145,7 @@ This is a comprehensive test feature that covers the implementation.
     assert "Submit to queue: /erk:plan-submit" in result.output
     # Verify exit Claude Code note and CLI commands
     assert "OR exit Claude Code first, then run one of:" in result.output
-    assert "Local: erk br co --for-plan 1" in result.output
-    expected = 'Implement: source "$(erk br co --for-plan 1 --script)" && erk implement --dangerous'
-    assert expected in result.output
+    assert "Checkout: erk br co --for-plan 1" in result.output
     assert "Submit to Queue: erk plan submit 1" in result.output
 
 

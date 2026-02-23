@@ -191,8 +191,7 @@ In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
 
 OR exit Claude Code first, then run one of:
-  Local: erk br co --for-plan <plan_number>
-  Prepare+Implement: source "$(erk br co --for-plan <plan_number> --script)" && erk implement --dangerous
+  Checkout: erk br co --for-plan <plan_number>
   Submit to Queue: erk plan submit <plan_number>
 ```
 
@@ -208,8 +207,7 @@ In Claude Code:
   Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
 
 OR exit Claude Code first, then run one of:
-  Local: erk br co --for-plan <plan_number>
-  Prepare+Implement: source "$(erk br co --for-plan <plan_number> --script)" && erk implement --dangerous
+  Checkout: erk br co --for-plan <plan_number>
   Submit to Queue: erk plan submit <plan_number>
 ```
 
