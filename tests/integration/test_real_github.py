@@ -620,7 +620,7 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
 
         error_msg = str(exc_info.value)
         assert "could not find run" in error_msg
-        assert "after 15 attempts" in error_msg
+        assert "after 7 attempts" in error_msg
         assert "Debug commands:" in error_msg
         assert "gh run list --workflow test-workflow.yml" in error_msg
 
