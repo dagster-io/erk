@@ -8,13 +8,13 @@ read_when:
 
 # Plan Creation Pathways
 
-Plans can be created through multiple entry points, each routing to the appropriate backend (issue-based or draft-PR).
+Plans can be created through multiple entry points, all routing to the draft-PR backend.
 
 ## Entry Points
 
 | Entry Point                             | Backend Used                   | Creates                |
 | --------------------------------------- | ------------------------------ | ---------------------- |
-| `/erk:plan-save`                        | Depends on `ERK_PLAN_BACKEND`  | Issue or draft PR      |
+| `/erk:plan-save`                        | Draft-PR (DraftPRPlanBackend)  | Draft pull request     |
 | `erk plan create --file <path>`         | Issue-based (GitHubPlanStore)  | GitHub issue           |
 | `erk exec plan-save-to-issue`           | Issue-based (GitHubPlanStore)  | GitHub issue           |
 | One-shot dispatch (`one_shot_dispatch`) | Issue-based (GitHubPlanStore)  | Skeleton issue         |
@@ -24,14 +24,9 @@ Plans can be created through multiple entry points, each routing to the appropri
 
 ## Backend Routing
 
-Backend selection is controlled by `ERK_PLAN_BACKEND` environment variable:
+The plan backend is hardcoded to `"draft_pr"`. All plan creation routes through DraftPRPlanBackend. The former dynamic backend selection via `get_plan_backend()` was removed in PR #7971 (objective #7911 node 1.1). There is no longer a `"github"` issue-based plan storage path for new plans.
 
-- `"github"` (default): Routes to `GitHubPlanStore`
-- `"draft_pr"`: Routes to `DraftPRPlanBackend`
-
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/__init__.py, get_plan_backend -->
-
-The `get_plan_backend()` function in `packages/erk-shared/src/erk_shared/plan_store/__init__.py` reads this variable.
+The `ERK_PLAN_BACKEND` environment variable is no longer read by application code.
 
 ## Label Application
 

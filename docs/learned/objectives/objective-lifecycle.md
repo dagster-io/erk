@@ -16,6 +16,9 @@ tripwires:
     warning: "inspect command was removed in PR #7385. Use `erk objective view` or `/local:objective-view` instead."
   - action: "running objective-fetch-context on master without --branch"
     warning: "Auto-discovery fails on non-plan branches. Pass `--branch` explicitly when on master."
+  - action: "calling update-objective-node or plan-save inside objective-plan workflow without creating roadmap-step marker first"
+    warning: "The roadmap-step marker must be created before entering plan mode. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update. Create the marker immediately after the user selects a node (step 5 of objective-plan), before gathering code context."
+    score: 5
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
 ---

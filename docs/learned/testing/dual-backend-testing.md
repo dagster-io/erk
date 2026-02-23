@@ -5,13 +5,13 @@ read_when:
   - "testing plan-related features across both backends"
   - "creating test helpers for plan store operations"
 tripwires:
-  - action: "writing plan storage tests without considering both backends"
-    warning: "Tests should cover both GitHubPlanStore and DraftPRPlanBackend where applicable. See dual-backend-testing.md."
+  - action: "writing plan storage tests that parametrize across both backends"
+    warning: "After PR #7971 (objective #7911 node 1.1), only the 'draft_pr' backend is active. New plan-related tests should use create_plan_store(backend='draft_pr') directly rather than parametrizing across both backends. The 'github' path is dead code pending removal."
 ---
 
-# Dual Backend Testing
+# Plan Storage Testing
 
-Tests must cover both GitHubPlanStore (issue-based) and DraftPRPlanBackend (draft PR-based) plan storage backends.
+> **Note:** After PR #7971 (objective #7911 node 1.1), only the `"draft_pr"` backend is active. The `"github"` issue-based backend path is dead code pending removal. This document describes the test infrastructure that still exists for both backends but new tests should use `"draft_pr"` only.
 
 ## Test Helpers
 
@@ -45,7 +45,7 @@ Creates a DraftPRPlanBackend pre-populated with plans (lines 136-184). The draft
 
 ## Convention
 
-New plan-related tests should parametrize across both backends where the behavior is expected to be consistent. Use `create_plan_store()` with the backend parameter for this.
+After PR #7971 (objective #7911 node 1.1), only the `"draft_pr"` backend exists. New plan-related tests should use `create_plan_store(backend="draft_pr")` directly rather than parametrizing across backends. The `"github"` issue-based backend path is dead code pending removal.
 
 ## Context Integration
 
@@ -53,15 +53,16 @@ New plan-related tests should parametrize across both backends where the behavio
 
 ## `env_overrides` for Backend Isolation
 
-When tests need to run with a specific backend regardless of the environment, use `erk_isolated_fs_env()` from `tests/test_utils/env_helpers.py` to override environment variables. See `tests/unit/cli/commands/test_prepare.py` for representative usage of `env_overrides={"ERK_PLAN_BACKEND": ...}`.
+> **Obsolete:** After PR #7971, the `ERK_PLAN_BACKEND` environment variable no longer affects behavior. The `env_overrides` for this variable are inert. Existing fixtures that set `ERK_PLAN_BACKEND` are exercising dead code paths and will be cleaned up in later nodes of objective #7911.
 
-This is especially important when `ERK_PLAN_BACKEND=draft_pr` is set in the developer's shell. See [Environment Variable Isolation](environment-variable-isolation.md) for the full contamination pattern.
+See [Environment Variable Isolation](environment-variable-isolation.md) for historical context.
 
 ## Backend-Conditional Assertion Patterns
 
-Some tests need different assertions depending on the backend:
+> **Note:** The dual-backend parametrize pattern below is now outdated. The `"github"` backend path is dead code. New tests should use `"draft_pr"` only.
 
 ```python
+# Legacy pattern — do not use for new tests
 @pytest.mark.parametrize("backend", ["github", "draft_pr"])
 def test_plan_creation(backend: str) -> None:
     store, fake = create_plan_store({}, backend=backend)
@@ -75,7 +76,7 @@ def test_plan_creation(backend: str) -> None:
         assert len(fake.created_prs) == 1
 ```
 
-Use `create_plan_store()` from `tests/test_utils/plan_helpers.py` to get the right store-fake pair for each backend.
+For new tests, use `create_plan_store(backend="draft_pr")` directly.
 
 ## Related Topics
 
