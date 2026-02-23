@@ -290,24 +290,24 @@ class RealGitHub(GitHub):
         # Generate 6 random characters (~2.2 billion possibilities)
         return "".join(secrets.choice(base36_chars) for _ in range(6))
 
-    def trigger_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+    def _dispatch_workflow(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:
-        """Trigger GitHub Actions workflow via gh CLI.
+        """Dispatch workflow and return the distinct_id used for correlation.
 
-        Generates a unique distinct_id internally, passes it to the workflow,
-        and uses it to reliably find the triggered run via displayTitle matching.
+        Generates a unique distinct_id, adds it to workflow inputs, and dispatches
+        the workflow via gh CLI. Returns the distinct_id so the caller can optionally
+        poll for the resulting run.
 
         Args:
             repo_root: Repository root path
             workflow: Workflow file name (e.g., "implement-plan.yml")
             inputs: Workflow inputs as key-value pairs
-            ref: Branch or tag to run workflow from (default: repository default branch)
+            ref: Branch or tag to run workflow from (None for repository default)
 
         Returns:
-            The GitHub Actions run ID as a string
+            The distinct_id used for dispatch correlation
         """
-        # Generate distinct ID for reliable run matching
         distinct_id = self._generate_distinct_id()
         debug_log(f"trigger_workflow: workflow={workflow}, distinct_id={distinct_id}, ref={ref}")
 
@@ -332,6 +332,44 @@ class RealGitHub(GitHub):
             cwd=repo_root,
         )
         debug_log("trigger_workflow: workflow triggered successfully")
+        return distinct_id
+
+    def dispatch_workflow(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+    ) -> None:
+        """Dispatch workflow without polling for run ID.
+
+        Fire-and-forget variant of trigger_workflow(). Dispatches the workflow
+        and returns immediately without waiting for the run to appear in GitHub API.
+
+        Args:
+            repo_root: Repository root path
+            workflow: Workflow file name (e.g., "implement-plan.yml")
+            inputs: Workflow inputs as key-value pairs
+            ref: Branch or tag to run workflow from (default: repository default branch)
+        """
+        self._dispatch_workflow(repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref)
+
+    def trigger_workflow(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+    ) -> str:
+        """Trigger GitHub Actions workflow via gh CLI.
+
+        Generates a unique distinct_id internally, passes it to the workflow,
+        and uses it to reliably find the triggered run via displayTitle matching.
+
+        Args:
+            repo_root: Repository root path
+            workflow: Workflow file name (e.g., "implement-plan.yml")
+            inputs: Workflow inputs as key-value pairs
+            ref: Branch or tag to run workflow from (default: repository default branch)
+
+        Returns:
+            The GitHub Actions run ID as a string
+        """
+        distinct_id = self._dispatch_workflow(
+            repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
+        )
 
         # Poll for the run by matching displayTitle containing the distinct ID
         # The workflow uses run-name: "<issue_number>:<distinct_id>"

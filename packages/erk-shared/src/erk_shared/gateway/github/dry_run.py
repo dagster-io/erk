@@ -80,6 +80,12 @@ class DryRunGitHub(GitHub):
         # Return fake run ID - prevents actual workflow trigger
         return "noop-run-12345"
 
+    def dispatch_workflow(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+    ) -> None:
+        """No-op for dispatching workflow in dry-run mode."""
+        pass
+
     def create_pr(
         self,
         repo_root: Path,

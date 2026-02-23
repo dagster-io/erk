@@ -157,6 +157,7 @@ class FakeGitHub(GitHub):
         self._closed_prs: list[int] = []
         self._marked_pr_ready: list[int] = []
         self._triggered_workflows: list[tuple[str, dict[str, str]]] = []
+        self._dispatched_workflows: list[tuple[str, dict[str, str]]] = []
         self._poll_attempts: list[tuple[str, str, int, int]] = []
         self._check_auth_status_calls: list[None] = []
         self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
@@ -267,6 +268,21 @@ class FakeGitHub(GitHub):
         # Prepend to list so it's found first (most recent)
         self._workflow_runs.insert(0, triggered_run)
         return run_id
+
+    def dispatch_workflow(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+    ) -> None:
+        """Record fire-and-forget workflow dispatch in mutation tracking list.
+
+        Does NOT create a WorkflowRun entry — no run ID is available for
+        fire-and-forget dispatches. Use dispatched_workflows property for assertions.
+        """
+        self._dispatched_workflows.append((workflow, inputs))
+
+    @property
+    def dispatched_workflows(self) -> list[tuple[str, dict[str, str]]]:
+        """Read-only access to tracked fire-and-forget workflow dispatches for test assertions."""
+        return self._dispatched_workflows
 
     def create_pr(
         self,

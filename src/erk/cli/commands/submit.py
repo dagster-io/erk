@@ -227,8 +227,8 @@ class SubmitResult:
     issue_url: str
     pr_number: int | None
     pr_url: str | None
-    workflow_run_id: str
-    workflow_url: str
+    workflow_run_id: str | None
+    workflow_url: str | None
 
 
 def _build_workflow_run_url(issue_url: str, run_id: str) -> str:
@@ -379,6 +379,7 @@ def _submit_draft_pr_plan(
     submitted_by: str,
     original_branch: str,
     base_branch: str,
+    no_wait: bool,
 ) -> SubmitResult:
     """Submit a validated draft-PR plan for implementation.
 
@@ -479,41 +480,50 @@ def _submit_draft_pr_plan(
         **workflow_config,
     }
 
-    run_id = ctx.github.trigger_workflow(
-        repo_root=repo.root,
-        workflow=DISPATCH_WORKFLOW_NAME,
-        inputs=inputs,
-    )
-    user_output(click.style("✓", fg="green") + " Workflow triggered.")
-
-    # Compute workflow URL
-    workflow_url = _build_workflow_run_url(validated.url, run_id)
-
-    # Write dispatch metadata FIRST (before any PR body modification)
-    try:
-        write_dispatch_metadata(
-            plan_backend=ctx.plan_backend,
-            github=ctx.github,
+    if no_wait:
+        ctx.github.dispatch_workflow(
             repo_root=repo.root,
-            issue_number=plan_number,
-            run_id=run_id,
-            dispatched_at=queued_at,
+            workflow=DISPATCH_WORKFLOW_NAME,
+            inputs=inputs,
         )
-        user_output(click.style("✓", fg="green") + " Dispatch metadata written")
-    except Exception as e:
-        user_output(
-            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+        user_output(click.style("✓", fg="green") + " Workflow dispatched (fire-and-forget).")
+        workflow_url = None
+        run_id = None
+    else:
+        run_id = ctx.github.trigger_workflow(
+            repo_root=repo.root,
+            workflow=DISPATCH_WORKFLOW_NAME,
+            inputs=inputs,
         )
+        user_output(click.style("✓", fg="green") + " Workflow triggered.")
+        workflow_url = _build_workflow_run_url(validated.url, run_id)
 
-    # Update PR body with workflow run link (best-effort)
-    # Guard: only append if body is non-empty to avoid overwriting metadata block
-    try:
-        pr_details = ctx.github.get_pr(repo.root, plan_number)
-        if not isinstance(pr_details, PRNotFound) and pr_details.body:
-            updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
-            ctx.github.update_pr_body(repo.root, plan_number, updated_body)
-    except Exception as e:
-        logger.warning("Failed to update PR body with workflow run link: %s", e)
+    if run_id is not None:
+        # Write dispatch metadata FIRST (before any PR body modification)
+        try:
+            write_dispatch_metadata(
+                plan_backend=ctx.plan_backend,
+                github=ctx.github,
+                repo_root=repo.root,
+                issue_number=plan_number,
+                run_id=run_id,
+                dispatched_at=queued_at,
+            )
+            user_output(click.style("✓", fg="green") + " Dispatch metadata written")
+        except Exception as e:
+            user_output(
+                click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+            )
+
+        # Update PR body with workflow run link (best-effort)
+        # Guard: only append if body is non-empty to avoid overwriting metadata block
+        try:
+            pr_details = ctx.github.get_pr(repo.root, plan_number)
+            if not isinstance(pr_details, PRNotFound) and pr_details.body:
+                updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
+                ctx.github.update_pr_body(repo.root, plan_number, updated_body)
+        except Exception as e:
+            logger.warning("Failed to update PR body with workflow run link: %s", e)
 
     # Post queued event comment via PlanBackend
     try:
@@ -530,6 +540,9 @@ def _submit_draft_pr_plan(
             expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
         )
 
+        workflow_run_line = (
+            f"**Workflow run:** {workflow_url}" if workflow_url else "**Workflow run:** pending"
+        )
         comment_body = render_erk_issue_event(
             title="🔄 Plan Queued for Implementation",
             metadata=metadata_block,
@@ -537,7 +550,7 @@ def _submit_draft_pr_plan(
                 f"Plan submitted by **{submitted_by}** at {queued_at}.\n\n"
                 f"The `{DISPATCH_WORKFLOW_METADATA_NAME}` workflow has been "
                 f"triggered via direct dispatch.\n\n"
-                f"**Workflow run:** {workflow_url}"
+                f"{workflow_run_line}"
             ),
         )
 
@@ -810,6 +823,7 @@ def _submit_single_issue(
     submitted_by: str,
     original_branch: str,
     base_branch: str,
+    no_wait: bool,
 ) -> SubmitResult:
     """Submit a single validated issue for implementation.
 
@@ -1019,42 +1033,51 @@ def _submit_single_issue(
         **workflow_config,
     }
 
-    run_id = ctx.github.trigger_workflow(
-        repo_root=repo.root,
-        workflow=DISPATCH_WORKFLOW_NAME,
-        inputs=inputs,
-    )
-    user_output(click.style("✓", fg="green") + " Workflow triggered.")
-
-    # Compute workflow URL once (used for PR body update, queued comment, and result)
-    workflow_url = _build_workflow_run_url(issue.url, run_id)
-
-    # Update PR body with workflow run link (best-effort)
-    try:
-        pr_details = ctx.github.get_pr(repo.root, pr_number)
-        if not isinstance(pr_details, PRNotFound):
-            updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
-            ctx.github.update_pr_body(repo.root, pr_number, updated_body)
-    except Exception as e:
-        logger.warning("Failed to update PR body with workflow run link: %s", e)
-
-    # Write dispatch metadata synchronously to fix race condition with erk dash
-    # This ensures the issue body has the run info before we return to the user
-    try:
-        write_dispatch_metadata(
-            plan_backend=ctx.plan_backend,
-            github=ctx.github,
+    if no_wait:
+        ctx.github.dispatch_workflow(
             repo_root=repo.root,
-            issue_number=issue_number,
-            run_id=run_id,
-            dispatched_at=queued_at,
+            workflow=DISPATCH_WORKFLOW_NAME,
+            inputs=inputs,
         )
-        user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
-    except Exception as e:
-        # Log warning but don't block - workflow is already triggered
-        user_output(
-            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+        user_output(click.style("✓", fg="green") + " Workflow dispatched (fire-and-forget).")
+        workflow_url = None
+        run_id = None
+    else:
+        run_id = ctx.github.trigger_workflow(
+            repo_root=repo.root,
+            workflow=DISPATCH_WORKFLOW_NAME,
+            inputs=inputs,
         )
+        user_output(click.style("✓", fg="green") + " Workflow triggered.")
+        workflow_url = _build_workflow_run_url(issue.url, run_id)
+
+    if run_id is not None:
+        # Update PR body with workflow run link (best-effort)
+        try:
+            pr_details = ctx.github.get_pr(repo.root, pr_number)
+            if not isinstance(pr_details, PRNotFound):
+                updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
+                ctx.github.update_pr_body(repo.root, pr_number, updated_body)
+        except Exception as e:
+            logger.warning("Failed to update PR body with workflow run link: %s", e)
+
+        # Write dispatch metadata synchronously to fix race condition with erk dash
+        # This ensures the issue body has the run info before we return to the user
+        try:
+            write_dispatch_metadata(
+                plan_backend=ctx.plan_backend,
+                github=ctx.github,
+                repo_root=repo.root,
+                issue_number=issue_number,
+                run_id=run_id,
+                dispatched_at=queued_at,
+            )
+            user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
+        except Exception as e:
+            # Log warning but don't block - workflow is already triggered
+            user_output(
+                click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+            )
 
     validation_results = {
         "issue_is_open": True,
@@ -1071,6 +1094,9 @@ def _submit_single_issue(
             expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
         )
 
+        workflow_run_line = (
+            f"**Workflow run:** {workflow_url}" if workflow_url else "**Workflow run:** pending"
+        )
         comment_body = render_erk_issue_event(
             title="🔄 Issue Queued for Implementation",
             metadata=metadata_block,
@@ -1078,7 +1104,7 @@ def _submit_single_issue(
                 f"Issue submitted by **{submitted_by}** at {queued_at}.\n\n"
                 f"The `{DISPATCH_WORKFLOW_METADATA_NAME}` workflow has been "
                 f"triggered via direct dispatch.\n\n"
-                f"**Workflow run:** {workflow_url}\n\n"
+                f"{workflow_run_line}\n\n"
                 f"Branch and draft PR were created locally for correct commit attribution."
             ),
         )
@@ -1121,9 +1147,18 @@ def _submit_single_issue(
     is_flag=True,
     help="Delete existing branches and create fresh without prompting.",
 )
+@click.option(
+    "--no-wait",
+    is_flag=True,
+    help="Dispatch workflow without polling for run ID (fire-and-forget). Skips run URL output.",
+)
 @click.pass_obj
 def submit_cmd(
-    ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None, force: bool
+    ctx: ErkContext,
+    issue_numbers: tuple[int, ...],
+    base: str | None,
+    force: bool,
+    no_wait: bool,
 ) -> None:
     """Submit issues for remote AI implementation via GitHub Actions.
 
@@ -1250,6 +1285,7 @@ def submit_cmd(
                 submitted_by=submitted_by,
                 original_branch=original_branch,
                 base_branch=target_branch,
+                no_wait=no_wait,
             )
             results.append(result)
             user_output("")
@@ -1295,6 +1331,7 @@ def submit_cmd(
                 submitted_by=submitted_by,
                 original_branch=original_branch,
                 base_branch=target_branch,
+                no_wait=no_wait,
             )
             results.append(result)
             user_output("")
@@ -1309,4 +1346,7 @@ def submit_cmd(
         user_output(f"    Issue: {r.issue_url}")
         if r.pr_url:
             user_output(f"    PR: {r.pr_url}")
-        user_output(f"    Workflow: {r.workflow_url}")
+        if r.workflow_url:
+            user_output(f"    Workflow: {r.workflow_url}")
+        else:
+            user_output("    Workflow: dispatched (run ID pending)")

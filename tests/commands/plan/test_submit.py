@@ -606,3 +606,108 @@ def test_submit_issue_plan_uses_plumbing_commit() -> None:
             branch for _, branch in git.checked_out_branches if branch.startswith("P42-")
         ]
         assert len(plan_branch_checkouts) == 0
+
+
+def test_submit_draft_pr_plan_no_wait_dispatches_without_polling() -> None:
+    """Test that --no-wait calls dispatch_workflow instead of trigger_workflow.
+
+    With --no-wait:
+    - dispatch_workflow() is called (fire-and-forget, no run ID)
+    - trigger_workflow() is NOT called
+    - Summary shows "run ID pending" instead of a URL
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "draft-pr-plan-branch"
+
+        plan_header = render_metadata_block(
+            MetadataBlock(
+                key="plan-header",
+                data={
+                    "schema_version": "2",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                    "created_by": "testuser",
+                    "branch_name": plan_branch,
+                },
+            )
+        )
+        pr_body = build_plan_stage_body(
+            plan_header,
+            "# Plan: Test Draft PR Plan\n\n- Step 1\n- Step 2",
+        )
+
+        pr_42 = PRDetails(
+            number=42,
+            url="https://github.com/test-owner/test-repo/pull/42",
+            title="[erk-plan] Test Draft PR Plan",
+            body=pr_body,
+            state="OPEN",
+            is_draft=True,
+            base_ref_name="main",
+            head_ref_name=plan_branch,
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner="test-owner",
+            repo="test-repo",
+            labels=("erk-plan",),
+        )
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+
+        draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=[],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=draft_pr_backend,
+        )
+
+        result = runner.invoke(
+            cli, ["plan", "submit", "42", "--base", "main", "--no-wait"], obj=ctx
+        )
+
+        # dispatch_workflow used, not trigger_workflow
+        assert len(fake_gh.dispatched_workflows) == 1
+        assert len(fake_gh.triggered_workflows) == 0
+
+        # Verify dispatch used correct workflow inputs
+        _workflow_name, inputs = fake_gh.dispatched_workflows[0]
+        assert inputs["plan_backend"] == "draft_pr"
+        assert inputs["plan_id"] == "42"
+
+        # Summary indicates run ID is pending
+        assert "pending" in result.output

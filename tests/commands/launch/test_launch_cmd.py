@@ -387,3 +387,81 @@ def test_workflow_launch_pr_fix_conflicts_closed_pr_fails(tmp_path: Path) -> Non
 
         assert result.exit_code == 1
         assert "Cannot rebase CLOSED PR" in result.output
+
+
+def test_workflow_launch_pr_fix_conflicts_no_wait() -> None:
+    """Test pr-fix-conflicts with --no-wait dispatches without polling."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            state="OPEN",
+            base_ref_name="main",
+            title="Add feature",
+        )
+        github = FakeGitHub(
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli, ["launch", "pr-fix-conflicts", "--pr", "123", "--no-wait"], obj=ctx
+        )
+
+        assert result.exit_code == 0
+        assert "fire-and-forget" in result.output
+
+        # dispatch_workflow used, not trigger_workflow
+        assert len(github.dispatched_workflows) == 1
+        assert len(github.triggered_workflows) == 0
+
+        workflow, inputs = github.dispatched_workflows[0]
+        assert workflow == WORKFLOW_COMMAND_MAP["pr-fix-conflicts"]
+        assert inputs["branch_name"] == "feature-branch"
+
+
+def test_workflow_launch_pr_address_no_wait() -> None:
+    """Test pr-address with --no-wait dispatches without polling."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        pr_details = _make_pr_details(
+            number=456,
+            head_ref_name="review-branch",
+            state="OPEN",
+            base_ref_name="main",
+            title="PR with comments",
+        )
+        github = FakeGitHub(
+            pr_details={456: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(cli, ["launch", "pr-address", "--pr", "456", "--no-wait"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "fire-and-forget" in result.output
+
+        # dispatch_workflow used, not trigger_workflow
+        assert len(github.dispatched_workflows) == 1
+        assert len(github.triggered_workflows) == 0
+
+        workflow, inputs = github.dispatched_workflows[0]
+        assert workflow == WORKFLOW_COMMAND_MAP["pr-address"]
+        assert inputs["pr_number"] == "456"
