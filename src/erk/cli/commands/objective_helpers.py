@@ -46,6 +46,10 @@ def _wait_for_issue_closure(
         _AUTO_CLOSE_RETRY_DELAY,
     )
     for attempt in range(_AUTO_CLOSE_MAX_RETRIES):
+        user_output(
+            f"  Waiting for issue #{issue_number} to close... "
+            f"(attempt {attempt + 1}/{_AUTO_CLOSE_MAX_RETRIES})"
+        )
         ctx.time.sleep(_AUTO_CLOSE_RETRY_DELAY)
         result = ctx.plan_store.get_plan(repo_root, plan_id)
         if isinstance(result, PlanNotFound):

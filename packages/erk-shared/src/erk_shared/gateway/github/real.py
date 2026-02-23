@@ -339,6 +339,7 @@ class RealGitHub(GitHub):
         max_attempts = 15
         runs_data: list[dict[str, Any]] = []
         for attempt in range(max_attempts):
+            user_output(f"  Waiting for workflow run... (attempt {attempt + 1}/{max_attempts})")
             debug_log(f"trigger_workflow: polling attempt {attempt + 1}/{max_attempts}")
 
             # GH-API-AUDIT: REST - GET actions/runs

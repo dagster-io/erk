@@ -13,6 +13,7 @@ import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.time.abc import Time
+from erk_shared.output.output import user_output
 
 # Feature flag: set to False to disable index lock waiting
 INDEX_LOCK_WAITING_ENABLED = True
@@ -41,7 +42,12 @@ def get_lock_path(repo_root: Path) -> Path | None:
     if result.returncode != 0:
         # Not a git repository or git not available
         return None
-    return Path(result.stdout.strip())
+    raw_path = Path(result.stdout.strip())
+    # git rev-parse --git-path returns a path relative to repo_root;
+    # resolve it so callers don't depend on CWD matching the repo.
+    if not raw_path.is_absolute():
+        return (repo_root / raw_path).resolve()
+    return raw_path
 
 
 def wait_for_index_lock(
@@ -80,8 +86,12 @@ def wait_for_index_lock(
         return True
 
     elapsed = 0.0
+    printed = False
 
     while lock_path.exists() and elapsed < max_wait_seconds:
+        if not printed:
+            user_output("  Waiting for git index.lock to be released...")
+            printed = True
         time.sleep(poll_interval)
         elapsed += poll_interval
 
