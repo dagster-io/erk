@@ -26,9 +26,9 @@ Quick reference for all `erk exec` subcommands.
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                        |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                                |
 | `close-issue-with-comment`        | Close a plan with a comment.                                                |
+| `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                         |
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                   |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                  |
-| `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                         |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                            |
@@ -36,6 +36,7 @@ Quick reference for all `erk exec` subcommands.
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                  |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                          |
 | `find-project-dir`                | Find Claude Code project directory for a filesystem path.                   |
+| `generate-node-slugs`             | Generate slugs for objective node descriptions from JSON on stdin.          |
 | `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                       |
 | `generate-pr-summary`             | Generate PR summary from PR diff using Claude.                              |
 | `get-closing-text`                | Get closing text for PR body based on .impl/plan-ref.json or branch name.   |
@@ -65,7 +66,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker delete`                   | Delete a marker file.                                                       |
 | `marker exists`                   | Check if a marker file exists.                                              |
 | `marker read`                     | Read content from a marker file.                                            |
-| `migrate-objective-schema`        | Migrate an objective's roadmap YAML from schema v2 to v3.                   |
+| `migrate-objective-schema`        | Migrate an objective's roadmap YAML to the latest schema (v4).              |
 | `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                  |
 | `objective-fetch-context`         | Fetch all context for objective update in a single call.                    |
 | `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                      |
@@ -224,6 +225,18 @@ Close a plan with a comment.
 | ----------- | ---- | -------- | -------------- | ---------------------------------- |
 | `--comment` | TEXT | Yes      | Sentinel.UNSET | Comment body to add before closing |
 
+### create-impl-context-from-plan
+
+Create .erk/impl-context/ folder from plan content.
+
+**Usage:** `erk exec create-impl-context-from-plan` <plan_id>
+
+**Arguments:**
+
+| Name      | Required | Description |
+| --------- | -------- | ----------- |
+| `PLAN_ID` | Yes      | -           |
+
 ### create-issue-from-session
 
 Extract plan from Claude session and create GitHub issue.
@@ -241,18 +254,6 @@ Extract plan from Claude session and create GitHub issue.
 Create GitHub issue from plan content with erk-plan label.
 
 **Usage:** `erk exec create-plan-from-context`
-
-### create-impl-context-from-plan
-
-Create .erk/impl-context/ folder from plan content.
-
-**Usage:** `erk exec create-impl-context-from-plan` <plan_id>
-
-**Arguments:**
-
-| Name      | Required | Description |
-| --------- | -------- | ----------- |
-| `PLAN_ID` | Yes      | -           |
 
 ### dash-data
 
@@ -334,6 +335,12 @@ Find Claude Code project directory for a filesystem path.
 | -------- | ---- | -------- | -------------- | -------------------------------------------------------- |
 | `--path` | PATH | No       | Sentinel.UNSET | Path to find project for (defaults to current directory) |
 | `--json` | FLAG | No       | -              | Output in JSON format                                    |
+
+### generate-node-slugs
+
+Generate slugs for objective node descriptions from JSON on stdin.
+
+**Usage:** `erk exec generate-node-slugs`
 
 ### generate-pr-address-summary
 
@@ -622,21 +629,22 @@ Execute deferred land operations.
 
 **Options:**
 
-| Flag                  | Type    | Required | Default        | Description                                                                       |
-| --------------------- | ------- | -------- | -------------- | --------------------------------------------------------------------------------- |
-| `--pr-number`         | INTEGER | Yes      | Sentinel.UNSET | PR number to merge                                                                |
-| `--branch`            | TEXT    | Yes      | Sentinel.UNSET | Branch name being landed                                                          |
-| `--worktree-path`     | PATH    | No       | Sentinel.UNSET | Path to worktree being cleaned up                                                 |
-| `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                                    |
-| `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                                           |
-| `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                                     |
-| `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                                            |
-| `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)                               |
-| `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                   |
-| `--no-cleanup`        | FLAG    | No       | -              | User declined cleanup during validation phase                                     |
-| `--script`            | FLAG    | No       | -              | Output activation script path (for shell integration)                             |
-| `--up`                | FLAG    | No       | -              | Navigate upstack to child branch after landing (resolves child at execution time) |
-| `-f`, `--force`       | FLAG    | No       | -              | Accept flag for compatibility (execute mode always skips confirmations)           |
+| Flag                  | Type    | Required | Default        | Description                                                                              |
+| --------------------- | ------- | -------- | -------------- | ---------------------------------------------------------------------------------------- |
+| `--pr-number`         | INTEGER | Yes      | Sentinel.UNSET | PR number to merge                                                                       |
+| `--branch`            | TEXT    | Yes      | Sentinel.UNSET | Branch name being landed                                                                 |
+| `--worktree-path`     | PATH    | No       | Sentinel.UNSET | Path to worktree being cleaned up                                                        |
+| `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                                           |
+| `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                                                  |
+| `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                                            |
+| `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                                                   |
+| `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)                                      |
+| `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                          |
+| `--no-cleanup`        | FLAG    | No       | -              | User declined cleanup during validation phase                                            |
+| `--script`            | FLAG    | No       | -              | Output activation script path (for shell integration)                                    |
+| `--up`                | FLAG    | No       | -              | Navigate upstack to child branch after landing (resolves child at execution time)        |
+| `-f`, `--force`       | FLAG    | No       | -              | Accept flag for compatibility (execute mode always skips confirmations)                  |
+| `--down`              | FLAG    | No       | -              | Accept flag for compatibility (navigate-to-trunk is the default when --up is not passed) |
 
 ### list-sessions
 
@@ -758,7 +766,7 @@ Read content from a marker file.
 
 ### migrate-objective-schema
 
-Migrate an objective's roadmap YAML from schema v2 to v3.
+Migrate an objective's roadmap YAML to the latest schema (v4).
 
 **Usage:** `erk exec migrate-objective-schema` <issue_number>
 
