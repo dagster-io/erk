@@ -111,6 +111,11 @@ def _display_copy_prepare_activate(ctx: CommandContext) -> str:
     )
 
 
+def _display_copy_implement_local(ctx: CommandContext) -> str:
+    """Display name for copy_implement_local command."""
+    return f'source "$(erk pr checkout {ctx.row.pr_number} --script)" && erk implement --dangerous'
+
+
 def _display_copy_submit(ctx: CommandContext) -> str:
     """Display name for copy_submit command."""
     return f"erk plan submit {ctx.row.plan_id}"
@@ -346,6 +351,17 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut="4",
             is_available=lambda ctx: _is_plan_view(ctx) and _is_github_backend(ctx),
             get_display_name=_display_copy_prepare_activate,
+        ),
+        CommandDefinition(
+            id="copy_implement_local",
+            name="checkout && implement",
+            description="implement",
+            category=CommandCategory.COPY,
+            shortcut="2",
+            is_available=lambda ctx: (
+                _is_plan_view(ctx) and not _is_github_backend(ctx) and ctx.row.pr_number is not None
+            ),
+            get_display_name=_display_copy_implement_local,
         ),
         CommandDefinition(
             id="copy_submit",

@@ -48,6 +48,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("y", "copy_output_logs", "Copy Logs"),
         Binding("1", "copy_prepare", "Prepare"),
         Binding("4", "copy_prepare_activate", "Activate"),
+        Binding("2", "copy_implement_local", "Implement Local"),
         Binding("3", "copy_submit", "Submit"),
         Binding("5", "fix_conflicts_remote", "Fix Conflicts"),
     ]
@@ -349,6 +350,15 @@ class PlanDetailScreen(ModalScreen):
         )
         self._copy_and_notify(cmd)
 
+    def action_copy_implement_local(self) -> None:
+        """Copy one-liner to checkout PR and start local implementation."""
+        if self._row.pr_number is not None:
+            cmd = (
+                f'source "$(erk pr checkout {self._row.pr_number} --script)"'
+                " && erk implement --dangerous"
+            )
+            self._copy_and_notify(cmd)
+
     def action_copy_submit(self) -> None:
         """Copy submit command to clipboard."""
         cmd = f"erk plan submit {self._row.plan_id}"
@@ -643,6 +653,15 @@ class PlanDetailScreen(ModalScreen):
             )
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
+
+        elif command_id == "copy_implement_local":
+            if row.pr_number is not None:
+                cmd = (
+                    f'source "$(erk pr checkout {row.pr_number} --script)"'
+                    " && erk implement --dangerous"
+                )
+                executor.copy_to_clipboard(cmd)
+                executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_submit":
             cmd = f"erk plan submit {row.plan_id}"

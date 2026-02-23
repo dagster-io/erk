@@ -840,6 +840,15 @@ class ErkDashApp(App):
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
+        elif command_id == "copy_implement_local":
+            if row.pr_number is not None:
+                cmd = (
+                    f'source "$(erk pr checkout {row.pr_number} --script)"'
+                    " && erk implement --dangerous"
+                )
+                self._provider.clipboard.copy(cmd)
+                self.notify(f"Copied: {cmd}")
+
         elif command_id == "copy_submit":
             cmd = f"erk plan submit {row.plan_id}"
             self._provider.clipboard.copy(cmd)
