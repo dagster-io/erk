@@ -1,5 +1,7 @@
 """Tests for one-shot dispatch shared logic."""
 
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -11,7 +13,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import CreateIssueResult, IssueNotFound
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -446,3 +448,77 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
         # Verify full prompt was committed directly to branch via branch_commits
         assert len(git.branch_commits) == 1
         assert git.branch_commits[0].files == {".erk/impl-context/prompt.md": long_prompt + "\n"}
+
+
+def test_dispatch_fails_on_full_skeleton_failure() -> None:
+    """Dispatch raises when create_plan_issue fails completely (no issue created)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        class FailingCreateGitHubIssues(FakeGitHubIssues):
+            def create_issue(
+                self, *, repo_root: Path, title: str, body: str, labels: list[str]
+            ) -> CreateIssueResult:
+                raise RuntimeError("GitHub API unavailable")
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FailingCreateGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "fix the import"],
+            obj=ctx,
+        )
+
+        # Dispatch should fail — no branch, PR, or workflow created
+        assert result.exit_code != 0
+        assert len(git.created_branches) == 0
+        assert len(github.created_prs) == 0
+        assert len(github.triggered_workflows) == 0
+
+
+def test_dispatch_fails_on_partial_skeleton_failure() -> None:
+    """Dispatch raises when skeleton issue is created but comment fails (partial failure)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        class FailingCommentGitHubIssues(FakeGitHubIssues):
+            def add_comment(self, repo_root: Path, number: int, body: str) -> int:
+                raise RuntimeError("Comment too large")
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FailingCommentGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "fix the import"],
+            obj=ctx,
+        )
+
+        # Dispatch should fail even though issue was created
+        assert result.exit_code != 0
+        # The error should mention the comment failure
+        assert "failed to add plan comment" in result.output
+
+        # No branch, PR, or workflow created (stopped before those steps)
+        assert len(git.created_branches) == 0
+        assert len(github.created_prs) == 0
+        assert len(github.triggered_workflows) == 0
