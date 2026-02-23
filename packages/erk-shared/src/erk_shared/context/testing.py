@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
-from erk_shared.plan_store import get_plan_backend
 
 if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
@@ -192,7 +191,7 @@ def context_for_test(
     # When github_issues is explicitly passed, the caller is setting up for the github
     # backend (FakeGitHubIssues with issues/comments). Use GitHubPlanStore to match
     # their intent rather than switching to DraftPRPlanBackend.
-    elif get_plan_backend() == "draft_pr" and not issues_explicitly_passed:
+    elif "draft_pr" == "draft_pr" and not issues_explicitly_passed:
         resolved_plan_store = DraftPRPlanBackend(resolved_github, resolved_issues, time=FakeTime())
     else:
         resolved_plan_store = GitHubPlanStore(resolved_issues, fake_time)

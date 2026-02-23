@@ -7,6 +7,7 @@ import time
 from collections.abc import Callable, Iterator
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 from textual import on, work
 from textual.app import App, ComposeResult, SystemCommand
@@ -36,7 +37,6 @@ from erk.tui.views.types import (
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
-from erk_shared.context.types import PlanBackendType
 from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
@@ -111,7 +111,7 @@ class ErkDashApp(App):
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
-        plan_backend: PlanBackendType = "github",
+        plan_backend: Literal["draft_pr"] = "draft_pr",
     ) -> None:
         """Initialize the dashboard app.
 

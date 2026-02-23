@@ -58,7 +58,6 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
 from erk_shared.impl_folder import read_plan_ref
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 from erk_shared.scratch.session_markers import read_objective_context_marker
@@ -764,7 +763,7 @@ def _gather_inputs(
         pr_number=pr_number,
         plan_issue_number=plan_issue_number,
         editor=editor,
-        plan_backend=get_plan_backend(),
+        plan_backend="draft_pr",
     )
 
 

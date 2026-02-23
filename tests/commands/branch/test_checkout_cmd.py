@@ -21,7 +21,6 @@ from erk.core.worktree_pool import (
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
@@ -708,7 +707,7 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = get_plan_backend()
+        backend = "draft_pr"
         plan_store, _ = create_plan_store({"500": plan}, backend=backend)
 
         # Draft-PR backend needs the branch to exist already
@@ -908,7 +907,7 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = get_plan_backend()
+        backend = "draft_pr"
         plan_store, _ = create_plan_store({"500": plan}, backend=backend)
 
         branch = "plnd/add-feature-01-15-1030"

@@ -78,7 +78,6 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
@@ -609,7 +608,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # PLAN_BACKEND_SPLIT: selects DraftPRPlanBackend or GitHubPlanStore based on ERK_PLAN_BACKEND
     plan_store: PlanStore
     plan_list_service: PlanListService
-    if get_plan_backend() == "draft_pr":
+    if "draft_pr" == "draft_pr":
         plan_store = DraftPRPlanBackend(github, issues, time=RealTime())
         plan_list_service = DraftPRPlanListService(github)
     else:

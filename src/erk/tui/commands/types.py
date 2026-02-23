@@ -3,10 +3,10 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Literal
 
 from erk.tui.data.types import PlanRowData
 from erk.tui.views.types import ViewMode
-from erk_shared.context.types import PlanBackendType
 
 
 class CommandCategory(Enum):
@@ -31,7 +31,7 @@ class CommandContext:
 
     row: PlanRowData
     view_mode: ViewMode
-    plan_backend: PlanBackendType
+    plan_backend: Literal["draft_pr"]
 
 
 @dataclass(frozen=True)
