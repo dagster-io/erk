@@ -1075,3 +1075,105 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_after_deleting_b
     # Verify branch was deleted
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
+
+
+def test_cleanup_no_worktree_ensures_branch_not_checked_out_before_delete(
+    tmp_path: Path,
+) -> None:
+    """Test that NO_WORKTREE path releases branch before deletion.
+
+    Regression test for bug where _cleanup_no_worktree skipped the
+    _ensure_branch_not_checked_out() call, causing delete_branch() to fail
+    when the branch was still checked out in another worktree.
+
+    Scenario:
+    - worktree_path=None (NO_WORKTREE classification)
+    - Branch is checked out in an implementation worktree
+    - Without fix: delete_branch() fails because branch is still checked out
+    - With fix: _ensure_branch_not_checked_out() detaches HEAD first
+    """
+    other_worktree_path = tmp_path / "worktrees" / "erk-slot-01"
+    other_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+
+    # Branch is checked out in another worktree
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [
+                WorktreeInfo(path=other_worktree_path, branch="feature-branch"),
+            ]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        trunk_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            other_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+        },
+    )
+
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=main_repo_root,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=main_repo_root / "pool.json",
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # worktree_path=None triggers NO_WORKTREE classification
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=None,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            no_delete=False,
+            skip_activation_output=False,
+            cleanup_confirmed=True,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify _ensure_branch_not_checked_out detached HEAD in the other worktree
+    detached_calls = [(path, ref) for path, ref in fake_git.detached_checkouts if ref == "main"]
+    actual_path_detached = [
+        (path, ref)
+        for path, ref in detached_calls
+        if path.resolve() == other_worktree_path.resolve()
+    ]
+    assert len(actual_path_detached) >= 1, (
+        f"Expected detached checkout at other_worktree_path. "
+        f"Got detached_checkouts: {fake_git.detached_checkouts}"
+    )
+
+    # Verify branch was deleted successfully
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
