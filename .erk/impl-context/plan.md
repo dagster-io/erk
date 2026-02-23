@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Plan: Merge `plan`/`pr` into single `planned_pr` field in objective roadmap
 
 ## Context
@@ -98,3 +99,62 @@ Merge `plan: str | None` and `pr: str | None` into a single `planned_pr: str | N
 3. `erk objective check 7911` — passes all validation checks
 4. `erk exec update-objective-node 7911 --node 1.2 --planned-pr "#9999" --status in_progress` — sets single field, then revert
 5. `erk exec objective-render-roadmap` with test JSON — produces 4-column table (Node | Description | Status | Planned PR)
+=======
+# Fix: impl-signal started missing lifecycle_stage transition
+
+## Context
+
+When `erk exec impl-signal started` is called during plan implementation, the PR status should transition from `planned` → `implementing`. However, the PR stayed at "planned" throughout the session because `_signal_started()` in `impl_signal.py` omits `"lifecycle_stage": "implementing"` from the metadata dict it posts.
+
+The `_signal_submitted` handler (same file) correctly sets `"lifecycle_stage": "implemented"`, and the now-replaced `mark_impl_started.py` command correctly set `"lifecycle_stage": "implementing"`. The `started` handler was simply never updated to carry the transition forward.
+
+## Root Cause
+
+**File:** `src/erk/cli/commands/exec/scripts/impl_signal.py`, lines 248–259
+
+```python
+metadata: dict[str, object] = {
+    "worktree_name": worktree_name,
+    "branch_name": branch_name,
+}
+if in_github_actions():
+    metadata["last_remote_impl_at"] = timestamp
+else:
+    metadata["last_local_impl_at"] = timestamp
+    metadata["last_local_impl_event"] = "started"
+    metadata["last_local_impl_session"] = session_id
+    metadata["last_local_impl_user"] = user
+```
+
+`"lifecycle_stage": "implementing"` is absent from both branches.
+
+## Fix
+
+Add `"lifecycle_stage": "implementing"` to both branches of the metadata dict in `_signal_started()`, mirroring what `mark_impl_started.py` did:
+
+```python
+metadata: dict[str, object] = {
+    "worktree_name": worktree_name,
+    "branch_name": branch_name,
+}
+if in_github_actions():
+    metadata["last_remote_impl_at"] = timestamp
+    metadata["lifecycle_stage"] = "implementing"
+else:
+    metadata["last_local_impl_at"] = timestamp
+    metadata["last_local_impl_event"] = "started"
+    metadata["last_local_impl_session"] = session_id
+    metadata["last_local_impl_user"] = user
+    metadata["lifecycle_stage"] = "implementing"
+```
+
+## Files to Change
+
+- `src/erk/cli/commands/exec/scripts/impl_signal.py` — the only change needed
+
+## Verification
+
+After the fix, run `erk exec impl-signal started` in a worktree with a valid `.impl/plan-ref.json` pointing to a draft-PR plan, and confirm the PR metadata block updates `lifecycle_stage` to `implementing`. The status indicator in `erk dash` should show "impl" rather than "planned".
+
+Tests live in `tests/unit/cli/commands/exec/scripts/` — check for existing `test_impl_signal.py` to add a regression case covering the lifecycle_stage transition.
+>>>>>>> 875c76569 (Add plan: Fix: impl-signal started missing lifecycle_stage transition)

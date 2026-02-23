@@ -1,9 +1,22 @@
 {
   "provider": "github-draft-pr",
+<<<<<<< HEAD
+<<<<<<< HEAD
   "plan_id": "7975",
   "url": "https://github.com/dagster-io/erk/pull/7975",
   "created_at": "2026-02-23T12:30:49.677654",
   "synced_at": "2026-02-23T12:30:49.677654",
   "labels": [],
   "objective_id": null
+=======
+  "title": "Fix: impl-signal started missing lifecycle_stage transition"
+>>>>>>> 875c76569 (Add plan: Fix: impl-signal started missing lifecycle_stage transition)
+=======
+  "plan_id": "7992",
+  "url": "https://github.com/dagster-io/erk/pull/7992",
+  "created_at": "2026-02-23T20:07:32.420463",
+  "synced_at": "2026-02-23T20:07:32.420463",
+  "labels": [],
+  "objective_id": null
+>>>>>>> 8eacac61e (Add plan for PR #7992)
 }

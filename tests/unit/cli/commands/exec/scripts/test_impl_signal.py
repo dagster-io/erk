@@ -317,6 +317,30 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
 
 
 @_requires_git_branch
+def test_started_sets_lifecycle_stage_implementing(tmp_path: Path) -> None:
+    """Started event sets lifecycle_stage to 'implementing' in metadata."""
+    issue = _make_issue(number=321)
+    fake_issues = FakeGitHubIssues(issues={321: issue})
+    _setup_plan_ref(tmp_path / ".impl", plan_id="321")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        impl_signal,
+        ["started", "--session-id", "test-session-321"],
+        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is True
+
+    # Verify lifecycle_stage was set in the updated body
+    assert len(fake_issues.updated_bodies) == 1
+    _updated_issue_number, updated_body = fake_issues.updated_bodies[0]
+    assert "implementing" in updated_body
+
+
+@_requires_git_branch
 def test_started_writes_local_run_state(tmp_path: Path) -> None:
     """Started event writes local run state file."""
     issue = _make_issue(number=789)
