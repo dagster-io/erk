@@ -371,7 +371,7 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
     assert len(fake_issues.updated_bodies) == 1
     updated_issue_number, updated_body = fake_issues.updated_bodies[0]
     assert updated_issue_number == 100
-    assert "implemented" in updated_body
+    assert "impl" in updated_body
 
 
 def test_submitted_no_plan_ref(tmp_path: Path) -> None:

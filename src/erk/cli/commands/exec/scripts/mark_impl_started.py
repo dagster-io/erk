@@ -139,7 +139,7 @@ def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
                 plan_ref.plan_id,
                 metadata={
                     "last_remote_impl_at": timestamp,
-                    "lifecycle_stage": "implementing",
+                    "lifecycle_stage": "impl",
                 },
             )
         else:
@@ -151,7 +151,7 @@ def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
                     "last_local_impl_event": "started",
                     "last_local_impl_session": session_id,
                     "last_local_impl_user": user,
-                    "lifecycle_stage": "implementing",
+                    "lifecycle_stage": "impl",
                 },
             )
     except RuntimeError as e:

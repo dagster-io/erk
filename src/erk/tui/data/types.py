@@ -82,7 +82,7 @@ class PlanRowData:
         created_display: Formatted relative time string (e.g., "2d ago").
         author: GitHub login of the issue creator.
         is_learn_plan: Whether this is a learn plan (has [erk-learn] prefix).
-        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-").
+        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "impl", "-").
         status_display: Status indicator emojis (e.g., "🚀", "👀 💥", "-").
     """
 
