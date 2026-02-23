@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Fix `ci-update-pr-body` to also update PR title"
-}
