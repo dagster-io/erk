@@ -56,9 +56,9 @@ def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
     if stage == "planned":
         return f"[dim]{stage}[/dim]"
     if stage == "implementing":
-        return "[yellow]impling[/yellow]"
+        return "[yellow]impl[/yellow]"
     if stage == "implemented":
-        return "[cyan]impld[/cyan]"
+        return "[cyan]impl[/cyan]"
     if stage == "merged":
         return f"[green]{stage}[/green]"
     if stage == "closed":
@@ -193,8 +193,8 @@ def _build_indicators(
     """
     # Detect stage from the display string content
     is_planned = "planned" in lifecycle_display
-    is_implementing = "impling" in lifecycle_display
-    is_implemented = "impld" in lifecycle_display
+    is_implementing = "[yellow]" in lifecycle_display and "impl" in lifecycle_display
+    is_implemented = "[cyan]" in lifecycle_display and "impl" in lifecycle_display
     is_review = "review" in lifecycle_display and "REVIEW" not in lifecycle_display
     is_active_stage = is_planned or is_implementing or is_review
 
