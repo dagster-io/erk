@@ -62,7 +62,7 @@ Branch: <branch_name>
 Original issue #<original_issue_number> has been closed.
 
 Next steps:
-  View PR:  gh pr view <pr_number> --web
+  View PR:  <pr_url>
   Prepare:  erk br co --for-plan <pr_number>
   Submit:   erk plan submit <pr_number>
 ```

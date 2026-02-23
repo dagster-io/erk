@@ -139,7 +139,7 @@ This is a comprehensive test feature that covers the implementation.
     assert "URL: " in result.output
     # Verify Next steps section with copy/pasteable commands
     assert "Next steps:" in result.output
-    assert "View Issue: gh issue view 1 --web" in result.output
+    assert "View Issue: https://github.com/test-owner/test-repo/issues/1" in result.output
     # Verify Claude Code slash command options
     assert "In Claude Code:" in result.output
     assert "Submit to queue: /erk:plan-submit" in result.output

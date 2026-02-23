@@ -131,7 +131,7 @@ Display: `Plan already saved as #<plan_number> (duplicate skipped)`
 
 If `branch_name` is present in the JSON, display the same next-steps block as the success case below (using the `plan_backend` field to choose the correct format).
 
-If `branch_name` is absent, display only: `View PR: gh pr view <plan_number> --web`
+If `branch_name` is absent, display only: `View PR: <plan_url>`
 
 Return immediately (skip Steps 3, 3.5 above if not already executed).
 
@@ -185,7 +185,7 @@ OR exit Claude Code first, then run one of:
 ```
 Next steps:
 
-View PR: gh pr view <plan_number> --web
+View PR: <plan_url>
 
 In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
@@ -200,7 +200,7 @@ OR exit Claude Code first, then run one of:
 ```
 Next steps:
 
-View Issue: gh issue view <plan_number> --web
+View Issue: <plan_url>
 
 In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation

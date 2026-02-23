@@ -8,10 +8,11 @@ class IssueNextSteps:
     """Canonical commands for issue operations."""
 
     issue_number: int
+    url: str
 
     @property
     def view(self) -> str:
-        return f"gh issue view {self.issue_number} --web"
+        return self.url
 
     @property
     def checkout(self) -> str:
@@ -46,10 +47,11 @@ class DraftPRNextSteps:
 
     pr_number: int
     branch_name: str
+    url: str
 
     @property
     def view(self) -> str:
-        return f"gh pr view {self.pr_number} --web"
+        return self.url
 
     @property
     def submit(self) -> str:
@@ -87,9 +89,9 @@ SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
 CHECKOUT_SLASH_COMMAND = "/erk:prepare"
 
 
-def format_next_steps_plain(issue_number: int) -> str:
+def format_next_steps_plain(issue_number: int, *, url: str) -> str:
     """Format for CLI output (plain text)."""
-    s = IssueNextSteps(issue_number)
+    s = IssueNextSteps(issue_number, url=url)
     return f"""Next steps:
 
 View Issue: {s.view}
@@ -103,9 +105,9 @@ OR exit Claude Code first, then run one of:
   Submit to Queue: {s.submit}"""
 
 
-def format_draft_pr_next_steps_plain(pr_number: int, *, branch_name: str) -> str:
+def format_draft_pr_next_steps_plain(pr_number: int, *, branch_name: str, url: str) -> str:
     """Format for CLI output (plain text) for draft PR plans."""
-    s = DraftPRNextSteps(pr_number=pr_number, branch_name=branch_name)
+    s = DraftPRNextSteps(pr_number=pr_number, branch_name=branch_name, url=url)
     return f"""Next steps:
 
 View PR: {s.view}
@@ -119,9 +121,9 @@ OR exit Claude Code first, then run one of:
   Submit to Queue: {s.submit}"""
 
 
-def format_next_steps_markdown(issue_number: int) -> str:
+def format_next_steps_markdown(issue_number: int, *, url: str) -> str:
     """Format for issue body (markdown)."""
-    s = IssueNextSteps(issue_number)
+    s = IssueNextSteps(issue_number, url=url)
     return f"""## Execution Commands
 
 **Submit to Erk Queue:**
