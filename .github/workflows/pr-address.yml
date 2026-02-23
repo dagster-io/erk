@@ -78,12 +78,11 @@ jobs:
 
       - name: Clean up plan staging dirs if present
         run: |
-          NEEDS_CLEANUP=false
-          if [ -d .erk/impl-context/ ] && git ls-files --error-unmatch .erk/impl-context/ >/dev/null 2>&1; then
+          # For plan-only PRs, .erk/impl-context/plan.md IS the PR content — skip cleanup
+          if git ls-files --error-unmatch .erk/impl-context/plan.md >/dev/null 2>&1; then
+            echo "Plan-only PR detected (.erk/impl-context/plan.md is tracked), skipping cleanup"
+          elif [ -d .erk/impl-context/ ] && git ls-files --error-unmatch .erk/impl-context/ >/dev/null 2>&1; then
             git rm -rf .erk/impl-context/
-            NEEDS_CLEANUP=true
-          fi
-          if [ "$NEEDS_CLEANUP" = true ]; then
             git commit -m "Remove plan staging dirs"
             echo "Cleaned up plan staging dirs"
           fi
