@@ -240,12 +240,12 @@ def handle_no_changes(
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
 
-    # 3. Set lifecycle stage to implemented
+    # 3. Set lifecycle stage to impl
     try:
         backend.update_metadata(
             repo_root,
             str(plan_id),
-            metadata={"lifecycle_stage": "implemented"},
+            metadata={"lifecycle_stage": "impl"},
         )
     except RuntimeError as e:
         result = HandleNoChangesError(

@@ -80,7 +80,7 @@ def test_update_multiple_fields() -> None:
     runner = CliRunner()
     result = runner.invoke(
         update_plan_header,
-        ["456", "lifecycle_stage=implementing", "objective_issue=7823"],
+        ["456", "lifecycle_stage=impl", "objective_issue=7823"],
         obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
     )
 
@@ -92,7 +92,7 @@ def test_update_multiple_fields() -> None:
     updated_issue = fake_gh.get_issue(repo_root, 456)
     block = find_metadata_block(updated_issue.body, "plan-header")
     assert block is not None
-    assert block.data["lifecycle_stage"] == "implementing"
+    assert block.data["lifecycle_stage"] == "impl"
     assert block.data["objective_issue"] == 7823
 
 

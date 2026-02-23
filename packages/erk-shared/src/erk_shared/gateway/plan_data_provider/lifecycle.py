@@ -17,7 +17,7 @@ def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
     color-coded Rich markup string for table display.
 
     When the resolved stage is "planned" and a workflow run exists,
-    upgrades to "implementing" since the plan is actively being worked on.
+    upgrades to "impl" since the plan is actively being worked on.
 
     Args:
         plan: Plan with header_fields and metadata populated
@@ -37,7 +37,7 @@ def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
             if is_draft and pr_state == "OPEN":
                 stage = "planned"
             elif not is_draft and pr_state == "OPEN":
-                stage = "implemented"
+                stage = "impl"
             elif not is_draft and pr_state == "MERGED":
                 stage = "merged"
             elif not is_draft and pr_state == "CLOSED":
@@ -46,19 +46,17 @@ def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
     if stage is None:
         return "-"
 
-    # Upgrade "planned" to "implementing" when a workflow run exists
+    # Upgrade "planned" to "impl" when a workflow run exists
     if stage == "planned" and has_workflow_run:
-        stage = "implementing"
+        stage = "impl"
 
     # Color-code by stage
     if stage in ("prompted", "planning"):
         return f"[magenta]{stage}[/magenta]"
     if stage == "planned":
         return f"[dim]{stage}[/dim]"
-    if stage == "implementing":
+    if stage in ("impl", "implementing", "implemented"):
         return "[yellow]impl[/yellow]"
-    if stage == "implemented":
-        return "[cyan]impl[/cyan]"
     if stage == "merged":
         return f"[green]{stage}[/green]"
     if stage == "closed":
@@ -122,11 +120,11 @@ def format_lifecycle_with_status(
 
     Adds emoji indicators to the stage text when relevant:
     - 🥞 prefix for stacked PRs (base branch != master/main)
-    - 🚧/👀 suffix for draft/published state (on planned, implementing, review)
-    - 💥 suffix for merge conflicts (on implementing and review stages)
+    - 🚧/👀 suffix for draft/published state (on planned, impl, review)
+    - 💥 suffix for merge conflicts (on impl and review stages)
     - ✔ suffix for approved PRs (on review stage only)
     - ❌ suffix for changes requested (on review stage only)
-    - 🚀 suffix for implemented PRs that are ready to merge (checks pass, no
+    - 🚀 suffix for impl PRs that are ready to merge (checks pass, no
       unresolved comments, no conflicts)
 
     Indicators are inserted inside Rich markup tags so they inherit
@@ -202,10 +200,9 @@ def _build_indicators(
     """
     # Detect stage from the display string content
     is_planned = "planned" in lifecycle_display
-    is_implementing = "[yellow]" in lifecycle_display and "impl" in lifecycle_display
-    is_implemented = "[cyan]" in lifecycle_display and "impl" in lifecycle_display
+    is_impl = "impl" in lifecycle_display  # matches "impl", "implementing", "implemented"
     is_review = "review" in lifecycle_display and "REVIEW" not in lifecycle_display
-    is_active_stage = is_planned or is_implementing or is_review
+    is_active_stage = is_planned or is_impl or is_review
 
     # Build indicator suffix — all emojis go on the right for consistency
     indicators: list[str] = []
@@ -218,8 +215,8 @@ def _build_indicators(
     if is_active_stage and is_draft is not None:
         indicators.append("🚧" if is_draft else "👀")
 
-    # Conflict/review indicators for implementing, implemented, and review stages
-    if is_implementing or is_implemented or is_review:
+    # Conflict/review indicators for impl and review stages
+    if is_impl or is_review:
         if has_conflicts is True:
             indicators.append("💥")
 
@@ -229,11 +226,11 @@ def _build_indicators(
             elif review_decision == "CHANGES_REQUESTED":
                 indicators.append("❌")
 
-    # Ready-to-merge indicator for implemented stage:
+    # Ready-to-merge indicator for impl stage:
     # shown only when checks pass, no unresolved comments, and no conflicts
     # (🥞 is informational and should not block 🚀)
     has_blocking_indicators = any(i != "🥞" for i in indicators)
-    if is_implemented and not has_blocking_indicators:
+    if is_impl and not has_blocking_indicators:
         if checks_passing is True and has_unresolved_comments is not True:
             indicators.append("🚀")
 

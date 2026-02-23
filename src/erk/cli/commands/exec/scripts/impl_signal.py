@@ -3,7 +3,7 @@
 This exec command wraps the start/end/submit signaling operations:
 - "started": Combines post-start-comment and mark-impl-started
 - "ended": Runs mark-impl-ended
-- "submitted": Sets lifecycle_stage to "implemented" after PR submission
+- "submitted": Sets lifecycle_stage to "impl" after PR submission
 
 Provides a single entry point for /erk:plan-implement to signal events
 with graceful failure (always exits 0 for || true pattern).
@@ -359,7 +359,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
 
 
 def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
-    """Handle 'submitted' event - set lifecycle_stage to implemented."""
+    """Handle 'submitted' event - set lifecycle_stage to impl."""
     event = "submitted"
 
     # Get cwd from context
@@ -396,7 +396,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
 
     # Build metadata dict with lifecycle_stage transition
     metadata: dict[str, object] = {
-        "lifecycle_stage": "implemented",
+        "lifecycle_stage": "impl",
     }
 
     # LBYL: Check plan exists before updating
@@ -436,7 +436,7 @@ def impl_signal(ctx: click.Context, event: str, session_id: str | None) -> None:
 
     'started' posts a start comment and updates issue metadata.
     'ended' updates issue metadata with ended event.
-    'submitted' sets lifecycle_stage to "implemented" after PR submission.
+    'submitted' sets lifecycle_stage to "impl" after PR submission.
 
     When --session-id is provided on 'started', also deletes the Claude plan file
     (the content has been saved to GitHub and snapshotted).
