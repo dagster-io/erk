@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Convert submit pipeline to git plumbing and wire configurable plan backend"
+}
