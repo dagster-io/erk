@@ -1,0 +1,54 @@
+{
+  "success": true,
+  "pr_number": 7923,
+  "comments": [
+    {
+      "id": 3941945559,
+      "author": "schrockn",
+      "body": "\ud83d\udd04 Plan Queued for Implementation\n\n<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n<!-- erk:metadata-block:submission-queued -->\n<details>\n<summary>submission-queued</summary>\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-02-22T23:56:04.950072+00:00'\nsubmitted_by: schrockn\nissue_number: 7923\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n</details>\n<!-- /erk:metadata-block:submission-queued -->\n\n---\n\nPlan submitted by **schrockn** at 2026-02-22T23:56:04.950072+00:00.\n\nThe `plan-implement` workflow has been triggered via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22288160766",
+      "url": "https://github.com/dagster-io/erk/pull/7923#issuecomment-3941945559"
+    },
+    {
+      "id": 3941946074,
+      "author": "github-actions[bot]",
+      "body": "\u2699\ufe0f GitHub Action Started\n\n<details>\n<summary>\ud83d\udccb Metadata</summary>\n\n<!-- erk:metadata-block:workflow-started -->\n```yaml\nschema: workflow-started\nstatus: started\nstarted_at: 2026-02-22T23:56:34Z\nworkflow_run_id: \"22288160766\"\nworkflow_run_url: https://github.com/dagster-io/erk/actions/runs/22288160766\nbranch_name: plnd/plan-harden-one-shot-skele-02-22-2354\nplan_id: 7923\n```\n<!-- /erk:metadata-block:workflow-started -->\n\n</details>\n\n---\n\nSetup completed successfully.\n\n**Branch:** `plnd/plan-harden-one-shot-skele-02-22-2354`\n**PR:** [#7923](https://github.com/dagster-io/erk/pull/7923)\n**Status:** Ready for implementation\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22288160766)\n",
+      "url": "https://github.com/dagster-io/erk/pull/7923#issuecomment-3941946074"
+    },
+    {
+      "id": 3941971049,
+      "author": "github-actions[bot]",
+      "body": "\u2705 Remote rebase completed\n\nRebased `plnd/plan-harden-one-shot-skele-02-22-2354` onto `master` (was 2 commits behind).\n\n**Conflicts auto-resolved:**\n- `src/erk/cli/commands/one_shot_dispatch.py`\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22288399411)",
+      "url": "https://github.com/dagster-io/erk/pull/7923#issuecomment-3941971049"
+    },
+    {
+      "id": 3941972782,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-python-review -->\n\n## \u2705 Dignified Python Review\n\n**Last updated:** 2026-02-22 16:13:25 PT\n\nFound 0 violations. All changes comply with dignified-python standards.\n\n<details>\n<summary>Details</summary>\n\n### Patterns Checked\n\u2705 LBYL over EAFP - All control flow uses proactive checks\n\u2705 Exception handling - No silent swallowing of exceptions\n\u2705 Path operations - Proper pathlib usage\n\u2705 Import organization - Module-level absolute imports\n\u2705 No default parameter values - Function signatures follow conventions\n\u2705 Frozen dataclasses - Used where applicable\n\u2705 No re-exports - No `__all__` modifications\n\n### Files Reviewed\n- `packages/erk-shared/src/erk_shared/plan_store/github.py`: 0 violations\n- `packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py`: 0 violations\n- `tests/commands/one_shot/test_one_shot_dispatch.py`: 0 violations\n\n---\n\n### Activity Log\n- **2026-02-22 16:13:25 PT**: No violations detected. Code follows LBYL patterns, proper import organization, and test structure.\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7923#issuecomment-3941972782"
+    },
+    {
+      "id": 3941973453,
+      "author": "github-actions[bot]",
+      "body": "<!-- test-coverage-review -->\n\n## \u2705 Test Coverage Review\n\n**Last updated:** 2026-02-22 16:13:46 PT\n\nNo violations found. All source modifications have corresponding tests.\n\n<details>\n<summary>Details</summary>\n\n### Patterns Checked\n\u2705 All source file modifications have tests\n\u2705 No untested new source files\n\u2705 No test deletions without corresponding source removal\n\n### Files Reviewed\n- `packages/erk-shared/src/erk_shared/plan_store/github.py`: Modified with 119-line test coverage\n- `packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py`: New test file (2 tests)\n- `tests/commands/one_shot/test_one_shot_dispatch.py`: Modified with 2 new tests\n\n### Summary\nThis PR hardens plan comment resilience by changing the behavior of `update_plan_content` from raising an error when no plan comment exists to creating one and updating the issue body. The changes are fully tested:\n\n- **test_update_plan_content_creates_comment_when_none_exist** validates the core new behavior (creating comment + updating issue body)\n- **test_update_plan_content_first_comment_fallback_still_works** validates backward compatibility with existing fallback logic\n- **test_dispatch_fails_on_full_skeleton_failure** and **test_dispatch_fails_on_partial_skeleton_failure** test error handling at the integration level\n\n---\n\n### Activity Log\n- **2026-02-22 16:13:46 PT**: All source modifications have test coverage. No violations.\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7923#issuecomment-3941973453"
+    },
+    {
+      "id": 3941973545,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-code-simplifier-review -->\n\n## \u2705 Dignified Code Simplifier Review\n\n**Last updated:** 2026-02-22 16:13:48 PT\n\nNo violations detected. All changes adhere to dignified-python standards.\n\n<details>\n<summary>Details</summary>\n\n### Patterns Checked\n\u2705 LBYL (Look Before You Leap) - Proper condition checking, no exception-based control flow\n\u2705 Pathlib usage - Correct Path import and usage throughout\n\u2705 Absolute imports - All imports are absolute, no relative imports\n\u2705 Modern type syntax - Union types (int | None) correct for Python 3.11+\n\u2705 Exception handling - Appropriate LBYL patterns used instead of try/except for control flow\n\u2705 Indentation depth - All functions properly structured, no excessive nesting\n\u2705 Test helpers - Properly factored with underscore prefix for internal test utilities\n\n### Files Reviewed\n- `packages/erk-shared/src/erk_shared/plan_store/github.py`: 0 violations\n  - Lines 553-561: Clean LBYL pattern when creating new comment fallback\n  - Proper condition checks before operations\n  \n- `packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py`: 0 violations\n  - Helper functions properly named and structured\n  - Modern union type syntax appropriate for Python 3.11+\n  \n- `tests/commands/one_shot/test_one_shot_dispatch.py`: 0 violations\n  - Proper test fake classes following existing patterns\n  - Well-structured error handling tests\n\n---\n\n### Activity Log\n- **2026-02-22 16:13:48 PT**: Reviewed 3 files, 0 violations detected - all code adheres to dignified-python standards (LBYL patterns, proper imports, modern types, clean structure)\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7923#issuecomment-3941973545"
+    },
+    {
+      "id": 3941974909,
+      "author": "github-actions[bot]",
+      "body": "<!-- tripwires-review -->\n\n## \u2705 Tripwires Review\n\n**Last updated:** 2026-02-22 16:14:26 PT\n\nFound 0 violations across 3 files.\n\n<details>\n<summary>Details</summary>\n\n### Tripwires Triggered\n- **creating custom FakeGitHubIssues without passing to build_workspace_test_context** \u2192 loaded docs/learned/architecture/test-context-composition.md\n- **creating custom FakeGitHubIssues without passing to build_workspace_test_context** \u2192 loaded docs/learned/testing/fake-github-testing.md\n\n(Loaded 1 unique tripwire from testing category)\n\n### Tier 1 Pattern Matches (Mechanical)\n\u2705 `subprocess\\.run\\(|run_subprocess_with_context\\(` - None found\n\u2705 `os\\.chdir\\(` - None found\n\u2705 `import time\\b|time\\.sleep\\(|datetime\\.now\\(` - None found\n\u2705 `\\bgt\\s+(sync|submit|restack|create|modify)` - None found\n\u2705 `@patch|monkeypatch\\.` - None found\n\u2705 `Path\\.home\\(\\)` - None found\n\n### Tier 2 Semantic Matches\n\u2705 **creating custom FakeGitHubIssues without passing to build_workspace_test_context** - Examined test_one_shot_dispatch.py:472,507 and test_update_plan_content.py:74. All uses are correct: test_one_shot_dispatch.py passes `issues=issues` to build_workspace_test_context (lines 472, 507), and test_update_plan_content.py directly constructs GitHubPlanStore for unit testing (not using build_workspace_test_context).\n\n### Violations Summary\nNo violations detected.\n\n### Files Reviewed\n- `packages/erk-shared/src/erk_shared/plan_store/github.py`: 0 violations\n- `packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py`: 0 violations\n- `tests/commands/one_shot/test_one_shot_dispatch.py`: 0 violations\n\n---\n\n### Activity Log\n- **2026-02-22 16:14:26 PT**: No tripwire violations detected. Reviewed 3 files for architecture and testing tripwires. All custom FakeGitHubIssues usage follows correct patterns.\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7923#issuecomment-3941974909"
+    },
+    {
+      "id": 3942196021,
+      "author": "schrockn",
+      "body": "* **#7923** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7923?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7923?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7923#issuecomment-3942196021"
+    }
+  ]
+}

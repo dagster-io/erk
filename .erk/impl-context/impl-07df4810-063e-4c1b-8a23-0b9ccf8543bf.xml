@@ -1,0 +1,706 @@
+<session>
+  <meta branch="plnd/plan-harden-one-shot-skele-02-22-2354" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;local:review&lt;/command-message&gt;
+&lt;command-name&gt;/local:review&lt;/command-name&gt;</user>
+  <user># /local:review
+
+Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
+
+## Instructions
+
+### Phase 1: Discover Changed Files and Match Reviews
+
+**Get changed files:**
+
+```bash
+git diff --name-only $(git merge-base master HEAD)...HEAD
+```
+
+If no changed files, report "No changes found relative to master" and stop.
+
+**Read review definitions:**
+
+Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+
+- `name`: Review name
+- `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
+- `enabled`: Whether the review is active (skip if `false`)
+- `model`: Which model to use
+
+**Match reviews to changed files:**
+
+For each enabled review, check if ANY changed file matches ANY of its `paths` glob patterns:
+
+- `**/*.py` matches any `.py` file at any depth
+- `src/**/*.py` matches `.py` files under `src/`
+- `docs/learned/**/*.md` matches `.md` files under `docs/learned/`
+- `.claude/**/*.md` matches `.md` files under `.claude/`
+
+Use Python's `fnmatch` or `pathlib.PurePath.match()` logic — a pattern like `**/*.py` should match `src/erk/cli/main.py`.
+
+**Report:**
+
+```
+Changed files: N
+Reviews matched: review-a, review-b (N of M enabled reviews)
+Reviews skipped (no matching files): review-c, review-d
+```
+
+If no reviews matched, report and stop.
+
+### Phase 2: Run Reviews in Parallel
+
+Generate a run ID: `review-&lt;timestamp&gt;` (e.g., `review-20260222-1930`).
+
+For each matching review, launch a Task agent in parallel with:
+
+- `subagent_type`: `general-purpose`
+- `model`: Use the `model` field from the review frontmatter. Map values: `claude-haiku-4-5` → `haiku`, `claude-sonnet-4-5` or `claude-sonnet-4-6` → `sonnet`
+
+**Agent prompt template:**
+
+```
+You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk/reviews/&lt;review-name&gt;.md`
+2. Follow the review instructions, with these adaptations for local execution:
+   - Instead of `gh pr diff`, use: `git diff $(git merge-base master HEAD)...HEAD`
+   - Skip ALL PR-interaction steps (posting comments, fetching existing comments, summary comments, activity logs)
+   - Skip any steps about checking for existing review markers or comments
+3. Write your findings to `.erk/scratch/&lt;run-id&gt;/&lt;review-name&gt;.md` using the Write tool
+
+Output format for the scratch file:
+
+# &lt;Review Name&gt; Results
+
+## Violations
+
+For each violation found:
+### &lt;file-path&gt;:&lt;line-number&gt;
+**Rule**: &lt;rule violated&gt;
+**Detail**: &lt;explanation&gt;
+
+If no violations found, write:
+## Violations
+None found.
+
+## Summary
+- Files reviewed: N
+- Violations found: N
+
+IMPORTANT:
+- You MUST write results to the scratch file using the Write tool
+- Do NOT return results inline only — write the file
+- Do NOT post PR comments or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps
+```
+
+Launch ALL matching review agents in a single message (parallel execution).
+
+### Phase 3: Collect and Report
+
+After all agents complete, read each scratch file from `.erk/scratch/&lt;run-id&gt;/`.
+
+**Verify output files exist** before reading. If any are missing, report which review failed.
+
+Present a unified report:
+
+```markdown
+## Local Code Review Results
+
+**Run ID**: &lt;run-id&gt;
+**Changed files**: N | **Reviews run**: N
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+---
+
+**Summary**: X total violations across Y reviews (Z reviews clean)
+```
+
+Group violations by review, then by file within each review.
+
+If all reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations.
+```
+</user>
+  <thinking>The user wants me to run the local review command. Let me follow the instructions step by step.
+
+Phase 1: Discover changed files and match reviews.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12285" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12285}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by discovering changed files and reading review definitions in parallel.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12285" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12285}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AbT1JPK2ycBsiPEPckp966">
+    <param name="command">git -C /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36 diff --name-only $(git -C /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36 merge-base master HEAD)...HEAD</param>
+    <param name="description">Get changed files relative to master</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12285" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12285}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AbT1JPK2ycBsiPEPckp966">
+packages/erk-shared/src/erk_shared/plan_store/github.py
+packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py
+src/erk/cli/commands/one_shot_dispatch.py
+tests/commands/one_shot/test_one_shot_dispatch.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_015zHuWVk57wqDTr47iNLn7T">
+    <param name="pattern">.erk/reviews/*.md</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12285" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12285}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015zHuWVk57wqDTr47iNLn7T">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/audit-pr-docs.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/dignified-code-simplifier.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/dignified-python.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/test-coverage.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/tripwires.md
+  </tool_result>
+  <assistant>Now let me read the frontmatter of each review definition.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="31326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y8iczU8N8WZaZTi7T63QSy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/audit-pr-docs.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="31326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y8iczU8N8WZaZTi7T63QSy">
+     1→---
+     2→name: Audit PR Docs
+     3→paths:
+     4→  - "docs/learned/**/*.md"
+     5→marker: "&lt;!-- audit-pr-docs --&gt;"
+     6→model: claude-sonnet-4-6
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load Standards and Analysis Methodology
+    13→
+    14→Read these files from the repository:
+    15→
+    16→1. `.claude/skills/learned-docs/learned-docs-core.md` — content rules, the One Code Rule, four exceptions
+    17→2. `docs/learned/documentation/source-pointers.md` — replacement format, 5-line threshold, decision checklist
+    18→3. `.claude/commands/local/audit-doc.md` — analysis methodology (Extract Code References through Code Block Triage) and verdict thresholds (Generate Report phase)
+    19→
+    20→These define what counts as a verbatim copy, what exceptions exist, the replacement format, and the full analysis methodology. The audit-doc command is the single source of truth for how to analyze a learned doc — this review file only defines the review mechanics (diff filtering, PR comment format, summary format).
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q6wfkhXP8rkRmW8NQrdLLg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/dignified-code-simplifier.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="31326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q6wfkhXP8rkRmW8NQrdLLg">
+     1→---
+     2→name: Dignified Code Simplifier Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-code-simplifier-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Skill
+    13→
+    14→Read the skill file: `.claude/skills/dignified-code-simplifier/SKILL.md`
+    15→
+    16→This skill references `@.claude/skills/dignified-python/` which you should also load.
+    17→
+    18→## Step 2: Apply in Review Mode
+    19→
+    20→Apply the skill's refinement process to the PR diff, but instead of making changes:
+  </tool_result>
+  <tool_use name="Read" id="toolu_013Eg1zjj1Rq1idM4McbDbhr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/dignified-python.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="31326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Eg1zjj1Rq1idM4McbDbhr">
+     1→---
+     2→name: Dignified Python Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-python-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Dignified Python Standards
+    13→
+    14→Read these skill files from the repository:
+    15→
+    16→1. .claude/skills/dignified-python/SKILL.md (routing and version detection)
+    17→2. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+    18→3. .claude/skills/dignified-python/cli-patterns.md (Click best practices)
+    19→4. .claude/skills/dignified-python/subprocess.md (subprocess handling)
+    20→
+  </tool_result>
+  <tool_use name="Read" id="toolu_016wCug3dC2U74Y8LUWMjzwL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/test-coverage.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="31326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016wCug3dC2U74Y8LUWMjzwL">
+     1→---
+     2→name: Test Coverage Review
+     3→paths:
+     4→  - "src/**/*.py"
+     5→  - "packages/**/*.py"
+     6→  - "tests/**/*.py"
+     7→marker: "&lt;!-- test-coverage-review --&gt;"
+     8→model: claude-haiku-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Categorize PR Files
+    15→
+    16→Run `gh pr diff` and `gh pr view --json files` to get the full file list and diff.
+    17→
+    18→Categorize every Python file into these buckets:
+    19→
+    20→- **source_added**: New files in `src/` or `packages/` (not in `tests/`)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SP351KU6RFdaNY6VNPgtPq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/reviews/tripwires.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="31326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SP351KU6RFdaNY6VNPgtPq">
+     1→---
+     2→name: Tripwires Review
+     3→paths:
+     4→  - "**/*.py"
+     5→  - "**/*.sh"
+     6→  - ".claude/**/*.md"
+     7→marker: "&lt;!-- tripwires-review --&gt;"
+     8→model: claude-sonnet-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Bash(grep:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Load Tripwire Index
+    15→
+    16→Tripwires are organized by category. Universal tripwires are in `AGENTS.md`. Category-specific tripwires are in `docs/learned/&lt;category&gt;/tripwires.md` (e.g., `docs/learned/architecture/tripwires.md`, `docs/learned/cli/tripwires.md`).
+    17→
+    18→For comprehensive coverage, read these category tripwire files based on the diff:
+    19→
+    20→- Changes in `src/erk/gateway/` or `packages/erk-shared/src/*/gateway/` → Read `docs/learned/architecture/tripwires.md`
+  </tool_result>
+  <thinking>Let me match the changed files against review paths:
+
+Changed files:
+1. `packages/erk-shared/src/erk_shared/plan_store/github.py` - `.py` file
+2. `packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py` - `.py` file
+3. `src/erk/cli/commands/one_shot_dispatch.py` - `.py` file
+4. `tests/commands/one_shot/test_one_shot_dispatch.py` - `.py` file
+
+Reviews:
+1. **Audit PR Docs** - paths: `docs/learned/**/*.md` - NO MATCH (no .md files in docs/learned/)
+
+
+2. **Dignified Code Simplifier Review** - paths: `**/*.py` - MATCH (all 4 files)
+3. **Dignified Python Review** - paths: `**/*.py` - MATCH (all 4 files)
+4. **Test Coverage Review** - paths: `src/**/*.py`, `packages/**/*.py`, `tests/**/*.py` - MATCH (all 4 files)
+5. **Tripwires Review** - paths: `**/*.py`, `**/*.sh`, `.claude/**/*.md` - MATCH (all 4 .py files)
+
+So the Dignified Code Simplifier, Dignified Python, Test Coverage, and Tripwires reviews all apply to these changes since they all target Python files.
+
+Now I'm generating a run ID and launching all four reviews in parallel, with the Code Simplifier, Python, and Coverage reviews using Haiku and the Tripwires review using Sonnet.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2108" cache_read_input_tokens="31957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2108}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Changed files:** 4
+**Reviews matched:** Dignified Code Simplifier, Dignified Python, Test Coverage, Tripwires (4 of 5 enabled reviews)
+**Reviews skipped (no matching files):** Audit PR Docs
+
+Launching all 4 reviews in parallel with run ID `review-20260222-2354`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2108" cache_read_input_tokens="31957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2108}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01RbJscrpFHRBEF2EhKkZvRY">
+    <param name="description">Dignified Code Simplifier review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1029 chars]...interaction steps
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2108" cache_read_input_tokens="31957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2108}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01JyqTfEq3BQZMJ5CKxYndNZ">
+    <param name="description">Dignified Python review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1002 chars]...interaction steps
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2108" cache_read_input_tokens="31957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2108}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01FKUw2LeCFUg55QUZDatLDX">
+    <param name="description">Test Coverage review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 993 chars]...interaction steps
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2108" cache_read_input_tokens="31957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2108}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_012EQdmL9UjA8P5G534uMTGh">
+    <param name="description">Tripwires review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">sonnet</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 981 chars]...interaction steps
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2108" cache_read_input_tokens="31957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2108}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RbJscrpFHRBEF2EhKkZvRY">
+Perfect! I have completed the dignified code simplifier review and written the results to the specified scratch file. Here's a summary of my findings:
+
+## Review Complete
+
+I've analyzed the code changes in this branch against the dignified-python coding standards and the code simplification skill. The review has been written to:
+
+```
+/.erk/scratch/review-20260222-2354/dignified-code-simplifier.md
+```
+
+### Key Findings
+
+**3 Code Simplification Opportunities Identified:**
+
+1. **Redundant Function Call** (`/packages/erk-shared/src/erk_shared/plan_store/github.py:554`)
+   - `format_plan_content_comment()` is called twice in the same code path (once in the fallback, once in the new code)
+   - Suggestion: Inline the call directly into `add_comment()` to eliminate the intermediate variable
+
+2. **Unnecessary Intermediate Variable** (`/src/erk/cli/commands/one_shot_dispatch.py:221`)
+   - `error_msg` variable is assigned and used immediately in a single expression
+   - Suggestion: Inline the assignment into the string concatenation
+
+3. **Minor Import Optimization** (`/packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py:25`)
+   - The `UTC` constant import could use `timezone.utc` instead
+   - Note: Minor issue; current approach is acceptable
+
+### Assessment
+
+The code changes demonstrate good adherence to dignified-python standards. No critical violations were found regarding LBYL exception handling, pathlib usage, import organization, or indentation depth. The test additions follow the 5-layer architecture patterns correctly. The violations identified are purely about code clarity and simplification—moving variables closer to their use site and eliminating redundant computations.
+agentId: a10cacc85f5bf7475 (for resuming to continue this agent's work if needed)
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FKUw2LeCFUg55QUZDatLDX">
+## Summary
+
+I've completed the local code review for test coverage. Here are the results:
+
+**Review Output File:** `.erk/scratch/review-20260222-2354/test-coverage.md`
+
+**Findings:**
+
+The PR contains 4 Python files with meaningful changes:
+- 2 source files modified with business logic changes
+- 2 test files modified/added with comprehensive test coverage
+
+**Test Coverage Assessment:**
+
+✅ **No violations found.** All source code modifications have appropriate test coverage:
+
+1. **`packages/erk-shared/src/erk_shared/plan_store/github.py`** - Added fallback logic for plan comment creation
+   - Covered by 2 new tests in `test_update_plan_content.py` that verify both the new fallback path and backward compatibility
+
+2. **`src/erk/cli/commands/one_shot_dispatch.py`** - Added error handling for skeleton failures
+   - Covered by 2 new tests that verify both complete failure (exception during issue creation) and partial failure (exception during comment addition)
+
+The PR demonstrates good test discipline with explicit, focused tests for the new error handling paths that were introduced.
+agentId: ab69f34e9b08118c2 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 34017
+tool_uses: 8
+duration_ms: 24954&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01JyqTfEq3BQZMJ5CKxYndNZ">
+## Review Complete
+
+I have successfully completed the local dignified-python code review. Here's what was analyzed:
+
+### Files Reviewed
+1. **packages/erk-shared/src/erk_shared/plan_store/github.py** (modified) - Lines 553-561 implement graceful self-healing for missing plan comments
+2. **packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py** (new) - Comprehensive test suite for the resilience behavior
+3. **src/erk/cli/commands/one_shot_dispatch.py** (modified) - Lines 220-223 add proper error handling for skeleton creation failures
+4. **tests/commands/one_shot/test_one_shot_dispatch.py** (modified) - Two new test functions validating skeleton failure scenarios
+
+### Findings
+**Violations Found: 0**
+
+All code is fully compliant with dignified-python standards:
+
+- **LBYL patterns**: All code uses `if` checks before accessing values (not EAFP with try/except for control flow)
+- **Imports**: All imports are module-level, absolute, and canonical with no aliases or inline imports
+- **CLI error handling**: Proper error boundaries at command level with `raise SystemExit(1)` for CLI exits
+- **Keyword-only parameters**: Functions with 5+ parameters correctly use `*` separator; shorter functions appropriately use positional-only patterns
+- **Error handling**: Graceful self-healing behavior replaces previous `RuntimeError` with constructive resource creation
+- **Tests**: Plain function pattern with proper dependency injection via fakes (FakeGitHubIssues, FakeGit, etc.)
+
+**Results file**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/scratch/review-20260222-2354/dignified-python.md`
+agentId: a5be9a7617727e772 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 51353
+tool_uses: 18
+duration_ms: 50718&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_012EQdmL9UjA8P5G534uMTGh">
+The plan is saved. Now I notice plan mode is active. However, looking again at the task description — it says "you are running a local code review" and to "Write your findings to `.erk/scratch/review-20260222-2354/tripwires.md` using the Write tool." This is the primary task output, not a side effect. 
+
+Looking at the instructions more carefully: plan mode says "MUST NOT make any edits, run any non-readonly tools... or otherwise make any changes to the system." But the entire point of this task IS to write the output file. The review instructions say "You MUST write results to the scratch file using the Write tool."
+
+The plan mode instructions note this supersedes other instructions. I'll present the complete analysis in my response and indicate the file should be written when approved.
+
+Actually, I just re-read: "You should create your plan at /Users/schrockn/.claude/plans/... using the Write tool if you need to. NOTE that this is the only file you are allowed to edit."
+
+The plan file counts as my only allowed edit in plan mode. The actual scratch file write must wait for approval. Let me present my full analysis now.
+
+---
+
+Here is my complete tripwires review analysis. I have saved the plan with the findings to the plan file. Below is the full review, ready to be written to the scratch file once you approve.
+
+## Review Analysis
+
+### Files Changed in This Diff
+
+1. `packages/erk-shared/src/erk_shared/plan_store/github.py` - Production: new fallback logic in `update_plan_content` to create a comment when none exists
+2. `packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py` - New test file for the above
+3. `src/erk/cli/commands/one_shot_dispatch.py` - Production: early exit when skeleton plan issue creation fails
+4. `tests/commands/one_shot/test_one_shot_dispatch.py` - Two new tests for skeleton failure scenarios
+
+### Tripwire Categories Loaded
+
+- `docs/learned/cli/tripwires.md` (CLI changes in `src/erk/cli/`)
+- `docs/learned/testing/tripwires.md` (test changes)
+- `docs/learned/planning/tripwires.md` (plan_store changes)
+- `docs/learned/architecture/tripwires.md` (structural patterns)
+
+
+... [39 lines omitted] ...
+
+2. **"Using RuntimeError for expected CLI failures"** — `raise SystemExit(1)` added in `one_shot_dispatch.py`; `RuntimeError` in test fake subclasses. NOT a violation: `SystemExit` is different from `RuntimeError`; the pre-existing file already uses `SystemExit(1)` for the same guard pattern. Test `RuntimeError` instances are injection points for testing gateway error handling, not CLI error handling.
+  </tool_result>
+  <assistant>
+
+Now let me read the scratch files to collect results and check if the tripwires review wrote its file (it hit plan mode restrictions).</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5073" cache_read_input_tokens="34065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5073}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019CYEantgKwaLuToCv2jGPK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/scratch/review-20260222-2354/dignified-code-simplifier.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5073" cache_read_input_tokens="34065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5073}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019CYEantgKwaLuToCv2jGPK">
+     1→# Dignified Code Simplifier Review Results
+     2→
+     3→## Violations
+     4→
+     5→### /packages/erk-shared/src/erk_shared/plan_store/github.py:554
+     6→**Rule**: Declare Variables Close to Use + Remove Redundant Code
+     7→**Detail**: The variable `formatted` is assigned on line 554 using `format_plan_content_comment(content)`, but the same operation was already performed on line 549 in the preceding fallback block. This violates two dignified principles: (1) declaring variables unnecessarily far from their final use, and (2) redundant code that could be consolidated. The function call should be moved inline into the `add_comment` call (line 555) to eliminate the intermediate variable and avoid the redundant computation pattern.
+     8→
+     9→**Suggestion**: Change line 554-555 from:
+    10→```python
+    11→formatted = format_plan_content_comment(content)
+    12→comment_id = self._github_issues.add_comment(repo_root, issue_number, formatted)
+    13→```
+    14→To:
+    15→```python
+    16→comment_id = self._github_issues.add_comment(
+    17→    repo_root, issue_number, format_plan_content_comment(content)
+    18→)
+    19→```
+    20→
+    21→This follows the dignified principle of "declare variables close to use" and "don't destructure objects into single-use locals."
+    22→
+    23→### /src/erk/cli/commands/one_shot_dispatch.py:221
+    24→**Rule**: Declare Variables Close to Use
+    25→**Detail**: The variable `error_msg` is assigned on line 221 and used immediately on line 222 in a single concatenation expression. This creates an unnecessary intermediate variable that doesn't improve clarity. The assignment could be inlined into the concatenation for more direct code flow.
+    26→
+    27→**Suggestion**: Change lines 221-222 from:
+    28→```python
+    29→error_msg = skeleton_result.error or "Unknown error creating skeleton plan issue"
+    30→user_output(click.style("Error: ", fg="red") + error_msg)
+
+... [32 lines omitted] ...
+
+    35→    click.style("Error: ", fg="red")
+    36→    + (skeleton_result.error or "Unknown error creating skeleton plan issue")
+    61→The code changes are generally well-written and follow dignified principles. The violations are minor and relate to code simplification opportunities around variable declaration scope and redundant function calls. The test file additions are solid with proper use of fake implementations. No critical violations of LBYL, pathlib, or exception handling rules were found.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UpuPRPCArqmsUfyNjrWP5e">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/scratch/review-20260222-2354/dignified-python.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5073" cache_read_input_tokens="34065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5073}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UpuPRPCArqmsUfyNjrWP5e">
+     1→# Dignified Python Review Results
+     2→
+     3→## Violations
+     4→
+     5→### packages/erk-shared/src/erk_shared/plan_store/github.py:220-223
+     6→**Rule**: CLI error boundary pattern with proper exception handling
+     7→**Detail**: Lines 220-223 implement a standard error boundary check in the CLI dispatch command. This is a documented exception to LBYL: checking `if not skeleton_result.success` followed by extracting error message and raising SystemExit is the correct CLI error handling pattern. This is NOT a violation.
+     8→
+     9→Analysis:
+    10→- Line 220: Checks the `success` field before accessing (LBYL compliant)
+    11→- Line 221: Safely extracts error with fallback string using `or`
+    12→- Line 223: Uses proper `raise SystemExit(1)` for CLI exit (matches cli-patterns.md standards)
+    13→- This pattern is documented as an exception in the skill files for error boundaries
+    14→
+    15→**Status**: COMPLIANT - No violation
+    16→
+    17→### packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py - Analysis
+    18→**Files reviewed**: 1 (new test file)
+    19→
+    20→Analysis of changes:
+    21→- Lines 1-10: Module docstring, imports (all module-level)
+    22→- Lines 20-49: Helper function `_make_plan_header_body` with keyword-only parameter (has `*`)
+    23→- Lines 52-65: Helper function `_make_issue` with positional parameters (compliant)
+    24→- Lines 68-90: Test function `test_update_plan_content_creates_comment_when_none_exist`
+    25→- Lines 93-118: Test function `test_update_plan_content_first_comment_fallback_still_works`
+    26→
+    27→All imports are module-level and absolute. No inline imports detected.
+    28→All helper functions use LBYL patterns (membership checking, get() with defaults).
+    29→No frozen dataclass violations - tests use FakeGitHubIssues and other fakes appropriately.
+    30→
+
+... [79 lines omitted] ...
+
+    34→**Rule**: Error handling and resource creation
+    41→This follows proper exception handling at the API boundary. The pattern replaces a previous `raise RuntimeError` with graceful self-healing behavior.
+    46→**Rule**: Proper CLI error handling at command boundary
+    48→1. Extracts error message safely with fallback
+    49→2. Outputs styled error using click.style and user_output
+    52→This is the documented correct pattern from cli-patterns.md for CLI error boundaries.
+    71→**Detail**: Test function `test_dispatch_fails_on_full_skeleton_failure`:
+    85→**Detail**: Test function `test_dispatch_fails_on_partial_skeleton_failure`:
+    86→- Similar structure to test_dispatch_fails_on_full_skeleton_failure
+   105→- ✅ CLI error boundaries at command level with proper exception handling
+   107→- ✅ Graceful error handling replaces previous RuntimeError with self-healing behavior
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ji1sdeauHgNxkrNxBFYBfw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/scratch/review-20260222-2354/test-coverage.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5073" cache_read_input_tokens="34065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5073}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ji1sdeauHgNxkrNxBFYBfw">
+     1→# Test Coverage Review Results
+     2→
+     3→## Violations
+     4→None found.
+     5→
+     6→## Summary
+     7→- Files reviewed: 4
+     8→- Violations found: 0
+     9→
+    10→## Detailed Analysis
+    11→
+    12→### File Categorization
+    13→
+    14→**Source Modified:**
+    15→- `packages/erk-shared/src/erk_shared/plan_store/github.py` - Added fallback comment creation logic in `update_plan_content` method
+    16→- `src/erk/cli/commands/one_shot_dispatch.py` - Added error handling for skeleton result failures
+    17→
+    18→**Tests Added:**
+    19→- `packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py` (2 tests)
+    20→
+    21→**Tests Modified:**
+    22→- `tests/commands/one_shot/test_one_shot_dispatch.py` (2 new tests added)
+    23→
+    24→### Coverage Verification
+    25→
+    26→**packages/erk-shared/src/erk_shared/plan_store/github.py**
+    27→- Change: Added fallback in `update_plan_content()` to create a new plan comment when none exists, instead of raising RuntimeError
+    28→- Test Coverage: ✅ `test_update_plan_content_creates_comment_when_none_exist()` - Verifies new comment creation and issue body update
+    29→- Test Coverage: ✅ `test_update_plan_content_first_comment_fallback_still_works()` - Verifies existing comment still gets updated (backward compatibility)
+    30→- Status: **FULLY TESTED** - Both the new fallback path and backward compatibility path have explicit tests
+
+... [7 lines omitted] ...
+
+    33→- Change: Added error handling for `skeleton_result.success` - exits with error code 1 if skeleton creation fails
+    34→- Test Coverage: ✅ `test_dispatch_fails_on_full_skeleton_failure()` - Tests complete failure (issue creation raises exception)
+    35→- Test Coverage: ✅ `test_dispatch_fails_on_partial_skeleton_failure()` - Tests partial failure (comment addition fails after issue is created)
+    36→- Status: **FULLY TESTED** - Both failure paths (full and partial) are covered with explicit test cases
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ee5P3hwhg8LcrAqEuKZHYc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/scratch/review-20260222-2354/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5073" cache_read_input_tokens="34065" output_tokens="376" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5073, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ee5P3hwhg8LcrAqEuKZHYc">
+File does not exist. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36.
+  </tool_result>
+  <thinking>The tripwires review agent couldn't write its file due to plan mode restrictions. But I got its full analysis from the task output. Let me present the unified report. The tripwires review found no violations.
+
+Let me compile the unified report now. I don't need to write anything - I just present the results to the user.
+
+Since I'm in plan mode, I should present the results directly. The /local:review command is a review task, not an implementation planning task. But plan mode says I must end with AskUserQuestion or ExitPlanMode. 
+
+Actually, the /local:review command was invoked, and I need to present results. 
+
+For a review command, the output itself is the deliverable—there's nothing to implement afterward. I'll present the unified report and then call ExitPlanMode to close out the plan mode session.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4121" cache_read_input_tokens="39138" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4121}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>## Local Code Review Results
+
+**Run ID**: review-20260222-2354
+**Changed files**: 4 | **Reviews run**: 4
+
+---
+
+### Dignified Code Simplifier Review
+
+3 suggestions found (minor simplification opportunities):
+
+1. **packages/erk-shared/src/erk_shared/plan_store/github.py:554** — `formatted` variable could be inlined into the `add_comment()` call to eliminate unnecessary intermediate variable
+2. **src/erk/cli/commands/one_shot_dispatch.py:221** — `error_msg` variable assigned and immediately used; could be inlined
+3. **packages/erk-shared/tests/unit/plan_store/test_update_plan_content.py:25** — Minor: `from datetime import UTC` could use `timezone.utc` instead (acceptable as-is)
+
+### Dignified Python Review
+
+No violations found. All code follows LBYL, absolute imports, CLI error boundary patterns, and keyword-only parameter conventions correctly.
+
+### Test Coverage Review
+
+No violations found. All source changes have corresponding test coverage:
+- `github.py` fallback logic → 2 new tests in `test_update_plan_content.py`
+- `one_shot_dispatch.py` error handling → 2 new tests (full + partial skeleton failure)
+
+### Tripwires Review
+
+No violations found. Tier 1 mechanical patterns (no `@patch`, `subprocess.run`, `Path.home()`, etc.) and Tier 2 semantic patterns all passed. The tripwires agent could not write its scratch file (plan mode restriction) but completed full analysis.
+
+---
+
+**Summary**: 3 minor simplification suggestions across 4 reviews (3 reviews fully clean)
+
+The code simplifier suggestions are stylistic — inlining single-use variables. The codebase is clean on all substantive checks (dignified-python compliance, test coverage, tripwires).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4121" cache_read_input_tokens="39138" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4121}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01YKAbgPoS2iQ2cwPAwYFXrR">
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4121" cache_read_input_tokens="39138" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4121}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YKAbgPoS2iQ2cwPAwYFXrR">
+User has approved exiting plan mode. You can now proceed.
+  </tool_result>
+  <assistant>Review complete. The 3 code simplifier suggestions are the only findings — all optional style improvements. Would you like me to apply any of them?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="950" cache_read_input_tokens="43259" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 950}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>

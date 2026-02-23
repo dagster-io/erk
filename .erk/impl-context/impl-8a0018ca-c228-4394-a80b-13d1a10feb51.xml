@@ -1,0 +1,802 @@
+<session>
+  <meta branch="plnd/plan-harden-one-shot-skele-02-22-2354" />
+  <meta model="claude-opus-4-6" />
+  <user>(erk) ➜  erk-slot-36 git:(plnd/plan-harden-one-shot-skele-02-22-2354) make fast-ci
+=== Fast CI ===
+
+--- Lint ---
+All checks passed!
+
+--- Format Check ---
+1500 files already formatted
+
+--- Prettier Check ---
+Checking formatting...
+All matched files use Prettier code style!
+
+--- Markdown Check ---
+✓ AGENTS.md standard: PASSED
+
+All CLAUDE.md and AGENTS.md files properly paired.
+
+CLAUDE.md files checked: 19
+Violations: 0
+
+--- Exec Reference Check ---
+FAIL: .claude/skills/erk-exec/reference.md is out of date
+Run 'erk-dev gen-exec-reference-docs' to regenerate it.
+
+--- ty ---
+All checks passed!
+
+--- Unit Tests (erk) ---
+bringing up nodes...
+............................................................................................................................................................ [  2%]
+............................................................................................................................................................ [  5%]
+............................................................................................................................................................ [  8%]
+............................................................................................................................................................ [ 11%]
+............................................................................................................................................................ [ 14%]
+............................................................................................................................................................ [ 17%]
+............................................................................................................................................................ [ 20%]
+............................................................................................................................................................ [ 22%]
+............................................................................................................................................................ [ 25%]
+............................................................................................................................................................ [ 28%]
+............................................................................................................................................................ [ 31%]
+............................................................................................................................................................ [ 34%]
+............................................................................................................................................................ [ 37%]
+............................................................................................................................................................ [ 40%]
+............................................................................................................................................................ [ 42%]
+............................................................................................................................................................ [ 45%]
+............................................................................................................................................................ [ 48%]
+............................................................................................................................................................ [ 51%]
+............................................................................................................................................................ [ 54%]
+............................................................................................................................................................ [ 57%]
+............................................................................................................................................................ [ 60%]
+............................................................................................................................................................ [ 62%]
+............................................................................................................................................................ [ 65%]
+.....................................................................................................................F....F................................. [ 68%]
+............................................................................................................................................................ [ 71%]
+............................................................................................................................................................ [ 74%]
+............................................................................................................................................................ [ 77%]
+............................................................................................................................................................ [ 80%]
+............................................................................................................................................................ [ 83%]
+............................................................................................................................................................ [ 85%]
+............................................................................................................................................................ [ 88%]
+............................................................................................................................................................ [ 91%]
+............................................................................................................................................................ [ 94%]
+............................................................................................................................................................ [ 97%]
+..................................................................................................................................................           [100%]
+============================================================================= FAILURES =============================================================================
+___________________________________________________________ test_dispatch_fails_on_full_skeleton_failure ___________________________________________________________
+[gw1] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.venv/bin/python
+
+    def test_dispatch_fails_on_full_skeleton_failure() -&gt; None:
+        """Dispatch raises when create_plan_issue fails completely (no issue created)."""
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner, env_overrides=None) as env:
+            env.setup_repo_structure()
+
+            class FailingCreateGitHubIssues(FakeGitHubIssues):
+                def create_issue(
+                    self, *, repo_root: Path, title: str, body: str, labels: list[str]
+                ) -&gt; CreateIssueResult:
+                    raise RuntimeError("GitHub API unavailable")
+
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                trunk_branches={env.cwd: "main"},
+                current_branches={env.cwd: "main"},
+            )
+            issues = FailingCreateGitHubIssues()
+            github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+            ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+            result = runner.invoke(
+                cli,
+                ["one-shot", "fix the import"],
+                obj=ctx,
+            )
+
+            # Dispatch should fail — no branch, PR, or workflow created
+&gt;           assert result.exit_code != 0
+E           assert 0 != 0
+E            +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/commands/one_shot/test_one_shot_dispatch.py:483: AssertionError
+_________________________________________________________ test_dispatch_fails_on_partial_skeleton_failure __________________________________________________________
+[gw1] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.venv/bin/python
+
+    def test_dispatch_fails_on_partial_skeleton_failure() -&gt; None:
+        """Dispatch raises when skeleton issue is created but comment fails (partial failure)."""
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner, env_overrides=None) as env:
+            env.setup_repo_structure()
+
+            class FailingCommentGitHubIssues(FakeGitHubIssues):
+                def add_comment(self, repo_root: Path, number: int, body: str) -&gt; int:
+                    raise RuntimeError("Comment too large")
+
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                default_branches={env.cwd: "main"},
+                trunk_branches={env.cwd: "main"},
+                current_branches={env.cwd: "main"},
+            )
+            issues = FailingCommentGitHubIssues()
+            github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+            ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+            result = runner.invoke(
+                cli,
+                ["one-shot", "fix the import"],
+                obj=ctx,
+            )
+
+            # Dispatch should fail even though issue was created
+&gt;           assert result.exit_code != 0
+E           assert 0 != 0
+E            +  where 0 = &lt;Result okay&gt;.exit_code
+
+tests/commands/one_shot/test_one_shot_dispatch.py:517: AssertionError
+===================================================================== short test summary info ======================================================================
+FAILED tests/commands/one_shot/test_one_shot_dispatch.py::test_dispatch_fails_on_full_skeleton_failure - assert 0 != 0
+FAILED tests/commands/one_shot/test_one_shot_dispatch.py::test_dispatch_fails_on_partial_skeleton_failure - assert 0 != 0
+2 failed, 5448 passed in 15.23s
+
+--- Tests (erk-dev) ---
+bringing up nodes...
+........................................................................................................................................                     [100%]
+136 passed in 2.47s
+
+--- Tests (erk-statusline) ---
+bringing up nodes...
+..............................................................................................................................                               [100%]
+126 passed in 0.65s
+make: *** [fast-ci] Error 1
+(erk) ➜  erk-slot-36 git:(plnd/plan-harden-one-shot-skele-02-22-2354)
+
+fix </user>
+  <thinking>The user wants me to fix the two failing tests. Let me understand what's happening:
+
+1. `test_dispatch_fails_on_full_skeleton_failure` - Tests that dispatch raises when `create_plan_issue` fails completely. The test expects `exit_code != 0` but gets `0`.
+2. `test_dispatch_fails_on_partial_skeleton_failure` - Tests that dispatch raises when skeleton issue is created but comment fails. Same issue.
+
+Both tests have custom fake classes that raise `RuntimeError`, but the dispatch is swallowing the errors and returning exit code 0. I need to look at:
+1. The test file to understand the test setup
+
+
+2. The dispatch code to understand how errors are handled
+
+Let me examine the test file and the relevant source code to see where the error handling is breaking down.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11802" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11802}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the test file and the dispatch code to understand what's happening.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11802" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11802}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018fNZi3X8dSL13hopwuSfmZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="offset">460</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11802" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11802}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018fNZi3X8dSL13hopwuSfmZ">
+   460→            def create_issue(
+   461→                self, *, repo_root: Path, title: str, body: str, labels: list[str]
+   462→            ) -&gt; CreateIssueResult:
+   463→                raise RuntimeError("GitHub API unavailable")
+   464→
+   465→        git = FakeGit(
+   466→            git_common_dirs={env.cwd: env.git_dir},
+   467→            default_branches={env.cwd: "main"},
+   468→            trunk_branches={env.cwd: "main"},
+   469→            current_branches={env.cwd: "main"},
+   470→        )
+   471→        issues = FailingCreateGitHubIssues()
+   472→        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+   473→
+   474→        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+   475→
+   476→        result = runner.invoke(
+   477→            cli,
+   478→            ["one-shot", "fix the import"],
+   479→            obj=ctx,
+   480→        )
+   481→
+   482→        # Dispatch should fail — no branch, PR, or workflow created
+   483→        assert result.exit_code != 0
+   484→        assert len(git.created_branches) == 0
+   485→        assert len(github.created_prs) == 0
+   486→        assert len(github.triggered_workflows) == 0
+   487→
+   488→
+   489→def test_dispatch_fails_on_partial_skeleton_failure() -&gt; None:
+
+... [36 lines omitted] ...
+
+   490→    """Dispatch raises when skeleton issue is created but comment fails (partial failure)."""
+   497→                raise RuntimeError("Comment too large")
+   518→        # The error should mention the comment failure
+   519→        assert "failed to add plan comment" in result.output
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015pmtvgZZohtvoGxG3he3bg">
+    <param name="pattern">create_plan_issue|skeleton</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11802" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11802}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015pmtvgZZohtvoGxG3he3bg">
+Found 4 files
+src/erk/cli/commands/plan/create_cmd.py
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/commands/exec/scripts/plan_save_to_issue.py
+src/erk/cli/commands/exec/scripts/create_issue_from_session.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TJiksuudFFPpXhXopppRPD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6436" cache_read_input_tokens="30843" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6436, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TJiksuudFFPpXhXopppRPD">
+     1→"""Shared dispatch logic for one-shot autonomous execution.
+     2→
+     3→Extracts the branch-create/push/PR/workflow-trigger sequence into reusable
+     4→pieces so both `erk one-shot` and `erk objective plan --one-shot` can
+     5→dispatch tasks through the same CI workflow.
+     6→"""
+     7→
+     8→import logging
+     9→import time
+    10→from dataclasses import dataclass
+    11→from datetime import UTC
+    12→
+    13→import click
+    14→
+    15→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    16→from erk.cli.ensure import Ensure
+    17→from erk.core.branch_slug_generator import generate_slug_or_fallback
+    18→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    19→from erk_shared.core.prompt_executor import PromptExecutor
+    20→from erk_shared.gateway.git.remote_ops.types import PushError
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    create_submission_queued_block,
+    23→    render_erk_issue_event,
+    24→)
+    25→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    26→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    27→from erk_shared.gateway.github.plan_issues import create_plan_issue
+    28→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    29→from erk_shared.gateway.time.abc import Time
+    30→from erk_shared.naming import (
+
+... [456 lines omitted] ...
+
+   249→                click.style("Error: ", fg="red")
+   275→        if isinstance(push_result, PushError):
+   276→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   414→            except Exception as e:
+   415→                logger.warning("Failed to update stub PR body with workflow run link: %s", e)
+   431→            except Exception as e:
+   433→                    click.style("Warning: ", fg="yellow")
+   434→                    + f"Failed to update dispatch metadata: {e}"
+   458→            except Exception as e:
+   460→                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   465→    except Exception as exc:
+   466→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <thinking>Now I understand the issue. The tests expect that when `create_plan_issue` raises a `RuntimeError` (full skeleton failure) or when `add_comment` raises a `RuntimeError` (partial skeleton failure), the dispatch should fail with a non-zero exit code.
+
+Looking at the code, the `dispatch_one_shot` function has a try/except at line 189-467 that catches `Exception` and re-raises it. So when `create_plan_issue` raises `RuntimeError`, it should propagate up. But the test uses `runner.invoke()` from Click, which by default catches exceptions.
+
+Wait, let me look more carefully. The `create_plan_issue` function is called at line 206. If it raises, the exception should be caught by the except block at line 465-467 and re-raised. 
+
+But Click's `CliRunner.invoke()` catches all exceptions by default and converts them to exit code 1. Actually, I need to trace through what happens when the fake's `create_issue` raises `RuntimeError` — I should check whether `create_plan_issue` from the gateway module catches that exception or lets it propagate.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7084" cache_read_input_tokens="37279" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7084}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the `create_plan_issue` function to see if it's catching the error.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7084" cache_read_input_tokens="37279" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7084}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PNwCWciLyzKhaUMFnxz6G9">
+    <param name="pattern">def create_plan_issue</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7084" cache_read_input_tokens="37279" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7084}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PNwCWciLyzKhaUMFnxz6G9">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HUfGmGFiZ2aGkQMcYXVoPs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="44363" output_tokens="102" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 533, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HUfGmGFiZ2aGkQMcYXVoPs">
+     1→"""Create Schema v2 plan issues with metadata-only body and plan content comment.
+     2→
+     3→This module consolidates the 6-step workflow for creating plan issues:
+     4→1. Get GitHub username (fail if not authenticated)
+     5→2. Extract title from plan H1 (or use provided)
+     6→3. Ensure all required labels exist
+     7→4. Create issue with metadata-only body
+     8→5. Add first comment with plan content
+     9→6. Handle partial failures (issue created but comment failed)
+    10→
+    11→All callers should use create_plan_issue() instead of duplicating this logic.
+    12→"""
+    13→
+    14→from dataclasses import dataclass
+    15→from datetime import UTC, datetime
+    16→from pathlib import Path
+    17→
+    18→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    19→from erk_shared.gateway.github.metadata.core import (
+    20→    create_objective_header_block,
+    21→    extract_raw_metadata_blocks,
+    22→    format_objective_content_comment,
+    23→    format_plan_commands_section,
+    24→    render_metadata_block,
+    25→    update_objective_header_comment_id,
+    26→)
+    27→from erk_shared.gateway.github.metadata.plan_header import (
+    28→    format_plan_content_comment,
+    29→    format_plan_header_body,
+    30→    update_plan_header_comment_id,
+
+... [514 lines omitted] ...
+
+    65→        issue_number: Issue number if created (may be set even on failure if
+    66→            partial success - issue created but comment failed)
+    69→        error: Error message if failed, None if success
+    76→    error: str | None
+   122→        Does NOT raise exceptions. All errors returned in result.
+   123→        Partial success (issue created, comment failed) is possible.
+   133→            error="Could not get GitHub username (gh CLI not authenticated?)",
+   154→    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
+   155→    if label_errors:
+   161→            error=label_errors,
+   213→    except RuntimeError as e:
+   219→            error=f"Failed to create GitHub issue: {e}",
+   226→    except RuntimeError as e:
+   227→        # Partial success - issue created but comment failed
+   233→            error=f"Issue #{result.number} created but failed to add plan comment: {e}",
+   251→        error=None,
+   287→        "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n"
+   324→        Does NOT raise exceptions. All errors returned in result.
+   334→            error="Could not get GitHub username (gh CLI not authenticated?)",
+   350→                error=slug_result.message,
+   363→    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
+   364→    if label_errors:
+   370→            error=label_errors,
+   396→    except RuntimeError as e:
+   402→            error=f"Failed to create GitHub issue: {e}",
+   409→    except RuntimeError as e:
+   410→        # Partial success - issue created but comment failed
+   416→            error=f"Issue #{result.number} created but failed to add objective comment: {e}",
+   428→        error=None,
+   445→        Error message if failed, None if success
+   478→    except RuntimeError as e:
+   479→        return f"Failed to ensure labels exist: {e}"
+  </tool_result>
+  <thinking>Now I see the issue. `create_plan_issue` catches `RuntimeError` from `create_issue` and returns a `CreatePlanIssueResult` with `success=False` (line 213-220). It does NOT raise.
+
+In `dispatch_one_shot` at line 206-220:
+
+```python
+skeleton_result = create_plan_issue(
+    github_issues=ctx.github.issues,
+    repo_root=repo.root,
+    ...
+)
+plan_issue_number = skeleton_result.issue_number
+```
+
+The code doesn't check `skeleton_result.success`. It just proceeds to use `skeleton_result.issue_number` (which is `None` when `create_issue` failed). Then it continues without failing.
+
+
+So in the full failure case, `create_plan_issue` returns `success=False` with `issue_number=None`, but `dispatch_one_shot` ignores the success flag and uses the `None` value to generate a branch name like `oneshot-`, continuing execution as if nothing went wrong. In the partial failure case, the same pattern happens when `add_comment` fails inside `create_plan_issue`.
+
+The real issue is that `dispatch_one_shot` needs to check the `success` flag from `create_plan_issue` and bail out early if it's false. Looking at the test expectations, both test cases expect a non-zero exit code and no downstream artifacts (branches, PRs, workflows) when the skeleton creation fails, so the function should stop processing immediately upon detecting that failure. Writing the error handling logic... I'm confirming that `SystemExit` won't be caught by the generic `Exception` handler since it inherits from `BaseException`, so the explicit `except SystemExit: raise` will let it propagate correctly to Click's test runner. Now I'll implement the fix.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7068" cache_read_input_tokens="44896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7068}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I see the problem. `create_plan_issue` catches `RuntimeError` internally and returns a `CreatePlanIssueResult` with `success=False` — it never raises. But `dispatch_one_shot` never checks `skeleton_result.success` at line 220, so it continues executing even when skeleton creation fails.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7068" cache_read_input_tokens="44896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7068}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PLpFR5SjYdBeq2sehvjh2K">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="old_string">            plan_issue_number = skeleton_result.issue_number
+            user_output(click.style(f"  \u2192 Plan issue #{plan_issue_number}", dim=True))</param>
+    <param name="new_string">            if not skeleton_result.success:
+                error_msg = skeleton_result.er...[truncated 205 chars]...           user_output(click.style(f"  \u2192 Plan issue #{plan_issue_number}", dim=True))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7068" cache_read_input_tokens="44896" output_tokens="1591" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7068, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PLpFR5SjYdBeq2sehvjh2K">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the failing tests to verify the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1652" cache_read_input_tokens="51964" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1652}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SKoKAGeNZTxs53KvQFq9RK">
+    <param name="description">Run failing one-shot tests</param>
+    <param name="prompt">Run this command and report the results:
+pytest tests/commands/one_shot/test_one_shot_disp...[truncated 47 chars]...s/one_shot/test_one_shot_dispatch.py::test_dispatch_fails_on_partial_skeleton_failure -xvs</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1652" cache_read_input_tokens="51964" output_tokens="183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1652, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SKoKAGeNZTxs53KvQFq9RK">
+pytest passed: 2 tests passed in 0.38s
+
+Both tests executed successfully:
+- `test_dispatch_fails_on_full_skeleton_failure`
+- `test_dispatch_fails_on_partial_skeleton_failure`
+
+These tests verify that the one-shot dispatch command properly handles failure scenarios when skeleton creation fails (both full and partial skeleton failures).
+agentId: a8a7ae2f0224283f2 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13813
+tool_uses: 1
+duration_ms: 4858&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+Both tests pass. The fix adds a check for `skeleton_result.success` after the `create_plan_issue` call — if it failed (either fully or partially), the error message is printed and the command exits with code 1, preventing it from continuing to create branches, PRs, or workflows.
+
+Now let me also regenerate the exec reference docs since that was flagged in CI.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="447" cache_read_input_tokens="53616" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Fu5fobtzVchxeGbey6JAPt">
+    <param name="command">erk-dev gen-exec-reference-docs</param>
+    <param name="description">Regenerate exec reference docs</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="447" cache_read_input_tokens="53616" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Fu5fobtzVchxeGbey6JAPt">
+Generated .claude/skills/erk-exec/reference.md (formatted)
+  86 top-level commands documented
+  </tool_result>
+  <tool_use name="Task" id="toolu_014TC3QvSomesYJSHcriSz14">
+    <param name="description">Run full fast-ci check</param>
+    <param name="prompt">Run this command and report results: make fast-ci</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="54063" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 229}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014TC3QvSomesYJSHcriSz14">
+**make fast-ci passed**: All checks and tests completed successfully.
+
+Summary:
+- **Lint**: All checks passed
+- **Format Check**: 1500 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: AGENTS.md standard passed, no violations (19 CLAUDE.md files checked)
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md up to date
+- **Type Check (ty)**: All checks passed
+- **Unit Tests (erk)**: 5450 passed in 10.58s
+- **Tests (erk-dev)**: 136 passed in 2.40s
+- **Tests (erk-statusline)**: 126 passed in 0.63s
+agentId: ae61aa71d51d23560 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14526
+tool_uses: 1
+duration_ms: 23354&lt;/usage&gt;
+  </tool_result>
+  <assistant>All green — 5450 tests passed, all lint/format/type checks clean. 
+
+The fix: added a `skeleton_result.success` check after `create_plan_issue()` in `one_shot_dispatch.py:220`. Previously the code blindly used the result without checking if it succeeded, so failures from `create_issue` or `add_comment` were silently swallowed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3469" cache_read_input_tokens="54292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3469}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01EvPeUoUvsJMd4X4D31r2iH">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick submit all changes via Graphite</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="283" cache_read_input_tokens="57854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 283}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EvPeUoUvsJMd4X4D31r2iH">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7923"
+}
+  </tool_result>
+  <assistant>Submitted: https://github.com/dagster-io/erk/pull/7923</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="213" cache_read_input_tokens="58137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 213}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="335" cache_read_input_tokens="58372" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:debug-ci&lt;/command-message&gt;
+&lt;command-name&gt;/local:debug-ci&lt;/command-name&gt;</user>
+  <user># Debug CI
+
+Fetch and analyze failing CI logs for the current branch's PR.
+
+## Usage
+
+```bash
+/debug-ci
+```
+
+## Implementation
+
+### Step 1: Get Current Branch
+
+```bash
+git branch --show-current
+```
+
+### Step 2: Get Failed Run IDs
+
+Find the most recent failed workflow runs for this branch (REST-based, avoids GraphQL rate limits):
+
+```bash
+gh run list --branch &lt;branch&gt; --json conclusion,name,databaseId,status --jq '.[] | select(.conclusion == "failure") | "\(.databaseId) \(.name)"' | head -5
+```
+
+If no failures found, report "All CI checks are passing" and stop.
+
+### Step 3: Fetch Failed Logs
+
+For each failed run, fetch the logs:
+
+```bash
+gh run view &lt;run_id&gt; --log-failed | head -100
+```
+
+### Step 4: Analyze and Report
+
+Present the failure information clearly:
+
+```markdown
+## CI Failure Analysis
+
+**Branch**: &lt;branch&gt;
+**PR**: #&lt;number&gt;
+
+### Failed Checks
+
+1. **&lt;check_name&gt;**
+   - Run ID: &lt;id&gt;
+   - Error: &lt;error_summary&gt;
+
+### Failure Logs
+
+&lt;relevant log output&gt;
+
+### Suggested Fix
+
+&lt;based on the error, suggest what to do&gt;
+```
+
+## Common Failures and Fixes
+
+### docs-check / docs-sync-check
+
+**Error**: "Files out of sync: N change(s) needed"
+**Fix**: Run `erk docs sync` then commit
+
+### lint
+
+**Error**: Ruff linting errors
+**Fix**: Run `make fix` then commit
+
+### format-check
+
+**Error**: Files need reformatting
+**Fix**: Run `make format` then commit
+
+### prettier-check
+
+**Error**: Markdown files need formatting
+**Fix**: Run `make prettier` then commit
+
+### ty
+
+**Error**: Type checking failures
+**Fix**: Read the file and fix type annotations
+
+### unit-tests / integration-tests
+
+**Error**: Test failures
+**Fix**: Analyze test output and fix code or tests
+
+## Notes
+
+- This command only fetches and analyzes logs - it does NOT automatically fix issues
+- Use `/fast-ci` or `/all-ci` to run CI locally and fix issues iteratively
+- After fixing issues, inform the user that the fix is complete and they can push when ready
+- IMPORTANT: Do NOT push code automatically. The user will push when they choose to.
+</user>
+  <tool_use name="Bash" id="toolu_01EUA3ZDQ3mKKB8Swt2BvjsL">
+    <param name="command">git branch --show-current</param>
+    <param name="description">Get current branch name</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="763" cache_read_input_tokens="58707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 763}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EUA3ZDQ3mKKB8Swt2BvjsL">
+plnd/plan-harden-one-shot-skele-02-22-2354
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017Uknvzi5Kwg2v6A8RPF1aH">
+    <param name="command">gh run list --branch plnd/plan-harden-one-shot-skele-02-22-2354 --json conclusion,name,databaseId,status --jq '.[] | select(.conclusion == "failure") | "\(.databaseId) \(.name)"' | head -5</param>
+    <param name="description">Find failed CI runs for this branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="59470" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 112, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Uknvzi5Kwg2v6A8RPF1aH">
+22290853337 code-reviews
+22290772195 ci
+22290772210 code-reviews
+22290771825 ci
+22288436226 ci
+  </tool_result>
+  <assistant>Let me get logs for the most recent `ci` and `code-reviews` failures.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="59582" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HV21vej9FPmrb4Hn5HVVa1">
+    <param name="command">gh run view 22290853337 --log-failed | head -100</param>
+    <param name="description">Fetch failed logs for code-reviews run</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="59582" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NZWAahYJXimquKjeohm4zR">
+    <param name="command">gh run view 22290772195 --log-failed | head -100</param>
+    <param name="description">Fetch failed logs for ci run</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="59582" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HV21vej9FPmrb4Hn5HVVa1">
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	﻿2026-02-23T02:29:58.3773368Z ##[group]Run # Extract review name from filename (remove .md extension)
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3773885Z [36;1m# Extract review name from filename (remove .md extension)[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3774256Z [36;1mREVIEW_NAME="test-coverage.md"[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3774540Z [36;1mREVIEW_NAME="${REVIEW_NAME%.md}"[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3775125Z [36;1m[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3775333Z [36;1mecho "Running review: $REVIEW_NAME"[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3775607Z [36;1merk exec run-review \[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3775851Z [36;1m  --name "$REVIEW_NAME" \[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3776122Z [36;1m  --pr-number 7923 \[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3776370Z [36;1m  --reviews-dir .erk/reviews[0m
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3807315Z shell: /usr/bin/bash -e {0}
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3807561Z env:
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3807800Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3808677Z   CLAUDE_CODE_OAUTH_TOKEN: ***
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3809337Z   ANTHROPIC_API_KEY: ***
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3809690Z   GH_TOKEN: ***
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3809928Z ##[endgroup]
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:29:58.3859996Z Running review: test-coverage
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:30:02.2899717Z {"type":"system","subtype":"init","cwd":"/home/runner/work/erk/erk","session_id":"8f4b4f86-fcc7-47e6-a8bc-8d75af78dad9","tools":["Task","TaskOutput","Bash","Glob","Grep","ExitPlanMode","Read","Edit","Write","NotebookEdit","WebFetch","TodoWrite","WebSearch","KillShell","Skill","SlashCommand","EnterPlanMode"],"mcp_servers":[],"model":"claude-haiku-4-5","permissionMode":"bypassPermissions","slash_commands":["erk:diag-lock-error","erk:one-shot-plan","erk:pr-preview-address","erk:pr-submit","erk:git-pr-push","erk:pr-address-remote","erk:objective-plan","erk:pr-address","erk:migrate-objective-schema","erk:learn","erk:replan","erk:plan-submit","erk:plan-save","erk:migrate-plan-to-draft-pr","erk:one-shot","erk:objective-update-with-landed-pr","erk:land","erk:objective-create","erk:fix-conflicts","erk:objective-list","erk:plan-implement","erk:sync-divergence","local:pr-sync-commit","local:audit-skill","local:statusline-refresh","local:analyze-context","local:interview","local:plan-update","local:audit-scan","local:check-relevance","local:sessions-list","local:tasks-clear","local:debug-ci","local:quick-submit","local:replan-learn-plans","local:tdd","local:objective-view","local:py-fast-ci","local:changelog-release","local:incremental-plan-mode","local:all-ci","local:audit-branches","local:audit-doc","local:code-stats","local:changelog-update","local:fast-ci","local:audit-plans","local:objective-reevaluate","fake-driven-testing","dignified-python","command-creator","cli-skill-creator","erk-exec","erk-diff-analysis","dignified-code-simplifier","gt","session-inspector","ci-iteration","objective","pr-operations","gh","learned-docs","erk-planning","pr-feedback-classifier","compact","context","cost","init","pr-comments","release-notes","review","security-review"],"apiKeySource":"ANTHROPIC_API_KEY","claude_code_version":"2.0.67","output_style":"default","agents":["general-purpose","statusline-setup","Explore","Plan","devrun","commit-categorizer","existing-docs-checker","session-analyzer","documentation-gap-identifier","plan-synthesizer","tripwire-extractor","code-diff-analyzer","libcst-refactor"],"skills":["dignified-python","command-creator","cli-skill-creator","erk-exec","erk-diff-analysis","dignified-code-simplifier","session-inspector","ci-iteration","objective","pr-operations","gh","learned-docs","erk-planning","pr-feedback-classifier"],"plugins":[],"uuid":"505cfede-9989-4dcb-a5b3-b12975832114"}
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:30:02.7731786Z {"type":"assistant","message":{"id":"edd66c02-f64f-41e2-af56-770e9052cb1e","container":null,"model":"&lt;synthetic&gt;","role":"assistant","stop_reason":"stop_sequence","stop_sequence":"","type":"message","usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":null,"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0}},"content":[{"type":"text","text":"Credit balance is too low"}],"context_management":null},"parent_tool_use_id":null,"session_id":"8f4b4f86-fcc7-47e6-a8bc-8d75af78dad9","uuid":"5c8f9488-d52b-4aac-832e-55c6a22ceb3d","error":"billing_error"}
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:30:02.7740260Z {"type":"result","subtype":"success","is_error":true,"duration_ms":1758,"duration_api_ms":0,"num_turns":1,"result":"Credit balance is too low","session_id":"8f4b4f86-fcc7-47e6-a8bc-8d75af78dad9","total_cost_usd":0,"usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0}},"modelUsage":{},"permission_denials":[],"uuid":"8630c3c2-7428-4300-a47f-02c966e9a52f"}
+review (Test Coverage Review, test-coverage.md)	Run Test Coverage Review	2026-02-23T02:30:02.9139062Z ##[error]Process completed with exit code 1.
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	﻿2026-02-23T02:29:59.3066904Z ##[group]Run # Extract review name from filename (remove .md extension)
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:29:59.3067450Z [36;1m# Extract review name from filename (remove .md extension)[0m
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:29:59.3067856Z [36;1mREVIEW_NAME="dignified-code-simplifier.md"[0m
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:29:59.3068190Z [36;1mREVIEW_NAME="${REVIEW_NAME%.md}"[0m
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:29:59.3068451Z [36;1m[0m
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:29:59.3068656Z [36;1mecho "Running review: $REVIEW_NAME"[0m
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:29:59.3069175Z [36;1merk exec run-review \[0m
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:29:59.3069439Z [36;1m  --name "$REVIEW_NAME" \[0m
+
+... [58 lines omitted] ...
+
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:30:03.8513852Z {"type":"system","subtype":"init","cwd":"/home/runner/work/erk/erk","session_id":"b7dc4780-9562-4582-a932-26197d69b5c4","tools":["Task","TaskOutput","Bash","Glob","Grep","ExitPlanMode","Read","Edit","Write","NotebookEdit","WebFetch","TodoWrite","WebSearch","KillShell","Skill","SlashCommand","EnterPlanMode"],"mcp_servers":[],"model":"claude-haiku-4-5","permissionMode":"bypassPermissions","slash_commands":["erk:diag-lock-error","erk:one-shot-plan","erk:pr-preview-address","erk:pr-submit","erk:git-pr-push","erk:pr-address-remote","erk:objective-plan","erk:pr-address","erk:migrate-objective-schema","erk:learn","erk:replan","erk:plan-submit","erk:plan-save","erk:migrate-plan-to-draft-pr","erk:one-shot","erk:objective-update-with-landed-pr","erk:land","erk:objective-create","erk:fix-conflicts","erk:objective-list","erk:plan-implement","erk:sync-divergence","local:pr-sync-commit","local:audit-skill","local:statusline-refresh","local:analyze-context","local:interview","local:plan-update","local:audit-scan","local:check-relevance","local:sessions-list","local:tasks-clear","local:debug-ci","local:quick-submit","local:replan-learn-plans","local:tdd","local:objective-view","local:py-fast-ci","local:changelog-release","local:incremental-plan-mode","local:all-ci","local:audit-branches","local:audit-doc","local:code-stats","local:changelog-update","local:fast-ci","local:audit-plans","local:objective-reevaluate","fake-driven-testing","dignified-python","command-creator","cli-skill-creator","erk-exec","erk-diff-analysis","dignified-code-simplifier","gt","session-inspector","ci-iteration","objective","pr-operations","gh","learned-docs","erk-planning","pr-feedback-classifier","compact","context","cost","init","pr-comments","release-notes","review","security-review"],"apiKeySource":"ANTHROPIC_API_KEY","claude_code_version":"2.0.67","output_style":"default","agents":["general-purpose","statusline-setup","Explore","Plan","devrun","commit-categorizer","existing-docs-checker","session-analyzer","documentation-gap-identifier","plan-synthesizer","tripwire-extractor","code-diff-analyzer","libcst-refactor"],"skills":["dignified-python","command-creator","cli-skill-creator","erk-exec","erk-diff-analysis","dignified-code-simplifier","session-inspector","ci-iteration","objective","pr-operations","gh","learned-docs","erk-planning","pr-feedback-classifier"],"plugins":[],"uuid":"32cd435b-2d6a-482e-a5c8-a3d5b9f18653"}
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:30:04.1149712Z {"type":"assistant","message":{"id":"705a4f67-b9e8-4ab4-8922-c09679d910e7","container":null,"model":"&lt;synthetic&gt;","role":"assistant","stop_reason":"stop_sequence","stop_sequence":"","type":"message","usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":null,"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0}},"content":[{"type":"text","text":"Credit balance is too low"}],"context_management":null},"parent_tool_use_id":null,"session_id":"b7dc4780-9562-4582-a932-26197d69b5c4","uuid":"67d5322c-4e83-4d72-b9b7-83ceff940150","error":"billing_error"}
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:30:04.1157410Z {"type":"result","subtype":"success","is_error":true,"duration_ms":1766,"duration_api_ms":0,"num_turns":1,"result":"Credit balance is too low","session_id":"b7dc4780-9562-4582-a932-26197d69b5c4","total_cost_usd":0,"usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0}},"modelUsage":{},"permission_denials":[],"uuid":"d3a3ec66-b051-45ed-9c12-3b0899f1b942"}
+review (Dignified Code Simplifier Review, dignified-code-simplifier.md)	Run Dignified Code Simplifier Review	2026-02-23T02:30:04.3129393Z ##[error]Process completed with exit code 1.
+review (Tripwires Review, tripwires.md)	Run Tripwires Review	2026-02-23T02:29:58.6309004Z {"type":"system","subtype":"init","cwd":"/home/runner/work/erk/erk","session_id":"7a6cf36d-8c1c-4321-b7e9-796f338cbacc","tools":["Task","TaskOutput","Bash","Glob","Grep","ExitPlanMode","Read","Edit","Write","NotebookEdit","WebFetch","TodoWrite","WebSearch","KillShell","Skill","SlashCommand","EnterPlanMode"],"mcp_servers":[],"model":"claude-sonnet-4-5","permissionMode":"bypassPermissions","slash_commands":["erk:diag-lock-error","erk:one-shot-plan","erk:pr-preview-address","erk:pr-submit","erk:git-pr-push","erk:pr-address-remote","erk:objective-plan","erk:pr-address","erk:migrate-objective-schema","erk:learn","erk:replan","erk:plan-submit","erk:plan-save","erk:migrate-plan-to-draft-pr","erk:one-shot","erk:objective-update-with-landed-pr","erk:land","erk:objective-create","erk:fix-conflicts","erk:objective-list","erk:plan-implement","erk:sync-divergence","local:pr-sync-commit","local:audit-skill","local:statusline-refresh","local:analyze-context","local:interview","local:plan-update","local:audit-scan","local:check-relevance","local:sessions-list","local:tasks-clear","local:debug-ci","local:quick-submit","local:replan-learn-plans","local:tdd","local:objective-view","local:py-fast-ci","local:changelog-release","local:incremental-plan-mode","local:all-ci","local:audit-branches","local:audit-doc","local:code-stats","local:changelog-update","local:fast-ci","local:audit-plans","local:objective-reevaluate","fake-driven-testing","dignified-python","command-creator","cli-skill-creator","erk-exec","erk-diff-analysis","dignified-code-simplifier","gt","session-inspector","ci-iteration","objective","pr-operations","gh","learned-docs","erk-planning","pr-feedback-classifier","compact","context","cost","init","pr-comments","release-notes","review","security-review"],"apiKeySource":"ANTHROPIC_API_KEY","claude_code_version":"2.0.67","output_style":"default","agents":["general-purpose","statusline-setup","Explore","Plan","devrun","commit-categorizer","existing-docs-checker","session-analyzer","documentation-gap-identifier","plan-synthesizer","tripwire-extractor","code-diff-analyzer","libcst-refactor"],"skills":["dignified-python","command-creator","cli-skill-creator","erk-exec","erk-diff-analysis","dignified-code-simplifier","session-inspector","ci-iteration","objective","pr-operations","gh","learned-docs","erk-planning","pr-feedback-classifier"],"plugins":[],"uuid":"ec4e41de-17a0-400e-84a2-2f593d789a6e"}
+review (Tripwires Review, tripwires.md)	Run Tripwires Review	2026-02-23T02:29:58.7972064Z {"type":"assistant","message":{"id":"6a419c9a-aacc-4a05-ad06-74260167713a","container":null,"model":"&lt;synthetic&gt;","role":"assistant","stop_reason":"stop_sequence","stop_sequence":"","type":"message","usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":null,"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0}},"content":[{"type":"text","text":"Credit balance is too low"}],"context_management":null},"parent_tool_use_id":null,"session_id":"7a6cf36d-8c1c-4321-b7e9-796f338cbacc","uuid":"2f841915-3dad-4786-b872-d2cdf53593ba","error":"billing_error"}
+review (Tripwires Review, tripwires.md)	Run Tripwires Review	2026-02-23T02:29:58.7979307Z {"type":"result","subtype":"success","is_error":true,"duration_ms":1536,"duration_api_ms":0,"num_turns":1,"result":"Credit balance is too low","session_id":"7a6cf36d-8c1c-4321-b7e9-796f338cbacc","total_cost_usd":0,"usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0}},"modelUsage":{},"permission_denials":[],"uuid":"c4da0b64-c6bc-41b6-83a0-768a58217465"}
+review (Tripwires Review, tripwires.md)	Run Tripwires Review	2026-02-23T02:29:58.9234861Z ##[error]Process completed with exit code 1.
+review (Dignified Python Review, dignified-python.md)	Run Dignified Python Review	2026-02-23T02:30:00.5187924Z {"type":"system","subtype":"init","cwd":"/home/runner/work/erk/erk","session_id":"75a4d6ee-dab2-4289-b9bc-4b524c3945a4","tools":["Task","TaskOutput","Bash","Glob","Grep","ExitPlanMode","Read","Edit","Write","NotebookEdit","WebFetch","TodoWrite","WebSearch","KillShell","Skill","SlashCommand","EnterPlanMode"],"mcp_servers":[],"model":"claude-haiku-4-5","permissionMode":"bypassPermissions","slash_commands":["erk:diag-lock-error","erk:one-shot-plan","erk:pr-preview-address","erk:pr-submit","erk:git-pr-push","erk:pr-address-remote","erk:objective-plan","erk:pr-address","erk:migrate-objective-schema","erk:learn","erk:replan","erk:plan-submit","erk:plan-save","erk:migrate-plan-to-draft-pr","erk:one-shot","erk:objective-update-with-landed-pr","erk:land","erk:objective-create","erk:fix-conflicts","erk:objective-list","erk:plan-implement","erk:sync-divergence","local:pr-sync-commit","local:audit-skill","local:statusline-refresh","local:analyze-context","local:interview","local:plan-update","local:audit-scan","local:check-relevance","local:sessions-list","local:tasks-clear","local:debug-ci","local:quick-submit","local:replan-learn-plans","local:tdd","local:objective-view","local:py-fast-ci","local:changelog-release","local:incremental-plan-mode","local:all-ci","local:audit-branches","local:audit-doc","local:code-stats","local:changelog-update","local:fast-ci","local:audit-plans","local:objective-reevaluate","fake-driven-testing","dignified-python","command-creator","cli-skill-creator","erk-exec","erk-diff-analysis","dignified-code-simplifier","gt","session-inspector","ci-iteration","objective","pr-operations","gh","learned-docs","erk-planning","pr-feedback-classifier","compact","context","cost","init","pr-comments","release-notes","review","security-review"],"apiKeySource":"ANTHROPIC_API_KEY","claude_code_version":"2.0.67","output_style":"default","agents":["general-purpose","statusline-setup","Explore","Plan","devrun","commit-categorizer","existing-docs-checker","session-analyzer","documentation-gap-identifier","plan-synthesizer","tripwire-extractor","code-diff-analyzer","libcst-refactor"],"skills":["dignified-python","command-creator","cli-skill-creator","erk-exec","erk-diff-analysis","dignified-code-simplifier","session-inspector","ci-iteration","objective","pr-operations","gh","learned-docs","erk-planning","pr-feedback-classifier"],"plugins":[],"uuid":"d5742e66-b700-43e9-aa15-6b7d70a2f7f3"}
+review (Dignified Python Review, dignified-python.md)	Run Dignified Python Review	2026-02-23T02:30:00.7121381Z {"type":"assistant","message":{"id":"a796f1be-2d9c-4382-877e-428f58dc7a74","container":null,"model":"&lt;synthetic&gt;","role":"assistant","stop_reason":"stop_sequence","stop_sequence":"","type":"message","usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":null,"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0}},"content":[{"type":"text","text":"Credit balance is too low"}],"context_management":null},"parent_tool_use_id":null,"session_id":"75a4d6ee-dab2-4289-b9bc-4b524c3945a4","uuid":"c743e406-009f-4c30-8160-775351e6a35c","error":"billing_error"}
+review (Dignified Python Review, dignified-python.md)	Run Dignified Python Review	2026-02-23T02:30:00.7130389Z {"type":"result","subtype":"success","is_error":true,"duration_ms":1663,"duration_api_ms":0,"num_turns":1,"result":"Credit balance is too low","session_id":"75a4d6ee-dab2-4289-b9bc-4b524c3945a4","total_cost_usd":0,"usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0}},"modelUsage":{},"permission_denials":[],"uuid":"40354b66-4d0c-4d11-83d3-576e5c278a4a"}
+review (Dignified Python Review, dignified-python.md)	Run Dignified Python Review	2026-02-23T02:30:00.8452955Z ##[error]Process completed with exit code 1.
+  </tool_result>
+  <tool_result tool="toolu_01NZWAahYJXimquKjeohm4zR">
+unit-tests (3.14)	Run unit tests	﻿2026-02-23T02:25:08.1259140Z ##[group]Run make test
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1259407Z [36;1mmake test[0m
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1292697Z shell: /usr/bin/bash -e {0}
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1293107Z env:
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1293271Z   UV_PYTHON: 3.14
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1293528Z   pythonLocation: /opt/hostedtoolcache/Python/3.14.2/x64
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1293926Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.14.2/x64/lib/pkgconfig
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1294309Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.14.2/x64
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1294667Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.14.2/x64
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1295009Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.14.2/x64
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1295355Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.14.2/x64/lib
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1295645Z ##[endgroup]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:08.1376086Z uv run pytest tests/unit/ tests/commands/ tests/core/ tests/real/ -n auto
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:31.6743175Z bringing up nodes...
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:31.6743638Z bringing up nodes...
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:31.6743977Z 
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:31.7939200Z ........................................................................ [  1%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:31.8500363Z ........................................................................ [  2%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:31.9952461Z ........................................................................ [  3%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.0925293Z ........................................................................ [  5%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.2025869Z ........................................................................ [  6%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.3151864Z ..............................s....s.................................... [  7%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.4275415Z ........................................................................ [  9%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.5263610Z ........................................................................ [ 10%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.6325042Z ........................................................................ [ 11%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.7307188Z ........................................................................ [ 13%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.8210109Z ........................................................................ [ 14%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:32.9473880Z ........................................................................ [ 15%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:33.0453470Z ........................................................................ [ 17%]
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:33.1726696Z ........................................................................ [ 18%]
+
+... [70 lines omitted] ...
+
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:42.1081880Z =================================== FAILURES ===================================
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:42.1082830Z _________________ test_dispatch_fails_on_full_skeleton_failure _________________
+unit-tests (3.14)	Run unit tests	2026-02-23T02:25:42.1084852Z     def test_dispatch_fails_on_full_skeleton_failure() -&gt; None:
+  </tool_result>
+  <assistant>## CI Failure Analysis
+
+**Branch**: `plnd/plan-harden-one-shot-skele-02-22-2354`
+**PR**: #7923
+
+### Failed Checks
+
+1. **code-reviews** — All 4 review jobs failed with `"Credit balance is too low"` (billing error, not a code issue)
+
+2. **ci (unit-tests on Python 3.14)** — The same 2 test failures from before the fix was pushed. This is from a **stale run** (triggered before the fix commit).
+
+The CI run `22290772195` was triggered on the old code before you pushed. The fix has already been submitted. You just need to wait for the new CI run to complete, or re-trigger it.
+
+The `code-reviews` failures are an Anthropic API billing issue — nothing actionable on our end.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14317" cache_read_input_tokens="59773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14317}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
