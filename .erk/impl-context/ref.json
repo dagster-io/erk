@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Split AI Generation Out of `erk pr submit`"
+  "plan_id": "7946",
+  "url": "https://github.com/dagster-io/erk/pull/7946",
+  "created_at": "2026-02-23T02:24:15.638032",
+  "synced_at": "2026-02-23T02:24:15.638032",
+  "labels": [],
+  "objective_id": null
 }
