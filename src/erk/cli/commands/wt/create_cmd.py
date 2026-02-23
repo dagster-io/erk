@@ -675,10 +675,7 @@ def create_wt(
 
         # Prepare and validate using shared helper (returns union type)
         trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
-        plan_backend = "planned_pr"
-        result = prepare_plan_for_worktree(
-            plan, ctx.time.now(), plan_backend=plan_backend, warn_non_open=True
-        )
+        result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
 
         if isinstance(result, IssueValidationFailed):
             user_output(click.style("Error: ", fg="red") + result.message)

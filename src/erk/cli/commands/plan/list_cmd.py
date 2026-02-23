@@ -117,7 +117,6 @@ def dash_options(f: Callable[P, T]) -> Callable[P, T]:
 def _build_static_table(
     rows: list[PlanRowData],
     *,
-    plan_backend: str,
     show_pr_column: bool,
 ) -> Table:
     """Build a Rich static table from PlanRowData rows.
@@ -126,7 +125,6 @@ def _build_static_table(
 
     Args:
         rows: List of PlanRowData to display
-        plan_backend: Plan backend type ("github" or "planned_pr")
         show_pr_column: Whether to show a separate PR column
 
     Returns:
@@ -135,20 +133,15 @@ def _build_static_table(
     table = Table(show_header=True, header_style="bold")
 
     # Column setup mirrors PlanDataTable._setup_columns()
-    plan_col_header = "pr" if plan_backend == "planned_pr" else "plan"
-    table.add_column(plan_col_header, style="cyan", no_wrap=True, width=6)
-
-    if plan_backend == "planned_pr":
-        table.add_column("stage", no_wrap=True, width=8)
-        table.add_column("sts", no_wrap=True, width=4)
-        table.add_column("created", no_wrap=True, width=7)
+    table.add_column("pr", style="cyan", no_wrap=True, width=6)
+    table.add_column("stage", no_wrap=True, width=8)
+    table.add_column("sts", no_wrap=True, width=4)
+    table.add_column("created", no_wrap=True, width=7)
     table.add_column("obj", no_wrap=True, width=5)
     table.add_column("loc", no_wrap=True, width=3)
     table.add_column("branch", no_wrap=True, width=42)
     table.add_column("run-id", no_wrap=True, width=10)
     table.add_column("run", no_wrap=True, width=3)
-    if plan_backend != "planned_pr":
-        table.add_column("created", no_wrap=True, width=7)
     table.add_column("author", no_wrap=True, width=9)
     if show_pr_column:
         table.add_column("pr", no_wrap=True, width=10)
@@ -156,9 +149,7 @@ def _build_static_table(
     table.add_column("cmts", no_wrap=True, width=5)
 
     for row in rows:
-        values = _row_to_static_values(
-            row, plan_backend=plan_backend, show_pr_column=show_pr_column
-        )
+        values = _row_to_static_values(row, show_pr_column=show_pr_column)
         table.add_row(*values)
 
     return table
@@ -167,7 +158,6 @@ def _build_static_table(
 def _row_to_static_values(
     row: PlanRowData,
     *,
-    plan_backend: str,
     show_pr_column: bool,
 ) -> tuple[str | Text, ...]:
     """Convert PlanRowData to static table cell values.
@@ -176,7 +166,6 @@ def _row_to_static_values(
 
     Args:
         row: Plan row data
-        plan_backend: Plan backend type ("github" or "planned_pr")
         show_pr_column: Whether to show a separate PR column
 
     Returns:
@@ -210,23 +199,18 @@ def _row_to_static_values(
     run_state_emoji = run_state_text.split(" ", 1)[0] if run_state_text.strip() else "-"
 
     # Build values list matching column order
-    values: list[str | Text] = [plan_cell]
-    if plan_backend == "planned_pr":
-        stage_display = strip_rich_markup(row.lifecycle_display)
-        values.append(stage_display)
-        values.append(row.status_display)
-        values.append(row.created_display)
-    values.extend(
-        [
-            objective_cell,
-            location_cell,
-            row.pr_head_branch or row.worktree_branch or "-",
-            run_id,
-            run_state_emoji,
-        ]
-    )
-    if plan_backend != "planned_pr":
-        values.append(row.created_display)
+    stage_display = strip_rich_markup(row.lifecycle_display)
+    values: list[str | Text] = [
+        plan_cell,
+        stage_display,
+        row.status_display,
+        row.created_display,
+        objective_cell,
+        location_cell,
+        row.pr_head_branch or row.worktree_branch or "-",
+        run_id,
+        run_state_emoji,
+    ]
     values.append(row.author)
 
     checks_display = strip_rich_markup(row.checks_display)
@@ -276,8 +260,6 @@ def _list_plans_impl(
     # Build labels - default to ["erk-plan"]
     labels = label if label else ("erk-plan",)
 
-    plan_backend = "planned_pr"
-
     # Construct RealPlanDataProvider
     # Only fetch_plans() and fetch_branch_activity() are used here;
     # neither requires clipboard, browser, or http_client, so use fakes.
@@ -291,7 +273,6 @@ def _list_plans_impl(
         http_client=FakeHttpClient(),
     )
 
-    show_pr_column = plan_backend != "planned_pr"
     filters = PlanFilters(
         labels=labels,
         state=state,
@@ -300,7 +281,7 @@ def _list_plans_impl(
         show_prs=True,
         show_runs=True,
         creator=creator,
-        show_pr_column=show_pr_column,
+        show_pr_column=False,
     )
 
     # Fetch data via provider
@@ -321,8 +302,7 @@ def _list_plans_impl(
     # Build and display static table
     table = _build_static_table(
         rows,
-        plan_backend=plan_backend,
-        show_pr_column=show_pr_column,
+        show_pr_column=False,
     )
 
     user_output(f"\nFound {len(rows)} plan(s):\n")
@@ -384,8 +364,6 @@ def _run_interactive_mode(
     clipboard = RealClipboard()
     browser = RealBrowserLauncher()
 
-    plan_backend = "planned_pr"
-
     # Fetch GitHub token once at startup for fast HTTP client
     token = fetch_github_token()
     http_client = RealHttpClient(token=token, base_url="https://api.github.com")
@@ -405,7 +383,7 @@ def _run_interactive_mode(
         show_prs=prs,
         show_runs=runs,
         creator=creator,
-        show_pr_column=plan_backend != "planned_pr",
+        show_pr_column=False,
     )
 
     # Convert sort string to SortState
@@ -417,7 +395,7 @@ def _run_interactive_mode(
         filters=filters,
         refresh_interval=interval,
         initial_sort=initial_sort,
-        plan_backend=plan_backend,
+        plan_backend="planned_pr",
     )
     app.run()
 
