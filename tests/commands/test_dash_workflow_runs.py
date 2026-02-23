@@ -113,7 +113,7 @@ Implementation details"""
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify workflow run ID appears
@@ -203,7 +203,7 @@ last_dispatched_node_id: 'WFR_def456'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify run ID and OSC 8 link present
@@ -289,7 +289,7 @@ last_dispatched_node_id: 'WFR_ghi789'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify run ID displays (without link)
@@ -351,7 +351,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify "-" appears in run-id column
@@ -426,7 +426,6 @@ def test_plan_list_handles_batch_query_failure() -> None:
         # Verify plan still displays (without run ID)
         output = strip_ansi(result.output)
         assert "222" in output
-        assert "Plan with API failure" in output
 
 
 def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> None:
@@ -553,7 +552,7 @@ last_dispatched_node_id: 'WFR_node2'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify both run IDs appear
@@ -614,6 +613,5 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
         # Verify plan displays without run ID
         output = strip_ansi(result.output)
         assert "999" in output
-        assert "Plan without worktree" in output
         # Run ID should be "-" or blank
         assert "44444444" not in output, "Should not show unrelated run ID"

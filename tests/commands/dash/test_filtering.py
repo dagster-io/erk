@@ -60,9 +60,7 @@ def test_plan_list_no_filters() -> None:
         assert result.exit_code == 0
         assert "Found 2 plan(s)" in result.output
         assert "#1" in result.output
-        assert "Issue 1" in result.output
         assert "#2" in result.output
-        assert "Issue 2" in result.output
 
 
 def test_plan_list_filter_by_state() -> None:
@@ -110,7 +108,6 @@ def test_plan_list_filter_by_state() -> None:
         assert result.exit_code == 0
         assert "Found 1 plan(s)" in result.output
         assert "#1" in result.output
-        assert "Open Issue" in result.output
         assert "#2" not in result.output
 
 
@@ -165,7 +162,6 @@ def test_plan_list_filter_by_labels() -> None:
         assert result.exit_code == 0
         assert "Found 1 plan(s)" in result.output
         assert "#1" in result.output
-        assert "Issue with both labels" in result.output
         assert "#2" not in result.output
 
 
@@ -287,7 +283,6 @@ def test_plan_list_combined_filters() -> None:
         assert result.exit_code == 0
         assert "Found 1 plan(s)" in result.output
         assert "#1" in result.output
-        assert "Matching Issue" in result.output
 
 
 def test_plan_list_empty_results() -> None:

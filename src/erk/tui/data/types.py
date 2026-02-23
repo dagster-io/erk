@@ -50,6 +50,7 @@ class PlanRowData:
         learn_display: Formatted display string with text (e.g., "- not started", "⟳ in progress")
         learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12")
         objective_issue: Objective issue number (for linking plans to objectives)
+        objective_url: Full URL to the objective issue (for clickable links)
         objective_display: Formatted display string (e.g., "#123" or "-")
         objective_done_nodes: Count of done nodes in objective roadmap
         objective_total_nodes: Total nodes in objective roadmap
@@ -102,6 +103,7 @@ class PlanRowData:
     learn_display: str
     learn_display_icon: str
     objective_issue: int | None
+    objective_url: str | None
     objective_display: str
     objective_done_nodes: int
     objective_total_nodes: int
