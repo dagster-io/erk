@@ -658,6 +658,7 @@ def replace_metadata_block_in_body(
     #   - <!-- /erk:metadata-block -->
     escaped_key = re.escape(key)
     pattern = (
+        rf"(?:<!-- WARNING: Machine-generated\. Manual edits may break erk tooling\. -->\n)*"
         rf"<!-- erk:metadata-block:{escaped_key} -->"
         rf"(.+?)"
         rf"<!-- /erk:metadata-block(?::{escaped_key})? -->"
