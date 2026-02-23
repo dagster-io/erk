@@ -53,11 +53,13 @@ class PrAddressWorkflowCapability(Capability):
         return [ManagedArtifact(name="pr-address", artifact_type="workflow")]
 
     def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
-        assert repo_root is not None, "PrAddressWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("PrAddressWorkflowCapability requires repo_root")
         return (repo_root / ".github" / "workflows" / "pr-address.yml").exists()
 
     def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
-        assert repo_root is not None, "PrAddressWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("PrAddressWorkflowCapability requires repo_root")
 
         bundled_github_dir = get_bundled_github_dir()
         if not bundled_github_dir.exists():
@@ -87,7 +89,8 @@ class PrAddressWorkflowCapability(Capability):
 
     def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove the pr-address workflow."""
-        assert repo_root is not None, "PrAddressWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("PrAddressWorkflowCapability requires repo_root")
 
         workflow_file = repo_root / ".github" / "workflows" / "pr-address.yml"
 

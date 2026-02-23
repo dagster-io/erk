@@ -53,11 +53,13 @@ class OneShotWorkflowCapability(Capability):
         return [ManagedArtifact(name="one-shot", artifact_type="workflow")]
 
     def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
-        assert repo_root is not None, "OneShotWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("OneShotWorkflowCapability requires repo_root")
         return (repo_root / ".github" / "workflows" / "one-shot.yml").exists()
 
     def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
-        assert repo_root is not None, "OneShotWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("OneShotWorkflowCapability requires repo_root")
 
         bundled_github_dir = get_bundled_github_dir()
         if not bundled_github_dir.exists():
@@ -87,7 +89,8 @@ class OneShotWorkflowCapability(Capability):
 
     def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove the one-shot workflow."""
-        assert repo_root is not None, "OneShotWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("OneShotWorkflowCapability requires repo_root")
 
         workflow_file = repo_root / ".github" / "workflows" / "one-shot.yml"
 

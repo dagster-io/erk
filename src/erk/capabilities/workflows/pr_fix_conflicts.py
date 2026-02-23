@@ -53,11 +53,13 @@ class PrFixConflictsWorkflowCapability(Capability):
         return [ManagedArtifact(name="pr-fix-conflicts", artifact_type="workflow")]
 
     def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
-        assert repo_root is not None, "PrFixConflictsWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
         return (repo_root / ".github" / "workflows" / "pr-fix-conflicts.yml").exists()
 
     def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
-        assert repo_root is not None, "PrFixConflictsWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
 
         bundled_github_dir = get_bundled_github_dir()
         if not bundled_github_dir.exists():
@@ -87,7 +89,8 @@ class PrFixConflictsWorkflowCapability(Capability):
 
     def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         """Remove the pr-fix-conflicts workflow."""
-        assert repo_root is not None, "PrFixConflictsWorkflowCapability requires repo_root"
+        if repo_root is None:
+            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
 
         workflow_file = repo_root / ".github" / "workflows" / "pr-fix-conflicts.yml"
 
