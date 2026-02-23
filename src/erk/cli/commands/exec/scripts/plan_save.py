@@ -30,7 +30,6 @@ from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     plan_save_to_issue,
 )
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
-from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk_shared.context.helpers import (
     get_repo_identifier,
     require_branch_manager,
@@ -40,14 +39,18 @@ from erk_shared.context.helpers import (
     require_github,
     require_issues,
     require_local_config,
-    require_prompt_executor,
     require_repo_root,
     require_time,
 )
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.naming import InvalidPlanTitle, generate_draft_pr_branch_name, validate_plan_title
+from erk_shared.naming import (
+    InvalidPlanTitle,
+    generate_draft_pr_branch_name,
+    sanitize_worktree_name,
+    validate_plan_title,
+)
 from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
@@ -116,6 +119,7 @@ def _save_as_draft_pr(
     plan_file: Path | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
+    branch_slug: str | None,
 ) -> None:
     """Save plan as a draft PR.
 
@@ -131,6 +135,7 @@ def _save_as_draft_pr(
         plan_file: Original plan file path (for snapshot)
         learned_from_issue: Parent plan issue number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
+        branch_slug: Pre-generated branch slug (skips LLM call when provided)
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -160,9 +165,8 @@ def _save_as_draft_pr(
             )
         raise SystemExit(2)
 
-    # Generate branch name with LLM-generated slug
-    executor = require_prompt_executor(ctx)
-    slug = generate_slug_or_fallback(executor, title)
+    # Use pre-generated slug or deterministic fallback (no LLM call)
+    slug = branch_slug if branch_slug else sanitize_worktree_name(title)
     now = require_time(ctx).now()
     branch_name = generate_draft_pr_branch_name(
         slug,
@@ -294,6 +298,7 @@ def _save_plan_via_draft_pr(
     plan_type: str | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
+    branch_slug: str | None,
 ) -> None:
     """Handle draft-PR backend: dedup check, plan extraction, validation, and save.
 
@@ -306,6 +311,7 @@ def _save_plan_via_draft_pr(
         plan_type: Plan type (standard or learn)
         learned_from_issue: Parent plan issue number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
+        branch_slug: Pre-generated branch slug (skips LLM call when provided)
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -379,6 +385,7 @@ def _save_plan_via_draft_pr(
         plan_file=plan_file,
         learned_from_issue=learned_from_issue,
         created_from_workflow_run_url=created_from_workflow_run_url,
+        branch_slug=branch_slug,
     )
 
 
@@ -424,6 +431,11 @@ def _save_plan_via_draft_pr(
     default=None,
     help="GitHub Actions workflow run URL",
 )
+@click.option(
+    "--branch-slug",
+    default=None,
+    help="Pre-generated branch slug (skips LLM call when provided)",
+)
 @click.pass_context
 def plan_save(
     ctx: click.Context,
@@ -435,6 +447,7 @@ def plan_save(
     plan_type: str | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
+    branch_slug: str | None,
 ) -> None:
     """Backend-aware plan save: dispatches to issue or draft-PR based on constant.
 
@@ -465,4 +478,5 @@ def plan_save(
         plan_type=plan_type,
         learned_from_issue=learned_from_issue,
         created_from_workflow_run_url=created_from_workflow_run_url,
+        branch_slug=branch_slug,
     )

@@ -158,8 +158,15 @@ def _setup_from_file(
     default=None,
     help="Markdown file to set up from",
 )
+@click.option(
+    "--branch-slug",
+    default=None,
+    help="Pre-generated branch slug (skips LLM call when provided)",
+)
 @click.pass_context
-def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | None) -> None:
+def setup_impl(
+    ctx: click.Context, issue_number: int | None, file_path: Path | None, branch_slug: str | None
+) -> None:
     """Consolidated implementation setup.
 
     Handles all setup paths for plan-implement:
@@ -174,7 +181,7 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
 
     # Path 1: --issue provided
     if issue_number is not None:
-        _handle_issue_setup(ctx, issue_number=issue_number)
+        _handle_issue_setup(ctx, issue_number=issue_number, branch_slug=branch_slug)
         return
 
     # Path 2: --file provided
@@ -202,7 +209,7 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
             else:
                 plan_id = None
             if plan_id is not None:
-                _handle_issue_setup(ctx, issue_number=plan_id)
+                _handle_issue_setup(ctx, issue_number=plan_id, branch_slug=None)
                 return
 
         # File-based plan (no tracking) - just validate
@@ -246,7 +253,7 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
         detected_number = detection["plan_number"]
         if isinstance(detected_number, int):
             click.echo(f"Auto-detected plan #{detected_number} from branch", err=True)
-            _handle_issue_setup(ctx, issue_number=detected_number)
+            _handle_issue_setup(ctx, issue_number=detected_number, branch_slug=None)
             return
 
     # 3c: No plan found
@@ -262,7 +269,7 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
     raise SystemExit(1)
 
 
-def _handle_issue_setup(ctx: click.Context, *, issue_number: int) -> None:
+def _handle_issue_setup(ctx: click.Context, *, issue_number: int, branch_slug: str | None) -> None:
     """Handle setup from an issue number (shared by explicit --issue and auto-detect).
 
     Delegates to setup-impl-from-issue, runs impl-init, runs cleanup,
@@ -271,6 +278,7 @@ def _handle_issue_setup(ctx: click.Context, *, issue_number: int) -> None:
     Args:
         ctx: Click context.
         issue_number: The issue/PR number to set up from.
+        branch_slug: Pre-generated branch slug, or None to use deterministic generation.
     """
     from erk.cli.commands.exec.scripts.setup_impl_from_issue import setup_impl_from_issue
 
@@ -279,7 +287,13 @@ def _handle_issue_setup(ctx: click.Context, *, issue_number: int) -> None:
     runner_ctx.obj = ctx.obj
 
     # Run setup-impl-from-issue
-    ctx.invoke(setup_impl_from_issue, plan_number=issue_number, session_id=None, no_impl=False)
+    ctx.invoke(
+        setup_impl_from_issue,
+        plan_number=issue_number,
+        session_id=None,
+        no_impl=False,
+        branch_slug=branch_slug,
+    )
 
     # Run impl-init for validation and metadata
     try:

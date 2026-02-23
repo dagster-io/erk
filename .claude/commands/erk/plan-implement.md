@@ -60,10 +60,33 @@ This single command handles:
 - Running impl-init validation
 - Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
 
-If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view <ISSUE_ARG> --json title -q .title` (for draft-PR plans) or `gh issue view <ISSUE_ARG> --json title -q .title` (for issue plans). Try PR first, fall back to issue.
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
 
 ```bash
-erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}"
+erk exec setup-impl --issue <ISSUE_ARG> --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
 ```
 
 Parse the JSON output to get `issue_number`, then:

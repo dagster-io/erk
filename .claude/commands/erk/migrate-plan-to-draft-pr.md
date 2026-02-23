@@ -43,10 +43,22 @@ erk exec plan-migrate-to-draft-pr <plan_number> --dry-run --format display
 
 Display the output to the user and ask if they want to proceed. Skip this step if the user said to proceed directly.
 
+### Step 2.5: Generate Branch Slug
+
+Fetch the plan title and generate a branch slug before running the migration:
+
+1. Fetch the title: `gh issue view <plan_number> --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
 ### Step 3: Run the Migration
 
 ```bash
-erk exec plan-migrate-to-draft-pr <plan_number> --format json
+erk exec plan-migrate-to-draft-pr <plan_number> --branch-slug="${BRANCH_SLUG}" --format json
 ```
 
 Parse the JSON output. If `success` is `false`, display the error and stop.

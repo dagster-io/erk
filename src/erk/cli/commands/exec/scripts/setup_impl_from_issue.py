@@ -23,14 +23,12 @@ from pathlib import Path
 
 import click
 
-from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk_shared.context.helpers import (
     require_branch_manager,
     require_cwd,
     require_git,
     require_github,
     require_plan_backend,
-    require_prompt_executor,
     require_repo_root,
     require_time,
 )
@@ -256,6 +254,7 @@ def _setup_issue_plan(
     *,
     plan_number: int,
     no_impl: bool,
+    branch_slug: str | None,
 ) -> dict[str, str | int | bool | None]:
     """Set up implementation from an issue-based plan.
 
@@ -265,6 +264,7 @@ def _setup_issue_plan(
         ctx: Click context
         plan_number: Issue number for the plan
         no_impl: Skip .impl/ folder creation
+        branch_slug: Pre-generated branch slug (skips LLM call when provided)
 
     Returns:
         Success output dict
@@ -299,9 +299,8 @@ def _setup_issue_plan(
         click.echo(f"Already on branch for issue #{plan_number}: {current_branch}", err=True)
         branch_name = current_branch
     else:
-        # Generate branch name from issue with LLM-generated slug
-        executor = require_prompt_executor(ctx)
-        slug = generate_slug_or_fallback(executor, plan.title)
+        # Use pre-generated slug or deterministic fallback (no LLM call)
+        slug = branch_slug if branch_slug else sanitize_worktree_name(plan.title)
         timestamp = time.now()
         branch_name = generate_issue_branch_name(
             plan_number, slug, timestamp, objective_id=plan.objective_id
@@ -383,12 +382,18 @@ def _setup_issue_plan(
     is_flag=True,
     help="Skip .impl/ folder creation (for local execution without file overhead)",
 )
+@click.option(
+    "--branch-slug",
+    default=None,
+    help="Pre-generated branch slug (skips LLM call when provided)",
+)
 @click.pass_context
 def setup_impl_from_issue(
     ctx: click.Context,
     plan_number: int,
     session_id: str | None,
     no_impl: bool,
+    branch_slug: str | None,
 ) -> None:
     """Set up .impl/ folder from GitHub issue in current worktree.
 
@@ -410,6 +415,8 @@ def setup_impl_from_issue(
     if plan_backend.get_provider_name() == "github-draft-pr":
         output = _setup_draft_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
     else:
-        output = _setup_issue_plan(ctx, plan_number=plan_number, no_impl=no_impl)
+        output = _setup_issue_plan(
+            ctx, plan_number=plan_number, no_impl=no_impl, branch_slug=branch_slug
+        )
 
     click.echo(json.dumps(output))

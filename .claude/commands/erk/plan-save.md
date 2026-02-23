@@ -48,12 +48,25 @@ Else:
   - Set PLAN_TYPE_FLAG to empty string
 ```
 
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
 ### Step 2: Run Save Command
 
-Run this command with the session ID and optional flags:
+Run this command with the session ID, branch slug, and optional flags:
 
 ```bash
-erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
 ```
 
 Parse the JSON output to extract `plan_number` for verification in Step 3.
