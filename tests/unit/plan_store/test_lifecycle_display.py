@@ -78,13 +78,13 @@ def test_implementing_stage_returns_yellow_markup() -> None:
     """implementing header field returns yellow markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
     result = compute_lifecycle_display(plan, has_workflow_run=False)
-    assert result == "[yellow]impling[/yellow]"
+    assert result == "[yellow]impl[/yellow]"
 
 
 def test_implemented_stage_returns_cyan_markup() -> None:
     """implemented header field returns cyan markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]impld[/cyan]"
+    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]impl[/cyan]"
 
 
 def test_merged_stage_returns_green_markup() -> None:
@@ -111,7 +111,7 @@ def test_infer_planned_from_draft_open_pr() -> None:
 def test_infer_review_from_non_draft_open_pr() -> None:
     """Non-draft + OPEN PR infers implemented stage."""
     plan = _make_plan(metadata={"is_draft": False, "pr_state": "OPEN"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]impld[/cyan]"
+    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]impl[/cyan]"
 
 
 def test_infer_merged_from_merged_pr() -> None:
@@ -160,7 +160,7 @@ def test_header_field_takes_precedence_over_metadata() -> None:
         metadata={"is_draft": False, "pr_state": "MERGED"},
     )
     result = compute_lifecycle_display(plan, has_workflow_run=False)
-    assert result == "[yellow]impling[/yellow]"
+    assert result == "[yellow]impl[/yellow]"
 
 
 # --- format_lifecycle_with_status tests ---
@@ -235,34 +235,34 @@ def test_review_conflicts_and_approved() -> None:
 def test_implementing_with_conflicts() -> None:
     """Implementing stage with conflicts shows explosion emoji."""
     result = _format_lifecycle(
-        "[yellow]impling[/yellow]",
+        "[yellow]impl[/yellow]",
         is_draft=None,
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[yellow]impling 💥[/yellow]"
+    assert result == "[yellow]impl 💥[/yellow]"
 
 
 def test_implementing_no_conflicts() -> None:
     """Implementing stage without conflicts returns unchanged."""
     result = _format_lifecycle(
-        "[yellow]impling[/yellow]",
+        "[yellow]impl[/yellow]",
         is_draft=None,
         has_conflicts=False,
         review_decision=None,
     )
-    assert result == "[yellow]impling[/yellow]"
+    assert result == "[yellow]impl[/yellow]"
 
 
 def test_implementing_ignores_review_decision() -> None:
     """Implementing stage does not show review decision indicators."""
     result = _format_lifecycle(
-        "[yellow]impling[/yellow]",
+        "[yellow]impl[/yellow]",
         is_draft=None,
         has_conflicts=False,
         review_decision="APPROVED",
     )
-    assert result == "[yellow]impling[/yellow]"
+    assert result == "[yellow]impl[/yellow]"
 
 
 def test_planned_stage_no_indicators() -> None:
@@ -359,23 +359,23 @@ def test_planned_published_shows_eyes_emoji() -> None:
 def test_implementing_draft_shows_construction_emoji() -> None:
     """Implementing stage with draft PR shows construction emoji prefix."""
     result = _format_lifecycle(
-        "[yellow]impling[/yellow]",
+        "[yellow]impl[/yellow]",
         is_draft=True,
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[yellow]impling 🚧[/yellow]"
+    assert result == "[yellow]impl 🚧[/yellow]"
 
 
 def test_implementing_published_shows_eyes_emoji() -> None:
     """Implementing stage with published PR shows eyes emoji prefix."""
     result = _format_lifecycle(
-        "[yellow]impling[/yellow]",
+        "[yellow]impl[/yellow]",
         is_draft=False,
         has_conflicts=None,
         review_decision=None,
     )
-    assert result == "[yellow]impling 👀[/yellow]"
+    assert result == "[yellow]impl 👀[/yellow]"
 
 
 def test_review_published_shows_eyes_emoji() -> None:
@@ -447,12 +447,12 @@ def test_plain_text_stage_with_draft_prefix() -> None:
 def test_implementing_draft_with_conflicts_shows_both() -> None:
     """Implementing draft with conflicts shows prefix and suffix."""
     result = _format_lifecycle(
-        "[yellow]impling[/yellow]",
+        "[yellow]impl[/yellow]",
         is_draft=True,
         has_conflicts=True,
         review_decision=None,
     )
-    assert result == "[yellow]impling 🚧 💥[/yellow]"
+    assert result == "[yellow]impl 🚧 💥[/yellow]"
 
 
 # --- Ready-to-merge (rocket) indicator tests ---
@@ -461,79 +461,79 @@ def test_implementing_draft_with_conflicts_shows_both() -> None:
 def test_implemented_checks_passing_no_comments_shows_rocket() -> None:
     """Implemented with passing checks and no unresolved comments shows rocket."""
     result = _format_lifecycle(
-        "[cyan]impld[/cyan]",
+        "[cyan]impl[/cyan]",
         is_draft=None,
         has_conflicts=False,
         review_decision=None,
         checks_passing=True,
         has_unresolved_comments=False,
     )
-    assert result == "[cyan]impld 🚀[/cyan]"
+    assert result == "[cyan]impl 🚀[/cyan]"
 
 
 def test_implemented_checks_failing_no_rocket() -> None:
     """Implemented with failing checks does not show rocket."""
     result = _format_lifecycle(
-        "[cyan]impld[/cyan]",
+        "[cyan]impl[/cyan]",
         is_draft=None,
         has_conflicts=False,
         review_decision=None,
         checks_passing=False,
         has_unresolved_comments=False,
     )
-    assert result == "[cyan]impld[/cyan]"
+    assert result == "[cyan]impl[/cyan]"
 
 
 def test_implemented_checks_none_no_rocket() -> None:
     """Implemented with unknown checks does not show rocket."""
     result = _format_lifecycle(
-        "[cyan]impld[/cyan]",
+        "[cyan]impl[/cyan]",
         is_draft=None,
         has_conflicts=False,
         review_decision=None,
         checks_passing=None,
         has_unresolved_comments=False,
     )
-    assert result == "[cyan]impld[/cyan]"
+    assert result == "[cyan]impl[/cyan]"
 
 
 def test_implemented_unresolved_comments_no_rocket() -> None:
     """Implemented with unresolved comments does not show rocket."""
     result = _format_lifecycle(
-        "[cyan]impld[/cyan]",
+        "[cyan]impl[/cyan]",
         is_draft=None,
         has_conflicts=False,
         review_decision=None,
         checks_passing=True,
         has_unresolved_comments=True,
     )
-    assert result == "[cyan]impld[/cyan]"
+    assert result == "[cyan]impl[/cyan]"
 
 
 def test_implemented_conflicts_no_rocket() -> None:
     """Implemented with conflicts shows conflict emoji, not rocket."""
     result = _format_lifecycle(
-        "[cyan]impld[/cyan]",
+        "[cyan]impl[/cyan]",
         is_draft=None,
         has_conflicts=True,
         review_decision=None,
         checks_passing=True,
         has_unresolved_comments=False,
     )
-    assert result == "[cyan]impld 💥[/cyan]"
+    assert result == "[cyan]impl 💥[/cyan]"
 
 
 def test_implementing_checks_passing_no_rocket() -> None:
     """Implementing stage does not show rocket even with passing checks."""
     result = _format_lifecycle(
-        "[yellow]impling[/yellow]",
+        "[yellow]impl[/yellow]",
         is_draft=None,
         has_conflicts=False,
         review_decision=None,
         checks_passing=True,
         has_unresolved_comments=False,
     )
-    assert result == "[yellow]impling[/yellow]"
+    assert result == "[yellow]impl[/yellow]"
 
 
 # --- Workflow run inference tests ---
@@ -542,7 +542,7 @@ def test_implementing_checks_passing_no_rocket() -> None:
 def test_planned_with_workflow_run_upgrades_to_implementing() -> None:
     """Header "planned" with workflow run upgrades to implementing."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impling[/yellow]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
 
 
 def test_planned_without_workflow_run_stays_planned() -> None:
@@ -554,19 +554,19 @@ def test_planned_without_workflow_run_stays_planned() -> None:
 def test_inferred_planned_with_workflow_run_upgrades_to_implementing() -> None:
     """Draft + OPEN (inferred planned) with workflow run upgrades to implementing."""
     plan = _make_plan(metadata={"is_draft": True, "pr_state": "OPEN"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impling[/yellow]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
 
 
 def test_implementing_with_workflow_run_stays_implementing() -> None:
     """Already implementing with workflow run stays implementing (no double-upgrade)."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impling[/yellow]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
 
 
 def test_implemented_with_workflow_run_stays_implemented() -> None:
     """Past implementing stage with workflow run does not downgrade."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[cyan]impld[/cyan]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[cyan]impl[/cyan]"
 
 
 def test_no_stage_with_workflow_run_returns_dash() -> None:
@@ -615,13 +615,13 @@ def test_indicators_planned_published_returns_eyes() -> None:
 
 def test_indicators_implementing_with_conflicts() -> None:
     """Implementing with conflicts returns draft + conflict emojis."""
-    assert _indicators("[yellow]impling[/yellow]", is_draft=True, has_conflicts=True) == "🚧 💥"
+    assert _indicators("[yellow]impl[/yellow]", is_draft=True, has_conflicts=True) == "🚧 💥"
 
 
 def test_indicators_implemented_ready_to_merge() -> None:
     """Implemented with passing checks returns rocket."""
     result = _indicators(
-        "[cyan]impld[/cyan]",
+        "[cyan]impl[/cyan]",
         checks_passing=True,
         has_unresolved_comments=False,
     )
@@ -631,7 +631,7 @@ def test_indicators_implemented_ready_to_merge() -> None:
 def test_indicators_implemented_with_conflicts_no_rocket() -> None:
     """Implemented with conflicts returns conflict, not rocket."""
     result = _indicators(
-        "[cyan]impld[/cyan]",
+        "[cyan]impl[/cyan]",
         has_conflicts=True,
         checks_passing=True,
         has_unresolved_comments=False,
