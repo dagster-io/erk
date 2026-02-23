@@ -22,6 +22,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     run_submit_pipeline,
 )
 from erk.core.context import ErkContext
+from erk_shared.output.output import user_output
 
 # Set to False to disable polling for PR in Graphite cache after submission.
 # This feature ensures the status line can immediately display the PR number.
@@ -53,6 +54,7 @@ def _wait_for_pr_in_cache(
         True if PR found in cache, False if timeout
     """
     start = ctx.time.now()
+    user_output("  Waiting for PR to appear in Graphite cache...")
     while (ctx.time.now() - start).total_seconds() < max_wait_seconds:
         prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo_root)
         if branch in prs:
