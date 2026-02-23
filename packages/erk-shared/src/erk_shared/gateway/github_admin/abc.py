@@ -116,3 +116,30 @@ class GitHubAdmin(ABC):
             RuntimeError: If the gh CLI command fails
         """
         ...
+
+    @abstractmethod
+    def get_variable(self, location: GitHubRepoLocation, variable_name: str) -> str | None:
+        """Get a repository variable value.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            variable_name: Name of the variable to retrieve
+
+        Returns:
+            The variable value as a string, or None if the variable is not set
+        """
+        ...
+
+    @abstractmethod
+    def set_variable(self, location: GitHubRepoLocation, variable_name: str, value: str) -> None:
+        """Set a repository variable.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            variable_name: Name of the variable to set
+            value: Value to set for the variable
+
+        Raises:
+            RuntimeError: If the gh CLI command fails
+        """
+        ...

@@ -55,3 +55,12 @@ class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
         """Delete secret with printed output."""
         self._emit(self._format_command(f"gh secret delete {secret_name}"))
         self._wrapped.delete_secret(location, secret_name)
+
+    def get_variable(self, location: GitHubRepoLocation, variable_name: str) -> str | None:
+        """Get variable (read-only, no printing)."""
+        return self._wrapped.get_variable(location, variable_name)
+
+    def set_variable(self, location: GitHubRepoLocation, variable_name: str, value: str) -> None:
+        """Set variable with printed output."""
+        self._emit(self._format_command(f"gh variable set {variable_name} --body {value}"))
+        self._wrapped.set_variable(location, variable_name, value)
