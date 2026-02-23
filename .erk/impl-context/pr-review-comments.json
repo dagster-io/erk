@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "pr_number": 7972,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wMo-7",
+      "path": "src/erk/cli/commands/submit.py",
+      "line": 720,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "schrockn",
+          "body": "this should be expressed in plan ids",
+          "created_at": "2026-02-23T18:04:36Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: changed commit message from 'Add plan for issue #N' to 'Add plan #N' \u2014 drops GitHub-specific 'issue' noun in favor of plan-centric phrasing.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 10:11 PST_",
+          "created_at": "2026-02-23T18:11:43Z"
+        }
+      ]
+    }
+  ]
+}

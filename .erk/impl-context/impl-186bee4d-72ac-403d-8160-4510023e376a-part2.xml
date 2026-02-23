@@ -1,0 +1,923 @@
+<session>
+  <meta branch="plnd/O7813-plan-convert-submit-02-23-1649" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_use name="Edit" id="toolu_01Gfr2Yj3AJg7fmcUTPV6aLc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">            # Link PR with Graphite (if enabled)
+            if ctx.branch_manager.is_grap...[truncated 982 chars]...aphite lineage)
+            ctx.branch_manager.checkout_branch(repo.root, original_branch)</param>
+    <param name="new_string">            # Link PR with Graphite (if enabled) using a targeted checkout scope
+         ...[truncated 1004 chars]...ft PR(s): "
+                    + ", ".join(f"#{n}" for n in closed_prs)
+                )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1229" cache_read_input_tokens="73859" output_tokens="788" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1229, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gfr2Yj3AJg7fmcUTPV6aLc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01T4bbXYBtpnWDAvDLTAim9E">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="845" cache_read_input_tokens="75088" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 845}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T4bbXYBtpnWDAvDLTAim9E">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014y3ZJCq2PwnS2ZoDTwoXmn">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="845" cache_read_input_tokens="75088" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 845}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014y3ZJCq2PwnS2ZoDTwoXmn">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Clean up dead code**
+
+Now let me handle the callers in `_submit_single_issue`. According to the plan:
+- Remove checkout at line 968 (the "branch exists locally" path)
+- Remove `branch_rollback` context manager wrappers from both paths
+
+Let me read the current state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="75933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J716He7AxoMd7zTJZsUku1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">945</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="75933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J716He7AxoMd7zTJZsUku1">
+   945→                )
+   946→    else:
+   947→        # Check if branch exists locally (user chose to reuse existing)
+   948→        local_branches = ctx.git.branch.list_local_branches(repo.root)
+   949→        branch_exists_locally = branch_name in local_branches
+   950→
+   951→        if branch_exists_locally:
+   952→            # Reuse existing local branch
+   953→            user_output(f"Using existing local branch: {click.style(branch_name, fg='cyan')}")
+   954→
+   955→            # Track in Graphite if not already tracked
+   956→            if ctx.branch_manager.is_graphite_managed():
+   957→                if not ctx.graphite.is_branch_tracked(repo.root, branch_name):
+   958→                    ctx.branch_manager.track_branch(repo.root, branch_name, base_branch)
+   959→                    user_output(click.style("✓", fg="green") + " Branch tracked in Graphite")
+   960→
+   961→            # Checkout existing branch
+   962→            ctx.branch_manager.checkout_branch(repo.root, branch_name)
+   963→
+   964→            # Use context manager to restore original branch on failure
+   965→            with branch_rollback(ctx, repo.root, original_branch):
+   966→                pr_number = _create_branch_and_pr(
+   967→                    ctx=ctx,
+   968→                    repo=repo,
+   969→                    validated=validated,
+   970→                    branch_name=branch_name,
+   971→                    base_branch=base_branch,
+   972→                    submitted_by=submitted_by,
+   973→                    original_branch=original_branch,
+   974→                )
+
+... [65 lines omitted] ...
+
+   992→                    user_output(click.style("Error: ", fg="red") + msg)
+   999→                user_output(click.style("Error: ", fg="red") + create_result.message)
+  1003→            # Use context manager to restore original branch on failure
+  1021→            click.style("Error: ", fg="red")
+  1022→            + "Failed to create or find PR. Cannot trigger workflow."
+  </tool_result>
+  <thinking>Now I need to:
+1. Remove the checkout at line 962: `ctx.branch_manager.checkout_branch(repo.root, branch_name)` 
+2. Remove the `branch_rollback` context manager for both caller paths
+
+For the "branch exists locally" path:
+- Remove checkout before `_create_branch_and_pr`
+- Remove `branch_rollback` context manager wrapper
+
+For the "create new branch" path:
+- Remove `branch_rollback` context manager wrapper
+
+Also need to remove the `branch_rollback` function itself and clean up imports.
+
+Let me first fix the "branch exists locally" path:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1647" cache_read_input_tokens="76131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1647}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now remove the checkout and `branch_rollback` wrappers in both caller paths:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1647" cache_read_input_tokens="76131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1647}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BeDKmnM7bE7RHXpcagc9My">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">        if branch_exists_locally:
+            # Reuse existing local branch
+            us...[truncated 2858 chars]...ed_by=submitted_by,
+                    original_branch=original_branch,
+                )</param>
+    <param name="new_string">        if branch_exists_locally:
+            # Reuse existing local branch
+            us...[truncated 2397 chars]... submitted_by=submitted_by,
+                original_branch=original_branch,
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1647" cache_read_input_tokens="76131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1647}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BeDKmnM7bE7RHXpcagc9My">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the `branch_rollback` context manager function and clean up imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1827" cache_read_input_tokens="77778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1827}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0122sQXLJtmK2NfvhWsn8WdE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">import logging
+import tomllib
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass</param>
+    <param name="new_string">import logging
+import tomllib
+from dataclasses import dataclass</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1827" cache_read_input_tokens="77778" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1827, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0122sQXLJtmK2NfvhWsn8WdE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the `branch_rollback` function itself:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="79605" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 264}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NdgUFBJJRFeGzoj8RcSoE8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">@contextmanager
+def branch_rollback(ctx: ErkContext, repo_root: Path, original_branch: str...[truncated 361 chars]... )
+        ctx.branch_manager.checkout_branch(repo_root, original_branch)
+        raise
+
+
+</param>
+    <param name="new_string">
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="79605" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 264}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NdgUFBJJRFeGzoj8RcSoE8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now clean up the unused imports. Let me check if `IMPL_CONTEXT_DIR` is still used directly or only inside `build_impl_context_files`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="79869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 362}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SensEciABCrHZCX5ucj4gS">
+    <param name="pattern">IMPL_CONTEXT_DIR</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="79869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 362}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SensEciABCrHZCX5ucj4gS">
+51:from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+450:    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR])
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019P6vN1vSwgm5hMy4ce3czy">
+    <param name="pattern">create_impl_context|impl_context_exists|remove_impl_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="79869" output_tokens="294" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 362, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019P6vN1vSwgm5hMy4ce3czy">
+45:    create_impl_context,
+46:    impl_context_exists,
+47:    remove_impl_context,
+433:    if impl_context_exists(repo.root):
+435:        remove_impl_context(repo.root)
+439:    create_impl_context(
+  </tool_result>
+  <thinking>I see that `IMPL_CONTEXT_DIR` is still used at line 450 in `_submit_draft_pr_plan` (the draft PR path - not the issue path). So it's still needed there. 
+
+Also, `create_impl_context`, `impl_context_exists`, and `remove_impl_context` are still used in `_submit_draft_pr_plan` (lines 433-439). Let me check what's at those lines.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="80231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what's at lines 433-439 and 450 - these are in `_submit_draft_pr_plan`, which was not modified:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="80231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GkmJ1ypH4T812eER4phqks">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">428</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="80231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GkmJ1ypH4T812eER4phqks">
+   428→        raise UserFacingCliError(
+   429→            f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+   430→        )
+   431→
+   432→    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
+   433→    if impl_context_exists(repo.root):
+   434→        user_output("Cleaning up previous .erk/impl-context/ folder...")
+   435→        remove_impl_context(repo.root)
+   436→
+   437→    # Create .erk/impl-context/ with draft-PR provider
+   438→    user_output("Creating .erk/impl-context/ folder...")
+   439→    create_impl_context(
+   440→        plan_content=plan.body,
+   441→        plan_id=str(plan_number),
+   442→        url=validated.url,
+   443→        repo_root=repo.root,
+   444→        provider="github-draft-pr",
+   445→        objective_id=plan.objective_id,
+   446→        now_iso=ctx.time.now().isoformat(),
+   447→    )
+   448→
+   449→    # Stage, commit, and push
+   450→    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR])
+   451→    ctx.git.commit.commit(repo.root, f"Add plan for PR #{plan_number}")
+   452→    push_result = ctx.git.remote.push_to_remote(
+   453→        repo.root, "origin", branch_name, set_upstream=False, force=False
+   454→    )
+   455→    if isinstance(push_result, PushError):
+   456→        raise UserFacingCliError(push_result.message)
+   457→    user_output(click.style("✓", fg="green") + " Branch pushed to remote")
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>The `create_impl_context`, `impl_context_exists`, `remove_impl_context`, and `IMPL_CONTEXT_DIR` are still used in `_submit_draft_pr_plan` which is the draft-PR path. This path was intentionally left unchanged (it's not part of this plan's scope). So the old imports are still needed for that path. I should keep those imports.
+
+But `build_impl_context_files` was added to the import in Phase 4. Let me update the import to keep the old ones (for draft-PR path) and the new one.
+
+Actually wait, I already added `build_impl_context_files` to the imports. 
+
+Let me verify the current import state to make sure everything's in place.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="851" cache_read_input_tokens="80919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 851}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good - `create_impl_context`, `impl_context_exists`, `remove_impl_context`, and `IMPL_CONTEXT_DIR` are all still needed by `_submit_draft_pr_plan`. The import cleanup just needed to ADD `build_impl_context_files`, which I already did. No further import changes needed.
+
+Let me verify the current state of the imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="851" cache_read_input_tokens="80919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 851}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JvG96EoyUZDaQBtbzDcu3c">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="851" cache_read_input_tokens="80919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 851}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JvG96EoyUZDaQBtbzDcu3c">
+     1→"""Submit issue for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    12→from erk.cli.commands.slot.common import is_placeholder_branch
+    13→from erk.cli.commands.submit_helpers import ensure_trunk_synced
+    14→from erk.cli.constants import (
+    15→    DISPATCH_WORKFLOW_METADATA_NAME,
+    16→    DISPATCH_WORKFLOW_NAME,
+    17→    ERK_PLAN_LABEL,
+    18→    ERK_PLAN_TITLE_PREFIX,
+    19→    PLAN_HEADING_PREFIX,
+    20→    PLANNED_PR_TITLE_PREFIX,
+    21→)
+    22→from erk.cli.core import discover_repo_context
+    23→from erk.cli.ensure import Ensure, UserFacingCliError
+    24→from erk.core.branch_slug_generator import generate_slug_or_fallback
+    25→from erk.core.context import ErkContext
+    26→from erk.core.repo_discovery import RepoContext
+    27→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    28→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    29→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+    30→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Good. The imports look correct. Now let me also verify the `_create_branch_and_pr` function docstring is still accurate (it references being called within `branch_rollback`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1342" cache_read_input_tokens="81770" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1342}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CJMMBY21WrZmPzby6RdHFd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">668</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1342" cache_read_input_tokens="81770" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1342}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CJMMBY21WrZmPzby6RdHFd">
+   668→def _create_branch_and_pr(
+   669→    ctx: ErkContext,
+   670→    *,
+   671→    repo: RepoContext,
+   672→    validated: ValidatedIssue,
+   673→    branch_name: str,
+   674→    base_branch: str,
+   675→    submitted_by: str,
+   676→    original_branch: str,
+   677→) -&gt; int:
+   678→    """Create branch, commit, push, and create draft PR.
+   679→
+   680→    This function is called within the branch_rollback context manager.
+   681→    On any exception, the context manager will restore the original branch.
+   682→
+   683→    Args:
+   684→        ctx: ErkContext with git operations
+   685→        repo: Repository context
+   686→        validated: Validated issue information
+   687→        branch_name: Name of branch to create
+   688→        base_branch: Base branch for PR
+   689→        submitted_by: GitHub username of submitter
+   690→        original_branch: Original branch name (for cleanup on success)
+   691→
+   692→    Returns:
+   693→        PR number of the created draft PR.
+   694→    """
+   695→    issue = validated.issue
+   696→    issue_number = validated.number
+   697→
+
+... [25 lines omitted] ...
+
+   702→        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+  </tool_result>
+  <assistant>The docstring still references `branch_rollback`. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="881" cache_read_input_tokens="83112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 881}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013ENDB8ffw4KYkJ7em5PD8X">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">    """Create branch, commit, push, and create draft PR.
+
+    This function is called with...[truncated 413 chars]... (for cleanup on success)
+
+    Returns:
+        PR number of the created draft PR.
+    """</param>
+    <param name="new_string">    """Create branch, commit, push, and create draft PR.
+
+    Uses git plumbing to commit ...[truncated 457 chars]...raphite checkout restore)
+
+    Returns:
+        PR number of the created draft PR.
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="881" cache_read_input_tokens="83112" output_tokens="449" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 881, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ENDB8ffw4KYkJ7em5PD8X">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01NBPxRyoeKCf1F91UNV66Nr">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="83993" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 506}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NBPxRyoeKCf1F91UNV66Nr">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01A2yLbbrZNDFMyLMnstd65V">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="83993" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 506}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A2yLbbrZNDFMyLMnstd65V">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 5: Update tests**
+
+Let me read the full context of the test to understand imports and helper functions used:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="84499" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013U3SYwdobXgD3MhF2RMtSZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_submit.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="84499" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013U3SYwdobXgD3MhF2RMtSZ">
+     1→"""Tests for erk plan submit command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.cli import cli
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    14→from erk_shared.gateway.github.types import PRDetails
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→from erk_shared.gateway.graphite.types import BranchMetadata
+    17→from erk_shared.gateway.time.fake import FakeTime
+    18→from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+    19→from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+    20→from tests.test_utils.context_builders import build_workspace_test_context
+    21→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    22→
+    23→
+    24→def test_submit_exits_cleanly_when_parent_branch_untracked() -&gt; None:
+    25→    """Test that submit fails gracefully when stacking on untracked Graphite branch.
+    26→
+    27→    When stacking a plan on a parent branch that exists locally but isn't tracked
+    28→    with Graphite, the command should exit with a friendly error message instead
+    29→    of raising an exception.
+    30→    """
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HZx4UbeRsBd7YE99MJVeNk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_submit.py</param>
+    <param name="offset">537</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1431" cache_read_input_tokens="84697" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1431, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HZx4UbeRsBd7YE99MJVeNk">
+   537→def test_submit_issue_plan_cleans_up_stale_impl_context_folder() -&gt; None:
+   538→    """Test that _create_branch_and_pr cleans up stale .erk/impl-context/ before creating new one.
+   539→
+   540→    When a previous submission failed and left behind a .erk/impl-context/ folder,
+   541→    the issue-based submit path should remove it before creating the new one.
+   542→    This tests the cleanup logic at submit.py:713-716.
+   543→    """
+   544→    runner = CliRunner()
+   545→    with erk_isolated_fs_env(runner) as env:
+   546→        issue = IssueInfo(
+   547→            number=42,
+   548→            title="[erk-plan] Test Issue Cleanup",
+   549→            body="Test plan body for cleanup test",
+   550→            state="OPEN",
+   551→            url="https://github.com/test-owner/test-repo/issues/42",
+   552→            labels=["erk-plan"],
+   553→            assignees=[],
+   554→            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+   555→            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+   556→            author="testuser",
+   557→        )
+   558→        fake_issues = FakeGitHubIssues(issues={42: issue})
+   559→
+   560→        git = FakeGit(
+   561→            git_common_dirs={env.cwd: env.git_dir},
+   562→            current_branches={env.cwd: "main"},
+   563→            local_branches={env.cwd: ["main"]},
+   564→            default_branches={env.cwd: "main"},
+   565→            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+   566→            remote_branches={env.cwd: ["origin/main"]},
+
+... [55 lines omitted] ...
+
+   588→        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed submission)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PCaz6eJC9Ug3EjuxXcXPXM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_submit.py</param>
+    <param name="offset">615</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1344" cache_read_input_tokens="86128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1344}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PCaz6eJC9Ug3EjuxXcXPXM">
+   615→
+   616→        # Verify ref.json has correct provider
+   617→        plan_ref = json.loads((impl_context / "ref.json").read_text())
+   618→        assert plan_ref["provider"] == "github"
+   619→
+   620→        assert "Traceback" not in result.output
+   621→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <thinking>Now I understand the test to rewrite. The test `test_submit_issue_plan_cleans_up_stale_impl_context_folder` needs to be rewritten as `test_submit_issue_plan_uses_plumbing_commit` that:
+- Verifies `fake_git.commit.branch_commits` has 1 entry
+- Verifies `branch_commits[0].files` contains `.erk/impl-context/plan.md` and `.erk/impl-context/ref.json`
+- Verifies `branch_commits[0].branch` matches expected branch name
+
+
+- Verifies no checkouts occurred for the plan branch
+
+I should switch to `erk_inmem_env` since we're no longer doing filesystem operations, and I need to understand how `FakeGit` exposes the `branch_commits` data through its commit operations interface.
+
+Now I'm checking whether `FakeGit` has a property to track checkout attempts so I can verify that no checkouts happened to the plan branch.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="87472" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check FakeGit for checkout tracking:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="87472" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TCFGCRUpFKWX4b8FYUhAWB">
+    <param name="command">grep -n "checkout\|checked_out" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/fake.py | head -30 2&gt;&amp;1</param>
+    <param name="description">Find checkout tracking in FakeGit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="87472" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TCFGCRUpFKWX4b8FYUhAWB">
+70:    Operations like add_worktree, checkout_branch modify internal state.
+91:    - checked_out_branches: Branches checked out via checkout_branch()
+110:        git_ops.checkout_branch(repo, "feature")
+112:        assert (repo, "feature") in git_ops.checked_out_branches
+281:        self._checked_out_branches: list[tuple[Path, str]] = []
+282:        self._detached_checkouts: list[tuple[Path, str]] = []
+362:            checked_out_branches=self._checked_out_branches,
+363:            detached_checkouts=self._detached_checkouts,
+531:    def checked_out_branches(self) -&gt; list[tuple[Path, str]]:
+537:        return self._checked_out_branches.copy()
+540:    def detached_checkouts(self) -&gt; list[tuple[Path, str]]:
+541:        """Get list of detached HEAD checkouts during test.
+546:        return self._detached_checkouts.copy()
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Sj4YLxy7eErS9Z5D7FM1Ax">
+    <param name="command">grep -n "checkout" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py | head -20 2&gt;&amp;1</param>
+    <param name="description">Find checkout tracking in FakeBranchManager</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="87472" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sj4YLxy7eErS9Z5D7FM1Ax">
+47:    # Track detached checkouts for assertions: list of refs
+48:    _detached_checkouts: list[str] = field(default_factory=list)
+182:    def checkout_branch(self, repo_root: Path, branch: str) -&gt; None:
+183:        """Record branch checkout in tracked list.
+187:            branch: Branch name to checkout
+191:    def checkout_detached(self, repo_root: Path, ref: str) -&gt; None:
+192:        """Record detached HEAD checkout in tracked list.
+196:            ref: Git ref to checkout
+198:        self._detached_checkouts.append(ref)
+269:    def detached_checkouts(self) -&gt; list[str]:
+270:        """Get list of detached HEAD checkouts for test assertions.
+275:        return list(self._detached_checkouts)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X21GM3eRtnfJ8suVCJ8reM">
+    <param name="command">grep -n "checked_out\|checkout" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packa...[truncated 16 chars]...y/branch_manager/fake.py | grep -v "def\|#\|Args\|Return\|branch_name\|for asserting" 2&gt;&amp;1</param>
+    <param name="description">Find checkout mutation tracking properties in FakeBranchManager</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1122" cache_read_input_tokens="87771" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1122, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X21GM3eRtnfJ8suVCJ8reM">
+183:        """Record branch checkout in tracked list.
+187:            branch: Branch name to checkout
+189:        self._checked_out_branches.append(branch)
+192:        """Record detached HEAD checkout in tracked list.
+196:            ref: Git ref to checkout
+198:        self._detached_checkouts.append(ref)
+266:        return list(self._checked_out_branches)
+270:        """Get list of detached HEAD checkouts for test assertions.
+275:        return list(self._detached_checkouts)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LpuymiEwMwibL1XF68kWMd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py</param>
+    <param name="offset">255</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="88893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 305}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LpuymiEwMwibL1XF68kWMd">
+   255→            List of commit messages.
+   256→        """
+   257→        return list(self._commits)
+   258→
+   259→    @property
+   260→    def checked_out_branches(self) -&gt; list[str]:
+   261→        """Get list of checked out branches for test assertions.
+   262→
+   263→        Returns:
+   264→            List of branch names that were checked out.
+   265→        """
+   266→        return list(self._checked_out_branches)
+   267→
+   268→    @property
+   269→    def detached_checkouts(self) -&gt; list[str]:
+   270→        """Get list of detached HEAD checkouts for test assertions.
+   271→
+   272→        Returns:
+   273→            List of refs that were checked out with detached HEAD.
+   274→        """
+   275→        return list(self._detached_checkouts)
+   276→
+   277→    @property
+   278→    def created_tracking_branches(self) -&gt; list[tuple[str, str]]:
+   279→        """Get list of created tracking branches for test assertions.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <thinking>Now I understand. `FakeBranchManager` has `checked_out_branches` property. I need to check how it's exposed through `ErkContext`.
+
+Let me check how `build_workspace_test_context` works to understand what's accessible.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="89198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 497}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check `build_workspace_test_context` to understand what it returns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="89198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 497}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011FptwZpFPahyRWrYeXwXTp">
+    <param name="command">grep -n "branch_manager\|checked_out\|FakeBranchManager" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/context_builders.py | head -20 2&gt;&amp;1</param>
+    <param name="description">Check how branch_manager is exposed in context builders</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="89198" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011FptwZpFPahyRWrYeXwXTp">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017A9MPRr1pVk2gfAe7cekd1">
+    <param name="command">grep -n "branch_manager\|FakeBranchManager" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/context_builders.py 2&gt;&amp;1</param>
+    <param name="description">Check how branch_manager is exposed in context builders</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="89695" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 459, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017A9MPRr1pVk2gfAe7cekd1">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014XYgH8jqWxScBWDAeh6XGR">
+    <param name="command">grep -n "branch_manager\|FakeBranchManager" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/core/context.py | head -10 2&gt;&amp;1</param>
+    <param name="description">Check how branch_manager is on ErkContext</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="161" cache_read_input_tokens="90154" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 161, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014XYgH8jqWxScBWDAeh6XGR">
+308:    # ErkContext.branch_manager returns GitBranchManager
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SLM4NJhy8QRFhwFA8KDnRU">
+    <param name="command">grep -n "branch_manager" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_submit.py | head -10 2&gt;&amp;1</param>
+    <param name="description">Check how existing tests access branch_manager</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="167" cache_read_input_tokens="90315" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 167}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SLM4NJhy8QRFhwFA8KDnRU">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01THL8ebR83oopN7ZBQwh3qn">
+    <param name="command">grep -n "checked_out\|branch_commit\|fake_git" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_submit.py | head -20 2&gt;&amp;1</param>
+    <param name="description">Check how existing tests access mutations</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="90482" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01THL8ebR83oopN7ZBQwh3qn">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LYhw9yDxkxTa1BWq4kykyD">
+    <param name="command">grep -rn "branch_commits\|fake_git\\.commit" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/ --include="*.py" | head -20 2&gt;&amp;1</param>
+    <param name="description">Find existing tests using branch_commits assertions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="90637" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LYhw9yDxkxTa1BWq4kykyD">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py:72:    assert len(fake_git.commit.commits) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py:73:    assert fake_git.commit.commits[0].message == "WIP: Prepare for PR submission"
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py:85:    assert len(fake_git.commit.commits) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:230:    assert len(fake_git.commit.commits) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:231:    commit_msg = fake_git.commit.commits[0].message
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:300:    assert len(fake_git.commit.commits) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:301:    commit_msg = fake_git.commit.commits[0].message
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_upload_session.py:106:    assert len(fake_git.branch_commits) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_upload_session.py:107:    bc = fake_git.branch_commits[0]
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_save.py:221:    assert len(fake_git.branch_commits) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_save.py:222:    ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_save.py:250:    assert len(fake_git.branch_commits) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_save.py:251:    branch_commit = fake_git.branch_commits[0]
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_save.py:264:    assert len(fake_git.commits) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py:313:    assert len(fake_git.branch_commits) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py:314:    bc = fake_git.branch_commits[0]
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_migrate_to_draft_pr.py:381:    assert len(fake_git.commit.branch_commits) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_migrate_to_draft_pr.py:382:    branch_commit = fake_git.commit.branch_commits[0]
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_migrate_to_draft_pr.py:389:    assert fake_git.commit.commits == []
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_migrate_to_draft_pr.py:390:    assert fake_git.commit.staged_files == []
+  </tool_result>
+  <thinking>Good, I can see that `fake_git.branch_commits` is accessible. However, the tests that use this use `fake_git.branch_commits` (directly, as a property on `FakeGit`), while others use `fake_git.commit.branch_commits`. Let me check the FakeGit class to see which property is exposed there.
+
+Also, notice from test_plan_save.py:
+```python
+assert len(fake_git.branch_commits) == 1
+ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
+
+
+```
+
+So `fake_git.branch_commits` is the property. Looking at the test files, I see that test_upload_session.py and test_plan_save.py both access it directly as `fake_git.branch_commits`, while test_plan_migrate_to_draft_pr.py uses `fake_git.commit.branch_commits`. Let me trace through test_submit.py to understand which pattern is correct.
+
+I also need to figure out how to access the branch_manager from the context to verify checkout calls. The existing test uses `build_workspace_test_context()` to create the context, so I should check what properties are available on ErkContext to see if I can access the branch_manager or its tracked checkouts from there.
+
+```</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1517" cache_read_input_tokens="90800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1517}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `ErkContext` exposes branch_manager and look at a test that verifies checkouts:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1517" cache_read_input_tokens="90800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1517}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W4srbi8pviB9GQiLbTSVUL">
+    <param name="command">grep -rn "checked_out_branches\|branch_manager.checkout" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/ --include="*.py" | head -15 2&gt;&amp;1</param>
+    <param name="description">Find existing tests that check checkout calls</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1517" cache_read_input_tokens="90800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1517}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W4srbi8pviB9GQiLbTSVUL">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/land/test_no_delete_flag.py:218:    assert len(fake_git.checked_out_branches) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/land/test_cleanup_and_navigate.py:306:        for path, branch in fake_git.checked_out_branches
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/land/test_cleanup_and_navigate.py:498:    assert len(fake_git.checked_out_branches) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/land/test_cleanup_and_navigate.py:793:        for path, branch in fake_git.checked_out_branches
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/land/test_cleanup_and_navigate.py:965:    assert len(fake_git.checked_out_branches) == 0, (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/land/test_cleanup_and_navigate.py:1068:        (path, branch) for path, branch in fake_git.checked_out_branches if branch == "main"
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/branch/test_create_cmd.py:325:            (path, branch) for path, branch in git_ops.checked_out_branches if path == worktree_path
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py:259:        assert len(fake_git.checked_out_branches) &gt;= 1, "At least one checkout should occur"
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py:260:        final_checkout = fake_git.checked_out_branches[-1]
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py:261:        # checked_out_branches are (cwd, branch) tuples
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py:433:    assert (tmp_path, plan_branch) in fake_git.checked_out_branches
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py:467:    assert all(b != plan_branch for _, b in fake_git.checked_out_branches)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_issue.py:523:    assert len(fake_git.checked_out_branches) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_save.py:237:    assert len(fake_git.checked_out_branches) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/unit/cli/commands/exec/scripts/test_plan_migrate_to_draft_pr.py:378:    assert fake_git.branch.checked_out_branches == []
+  </tool_result>
+  <thinking>I see that `fake_git.checked_out_branches` is used in tests. The FakeGit has this as a property (from the git ops I saw). 
+
+However, looking at the `test_submit.py` tests, the branch manager used there is actually `ctx.branch_manager` which is a `FakeBranchManager`, not FakeGit. Let me look at how `build_workspace_test_context` is constructed and how FakeBranchManager vs FakeGit is set up.
+
+Also, I need to figure out what `FakeGit.branch_commits` versus `FakeGit.commit.branch_commits` is. 
+
+Now I'm checking whether the test setup allows access to the git fake's properties through the context when tests run via CliRunner, and whether I can reach `ctx.git.commit.branch_commits` or similar paths to verify the test pattern works.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3051" cache_read_input_tokens="92317" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3051}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KdCCPJ7fGiVC4XdFAY7KSg">
+    <param name="command">grep -n "branch_commits" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/fake.py | head -10 2&gt;&amp;1</param>
+    <param name="description">Check if FakeGit exposes branch_commits directly</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3051" cache_read_input_tokens="92317" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3051}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KdCCPJ7fGiVC4XdFAY7KSg">
+157:        branch_commits_with_authors: dict[tuple[Path, str, str, int], list[dict[str, str]]]
+215:            branch_commits_with_authors: Mapping of (repo_root, branch, trunk, limit)
+269:        self._branch_commits_with_authors = branch_commits_with_authors or {}
+288:        self._branch_commits: list[BranchCommitRecord] = []
+353:            branch_commits_with_authors=self._branch_commits_with_authors,
+397:            branch_commits=self._branch_commits,
+611:    def branch_commits(self) -&gt; list[BranchCommitRecord]:
+616:        return list(self._branch_commits)
+  </tool_result>
+  <assistant>`FakeGit.branch_commits` is a top-level property. Now let me check how to access `FakeBranchManager.checked_out_branches` from the ctx. Let me look at the context access pattern in submit tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="815" cache_read_input_tokens="95368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 815}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FVjHjh8WFs7P3UatchTV6L">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="815" cache_read_input_tokens="95368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 815}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FVjHjh8WFs7P3UatchTV6L">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.gateway.git.dry_run import DryRunGit
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from tests.fakes.shell import FakeShell
+    13→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    14→
+    15→
+    16→def build_workspace_test_context(
+    17→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    18→    *,
+    19→    dry_run: bool = False,
+    20→    use_graphite: bool = False,
+    21→    current_branch: str | None = None,
+    22→    **kwargs,
+    23→) -&gt; ErkContext:
+    24→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    25→
+    26→    This builder provides a standard context configuration for workspace manipulation
+    27→    commands with sensible defaults and support for common testing scenarios.
+    28→
+    29→    Args:
+    30→        env: Pure or isolated erk environment fixture
+
+... [101 lines omitted] ...
+  </tool_result>
+  <thinking>The `build_workspace_test_context` takes a `git` kwarg that's the `FakeGit` instance. After the runner.invoke, I can access `git.branch_commits` to verify the plumbing commit was used. I also need to check if we need to use `erk_isolated_fs_env` or `erk_inmem_env` - since the new test doesn't write to filesystem at all, `erk_inmem_env` should work.
+
+Now let me also look at the `FakeBranchManager` to understand how to check if a branch checkout was called with the plan branch name - but actually, in the new test the plan doesn't need to check out the branch. 
+
+For the Graphite-enabled test, a checkout will happen for Graphite linking, so I need to verify that the plan commit is in `branch_commits` with the right files and branch, and that any checkouts are only for Graphite operations, not for the plan itself. I need to verify that no checkouts happen for the plan branch, so I should structure the test without Graphite to avoid any branch switching. Since we're not touching the filesystem anymore, I can use the in-memory environment instead. Now I need to figure out how to access the fake branch manager's checkout history through the context object that's passed to the test.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2263" cache_read_input_tokens="96183" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check ErkContext's branch_manager field:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2263" cache_read_input_tokens="96183" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LcKzxmeK4qq3YGtaNGRZju">
+    <param name="command">grep -n "branch_manager\|FakeBranchManager" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/core/context.py | head -15 2&gt;&amp;1</param>
+    <param name="description">Check ErkContext branch_manager field</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2263" cache_read_input_tokens="96183" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LcKzxmeK4qq3YGtaNGRZju">
+308:    # ErkContext.branch_manager returns GitBranchManager
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012BKhhVmA1SYusFTNGghTdZ">
+    <param name="command">grep -n "branch_manager" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/env_helpers.py | head -15 2&gt;&amp;1</param>
+    <param name="description">Check how env_helpers builds branch_manager</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1006" cache_read_input_tokens="98446" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1006}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012BKhhVmA1SYusFTNGghTdZ">
+507:        # behavior. This ensures ErkContext.branch_manager returns GitBranchManager
+956:        # behavior. This ensures ErkContext.branch_manager returns GitBranchManager
+  </tool_result>
+  <thinking>The test doesn't easily expose `FakeBranchManager.checked_out_branches` through `ctx`. Let me instead just check `git.checked_out_branches` from `FakeGit` which also tracks checkouts.
+
+Looking at the FakeGit code earlier:
+```pythonself._checked_out_branches: list[tuple[Path, str]] = []
+```
+
+And the property:
+```python
+@property
+def checked_out_branches(self) -&gt; list[tuple[Path, str]]:
+```
+
+So `git.checked_out_branches` returns a list of `(path, branch)` tuples. 
+
+But I'm realizing `FakeGit` doesn't actually handle the checkouts—that's all in `FakeBranchManager`. So checking `git.checked_out_branches` won't capture what the branch manager did. I need to look at both sources: `FakeGit` tracks git-level branch operations while `FakeBranchManager` tracks its own checkout calls, and the test should verify that no checkout_branch calls happened for the plan branch.
+
+For the non-Graphite test, it's straightforward—just confirm that `branch_commits` has the right entry and no checkouts occurred at all. I could use `erk_inmem_env` since there's no filesystem work, though the existing test setup uses `erk_isolated_fs_env`.
+
+Looking at how other tests in this file handle the normal submit flow, like `test_submit_succeeds_when_parent_branch_tracked`, they use `erk_inmem_env`, so let me check that pattern to align my approach.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="99452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 185}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at a successful `test_submit_succeeds` test to understand the pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="99452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 185}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VBN6MyEgVYmpRZvWNGtgh2">
+    <param name="command">grep -n "test_submit_succeeds_when_parent_branch_tracked\|def test_submit" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_submit.py | head -20 2&gt;&amp;1</param>
+    <param name="description">Find test function names in test_submit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="99452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 185}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VBN6MyEgVYmpRZvWNGtgh2">
+24:def test_submit_exits_cleanly_when_parent_branch_untracked() -&gt; None:
+105:def test_submit_succeeds_when_parent_branch_tracked() -&gt; None:
+182:def test_submit_updates_pr_body_with_workflow_run_link() -&gt; None:
+298:def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -&gt; None:
+418:def test_submit_draft_pr_plan_cleans_up_stale_impl_context_folder() -&gt; None:
+537:def test_submit_issue_plan_cleans_up_stale_impl_context_folder() -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Acg9xE3anocuGpch3oi3Ca">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_submit.py</param>
+    <param name="offset">105</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="907" cache_read_input_tokens="99637" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 907}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Acg9xE3anocuGpch3oi3Ca">
+   105→def test_submit_succeeds_when_parent_branch_tracked() -&gt; None:
+   106→    """Test that submit works when parent branch is tracked by Graphite.
+   107→
+   108→    This is a positive control test to ensure the tracking check doesn't
+   109→    break the happy path.
+   110→    """
+   111→    runner = CliRunner()
+   112→    with erk_inmem_env(runner) as env:
+   113→        # Create an issue with erk-plan label
+   114→        issue = IssueInfo(
+   115→            number=456,
+   116→            title="[erk-plan] Test Plan",
+   117→            body="Test plan body",
+   118→            state="OPEN",
+   119→            url="https://github.com/test-owner/test-repo/issues/456",
+   120→            labels=["erk-plan"],
+   121→            assignees=[],
+   122→            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+   123→            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+   124→            author="testuser",
+   125→        )
+   126→        issues = FakeGitHubIssues(issues={456: issue})
+   127→
+   128→        # Configure git with the tracked parent branch existing on remote
+   129→        git = FakeGit(
+   130→            git_common_dirs={env.cwd: env.git_dir},
+   131→            current_branches={env.cwd: "tracked-parent"},
+   132→            local_branches={env.cwd: ["main", "tracked-parent"]},
+   133→            default_branches={env.cwd: "main"},
+   134→            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+
+... [55 lines omitted] ...
+
+   178→        # Should NOT fail with untracked branch error
+  </tool_result>
+  <thinking>Now I have enough context. Looking at the pattern of `test_submit_succeeds_when_parent_branch_tracked`, I can write my test as:
+
+```python
+def test_submit_issue_plan_uses_plumbing_commit() -&gt; None:
+    """Test that issue plan submission uses commit_files_to_branch instead of checkout.
+    
+    The issue-based submit path should use git plumbing to commit impl-context files
+    directly to the plan branch without checking it out.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issue = IssueInfo(
+
+
+```
+
+Setting up the test issue with the necessary fields...
+
+```
+
+I'm configuring the fake Git and GitHub objects with the test environment details, including repository information, branch configuration, and authentication settings for the test context.
+
+Now I'm invoking the CLI command to submit a plan and then verifying the results—checking that no errors occurred, that the plumbing commit was used correctly, and that the implementation context files were properly committed to the plan branch rather than main.
+
+```
+commit.branch.startswith("P42-")
+        
+        # Verify no working-tree checkouts occurred to the plan branch
+        plan_branch_checkouts = [
+            b for b in git.checked_out_branches 
+            if b[1].startswith("P42-")
+        ]
+        assert len(plan_branch_checkouts) == 0
+        
+        # Verify plan content was included
+        assert branch_commit.files[".erk/impl-context/plan.md"] == "Test plan body"
+        
+        # Verify provider in ref.json
+        ref_json = json.loads(branch_commit.files[".erk/impl-context/ref.json"])
+        assert ref_json["provider"] == "github"
+```
+
+Wait, but the issue is that `erk_inmem_env` doesn't use a real filesystem. Looking at the original test, it used `erk_isolated_fs_env` because it needed to create a stale folder on disk. The new test doesn't need the filesystem, so `erk_inmem_env` should work. But I need to check what `git.checked_out_branches` would return from FakeGit and how the branch checkout flows through `ctx.branch_manager.checkout_branch` using FakeBranchManager.
+
+Looking at the test examples, `fake_git.checked_out_branches` returns tuples of path and branch name, but this tracks FakeGit's git operations, not the branch manager's checkouts. I need to verify whether the branch manager checkouts are being captured by FakeGit's tracking or if I'm looking at the wrong place for assertions. I'm seeing that `FakeGit` stores `_checked_out_branches` as a list of tuples and exposes it as a property, while `FakeBranchManager` wraps the actual branch operations. When `ctx.branch_manager.checkout_branch` is called, it goes through `FakeBranchManager` rather than directly to `FakeGit`, so I need to think about which object actually tracks the checked-out branches for the test assertions.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1259" cache_read_input_tokens="100544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1259}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check ErkContext and env_helpers to understand the branch_manager structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1259" cache_read_input_tokens="100544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1259}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XnCTrRRFEBXC1dD3dpWKCS">
+    <param name="command">grep -n "branch_manager\|FakeBranchManager\|GitBranchManager" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/env_helpers.py | head -20 2&gt;&amp;1</param>
+    <param name="description">Find branch_manager setup in env_helpers</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1259" cache_read_input_tokens="100544" output_tokens="2081" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1259, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XnCTrRRFEBXC1dD3dpWKCS">
+507:        # behavior. This ensures ErkContext.branch_manager returns GitBranchManager
+956:        # behavior. This ensures ErkContext.branch_manager returns GitBranchManager
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RKzSDv64SYojgEnwc7Ne2W">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/env_helpers.py</param>
+    <param name="offset">500</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2091" cache_read_input_tokens="101803" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2091}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,1232 @@
+<session>
+  <meta branch="plnd/O7813-plan-convert-submit-02-23-1649" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="186bee4d-72ac-403d-8160-4510023e376a"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="186bee4d-72ac-403d-8160-4510023e376a" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="186bee4d-72ac-403d-8160-4510023e376a" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement`. Let me follow the instructions carefully.
+
+First, let me parse the arguments - there are no arguments provided (the `` section is empty based on the command invocation).
+
+So I need to:
+1. Check if `.impl/` already exists
+2. If not, fall back to saving current plan
+
+Let me start by checking if `.impl/` exists and running `erk exec impl-init --json`.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="31969" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31969}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="31969" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31969}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SpEG4379wGGrV6hCKpbS6i">
+    <param name="command">erk exec impl-init --json 2&gt;&amp;1</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="31969" cache_read_input_tokens="0" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31969, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SpEG4379wGGrV6hCKpbS6i">
+{"valid": true, "impl_type": "impl", "has_plan_tracking": true, "related_docs": {"skills": [], "docs": []}, "plan_number": 7972}
+  </tool_result>
+  <thinking>The `.impl/` folder exists and is valid with issue tracking. I need to check if `has_issue_tracking` is true. The JSON shows `has_plan_tracking: true`. Let me check the issue.json file to get the issue number and then call `setup-impl-from-issue` to sync.
+
+Wait, the output shows `has_plan_tracking: true` not `has_issue_tracking: true`. Let me check if these are the same thing. The plan says to look for `has_issue_tracking`. But the output shows `has_plan_tracking`. Let me look at the issue.json file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="31969" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 267}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0181YYfX3t3JJVCHVKuSBzdD">
+    <param name="command">cat .impl/issue.json 2&gt;/dev/null || echo "No issue.json"</param>
+    <param name="description">Check issue.json for issue number</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="31969" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 267}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0181YYfX3t3JJVCHVKuSBzdD">
+No issue.json
+  </tool_result>
+  <thinking>There's no issue.json but there is a plan_number: 7972. Let me check what's in the .impl/ folder.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="32236" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EDr5SuSkQVBRjSw45r3Ymk">
+    <param name="command">ls -la .impl/ 2&gt;/dev/null</param>
+    <param name="description">List .impl/ directory contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="32236" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EDr5SuSkQVBRjSw45r3Ymk">
+total 24
+drwxr-xr-x@  4 schrockn  staff   128 Feb 23 08:51 .
+drwxr-xr-x@ 38 schrockn  staff  1216 Feb 23 08:51 ..
+-rw-r--r--@  1 schrockn  staff   255 Feb 23 08:51 plan-ref.json
+-rw-r--r--@  1 schrockn  staff  7403 Feb 23 08:51 plan.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SBneK5iew7uTpoYXdx2Kcs">
+    <param name="command">cat .impl/plan-ref.json</param>
+    <param name="description">Read plan-ref.json</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="32499" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 279}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SBneK5iew7uTpoYXdx2Kcs">
+{
+  "provider": "github-draft-pr",
+  "plan_id": "7972",
+  "url": "https://github.com/dagster-io/erk/pull/7972",
+  "created_at": "2026-02-23T16:51:14.551595+00:00",
+  "synced_at": "2026-02-23T16:51:14.551595+00:00",
+  "labels": [],
+  "objective_id": 7813
+}
+  </tool_result>
+  <thinking>This is a draft-PR plan. The `has_plan_tracking: true` and `plan_number: 7972` - it's a draft PR plan. According to the instructions: "If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote". 
+
+But this appears to be a draft-PR plan with `provider: github-draft-pr`. Let me call `setup-impl-from-issue 7972` to sync the local branch with remote.
+
+Wait, actually the command is `setup-impl-from-issue` but this is a draft PR plan, not an issue. 
+
+I'm re-reading the instructions more carefully — it says the command is idempotent and just pulls the latest if already on the plan branch. Looking at the plan-ref.json, I see `provider: github-draft-pr` and `has_plan_tracking` is true, not `has_issue_tracking`. These might be different flags, so let me check what branch I'm currently on to understand the situation better.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="32778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 216}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SwBGR4e6CZZPQvhc4deoV6">
+    <param name="command">git branch --show-current</param>
+    <param name="description">Check current branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="32778" output_tokens="394" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SwBGR4e6CZZPQvhc4deoV6">
+plnd/O7813-plan-convert-submit-02-23-1649
+  </tool_result>
+  <thinking>The current branch is `plnd/O7813-plan-convert-submit-02-23-1649`. This is a draft-PR plan branch already checked out. The impl-init returned `has_plan_tracking: true`. 
+
+Looking at the instructions again:
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync.
+
+The impl-init output has `has_plan_tracking: true` not `has_issue_tracking: true`. 
+
+Since this is a `github-draft-pr` plan type, the field name is `has_plan_tracking` rather than `has_issue_tracking`, but the intent is the same—I should sync with the remote. Let me try calling `setup-impl-from-issue` with the plan number and see what happens, though I should double-check the instructions first to make sure I'm following the right path. If this succeeds with `"valid": true`:
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`."
+
+The `impl-init` returned `has_plan_tracking: true` not `has_issue_tracking`. There's no `issue.json`, just `plan-ref.json`. This is a draft-PR plan.
+
+I think `has_plan_tracking` is the actual field name (the instructions might be slightly out of date), and for draft-PR plans we likely want to sync with remote as well. Let me try calling `setup-impl-from-issue` with the plan number (7972) to see what happens.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="32994" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The `.impl/` folder exists with a draft-PR plan (PR #7972). Let me sync with remote and proceed to Step 2d.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="32994" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017bwW3LJYomLGEPKwgNX34M">
+    <param name="command">erk exec setup-impl-from-issue 7972 2&gt;&amp;1</param>
+    <param name="description">Sync local branch with remote draft-PR plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="32994" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017bwW3LJYomLGEPKwgNX34M">
+Found existing .impl/ for plan #7972, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl", "plan_number": 7972, "plan_url": "https://github.com/dagster-io/erk/pull/7972", "branch": "plnd/O7813-plan-convert-submit-02-23-1649", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <thinking>Good. Now Step 2d - clean up plan staging directory:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="817" cache_read_input_tokens="33415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 817}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. Now Step 2d - clean up plan staging directory.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="817" cache_read_input_tokens="33415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 817}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RG5Y8CbWbjnVv6o1XMUAkw">
+    <param name="command">if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove...[truncated 54 chars]... --show-current)"
+else
+  echo "No .erk/impl-context/ directory found, skipping cleanup"
+fi</param>
+    <param name="description">Clean up plan staging directory if it exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="817" cache_read_input_tokens="33415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 817}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RG5Y8CbWbjnVv6o1XMUAkw">
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plnd/O7813-plan-convert-submit-02-23-1649 19196ab08] Remove .erk/impl-context/ before implementation
+ 2 files changed, 164 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   ef63f3dde..19196ab08  plnd/O7813-plan-convert-submit-02-23-1649 -&gt; plnd/O7813-plan-convert-submit-02-23-1649
+  </tool_result>
+  <thinking>Good, the cleanup was done. Now let me read the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 591}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 591}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AV7X2gunTEsCMRurm1wjra">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="34232" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 591, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AV7X2gunTEsCMRurm1wjra">
+     1→# Plan: Convert submit.py checkout cycles to commit_files_to_branch
+     2→
+     3→Part of Objective #7813, Node 2.2
+     4→
+     5→## Context
+     6→
+     7→The submit pipeline in `src/erk/cli/commands/submit.py` uses checkout-based git workflows: checkout a branch, write files to disk, stage, commit, push, checkout back. This is fragile (requires cleanup on failure) and creates race conditions when multiple sessions share a worktree. Phase 1 of Objective #7813 already converted 3 other call sites to use `commit_files_to_branch` (a git plumbing operation that commits directly to a branch ref without touching the working tree). Node 2.2 applies the same pattern to the submit pipeline.
+     8→
+     9→**Target functions:**
+    10→1. `_create_branch_and_pr` (line 685) - creates impl-context files, commits, pushes, creates draft PR
+    11→2. "Branch-exists-but-no-PR" path in `_submit_single_issue` (line 864) - adds empty placeholder commit, pushes, creates PR
+    12→
+    13→**Checkouts eliminated:** 4 explicit `checkout_branch` calls at lines 715, 823, 877, 951, plus 1 redundant caller checkout at line 968.
+    14→
+    15→## Phase 1: Add `build_impl_context_files` helper
+    16→
+    17→**File:** `packages/erk-shared/src/erk_shared/impl_context.py`
+    18→
+    19→Add a new function that returns impl-context content as a `dict[str, str]` (for use with `commit_files_to_branch`) without writing to the filesystem:
+    20→
+    21→```python
+    22→def build_impl_context_files(
+    23→    plan_content: str,
+    24→    plan_id: str,
+    25→    url: str,
+    26→    *,
+    27→    provider: str,
+    28→    objective_id: int | None,
+    29→    now_iso: str,
+    30→) -&gt; dict[str, str]:
+
+... [135 lines omitted] ...
+
+    78→       # ... error handling ...
+   142→- `test_submit_exits_cleanly_when_parent_branch_untracked` - should work (error path is before commit)
+  </tool_result>
+  <thinking>Now I understand the plan. Let me load the relevant skills and documentation before implementing. The plan involves:
+1. Python code changes - need `dignified-python` skill
+2. Test changes - need `fake-driven-testing` skill
+
+Let me also look at the files I need to modify before starting. Let me first signal GitHub started, then start creating todo entries and implementing.
+
+Let me first read the relevant source files to understand the current state.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3043" cache_read_input_tokens="34823" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3043}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me signal GitHub started and load documentation in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3043" cache_read_input_tokens="34823" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3043}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TkmWMKucsARDE7kf9EDmbc">
+    <param name="command">erk exec impl-signal started --session-id="186bee4d-72ac-403d-8160-4510023e376a" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3043" cache_read_input_tokens="34823" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3043}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01XmVrgSmxqDn8XA3VeA3Ugd">
+    <param name="subject">Phase 1: Add build_impl_context_files helper</param>
+    <param name="description">Add a new function `build_impl_context_files` to `packages/erk-shared/src/erk_shared/impl_context.py` that returns impl-context content as a `dict[str, str]` without writing to the filesystem.</param>
+    <param name="activeForm">Adding build_impl_context_files helper</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3043" cache_read_input_tokens="34823" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3043}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TkmWMKucsARDE7kf9EDmbc">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 7972
+}
+  </tool_result>
+  <tool_result tool="toolu_01XmVrgSmxqDn8XA3VeA3Ugd">
+Task #1 created successfully: Phase 1: Add build_impl_context_files helper
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_015Ybi2qmZmmZGwHirvX6zrj">
+    <param name="subject">Phase 2: Refactor _create_branch_and_pr</param>
+    <param name="description">Refactor `_create_branch_and_pr` in `src/erk/cli/commands/submit.py` to use `commit_files_...[truncated 47 chars]...out, replace filesystem impl-context operations, add targeted checkout scope for Graphite.</param>
+    <param name="activeForm">Refactoring _create_branch_and_pr</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="37866" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 488}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Ybi2qmZmmZGwHirvX6zrj">
+Task #2 created successfully: Phase 2: Refactor _create_branch_and_pr
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_011PzQG2Aqk7vvaAAMyMSFq7">
+    <param name="subject">Phase 3: Refactor branch-exists-but-no-PR path</param>
+    <param name="description">Refactor the "branch-exists-but-no-PR" path in `_submit_single_issue` in `src/erk/cli/commands/submit.py` to use `commit_files_to_branch` instead of checkout-based empty commit.</param>
+    <param name="activeForm">Refactoring branch-exists-but-no-PR path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="37866" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 488}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011PzQG2Aqk7vvaAAMyMSFq7">
+Task #3 created successfully: Phase 3: Refactor branch-exists-but-no-PR path
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_017uQhLDpYYEUSTwixiFtGU9">
+    <param name="subject">Phase 4: Clean up dead code</param>
+    <param name="description">Remove `branch_rollback` context manager, clean up imports in `src/erk/cli/commands/submit.py`.</param>
+    <param name="activeForm">Cleaning up dead code</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="38354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 439}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017uQhLDpYYEUSTwixiFtGU9">
+Task #4 created successfully: Phase 4: Clean up dead code
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01TZZTMQkzg31DLsk2SWudEm">
+    <param name="subject">Phase 5: Update tests</param>
+    <param name="description">Rewrite `test_submit_issue_plan_cleans_up_stale_impl_context_folder` as `test_submit_issue...[truncated 14 chars]...sts/commands/plan/test_submit.py`. Verify plumbing behavior instead of filesystem cleanup.</param>
+    <param name="activeForm">Updating tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="38354" output_tokens="269" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TZZTMQkzg31DLsk2SWudEm">
+Task #5 created successfully: Phase 5: Update tests
+  </tool_result>
+  <assistant>Now let me read the relevant source files before implementing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="38793" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q5u6kkmD9V8yak9qJTjTLr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/impl_context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="38793" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q5u6kkmD9V8yak9qJTjTLr">
+     1→"""Implementation context staging directory utilities.
+     2→
+     3→This module provides utilities for managing .erk/impl-context/ folder structures used
+     4→during plan submission workflows. The .erk/impl-context/ folder is committed to the
+     5→branch and contains the implementation plan, making it visible in the PR immediately.
+     6→
+     7→Unlike .impl/ folders (ephemeral, local, never committed), .erk/impl-context/ folders are:
+     8→- Committed to the branch
+     9→- Visible in draft PR immediately
+    10→- Removed before implementation begins (Step 2d of plan-implement)
+    11→
+    12→Folder structure:
+    13→.erk/impl-context/
+    14→├── plan.md          # Full plan content from GitHub issue
+    15→└── ref.json         # Plan reference metadata (provider, plan_id, url, etc.)
+    16→"""
+    17→
+    18→from __future__ import annotations
+    19→
+    20→import json
+    21→import shutil
+    22→from pathlib import Path
+    23→
+    24→from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+    25→
+    26→
+    27→def create_impl_context(
+    28→    plan_content: str,
+    29→    plan_id: str,
+    30→    url: str,
+
+... [101 lines omitted] ...
+
+    52→        FileExistsError: If .erk/impl-context/ folder already exists
+    53→        ValueError: If repo_root doesn't exist or isn't a directory
+    56→        raise ValueError(f"Repository root does not exist: {repo_root}")
+    59→        raise ValueError(f"Repository root is not a directory: {repo_root}")
+    64→        raise FileExistsError(f".erk/impl-context/ folder already exists at {impl_context_dir}")
+    95→        FileNotFoundError: If .erk/impl-context/ folder doesn't exist
+    96→        ValueError: If repo_root doesn't exist or isn't a directory
+    99→        raise ValueError(f"Repository root does not exist: {repo_root}")
+   102→        raise ValueError(f"Repository root is not a directory: {repo_root}")
+   107→        raise FileNotFoundError(f".erk/impl-context/ folder does not exist at {impl_context_dir}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_013GcACsjGadYKT33gNTjUZs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="38793" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013GcACsjGadYKT33gNTjUZs">
+     1→"""Submit issue for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from collections.abc import Iterator
+     6→from contextlib import contextmanager
+     7→from dataclasses import dataclass
+     8→from datetime import UTC, datetime
+     9→from pathlib import Path
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.commands.submit_helpers import ensure_trunk_synced
+    16→from erk.cli.constants import (
+    17→    DISPATCH_WORKFLOW_METADATA_NAME,
+    18→    DISPATCH_WORKFLOW_NAME,
+    19→    ERK_PLAN_LABEL,
+    20→    ERK_PLAN_TITLE_PREFIX,
+    21→    PLAN_HEADING_PREFIX,
+    22→    PLANNED_PR_TITLE_PREFIX,
+    23→)
+    24→from erk.cli.core import discover_repo_context
+    25→from erk.cli.ensure import Ensure, UserFacingCliError
+    26→from erk.core.branch_slug_generator import generate_slug_or_fallback
+    27→from erk.core.context import ErkContext
+    28→from erk.core.repo_discovery import RepoContext
+    29→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    30→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+
+... [75 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+    75→    """Context manager that restores original branch on exception.
+    78→    On exception, checks out original_branch and re-raises.
+    82→    except Exception:
+    84→            click.style("Error: ", fg="red") + "Operation failed, restoring original branch..."
+  </tool_result>
+  <tool_use name="Read" id="toolu_018RmtD9LsYu6QdaugG69MHe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">100</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3317" cache_read_input_tokens="39151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3317}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018RmtD9LsYu6QdaugG69MHe">
+   100→
+   101→
+   102→def _find_existing_branches_for_issue(
+   103→    ctx: ErkContext,
+   104→    repo_root: Path,
+   105→    issue_number: int,
+   106→) -&gt; list[str]:
+   107→    """Find local branches matching P{issue_number}-* pattern."""
+   108→    local_branches = ctx.git.branch.list_local_branches(repo_root)
+   109→    prefix = f"P{issue_number}-"
+   110→    return sorted([b for b in local_branches if b.startswith(prefix)])
+   111→
+   112→
+   113→def _prompt_existing_branch_action(
+   114→    ctx: ErkContext,
+   115→    repo_root: Path,
+   116→    existing_branches: list[str],
+   117→    new_branch_name: str,
+   118→    *,
+   119→    force: bool,
+   120→) -&gt; str | None:
+   121→    """Prompt user to decide what to do with existing branch(es).
+   122→
+   123→    Args:
+   124→        ctx: ErkContext with git operations
+   125→        repo_root: Repository root path
+   126→        existing_branches: List of existing branch names matching the issue pattern
+   127→        new_branch_name: Name for new branch if creating fresh
+   128→        force: If True, delete existing branches without prompting
+   129→
+
+... [175 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016bZspiE3MZm1J8RXZLa5gM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">300</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2799" cache_read_input_tokens="42468" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2799}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016bZspiE3MZm1J8RXZLa5gM">
+   300→        pr_number: PR number
+   301→
+   302→    Returns:
+   303→        PR URL (e.g., https://github.com/owner/repo/pull/456)
+   304→    """
+   305→    owner_repo = extract_owner_repo_from_github_url(issue_url)
+   306→    if owner_repo is not None:
+   307→        owner, repo = owner_repo
+   308→        return construct_pr_url(owner, repo, pr_number)
+   309→    return f"https://github.com/pull/{pr_number}"
+   310→
+   311→
+   312→def _close_orphaned_draft_prs(
+   313→    ctx: ErkContext,
+   314→    repo_root: Path,
+   315→    issue_number: int,
+   316→    keep_pr_number: int,
+   317→) -&gt; list[int]:
+   318→    """Close old draft PRs linked to an issue, keeping the specified one.
+   319→
+   320→    Returns list of PR numbers that were closed.
+   321→    """
+   322→    linked_prs = ctx.issues.get_prs_referencing_issue(repo_root, issue_number)
+   323→
+   324→    closed_prs: list[int] = []
+   325→    for pr in linked_prs:
+   326→        # Close orphaned drafts: draft PRs that are OPEN and not the one we just created
+   327→        # Any draft PR linked to an erk-plan issue is fair game to close
+   328→        if pr.is_draft and pr.state == "OPEN" and pr.number != keep_pr_number:
+   329→            ctx.github.close_pr(repo_root, pr.number)
+
+... [175 lines omitted] ...
+
+   364→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   370→            click.style("Error: ", fg="red")
+   379→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   427→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   444→    if isinstance(pull_result, PullRebaseError):
+   445→        raise UserFacingCliError(
+   446→            f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+   449→    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
+   472→    if isinstance(push_result, PushError):
+   473→        raise UserFacingCliError(push_result.message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Hkua37EE1S71WDmEaUCwds">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">500</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2947" cache_read_input_tokens="45267" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2947}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hkua37EE1S71WDmEaUCwds">
+   500→    run_id = ctx.github.trigger_workflow(
+   501→        repo_root=repo.root,
+   502→        workflow=DISPATCH_WORKFLOW_NAME,
+   503→        inputs=inputs,
+   504→    )
+   505→    user_output(click.style("✓", fg="green") + " Workflow triggered.")
+   506→
+   507→    # Compute workflow URL
+   508→    workflow_url = _build_workflow_run_url(validated.url, run_id)
+   509→
+   510→    # Write dispatch metadata FIRST (before any PR body modification)
+   511→    try:
+   512→        write_dispatch_metadata(
+   513→            plan_backend=ctx.plan_backend,
+   514→            github=ctx.github,
+   515→            repo_root=repo.root,
+   516→            issue_number=plan_number,
+   517→            run_id=run_id,
+   518→            dispatched_at=queued_at,
+   519→        )
+   520→        user_output(click.style("✓", fg="green") + " Dispatch metadata written")
+   521→    except Exception as e:
+   522→        user_output(
+   523→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   524→        )
+   525→
+   526→    # Update PR body with workflow run link (best-effort)
+   527→    # Guard: only append if body is non-empty to avoid overwriting metadata block
+   528→    try:
+   529→        pr_details = ctx.github.get_pr(repo.root, plan_number)
+
+... [225 lines omitted] ...
+
+   533→    except Exception as e:
+   534→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   565→    except Exception as e:
+   567→            click.style("Warning: ", fg="yellow")
+   568→            + f"Failed to post queued comment: {e}\n"
+   610→        user_output(click.style("Error: ", fg="red") + f"Issue #{issue.issue_number} not found")
+   616→            click.style("Error: ", fg="red")
+   626→            click.style("Error: ", fg="red") + f"Issue #{issue_number} is {issue.state}\n\n"
+   698→    On any exception, the context manager will restore the original branch.
+   721→        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+   725→    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
+   747→    if isinstance(push_result, PushError):
+   748→        raise UserFacingCliError(push_result.message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RnQFwQd1njnTLQqU9AXJ98">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">749</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3661" cache_read_input_tokens="48214" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3661}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RnQFwQd1njnTLQqU9AXJ98">
+   749→    user_output(click.style("✓", fg="green") + " Branch pushed to remote")
+   750→
+   751→    # Create draft PR
+   752→    # IMPORTANT: "Closes owner/repo#N" (cross-repo) or "Closes #N" (same-repo)
+   753→    # MUST be in the initial body passed to create_pr(), NOT added via update.
+   754→    # GitHub's willCloseTarget API field is set at PR creation time and is NOT
+   755→    # updated when the body is edited afterward.
+   756→    user_output("Creating draft PR...")
+   757→    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+   758→    issue_ref = _format_issue_ref(issue_number, plans_repo)
+   759→    pr_body = (
+   760→        f"**Author:** @{submitted_by}\n"
+   761→        f"**Status:** Queued for implementation\n\n"
+   762→        f"This PR will be marked ready for review after implementation completes.\n\n"
+   763→        f"## Implementation Plan\n\n"
+   764→        f"&lt;details&gt;\n"
+   765→        f"&lt;summary&gt;&lt;strong&gt;Implementation Plan&lt;/strong&gt; (Issue #{issue_number})&lt;/summary&gt;\n\n"
+   766→        f"{plan.body}\n\n"
+   767→        f"&lt;/details&gt;\n\n"
+   768→        f"**Plan:** {issue_ref}\n\n"
+   769→        f"---\n\n"
+   770→        f"Closes {issue_ref}"
+   771→    )
+   772→    pr_title = _add_planned_prefix(_strip_plan_markers(issue.title))
+   773→    pr_number = ctx.github.create_pr(
+   774→        repo_root=repo.root,
+   775→        branch=branch_name,
+   776→        title=pr_title,
+   777→        body=pr_body,
+   778→        base=base_branch,
+
+... [275 lines omitted] ...
+
+   805→        if isinstance(submit_result, SubmitBranchError):
+   808→                + f" Failed to link PR with Graphite: {submit_result.message}"
+   887→            if isinstance(push_result, PushError):
+   888→                raise UserFacingCliError(push_result.message)
+   933→                if isinstance(submit_result, SubmitBranchError):
+   936→                        + f" Failed to link PR with Graphite: {submit_result.message}"
+   970→            # Use context manager to restore original branch on failure
+   998→                    user_output(click.style("Error: ", fg="red") + msg)
+  1005→                user_output(click.style("Error: ", fg="red") + create_result.message)
+  1009→            # Use context manager to restore original branch on failure
+  1027→            click.style("Error: ", fg="red")
+  1028→            + "Failed to create or find PR. Cannot trigger workflow."
+  </tool_result>
+  <thinking>Now I have a good understanding of the code. Let me also look at the `commit_files_to_branch` function to understand its signature. Let me also check the test file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4878" cache_read_input_tokens="51875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4878}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the `commit_files_to_branch` function and the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4878" cache_read_input_tokens="51875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4878}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LAoQsTCAibDZD7pnf9eyXh">
+    <param name="command">grep -r "commit_files_to_branch" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/ --include="*.py" -l 2&gt;&amp;1</param>
+    <param name="description">Find commit_files_to_branch definition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4878" cache_read_input_tokens="51875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4878}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LAoQsTCAibDZD7pnf9eyXh">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/printing.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GVvcHrGdMJGnTn2obCjnHZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_submit.py</param>
+    <param name="offset">530</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4878" cache_read_input_tokens="51875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4878}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GVvcHrGdMJGnTn2obCjnHZ">
+   530→        # Verify: no warnings, dispatch metadata written successfully
+   531→        assert "Warning:" not in result.output
+   532→        assert "Dispatch metadata written" in result.output
+   533→
+   534→        assert "Traceback" not in result.output
+   535→
+   536→
+   537→def test_submit_issue_plan_cleans_up_stale_impl_context_folder() -&gt; None:
+   538→    """Test that _create_branch_and_pr cleans up stale .erk/impl-context/ before creating new one.
+   539→
+   540→    When a previous submission failed and left behind a .erk/impl-context/ folder,
+   541→    the issue-based submit path should remove it before creating the new one.
+   542→    This tests the cleanup logic at submit.py:713-716.
+   543→    """
+   544→    runner = CliRunner()
+   545→    with erk_isolated_fs_env(runner) as env:
+   546→        issue = IssueInfo(
+   547→            number=42,
+   548→            title="[erk-plan] Test Issue Cleanup",
+   549→            body="Test plan body for cleanup test",
+   550→            state="OPEN",
+   551→            url="https://github.com/test-owner/test-repo/issues/42",
+   552→            labels=["erk-plan"],
+   553→            assignees=[],
+   554→            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+   555→            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+   556→            author="testuser",
+   557→        )
+   558→        fake_issues = FakeGitHubIssues(issues={42: issue})
+   559→
+
+... [55 lines omitted] ...
+
+   588→        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed submission)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01P7pade63sT4Q128KCCmEAk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6938" cache_read_input_tokens="56753" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6938}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P7pade63sT4Q128KCCmEAk">
+     1→"""Abstract base class for Git commit operations.
+     2→
+     3→This sub-gateway extracts commit operations from the main Git gateway,
+     4→including staging, committing, amending, and commit message queries.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→
+    13→class GitCommitOps(ABC):
+    14→    """Abstract interface for Git commit operations.
+    15→
+    16→    This interface contains both mutation and query operations for commits.
+    17→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    18→    """
+    19→
+    20→    # ============================================================================
+    21→    # Mutation Operations
+    22→    # ============================================================================
+    23→
+    24→    @abstractmethod
+    25→    def stage_files(self, cwd: Path, paths: list[str]) -&gt; None:
+    26→        """Stage specific files for commit.
+    27→
+    28→        Args:
+    29→            cwd: Working directory
+    30→            paths: List of file paths to stage (relative to cwd)
+
+... [137 lines omitted] ...
+
+    33→            subprocess.CalledProcessError: If git command fails
+    48→            subprocess.CalledProcessError: If git command fails
+    60→            subprocess.CalledProcessError: If git command fails
+    73→            subprocess.CalledProcessError: If git command fails
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DCtCZ2SMMrE9DvnRQ3KYA5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6938" cache_read_input_tokens="56753" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6938}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DCtCZ2SMMrE9DvnRQ3KYA5">
+     1→"""Fake implementation of Git commit operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class CommitRecord:
+    13→    """Record of a commit operation.
+    14→
+    15→    Attributes:
+    16→        cwd: Working directory where commit was made
+    17→        message: Commit message
+    18→        staged_files: Files that were staged at time of commit
+    19→    """
+    20→
+    21→    cwd: Path
+    22→    message: str
+    23→    staged_files: tuple[str, ...]
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class BranchCommitRecord:
+    28→    """Record of a direct-to-branch commit (no checkout)."""
+    29→
+    30→    cwd: Path
+
+... [228 lines omitted] ...
+
+    49→    - add_all_raises: Exception to raise when add_all() is called
+    66→        add_all_raises: Exception | None = None,
+    77→            add_all_raises: Exception to raise when add_all() is called
+   124→        Raises configured exception if add_all_raises was set.
+  </tool_result>
+  <thinking>Now I have a clear picture of the code. Let me start implementing:
+
+**Phase 1:** Add `build_impl_context_files` to `packages/erk-shared/src/erk_shared/impl_context.py`
+
+The function should return a `dict[str, str]` of file paths to content.
+
+**Phase 2:** Refactor `_create_branch_and_pr` in `submit.py`:
+- Remove checkout at line 715
+- Remove filesystem impl-context operations (impl_context_exists, remove_impl_context, create_impl_context)
+- Replace stage+commit with `commit_files_to_branch`
+
+
+- Add Graphite linking with targeted checkout scope
+- Remove final checkout at line 823
+
+**Phase 3:** Refactor "branch-exists-but-no-PR" path:
+- Remove checkout at line 877
+- Replace empty commit with `commit_files_to_branch(files={})`
+- Add Graphite linking with targeted checkout scope
+- Remove final checkout at line 951
+
+**Phase 4:** Clean up dead code:
+- Remove `branch_rollback` context manager
+- Clean up imports
+
+**Phase 5:** Update tests
+
+Let me start with Phase 1 and check what `IMPL_CONTEXT_DIR` is.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5348" cache_read_input_tokens="63691" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5348}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have everything I need. Let me start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5348" cache_read_input_tokens="63691" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5348}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_017vhRMFmsdcUWwwqiMkz5hx">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5348" cache_read_input_tokens="63691" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5348}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017vhRMFmsdcUWwwqiMkz5hx">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 1: Add `build_impl_context_files` helper**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="69039" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 405}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DXbGoV67D9VSEj8hg9vPmE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/impl_context.py</param>
+    <param name="old_string">def impl_context_exists(repo_root: Path) -&gt; bool:
+    """Check if .erk/impl-context/ folde...[truncated 203 chars]...
+
+    impl_context_dir = repo_root / IMPL_CONTEXT_DIR
+    return impl_context_dir.exists()</param>
+    <param name="new_string">def impl_context_exists(repo_root: Path) -&gt; bool:
+    """Check if .erk/impl-context/ folde...[truncated 1501 chars]...lan_content,
+        f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+    }</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="69039" output_tokens="782" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DXbGoV67D9VSEj8hg9vPmE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/impl_context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01452fLkgKJDokRUyoBXwVwb">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="865" cache_read_input_tokens="69444" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 865}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01452fLkgKJDokRUyoBXwVwb">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01K8ZFzLtWDLiiSb5GT5Gsr6">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="865" cache_read_input_tokens="69444" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 865}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K8ZFzLtWDLiiSb5GT5Gsr6">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 2: Refactor `_create_branch_and_pr`**
+
+Now let me make the changes to `submit.py`. I need to:
+1. Remove the initial checkout (line 715)
+2. Replace filesystem impl-context operations with `build_impl_context_files`
+3. Replace stage+commit with `commit_files_to_branch`
+4. Wrap Graphite linking in a targeted checkout scope
+5. Remove the final checkout</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="70309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Pqepg6HMtPjLxro8JWaPG4">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">from erk_shared.impl_context import (
+    create_impl_context,
+    impl_context_exists,
+    remove_impl_context,
+)</param>
+    <param name="new_string">from erk_shared.impl_context import (
+    build_impl_context_files,
+    create_impl_context,
+    impl_context_exists,
+    remove_impl_context,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="70309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pqepg6HMtPjLxro8JWaPG4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the body of `_create_branch_and_pr`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="391" cache_read_input_tokens="70507" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 391}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GKrtKLuFtjDH5try7zDKyQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">    issue = validated.issue
+    issue_number = validated.number
+
+    ctx.branch_manager.ch...[truncated 1312 chars]...result.message)
+    user_output(click.style("✓", fg="green") + " Branch pushed to remote")</param>
+    <param name="new_string">    issue = validated.issue
+    issue_number = validated.number
+
+    # Get plan content an...[truncated 1055 chars]...result.message)
+    user_output(click.style("✓", fg="green") + " Branch pushed to remote")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="391" cache_read_input_tokens="70507" output_tokens="1015" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 391, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GKrtKLuFtjDH5try7zDKyQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the Graphite linking section and remove the final checkout in `_create_branch_and_pr`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1072" cache_read_input_tokens="70898" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1072}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011xbgR6JENsLb2j41bbRH2u">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">    # Link PR with Graphite (if enabled)
+    if ctx.branch_manager.is_graphite_managed():
+...[truncated 851 chars]...)
+    ctx.branch_manager.checkout_branch(repo.root, original_branch)
+
+    return pr_number</param>
+    <param name="new_string">    # Link PR with Graphite (if enabled) using a targeted checkout scope
+    if ctx.branch...[truncated 873 chars]...s): "
+            + ", ".join(f"#{n}" for n in closed_prs)
+        )
+
+    return pr_number</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1072" cache_read_input_tokens="70898" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1072}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011xbgR6JENsLb2j41bbRH2u">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XZjRkvL7v1B2aukJRQgzCX">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="873" cache_read_input_tokens="71970" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 873}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XZjRkvL7v1B2aukJRQgzCX">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013Spz9HwCnMT656Wj58B7hX">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="873" cache_read_input_tokens="71970" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 873}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Spz9HwCnMT656Wj58B7hX">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 3: Refactor "branch-exists-but-no-PR" path**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="72843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Kttkt7iGp8ZeTA1zNw2Trw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="old_string">            # Fetch and checkout the remote branch locally
+            ctx.git.remote.fetc...[truncated 930 chars]...sage)
+            user_output(click.style("✓", fg="green") + " Placeholder commit pushed")</param>
+    <param name="new_string">            # Fetch the remote branch locally (no checkout needed)
+            ctx.git.rem...[truncated 975 chars]...sage)
+            user_output(click.style("✓", fg="green") + " Placeholder commit pushed")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="72843" output_tokens="761" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kttkt7iGp8ZeTA1zNw2Trw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the Graphite linking block and remove the final checkout in the "branch-exists-but-no-PR" path. Let me read the current state of that section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="818" cache_read_input_tokens="73041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 818}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HJKg3iMEU2kewEw9cAUYL5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/submit.py</param>
+    <param name="offset">920</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="818" cache_read_input_tokens="73041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 818}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HJKg3iMEU2kewEw9cAUYL5">
+   920→                ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_LEARN_LABEL)
+   921→                # FUTURE ENHANCEMENT: See comment in _create_branch_and_pr for
+   922→                # updating parent plan's learn_status when learn plan gets a PR.
+   923→
+   924→            # Link PR with Graphite (if enabled)
+   925→            if ctx.branch_manager.is_graphite_managed():
+   926→                user_output("Linking PR with Graphite...")
+   927→                submit_result = ctx.branch_manager.submit_branch(repo.root, branch_name)
+   928→                if isinstance(submit_result, SubmitBranchError):
+   929→                    user_output(
+   930→                        click.style("✗", fg="red")
+   931→                        + f" Failed to link PR with Graphite: {submit_result.message}"
+   932→                    )
+   933→                else:
+   934→                    user_output(click.style("✓", fg="green") + " PR linked with Graphite")
+   935→
+   936→            # Close any orphaned draft PRs
+   937→            closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
+   938→            if closed_prs:
+   939→                user_output(
+   940→                    click.style("✓", fg="green")
+   941→                    + f" Closed {len(closed_prs)} orphaned draft PR(s): "
+   942→                    + ", ".join(f"#{n}" for n in closed_prs)
+   943→                )
+   944→
+   945→            # Switch back to original branch (keep the new branch for Graphite lineage)
+   946→            ctx.branch_manager.checkout_branch(repo.root, original_branch)
+   947→    else:
+   948→        # Check if branch exists locally (user chose to reuse existing)
+   949→        local_branches = ctx.git.branch.list_local_branches(repo.root)
+
+... [35 lines omitted] ...
+
+   965→            # Use context manager to restore original branch on failure
+  </tool_result>
+</session>

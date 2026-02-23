@@ -1,0 +1,1019 @@
+<session>
+  <meta branch="plnd/O7813-plan-convert-submit-02-23-1649" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_011MRALXtcJMdoEad9ffPyYc">
+{
+  "branch": {
+    "current": "plnd/O7813-plan-convert-submit-02-23-1649",
+    "parent": "master"
+  },
+  "pr": {
+    "number": 7972,
+    "url": "https://github.com/dagster-io/erk/pull/7972"
+  },
+  "diff_file": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/sessions/b33cd1f4-1f7e-4889-81c1-5999025fa990/pr-diff-865a1632.diff",
+  "commit_messages": [
+    "Add plan: Plan: Convert submit.py checkout cycles to commit_files_to_branch",
+    "Remove .erk/impl-context/ before implementation",
+    "Convert submit pipeline to git plumbing, add configurable plan backend, remove local review marker\n\nThis commit eliminates unnecessary git checkout cycles in the submit pipeline by using commit_files_to_branch (git plumbing) instead of checkout-stage-commit workflows. It introduces get_plan_backend() for environment-based plan storage configuration, removes the defunct local review marker CI feature, and adds comprehensive test coverage for plan backend resolution and PR column display.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Added (1 file)\n- `packages/erk-shared/src/erk_shared/plan_store/__init__.py` - Plan backend resolution function with env var support\n- `tests/unit/plan_store/test_get_plan_backend.py` - Tests for backend resolution\n\n### Modified (29 files)\n- `src/erk/cli/commands/submit.py` - Core refactoring: replace checkouts with plumbing commits, remove branch_rollback context manager\n- `packages/erk-shared/src/erk_shared/impl_context.py` - Add build_impl_context_files() for in-memory file content generation\n- `packages/erk-shared/src/erk_shared/context/types.py` - Add PlanBackendType type definition\n- `packages/erk-shared/src/erk_shared/context/testing.py` - Use get_plan_backend() for test context\n- `packages/erk-statusline/src/erk_statusline/statusline.py` - Use get_plan_backend() instead of hardcoded value\n- Multiple CLI commands (branch/checkout_cmd.py, branch/create_cmd.py, exec/exit_plan_mode_hook.py, exec/plan_save.py, implement_shared.py, plan/list_cmd.py, wt/create_cmd.py) - Replace hardcoded \"draft_pr\" with get_plan_backend()\n- `src/erk/core/context.py` - Use get_plan_backend() for context initialization\n- `src/erk/tui/` (app.py, commands/types.py, widgets/plan_table.py) - Use PlanBackendType instead of Literal[\"draft_pr\"]\n- `tests/commands/dash/conftest.py` - Add autouse fixture to force github backend for dash tests\n- `tests/commands/dash/test_impl_columns.py` - Update PR column assertion\n- `tests/commands/dash/test_pr_columns.py` - Add 6 new test cases for PR column display states (open, draft, merged, closed, conflicts, multiple PRs)\n- `tests/commands/plan/test_submit.py` - Rewrite cleanup test as plumbing commit test\n- `tests/commands/submit/test_rollback.py` - Refactor to verify no plan branch checkout\n- `tests/commands/test_create.py` - Add 8 new tests for --from-plan functionality\n- `tests/unit/cli/commands/branch/test_create_cmd.py` - Use get_plan_backend()\n- `tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py` - Use get_plan_backend()\n- `tests/unit/cli/commands/exec/scripts/test_plan_save.py` - Add test for github backend delegation\n- CHANGELOG.md - Clear unreleased section\n- `.claude/commands/local/code-review.md` - Remove Phase 4 (local review marker)\n- `.claude/skills/erk-exec/reference.md` - Remove set-local-review-marker reference\n- `.github/workflows/code-reviews.yml` - Remove local review marker check\n\n### Deleted (3 files)\n- `src/erk/cli/commands/exec/scripts/set_local_review_marker.py` - Removed unused local review marker command\n- `tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py` - Tests for removed command\n- `set-local-review-marker` command registration from exec group\n\n&lt;/details&gt;\n\n## Key Changes\n\n- **Eliminate checkout cycles in submit pipeline**: Replace working-tree checkouts with git plumbing operations (commit_files_to_branch) for creating plan impl-context commits, reducing race conditions and failure modes\n- **Add configurable plan backend**: Implement get_plan_backend() function that resolves plan storage (draft_pr | github) from ERK_PLAN_BACKEND env var with draft_pr as default\n- **Remove local review marker feature**: Sunset the ephemeral local review marker workflow from CI/CD pipeline (check + conditional checkout removed from code-reviews.yml)\n- **Introduce build_impl_context_files()**: New function generates impl-context file content as in-memory dict, enabling plumbing-based commits without filesystem I/O\n- **Expand test coverage**: Add tests for plan backend resolution, PR column display across all states, and --from-plan functionality with Graphite integration"
+  ],
+  "plan_context": {
+    "plan_id": "7972",
+    "plan_content": "# Plan: Convert submit.py checkout cycles to commit_files_to_branch\n\nPart of Objective #7813, Node 2.2\n\n## Context\n\nThe submit pipeline in `src/erk/cli/commands/submit.py` uses checkout-based git workflows: checkout a branch, write files to disk, stage, commit, push, checkout back. This is fragile (requires cleanup on failure) and creates race conditions when multiple sessions share a worktree. Phase 1 of Objective #7813 already converted 3 other call sites to use `commit_files_to_branch` (a git plumbing operation that commits directly to a branch ref without touching the working tree). Node 2.2 applies the same pattern to the submit pipeline.\n\n**Target functions:**\n1. `_create_branch_and_pr` (line 685) - creates impl-context files, commits, pushes, creates draft PR\n2. \"Branch-exists-but-no-PR\" path in `_submit_single_issue` (line 864) - adds empty placeholder commit, pushes, creates PR\n\n**Checkouts eliminated:** 4 explicit `checkout_branch` calls at lines 715, 823, 877, 951, plus 1 redundant caller checkout at line 968.\n\n## Phase 1: Add `build_impl_context_files` helper\n\n**File:** `packages/erk-shared/src/erk_shared/impl_context.py`\n\nAdd a new function that returns impl-context content as a `dict[str, str]` (for use with `commit_files_to_branch`) without writing to the filesystem:\n\n```python\ndef build_impl_context_files(\n    plan_content: str,\n    plan_id: str,\n    url: str,\n    *,\n    provider: str,\n    objective_id: int | None,\n    now_iso: str,\n) -&gt; dict[str, str]:\n```\n\nReturns:\n```python\n{\n    f\"{IMPL_CONTEXT_DIR}/plan.md\": plan_content,\n    f\"{IMPL_CONTEXT_DIR}/ref.json\": json.dumps({...}, indent=2),\n}\n```\n\nSame ref.json structure as `create_impl_context` (provider, plan_id, url, created_at, synced_at, labels, objective_id). Note: no `repo_root` parameter needed since there are no filesystem operations.\n\n## Phase 2: Refactor `_create_branch_and_pr`\n\n**File:** `src/erk/cli/commands/submit.py`\n\n### Changes to `_create_branch_and_pr` (lines 685-825):\n\n1. **Remove initial checkout** (line 715): `ctx.branch_manager.checkout_branch(repo.root, branch_name)`\n\n2. **Remove filesystem impl-context operations** (lines 725-739): Remove calls to `impl_context_exists`, `remove_impl_context`, `create_impl_context`. Replace with `build_impl_context_files`.\n\n3. **Replace stage+commit with plumbing** (lines 742-743): Replace `stage_files` + `commit` with:\n   ```python\n   files = build_impl_context_files(\n       plan_content=plan.body,\n       plan_id=str(issue_number),\n       url=issue.url,\n       provider=\"github\",\n       objective_id=plan.objective_id,\n       now_iso=ctx.time.now().isoformat(),\n   )\n   ctx.git.commit.commit_files_to_branch(\n       repo.root,\n       branch=branch_name,\n       files=files,\n       message=f\"Add plan for issue #{issue_number}\",\n   )\n   ```\n\n4. **Graphite linking** (lines 801-811): Wrap in a targeted checkout scope since `gt submit` operates on the current stack:\n   ```python\n   if ctx.branch_manager.is_graphite_managed():\n       user_output(\"Linking PR with Graphite...\")\n       ctx.branch_manager.checkout_branch(repo.root, branch_name)\n       submit_result = ctx.branch_manager.submit_branch(repo.root, branch_name)\n       ctx.branch_manager.checkout_branch(repo.root, original_branch)\n       # ... error handling ...\n   ```\n\n5. **Remove final checkout** (line 823): `ctx.branch_manager.checkout_branch(repo.root, original_branch)` - replaced by Graphite-specific restore above or removed entirely for non-Graphite paths.\n\n### Changes to callers in `_submit_single_issue`:\n\n1. **\"Branch exists locally\" path** (lines 957-980):\n   - Remove checkout at line 968: `ctx.branch_manager.checkout_branch(repo.root, branch_name)`\n   - Remove `branch_rollback` context manager wrapper (lines 971, 980)\n\n2. **\"Create new branch\" path** (lines 1001-1019):\n   - `create_branch` already creates ref without checkout (confirmed in docstring) - keep as-is\n   - Remove `branch_rollback` context manager wrapper (lines 1010, 1019)\n\n## Phase 3: Refactor \"branch-exists-but-no-PR\" path\n\n**File:** `src/erk/cli/commands/submit.py` (lines 864-951)\n\n1. **Remove checkout** (line 877): `ctx.branch_manager.checkout_branch(repo.root, branch_name)`\n\n2. **Replace empty commit with plumbing** (lines 880-883):\n   ```python\n   ctx.git.commit.commit_files_to_branch(\n       repo.root,\n       branch=branch_name,\n       files={},\n       message=f\"[erk-plan] Initialize implementation for issue #{issue_number}\",\n   )\n   ```\n   Note: `commit_files_to_branch` with empty `files={}` creates an empty commit (same tree as parent, different commit hash) - equivalent to `git commit --allow-empty`.\n\n3. **Graphite linking** (lines 929-939): Same pattern as Phase 2 - wrap in targeted checkout scope.\n\n4. **Remove final checkout** (line 951): `ctx.branch_manager.checkout_branch(repo.root, original_branch)` - replaced by Graphite-specific restore.\n\n## Phase 4: Clean up dead code\n\n**File:** `src/erk/cli/commands/submit.py`\n\n1. **Remove `branch_rollback` context manager** (lines 73-87): Only used at lines 971 and 1010, both removed. Delete function and import of `contextmanager`/`Iterator` if no longer needed.\n\n2. **Clean up imports** (lines 45-49): Remove `create_impl_context`, `impl_context_exists`, `remove_impl_context` from imports. Add `build_impl_context_files`.\n\n3. **Remove `IMPL_CONTEXT_DIR` import** (line 52) if no longer used directly (now encapsulated in `build_impl_context_files`). Check usage first.\n\n## Phase 5: Update tests\n\n**File:** `tests/commands/plan/test_submit.py`\n\n### Rewrite `test_submit_issue_plan_cleans_up_stale_impl_context_folder` (line 537):\n\n- Current test creates a stale `.erk/impl-context/` folder on disk and verifies it's cleaned up\n- After change: filesystem is not touched, so this test scenario no longer applies\n- Rewrite as `test_submit_issue_plan_uses_plumbing_commit`:\n  - Verify `fake_git.commit.branch_commits` has 1 entry\n  - Verify `branch_commits[0].files` contains `\".erk/impl-context/plan.md\"` and `\".erk/impl-context/ref.json\"`\n  - Verify `branch_commits[0].branch` matches expected branch name\n  - Verify no checkouts occurred (no checkout_branch calls for the plan branch)\n\n### Verify existing tests still pass:\n\n- `test_submit_succeeds_when_parent_branch_tracked` - should work since FakeGit handles `commit_files_to_branch`\n- `test_submit_updates_pr_body_with_workflow_run_link` - should work (PR body logic unchanged)\n- `test_submit_exits_cleanly_when_parent_branch_untracked` - should work (error path is before commit)\n- `test_submit_draft_pr_plan_cleans_up_stale_impl_context_folder` - different code path (draft PR backend), unaffected\n- `test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend` - unaffected\n\n## Files to modify\n\n| File | Change |\n|------|--------|\n| `packages/erk-shared/src/erk_shared/impl_context.py` | Add `build_impl_context_files` function |\n| `src/erk/cli/commands/submit.py` | Core refactoring: plumbing commits, remove checkouts |\n| `tests/commands/plan/test_submit.py` | Update/rewrite tests for plumbing behavior |\n\n## Verification\n\n1. Run unit tests: `pytest tests/commands/plan/test_submit.py`\n2. Run integration tests: `pytest tests/integration/test_real_git_commit_ops.py` (verify plumbing operations)\n3. Run type checker: `ty check src/erk/cli/commands/submit.py packages/erk-shared/src/erk_shared/impl_context.py`\n4. Run full fast-ci: `make fast-ci`\n",
+    "objective_summary": "Objective #7813: Objective: Eliminate Unnecessary Git Checkouts via Plumbing Operations"
+  }
+}
+  </tool_result>
+  <thinking>Now I need to load the `erk-diff-analysis` skill and then read the diff file to generate a title and body.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4094" cache_read_input_tokens="121753" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4094}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_016KTmj3wAneD6TpPJJXdDtc">
+    <param name="skill">erk-diff-analysis</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4094" cache_read_input_tokens="121753" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4094}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016KTmj3wAneD6TpPJJXdDtc">
+Launching skill: erk-diff-analysis
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/skills/erk-diff-analysis
+
+# Diff Analysis
+
+This skill provides the commit message generation prompt used by PR submission commands.
+
+## When to Use
+
+Only load this skill when:
+
+- Explicitly requested by name (`erk-diff-analysis`)
+- Invoked by commands like `/erk:git-pr-push`
+
+## Usage
+
+Load `references/commit-message-prompt.md` when analyzing a diff, then apply its principles to generate output.
+
+## Key Principles
+
+- Be concise and strategic - focus on significant changes
+- Use component-level descriptions - reference modules/components, not individual functions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+</user>
+  <thinking>I need to read the commit message prompt file and then the diff file.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="318" cache_read_input_tokens="125847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 318}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J1c9zKqHzuL5WsxCGSoyrH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.claude/skills/erk-diff-analysis/references/commit-message-prompt.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="318" cache_read_input_tokens="125847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 318}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J1c9zKqHzuL5WsxCGSoyrH">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Files Changed
+    28→
+    29→&lt;details&gt;
+    30→&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+... [59 lines omitted] ...
+
+    69→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DSFnamp1LVT6t3H3A4aTYv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/sessions/b33cd1f4-1f7e-4889-81c1-5999025fa990/pr-diff-865a1632.diff</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="318" cache_read_input_tokens="125847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 318}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DSFnamp1LVT6t3H3A4aTYv">
+     1→diff --git a/.claude/commands/local/code-review.md b/.claude/commands/local/code-review.md
+     2→index ebea5ee95..84af53a5b 100644
+     3→--- a/.claude/commands/local/code-review.md
+     4→+++ b/.claude/commands/local/code-review.md
+     5→@@ -131,22 +131,3 @@ If all reviews are clean, celebrate briefly:
+     6→ ```
+     7→ All N reviews passed with no violations.
+     8→ ```
+     9→-
+    10→-### Phase 4: Mark PR as Reviewed
+    11→-
+    12→-**Only runs if ALL reviews passed (0 total violations).**
+    13→-
+    14→-If there were any violations, skip this phase entirely.
+    15→-
+    16→-Run the marker command:
+    17→-
+    18→-```bash
+    19→-erk exec set-local-review-marker
+    20→-```
+    21→-
+    22→-Parse the JSON output:
+    23→-
+    24→-- If `success: true`: Report "Local review marker set on PR #N for SHA abc1234... — CI will skip reviews for this commit."
+    25→-- If `success: false` with `reason: "no_pr"`: Report "No PR found for current branch — skipping marker."
+    26→-- If `success: false` with `reason: "detached_head"`: Report "Detached HEAD — skipping marker."
+    27→-- If the command fails: Report the error but don't fail the overall review run.
+    28→diff --git a/.claude/skills/erk-exec/reference.md b/.claude/skills/erk-exec/reference.md
+    29→index 84f47b196..767596d8f 100644
+    30→--- a/.claude/skills/erk-exec/reference.md
+
+... [175 lines omitted] ...
+
+   136→-- Fix WARNING comment accumulation on metadata block updates (60c75f5)
+   137→-- Clear error when trigger_workflow finds skipped/cancelled run (2a49eb3)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CTddkWH5G5VnwdFTr1T3Jm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/sessions/b33cd1f4-1f7e-4889-81c1-5999025fa990/pr-diff-865a1632.diff</param>
+    <param name="offset">200</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5004" cache_read_input_tokens="126165" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5004}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CTddkWH5G5VnwdFTr1T3Jm">
+   200→+) -&gt; dict[str, str]:
+   201→+    """Build impl-context file contents as an in-memory mapping.
+   202→+
+   203→+    Returns the same content as create_impl_context but without writing to disk,
+   204→+    suitable for use with commit_files_to_branch.
+   205→+
+   206→+    Args:
+   207→+        plan_content: Full plan markdown content from GitHub issue
+   208→+        plan_id: Provider-specific plan ID as string (e.g., "42")
+   209→+        url: Full plan URL
+   210→+        provider: Plan provider name (e.g., "github", "github-draft-pr")
+   211→+        objective_id: Optional linked objective issue number
+   212→+        now_iso: ISO 8601 UTC timestamp for created_at/synced_at fields
+   213→+
+   214→+    Returns:
+   215→+        Mapping of relative file paths to string content suitable for
+   216→+        passing to commit_files_to_branch.
+   217→+    """
+   218→+    ref_data: dict[str, str | int | list[str] | None] = {
+   219→+        "provider": provider,
+   220→+        "plan_id": plan_id,
+   221→+        "url": url,
+   222→+        "created_at": now_iso,
+   223→+        "synced_at": now_iso,
+   224→+        "labels": [],
+   225→+        "objective_id": objective_id,
+   226→+    }
+   227→+    return {
+   228→+        f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
+   229→+        f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+
+... [175 lines omitted] ...
+
+   296→             raise click.ClickException(f"Issue #{issue_number} not found")
+   317→             raise click.ClickException(f"Issue #{issue_number} not found")
+  </tool_result>
+  <thinking>I have enough context to generate the PR title and body. Let me analyze the diff:
+
+1. **`packages/erk-shared/src/erk_shared/impl_context.py`** - Added `build_impl_context_files()` helper for in-memory impl-context file generation
+2. **`packages/erk-shared/src/erk_shared/plan_store/__init__.py`** - Added `get_plan_backend()` function to resolve plan backend from env var
+3. **`packages/erk-shared/src/erk_shared/context/types.py`** - Added `PlanBackendType` type definition
+
+
+4. **`packages/erk-shared/src/erk_shared/context/testing.py`** and **`packages/erk-statusline/src/erk_statusline/statusline.py`** - Both now use the new `get_plan_backend()` function instead of hardcoded backend values
+5. **`src/erk/cli/commands/submit.py`** - Major refactoring that replaces checkout operations with plumbing commits and removes the `branch_rollback` logic
+6. **`src/erk/cli/commands/branch/checkout_cmd.py`** - Updated to use the new backend resolution function
+7. **`src/erk/cli/commands/branch/create_cmd.py`** - Also switches to `get_plan_backend()`
+8. **`src/erk/cli/commands/exec/group.py`** - Removing the `set-local-review-marker` command entirely
+9. **`src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`** and **`plan_save.py`** - Both updated to use `get_plan_backend()`
+10. **`set_local_review_marker.py`** - Being deleted as part of the cleanup
+11. **`.claude/commands/local/code-review.md`** - Also being removed
+
+Now I'm wrapping up the local review marker removal by cleaning up documentation references and workflow configurations, then updating the changelog to reflect all these changes.
+
+For the commit message itself, I need to capture the three main transformations: switching the submit pipeline to use git plumbing instead of checkouts, introducing the configurable plan backend resolution across the codebase, and removing the local review marker infrastructure entirely. The PR description should highlight how these changes work together to streamline the submission process while making the backend selection more flexible.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4006" cache_read_input_tokens="131169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll generate the PR title and body, then write to a temp file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4006" cache_read_input_tokens="131169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T7DjDYr1naGZ5Zayxw8jez">
+    <param name="command">cat &gt; /tmp/pr-body-7972.md &lt;&lt; 'EOF'
+Convert submit pipeline to git plumbing and wire confi...[truncated 2643 chars]...rom the exec group and `code-reviews.yml`
+EOF
+echo "Wrote PR body to /tmp/pr-body-7972.md"</param>
+    <param name="description">Write PR body to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4006" cache_read_input_tokens="131169" output_tokens="1940" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4006, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T7DjDYr1naGZ5Zayxw8jez">
+Wrote PR body to /tmp/pr-body-7972.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017t84EnC9sWN6b3RVsgGZ4G">
+    <param name="command">erk exec set-pr-description \
+  --title "Convert submit pipeline to git plumbing and wire configurable plan backend" \
+  --body-file "/tmp/pr-body-7972.md" 2&gt;&amp;1</param>
+    <param name="description">Apply PR title and body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1951" cache_read_input_tokens="135175" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1951}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017t84EnC9sWN6b3RVsgGZ4G">
+PR #7972 updated: Convert submit pipeline to git plumbing and wire configurable plan backend
+  </tool_result>
+  <assistant>PR submitted successfully.
+
+**PR:** https://github.com/dagster-io/erk/pull/7972
+
+**Title:** Convert submit pipeline to git plumbing and wire configurable plan backend
+
+The PR covers:
+- `submit.py` now uses `commit_files_to_branch` (plumbing) instead of checkout+stage+commit — eliminates 4 checkout cycles and the `branch_rollback` context manager
+- New `get_plan_backend()` function wired across 7 previously-hardcoded `"draft_pr"` sites
+- New `build_impl_context_files()` for in-memory impl-context generation
+- `set-local-review-marker` command and CI step removed
+
+🔄 Status line refreshed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="137126" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 157}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="332" cache_read_input_tokens="137458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 332}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:code-review&lt;/command-message&gt;
+&lt;command-name&gt;/local:code-review&lt;/command-name&gt;</user>
+  <user># /local:code-review
+
+Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
+
+## Instructions
+
+### Phase 1: Discover Changed Files and Match Reviews
+
+**Get changed files:**
+
+```bash
+git diff --name-only $(git merge-base master HEAD)...HEAD
+```
+
+If no changed files, report "No changes found relative to master" and stop.
+
+**Read review definitions:**
+
+Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+
+- `name`: Review name
+- `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
+- `enabled`: Whether the review is active (skip if `false`)
+- `model`: Which model to use
+
+**Match reviews to changed files:**
+
+For each enabled review, check if ANY changed file matches ANY of its `paths` glob patterns:
+
+- `**/*.py` matches any `.py` file at any depth
+- `src/**/*.py` matches `.py` files under `src/`
+- `docs/learned/**/*.md` matches `.md` files under `docs/learned/`
+- `.claude/**/*.md` matches `.md` files under `.claude/`
+
+Use Python's `fnmatch` or `pathlib.PurePath.match()` logic — a pattern like `**/*.py` should match `src/erk/cli/main.py`.
+
+**Report:**
+
+```
+Changed files: N
+Reviews matched: review-a, review-b (N of M enabled reviews)
+Reviews skipped (no matching files): review-c, review-d
+```
+
+If no reviews matched, report and stop.
+
+### Phase 2: Run Reviews in Parallel
+
+Generate a run ID: `review-&lt;timestamp&gt;` (e.g., `review-20260222-1930`).
+
+For each matching review, launch a Task agent in parallel with:
+
+- `subagent_type`: `general-purpose`
+- `model`: Use the `model` field from the review frontmatter. Map values: `claude-haiku-4-5` → `haiku`, `claude-sonnet-4-5` or `claude-sonnet-4-6` → `sonnet`
+
+**Agent prompt template:**
+
+```
+You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk/reviews/&lt;review-name&gt;.md`
+2. Follow the review instructions, with these adaptations for local execution:
+   - Instead of `gh pr diff`, use: `git diff $(git merge-base master HEAD)...HEAD`
+   - Skip ALL PR-interaction steps (posting comments, fetching existing comments, summary comments, activity logs)
+   - Skip any steps about checking for existing review markers or comments
+3. Write your findings to `.erk/scratch/&lt;run-id&gt;/&lt;review-name&gt;.md` using the Write tool
+
+Output format for the scratch file:
+
+# &lt;Review Name&gt; Results
+
+## Violations
+
+For each violation found:
+### &lt;file-path&gt;:&lt;line-number&gt;
+**Rule**: &lt;rule violated&gt;
+**Detail**: &lt;explanation&gt;
+
+If no violations found, write:
+## Violations
+None found.
+
+## Summary
+- Files reviewed: N
+- Violations found: N
+
+IMPORTANT:
+- You MUST write results to the scratch file using the Write tool
+- Do NOT return results inline only — write the file
+- Do NOT post PR comments or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps
+```
+
+Launch ALL matching review agents in a single message (parallel execution).
+
+### Phase 3: Collect and Report
+
+After all agents complete, read each scratch file from `.erk/scratch/&lt;run-id&gt;/`.
+
+**Verify output files exist** before reading. If any are missing, report which review failed.
+
+Present a unified report:
+
+```markdown
+## Local Code Review Results
+
+**Run ID**: &lt;run-id&gt;
+**Changed files**: N | **Reviews run**: N
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+---
+
+**Summary**: X total violations across Y reviews (Z reviews clean)
+```
+
+Group violations by review, then by file within each review.
+
+If all reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations.
+```
+</user>
+  <thinking>Let me start by discovering changed files and matching reviews.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1213" cache_read_input_tokens="137801" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1213}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016v11WFEH4KLqLVHRbhaRQU">
+    <param name="command">git diff --name-only $(git merge-base master HEAD)...HEAD 2&gt;&amp;1</param>
+    <param name="description">Get changed files relative to master</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1213" cache_read_input_tokens="137801" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1213}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016v11WFEH4KLqLVHRbhaRQU">
+packages/erk-shared/src/erk_shared/impl_context.py
+src/erk/cli/commands/submit.py
+tests/commands/plan/test_submit.py
+tests/commands/submit/test_rollback.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01PfrJnpcVHKb3C6xWzKYpLB">
+    <param name="pattern">.erk/reviews/*.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1213" cache_read_input_tokens="137801" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1213, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PfrJnpcVHKb3C6xWzKYpLB">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/audit-pr-docs.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/dignified-code-simplifier.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/dignified-python.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/test-coverage.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/tripwires.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EGAemGHVEpAxFhxoTx7uUD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/audit-pr-docs.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="139014" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EGAemGHVEpAxFhxoTx7uUD">
+     1→---
+     2→name: Audit PR Docs
+     3→paths:
+     4→  - "docs/learned/**/*.md"
+     5→marker: "&lt;!-- audit-pr-docs --&gt;"
+     6→model: claude-sonnet-4-6
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load Standards and Analysis Methodology
+    13→
+    14→Read these files from the repository:
+    15→
+    16→1. `.claude/skills/learned-docs/learned-docs-core.md` — content rules, the One Code Rule, four exceptions
+    17→2. `docs/learned/documentation/source-pointers.md` — replacement format, 5-line threshold, decision checklist
+    18→3. `.claude/commands/local/audit-doc.md` — analysis methodology (Extract Code References through Code Block Triage) and verdict thresholds (Generate Report phase)
+    19→
+    20→These define what counts as a verbatim copy, what exceptions exist, the replacement format, and the full analysis methodology. The audit-doc command is the single source of truth for how to analyze a learned doc — this review file only defines the review mechanics (diff filtering, PR comment format, summary format).
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JcGQC13aoX4mmRdaLrtPnu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/dignified-code-simplifier.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="139014" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JcGQC13aoX4mmRdaLrtPnu">
+     1→---
+     2→name: Dignified Code Simplifier Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-code-simplifier-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Skill
+    13→
+    14→Read the skill file: `.claude/skills/dignified-code-simplifier/SKILL.md`
+    15→
+    16→This skill references `@.claude/skills/dignified-python/` which you should also load.
+    17→
+    18→## Step 2: Apply in Review Mode
+    19→
+    20→Apply the skill's refinement process to the PR diff, but instead of making changes:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DijBQwWESjTi5R83kK8CRc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/dignified-python.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="139014" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DijBQwWESjTi5R83kK8CRc">
+     1→---
+     2→name: Dignified Python Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-python-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Dignified Python Standards
+    13→
+    14→Read these skill files from the repository:
+    15→
+    16→1. .claude/skills/dignified-python/SKILL.md (routing and version detection)
+    17→2. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+    18→3. .claude/skills/dignified-python/cli-patterns.md (Click best practices)
+    19→4. .claude/skills/dignified-python/subprocess.md (subprocess handling)
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_016gpuoztm37s4uCUFeHERXp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/test-coverage.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="139014" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016gpuoztm37s4uCUFeHERXp">
+     1→---
+     2→name: Test Coverage Review
+     3→paths:
+     4→  - "src/**/*.py"
+     5→  - "packages/**/*.py"
+     6→  - "tests/**/*.py"
+     7→marker: "&lt;!-- test-coverage-review --&gt;"
+     8→model: claude-haiku-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Categorize PR Files
+    15→
+    16→Run `gh pr diff` and `gh pr view --json files` to get the full file list and diff.
+    17→
+    18→Categorize every Python file into these buckets:
+    19→
+    20→- **source_added**: New files in `src/` or `packages/` (not in `tests/`)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JHkN8Wt3Th8pS768QUoCka">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/reviews/tripwires.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="139014" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JHkN8Wt3Th8pS768QUoCka">
+     1→---
+     2→name: Tripwires Review
+     3→paths:
+     4→  - "**/*.py"
+     5→  - "**/*.sh"
+     6→  - ".claude/**/*.md"
+     7→marker: "&lt;!-- tripwires-review --&gt;"
+     8→model: claude-sonnet-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Bash(grep:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Load Tripwire Index
+    15→
+    16→Tripwires are organized by category. Universal tripwires are in `AGENTS.md`. Category-specific tripwires are in `docs/learned/&lt;category&gt;/tripwires.md` (e.g., `docs/learned/architecture/tripwires.md`, `docs/learned/cli/tripwires.md`).
+    17→
+    18→For comprehensive coverage, read these category tripwire files based on the diff:
+    19→
+    20→- Changes in `src/erk/gateway/` or `packages/erk-shared/src/*/gateway/` → Read `docs/learned/architecture/tripwires.md`
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <thinking>Now let me match the changed files to review patterns:
+
+Changed files:
+1. `packages/erk-shared/src/erk_shared/impl_context.py` - `.py` file in `packages/`
+2. `src/erk/cli/commands/submit.py` - `.py` file in `src/`
+3. `tests/commands/plan/test_submit.py` - `.py` file in `tests/`
+4. `tests/commands/submit/test_rollback.py` - `.py` file in `tests/`
+
+Review matching:
+- **audit-pr-docs**: `docs/learned/**/*.md` → NO match (no docs files changed)
+
+
+- **dignified-code-simplifier**: `**/*.py` → YES match (all 4 files are .py)
+- **dignified-python**: `**/*.py` → YES match (all 4 files are .py)
+- **test-coverage**: `src/**/*.py`, `packages/**/*.py`, `tests/**/*.py` → YES match (all 4 files)
+- **tripwires**: `**/*.py`, `**/*.sh`, `.claude/**/*.md` → YES match (all 4 files are .py)
+
+So the matched reviews are dignified-code-simplifier, dignified-python, test-coverage, and tripwires, all using the haiku model.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2509" cache_read_input_tokens="139488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2509}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Changed files:** 4  
+**Reviews matched:** dignified-code-simplifier, dignified-python, test-coverage, tripwires (4 of 5 enabled reviews)  
+**Skipped (no matching files):** audit-pr-docs
+
+Launching 4 reviews in parallel...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2509" cache_read_input_tokens="139488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2509}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01M81ds387XaFeAmvDmwg9Uk">
+    <param name="description">Dignified Code Simplifier review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1276 chars]...interaction steps
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2509" cache_read_input_tokens="139488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2509}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M81ds387XaFeAmvDmwg9Uk">
+Async agent launched successfully.
+agentId: ab933e24fa97c217e (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/tasks/ab933e24fa97c217e.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01NGMXMWVTn9EVAiMZriAe11">
+    <param name="description">Dignified Python review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1240 chars]...interaction steps
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2509" cache_read_input_tokens="139488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2509}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NGMXMWVTn9EVAiMZriAe11">
+Async agent launched successfully.
+agentId: a9b320519d894b10c (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/tasks/a9b320519d894b10c.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01JFzBou1LMHAiGrA6Zf72xD">
+    <param name="description">Test Coverage review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1258 chars]...interaction steps
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2509" cache_read_input_tokens="139488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2509}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JFzBou1LMHAiGrA6Zf72xD">
+Async agent launched successfully.
+agentId: a0846a34771a81302 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/tasks/a0846a34771a81302.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01FRNM6i6jRcV6LYwnh7ES2w">
+    <param name="description">Tripwires review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">sonnet</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1212 chars]...interaction steps
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2509" cache_read_input_tokens="139488" output_tokens="2559" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FRNM6i6jRcV6LYwnh7ES2w">
+Async agent launched successfully.
+agentId: a2091d9d57e3cb56c (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/tasks/a2091d9d57e3cb56c.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <assistant>Reviews are running in parallel — waiting for all 4 to complete.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3718" cache_read_input_tokens="141997" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3718}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;ab933e24fa97c217e&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01M81ds387XaFeAmvDmwg9Uk&lt;/tool-use-id&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Dignified Code Simplifier review" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I have completed the local code review for the dignified code simplifier. Here's a summary of the findings:
+
+## Review Complete
+
+I conducted a comprehensive code review of the 4 changed files in this PR against the dignified-python coding standards. The review examined:
+
+**Files Reviewed:**
+1. `packages/erk-shared/src/erk_shared/impl_context.py`
+2. `src/erk/cli/commands/submit.py`
+3. `tests/commands/plan/test_submit.py`
+4. `tests/commands/submit/test_rollback.py`
+
+**Violations Found: 2**
+
+1. **Type annotation inconsistency in impl_context.py (line 154-162)**: The `ref_data` variable is annotated as `dict[str, str | int | list[str] | None]` but the function's return type is declared as `dict[str, str]`. This is misleading since the actual data contains int and list values before JSON serialization.
+
+2. **Argument passing clarity in submit.py (line 708-715)**: While structurally correct, the function call uses a mix of 5 positional arguments followed by 4 keyword arguments. The function correctly enforces keyword-only parameters with `*`, but the call could be clearer if all non-positional arguments were consistently passed as keywords.
+
+**Positive Observations:**
+- Excellent use of LBYL patterns with path operations
+- Proper use of keyword-only argument enforcement with `*`
+- Consistent absolute imports
+- Proper encoding specifications for file I/O
+- Smart refactoring from checkout-based commits to git plumbing to reduce unnecessary working-tree modifications
+- Tests correctly validate the new plumbing-based approach
+
+The review results have been written to `.erk/scratch/review-20260223-1700/dignified-code-simplifier.md`.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;48231&lt;/total_tokens&gt;&lt;tool_uses&gt;21&lt;/tool_uses&gt;&lt;duration_ms&gt;52607&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/tasks/ab933e24fa97c217e.output</user>
+  <assistant>Still waiting for 3 more reviews to complete.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="904" cache_read_input_tokens="145733" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 904}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a0846a34771a81302&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01JFzBou1LMHAiGrA6Zf72xD&lt;/tool-use-id&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Test Coverage review" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I've completed the local test coverage review and written the findings to the scratch file. Here's a summary of what I found:
+
+## Test Coverage Review - Summary
+
+### Files Reviewed
+- `packages/erk-shared/src/erk_shared/impl_context.py` — Modified with new function
+- `src/erk/cli/commands/submit.py` — Significantly refactored submission logic
+- `tests/commands/plan/test_submit.py` — Test updated for new behavior
+- `tests/commands/submit/test_rollback.py` — Test updated for new behavior
+
+### Violation Found
+
+**1 violation in `packages/erk-shared/src/erk_shared/impl_context.py:128`**
+
+The new `build_impl_context_files()` function (lines 128-166) was added without corresponding unit tests. This is a public API function that builds in-memory file contents for the impl-context directory. Per erk testing standards, all feature code requires Layer 4 business logic tests. The function needs unit tests to verify:
+- Correct dictionary structure returned
+- ref.json is properly formatted with expected fields
+- plan.md content is preserved exactly
+- provider and objective_id values are correctly included
+
+### Positive Findings
+
+The integration-level tests were properly updated:
+- `test_submit_issue_plan_uses_plumbing_commit` verifies the new git plumbing-based commit strategy
+- `test_submit_push_failure_leaves_original_branch_intact` confirms the new error handling behavior
+- Both tests verify that the plan branch is never checked out (as intended by the refactoring)
+
+The results have been written to: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/review-20260223-1700/test-coverage.md`&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;41963&lt;/total_tokens&gt;&lt;tool_uses&gt;11&lt;/tool_uses&gt;&lt;duration_ms&gt;47791&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/tasks/a0846a34771a81302.output</user>
+  <assistant>2 of 4 done, waiting for dignified-python and tripwires.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="790" cache_read_input_tokens="146637" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 790}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a9b320519d894b10c&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01NGMXMWVTn9EVAiMZriAe11&lt;/tool-use-id&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Dignified Python review" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I have completed the local code review. Here's a detailed writeup of my findings:
+
+## Dignified Python Code Review Results
+
+I performed a comprehensive local code review of the four changed Python files in this PR against the dignified-python coding standards.
+
+### Files Reviewed
+
+1. **packages/erk-shared/src/erk_shared/impl_context.py**
+   - New function `build_impl_context_files` (lines 128-166)
+   
+2. **src/erk/cli/commands/submit.py**
+   - Function signature updates for `_create_branch_and_pr`
+   - Import cleanup (removed `Iterator`, `contextmanager`)
+   - Removed `branch_rollback` context manager
+   
+3. **tests/commands/plan/test_submit.py**
+   - Test `test_submit_issue_plan_uses_plumbing_commit`
+   
+4. **tests/commands/submit/test_rollback.py**
+   - Test `test_submit_push_failure_leaves_original_branch_intact`
+
+### Key Findings
+
+**No violations found.** The code adheres to all dignified-python standards:
+
+#### Compliance Details:
+
+1. **Function Signatures**: The new `build_impl_context_files` function properly uses keyword-only parameters with the `*,` separator, following the 5+ parameter rule.
+
+2. **Type Annotations**: Modern syntax used throughout (`dict[str, str]`, `int | None`) with no use of deprecated typing module imports.
+
+3. **LBYL Pattern**: No EAFP or try/except control flow. The refactoring *improves* this by removing the `branch_rollback` context manager that used try/except, replacing it with a cleaner git plumbing approach.
+
+4. **Imports**: Properly cleaned up unused imports and added the new `build_impl_context_files` import.
+
+5. **Path Operations**: No path operations detected that would violate the "check exists before resolve" rule.
+
+6. **Default Parameters**: No functions added with default parameter values.
+
+### Architectural Improvement
+
+The refactoring is solid from a dignified-python perspective - it moves away from context manager-based exception handling to a more direct, plumbing-based approach that commits files without requiring branch checkouts. This is cleaner and more maintainable.
+
+The review results have been written to: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/review-20260223-1700/dignified-python.md`&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;59524&lt;/total_tokens&gt;&lt;tool_uses&gt;28&lt;/tool_uses&gt;&lt;duration_ms&gt;89293&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/tasks/a9b320519d894b10c.output</user>
+  <assistant>3 of 4 done, waiting for the tripwires review.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="945" cache_read_input_tokens="147450" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 945}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a2091d9d57e3cb56c&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01FRNM6i6jRcV6LYwnh7ES2w&lt;/tool-use-id&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Tripwires review" completed&lt;/summary&gt;
+&lt;result&gt;The tripwires review is complete. Here is a summary of the analysis:
+
+**Files reviewed**: 4
+- `packages/erk-shared/src/erk_shared/impl_context.py`
+- `src/erk/cli/commands/submit.py`
+- `tests/commands/plan/test_submit.py`
+- `tests/commands/submit/test_rollback.py`
+
+**Violations found**: 0
+
+**Analysis details**:
+
+**Tier 1 mechanical pattern matching** (all patterns searched against `+` lines only):
+- All 15+ Tier 1 patterns from the architecture, CLI, testing, and planning tripwire files returned no matches in newly-added code. The only hit was `datetime.now()` on a context line (not introduced by this PR).
+
+**Tier 2 semantic matching** (key checks):
+- The removal of `impl_context_exists()` / `remove_impl_context()` LBYL guards from `_create_branch_and_pr()` is correct because the new code uses `build_impl_context_files()` (pure in-memory function with no filesystem I/O), making the stale-filesystem guard unnecessary. The draft-PR path at line 432-434 still correctly uses the LBYL guard.
+- The new `checkout_branch` calls in the Graphite block are correctly scoped only to the Graphite link step, not for committing plan files — consistent with the `plan-save-branch-restoration.md` guidance.
+- All changed behavior has corresponding test coverage, including the renamed/rewritten `test_submit_issue_plan_uses_plumbing_commit` and `test_submit_push_failure_leaves_original_branch_intact`.
+
+Results written to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/review-20260223-1700/tripwires.md`.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;84429&lt;/total_tokens&gt;&lt;tool_uses&gt;57&lt;/tool_uses&gt;&lt;duration_ms&gt;243150&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-35/tasks/a2091d9d57e3cb56c.output</user>
+  <assistant>All 4 complete. Reading the scratch files:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="805" cache_read_input_tokens="148415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 805}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VhjGWLU2T3Yy4XwiPZ7Yj1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/review-20260223-1700/dignified-code-simplifier.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="805" cache_read_input_tokens="148415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 805}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VhjGWLU2T3Yy4XwiPZ7Yj1">
+     1→# Dignified Code Simplifier Review Results
+     2→
+     3→## Violations
+     4→
+     5→### packages/erk-shared/src/erk_shared/impl_context.py:154-162
+     6→**Rule**: Type annotation should match actual values assigned
+     7→**Detail**: The `ref_data` variable is annotated as `dict[str, str | int | list[str] | None]` but the function return type is `dict[str, str]`. The actual data structure contains `int` (objective_id) and `list[str]` (labels), which contradicts the return type annotation. This inconsistency can mislead type checkers and callers. Either the return type should be more accurate (`dict[str, str | int | list[str] | None]`) or the comment should clarify that `json.dumps()` converts all values to strings in the JSON output.
+     8→
+     9→### src/erk/cli/commands/submit.py:708-715
+    10→**Rule**: Arguments should be explicitly required (no implicit defaults)
+    11→**Detail**: The `build_impl_context_files()` call passes 5 positional arguments followed by 4 keyword arguments. While this is structurally sound, the function definition uses `*` to force keyword-only arguments for provider, objective_id, and now_iso. The call site is correct, but consider whether the positional argument pattern (plan_content, plan_id, url before the `*`) is intentional or could be made more explicit with all keyword arguments for consistency.
+    12→
+    13→## Summary
+    14→- Files reviewed: 4
+    15→- Violations found: 2
+    16→
+    17→## Notes
+    18→
+    19→The code changes demonstrate good application of dignified-python principles:
+    20→
+    21→**Positive observations:**
+    22→- LBYL pattern correctly used (checking `.exists()` before `.resolve()` in path operations)
+    23→- Keyword-only arguments properly enforced with `*` separator
+    24→- Absolute imports used throughout
+    25→- No relative imports detected
+    26→- Pathlib used consistently for path operations
+    27→- Proper encoding specified for file operations (`encoding="utf-8"`)
+    28→- Functions designed to avoid I/O in constructors (factory pattern with `build_impl_context_files`)
+    29→- Test assertions correctly verify behavior without mocking subprocess directly
+    30→
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Mim3MNiFFEk6Jq37PviBDB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/review-20260223-1700/dignified-python.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="805" cache_read_input_tokens="148415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 805}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mim3MNiFFEk6Jq37PviBDB">
+     1→# Dignified Python Review Results
+     2→
+     3→## Violations
+     4→
+     5→None found.
+     6→
+     7→## Summary
+     8→
+     9→- Files reviewed: 4
+    10→- Violations found: 0
+    11→
+    12→### Files Analyzed
+    13→
+    14→1. **packages/erk-shared/src/erk_shared/impl_context.py**
+    15→   - New function `build_impl_context_files` (lines 128-166): Properly implements keyword-only parameters after `*,` separator. Uses modern type syntax (`dict[str, str]`, `int | None`). No default values.
+    16→
+    17→2. **src/erk/cli/commands/submit.py**
+    18→   - Removed unused imports (`Iterator`, `contextmanager`) ✓
+    19→   - Removed `branch_rollback` context manager that used try/except pattern (refactored to use git plumbing)
+    20→   - Function `_create_branch_and_pr` uses proper keyword-only arguments after `*,` separator (7 keyword-only parameters)
+    21→   - Git operations use plumbing-based approach (`commit_files_to_branch`) instead of checkout patterns
+    22→   - Graphite linking properly scoped with `is_graphite_managed()` check
+    23→
+    24→3. **tests/commands/plan/test_submit.py**
+    25→   - Test `test_submit_issue_plan_uses_plumbing_commit` (lines 537-608): Properly verifies plumbing commit path without branch checkout
+    26→   - Uses standard test patterns with `CliRunner`
+    27→
+    28→4. **tests/commands/submit/test_rollback.py**
+    29→   - Test `test_submit_push_failure_leaves_original_branch_intact` (lines 17-74): Renamed to reflect new behavior. Verifies no unnecessary checkouts occur.
+    30→   - Tests push failure handling with proper assertions
+
+... [17 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01STTbREKRdTvZrVE5f5xZqo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/review-20260223-1700/test-coverage.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="805" cache_read_input_tokens="148415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 805}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01STTbREKRdTvZrVE5f5xZqo">
+     1→# Test Coverage Review Results
+     2→
+     3→## Violations
+     4→
+     5→### packages/erk-shared/src/erk_shared/impl_context.py:128
+     6→**Rule**: New source file without corresponding tests
+     7→**Detail**: New function `build_impl_context_files` (lines 128-166) was added but has no unit test coverage in the `tests/packages/erk_shared/test_impl_context.py` file. This function is a public API that builds impl-context file contents as an in-memory mapping. Erk requires Layer 4 business logic tests for all feature code. At minimum, tests should verify: (1) correct dictionary structure is returned, (2) ref.json is properly formatted and contains expected fields, (3) plan.md content is preserved exactly, (4) provider and objective_id are correctly included.
+     8→
+     9→## Summary
+    10→- Files reviewed: 4
+    11→- Violations found: 1
+    12→
+    13→## Details
+    14→
+    15→### Analyzed Files
+    16→
+    17→**Source Files Modified:**
+    18→- `packages/erk-shared/src/erk_shared/impl_context.py` — Added new function `build_impl_context_files` without corresponding unit tests
+    19→- `src/erk/cli/commands/submit.py` — Significant modifications to submission logic (removed `branch_rollback` context manager, refactored checkout strategy, replaced `create_impl_context` calls with `build_impl_context_files` usage)
+    20→
+    21→**Test Files Modified:**
+    22→- `tests/commands/plan/test_submit.py` — Test `test_submit_issue_plan_cleans_up_stale_impl_context_folder` renamed to `test_submit_issue_plan_uses_plumbing_commit` with updated assertions
+    23→- `tests/commands/submit/test_rollback.py` — Test `test_submit_rollback_on_push_failure` renamed to `test_submit_push_failure_leaves_original_branch_intact` with updated assertions
+    24→
+    25→### Test Coverage Analysis
+    26→
+    27→**Existing Tests:**
+    28→- `test_submit_draft_pr_plan_cleans_up_stale_impl_context_folder` (in test_submit.py) — Tests existing cleanup logic for draft PRs
+    29→- `test_submit_issue_plan_uses_plumbing_commit` (updated, in test_submit.py) — Tests that issue plan submission uses `commit_files_to_branch` without checkout. Verifies impl-context files were committed, plan branch had no checkouts, and provider is correct.
+    30→- `test_submit_push_failure_leaves_original_branch_intact` (updated, in test_rollback.py) — Tests that push failure leaves user on original branch with no plan branch checkouts.
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017neH2YoANZhBzBmB7q6Lek">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.erk/scratch/review-20260223-1700/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="805" cache_read_input_tokens="148415" output_tokens="358" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 805, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017neH2YoANZhBzBmB7q6Lek">
+     1→# Tripwires Review Results
+     2→
+     3→## Tripwires Triggered
+     4→
+     5→- `datetime.now()` pattern in diff → loaded `docs/learned/architecture/erk-architecture.md` (Tier 1)
+     6→  - On inspection: the matched line was a context line (not added by this PR) — no violation
+     7→- Impl-context LBYL guard removal → loaded `docs/learned/planning/impl-context.md` (Tier 2)
+     8→  - On inspection: new code uses `build_impl_context_files()` (no filesystem write), so LBYL guard not needed — no violation
+     9→- `checkout_branch` added in Graphite block → loaded `docs/learned/architecture/plan-save-branch-restoration.md` (Tier 2)
+    10→  - On inspection: checkout is scoped to Graphite link step only, not for file commits — no violation
+    11→- Business logic change in `submit.py` → checked for test coverage (Tier 2)
+    12→  - On inspection: new tests added in `test_submit.py` and `test_rollback.py` — no violation
+    13→- `commit_files_to_branch` usage → loaded `docs/learned/architecture/plan-save-branch-restoration.md` (Tier 2)
+    14→  - On inspection: consistent with established plumbing pattern — no violation
+    15→
+    16→## Tier 1 Pattern Matches
+    17→
+    18→- `@patch|monkeypatch\.` — None found in added lines
+    19→- `Path\.home\(\)` — None found in added lines
+    20→- `subprocess\.run\(|run_subprocess_with_context\(` — None found in added lines
+    21→- `monkeypatch\.chdir\(` — None found
+    22→- `monkeypatch\.setattr.*Path\.home|monkeypatch.*subprocess\.run` — None found
+    23→- `\bgt\s+(sync|submit|restack|create|modify)` — None found
+    24→- `os\.chdir\(` — None found
+    25→- `\bimport time\b|time\.sleep\(|datetime\.now\(` — Match found at diff line 293, but this is a **context line** (not a `+` line); not introduced by this PR
+    26→- `isinstance\(.*GraphiteDisabled\)` — None found
+    27→- `\btry:|\bexcept\s` — None found in added lines in gateway files
+    28→- `get_pr_for_branch\(` — None found
+    29→- `json\.dumps\(.*-F|gh\s+api\s+graphql` — None found
+    30→- `Path\.home\(\).*\.claude|os\.environ.*CLAUDE_CODE_SESSION_ID` — None found
+
+... [32 lines omitted] ...
+  </tool_result>
+</session>

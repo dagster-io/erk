@@ -1,0 +1,169 @@
+<session>
+  <meta branch="plnd/O7813-plan-convert-submit-02-23-1649" />
+  <meta model="claude-sonnet-4-6" />
+  <assistant>## Local Code Review Results
+
+**Run ID**: review-20260223-1700
+**Changed files**: 4 | **Reviews run**: 4
+
+---
+
+### Dignified Code Simplifier
+
+#### `packages/erk-shared/src/erk_shared/impl_context.py:154-162`
+**Rule**: Type annotation inconsistency
+**Detail**: `ref_data` is annotated `dict[str, str | int | list[str] | None]` but the function return type is `dict[str, str]`. The actual values include `int` (objective_id) and `list[str]` (labels) before `json.dumps()` serializes them. Worth a clarifying comment or adjusting the intermediate annotation.
+
+#### `src/erk/cli/commands/submit.py:708-715`
+**Rule**: Argument passing clarity (low severity)
+**Detail**: `build_impl_context_files()` is called with 3 positional args + 4 keyword args. The keyword-only enforcement via `*` is correct and the call site is valid — this is a style note rather than a real violation.
+
+---
+
+### Dignified Python
+
+No violations found. ✓
+
+---
+
+### Test Coverage
+
+#### `packages/erk-shared/src/erk_shared/impl_context.py:128`
+**Rule**: New public function without unit tests
+**Detail**: `build_impl_context_files()` was added with no direct unit tests in `tests/packages/erk_shared/test_impl_context.py`. It's exercised indirectly via `test_submit_issue_plan_uses_plumbing_commit`, but erk standards require direct Layer 4 unit tests verifying the dict structure, ref.json fields, plan.md content, and provider/objective_id values.
+
+---
+
+### Tripwires
+
+No violations found. ✓
+
+---
+
+**Summary**: 3 findings across 4 reviews (2 reviews clean)
+
+| Finding | Severity |
+|---|---|
+| `impl_context.py` — intermediate type annotation vs. return type | Low / style |
+| `submit.py` — positional vs. keyword call style | Very low / style |
+| `impl_context.py:build_impl_context_files` — missing unit tests | Medium |
+
+The missing unit test for `build_impl_context_files` is the only actionable item. Want me to add it to `tests/packages/erk_shared/test_impl_context.py`?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4629" cache_read_input_tokens="149220" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4629}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>yes, add the unit tests</user>
+  <thinking>Let me look at the existing test file for impl_context to understand the pattern, then add tests for `build_impl_context_files`.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="160" cache_read_input_tokens="154429" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017ZpgcYDhq6dR9mpYRd7d8s">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/packages/erk_shared/test_impl_context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="160" cache_read_input_tokens="154429" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017ZpgcYDhq6dR9mpYRd7d8s">
+     1→"""Tests for impl_context utilities.
+     2→
+     3→Layer 3: Pure unit tests (zero dependencies).
+     4→
+     5→These tests verify the impl_context module functions work correctly with
+     6→basic filesystem operations.
+     7→"""
+     8→
+     9→import json
+    10→from pathlib import Path
+    11→
+    12→import pytest
+    13→
+    14→FAKE_NOW_ISO = "2025-01-15T10:30:00+00:00"
+    15→
+    16→
+    17→def test_create_impl_context_success(tmp_path: Path) -&gt; None:
+    18→    """Test creating .erk/impl-context/ folder with all required files."""
+    19→    from erk_shared.impl_context import create_impl_context
+    20→
+    21→    plan_content = "# Test Plan\n\n## Tasks\n\n1. First task\n2. Second task\n"
+    22→
+    23→    impl_context_dir = create_impl_context(
+    24→        plan_content=plan_content,
+    25→        plan_id="123",
+    26→        url="https://github.com/owner/repo/issues/123",
+    27→        repo_root=tmp_path,
+    28→        provider="github",
+    29→        objective_id=None,
+    30→        now_iso=FAKE_NOW_ISO,
+
+... [263 lines omitted] ...
+
+    55→    """Test error when .erk/impl-context/ folder already exists."""
+    62→    # Attempt to create again should raise FileExistsError
+    63→    with pytest.raises(FileExistsError, match=".erk/impl-context/ folder already exists"):
+    76→    """Test error when repo_root doesn't exist."""
+    81→    with pytest.raises(ValueError, match="Repository root does not exist"):
+    94→    """Test error when repo_root is a file, not a directory."""
+   101→    with pytest.raises(ValueError, match="Repository root is not a directory"):
+   139→    """Test error when .erk/impl-context/ folder doesn't exist."""
+   142→    with pytest.raises(FileNotFoundError, match=".erk/impl-context/ folder does not exist"):
+   147→    """Test error when repo_root doesn't exist."""
+   152→    with pytest.raises(ValueError, match="Repository root does not exist"):
+  </tool_result>
+  <thinking>Now I understand the test pattern. The tests import the function inside the test function (using lazy imports), use `FAKE_NOW_ISO` constant, and are pure unit tests with no filesystem operations needed for `build_impl_context_files` (since it's a pure in-memory function).
+
+Let me also check `IMPL_CONTEXT_DIR` constant to use in tests:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4030" cache_read_input_tokens="154589" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4030}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have the pattern. `build_impl_context_files` is a pure in-memory function — no filesystem needed. Let me add the tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4030" cache_read_input_tokens="154589" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4030}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012P71fW5Aa6ZFunuRwGSfqb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/packages/erk_shared/test_impl_context.py</param>
+    <param name="old_string">def test_create_impl_context_no_readme(tmp_path: Path) -&gt; None:
+    """Test that .erk/impl...[truncated 355 chars]...ile = tmp_path / ".erk" / "impl-context" / "README.md"
+    assert not readme_file.exists()</param>
+    <param name="new_string">def test_create_impl_context_no_readme(tmp_path: Path) -&gt; None:
+    """Test that .erk/impl...[truncated 4868 chars]...
+    assert json.loads(in_memory[".erk/impl-context/ref.json"]) == json.loads(ref_on_disk)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4030" cache_read_input_tokens="154589" output_tokens="2095" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4030, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012P71fW5Aa6ZFunuRwGSfqb">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/packages/erk_shared/test_impl_context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01RCBvKX3x7VFMpq3gCknZwp">
+    <param name="description">Run impl_context tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `uv run pytest tests/packages/erk_shared/test_impl_context.py -v` and report results.
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2175" cache_read_input_tokens="158619" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RCBvKX3x7VFMpq3gCknZwp">
+pytest passed: 20 tests passed in 0.06s
+
+All tests in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/packages/erk_shared/test_impl_context.py` are passing.
+agentId: aa1f6776a945bfb88 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13746
+tool_uses: 1
+duration_ms: 8140&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 20 tests pass (14 existing + 6 new). Now let me amend that into the current commit and push:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="160794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 286}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JRHFNEUCepqa2fpwbusDTy">
+    <param name="command">git add tests/packages/erk_shared/test_impl_context.py &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+Add unit tests for build_impl_context_files
+
+Co-Authored-By: Claude Sonnet 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit new unit tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="160794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 286}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JRHFNEUCepqa2fpwbusDTy">
+[plnd/O7813-plan-convert-submit-02-23-1649 51d7dab32] Add unit tests for build_impl_context_files
+ 1 file changed, 132 insertions(+)
+  </tool_result>
+  <assistant>Added 6 unit tests for `build_impl_context_files` in `tests/packages/erk_shared/test_impl_context.py`:
+
+- `test_build_impl_context_files_returns_two_entries` — exactly `plan.md` and `ref.json` keys
+- `test_build_impl_context_files_preserves_plan_content` — content round-trips exactly
+- `test_build_impl_context_files_ref_json_fields` — all ref.json fields correct (provider, plan_id, url, created_at, synced_at, labels, objective_id)
+- `test_build_impl_context_files_with_objective_id` — objective_id passed through
+- `test_build_impl_context_files_draft_pr_provider` — `github-draft-pr` provider works
+- `test_build_impl_context_files_matches_create_impl_context_structure` — in-memory output matches filesystem output from `create_impl_context`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="239" cache_read_input_tokens="161080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 239}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+</session>
