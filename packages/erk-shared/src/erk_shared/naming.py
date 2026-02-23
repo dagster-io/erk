@@ -481,7 +481,6 @@ def slugify_node_description(description: str) -> str:
     return f"node-{digest}"
 
 
-
 def sanitize_worktree_name(name: str) -> str:
     """Sanitize a worktree name for use as a directory name.
 
