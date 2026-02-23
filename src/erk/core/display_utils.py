@@ -539,3 +539,16 @@ def format_relative_time(iso_timestamp: str | None, now: datetime | None = None)
     # Years
     years = total_seconds // 31536000
     return f"{years}y ago"
+
+
+def strip_rich_markup(text: str) -> str:
+    """Remove Rich markup tags from text.
+
+    Args:
+        text: Text potentially containing Rich markup like [link=...]...[/link]
+
+    Returns:
+        Plain text with markup removed
+    """
+    # Remove [tag=value] and [/tag] patterns
+    return re.sub(r"\[/?[^\]]+\]", "", text)

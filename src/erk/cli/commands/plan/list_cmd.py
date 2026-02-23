@@ -1,48 +1,33 @@
 """Command to list plans with filtering."""
 
 from collections.abc import Callable
-from datetime import datetime
 from typing import ParamSpec, TypeVar
 
 import click
-from rich.console import Console, Group
-from rich.panel import Panel
+from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.display_utils import (
-    format_relative_time,
-    format_workflow_outcome,
-    format_workflow_run_id,
-    get_workflow_run_state,
-)
-from erk.core.pr_utils import select_display_pr
+from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import SortKey, SortState
+from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.browser.real import RealBrowserLauncher
+from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.clipboard.real import RealClipboard
-from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.gateway.github.metadata.schemas import (
-    LAST_LOCAL_IMPL_AT,
-    LAST_LOCAL_IMPL_EVENT,
-    LAST_REMOTE_IMPL_AT,
-    SOURCE_REPO,
-    WORKTREE_NAME,
-)
+from erk_shared.gateway.github.emoji import get_pr_status_emoji
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
 from erk_shared.gateway.http.auth import fetch_github_token
+from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.http.real import RealHttpClient
-from erk_shared.gateway.live_display.abc import LiveDisplay
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
-from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store import get_plan_backend
-from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.types import Plan
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -77,63 +62,6 @@ def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str
         return f"[link={url}]{pr_text}[/link] {emoji}"
     else:
         return f"{pr_text} {emoji}"
-
-
-def format_worktree_name_cell(worktree_name: str, exists_locally: bool) -> str:
-    """Format worktree name with existence styling.
-
-    Args:
-        worktree_name: Name of the worktree
-        exists_locally: Whether the worktree exists on the local machine
-
-    Returns:
-        Formatted string with Rich markup:
-        - Exists locally: "[yellow]name[/yellow]"
-        - Doesn't exist: "-"
-    """
-    if not exists_locally:
-        return "-"
-    return f"[yellow]{worktree_name}[/yellow]"
-
-
-def format_local_run_cell(
-    last_local_impl_at: str | None,
-    last_local_impl_event: str | None,
-) -> str:
-    """Format last local implementation event as relative time with indicator.
-
-    Args:
-        last_local_impl_at: ISO timestamp of last local implementation, or None
-        last_local_impl_event: Event type ("started" or "ended"), or None
-
-    Returns:
-        Relative time string with event indicator (e.g., "⟳ 2h" or "✓ 2h") or "-" if no timestamp
-    """
-    relative_time = format_relative_time(last_local_impl_at)
-    if not relative_time:
-        return "-"
-
-    # Add event indicator
-    if last_local_impl_event == "started":
-        return f"⟳ {relative_time}"
-    if last_local_impl_event == "ended":
-        return f"✓ {relative_time}"
-
-    # Fallback for missing event (backward compatibility)
-    return relative_time
-
-
-def format_remote_run_cell(last_remote_impl_at: str | None) -> str:
-    """Format last remote implementation timestamp as relative time.
-
-    Args:
-        last_remote_impl_at: ISO timestamp of last remote (GitHub Actions) implementation, or None
-
-    Returns:
-        Relative time string (e.g., "2h ago") or "-" if no timestamp
-    """
-    relative_time = format_relative_time(last_remote_impl_at)
-    return relative_time if relative_time else "-"
 
 
 def plan_filter_options(f: Callable[P, T]) -> Callable[P, T]:
@@ -187,285 +115,131 @@ def dash_options(f: Callable[P, T]) -> Callable[P, T]:
     return f
 
 
-def _build_plans_table(
-    ctx: ErkContext,
+def _build_static_table(
+    rows: list[PlanRowData],
     *,
-    label: tuple[str, ...],
-    state: str | None,
-    run_state: str | None,
-    runs: bool,
-    limit: int | None,
-    all_users: bool,
-    sort: str,
-) -> tuple[Table | None, int]:
-    """Build plan dashboard table.
+    plan_backend: str,
+    show_pr_column: bool,
+) -> Table:
+    """Build a Rich static table from PlanRowData rows.
 
-    Uses PlanListService to batch all API calls into 2 total:
-    1. Single unified GraphQL query for issues + PR linkages
-    2. REST API calls for workflow runs (one per issue with run_id)
+    Column order matches the TUI PlanDataTable exactly.
+
+    Args:
+        rows: List of PlanRowData to display
+        plan_backend: Plan backend type ("github" or "draft_pr")
+        show_pr_column: Whether to show a separate PR column
 
     Returns:
-        Tuple of (table, plan_count). Table is None if no plans found.
+        Rich Table populated with rows
     """
-    repo = discover_repo_context(ctx, ctx.cwd)
-    ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
-    repo_root = repo.root  # Use git repository root for GitHub operations
-
-    # Build labels list - default to ["erk-plan"] if no labels specified
-    labels_list = list(label) if label else ["erk-plan"]
-
-    # Determine if we need workflow runs (for display or filtering)
-    needs_workflow_runs = runs or run_state is not None
-
-    # Get owner/repo from RepoContext (already populated via git remote URL parsing)
-    if repo.github is None:
-        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
-        raise SystemExit(1)
-    owner = repo.github.owner
-    repo_name = repo.github.repo
-
-    # Determine creator filter: None for all users, authenticated username otherwise
-    creator: str | None = None
-    if not all_users:
-        is_authenticated, username, _ = ctx.github.check_auth_status()
-        if is_authenticated and username:
-            creator = username
-
-    # Use PlanListService for batched API calls
-    # Skip workflow runs when not needed for better performance
-    # PR linkages are always fetched via unified GraphQL query (no performance penalty)
-    try:
-        location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
-        plan_data = ctx.plan_list_service.get_plan_list_data(
-            location=location,
-            labels=labels_list,
-            state=state,
-            limit=limit,
-            skip_workflow_runs=not needs_workflow_runs,
-            creator=creator,
-        )
-    except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
-        raise SystemExit(1) from e
-
-    # Use pre-converted Plan objects from PlanListData
-    plans = plan_data.plans
-
-    if not plans:
-        return None, 0
-
-    # Use pre-fetched data from PlanListService
-    pr_linkages = plan_data.pr_linkages
-    workflow_runs = plan_data.workflow_runs
-
-    # Build local worktree mapping from .impl/issue.json files
-    worktree_by_issue: dict[int, str] = {}
-    worktrees = ctx.git.worktree.list_worktrees(repo_root)
-    for worktree in worktrees:
-        impl_folder = worktree.path / ".impl"
-        if impl_folder.exists() and impl_folder.is_dir():
-            plan_ref = read_plan_ref(impl_folder)
-            if plan_ref is not None:
-                # If multiple worktrees have same issue, keep first found
-                plan_issue = int(plan_ref.plan_id)
-                if plan_issue not in worktree_by_issue:
-                    worktree_by_issue[plan_issue] = worktree.path.name
-
-    # Apply run state filter if specified
-    if run_state:
-        filtered_plans: list[Plan] = []
-        for plan in plans:
-            # Get workflow run (keyed by issue number)
-            plan_issue_number = plan.metadata.get("number")
-            workflow_run = None
-            if isinstance(plan_issue_number, int):
-                workflow_run = workflow_runs.get(plan_issue_number)
-            if workflow_run is None:
-                # No workflow run - skip this plan when filtering
-                continue
-            plan_run_state = get_workflow_run_state(workflow_run)
-            if plan_run_state == run_state:
-                filtered_plans.append(plan)
-        plans = filtered_plans
-
-        # Check if filtering resulted in no plans
-        if not plans:
-            return None, 0
-
-    # Build activity timestamps for display column (always computed)
-    trunk = ctx.git.branch.detect_trunk_branch(repo_root)
-
-    # Build issue -> branch mapping from worktrees
-    issue_to_branch: dict[int, str] = {}
-    for wt in worktrees:
-        impl_folder = wt.path / ".impl"
-        if impl_folder.exists() and impl_folder.is_dir():
-            plan_ref = read_plan_ref(impl_folder)
-            if plan_ref is not None and wt.branch is not None:
-                issue_to_branch[int(plan_ref.plan_id)] = wt.branch
-
-    # Build activity timestamps for display and sorting
-    activity_by_issue: dict[int, str] = {}
-    for issue_num, branch in issue_to_branch.items():
-        timestamp = ctx.git.branch.get_branch_last_commit_time(repo_root, branch, trunk)
-        if timestamp is not None:
-            activity_by_issue[issue_num] = timestamp
-
-    # Apply activity-based sorting if requested
-    if sort == "activity":
-
-        def get_last_commit_time(plan: Plan) -> tuple[bool, datetime]:
-            """Return sort key: (has_local_activity, commit_time).
-
-            Plans with local activity sort first (by recency), then others by issue#.
-            """
-            issue_number = plan.metadata.get("number")
-            if not isinstance(issue_number, int) or issue_number not in activity_by_issue:
-                return (False, datetime.min)
-            return (True, datetime.fromisoformat(activity_by_issue[issue_number]))
-
-        # Sort: plans with local activity first (by recency), then others by issue#
-        plans = sorted(plans, key=get_last_commit_time, reverse=True)
-
-    # Determine use_graphite for URL selection
-    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
-
-    # Check if any plan has source_repo (for cross-repo plans column)
-    has_cross_repo_plans = any(plan.header_fields.get(SOURCE_REPO) for plan in plans)
-
-    # Create Rich table with columns
     table = Table(show_header=True, header_style="bold")
-    table.add_column("plan", style="cyan", no_wrap=True)
-    table.add_column("title", no_wrap=True)
-    if has_cross_repo_plans:
-        table.add_column("impl-repo", no_wrap=True)
-    table.add_column("pr", no_wrap=True)
-    table.add_column("chks", no_wrap=True)
-    table.add_column("lcl-wt", no_wrap=True)
-    table.add_column("lcl-actvty", no_wrap=True)
-    table.add_column("lcl-impl", no_wrap=True)
-    if runs:
-        table.add_column("remote-impl", no_wrap=True)
-        table.add_column("run-id", no_wrap=True)
-        table.add_column("run-state", no_wrap=True, width=12)
 
-    # Populate table rows
-    for plan in plans:
-        # Format issue number with clickable OSC 8 hyperlink
-        id_text = f"#{plan.plan_identifier}"
-        colored_id = f"[cyan]{id_text}[/cyan]"
+    # Column setup mirrors PlanDataTable._setup_columns()
+    plan_col_header = "pr" if plan_backend == "draft_pr" else "plan"
+    table.add_column(plan_col_header, style="cyan", no_wrap=True, width=6)
 
-        # Make ID clickable using OSC 8 if URL is available
-        if plan.url:
-            # Rich library supports OSC 8 via markup syntax
-            issue_id = f"[link={plan.url}]{colored_id}[/link]"
-        else:
-            issue_id = colored_id
+    if plan_backend == "draft_pr":
+        table.add_column("stage", no_wrap=True, width=8)
+        table.add_column("sts", no_wrap=True, width=4)
+        table.add_column("created", no_wrap=True, width=7)
+    table.add_column("obj", no_wrap=True, width=5)
+    table.add_column("loc", no_wrap=True, width=3)
+    table.add_column("branch", no_wrap=True, width=42)
+    table.add_column("run-id", no_wrap=True, width=10)
+    table.add_column("run", no_wrap=True, width=3)
+    if plan_backend != "draft_pr":
+        table.add_column("created", no_wrap=True, width=7)
+    table.add_column("author", no_wrap=True, width=9)
+    if show_pr_column:
+        table.add_column("pr", no_wrap=True, width=10)
+    table.add_column("chks", no_wrap=True, width=8)
+    table.add_column("cmts", no_wrap=True, width=5)
 
-        # Truncate title to 50 characters with ellipsis
-        title = plan.title
-        if len(title) > 50:
-            title = title[:47] + "..."
-
-        # Query worktree status - check local .impl/issue.json first, then issue body
-        issue_number = plan.metadata.get("number")
-        worktree_name = ""
-        exists_locally = False
-        last_local_impl_at: str | None = None
-        last_local_impl_event: str | None = None
-        last_remote_impl_at: str | None = None
-
-        # Check local mapping first (worktree exists locally)
-        if isinstance(issue_number, int) and issue_number in worktree_by_issue:
-            worktree_name = worktree_by_issue[issue_number]
-            exists_locally = True
-
-        # Extract from pre-parsed header fields (no repeated YAML parsing)
-        source_repo: str | None = None
-        if plan.header_fields:
-            extracted = header_str(plan.header_fields, WORKTREE_NAME)
-            if extracted:
-                # If we don't have a local name yet, use the one from issue body
-                if not worktree_name:
-                    worktree_name = extracted
-            # Extract implementation timestamps and event
-            last_local_impl_at = header_str(plan.header_fields, LAST_LOCAL_IMPL_AT)
-            last_local_impl_event = header_str(plan.header_fields, LAST_LOCAL_IMPL_EVENT)
-            last_remote_impl_at = header_str(plan.header_fields, LAST_REMOTE_IMPL_AT)
-            # Extract source_repo for cross-repo plans
-            source_repo = header_str(plan.header_fields, SOURCE_REPO)
-
-        # Format the worktree cells
-        worktree_name_cell = format_worktree_name_cell(worktree_name, exists_locally)
-        local_run_cell = format_local_run_cell(last_local_impl_at, last_local_impl_event)
-        remote_run_cell = format_remote_run_cell(last_remote_impl_at)
-
-        # Get PR info for this issue
-        pr_cell = "-"
-        checks_cell = "-"
-        if isinstance(issue_number, int) and issue_number in pr_linkages:
-            issue_prs = pr_linkages[issue_number]
-            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
-            if selected_pr is not None:
-                graphite_url = ctx.graphite.get_graphite_url(
-                    GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
-                )
-                pr_cell = format_pr_cell(
-                    selected_pr, use_graphite=use_graphite, graphite_url=graphite_url
-                )
-                checks_cell = format_checks_cell(selected_pr)
-
-        # Get workflow run for this plan (keyed by issue number)
-        run_id_cell = "-"
-        workflow_run = None
-        if isinstance(issue_number, int):
-            workflow_run = workflow_runs.get(issue_number)
-        if workflow_run is not None:
-            # Build workflow URL from plan.url attribute
-            workflow_url = None
-            if plan.url:
-                # Parse owner/repo from URL like https://github.com/owner/repo/issues/123
-                parts = plan.url.split("/")
-                if len(parts) >= 5:
-                    owner = parts[-4]
-                    repo_name = parts[-3]
-                    workflow_url = (
-                        f"https://github.com/{owner}/{repo_name}/actions/runs/{workflow_run.run_id}"
-                    )
-            # Format the run ID with linkification
-            run_id_cell = format_workflow_run_id(workflow_run, workflow_url)
-
-        # Format workflow run outcome
-        run_outcome_cell = format_workflow_outcome(workflow_run)
-
-        # Format activity cell (last commit time on local branch)
-        activity_cell = "-"
-        if isinstance(issue_number, int) and issue_number in activity_by_issue:
-            activity_cell = format_relative_time(activity_by_issue[issue_number]) or "-"
-
-        # Build row based on which columns are enabled
-        row: list[str | Text] = [
-            issue_id,
-            Text(title),  # Prevent Rich markup interpretation
-        ]
-        if has_cross_repo_plans:
-            # Show just repo name (owner/repo -> repo) for brevity
-            impl_repo_cell = source_repo.split("/")[-1] if source_repo else "-"
-            row.append(impl_repo_cell)
-        row.extend(
-            [
-                pr_cell,
-                checks_cell,
-                worktree_name_cell,
-                activity_cell,
-                local_run_cell,
-            ]
+    for row in rows:
+        values = _row_to_static_values(
+            row, plan_backend=plan_backend, show_pr_column=show_pr_column
         )
-        if runs:
-            row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
-        table.add_row(*row)
+        table.add_row(*values)
 
-    return table, len(plans)
+    return table
+
+
+def _row_to_static_values(
+    row: PlanRowData,
+    *,
+    plan_backend: str,
+    show_pr_column: bool,
+) -> tuple[str | Text, ...]:
+    """Convert PlanRowData to static table cell values.
+
+    Mirrors PlanDataTable._row_to_values() for Rich Console rendering.
+
+    Args:
+        row: Plan row data
+        plan_backend: Plan backend type ("github" or "draft_pr")
+        show_pr_column: Whether to show a separate PR column
+
+    Returns:
+        Tuple of cell values matching column order
+    """
+    # Format plan/PR number
+    plan_cell: str | Text = f"#{row.plan_id}"
+    if row.plan_url:
+        plan_cell = f"[link={row.plan_url}]#{row.plan_id}[/link]"
+
+    # Format objective cell
+    objective_cell: str | Text = row.objective_display
+    if row.objective_issue is not None and row.objective_url is not None:
+        objective_cell = f"[link={row.objective_url}]{row.objective_display}[/link]"
+    elif row.objective_issue is not None:
+        objective_cell = Text(row.objective_display, style="cyan")
+
+    # Compact location emoji
+    location_parts: list[str] = []
+    if row.exists_locally:
+        location_parts.append("\U0001f4bb")
+    if row.run_url is not None:
+        location_parts.append("\u2601")
+    location_cell = "".join(location_parts) if location_parts else "-"
+
+    # run-id and run-state
+    run_id: str | Text = strip_rich_markup(row.run_id_display)
+    if row.run_url:
+        run_id = f"[link={row.run_url}]{run_id}[/link]"
+    run_state_text = strip_rich_markup(row.run_state_display)
+    run_state_emoji = run_state_text.split(" ", 1)[0] if run_state_text.strip() else "-"
+
+    # Build values list matching column order
+    values: list[str | Text] = [plan_cell]
+    if plan_backend == "draft_pr":
+        stage_display = strip_rich_markup(row.lifecycle_display)
+        values.append(stage_display)
+        values.append(row.status_display)
+        values.append(row.created_display)
+    values.extend(
+        [
+            objective_cell,
+            location_cell,
+            row.pr_head_branch or row.worktree_branch or "-",
+            run_id,
+            run_state_emoji,
+        ]
+    )
+    if plan_backend != "draft_pr":
+        values.append(row.created_display)
+    values.append(row.author)
+
+    checks_display = strip_rich_markup(row.checks_display)
+    comments_display = strip_rich_markup(row.comments_display)
+    if show_pr_column:
+        pr_display = strip_rich_markup(row.pr_display)
+        if row.pr_url:
+            pr_display = f"[link={row.pr_url}]{pr_display}[/link]"
+        values.extend([pr_display, checks_display, comments_display])
+    else:
+        values.extend([checks_display, comments_display])
+    return tuple(values)
 
 
 def _list_plans_impl(
@@ -474,124 +248,88 @@ def _list_plans_impl(
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
-    runs: bool,
     limit: int | None,
     all_users: bool,
     sort: str,
 ) -> None:
-    """Implementation logic for listing plans with optional filters."""
-    table, plan_count = _build_plans_table(
+    """Implementation logic for listing plans with optional filters.
+
+    Uses RealPlanDataProvider to fetch data (same as erk dash TUI),
+    then renders as a static Rich table matching the TUI column layout.
+    """
+    repo = discover_repo_context(ctx, ctx.cwd)
+    ensure_erk_metadata_dir(repo)
+    repo_root = repo.root
+
+    if repo.github is None:
+        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+        raise SystemExit(1)
+    owner = repo.github.owner
+    repo_name = repo.github.repo
+
+    # Determine creator filter
+    creator: str | None = None
+    if not all_users:
+        is_authenticated, username, _ = ctx.github.check_auth_status()
+        if is_authenticated and username:
+            creator = username
+
+    # Build labels - default to ["erk-plan"]
+    labels = label if label else ("erk-plan",)
+
+    plan_backend = get_plan_backend()
+
+    # Construct RealPlanDataProvider
+    # Only fetch_plans() and fetch_branch_activity() are used here;
+    # neither requires clipboard, browser, or http_client, so use fakes.
+    location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
+
+    provider = RealPlanDataProvider(
         ctx,
-        label=label,
-        state=state,
-        run_state=run_state,
-        runs=runs,
-        limit=limit,
-        all_users=all_users,
-        sort=sort,
+        location=location,
+        clipboard=FakeClipboard(),
+        browser=FakeBrowserLauncher(),
+        http_client=FakeHttpClient(),
     )
 
-    if table is None:
+    show_pr_column = plan_backend != "draft_pr"
+    filters = PlanFilters(
+        labels=labels,
+        state=state,
+        run_state=run_state,
+        limit=limit,
+        show_prs=True,
+        show_runs=True,
+        creator=creator,
+        show_pr_column=show_pr_column,
+    )
+
+    # Fetch data via provider
+    rows = provider.fetch_plans(filters)
+
+    if not rows:
         user_output("No plans found matching the criteria.")
         return
 
-    # Display results header
-    user_output(f"\nFound {plan_count} plan(s):\n")
+    # Sort rows
+    sort_key = SortKey.BRANCH_ACTIVITY if sort == "activity" else SortKey.PLAN_ID
+    if sort_key == SortKey.BRANCH_ACTIVITY:
+        activity_by_plan = provider.fetch_branch_activity(rows)
+        rows = sort_plans(rows, sort_key, activity_by_plan=activity_by_plan)
+    else:
+        rows = sort_plans(rows, sort_key)
 
-    # Output table to stderr (consistent with user_output convention)
-    # Use width=200 to ensure proper display without truncation
-    # force_terminal=True ensures hyperlinks render even when Rich doesn't detect a TTY
-    console = Console(stderr=True, width=200, force_terminal=True)
-    console.print(table)
-    console.print()  # Add blank line after table
-
-
-def _build_watch_content(
-    *,
-    table: Table | None,
-    count: int,
-    last_update: str,
-    seconds_remaining: int,
-    fetch_duration_secs: float | None = None,
-) -> Group | Panel:
-    """Build display content for watch mode.
-
-    Args:
-        table: The plans table, or None if no plans
-        count: Number of plans found
-        last_update: Formatted time of last data refresh
-        seconds_remaining: Seconds until next refresh
-        fetch_duration_secs: Duration of last data fetch in seconds, or None
-
-    Returns:
-        Rich renderable content for the display
-    """
-    # Build duration suffix
-    duration_suffix = f" ({fetch_duration_secs:.1f}s)" if fetch_duration_secs is not None else ""
-
-    footer = (
-        f"Found {count} plan(s) | Updated: {last_update}{duration_suffix} | "
-        f"Next refresh: {seconds_remaining}s | Ctrl+C to exit"
+    # Build and display static table
+    table = _build_static_table(
+        rows,
+        plan_backend=plan_backend,
+        show_pr_column=show_pr_column,
     )
 
-    if table is None:
-        return Panel(f"No plans found.\n\n{footer}", title="erk dash --watch")
-    else:
-        return Group(table, Panel(footer, style="dim"))
-
-
-def _run_watch_loop(
-    ctx: ErkContext,
-    live_display: LiveDisplay,
-    build_table_fn: Callable[[], tuple[Table | None, int]],
-    interval: float,
-) -> None:
-    """Run watch loop until KeyboardInterrupt.
-
-    Updates display every second with countdown timer. Fetches fresh data
-    when countdown reaches zero.
-
-    Args:
-        ctx: ErkContext with time abstraction
-        live_display: Display renderer for live updates
-        build_table_fn: Function that returns (table, count)
-        interval: Seconds between data refreshes
-    """
-    live_display.start()
-    try:
-        # Initial data fetch - with timing
-        start = ctx.time.now()
-        table, count = build_table_fn()
-        fetch_duration_secs = (ctx.time.now() - start).total_seconds()
-        last_update = ctx.time.now().strftime("%H:%M:%S")
-        seconds_remaining = int(interval)
-
-        while True:
-            # Update display with current countdown
-            content = _build_watch_content(
-                table=table,
-                count=count,
-                last_update=last_update,
-                seconds_remaining=seconds_remaining,
-                fetch_duration_secs=fetch_duration_secs,
-            )
-            live_display.update(content)
-
-            # Sleep for 1 second
-            ctx.time.sleep(1.0)
-            seconds_remaining -= 1
-
-            # Refresh data when countdown reaches zero
-            if seconds_remaining <= 0:
-                start = ctx.time.now()
-                table, count = build_table_fn()
-                fetch_duration_secs = (ctx.time.now() - start).total_seconds()
-                last_update = ctx.time.now().strftime("%H:%M:%S")
-                seconds_remaining = int(interval)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        live_display.stop()
+    user_output(f"\nFound {len(rows)} plan(s):\n")
+    console = Console(stderr=True, width=200, force_terminal=True)
+    console.print(table)
+    console.print()
 
 
 def _run_interactive_mode(
@@ -687,13 +425,6 @@ def _run_interactive_mode(
 
 @click.command("list")
 @plan_filter_options
-@click.option(
-    "--runs",
-    "-r",
-    is_flag=True,
-    default=False,
-    help="Show workflow run columns (run-id, run-state)",
-)
 @click.pass_obj
 def list_plans(
     ctx: ErkContext,
@@ -704,7 +435,6 @@ def list_plans(
     limit: int | None,
     all_users: bool,
     sort: str,
-    runs: bool,
 ) -> None:
     """List plans as a static table.
 
@@ -719,7 +449,6 @@ def list_plans(
         erk plan list --label erk-plan --label bug
         erk plan list --limit 10
         erk plan list --run-state in_progress
-        erk plan list --runs
         erk plan list --sort activity    # Sort by recent branch activity
     """
     _list_plans_impl(
@@ -727,7 +456,6 @@ def list_plans(
         label=label,
         state=state,
         run_state=run_state,
-        runs=runs,
         limit=limit,
         all_users=all_users,
         sort=sort,

@@ -69,9 +69,7 @@ def test_plan_list_no_filters() -> None:
         assert result.exit_code == 0
         assert "Found 2 plan(s)" in result.output
         assert "#1" in result.output
-        assert "Issue 1" in result.output
         assert "#2" in result.output
-        assert "Issue 2" in result.output
 
 
 def test_plan_list_filter_by_state() -> None:
@@ -116,7 +114,6 @@ def test_plan_list_filter_by_state() -> None:
         assert result.exit_code == 0
         assert "Found 1 plan(s)" in result.output
         assert "#1" in result.output
-        assert "Open Issue" in result.output
         assert "#2" not in result.output
 
 
@@ -168,7 +165,6 @@ def test_plan_list_filter_by_labels() -> None:
         assert result.exit_code == 0
         assert "Found 1 plan(s)" in result.output
         assert "#1" in result.output
-        assert "Issue with both labels" in result.output
         assert "#2" not in result.output
 
 
@@ -234,8 +230,8 @@ def test_plan_list_empty_results() -> None:
         assert "No plans found matching the criteria" in result.output
 
 
-def test_plan_list_runs_flag_shows_run_columns() -> None:
-    """Test that --runs flag enables run columns."""
+def test_plan_list_run_columns_always_shown() -> None:
+    """Test that run columns are always shown (runs are always enabled)."""
     from erk_shared.gateway.github.types import WorkflowRun
 
     plan_body = """<!-- erk:metadata-block:plan-header -->
@@ -281,65 +277,11 @@ last_dispatched_node_id: 'WFR_all_flag'
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         assert result.exit_code == 0
         assert "#200" in result.output
         assert "99999" in result.output
-
-
-def test_plan_list_short_runs_flag() -> None:
-    """Test that -r short flag works same as --runs."""
-    from erk_shared.gateway.github.types import WorkflowRun
-
-    plan_body = """<!-- erk:metadata-block:plan-header -->
-<details>
-<summary><code>plan-header</code></summary>
-
-```yaml
-schema_version: '2'
-last_dispatched_run_id: '88888'
-last_dispatched_node_id: 'WFR_short_flag'
-```
-</details>
-<!-- /erk:metadata-block:plan-header -->"""
-
-    plan = Plan(
-        plan_identifier="201",
-        title="Plan for short flag test",
-        body=plan_body,
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/201",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 201},
-        objective_id=None,
-    )
-
-    workflow_run = WorkflowRun(
-        run_id="88888",
-        status="in_progress",
-        conclusion=None,
-        branch="master",
-        head_sha="def456",
-    )
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
-        github = FakeGitHub(
-            issues_data=[plan_to_issue(plan)],
-            workflow_runs_by_node_id={"WFR_short_flag": workflow_run},
-        )
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
-
-        result = runner.invoke(cli, ["plan", "list", "-r"], obj=ctx)
-
-        assert result.exit_code == 0
-        assert "#201" in result.output
-        assert "88888" in result.output
 
 
 def test_plan_list_sort_issue_default() -> None:
@@ -446,13 +388,20 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=feature_wt, branch="feature-for-issue-1", is_root=False),
+                    WorktreeInfo(path=feature_wt, branch="P1-feature-for-issue-1", is_root=False),
                 ],
             },
             git_common_dirs={env.cwd: env.git_dir},
             trunk_branches={env.cwd: "main"},
-            branch_last_commit_times={
-                (env.cwd, "feature-for-issue-1", "main"): "2025-01-20T12:00:00+00:00",
+            branch_commits_with_authors={
+                (env.cwd, "P1-feature-for-issue-1", "main", 1): [
+                    {
+                        "hash": "abc123",
+                        "timestamp": "2025-01-20T12:00:00+00:00",
+                        "author": "test-user",
+                        "message": "test commit",
+                    }
+                ],
             },
         )
 
@@ -466,12 +415,14 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         assert "Found 2 plan(s)" in result.output
 
         # Plan 1 (with activity) should appear before Plan 2 (no activity)
-        # Check order by finding positions in output
-        pos1 = result.output.find("Older Issue with Activity")
-        pos2 = result.output.find("Newer Issue no Activity")
-        assert pos1 < pos2, (
-            f"Plan with activity should appear first. "
-            f"pos1={pos1}, pos2={pos2}, output={result.output}"
+        # Use plan IDs since title column is no longer displayed
+        lines = result.output.split("\n")
+        plan_lines = [line for line in lines if "#1" in line or "#2" in line]
+        assert len(plan_lines) >= 2
+        first_with_1 = next(i for i, line in enumerate(plan_lines) if "#1" in line)
+        first_with_2 = next(i for i, line in enumerate(plan_lines) if "#2" in line)
+        assert first_with_1 < first_with_2, (
+            f"Plan #1 (with activity) should appear first. output={result.output}"
         )
 
 
@@ -543,16 +494,29 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=wt1, branch="feature-for-issue-1", is_root=False),
-                    WorktreeInfo(path=wt2, branch="feature-for-issue-2", is_root=False),
+                    WorktreeInfo(path=wt1, branch="P1-feature-for-issue-1", is_root=False),
+                    WorktreeInfo(path=wt2, branch="P2-feature-for-issue-2", is_root=False),
                 ],
             },
             git_common_dirs={env.cwd: env.git_dir},
             trunk_branches={env.cwd: "main"},
-            # Older commit for issue 1, newer commit for issue 2
-            branch_last_commit_times={
-                (env.cwd, "feature-for-issue-1", "main"): "2025-01-20T10:00:00+00:00",
-                (env.cwd, "feature-for-issue-2", "main"): "2025-01-20T14:00:00+00:00",
+            branch_commits_with_authors={
+                (env.cwd, "P1-feature-for-issue-1", "main", 1): [
+                    {
+                        "hash": "abc123",
+                        "timestamp": "2025-01-20T10:00:00+00:00",
+                        "author": "test-user",
+                        "message": "old commit",
+                    }
+                ],
+                (env.cwd, "P2-feature-for-issue-2", "main", 1): [
+                    {
+                        "hash": "def456",
+                        "timestamp": "2025-01-20T14:00:00+00:00",
+                        "author": "test-user",
+                        "message": "newer commit",
+                    }
+                ],
             },
         )
 
@@ -566,9 +530,12 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         assert "Found 2 plan(s)" in result.output
 
         # Plan 2 (newer commit) should appear before Plan 1 (older commit)
-        pos1 = result.output.find("Issue with Older Commit")
-        pos2 = result.output.find("Issue with Newer Commit")
-        assert pos2 < pos1, (
-            f"Plan with newer commit should appear first. "
-            f"pos1={pos1}, pos2={pos2}, output={result.output}"
+        # Use plan IDs since title column is no longer displayed
+        lines = result.output.split("\n")
+        plan_lines = [line for line in lines if "#1" in line or "#2" in line]
+        assert len(plan_lines) >= 2
+        first_with_1 = next(i for i, line in enumerate(plan_lines) if "#1" in line)
+        first_with_2 = next(i for i, line in enumerate(plan_lines) if "#2" in line)
+        assert first_with_2 < first_with_1, (
+            f"Plan #2 (newer commit) should appear first. output={result.output}"
         )

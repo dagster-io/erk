@@ -9,6 +9,7 @@ from textual.events import Click
 from textual.message import Message
 from textual.widgets import DataTable
 
+from erk.core.display_utils import strip_rich_markup
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.views.types import ViewMode
 from erk_shared.context.types import PlanBackendType
@@ -268,7 +269,7 @@ class PlanDataTable(DataTable):
         # Format issue number - colorize if clickable
         plan_cell: str | Text = f"#{row.plan_id}"
         if row.plan_url:
-            plan_cell = Text(plan_cell, style="cyan underline")
+            plan_cell = f"[link={row.plan_url}]#{row.plan_id}[/link]"
 
         # Objectives view: plan, slug, progress, state, deps, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
@@ -290,8 +291,10 @@ class PlanDataTable(DataTable):
 
         # Format objective cell - colorize if clickable
         objective_cell: str | Text = row.objective_display
-        if row.objective_issue is not None:
-            objective_cell = Text(row.objective_display, style="cyan underline")
+        if row.objective_issue is not None and row.objective_url is not None:
+            objective_cell = f"[link={row.objective_url}]{row.objective_display}[/link]"
+        elif row.objective_issue is not None:
+            objective_cell = Text(row.objective_display, style="cyan")
 
         # Compact location emoji: 💻 = local checkout, ☁️ = remote run
         location_parts: list[str] = []
@@ -302,10 +305,10 @@ class PlanDataTable(DataTable):
         location_cell = "".join(location_parts) if location_parts else "-"
 
         # run-id and run-state (always shown)
-        run_id: str | Text = _strip_rich_markup(row.run_id_display)
+        run_id: str | Text = strip_rich_markup(row.run_id_display)
         if row.run_url:
-            run_id = Text(run_id, style="cyan underline")
-        run_state_text = _strip_rich_markup(row.run_state_display)
+            run_id = f"[link={row.run_url}]{run_id}[/link]"
+        run_state_text = strip_rich_markup(row.run_state_display)
         run_state_emoji = run_state_text.split(" ", 1)[0] if run_state_text.strip() else "-"
 
         # Build values list based on columns
@@ -313,7 +316,7 @@ class PlanDataTable(DataTable):
             plan_cell,
         ]
         if self._plan_backend == "draft_pr":
-            stage_display = _strip_rich_markup(row.lifecycle_display)
+            stage_display = strip_rich_markup(row.lifecycle_display)
             values.append(stage_display)
             values.append(row.status_display)
             values.append(row.created_display)
@@ -330,18 +333,18 @@ class PlanDataTable(DataTable):
             values.append(row.created_display)
         values.append(row.author)
 
-        checks_display = _strip_rich_markup(row.checks_display)
-        comments_display = _strip_rich_markup(row.comments_display)
+        checks_display = strip_rich_markup(row.checks_display)
+        comments_display = strip_rich_markup(row.comments_display)
         if self._plan_filters.show_pr_column:
             # Strip Rich markup and colorize if clickable
-            pr_display = _strip_rich_markup(row.pr_display)
+            pr_display = strip_rich_markup(row.pr_display)
             if row.pr_url:
-                pr_display = Text(pr_display, style="cyan underline")
+                pr_display = f"[link={row.pr_url}]{pr_display}[/link]"
             values.extend([pr_display, checks_display, comments_display])
         else:
             values.extend([checks_display, comments_display])
         values.extend([wt_cell, row.local_impl_display])
-        remote_impl = _strip_rich_markup(row.remote_impl_display)
+        remote_impl = strip_rich_markup(row.remote_impl_display)
         values.append(remote_impl)
 
         return tuple(values)
@@ -428,18 +431,3 @@ class PlanDataTable(DataTable):
                 event.prevent_default()
                 event.stop()
                 return
-
-
-def _strip_rich_markup(text: str) -> str:
-    """Remove Rich markup tags from text.
-
-    Args:
-        text: Text potentially containing Rich markup like [link=...]...[/link]
-
-    Returns:
-        Plain text with markup removed
-    """
-    import re
-
-    # Remove [tag=value] and [/tag] patterns
-    return re.sub(r"\[/?[^\]]+\]", "", text)

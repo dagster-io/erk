@@ -736,30 +736,3 @@ def test_format_relative_time_timezone_aware() -> None:
     timestamp = "2024-11-28T10:00:00+00:00"
     result = format_relative_time(timestamp, now=now)
     assert result == "2h ago"
-
-
-# Tests for format_worktree_name_cell (from list_cmd.py)
-
-
-def test_format_worktree_name_cell_exists_locally() -> None:
-    """Test worktree that exists locally shows yellow name."""
-    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
-
-    result = format_worktree_name_cell("my-worktree", True)
-    assert result == "[yellow]my-worktree[/yellow]"
-
-
-def test_format_worktree_name_cell_not_exists_locally() -> None:
-    """Test worktree that doesn't exist locally shows dash."""
-    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
-
-    result = format_worktree_name_cell("deleted-worktree", False)
-    assert result == "-"
-
-
-def test_format_worktree_name_cell_empty_name_not_exists() -> None:
-    """Test that empty worktree name with exists_locally=False returns dash."""
-    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
-
-    result = format_worktree_name_cell("", False)
-    assert result == "-"

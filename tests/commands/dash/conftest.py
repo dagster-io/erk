@@ -2,8 +2,29 @@
 
 from datetime import UTC, datetime
 
+import pytest
+
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
+
+
+@pytest.fixture(autouse=True)
+def _force_github_plan_backend() -> None:
+    """Force github plan backend for all dash tests.
+
+    These tests use issue-based plan data (Plan objects with plan_identifier
+    as issue numbers). The github backend ensures the correct column layout
+    with a separate PR column and plan-first table structure.
+    """
+    import os
+
+    original = os.environ.get("ERK_PLAN_BACKEND")
+    os.environ["ERK_PLAN_BACKEND"] = "github"
+    yield  # type: ignore[misc]
+    if original is None:
+        os.environ.pop("ERK_PLAN_BACKEND", None)
+    else:
+        os.environ["ERK_PLAN_BACKEND"] = original
 
 
 def plan_to_issue(plan: Plan) -> IssueInfo:

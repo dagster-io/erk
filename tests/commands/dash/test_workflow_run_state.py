@@ -105,7 +105,6 @@ last_dispatched_node_id: 'WFR_running'
         # Assert
         assert result.exit_code == 0
         assert "#1010" in result.output
-        assert "Queued Plan" in result.output
         assert "#1011" not in result.output
 
 
@@ -197,7 +196,6 @@ last_dispatched_node_id: 'WFR_failed'
         # Assert
         assert result.exit_code == 0
         assert "#1020" in result.output
-        assert "Success Plan" in result.output
         assert "#1021" not in result.output
 
 

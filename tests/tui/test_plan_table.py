@@ -2,9 +2,10 @@
 
 from rich.text import Text
 
+from erk.core.display_utils import strip_rich_markup
 from erk.tui.data.types import PlanFilters
 from erk.tui.views.types import ViewMode
-from erk.tui.widgets.plan_table import PlanDataTable, _strip_rich_markup
+from erk.tui.widgets.plan_table import PlanDataTable
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
@@ -12,40 +13,40 @@ def _text_to_str(value: str | Text) -> str:
     """Convert Text or str to plain string for assertions."""
     if isinstance(value, Text):
         return value.plain
-    return value
+    return strip_rich_markup(value)
 
 
 class TestStripRichMarkup:
-    """Tests for _strip_rich_markup utility function."""
+    """Tests for strip_rich_markup utility function."""
 
     def test_removes_link_tags(self) -> None:
         """Link markup is removed."""
         text = "[link=https://example.com]click here[/link]"
-        result = _strip_rich_markup(text)
+        result = strip_rich_markup(text)
         assert result == "click here"
 
     def test_removes_color_tags(self) -> None:
         """Color markup is removed."""
         text = "[cyan]colored text[/cyan]"
-        result = _strip_rich_markup(text)
+        result = strip_rich_markup(text)
         assert result == "colored text"
 
     def test_preserves_plain_text(self) -> None:
         """Plain text without markup is unchanged."""
         text = "plain text"
-        result = _strip_rich_markup(text)
+        result = strip_rich_markup(text)
         assert result == "plain text"
 
     def test_removes_nested_tags(self) -> None:
         """Nested tags are removed."""
         text = "[bold][cyan]styled[/cyan][/bold]"
-        result = _strip_rich_markup(text)
+        result = strip_rich_markup(text)
         assert result == "styled"
 
     def test_handles_emoji_pr_cell(self) -> None:
         """PR cell with emoji and link is cleaned."""
         text = "[link=https://github.com/repo/pull/123]#123[/link] 👀"
-        result = _strip_rich_markup(text)
+        result = strip_rich_markup(text)
         assert result == "#123 👀"
 
 
@@ -471,9 +472,9 @@ def test_row_to_values_draft_pr_includes_stage() -> None:
 
     values = table._row_to_values(row)
 
-    # draft_pr: plan, stage, created, obj, loc, branch, run-id, run, author,
+    # draft_pr: plan, stage, sts, created, obj, loc, branch, run-id, run, author,
     # pr, chks, cmts, local-wt, local-impl, remote-impl
-    assert len(values) == 15
+    assert len(values) == 16
     # Stage at index 1 (right after plan in draft_pr mode) - markup stripped
     assert _text_to_str(values[1]) == "review"
 
@@ -566,7 +567,7 @@ def test_row_to_values_status_remote_only() -> None:
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\U0001f310"
+    assert values[2] == "\u2601"
 
 
 def test_row_to_values_status_both() -> None:
@@ -577,4 +578,4 @@ def test_row_to_values_status_both() -> None:
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\U0001f4bb\U0001f310"
+    assert values[2] == "\U0001f4bb\u2601"

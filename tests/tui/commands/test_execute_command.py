@@ -198,6 +198,7 @@ class TestExecuteCommandClosePlan:
             learn_display="- not started",
             learn_display_icon="-",
             objective_issue=None,
+            objective_url=None,
             objective_display="-",
             objective_done_nodes=0,
             objective_total_nodes=0,
@@ -212,6 +213,7 @@ class TestExecuteCommandClosePlan:
             author="test-user",
             is_learn_plan=False,
             lifecycle_display="-",
+            status_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -276,6 +278,7 @@ class TestExecuteCommandSubmitToQueue:
             learn_display="- not started",
             learn_display_icon="-",
             objective_issue=None,
+            objective_url=None,
             objective_display="-",
             objective_done_nodes=0,
             objective_total_nodes=0,
@@ -290,6 +293,7 @@ class TestExecuteCommandSubmitToQueue:
             author="test-user",
             is_learn_plan=False,
             lifecycle_display="-",
+            status_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
