@@ -199,6 +199,8 @@ class PullRequestInfo:
     review_thread_counts: tuple[int, int] | None = None
     # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
     review_decision: str | None = None
+    # Base branch name (the target branch) - optional, populated by some API calls
+    base_ref_name: str | None = None
 
 
 class _NotAvailable:
