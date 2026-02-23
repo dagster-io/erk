@@ -85,6 +85,75 @@ def test_replace_metadata_block_not_found_raises() -> None:
         replace_metadata_block_in_body(body, "test-key", "new content")
 
 
+def test_replace_metadata_block_does_not_accumulate_warnings() -> None:
+    """Test that replacing a block with WARNING prefix doesn't leave orphaned warnings."""
+    # Simulate a body that already has accumulated WARNING comments
+    body = (
+        "# Plan Issue\n"
+        "\n"
+        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        "<!-- erk:metadata-block:plan-header -->\n"
+        "<details>\n"
+        "<summary>plan-header</summary>\n"
+        "\n"
+        "```yaml\n"
+        "\n"
+        "schema_version: '2'\n"
+        "\n"
+        "```\n"
+        "\n"
+        "</details>\n"
+        "<!-- /erk:metadata-block:plan-header -->"
+    )
+
+    new_block = (
+        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        "<!-- erk:metadata-block:plan-header -->\n"
+        "<details>\n"
+        "<summary>plan-header</summary>\n"
+        "\n"
+        "```yaml\n"
+        "\n"
+        "schema_version: '3'\n"
+        "\n"
+        "```\n"
+        "\n"
+        "</details>\n"
+        "<!-- /erk:metadata-block:plan-header -->"
+    )
+
+    result = replace_metadata_block_in_body(body, "plan-header", new_block)
+
+    # Should have exactly one WARNING comment, not two
+    assert result.count("<!-- WARNING: Machine-generated") == 1
+    assert "schema_version: '3'" in result
+    assert "schema_version: '2'" not in result
+    assert "# Plan Issue" in result
+
+
+def test_replace_metadata_block_single_warning_stays_single() -> None:
+    """Test that a single WARNING prefix remains single after replacement."""
+    body = (
+        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        "<!-- erk:metadata-block:test-key -->\n"
+        "content\n"
+        "<!-- /erk:metadata-block:test-key -->"
+    )
+
+    new_block = (
+        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        "<!-- erk:metadata-block:test-key -->\n"
+        "new content\n"
+        "<!-- /erk:metadata-block:test-key -->"
+    )
+
+    result = replace_metadata_block_in_body(body, "test-key", new_block)
+
+    assert result.count("<!-- WARNING: Machine-generated") == 1
+    assert "new content" in result
+
+
 def test_replace_metadata_block_handles_generic_closing_tag() -> None:
     """Test replacing block with generic closing tag (<!-- /erk:metadata-block -->)."""
     body = """<!-- erk:metadata-block:test-key -->
