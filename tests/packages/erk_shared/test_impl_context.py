@@ -11,13 +11,18 @@ from pathlib import Path
 
 import pytest
 
+from erk_shared.impl_context import (
+    build_impl_context_files,
+    create_impl_context,
+    impl_context_exists,
+    remove_impl_context,
+)
+
 FAKE_NOW_ISO = "2025-01-15T10:30:00+00:00"
 
 
 def test_create_impl_context_success(tmp_path: Path) -> None:
     """Test creating .erk/impl-context/ folder with all required files."""
-    from erk_shared.impl_context import create_impl_context
-
     plan_content = "# Test Plan\n\n## Tasks\n\n1. First task\n2. Second task\n"
 
     impl_context_dir = create_impl_context(
@@ -53,8 +58,6 @@ def test_create_impl_context_success(tmp_path: Path) -> None:
 
 def test_create_impl_context_already_exists(tmp_path: Path) -> None:
     """Test error when .erk/impl-context/ folder already exists."""
-    from erk_shared.impl_context import create_impl_context
-
     # Create .erk/impl-context/ folder first
     impl_context_dir = tmp_path / ".erk" / "impl-context"
     impl_context_dir.mkdir(parents=True)
@@ -74,8 +77,6 @@ def test_create_impl_context_already_exists(tmp_path: Path) -> None:
 
 def test_create_impl_context_repo_root_not_exists(tmp_path: Path) -> None:
     """Test error when repo_root doesn't exist."""
-    from erk_shared.impl_context import create_impl_context
-
     nonexistent_path = tmp_path / "nonexistent"
 
     with pytest.raises(ValueError, match="Repository root does not exist"):
@@ -92,8 +93,6 @@ def test_create_impl_context_repo_root_not_exists(tmp_path: Path) -> None:
 
 def test_create_impl_context_repo_root_not_directory(tmp_path: Path) -> None:
     """Test error when repo_root is a file, not a directory."""
-    from erk_shared.impl_context import create_impl_context
-
     # Create a file, not a directory
     file_path = tmp_path / "file.txt"
     file_path.write_text("test", encoding="utf-8")
@@ -112,8 +111,6 @@ def test_create_impl_context_repo_root_not_directory(tmp_path: Path) -> None:
 
 def test_remove_impl_context_success(tmp_path: Path) -> None:
     """Test removing .erk/impl-context/ folder."""
-    from erk_shared.impl_context import create_impl_context, remove_impl_context
-
     # Create .erk/impl-context/ folder first
     create_impl_context(
         plan_content="# Test\n",
@@ -137,16 +134,12 @@ def test_remove_impl_context_success(tmp_path: Path) -> None:
 
 def test_remove_impl_context_not_exists(tmp_path: Path) -> None:
     """Test error when .erk/impl-context/ folder doesn't exist."""
-    from erk_shared.impl_context import remove_impl_context
-
     with pytest.raises(FileNotFoundError, match=".erk/impl-context/ folder does not exist"):
         remove_impl_context(tmp_path)
 
 
 def test_remove_impl_context_repo_root_not_exists(tmp_path: Path) -> None:
     """Test error when repo_root doesn't exist."""
-    from erk_shared.impl_context import remove_impl_context
-
     nonexistent_path = tmp_path / "nonexistent"
 
     with pytest.raises(ValueError, match="Repository root does not exist"):
@@ -155,8 +148,6 @@ def test_remove_impl_context_repo_root_not_exists(tmp_path: Path) -> None:
 
 def test_impl_context_exists_true(tmp_path: Path) -> None:
     """Test impl_context_exists returns True when folder exists."""
-    from erk_shared.impl_context import create_impl_context, impl_context_exists
-
     # Create .erk/impl-context/ folder
     create_impl_context(
         plan_content="# Test\n",
@@ -173,15 +164,11 @@ def test_impl_context_exists_true(tmp_path: Path) -> None:
 
 def test_impl_context_exists_false(tmp_path: Path) -> None:
     """Test impl_context_exists returns False when folder doesn't exist."""
-    from erk_shared.impl_context import impl_context_exists
-
     assert impl_context_exists(tmp_path) is False
 
 
 def test_impl_context_exists_repo_root_not_exists(tmp_path: Path) -> None:
     """Test impl_context_exists returns False when repo_root doesn't exist."""
-    from erk_shared.impl_context import impl_context_exists
-
     nonexistent_path = tmp_path / "nonexistent"
 
     assert impl_context_exists(nonexistent_path) is False
@@ -189,8 +176,6 @@ def test_impl_context_exists_repo_root_not_exists(tmp_path: Path) -> None:
 
 def test_impl_context_plan_content_preservation(tmp_path: Path) -> None:
     """Test that plan content is preserved exactly as provided."""
-    from erk_shared.impl_context import create_impl_context
-
     # Plan with special characters and formatting
     plan_content = """# Implementation Plan
 
@@ -228,8 +213,6 @@ def example():
 
 def test_create_impl_context_with_objective_id(tmp_path: Path) -> None:
     """Test creating .erk/impl-context/ folder with objective_id included."""
-    from erk_shared.impl_context import create_impl_context
-
     create_impl_context(
         plan_content="# Test Plan\n",
         plan_id="123",
@@ -249,8 +232,6 @@ def test_create_impl_context_with_objective_id(tmp_path: Path) -> None:
 
 def test_create_impl_context_with_draft_pr_provider(tmp_path: Path) -> None:
     """Test creating .erk/impl-context/ folder with github-draft-pr provider."""
-    from erk_shared.impl_context import create_impl_context
-
     create_impl_context(
         plan_content="# Test Plan\n",
         plan_id="789",
@@ -271,8 +252,6 @@ def test_create_impl_context_with_draft_pr_provider(tmp_path: Path) -> None:
 
 def test_create_impl_context_no_readme(tmp_path: Path) -> None:
     """Test that .erk/impl-context/ does NOT contain README.md."""
-    from erk_shared.impl_context import create_impl_context
-
     create_impl_context(
         plan_content="# Test Plan\n",
         plan_id="123",
@@ -285,3 +264,123 @@ def test_create_impl_context_no_readme(tmp_path: Path) -> None:
 
     readme_file = tmp_path / ".erk" / "impl-context" / "README.md"
     assert not readme_file.exists()
+
+
+def test_build_impl_context_files_returns_two_entries() -> None:
+    """Test that build_impl_context_files returns exactly plan.md and ref.json."""
+    result = build_impl_context_files(
+        plan_content="# Test Plan\n",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        provider="github",
+        objective_id=None,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    assert set(result.keys()) == {".erk/impl-context/plan.md", ".erk/impl-context/ref.json"}
+
+
+def test_build_impl_context_files_preserves_plan_content() -> None:
+    """Test that plan.md content is preserved exactly."""
+    plan_content = "# Plan\n\n## Tasks\n\n1. Do the thing\n2. Test it\n"
+
+    result = build_impl_context_files(
+        plan_content=plan_content,
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        provider="github",
+        objective_id=None,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    assert result[".erk/impl-context/plan.md"] == plan_content
+
+
+def test_build_impl_context_files_ref_json_fields() -> None:
+    """Test that ref.json contains all expected fields with correct values."""
+    result = build_impl_context_files(
+        plan_content="# Plan\n",
+        plan_id="99",
+        url="https://github.com/owner/repo/issues/99",
+        provider="github",
+        objective_id=None,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["provider"] == "github"
+    assert ref_data["plan_id"] == "99"
+    assert ref_data["url"] == "https://github.com/owner/repo/issues/99"
+    assert ref_data["created_at"] == FAKE_NOW_ISO
+    assert ref_data["synced_at"] == FAKE_NOW_ISO
+    assert ref_data["labels"] == []
+    assert ref_data["objective_id"] is None
+
+
+def test_build_impl_context_files_with_objective_id() -> None:
+    """Test that objective_id is included in ref.json when provided."""
+    result = build_impl_context_files(
+        plan_content="# Plan\n",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        provider="github",
+        objective_id=7813,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["objective_id"] == 7813
+
+
+def test_build_impl_context_files_draft_pr_provider() -> None:
+    """Test that github-draft-pr provider is passed through correctly."""
+    result = build_impl_context_files(
+        plan_content="# Plan\n",
+        plan_id="789",
+        url="https://github.com/owner/repo/pull/789",
+        provider="github-draft-pr",
+        objective_id=None,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["provider"] == "github-draft-pr"
+    assert ref_data["plan_id"] == "789"
+    assert ref_data["url"] == "https://github.com/owner/repo/pull/789"
+
+
+def test_build_impl_context_files_matches_create_impl_context_structure(tmp_path: Path) -> None:
+    """Test that build_impl_context_files produces the same content as create_impl_context."""
+    plan_content = "# Plan\n\nSome content here.\n"
+    plan_id = "55"
+    url = "https://github.com/owner/repo/issues/55"
+    provider = "github"
+    objective_id = 100
+
+    # Build in-memory version
+    in_memory = build_impl_context_files(
+        plan_content=plan_content,
+        plan_id=plan_id,
+        url=url,
+        provider=provider,
+        objective_id=objective_id,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    # Build filesystem version
+    create_impl_context(
+        plan_content=plan_content,
+        plan_id=plan_id,
+        url=url,
+        repo_root=tmp_path,
+        provider=provider,
+        objective_id=objective_id,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    plan_on_disk = (impl_dir / "plan.md").read_text(encoding="utf-8")
+    ref_on_disk = (impl_dir / "ref.json").read_text(encoding="utf-8")
+
+    assert in_memory[".erk/impl-context/plan.md"] == plan_on_disk
+    assert json.loads(in_memory[".erk/impl-context/ref.json"]) == json.loads(ref_on_disk)

@@ -2,8 +2,6 @@
 
 import logging
 import tomllib
-from collections.abc import Iterator
-from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -43,6 +41,7 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
 from erk_shared.impl_context import (
+    build_impl_context_files,
     create_impl_context,
     impl_context_exists,
     remove_impl_context,
@@ -68,23 +67,6 @@ def _format_issue_ref(issue_number: int, plans_repo: str | None) -> str:
     if plans_repo is None:
         return f"#{issue_number}"
     return f"{plans_repo}#{issue_number}"
-
-
-@contextmanager
-def branch_rollback(ctx: ErkContext, repo_root: Path, original_branch: str) -> Iterator[None]:
-    """Context manager that restores original branch on exception.
-
-    On success, does nothing (caller handles cleanup).
-    On exception, checks out original_branch and re-raises.
-    """
-    try:
-        yield
-    except Exception:
-        user_output(
-            click.style("Error: ", fg="red") + "Operation failed, restoring original branch..."
-        )
-        ctx.branch_manager.checkout_branch(repo_root, original_branch)
-        raise
 
 
 def is_issue_learn_plan(labels: list[str]) -> bool:
@@ -694,8 +676,9 @@ def _create_branch_and_pr(
 ) -> int:
     """Create branch, commit, push, and create draft PR.
 
-    This function is called within the branch_rollback context manager.
-    On any exception, the context manager will restore the original branch.
+    Uses git plumbing to commit plan files directly to the branch without
+    checking it out. The Graphite linking step performs a targeted checkout
+    only when Graphite is enabled.
 
     Args:
         ctx: ErkContext with git operations
@@ -704,7 +687,7 @@ def _create_branch_and_pr(
         branch_name: Name of branch to create
         base_branch: Base branch for PR
         submitted_by: GitHub username of submitter
-        original_branch: Original branch name (for cleanup on success)
+        original_branch: Original branch name (for Graphite checkout restore)
 
     Returns:
         PR number of the created draft PR.
@@ -712,9 +695,7 @@ def _create_branch_and_pr(
     issue = validated.issue
     issue_number = validated.number
 
-    ctx.branch_manager.checkout_branch(repo.root, branch_name)
-
-    # Get plan content and create .erk/impl-context/ folder
+    # Get plan content and build impl-context files in memory
     user_output("Fetching plan content...")
     result = ctx.plan_store.get_plan(repo.root, str(issue_number))
     if isinstance(result, PlanNotFound):
@@ -722,25 +703,22 @@ def _create_branch_and_pr(
         raise SystemExit(1)
     plan = result
 
-    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
-    if impl_context_exists(repo.root):
-        user_output("Cleaning up previous .erk/impl-context/ folder...")
-        remove_impl_context(repo.root)
-
-    user_output("Creating .erk/impl-context/ folder...")
-    create_impl_context(
+    # Commit impl-context files directly to branch (no checkout required)
+    user_output("Committing plan to branch...")
+    files = build_impl_context_files(
         plan_content=plan.body,
         plan_id=str(issue_number),
         url=issue.url,
-        repo_root=repo.root,
         provider="github",
         objective_id=plan.objective_id,
         now_iso=ctx.time.now().isoformat(),
     )
-
-    # Stage, commit, and push
-    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR])
-    ctx.git.commit.commit(repo.root, f"Add plan for issue #{issue_number}")
+    ctx.git.commit.commit_files_to_branch(
+        repo.root,
+        branch=branch_name,
+        files=files,
+        message=f"Add plan for issue #{issue_number}",
+    )
     push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", branch_name, set_upstream=True, force=False
     )
@@ -798,10 +776,12 @@ def _create_branch_and_pr(
         # while the PR is still in review.
         # See: LearnStatusValue in erk_shared/github/metadata/schemas.py
 
-    # Link PR with Graphite (if enabled)
+    # Link PR with Graphite (if enabled) using a targeted checkout scope
     if ctx.branch_manager.is_graphite_managed():
         user_output("Linking PR with Graphite...")
+        ctx.branch_manager.checkout_branch(repo.root, branch_name)
         submit_result = ctx.branch_manager.submit_branch(repo.root, branch_name)
+        ctx.branch_manager.checkout_branch(repo.root, original_branch)
         if isinstance(submit_result, SubmitBranchError):
             user_output(
                 click.style("✗", fg="red")
@@ -818,9 +798,6 @@ def _create_branch_and_pr(
             + f" Closed {len(closed_prs)} orphaned draft PR(s): "
             + ", ".join(f"#{n}" for n in closed_prs)
         )
-
-    # Switch back to original branch (keep the new branch for Graphite lineage)
-    ctx.branch_manager.checkout_branch(repo.root, original_branch)
 
     return pr_number
 
@@ -865,7 +842,7 @@ def _submit_single_issue(
             # Branch exists but no PR - need to add a commit for PR creation
             user_output(f"Branch '{branch_name}' exists but no PR. Adding placeholder commit...")
 
-            # Fetch and checkout the remote branch locally
+            # Fetch the remote branch locally (no checkout needed)
             ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
 
             # Only create tracking branch if it doesn't exist locally (LBYL)
@@ -874,12 +851,12 @@ def _submit_single_issue(
                 remote_ref = f"origin/{branch_name}"
                 ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
 
-            ctx.branch_manager.checkout_branch(repo.root, branch_name)
-
-            # Create empty commit as placeholder for PR creation
-            ctx.git.commit.commit(
+            # Create empty commit as placeholder for PR creation (no checkout required)
+            ctx.git.commit.commit_files_to_branch(
                 repo.root,
-                f"[erk-plan] Initialize implementation for issue #{issue_number}",
+                branch=branch_name,
+                files={},
+                message=f"[erk-plan] Initialize implementation for issue #{issue_number}",
             )
             push_result = ctx.git.remote.push_to_remote(
                 repo.root, "origin", branch_name, set_upstream=False, force=False
@@ -926,10 +903,12 @@ def _submit_single_issue(
                 # FUTURE ENHANCEMENT: See comment in _create_branch_and_pr for
                 # updating parent plan's learn_status when learn plan gets a PR.
 
-            # Link PR with Graphite (if enabled)
+            # Link PR with Graphite (if enabled) using a targeted checkout scope
             if ctx.branch_manager.is_graphite_managed():
                 user_output("Linking PR with Graphite...")
+                ctx.branch_manager.checkout_branch(repo.root, branch_name)
                 submit_result = ctx.branch_manager.submit_branch(repo.root, branch_name)
+                ctx.branch_manager.checkout_branch(repo.root, original_branch)
                 if isinstance(submit_result, SubmitBranchError):
                     user_output(
                         click.style("✗", fg="red")
@@ -946,9 +925,6 @@ def _submit_single_issue(
                     + f" Closed {len(closed_prs)} orphaned draft PR(s): "
                     + ", ".join(f"#{n}" for n in closed_prs)
                 )
-
-            # Switch back to original branch (keep the new branch for Graphite lineage)
-            ctx.branch_manager.checkout_branch(repo.root, original_branch)
     else:
         # Check if branch exists locally (user chose to reuse existing)
         local_branches = ctx.git.branch.list_local_branches(repo.root)
@@ -964,20 +940,15 @@ def _submit_single_issue(
                     ctx.branch_manager.track_branch(repo.root, branch_name, base_branch)
                     user_output(click.style("✓", fg="green") + " Branch tracked in Graphite")
 
-            # Checkout existing branch
-            ctx.branch_manager.checkout_branch(repo.root, branch_name)
-
-            # Use context manager to restore original branch on failure
-            with branch_rollback(ctx, repo.root, original_branch):
-                pr_number = _create_branch_and_pr(
-                    ctx=ctx,
-                    repo=repo,
-                    validated=validated,
-                    branch_name=branch_name,
-                    base_branch=base_branch,
-                    submitted_by=submitted_by,
-                    original_branch=original_branch,
-                )
+            pr_number = _create_branch_and_pr(
+                ctx=ctx,
+                repo=repo,
+                validated=validated,
+                branch_name=branch_name,
+                base_branch=base_branch,
+                submitted_by=submitted_by,
+                original_branch=original_branch,
+            )
         else:
             # Create new branch
             user_output(f"Creating branch from origin/{base_branch}...")
@@ -1006,17 +977,15 @@ def _submit_single_issue(
                 raise SystemExit(1) from None
             user_output(f"Created branch: {click.style(branch_name, fg='cyan')}")
 
-            # Use context manager to restore original branch on failure
-            with branch_rollback(ctx, repo.root, original_branch):
-                pr_number = _create_branch_and_pr(
-                    ctx=ctx,
-                    repo=repo,
-                    validated=validated,
-                    branch_name=branch_name,
-                    base_branch=base_branch,
-                    submitted_by=submitted_by,
-                    original_branch=original_branch,
-                )
+            pr_number = _create_branch_and_pr(
+                ctx=ctx,
+                repo=repo,
+                validated=validated,
+                branch_name=branch_name,
+                base_branch=base_branch,
+                submitted_by=submitted_by,
+                original_branch=original_branch,
+            )
 
     # Gather submission metadata
     queued_at = datetime.now(UTC).isoformat()

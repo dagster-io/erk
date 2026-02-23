@@ -534,19 +534,18 @@ def test_submit_draft_pr_plan_cleans_up_stale_impl_context_folder() -> None:
         assert "Traceback" not in result.output
 
 
-def test_submit_issue_plan_cleans_up_stale_impl_context_folder() -> None:
-    """Test that _create_branch_and_pr cleans up stale .erk/impl-context/ before creating new one.
+def test_submit_issue_plan_uses_plumbing_commit() -> None:
+    """Test that issue plan submission uses commit_files_to_branch without checkout.
 
-    When a previous submission failed and left behind a .erk/impl-context/ folder,
-    the issue-based submit path should remove it before creating the new one.
-    This tests the cleanup logic at submit.py:713-716.
+    The issue-based submit path should commit impl-context files directly to the
+    plan branch using git plumbing, without checking out the branch.
     """
     runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
+    with erk_inmem_env(runner) as env:
         issue = IssueInfo(
             number=42,
-            title="[erk-plan] Test Issue Cleanup",
-            body="Test plan body for cleanup test",
+            title="[erk-plan] Test Plumbing Commit",
+            body="Test plan body",
             state="OPEN",
             url="https://github.com/test-owner/test-repo/issues/42",
             labels=["erk-plan"],
@@ -567,54 +566,43 @@ def test_submit_issue_plan_cleans_up_stale_impl_context_folder() -> None:
             repository_roots={env.cwd: env.cwd},
         )
 
-        graphite = FakeGraphite(
-            authenticated=True,
-            branches={
-                "main": BranchMetadata(
-                    name="main",
-                    parent=None,
-                    children=[],
-                    is_trunk=True,
-                    commit_sha=None,
-                ),
-            },
-        )
-
         fake_gh = FakeGitHub(
             authenticated=True,
             polled_run_id="12345",
         )
 
-        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed submission)
-        stale_impl_context = env.cwd / ".erk" / "impl-context"
-        stale_impl_context.mkdir(parents=True)
-        stale_marker = stale_impl_context / "stale-marker.txt"
-        stale_marker.write_text("leftover from previous run")
-
         ctx = build_workspace_test_context(
             env,
             git=git,
-            graphite=graphite,
             github=fake_gh,
             issues=fake_issues,
-            use_graphite=True,
+            use_graphite=False,  # No Graphite = no additional checkouts
         )
 
         result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
 
-        # Verify cleanup message was printed
-        assert "Cleaning up previous .erk/impl-context/ folder" in result.output
-
-        # Verify stale marker file no longer exists
-        assert not stale_marker.exists()
-
-        # Verify new .erk/impl-context/ was created with correct files
-        impl_context = env.cwd / ".erk" / "impl-context"
-        assert (impl_context / "plan.md").exists()
-        assert (impl_context / "ref.json").exists()
-
-        # Verify ref.json has correct provider
-        plan_ref = json.loads((impl_context / "ref.json").read_text())
-        assert plan_ref["provider"] == "github"
-
         assert "Traceback" not in result.output
+
+        # Verify plumbing commit was used (not stage_files + commit)
+        assert len(git.branch_commits) == 1
+        branch_commit = git.branch_commits[0]
+
+        # Verify impl-context files were committed to the branch
+        assert ".erk/impl-context/plan.md" in branch_commit.files
+        assert ".erk/impl-context/ref.json" in branch_commit.files
+
+        # Verify committed to the plan branch (not main)
+        assert branch_commit.branch.startswith("P42-")
+
+        # Verify plan content was included
+        assert branch_commit.files[".erk/impl-context/plan.md"] == "Test plan body"
+
+        # Verify provider in ref.json
+        ref_data = json.loads(branch_commit.files[".erk/impl-context/ref.json"])
+        assert ref_data["provider"] == "github"
+
+        # Verify no working-tree checkouts occurred to the plan branch
+        plan_branch_checkouts = [
+            branch for _, branch in git.checked_out_branches if branch.startswith("P42-")
+        ]
+        assert len(plan_branch_checkouts) == 0
