@@ -69,11 +69,49 @@ HEADER_PATTERNS = (
 )
 
 
-def extract_header_from_body(body: str) -> str:
-    """Extract header lines from the beginning of a PR body.
+def _scan_header_from_top(content: str) -> str:
+    """Scan from the top of content for header pattern lines (legacy format).
 
-    Header lines are lines at the start that match known patterns like
-    `**Plan:** #123` or `**Remotely executed:** [Run #...]`.
+    In the old format, header lines appeared at the top of the PR body
+    rather than just above the footer separator.
+    """
+    lines = content.split("\n")
+    header_lines: list[str] = []
+
+    for line in lines:
+        if not line.strip():
+            if header_lines:
+                header_lines.append(line)
+            continue
+        if any(line.startswith(pattern) for pattern in HEADER_PATTERNS):
+            header_lines.append(line)
+        else:
+            break
+
+    if not header_lines:
+        return ""
+
+    # Remove leading/trailing blank lines
+    while header_lines and not header_lines[0].strip():
+        header_lines.pop(0)
+    while header_lines and not header_lines[-1].strip():
+        header_lines.pop()
+
+    if header_lines:
+        return "\n".join(header_lines) + "\n\n"
+    return ""
+
+
+def extract_header_from_body(body: str) -> str:
+    """Extract header lines from the PR body.
+
+    Header lines match known patterns like ``**Plan:** #123`` or
+    ``**Remotely executed:** [Run #...]``. They may appear either just
+    above the footer separator (new format) or at the top of the body
+    (legacy format).
+
+    The function tries the new bottom position first, then falls back
+    to scanning from the top for backward compatibility with existing PRs.
 
     Args:
         body: Full PR body content
@@ -84,39 +122,86 @@ def extract_header_from_body(body: str) -> str:
     if not body:
         return ""
 
-    lines = body.split("\n")
+    # Remove footer first
+    parts = body.rsplit("\n---\n", 1)
+    content_without_footer = parts[0]
+
+    # Scan from the end of the content for header pattern lines (new format)
+    lines = content_without_footer.split("\n")
     header_lines: list[str] = []
 
-    for line in lines:
-        # Empty lines at the start are part of header if followed by header content
+    for line in reversed(lines):
         if not line.strip():
-            # If we already have header lines, include blank lines
             if header_lines:
                 header_lines.append(line)
             continue
-
-        # Check if line starts with a header pattern
         if any(line.startswith(pattern) for pattern in HEADER_PATTERNS):
             header_lines.append(line)
         else:
-            # First non-header, non-blank line - stop
             break
 
     if not header_lines:
-        return ""
+        # Fall back to scanning from top (legacy format)
+        return _scan_header_from_top(content_without_footer)
 
-    # Remove trailing blank lines from header
+    # Reverse to restore original order
+    header_lines.reverse()
+
+    # Remove leading/trailing blank lines
+    while header_lines and not header_lines[0].strip():
+        header_lines.pop(0)
     while header_lines and not header_lines[-1].strip():
         header_lines.pop()
 
-    # Return header with double newline separator if we have content
     if header_lines:
         return "\n".join(header_lines) + "\n\n"
     return ""
 
 
+def is_header_at_legacy_position(body: str) -> bool:
+    """Check whether a header exists at the legacy top position but not at the bottom.
+
+    Returns ``True`` when the PR body contains a header block (e.g.
+    ``**Plan:** #123``) at the *top* of the description — the old format —
+    and there is no header at the bottom (new format).  This is the signal
+    that the PR body needs to be migrated.
+
+    Args:
+        body: Full PR body content
+
+    Returns:
+        True if header is at the legacy top position only
+    """
+    if not body:
+        return False
+
+    # Remove footer first
+    parts = body.rsplit("\n---\n", 1)
+    content_without_footer = parts[0]
+
+    # Check bottom scan — scan from end for header pattern lines
+    lines = content_without_footer.split("\n")
+    found_at_bottom = False
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        if any(line.startswith(pattern) for pattern in HEADER_PATTERNS):
+            found_at_bottom = True
+        break
+
+    if found_at_bottom:
+        return False
+
+    # Check top scan — if top has a header, it's legacy
+    top_header = _scan_header_from_top(content_without_footer)
+    return bool(top_header)
+
+
 def extract_main_content(body: str) -> str:
-    """Extract the main content between header and footer.
+    """Extract the main content between start-of-body and header/footer.
+
+    The header sits just above the footer separator. Main content is
+    everything before the header (or before the footer if no header).
 
     Args:
         body: Full PR body content
@@ -131,15 +216,22 @@ def extract_main_content(body: str) -> str:
     parts = body.rsplit("\n---\n", 1)
     content_without_footer = parts[0]
 
-    # Remove header
-    header = extract_header_from_body(content_without_footer)
+    # Remove header from content (may be at end or beginning)
+    header = extract_header_from_body(body)
     if header:
-        # Header ends with \n\n, so strip that from the body
-        content = content_without_footer[len(header) - 1 :].lstrip("\n")
-    else:
-        content = content_without_footer
+        header_text = header.rstrip("\n")
+        stripped = content_without_footer.rstrip()
+        # Try removing from end (new format — bottom position)
+        if stripped.endswith(header_text):
+            content = stripped[: len(stripped) - len(header_text)]
+            return content.rstrip()
+        # Try removing from beginning (legacy format — top position)
+        lstripped = content_without_footer.lstrip()
+        if lstripped.startswith(header_text):
+            content = lstripped[len(header_text) :]
+            return content.strip()
 
-    return content
+    return content_without_footer.rstrip()
 
 
 def rebuild_pr_body(
@@ -149,6 +241,10 @@ def rebuild_pr_body(
     footer: str,
 ) -> str:
     """Reassemble PR body from header, content, and footer.
+
+    Header is placed between content and footer (above the ``---``
+    delimiter), matching the convention that metadata appears at the
+    bottom of the PR description.
 
     Args:
         header: Header content (may be empty)
@@ -160,12 +256,11 @@ def rebuild_pr_body(
     """
     parts: list[str] = []
 
-    if header:
-        # Header should already end with \n\n from extract_header_from_body
-        parts.append(header.rstrip("\n"))
-        parts.append("")  # Blank line after header
-
     parts.append(content.strip())
+
+    if header:
+        parts.append("")
+        parts.append(header.rstrip("\n"))
 
     if footer:
         parts.append("")

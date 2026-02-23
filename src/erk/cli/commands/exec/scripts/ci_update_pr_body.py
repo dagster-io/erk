@@ -58,6 +58,7 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remo
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
 from erk_shared.plan_store.draft_pr_lifecycle import (
+    PLAN_CONTENT_SEPARATOR,
     build_original_plan_section,
     extract_metadata_prefix,
     extract_plan_content,
@@ -273,9 +274,14 @@ def _update_pr_body_impl(
     # Build full PR body
     if is_draft_pr:
         # For draft-PR plans: preserve metadata prefix, include original plan section
-        metadata_prefix = extract_metadata_prefix(pr_result.body)
+        metadata_prefix_raw = extract_metadata_prefix(pr_result.body)
         plan_content = extract_plan_content(pr_result.body)
         original_plan_section = build_original_plan_section(plan_content)
+
+        # Strip the content separator — no longer needed when metadata is at bottom
+        metadata_block = metadata_prefix_raw
+        if metadata_block.endswith(PLAN_CONTENT_SEPARATOR):
+            metadata_block = metadata_block[: -len(PLAN_CONTENT_SEPARATOR)]
 
         summary_body = _build_pr_body(
             summary=summary,
@@ -285,7 +291,7 @@ def _update_pr_body_impl(
             run_url=run_url,
             plans_repo=plans_repo,
         )
-        pr_body = metadata_prefix + summary_body + original_plan_section
+        pr_body = summary_body + original_plan_section + "\n\n" + metadata_block
     else:
         pr_body = _build_pr_body(
             summary=summary,

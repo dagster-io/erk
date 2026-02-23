@@ -87,7 +87,7 @@ def test_impl_preserves_header(tmp_path: Path) -> None:
         number=456,
         url="https://github.com/owner/repo/pull/456",
         title="Old title",
-        body="**Plan:** #123\n\nOld body content",
+        body="Old body content\n\n**Plan:** #123\n\n---\n\nCloses #123",
         state="OPEN",
         is_draft=False,
         base_ref_name="main",
@@ -190,9 +190,9 @@ def test_impl_preserves_both_header_and_footer(tmp_path: Path) -> None:
         url="https://github.com/owner/repo/pull/456",
         title="Old title",
         body=(
+            "Old body\n\n"
             "**Plan:** #123\n"
-            "**Remotely executed:** [Run #999](https://example.com)\n\n"
-            "Old body\n"
+            "**Remotely executed:** [Run #999](https://example.com)\n"
             "\n---\n"
             "Closes #789"
         ),
@@ -385,7 +385,7 @@ def test_cli_success_json(tmp_path: Path) -> None:
         number=123,
         url="https://github.com/owner/repo/pull/123",
         title="Old title",
-        body="**Plan:** #456\n\nOld body",
+        body="Old body\n\n**Plan:** #456",
         state="OPEN",
         is_draft=False,
         base_ref_name="main",

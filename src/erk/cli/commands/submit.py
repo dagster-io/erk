@@ -758,7 +758,6 @@ def _create_branch_and_pr(
     issue_ref = _format_issue_ref(issue_number, plans_repo)
     pr_body = (
         f"**Author:** @{submitted_by}\n"
-        f"**Plan:** {issue_ref}\n\n"
         f"**Status:** Queued for implementation\n\n"
         f"This PR will be marked ready for review after implementation completes.\n\n"
         f"## Implementation Plan\n\n"
@@ -766,6 +765,7 @@ def _create_branch_and_pr(
         f"<summary><strong>Implementation Plan</strong> (Issue #{issue_number})</summary>\n\n"
         f"{plan.body}\n\n"
         f"</details>\n\n"
+        f"**Plan:** {issue_ref}\n\n"
         f"---\n\n"
         f"Closes {issue_ref}"
     )
@@ -897,9 +897,9 @@ def _submit_single_issue(
             issue_ref = _format_issue_ref(issue_number, plans_repo)
             pr_body = (
                 f"**Author:** @{submitted_by}\n"
-                f"**Plan:** {issue_ref}\n\n"
                 f"**Status:** Queued for implementation\n\n"
                 f"This PR will be marked ready for review after implementation completes.\n\n"
+                f"**Plan:** {issue_ref}\n\n"
                 f"---\n\n"
                 f"Closes {issue_ref}"
             )

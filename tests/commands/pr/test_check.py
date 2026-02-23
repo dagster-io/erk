@@ -793,3 +793,124 @@ erk pr checkout 123
         assert "[PASS] Draft PR plan" in result.output
         assert "no closing reference needed" in result.output
         assert "All checks passed" in result.output
+
+
+def test_pr_check_passes_with_bottom_header(tmp_path: Path) -> None:
+    """Test PR with header at bottom (new format) passes header position check."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # PR body with header at bottom (new format)
+        pr_body = (
+            "## Summary\nThis PR adds a feature.\n\n"
+            "**Plan:** #456\n\n"
+            "---\n\n"
+            "Closes #456\n\n"
+            "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
+            "```\nerk pr checkout 123\n```\n"
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        github = FakeGitHub(
+            prs={
+                "feature-branch": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Add feature",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                )
+            },
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["check"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "[PASS] Plan-header metadata is at correct position" in result.output
+
+
+def test_pr_check_fails_with_legacy_top_header(tmp_path: Path) -> None:
+    """Test PR with header at top (legacy format) fails header position check."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # PR body with header at top (legacy format)
+        pr_body = (
+            "**Plan:** #456\n\n"
+            "## Summary\nThis PR adds a feature.\n\n"
+            "---\n\n"
+            "Closes #456\n\n"
+            "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
+            "```\nerk pr checkout 123\n```\n"
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        github = FakeGitHub(
+            prs={
+                "feature-branch": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Add feature",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                )
+            },
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["check"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "[FAIL] Plan-header metadata is at legacy top position" in result.output
+        assert "should be above footer" in result.output
