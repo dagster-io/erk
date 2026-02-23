@@ -7,27 +7,29 @@ read_when:
   - "writing tests that involve plan backend selection"
 tripwires:
   - action: "debugging 100+ unexpected test failures with no obvious cause"
-    warning: "Check ERK_PLAN_BACKEND first. If set to 'draft_pr' in the environment, context_for_test() in erk-shared will use DraftPRPlanBackend instead of the default, causing widespread failures in tests that expect the issue-based backend. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures."
-    score: 9
+    warning: "Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911."
+    score: 6
 ---
 
 # Environment Variable Isolation in Tests
 
 ## The `ERK_PLAN_BACKEND` Contamination Pattern
 
-Setting `ERK_PLAN_BACKEND=draft_pr` in the shell environment causes **125+ test failures** when running the full test suite. The failures are not localized — they appear across unrelated test files because the env var affects `context_for_test()`.
+> **Note:** After PR #7971 (objective #7911 node 1.1), the `get_plan_backend()` function was deleted and the plan backend is hardcoded to `"draft_pr"`. The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. The contamination pattern described below is historical but the mitigations remain relevant until vestigial code paths are fully cleaned up in later nodes of objective #7911.
+
+Previously, setting `ERK_PLAN_BACKEND=draft_pr` in the shell environment caused **125+ test failures** when running the full test suite.
 
 ### Root Cause
 
-`context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` creates a test `ErkContext`. When no `plan_store` is explicitly provided, it calls `get_plan_backend()` which reads `ERK_PLAN_BACKEND` from the environment:
+`context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` creates a test `ErkContext`. After PR #7971, the plan backend selection is now a tautological comparison:
 
 ```python
-# From testing.py:192 (approximately)
-elif get_plan_backend() == "draft_pr" and not issues_explicitly_passed:
-    # Creates DraftPRPlanBackend instead of the default issue-based backend
+# From testing.py:192 (approximately) — after PR #7971
+elif "draft_pr" == "draft_pr" and not issues_explicitly_passed:
+    # Always takes the DraftPRPlanBackend path
 ```
 
-This means tests written assuming `github` (issue-based) backend silently get `github-draft-pr` (draft-PR) backend instead.
+The draft-PR path is always taken regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
 
 ## Two `context_for_test()` Implementations
 
