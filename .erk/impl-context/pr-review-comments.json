@@ -1,0 +1,137 @@
+{
+  "success": true,
+  "pr_number": 7936,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wICcd",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py",
+      "line": 33,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value - Violates 'no default parameters' rule. Use keyword-only args without defaults: consider removing the `= None` default and letting callers pass values explicitly, or use a factory method pattern.",
+          "created_at": "2026-02-23T12:55:39Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Resolved \u2014 the variables feature code was removed from this PR by rebasing onto latest master (PR #7947 removed the variables feature).\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:10 PST_",
+          "created_at": "2026-02-23T13:10:39Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wIDNi",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py",
+      "line": 33,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value - Violates 'no default parameters' rule. Use keyword-only args without defaults: consider removing the `= None` default and letting callers pass values explicitly, or use a factory method pattern.",
+          "created_at": "2026-02-23T12:56:33Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Resolved \u2014 stale code removed by rebase onto latest master.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:10 PST_",
+          "created_at": "2026-02-23T13:10:01Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wIEHC",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py",
+      "line": 33,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value violates 'no default parameters' rule - Remove the `= None` default and let callers pass values explicitly, or use factory method pattern (see `references/api-design.md`).",
+          "created_at": "2026-02-23T12:57:38Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Resolved by rebasing onto latest master \u2014 the variables feature was removed in PR #7947 and the stale code is no longer in this PR diff.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:09 PST_",
+          "created_at": "2026-02-23T13:09:46Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wICgM",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github_admin/real.py",
+      "line": 213,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: EAFP exception handling (try/except for control flow) - Violates LBYL principle. Instead of catching `TimeoutExpired` and `OSError`, check preconditions first or validate gracefully without relying on exceptions for control flow.",
+          "created_at": "2026-02-23T12:55:44Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Resolved \u2014 the variables feature code was removed from this PR by rebasing onto latest master (PR #7947 removed the variables feature).\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:10 PST_",
+          "created_at": "2026-02-23T13:10:42Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wIDR7",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github_admin/real.py",
+      "line": 225,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: EAFP exception handling (try/except for control flow) - Violates LBYL principle. Instead of catching `TimeoutExpired` and `OSError`, check preconditions first or validate gracefully without relying on exceptions for control flow.",
+          "created_at": "2026-02-23T12:56:39Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Resolved by rebasing onto latest master \u2014 the variables feature (including this exception handling) was removed in PR #7947 and is no longer in this PR diff.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:09 PST_",
+          "created_at": "2026-02-23T13:09:50Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already resolved above.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:10 PST_",
+          "created_at": "2026-02-23T13:10:05Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wID9D",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github_admin/real.py",
+      "line": 225,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Silent exception swallowing - Violates exception handling rules. Even with graceful degradation, exceptions must be logged/warned so issues can be diagnosed. Use: `logging.warning(...)` before returning None.",
+          "created_at": "2026-02-23T12:57:26Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Resolved \u2014 stale code removed by rebase onto latest master. The variables feature was removed in PR #7947.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:10 PST_",
+          "created_at": "2026-02-23T13:10:07Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wIEK3",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github_admin/real.py",
+      "line": 225,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: EAFP exception handling (try/except for control flow) violates LBYL principle - Check for timeout/OSError conditions before attempting the operation, or restructure to avoid exceptions for control flow (see `dignified-python-core.md#exception-handling`).",
+          "created_at": "2026-02-23T12:57:43Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Resolved by rebasing onto latest master \u2014 the variables feature (including this try/except) was removed in PR #7947 and is no longer in this PR diff.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:09 PST_",
+          "created_at": "2026-02-23T13:09:48Z"
+        }
+      ]
+    }
+  ]
+}

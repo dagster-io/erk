@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "pr_number": 7936,
+  "comments": [
+    {
+      "id": 3944593910,
+      "author": "schrockn",
+      "body": "\ud83d\ude80 Starting implementation\n\n---\n\n**Worktree:** `erk-slot-35`\n**Branch:** `plnd/update-ci-pr-title-02-22-1836`",
+      "url": "https://github.com/dagster-io/erk/pull/7936#issuecomment-3944593910"
+    },
+    {
+      "id": 3944628845,
+      "author": "schrockn",
+      "body": "* **#7936** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7936?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7936?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7936#issuecomment-3944628845"
+    },
+    {
+      "id": 3944634779,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-code-simplifier-review -->\n\n## \u2705 Dignified Code Simplifier Review\n\n**Last updated:** 2026-02-23 05:10:46 PT\n\nFound 0 violations across 2 files. All modified code adheres to dignified-python standards.\n\n<details>\n<summary>Details</summary>\n\n### Patterns Checked\n\u2705 LBYL exception handling - None found\n\u2705 Default parameter values - Compliant (Click decorators properly use API conventions)\n\u2705 Pathlib usage - All Path operations correct\n\u2705 Keyword-only arguments - Properly used with `*` separator\n\u2705 Import organization - Absolute imports, no gratuitous aliases\n\u2705 Properties/magic methods - None added\n\u2705 Indentation depth - All within 4-level limit\n\n### Violations Summary\nNo violations detected.\n\n### Files Reviewed\n- `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`: 0 violations\n- `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`: 0 violations\n\n---\n\n### Activity Log\n- **2026-02-23 05:10:46 PT**: No violations detected - all code complies with dignified-python standards (LBYL, keyword-only args, Click patterns correct)\n- **2026-02-23 12:57:43 PT**: Previous violations resolved by rebase onto latest master (removed variables feature)\n- **2026-02-23 12:57:26 PT**: Previous violations: Silent exception swallowing (now resolved)\n- **2026-02-23 12:57:38 PT**: Previous violations: Default parameter rules (now resolved)\n- **2026-02-23 12:57:43 PT**: Previous violations: EAFP pattern (now resolved)\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7936#issuecomment-3944634779"
+    },
+    {
+      "id": 3944637734,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-python-review -->\n\n## \u2705 Dignified Python Review\n\n**Last updated:** 2026-02-23 05:11:18 PT\n\nFound 0 violations. All code compliant with dignified-python standards.\n\n<details>\n<summary>Details</summary>\n\n### Patterns Checked\n\u2705 LBYL over EAFP - Compliant\n\u2705 Exception handling - Proper error boundaries\n\u2705 Path operations - Compliant\n\u2705 Import organization - All absolute imports\n\u2705 Subprocess handling - N/A (no subprocess calls in changes)\n\u2705 Frozen dataclasses - All dataclass fields in frozen classes\n\u2705 Keyword-only arguments - Compliant\n\u2705 Click patterns - Proper error handling and output\n\n### Violations Summary\nNone detected.\n\n### Files Reviewed\n- `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`: 0 violations\n- `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`: 0 violations\n\n---\n\n### Activity Log\n- **2026-02-23 05:11:18 PT**: All violations from prior review were on outdated code removed by rebase. Current diff is fully compliant.\n- **2026-02-23 04:57:32 PT**: Found 1 violation (silent exception swallowing in real.py get_variable)\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7936#issuecomment-3944637734"
+    },
+    {
+      "id": 3944642258,
+      "author": "github-actions[bot]",
+      "body": "<!-- test-coverage-review -->\n\n## \u2705 Test Coverage Review\n\n**Last updated:** 2026-02-23 05:10:41 PT\n\nAll source code changes have corresponding test coverage.\n\n<details>\n<summary>Details</summary>\n\n### Source Files Reviewed\n\n#### PR Title & Body Updates\n- `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py` - Modified (\u2705 tested)\n  - New function: `_parse_title_and_summary()` - parses Claude output into title and summary (2 dedicated unit tests)\n  - Updated: `UpdateSuccess` dataclass with new `title` field (5 integration tests verify field)\n  - Updated: `_update_pr_body_impl()` - now calls `github.update_pr_title_and_body()` with title parameter (5 tests verify both title and body update)\n  - Updated: CLI command output includes `title` in JSON response (4 tests verify JSON structure and type)\n\n### Test Coverage Summary\n- \u2705 2 new unit tests for `_parse_title_and_summary()` with edge cases (multiline and single-line)\n- \u2705 5 existing tests updated to verify title field in `UpdateSuccess`\n- \u2705 3 existing tests enhanced to verify both `updated_pr_titles` and `updated_pr_bodies` are called\n- \u2705 4 existing tests verify JSON output includes `title` field with correct type\n\n### Patterns Checked\n\u2705 New helper function - Full unit test coverage with multiline and single-line edge cases\n\u2705 Dataclass field addition - Covered by integration tests that verify field is populated\n\u2705 Gateway method change - Tests verify both title and body are passed to `update_pr_title_and_body()`\n\u2705 JSON output changes - Tests verify new `title` field is present and correctly typed\n\n### Violations Summary\nNone found.\n\n---\n\n### Activity Log\n- **2026-02-23 05:10:41 PT**: Modified ci_update_pr_body.py - added PR title generation feature with comprehensive test coverage (2 new unit tests, 5+ integration tests updated)\n- **2026-02-23 04:56:40 PT**: PR reviewed - all source changes have test coverage (new admin claude-ci command, gateway methods, TUI commands)\n\n</details>\n",
+      "url": "https://github.com/dagster-io/erk/pull/7936#issuecomment-3944642258"
+    },
+    {
+      "id": 3944643842,
+      "author": "github-actions[bot]",
+      "body": "<!-- tripwires-review -->\n\n## \u2705 Tripwires Review\n\n**Last updated:** 2026-02-23 05:10:36 PT\n\nFound 0 violations. All code changes comply with erk coding standards.\n\n<details>\n<summary>Details</summary>\n\n### Tripwires Triggered\n- **adding a new field to dataclass** \u2192 Verified frozen dataclass pattern compliance\n- **updating gateway method calls** \u2192 Verified proper gateway usage\n- **modifying test assertions** \u2192 Verified comprehensive test coverage\n\n### Tier 1 Pattern Matches\n\u2705 `@dataclass\\(frozen=True\\)` - Found and correctly used in UpdateSuccess\n\u2705 `subprocess\\.run\\(|run_subprocess_with_context\\(` - None found (good)\n\u2705 `Path\\.home\\(\\)` - None found (good)\n\n### Tier 2 Semantic Matches\n\u2705 **Adding field to dataclass** - UpdateSuccess.title field added correctly with frozen=True\n\u2705 **Gateway method calls** - Properly uses github.update_pr_title_and_body() instead of update_pr_body()\n\u2705 **Test coverage** - All tests updated to verify title field and new behavior\n\u2705 **Type imports** - BodyText imported from correct location (erk_shared.gateway.github.types)\n\u2705 **LBYL pattern** - _parse_title_and_summary uses proper length check before indexing\n\n### Violations Summary\n**No violations found.**\n\n### Files Reviewed\n- `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`: 0 violations\n- `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`: 0 violations\n\n---\n\n### Activity Log\n- **2026-02-23 05:10:36 PT**: No violations detected. Clean implementation of PR title generation feature.\n- **2026-02-23 04:58:52 PT**: All tripwires clean. 5-place gateway implementation verified complete with integration tests.\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7936#issuecomment-3944643842"
+    }
+  ]
+}
