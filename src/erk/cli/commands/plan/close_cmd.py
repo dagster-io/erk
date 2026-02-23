@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.objective_helpers import run_objective_update_after_close
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
@@ -61,6 +62,14 @@ def close_plan(ctx: ErkContext, identifier: str) -> None:
 
     # Close the plan (issue)
     ctx.plan_store.close_plan(repo_root, identifier)
+
+    # Update objective roadmap if plan is linked to an objective
+    if result.objective_id is not None:
+        run_objective_update_after_close(
+            ctx,
+            plan_number=number,
+            objective=result.objective_id,
+        )
 
     # Output
     user_output(f"Closed plan #{number}")

@@ -10,9 +10,13 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    format_plan_header_body_for_test,
+)
 
 
 def test_close_plan_with_issue_number() -> None:
@@ -281,3 +285,115 @@ def test_close_plan_reports_closed_prs() -> None:
         # Assert
         assert result.exit_code == 0
         assert "Closed 3 linked PR(s): #100, #200, #300" in result.output
+
+
+def test_close_plan_with_objective_invokes_update() -> None:
+    """Test closing a plan linked to an objective invokes the objective update."""
+    # Arrange - body must include plan-header with objective_issue so
+    # GitHubPlanStore._convert_to_plan() extracts objective_id correctly
+    body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Test Issue",
+        body=body_with_header,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={"issue_body": body_with_header},
+        objective_id=99,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        executor = FakePromptExecutor()
+        store, fake_issues = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(
+            env, plan_store=store, issues=fake_issues, prompt_executor=executor
+        )
+
+        # Act
+        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "Closed plan #42" in result.output
+        # Verify the objective update command was invoked
+        assert len(executor.executed_commands) == 1
+        cmd, _, _, _, _ = executor.executed_commands[0]
+        assert "/erk:objective-update-with-closed-plan" in cmd
+        assert "--plan 42" in cmd
+        assert "--objective 99" in cmd
+
+
+def test_close_plan_without_objective_skips_update() -> None:
+    """Test closing a plan without an objective does not invoke objective update."""
+    # Arrange
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Test Issue",
+        body="This is a test issue",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        executor = FakePromptExecutor()
+        store, fake_issues = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(
+            env, plan_store=store, issues=fake_issues, prompt_executor=executor
+        )
+
+        # Act
+        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "Closed plan #42" in result.output
+        # No objective update should have been invoked
+        assert len(executor.executed_commands) == 0
+
+
+def test_close_plan_objective_update_failure_does_not_break_close() -> None:
+    """Test that a failing objective update does not prevent plan close from succeeding."""
+    # Arrange - body must include plan-header with objective_issue so
+    # GitHubPlanStore._convert_to_plan() extracts objective_id correctly
+    body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Test Issue",
+        body=body_with_header,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={"issue_body": body_with_header},
+        objective_id=99,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        executor = FakePromptExecutor(command_should_fail=True)
+        store, fake_issues = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(
+            env, plan_store=store, issues=fake_issues, prompt_executor=executor
+        )
+
+        # Act
+        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+
+        # Assert - close still succeeds even though objective update failed
+        assert result.exit_code == 0
+        assert "Closed plan #42" in result.output
+        assert "Objective update failed" in result.output
