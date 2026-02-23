@@ -47,6 +47,7 @@ erk exec get-pr-context
 ```
 
 This outputs JSON to stdout with:
+
 - `branch.current` and `branch.parent`
 - `pr.number` and `pr.url`
 - `diff_file` path to the diff content
@@ -76,6 +77,7 @@ If this fails, display the error and stop.
 ### Step 5: Report Results
 
 Report:
+
 - PR URL (from step 2 JSON)
 - Success message
 
@@ -92,6 +94,7 @@ After reporting results, output the following to trigger a status line refresh:
 If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
 
 Common errors:
+
 - Authentication issues (Graphite/GitHub)
 - Merge conflicts
 - No commits to submit
