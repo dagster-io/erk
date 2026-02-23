@@ -25,11 +25,13 @@ Quick reference for all `erk exec` subcommands.
 | `check-impl`                      | Check .impl/ folder structure and validate prerequisites.                   |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                        |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                                |
+| `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                              |
 | `close-issue-with-comment`        | Close a plan with a comment.                                                |
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                         |
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                   |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                  |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
+| `detect-plan-from-branch`         | Detect plan number from the current git branch name.                        |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                            |
 | `download-remote-session`         | Download a session from a git branch.                                       |
@@ -96,6 +98,7 @@ Quick reference for all `erk exec` subcommands.
 | `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                  |
 | `set-local-review-marker`         | Set local review marker on PR to skip CI reviews.                           |
 | `set-pr-description`              | Update PR title and body with agent-provided values.                        |
+| `setup-impl`                      | Consolidated implementation setup.                                          |
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.                 |
 | `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.            |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                          |
@@ -106,6 +109,7 @@ Quick reference for all `erk exec` subcommands.
 | `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                  |
 | `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
+| `upload-impl-session`             | Upload current implementation session for async learn.                      |
 | `upload-session`                  | Upload a session JSONL to a git branch and update plan header.              |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.         |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                               |
@@ -211,6 +215,12 @@ Run full CI verification after autofix push.
 | `--original-sha` | TEXT | Yes      | Sentinel.UNSET | SHA before autofix ran         |
 | `--repo`         | TEXT | Yes      | Sentinel.UNSET | GitHub repository (owner/repo) |
 
+### cleanup-impl-context
+
+Clean up .erk/impl-context/ staging directory.
+
+**Usage:** `erk exec cleanup-impl-context`
+
 ### close-issue-with-comment
 
 Close a plan with a comment.
@@ -276,6 +286,12 @@ Serialize plan dashboard data to JSON.
 | `--show-runs` | FLAG    | No       | -             | -           |
 | `--run-state` | TEXT    | No       | -             | -           |
 | `--creator`   | TEXT    | No       | -             | -           |
+
+### detect-plan-from-branch
+
+Detect plan number from the current git branch name.
+
+**Usage:** `erk exec detect-plan-from-branch`
 
 ### detect-trunk-branch
 
@@ -1169,6 +1185,19 @@ Update PR title and body with agent-provided values.
 | `--body`      | TEXT | No       | -              | PR body text      |
 | `--body-file` | PATH | No       | -              | File with PR body |
 
+### setup-impl
+
+Consolidated implementation setup.
+
+**Usage:** `erk exec setup-impl`
+
+**Options:**
+
+| Flag      | Type    | Required | Default | Description                    |
+| --------- | ------- | -------- | ------- | ------------------------------ |
+| `--issue` | INTEGER | No       | -       | Issue/PR number to set up from |
+| `--file`  | PATH    | No       | -       | Markdown file to set up from   |
+
 ### setup-impl-from-issue
 
 Set up .impl/ folder from GitHub issue in current worktree.
@@ -1324,6 +1353,18 @@ Update PR title and body with AI-generated description.
 | -------------- | ---- | -------- | ------- | ------------------------------------- |
 | `--debug`      | FLAG | No       | -       | Show diagnostic output                |
 | `--session-id` | TEXT | No       | -       | Session ID for scratch file isolation |
+
+### upload-impl-session
+
+Upload current implementation session for async learn.
+
+**Usage:** `erk exec upload-impl-session`
+
+**Options:**
+
+| Flag           | Type | Required | Default        | Description                 |
+| -------------- | ---- | -------- | -------------- | --------------------------- |
+| `--session-id` | TEXT | Yes      | Sentinel.UNSET | Claude session ID to upload |
 
 ### upload-session
 

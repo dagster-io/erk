@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+
 # Plan: Merge `plan`/`pr` into single `planned_pr` field in objective roadmap
 
 ## Context
@@ -43,7 +44,7 @@ Merge `plan: str | None` and `pr: str | None` into a single `planned_pr: str | N
 
 ### 5. View command (`src/erk/cli/commands/objective/view_cmd.py`)
 
-- **_format_node_status()**: Rename `plan` param → `planned_pr`
+- **\_format_node_status()**: Rename `plan` param → `planned_pr`
 - Merge `max_plan_width`/`max_pr_width` into `max_planned_pr_width`
 - Merge separate "plan"/"pr" table columns into single "planned_pr" column
 - Update JSON output: replace `plan`/`pr` keys with `planned_pr`
@@ -98,8 +99,8 @@ Merge `plan: str | None` and `pr: str | None` into a single `planned_pr: str | N
 2. `erk objective view 7911` — renders correctly with single "planned_pr" column (existing v4 YAML auto-coalesced)
 3. `erk objective check 7911` — passes all validation checks
 4. `erk exec update-objective-node 7911 --node 1.2 --planned-pr "#9999" --status in_progress` — sets single field, then revert
-5. `erk exec objective-render-roadmap` with test JSON — produces 4-column table (Node | Description | Status | Planned PR)
-=======
+5. # `erk exec objective-render-roadmap` with test JSON — produces 4-column table (Node | Description | Status | Planned PR)
+
 # Simplify `/erk:plan-implement` Command
 
 ## Context
@@ -169,6 +170,7 @@ Replaces the entire decision tree (Steps 0 through 2d).
 ```
 
 **Internal logic** (priority order):
+
 1. Classify source arg (numeric → issue, URL → extract number, path → file, empty → continue)
 2. If issue: call `_setup_draft_pr_plan` or `_setup_issue_plan` (reuse from `setup_impl_from_issue.py`)
 3. If file: read file, generate branch via `BranchManager.create_branch()`, create `.impl/`
@@ -178,6 +180,7 @@ Replaces the entire decision tree (Steps 0 through 2d).
 7. **All paths**: call `cleanup-impl-context` + `impl-init` before returning
 
 **Key reuse**:
+
 - `_setup_draft_pr_plan()` and `_setup_issue_plan()` from `setup_impl_from_issue.py` — extract into importable functions or call directly
 - `_validate_impl_folder()` and `_extract_related_docs()` from `impl_init.py`
 - `extract_leading_issue_number()` from `erk_shared.naming`
@@ -239,4 +242,4 @@ Step 11: Submit PR
 3. Run unit tests for all 4 new commands
 4. Test `/erk:plan-implement` end-to-end with an issue number argument
 5. Run `local:fast-ci` to verify no regressions
->>>>>>> 1aba68119 (Add plan: Simplify `/erk:plan-implement` Command)
+   > > > > > > > 1aba68119 (Add plan: Simplify `/erk:plan-implement` Command)
