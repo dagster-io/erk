@@ -31,7 +31,7 @@ Edit `src/erk/__init__.py:10-12`:
 ```python
 def main() -> None:
     """CLI entry point used by the `erk` console script."""
-    print("hello")
+    print("hello world")
     cli()
 ```
 
