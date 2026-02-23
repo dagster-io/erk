@@ -30,6 +30,7 @@ class FakeGitHubAdmin(GitHubAdmin):
         auth_status: AuthStatus | None = None,
         secrets: set[str] | None = None,
         secret_check_error: bool = False,
+        variables: dict[str, str] | None = None,
     ) -> None:
         """Create FakeGitHubAdmin with pre-configured state.
 
@@ -42,6 +43,8 @@ class FakeGitHubAdmin(GitHubAdmin):
             secrets: Set of secret names that exist (for secret_exists checks).
                     Defaults to empty set.
             secret_check_error: If True, secret_exists returns None (simulates API error).
+            variables: Dict of variable name to value (for get_variable checks).
+                      Defaults to empty dict.
         """
         # Default permissions state (PR creation disabled)
         self._workflow_permissions = workflow_permissions or {
@@ -58,10 +61,14 @@ class FakeGitHubAdmin(GitHubAdmin):
         self._secrets = secrets or set()
         self._secret_check_error = secret_check_error
 
+        # Variables state
+        self._variables: dict[str, str] = variables or {}
+
         # Mutation tracking
         self._set_permission_calls: list[tuple[Path, bool]] = []
         self._set_secret_calls: list[tuple[str, str]] = []
         self._delete_secret_calls: list[str] = []
+        self._set_variable_calls: list[tuple[str, str]] = []
 
     def get_workflow_permissions(self, location: GitHubRepoLocation) -> dict[str, Any]:
         """Return pre-configured workflow permissions."""
@@ -113,3 +120,17 @@ class FakeGitHubAdmin(GitHubAdmin):
     def delete_secret_calls(self) -> tuple[str, ...]:
         """Read-only access to tracked secret delete calls for test assertions."""
         return tuple(self._delete_secret_calls)
+
+    def get_variable(self, location: GitHubRepoLocation, variable_name: str) -> str | None:
+        """Return variable value from pre-configured variables dict, or None if not set."""
+        return self._variables.get(variable_name)
+
+    def set_variable(self, location: GitHubRepoLocation, variable_name: str, value: str) -> None:
+        """Record variable set in mutation tracking and update internal state."""
+        self._set_variable_calls.append((variable_name, value))
+        self._variables[variable_name] = value
+
+    @property
+    def set_variable_calls(self) -> tuple[tuple[str, str], ...]:
+        """Read-only access to tracked variable set calls for test assertions."""
+        return tuple(self._set_variable_calls)

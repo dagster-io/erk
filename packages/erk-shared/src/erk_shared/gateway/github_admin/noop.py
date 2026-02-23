@@ -48,3 +48,11 @@ class NoopGitHubAdmin(GitHubAdmin):
     def delete_secret(self, location: GitHubRepoLocation, secret_name: str) -> None:
         """No-op for deleting secrets in dry-run mode."""
         pass
+
+    def get_variable(self, location: GitHubRepoLocation, variable_name: str) -> str | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_variable(location, variable_name)
+
+    def set_variable(self, location: GitHubRepoLocation, variable_name: str, value: str) -> None:
+        """No-op for setting variables in dry-run mode."""
+        pass
