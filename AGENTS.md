@@ -3,6 +3,7 @@
 
 > **Note:** Lines starting with `@` reference files to include. Some tools expand these inline automatically; others should read the referenced file directly.
 
+skdjfkjd
 # Erk - Plan-Oriented Agentic Engineering
 
 ## What is Erk?
