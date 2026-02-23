@@ -883,3 +883,75 @@ def test_checkout_stacks_in_place_from_assigned_slot() -> None:
         assert len(state.assignments) == 1
         assert state.assignments[0].branch_name == "target-branch"
         assert state.assignments[0].slot_name == "erk-slot-01"
+
+
+def test_checkout_stacks_in_place_for_plan_with_script() -> None:
+    """Regression: --for-plan --script in stack-in-place path must checkout branch.
+
+    Previously, _setup_impl_for_plan() called sys.exit(0) in script mode before
+    _perform_checkout() could run, leaving the worktree on the old branch.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        plan = Plan(
+            plan_identifier="500",
+            title="Add feature",
+            body="# Plan\nImplementation details",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/500",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={},
+            objective_id=None,
+        )
+        backend = get_plan_backend()
+        plan_store, _ = create_plan_store({"500": plan}, backend=backend)
+
+        branch = "plnd/add-feature-01-15-1030"
+        if backend == "draft_pr":
+            branch = "plan-500"
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "old-branch", branch]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        # Pre-create pool state with CWD assigned to a slot on "old-branch"
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="old-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, existing_state)
+
+        ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "500", "--script"], obj=ctx
+            )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        # The key assertion: branch was actually checked out
+        assert len(git.checked_out_branches) >= 1
+        checkout_path, checkout_branch = git.checked_out_branches[0]
+        assert checkout_path == env.cwd
+        assert checkout_branch == branch
+
+        # Verify .impl/ folder was created
+        impl_folder = env.cwd / ".impl"
+        assert impl_folder.exists()
+        assert (impl_folder / "plan.md").exists()

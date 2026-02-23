@@ -77,6 +77,11 @@ def _wait_for_pr_in_cache(
     help="Force push (use when branch has diverged from remote)",
 )
 @click.option(
+    "--skip-description",
+    is_flag=True,
+    help="Skip AI description generation (push + create PR only)",
+)
+@click.option(
     "--session-id",
     default=None,
     help="Claude session ID for tracing (passed by skills via ${CLAUDE_SESSION_ID})",
@@ -87,6 +92,7 @@ def pr_submit(
     debug: bool,
     no_graphite: bool,
     force: bool,
+    skip_description: bool,
     session_id: str | None,
 ) -> None:
     """Submit PR with AI-generated commit message.
@@ -99,6 +105,10 @@ def pr_submit(
     available and the branch is tracked, it will enhance the PR with
     stack metadata unless --no-graphite is specified.
 
+    Use --skip-description to skip AI description generation. This is
+    useful when the calling agent will generate the description itself
+    and apply it via `erk exec set-pr-description`.
+
     Examples:
 
     \b
@@ -110,9 +120,13 @@ def pr_submit(
 
       # Force push when branch has diverged
       erk pr submit -f
+
+      # Push and create PR only (no AI description)
+      erk pr submit --skip-description
     """
     # Verify Claude is available (needed for commit message generation)
-    require_claude_available(ctx)
+    if not skip_description:
+        require_claude_available(ctx)
 
     click.echo(click.style("🚀 Submitting PR...", bold=True))
     click.echo("")
@@ -123,6 +137,7 @@ def pr_submit(
         force=force,
         debug=debug,
         session_id=session_id,
+        skip_description=skip_description,
     )
 
     result = run_submit_pipeline(ctx, state)

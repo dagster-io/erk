@@ -60,6 +60,7 @@ from erk.cli.commands.exec.scripts.get_plans_for_objective import (
 )
 from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
 from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
+from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
@@ -142,6 +143,7 @@ from erk.cli.commands.exec.scripts.run_review import run_review
 from erk.cli.commands.exec.scripts.session_id_injector_hook import (
     session_id_injector_hook,
 )
+from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
 from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     setup_impl_from_issue,
 )
@@ -213,6 +215,7 @@ exec_group.add_command(get_issue_body, name="get-issue-body")
 exec_group.add_command(get_issue_timeline_prs, name="get-issue-timeline-prs")
 exec_group.add_command(get_learn_sessions, name="get-learn-sessions")
 exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
+exec_group.add_command(get_pr_context, name="get-pr-context")
 exec_group.add_command(handle_no_changes, name="handle-no-changes")
 exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
@@ -252,6 +255,7 @@ exec_group.add_command(resolve_review_threads, name="resolve-review-threads")
 exec_group.add_command(run_review, name="run-review")
 exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
+exec_group.add_command(set_pr_description, name="set-pr-description")
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
 exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")

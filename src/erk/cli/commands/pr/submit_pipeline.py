@@ -83,6 +83,7 @@ class SubmitState:
     force: bool
     debug: bool
     session_id: str
+    skip_description: bool
     issue_number: int | None
     pr_number: int | None
     pr_url: str | None
@@ -491,6 +492,8 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
 
 def extract_diff(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Local git diff to base branch, filter lock files, truncate, write scratch file."""
+    if state.skip_description:
+        return state
     click.echo(click.style("Phase 2: Getting diff", bold=True))
 
     if state.base_branch is None:
@@ -528,6 +531,8 @@ def extract_diff(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErr
 
 def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Fetch plan context from linked erk-plan issue."""
+    if state.skip_description:
+        return state
     click.echo(click.style("Phase 3: Fetching plan context", bold=True))
 
     plan_provider = PlanContextProvider(
@@ -545,6 +550,8 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
 
 def generate_description(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Generate AI PR title and body via CommitMessageGenerator."""
+    if state.skip_description:
+        return state
     click.echo(click.style("Phase 4: Generating PR description", bold=True))
 
     if state.diff_file is None:
@@ -658,6 +665,8 @@ def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -> SubmitState | 
 
 def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Update PR title/body with footer, add labels, amend local commit, clean up diff file."""
+    if state.skip_description:
+        return state
     click.echo(click.style("Phase 6: Updating PR metadata", bold=True))
 
     if state.pr_number is None:
@@ -840,6 +849,7 @@ def make_initial_state(
     force: bool,
     debug: bool,
     session_id: str | None,
+    skip_description: bool,
 ) -> SubmitState:
     """Create initial SubmitState with only CLI-provided values.
 
@@ -856,6 +866,7 @@ def make_initial_state(
         force=force,
         debug=debug,
         session_id=resolved_session_id,
+        skip_description=skip_description,
         issue_number=None,
         pr_number=None,
         pr_url=None,

@@ -542,11 +542,15 @@ def branch_checkout(
                         )
                     )
 
+                    # Checkout the branch before _setup_impl_for_plan, which may
+                    # sys.exit(0) in script mode and skip _perform_checkout.
+                    ctx.branch_manager.checkout_branch(slot_result.worktree_path, branch)
+
                     # Build a synthetic WorktreeInfo for the existing worktree.
-                    # The branch will be checked out by _perform_checkout below.
+                    # Branch is already checked out above.
                     target_wt = WorktreeInfo(
                         path=slot_result.worktree_path,
-                        branch=current_assignment.branch_name,
+                        branch=branch,
                     )
 
                     if setup is not None:
