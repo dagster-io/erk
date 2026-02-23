@@ -108,6 +108,23 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def dispatch_workflow(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+    ) -> None:
+        """Dispatch a GitHub Actions workflow without waiting for run ID.
+
+        Fire-and-forget variant of trigger_workflow(). Dispatches the workflow
+        but does not poll for the run ID.
+
+        Args:
+            repo_root: Repository root directory
+            workflow: Workflow filename (e.g., "implement-plan.yml")
+            inputs: Workflow inputs as key-value pairs
+            ref: Branch or tag to run workflow from (default: repository default branch)
+        """
+        ...
+
+    @abstractmethod
     def create_pr(
         self,
         repo_root: Path,

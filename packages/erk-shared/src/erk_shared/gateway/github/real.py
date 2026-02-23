@@ -290,6 +290,65 @@ class RealGitHub(GitHub):
         # Generate 6 random characters (~2.2 billion possibilities)
         return "".join(secrets.choice(base36_chars) for _ in range(6))
 
+    def _dispatch_workflow_impl(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+    ) -> str:
+        """Dispatch a GitHub Actions workflow and return the distinct_id.
+
+        Shared implementation for trigger_workflow() and dispatch_workflow().
+        Generates a unique distinct_id, passes it to the workflow, and returns
+        the distinct_id for optional polling.
+
+        Args:
+            repo_root: Repository root path
+            workflow: Workflow file name (e.g., "implement-plan.yml")
+            inputs: Workflow inputs as key-value pairs
+            ref: Branch or tag to run workflow from (default: repository default branch)
+
+        Returns:
+            The distinct_id used for correlation
+        """
+        distinct_id = self._generate_distinct_id()
+        debug_log(
+            f"_dispatch_workflow_impl: workflow={workflow}, distinct_id={distinct_id}, ref={ref}"
+        )
+
+        # GH-API-AUDIT: REST - POST workflows/{id}/dispatches
+        cmd = ["gh", "workflow", "run", workflow]
+
+        if ref:
+            cmd.extend(["--ref", ref])
+
+        cmd.extend(["-f", f"distinct_id={distinct_id}"])
+
+        for key, value in inputs.items():
+            cmd.extend(["-f", f"{key}={value}"])
+
+        debug_log(f"_dispatch_workflow_impl: executing command: {' '.join(cmd)}")
+        run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"trigger workflow '{workflow}'",
+            cwd=repo_root,
+        )
+        debug_log("_dispatch_workflow_impl: workflow dispatched successfully")
+        return distinct_id
+
+    def dispatch_workflow(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+    ) -> None:
+        """Dispatch a GitHub Actions workflow without waiting for run ID.
+
+        Fire-and-forget variant of trigger_workflow(). Dispatches the workflow
+        but does not poll for the run ID.
+
+        Args:
+            repo_root: Repository root path
+            workflow: Workflow file name (e.g., "implement-plan.yml")
+            inputs: Workflow inputs as key-value pairs
+            ref: Branch or tag to run workflow from (default: repository default branch)
+        """
+        self._dispatch_workflow_impl(repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref)
+
     def trigger_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
     ) -> str:
@@ -307,31 +366,9 @@ class RealGitHub(GitHub):
         Returns:
             The GitHub Actions run ID as a string
         """
-        # Generate distinct ID for reliable run matching
-        distinct_id = self._generate_distinct_id()
-        debug_log(f"trigger_workflow: workflow={workflow}, distinct_id={distinct_id}, ref={ref}")
-
-        # GH-API-AUDIT: REST - POST workflows/{id}/dispatches
-        cmd = ["gh", "workflow", "run", workflow]
-
-        # Add --ref flag if specified
-        if ref:
-            cmd.extend(["--ref", ref])
-
-        # Add distinct_id to workflow inputs automatically
-        cmd.extend(["-f", f"distinct_id={distinct_id}"])
-
-        # Add caller-provided workflow inputs
-        for key, value in inputs.items():
-            cmd.extend(["-f", f"{key}={value}"])
-
-        debug_log(f"trigger_workflow: executing command: {' '.join(cmd)}")
-        run_subprocess_with_context(
-            cmd=cmd,
-            operation_context=f"trigger workflow '{workflow}'",
-            cwd=repo_root,
+        distinct_id = self._dispatch_workflow_impl(
+            repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
         )
-        debug_log("trigger_workflow: workflow triggered successfully")
 
         # Poll for the run by matching displayTitle containing the distinct ID
         # The workflow uses run-name: "<issue_number>:<distinct_id>"
