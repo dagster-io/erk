@@ -2,7 +2,7 @@
 description: Run all applicable code reviews locally against the current branch
 ---
 
-# /local:review
+# /local:code-review
 
 Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
 
