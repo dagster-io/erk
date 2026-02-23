@@ -856,6 +856,23 @@ class ErkDashApp(App):
                 self._provider.clipboard.copy(cmd)
                 self.notify(f"Copied: {cmd}")
 
+        elif command_id == "copy_close_plan":
+            cmd = f"erk plan close {row.plan_id}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_fix_conflicts_remote":
+            if row.pr_number is not None:
+                cmd = f"erk launch pr-fix-conflicts --pr {row.pr_number}"
+                self._provider.clipboard.copy(cmd)
+                self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_address_remote":
+            if row.pr_number is not None:
+                cmd = f"erk launch pr-address --pr {row.pr_number}"
+                self._provider.clipboard.copy(cmd)
+                self.notify(f"Copied: {cmd}")
+
         elif command_id == "fix_conflicts_remote":
             if row.pr_number:
                 executor = RealCommandExecutor(

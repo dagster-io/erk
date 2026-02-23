@@ -126,6 +126,21 @@ def _display_copy_land(ctx: CommandContext) -> str:
     return f"erk land {ctx.row.pr_number}"
 
 
+def _display_copy_close_plan(ctx: CommandContext) -> str:
+    """Display name for copy_close_plan command."""
+    return f"erk plan close {ctx.row.plan_id}"
+
+
+def _display_copy_fix_conflicts_remote(ctx: CommandContext) -> str:
+    """Display name for copy_fix_conflicts_remote command."""
+    return f"erk launch pr-fix-conflicts --pr {ctx.row.pr_number}"
+
+
+def _display_copy_address_remote(ctx: CommandContext) -> str:
+    """Display name for copy_address_remote command."""
+    return f"erk launch pr-address --pr {ctx.row.pr_number}"
+
+
 # === Display Name Generators (Objective Commands) ===
 
 
@@ -358,6 +373,33 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut=None,
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_copy_land,
+        ),
+        CommandDefinition(
+            id="copy_close_plan",
+            name="erk plan close",
+            description="close",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            is_available=lambda ctx: _is_plan_view(ctx),
+            get_display_name=_display_copy_close_plan,
+        ),
+        CommandDefinition(
+            id="copy_fix_conflicts_remote",
+            name="erk launch pr-fix-conflicts",
+            description="fix-conflicts",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+            get_display_name=_display_copy_fix_conflicts_remote,
+        ),
+        CommandDefinition(
+            id="copy_address_remote",
+            name="erk launch pr-address",
+            description="address",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+            get_display_name=_display_copy_address_remote,
         ),
         # === OBJECTIVE COPIES ===
         CommandDefinition(

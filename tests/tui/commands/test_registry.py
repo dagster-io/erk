@@ -382,6 +382,75 @@ def test_copy_land_not_available_when_no_pr() -> None:
     assert "copy_land" not in cmd_ids
 
 
+def test_copy_close_plan_always_available() -> None:
+    """copy_close_plan should always be available in plan view."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_close_plan" in cmd_ids
+
+
+def test_copy_fix_conflicts_remote_available_when_pr_exists() -> None:
+    """copy_fix_conflicts_remote should be available when PR number exists."""
+    row = make_plan_row(123, "Test", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_fix_conflicts_remote" in cmd_ids
+
+
+def test_copy_fix_conflicts_remote_not_available_when_no_pr() -> None:
+    """copy_fix_conflicts_remote should not be available when no PR number."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_fix_conflicts_remote" not in cmd_ids
+
+
+def test_copy_address_remote_available_when_pr_exists() -> None:
+    """copy_address_remote should be available when PR number exists."""
+    row = make_plan_row(123, "Test", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_address_remote" in cmd_ids
+
+
+def test_copy_address_remote_not_available_when_no_pr() -> None:
+    """copy_address_remote should not be available when no PR number."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_address_remote" not in cmd_ids
+
+
+def test_display_name_copy_close_plan_shows_cli_command() -> None:
+    """copy_close_plan should show the erk plan close command."""
+    row = make_plan_row(5831, "Test Plan")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    cmd = next(c for c in get_all_commands() if c.id == "copy_close_plan")
+    assert get_display_name(cmd, ctx) == "erk plan close 5831"
+
+
+def test_display_name_copy_fix_conflicts_remote_shows_cli_command() -> None:
+    """copy_fix_conflicts_remote should show the launch command with PR number."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    cmd = next(c for c in get_all_commands() if c.id == "copy_fix_conflicts_remote")
+    assert get_display_name(cmd, ctx) == "erk launch pr-fix-conflicts --pr 456"
+
+
+def test_display_name_copy_address_remote_shows_cli_command() -> None:
+    """copy_address_remote should show the launch command with PR number."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
+    cmd = next(c for c in get_all_commands() if c.id == "copy_address_remote")
+    assert get_display_name(cmd, ctx) == "erk launch pr-address --pr 456"
+
+
 def test_all_commands_have_get_display_name() -> None:
     """All commands should have get_display_name defined."""
     commands = get_all_commands()
@@ -470,6 +539,9 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "copy_submit",
         "copy_replan",
         "copy_land",
+        "copy_close_plan",
+        "copy_fix_conflicts_remote",
+        "copy_address_remote",
     ]
     for plan_id in plan_cmd_ids:
         assert plan_id not in cmd_ids, f"Plan command {plan_id} should be hidden in Objectives view"
@@ -682,6 +754,9 @@ def test_commands_available_in_draft_pr_mode() -> None:
         "copy_submit",
         "copy_replan",
         "copy_land",
+        "copy_close_plan",
+        "copy_fix_conflicts_remote",
+        "copy_address_remote",
     ]
     for cmd_id in expected_available:
         assert cmd_id in cmd_ids, f"Command {cmd_id} should be available in draft_pr mode"
