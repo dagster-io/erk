@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: `_cleanup_no_worktree` crashes when branch is checked out in another worktree"
+}
