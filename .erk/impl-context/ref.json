@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: WARNING comment accumulation on metadata block updates"
+  "plan_id": "7948",
+  "url": "https://github.com/dagster-io/erk/pull/7948",
+  "created_at": "2026-02-23T10:28:26.837744",
+  "synced_at": "2026-02-23T10:28:26.837744",
+  "labels": [],
+  "objective_id": null
 }
