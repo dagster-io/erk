@@ -125,7 +125,17 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan 
 
 ### Step 4: Display Results
 
-On success, display based on `plan_backend` from JSON output:
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #<plan_number> (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below (using the `plan_backend` field to choose the correct format).
+
+If `branch_name` is absent, display only: `View PR: gh pr view <plan_number> --web`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display based on `plan_backend` from JSON output:
 
 **Header (both backends):**
 

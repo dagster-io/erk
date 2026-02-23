@@ -72,6 +72,42 @@ def read_objective_context_marker(session_id: str, repo_root: Path) -> int | Non
     return int(content)
 
 
+def create_plan_saved_branch_marker(session_id: str, repo_root: Path, branch_name: str) -> None:
+    """Create marker file storing the branch name of the saved plan.
+
+    This enables the skipped_duplicate response to include the branch name
+    when a session tries to save a plan that was already saved.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+        branch_name: The branch name where the plan was saved.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "plan-saved-branch.marker"
+    marker_file.write_text(branch_name, encoding="utf-8")
+
+
+def get_existing_saved_branch(session_id: str, repo_root: Path) -> str | None:
+    """Check if this session already saved a plan and return the branch name.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+
+    Returns:
+        The branch name if plan was already saved, None otherwise.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "plan-saved-branch.marker"
+    if not marker_file.exists():
+        return None
+    content = marker_file.read_text(encoding="utf-8").strip()
+    if not content:
+        return None
+    return content
+
+
 def get_existing_saved_issue(session_id: str, repo_root: Path) -> int | None:
     """Check if this session already saved a plan and return the issue number.
 

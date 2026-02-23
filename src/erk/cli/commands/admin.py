@@ -14,6 +14,16 @@ from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import GitHubRepoLocation
 from erk_shared.output.output import user_output
 
+CLAUDE_CI_WORKFLOWS = (
+    "code-reviews",
+    "autofix",
+    "learn",
+    "one-shot",
+    "plan-implement",
+    "pr-address",
+    "pr-fix-conflicts",
+)
+
 
 @dataclass(frozen=True)
 class _SecretConfig:
@@ -349,103 +359,7 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
             user_output(f"Status: {click.style('Disabled', fg='red')}")
         user_output("")
         user_output("Affected workflows:")
-        affected_workflows = [
-            "code-reviews",
-            "autofix",
-            "learn",
-            "one-shot",
-            "plan-implement",
-            "pr-address",
-            "pr-fix-conflicts",
-        ]
-        for workflow in affected_workflows:
-            user_output(f"  - {workflow}")
-
-    elif action == "enable":
-        try:
-            admin.set_variable(location, variable_name, "true")
-            user_output(
-                click.style("✓", fg="green") + " Enabled Claude CI workflows (CLAUDE_ENABLED=true)"
-            )
-        except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
-
-    elif action == "disable":
-        try:
-            admin.set_variable(location, variable_name, "false")
-            user_output(
-                click.style("✓", fg="green")
-                + " Disabled Claude CI workflows (CLAUDE_ENABLED=false)"
-            )
-        except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
-
-
-@admin_group.command("claude-ci")
-@click.option(
-    "--enable",
-    "action",
-    flag_value="enable",
-    help="Enable Claude CI workflows by setting CLAUDE_ENABLED=true",
-)
-@click.option(
-    "--disable",
-    "action",
-    flag_value="disable",
-    help="Disable Claude CI workflows by setting CLAUDE_ENABLED=false",
-)
-@click.pass_obj
-def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> None:
-    """Manage the CLAUDE_ENABLED repository variable for Claude CI workflows.
-
-    Without flags: Display current status
-    With --enable: Set CLAUDE_ENABLED=true (enables all Claude CI workflows)
-    With --disable: Set CLAUDE_ENABLED=false (disables all Claude CI workflows)
-
-    \b
-    Affected workflows:
-      - code-reviews
-      - autofix
-      - learn
-      - one-shot
-      - plan-implement
-      - pr-address
-      - pr-fix-conflicts
-    """
-    repo = discover_repo_context(ctx, ctx.cwd)
-
-    github_id = Ensure.not_none(
-        repo.github,
-        "Not a GitHub repository\n"
-        "This command requires the repository to have a GitHub remote configured.",
-    )
-
-    admin = ctx.github_admin
-    location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
-    variable_name = "CLAUDE_ENABLED"
-
-    if action is None:
-        value = admin.get_variable(location, variable_name)
-        user_output(click.style("Claude CI Status", bold=True))
-        user_output("")
-        if value is None:
-            user_output(f"Status: {click.style('Enabled', fg='green')} (variable not set, default)")
-        elif value.lower() == "true":
-            user_output(f"Status: {click.style('Enabled', fg='green')}")
-        else:
-            user_output(f"Status: {click.style('Disabled', fg='red')}")
-        user_output("")
-        user_output("Affected workflows:")
-        affected_workflows = [
-            "code-reviews",
-            "autofix",
-            "learn",
-            "one-shot",
-            "plan-implement",
-            "pr-address",
-            "pr-fix-conflicts",
-        ]
-        for workflow in affected_workflows:
+        for workflow in CLAUDE_CI_WORKFLOWS:
             user_output(f"  - {workflow}")
 
     elif action == "enable":

@@ -171,6 +171,10 @@ def test_draft_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.Monk
     output2 = json.loads(result2.output)
     assert output2["success"] is True
     assert output2["skipped_duplicate"] is True
+    assert output2["plan_backend"] == "draft_pr"
+    # branch_name should be included from the branch marker saved during first call
+    assert "branch_name" in output2
+    assert output2["branch_name"] == output1["branch_name"]
 
 
 def test_draft_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
