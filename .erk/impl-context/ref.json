@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Rename \"prepare\" properties to \"checkout\" in next_steps.py"
+}
