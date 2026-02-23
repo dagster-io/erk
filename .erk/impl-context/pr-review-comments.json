@@ -1,0 +1,96 @@
+{
+  "success": true,
+  "pr_number": 7944,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wH5VA",
+      "path": "src/erk/cli/commands/admin.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: The `affected_workflows` list is duplicated in docstring (lines 219-226) and created at runtime. Extract as a module-level constant to avoid duplication and runtime allocation - use it for both docstring and iteration.",
+          "created_at": "2026-02-23T12:44:17Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed \u2014 extracted `CLAUDE_CI_WORKFLOWS` as a module-level tuple constant. The Click docstring still contains the list inline since Click \b literal blocks cannot reference Python constants, but the runtime loop now uses the constant.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 04:50 PST_",
+          "created_at": "2026-02-23T12:50:12Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wIAcl",
+      "path": "src/erk/cli/commands/admin.py",
+      "line": 17,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Duplicate function definition - The `claude_ci()` function is defined multiple times in this file. The module-level constant `CLAUDE_CI_WORKFLOWS` has been extracted correctly, but the patch adds a third identical function definition at line 481 instead of removing the pre-existing duplicates. This will cause only the last definition to be used at runtime. Please remove the duplicate function definitions and keep only one implementation.",
+          "created_at": "2026-02-23T12:53:12Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed \u2014 removed the two duplicate claude_ci() definitions, keeping only the one using the CLAUDE_CI_WORKFLOWS constant. 174 lines deleted.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 05:02 PST_",
+          "created_at": "2026-02-23T13:02:16Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wH4qL",
+      "path": "src/erk/cli/commands/exec/scripts/plan_save.py",
+      "line": 338,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: This dict construction with conditional field addition can be simplified using direct assignment instead of declarative type annotation. Consider: `dedup_response = {...}; if existing_branch: dedup_response['branch_name'] = existing_branch` or use dict unpacking if needed - avoid premature type declaration before all fields are determined.",
+          "created_at": "2026-02-23T12:43:24Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed \u2014 removed the premature type annotation. The dict is now constructed without an explicit type hint.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 04:50 PST_",
+          "created_at": "2026-02-23T12:50:10Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wH5AW",
+      "path": "src/erk/tui/app.py",
+      "line": 877,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: The `copy_close_plan`, `copy_fix_conflicts_remote`, and `copy_address_remote` blocks all follow an identical pattern. Extract this as a helper to reduce duplication - the pattern is: format command, optionally check field, copy, notify.",
+          "created_at": "2026-02-23T12:43:53Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive \u2014 each copy handler is 2-3 lines with different guard conditions (plan_id vs pr_number) and different command format strings. Per AGENTS.md: \"three similar lines of code is better than a premature abstraction.\" The handlers are intentionally kept inline for readability.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 04:50 PST_",
+          "created_at": "2026-02-23T12:50:14Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wH5IL",
+      "path": "src/erk/tui/screens/plan_detail_screen.py",
+      "line": 701,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: The `copy_close_plan`, `copy_fix_conflicts_remote`, and `copy_address_remote` blocks duplicate the same pattern. Extract as a helper method to eliminate duplication - all follow: format command, optionally check field, copy to clipboard, notify.",
+          "created_at": "2026-02-23T12:44:02Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "False positive \u2014 same reasoning as app.py: each handler has different guard logic and format strings. Keeping them inline follows the project principle of avoiding premature abstractions for 2-3 line patterns.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 04:50 PST_",
+          "created_at": "2026-02-23T12:50:16Z"
+        }
+      ]
+    }
+  ]
+}
