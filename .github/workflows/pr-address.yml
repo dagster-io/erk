@@ -50,6 +50,13 @@ jobs:
           gh pr checkout "$PR_NUMBER"
           echo "Checked out PR #$PR_NUMBER"
 
+      - name: Set plan ID from PR number
+        id: plan_info
+        run: |
+          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "plan_id=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+
       - name: Save pre-implementation HEAD
         id: pre_impl
         run: echo "head=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -91,6 +98,51 @@ jobs:
             git push
             echo "Changes pushed successfully"
           fi
+
+      - name: Capture session ID
+        id: session
+        if: always()
+        run: |
+          if OUTPUT=$(erk exec capture-session-info --path "$GITHUB_WORKSPACE" 2>/dev/null); then
+            eval "$OUTPUT"
+            echo "session_id=$SESSION_ID" >> "$GITHUB_OUTPUT"
+            echo "session_file=$SESSION_FILE" >> "$GITHUB_OUTPUT"
+            echo "Captured session ID: $SESSION_ID"
+          else
+            echo "No session found for: $GITHUB_WORKSPACE"
+          fi
+
+      - name: Upload session to branch
+        if: always() && steps.session.outputs.session_id && steps.plan_info.outputs.plan_id
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          PLAN_ID: ${{ steps.plan_info.outputs.plan_id }}
+          SESSION_ID: ${{ steps.session.outputs.session_id }}
+          SESSION_FILE: ${{ steps.session.outputs.session_file }}
+        run: |
+          erk exec upload-session \
+            --session-file "$SESSION_FILE" \
+            --session-id "$SESSION_ID" \
+            --source remote \
+            --plan-id "$PLAN_ID"
+
+      - name: Update plan header with remote impl info
+        if: always() && steps.plan_info.outputs.plan_id
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          PLAN_ID: ${{ steps.plan_info.outputs.plan_id }}
+          RUN_ID: ${{ github.run_id }}
+          SESSION_ID: ${{ steps.session.outputs.session_id }}
+          BRANCH_NAME: ${{ steps.plan_info.outputs.branch_name }}
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
+          erk exec update-plan-header "$PLAN_ID" \
+            "last_remote_impl_at=$TIMESTAMP" \
+            "last_remote_impl_run_id=$RUN_ID" \
+            "last_remote_impl_session_id=$SESSION_ID" \
+            "branch_name=$BRANCH_NAME"
 
       - name: Generate and post summary comment
         if: always()
