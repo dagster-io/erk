@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-place path"
-}
