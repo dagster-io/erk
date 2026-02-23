@@ -9,23 +9,23 @@ from erk_shared.output.next_steps import (
 
 
 class TestIssueNextSteps:
-    def test_prepare_uses_co(self) -> None:
+    def test_checkout_uses_co(self) -> None:
         steps = IssueNextSteps(issue_number=99)
-        assert steps.prepare == "erk br co --for-plan 99"
+        assert steps.checkout == "erk br co --for-plan 99"
 
-    def test_prepare_and_implement_uses_co(self) -> None:
+    def test_checkout_and_implement_uses_co(self) -> None:
         steps = IssueNextSteps(issue_number=99)
-        assert steps.prepare_and_implement == (
+        assert steps.checkout_and_implement == (
             'source "$(erk br co --for-plan 99 --script)" && erk implement --dangerous'
         )
 
-    def test_prepare_new_slot(self) -> None:
+    def test_checkout_new_slot(self) -> None:
         steps = IssueNextSteps(issue_number=99)
-        assert steps.prepare_new_slot == "erk br co --new-slot --for-plan 99"
+        assert steps.checkout_new_slot == "erk br co --new-slot --for-plan 99"
 
-    def test_prepare_new_slot_and_implement(self) -> None:
+    def test_checkout_new_slot_and_implement(self) -> None:
         steps = IssueNextSteps(issue_number=99)
-        assert steps.prepare_new_slot_and_implement == (
+        assert steps.checkout_new_slot_and_implement == (
             'source "$(erk br co --new-slot --for-plan 99 --script)" && erk implement --dangerous'
         )
 
@@ -44,29 +44,29 @@ class TestDraftPRNextSteps:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
         assert steps.submit == "erk plan submit 42"
 
-    def test_checkout_and_implement_uses_branch_name(self) -> None:
+    def test_checkout_branch_and_implement_uses_branch_name(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
-        assert steps.checkout_and_implement == (
+        assert steps.checkout_branch_and_implement == (
             'source "$(erk br co plan-my-feature-02-20 --script)" && erk implement --dangerous'
         )
 
-    def test_prepare_uses_pr_number(self) -> None:
+    def test_checkout_uses_pr_number(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
-        assert steps.prepare == "erk br co --for-plan 42"
+        assert steps.checkout == "erk br co --for-plan 42"
 
-    def test_prepare_and_implement_uses_pr_number(self) -> None:
+    def test_checkout_and_implement_uses_pr_number(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
-        assert steps.prepare_and_implement == (
+        assert steps.checkout_and_implement == (
             'source "$(erk br co --for-plan 42 --script)" && erk implement --dangerous'
         )
 
-    def test_prepare_new_slot(self) -> None:
+    def test_checkout_new_slot(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
-        assert steps.prepare_new_slot == "erk br co --new-slot --for-plan 42"
+        assert steps.checkout_new_slot == "erk br co --new-slot --for-plan 42"
 
-    def test_prepare_new_slot_and_implement(self) -> None:
+    def test_checkout_new_slot_and_implement(self) -> None:
         steps = DraftPRNextSteps(pr_number=42, branch_name="plan-my-feature-02-20")
-        assert steps.prepare_new_slot_and_implement == (
+        assert steps.checkout_new_slot_and_implement == (
             'source "$(erk br co --new-slot --for-plan 42 --script)" && erk implement --dangerous'
         )
 
