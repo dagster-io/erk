@@ -26,6 +26,10 @@ Rules triggered by matching actions in code.
 
 **adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
 
+**adding a field to PullRequestInfo in types.py** → Read [GitHub Interface Patterns](github-interface-patterns.md) first. Must update all three parsers in real.py: \_parse_pr_from_timeline_event(), list_prs(), and \_parse_plan_prs_with_details(). See PullRequestInfo Field Addition Protocol in this doc.
+
+**adding a field to a GraphQL query that uses ISSUE_PR_LINKAGE_FRAGMENT** → Read [GitHub Interface Patterns](github-interface-patterns.md) first. Check GET_PLAN_PRS_WITH_DETAILS_QUERY for divergence. Both queries fetch PR fields but are defined separately in graphql_queries.py. A field in one but not the other causes None values in some code paths.
+
 **adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
 
 **adding a new field to agent-produced JSON without updating normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Add the field to CANONICAL_FIELDS and any aliases to FIELD_ALIASES in the normalization script. Without this, the field may be stripped during normalization.

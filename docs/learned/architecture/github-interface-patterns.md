@@ -7,6 +7,13 @@ read_when:
   - "working with gh api command"
   - "fetching PR or issue data efficiently"
   - "understanding PRDetails type"
+tripwires:
+  - action: "adding a field to PullRequestInfo in types.py"
+    warning: "Must update all three parsers in real.py: _parse_pr_from_timeline_event(), list_prs(), and _parse_plan_prs_with_details(). See PullRequestInfo Field Addition Protocol in this doc."
+    score: 7
+  - action: "adding a field to a GraphQL query that uses ISSUE_PR_LINKAGE_FRAGMENT"
+    warning: "Check GET_PLAN_PRS_WITH_DETAILS_QUERY for divergence. Both queries fetch PR fields but are defined separately in graphql_queries.py. A field in one but not the other causes None values in some code paths."
+    score: 5
 ---
 
 # GitHub Interface Patterns
@@ -108,6 +115,32 @@ This pattern:
 - Reduces API rate limit consumption
 - Simplifies call site code (no need to make additional fetches)
 - Makes the data contract explicit via the type definition
+
+## PullRequestInfo Field Addition Protocol
+
+When adding a new field to `PullRequestInfo` in `types.py`, three parsers in `real.py` must be updated to extract the field:
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub._parse_pr_from_timeline_event -->
+
+1. **`_parse_pr_from_timeline_event()`** — Parses PRs from GraphQL timeline cross-reference events (used by `get_prs_for_issue()`). Uses the `ISSUE_PR_LINKAGE_FRAGMENT` GraphQL fragment.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.list_prs -->
+
+2. **`list_prs()`** — Parses PRs from REST API responses. Field names differ from GraphQL (e.g., `base.ref` vs `baseRefName`).
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub._parse_plan_prs_with_details -->
+
+3. **`_parse_plan_prs_with_details()`** — Parses PRs from the `GET_PLAN_PRS_WITH_DETAILS_QUERY` GraphQL query (used by `list_plan_prs_with_details()`).
+
+### GraphQL Fragment Divergence Risk
+
+The `ISSUE_PR_LINKAGE_FRAGMENT` and `GET_PLAN_PRS_WITH_DETAILS_QUERY` are separate GraphQL definitions that both fetch PR fields. When adding a field to one, check whether the other also needs the field. Divergence between these two queries causes fields to be available in one code path but `None` in another.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py, ISSUE_PR_LINKAGE_FRAGMENT -->
+
+See `ISSUE_PR_LINKAGE_FRAGMENT` and `GET_PLAN_PRS_WITH_DETAILS_QUERY` in `graphql_queries.py` for the two GraphQL definitions.
+
+**Example**: The `base_ref_name` field was added to `PullRequestInfo` in PR #7964, requiring updates to all three parsers.
 
 ## Related Topics
 
