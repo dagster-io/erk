@@ -28,6 +28,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo, RepoInfo
+from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 
@@ -1035,3 +1036,75 @@ def test_get_pr_for_plan_direct_draft_pr_backend_not_found(tmp_path: Path) -> No
     )
 
     assert result is None
+
+
+# ============================================================================
+# CLAUDE_ENABLED Check Tests
+# ============================================================================
+
+
+def test_trigger_async_learn_claude_enabled_false_skips(tmp_path: Path) -> None:
+    """Test that CLAUDE_ENABLED='false' skips the entire learn pipeline."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+
+    body = _make_plan_issue_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    fake_claude = FakeClaudeInstallation.for_test()
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_admin = FakeGitHubAdmin(variables={"CLAUDE_ENABLED": "false"})
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_admin=fake_admin,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+
+    assert result.exit_code == 1
+    output = _parse_json_output(result.output)
+    assert output["success"] is False
+    assert "CLAUDE_ENABLED" in str(output["error"])
+
+    # Verify no workflows were triggered
+    assert len(fake_gh.triggered_workflows) == 0
+
+
+def test_trigger_async_learn_claude_enabled_unset_proceeds(tmp_path: Path) -> None:
+    """Test that unset CLAUDE_ENABLED (None) does NOT skip the pipeline."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+
+    body = _make_plan_issue_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={456: _make_issue_info(456, body)})
+    fake_claude = FakeClaudeInstallation.for_test()
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    # Default FakeGitHubAdmin has empty variables dict — get_variable returns None
+    fake_admin = FakeGitHubAdmin()
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_admin=fake_admin,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    # Create learn dir with content for branch commit
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-456"
+    learn_dir.mkdir(parents=True)
+    (learn_dir / "placeholder.txt").write_text("test content", encoding="utf-8")
+
+    result = runner.invoke(trigger_async_learn_command, ["456"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    output = _parse_json_output(result.output)
+    assert output["success"] is True
+    assert output["workflow_triggered"] is True
