@@ -10,6 +10,7 @@ from erk_shared.gateway.github.pr_footer import (
     extract_footer_from_body,
     extract_header_from_body,
     extract_main_content,
+    is_header_at_legacy_position,
     rebuild_pr_body,
 )
 
@@ -103,25 +104,26 @@ def test_build_remote_execution_note_starts_with_newline() -> None:
 
 
 def test_extract_header_from_body_with_plan_link() -> None:
-    """Test extraction of Plan header."""
-    body = "**Plan:** #123\n\nThis is the main content."
+    """Test extraction of Plan header from bottom of body (above footer)."""
+    body = "This is the main content.\n\n**Plan:** #123\n\n---\nCloses #123"
     header = extract_header_from_body(body)
     assert header == "**Plan:** #123\n\n"
 
 
 def test_extract_header_from_body_with_remote_execution() -> None:
-    """Test extraction of Remotely executed header."""
-    body = "**Remotely executed:** [Run #456](https://example.com)\n\nMain content."
+    """Test extraction of Remotely executed header from bottom."""
+    body = "Main content.\n\n**Remotely executed:** [Run #456](https://example.com)\n\n---\nFooter"
     header = extract_header_from_body(body)
     assert header == "**Remotely executed:** [Run #456](https://example.com)\n\n"
 
 
 def test_extract_header_from_body_with_multiple_headers() -> None:
-    """Test extraction of multiple header lines."""
+    """Test extraction of multiple header lines from bottom."""
     body = (
+        "Main content here.\n\n"
         "**Plan:** #123\n"
         "**Remotely executed:** [Run #456](https://example.com)\n\n"
-        "Main content here."
+        "---\nFooter"
     )
     header = extract_header_from_body(body)
     assert "**Plan:** #123" in header
@@ -130,7 +132,7 @@ def test_extract_header_from_body_with_multiple_headers() -> None:
 
 def test_extract_header_from_body_no_header() -> None:
     """Test when there's no header in the body."""
-    body = "This is just regular content.\n\nMore content here."
+    body = "This is just regular content.\n\nMore content here.\n\n---\nFooter"
     header = extract_header_from_body(body)
     assert header == ""
 
@@ -142,10 +144,49 @@ def test_extract_header_from_body_empty_body() -> None:
 
 
 def test_extract_header_from_body_cross_repo_plan() -> None:
-    """Test extraction of cross-repo plan header."""
-    body = "**Plan:** owner/repo#123\n\nMain content."
+    """Test extraction of cross-repo plan header from bottom."""
+    body = "Main content.\n\n**Plan:** owner/repo#123\n\n---\nFooter"
     header = extract_header_from_body(body)
     assert header == "**Plan:** owner/repo#123\n\n"
+
+
+def test_extract_header_from_body_no_footer() -> None:
+    """Test extraction when there's no footer delimiter."""
+    body = "Main content.\n\n**Plan:** #123"
+    header = extract_header_from_body(body)
+    assert header == "**Plan:** #123\n\n"
+
+
+# ============================================================================
+# extract_header_from_body Legacy Top-Position Tests
+# ============================================================================
+
+
+def test_extract_header_from_body_legacy_top_position() -> None:
+    """Test extraction of header from top of body (legacy format)."""
+    body = "**Plan:** #123\n\nThis is the main content.\n\n---\nCloses #123"
+    header = extract_header_from_body(body)
+    assert header == "**Plan:** #123\n\n"
+
+
+def test_extract_header_from_body_legacy_top_multiple_headers() -> None:
+    """Test extraction of multiple header lines from top (legacy format)."""
+    body = (
+        "**Plan:** #123\n"
+        "**Remotely executed:** [Run #456](https://example.com)\n\n"
+        "Main content here.\n\n"
+        "---\nFooter"
+    )
+    header = extract_header_from_body(body)
+    assert "**Plan:** #123" in header
+    assert "**Remotely executed:** [Run #456]" in header
+
+
+def test_extract_header_from_body_legacy_top_no_footer() -> None:
+    """Test extraction of header from top when there's no footer (legacy format)."""
+    body = "**Plan:** #123\n\nMain content here."
+    header = extract_header_from_body(body)
+    assert header == "**Plan:** #123\n\n"
 
 
 # ============================================================================
@@ -154,8 +195,8 @@ def test_extract_header_from_body_cross_repo_plan() -> None:
 
 
 def test_extract_main_content_with_header_and_footer() -> None:
-    """Test extraction with both header and footer."""
-    body = "**Plan:** #123\n\nMain content here.\n\n---\nCloses #123\nCheckout instructions..."
+    """Test extraction with both header (at bottom) and footer."""
+    body = "Main content here.\n\n**Plan:** #123\n\n---\nCloses #123\nCheckout instructions..."
     content = extract_main_content(body)
     assert content == "Main content here."
 
@@ -169,7 +210,7 @@ def test_extract_main_content_no_header() -> None:
 
 def test_extract_main_content_no_footer() -> None:
     """Test extraction with header but no footer."""
-    body = "**Plan:** #123\n\nMain content here."
+    body = "Main content here.\n\n**Plan:** #123"
     content = extract_main_content(body)
     assert content == "Main content here."
 
@@ -187,6 +228,20 @@ def test_extract_main_content_empty_body() -> None:
     assert content == ""
 
 
+def test_extract_main_content_legacy_top_header() -> None:
+    """Test main content extraction when header is at top (legacy format)."""
+    body = "**Plan:** #123\n\nMain content here.\n\n---\nCloses #123"
+    content = extract_main_content(body)
+    assert content == "Main content here."
+
+
+def test_extract_main_content_legacy_top_header_no_footer() -> None:
+    """Test main content extraction with top header and no footer."""
+    body = "**Plan:** #123\n\nMain content here."
+    content = extract_main_content(body)
+    assert content == "Main content here."
+
+
 # ============================================================================
 # rebuild_pr_body Tests
 # ============================================================================
@@ -199,8 +254,8 @@ def test_rebuild_pr_body_all_parts() -> None:
         content="Main content here.",
         footer="Closes #123\n\nCheckout instructions...",
     )
-    assert "**Plan:** #123" in result
     assert "Main content here." in result
+    assert "**Plan:** #123" in result
     assert "---" in result
     assert "Closes #123" in result
 
@@ -240,16 +295,39 @@ def test_rebuild_pr_body_content_only() -> None:
 
 
 def test_rebuild_pr_body_preserves_structure_order() -> None:
-    """Test that header comes before content which comes before footer."""
+    """Test that content comes before header which comes before footer."""
     result = rebuild_pr_body(
         header="**Plan:** #123\n\n",
         content="Main content here.",
         footer="Footer text",
     )
-    header_pos = result.find("**Plan:**")
     content_pos = result.find("Main content")
+    header_pos = result.find("**Plan:**")
     footer_pos = result.find("Footer text")
-    assert header_pos < content_pos < footer_pos
+    assert content_pos < header_pos < footer_pos
+
+
+# ============================================================================
+# is_header_at_legacy_position Tests
+# ============================================================================
+
+
+def test_is_header_at_legacy_position_top() -> None:
+    """Test returns True when header is at top (legacy format)."""
+    body = "**Plan:** #123\n\nMain content here.\n\n---\nCloses #123"
+    assert is_header_at_legacy_position(body) is True
+
+
+def test_is_header_at_legacy_position_bottom() -> None:
+    """Test returns False when header is at bottom (new format)."""
+    body = "Main content here.\n\n**Plan:** #123\n\n---\nCloses #123"
+    assert is_header_at_legacy_position(body) is False
+
+
+def test_is_header_at_legacy_position_no_header() -> None:
+    """Test returns False when no header exists."""
+    body = "Main content here.\n\n---\nCloses #123"
+    assert is_header_at_legacy_position(body) is False
 
 
 # ============================================================================
@@ -279,7 +357,7 @@ def test_extract_footer_from_body_no_footer() -> None:
 
 def test_roundtrip_header_content_footer() -> None:
     """Test that extract + rebuild preserves the structure."""
-    original = "**Plan:** #123\n\nMain description.\n\n---\nCloses #123\nCheckout instructions"
+    original = "Main description.\n\n**Plan:** #123\n\n---\nCloses #123\nCheckout instructions"
     header = extract_header_from_body(original)
     footer = extract_footer_from_body(original)
     content = extract_main_content(original)
@@ -295,3 +373,42 @@ def test_roundtrip_header_content_footer() -> None:
     assert "Main description." in rebuilt
     assert "---" in rebuilt
     assert "Closes #123" in rebuilt
+
+    # Verify ordering: content before header before footer
+    content_pos = rebuilt.find("Main description.")
+    header_pos = rebuilt.find("**Plan:** #123")
+    footer_pos = rebuilt.find("Closes #123")
+    assert content_pos < header_pos < footer_pos
+
+
+def test_roundtrip_legacy_top_header() -> None:
+    """Test that extract + rebuild works for legacy top-header PRs.
+
+    Note: rebuild places header at bottom (new format), which is the
+    intended migration path from old to new format.
+    """
+    original = "**Plan:** #123\n\nMain description.\n\n---\nCloses #123\nCheckout instructions"
+    header = extract_header_from_body(original)
+    footer = extract_footer_from_body(original)
+    content = extract_main_content(original)
+
+    assert header == "**Plan:** #123\n\n"
+    assert content == "Main description."
+
+    rebuilt = rebuild_pr_body(
+        header=header,
+        content=content,
+        footer=footer if footer else "",
+    )
+
+    # Verify key parts are present
+    assert "**Plan:** #123" in rebuilt
+    assert "Main description." in rebuilt
+    assert "---" in rebuilt
+    assert "Closes #123" in rebuilt
+
+    # After rebuild, header is at bottom (new format) — this is the migration
+    content_pos = rebuilt.find("Main description.")
+    header_pos = rebuilt.find("**Plan:** #123")
+    footer_pos = rebuilt.find("Closes #123")
+    assert content_pos < header_pos < footer_pos

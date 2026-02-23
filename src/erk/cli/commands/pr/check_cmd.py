@@ -4,6 +4,10 @@ import click
 
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk_shared.gateway.github.pr_footer import (
+    extract_header_from_body,
+    is_header_at_legacy_position,
+)
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.pr.submit import (
     has_checkout_footer_for_pr,
@@ -21,6 +25,7 @@ def pr_check(ctx: ErkContext) -> None:
     Checks that the PR:
     1. Has issue closing reference (Closes #N) when .impl/issue.json exists
     2. Has the standard checkout command footer
+    3. Has plan-header metadata at correct position (not legacy top)
     """
     # Get current branch
     branch = Ensure.not_none(
@@ -97,6 +102,16 @@ def pr_check(ctx: ErkContext) -> None:
         checks.append((True, "PR body contains checkout footer"))
     else:
         checks.append((False, "PR body missing checkout footer"))
+
+    # Check 3: Header position (not at legacy top position)
+    header = extract_header_from_body(pr_body)
+    if header:
+        if is_header_at_legacy_position(pr_body):
+            checks.append(
+                (False, "Plan-header metadata is at legacy top position (should be above footer)")
+            )
+        else:
+            checks.append((True, "Plan-header metadata is at correct position"))
 
     # Output results
     for passed, description in checks:

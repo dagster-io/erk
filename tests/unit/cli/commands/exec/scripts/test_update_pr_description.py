@@ -15,7 +15,6 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
-from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -259,13 +258,17 @@ def test_preserves_header_and_footer() -> None:
     """Test that existing header and footer metadata are preserved."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        header = "**Plan:** #123"
-        footer_content = build_pr_body_footer(
-            42,
-            issue_number=123,
-            plans_repo=None,
+        # Header at bottom (above footer), matching convention
+        existing_body = (
+            "Old content\n\n"
+            "**Plan:** #123\n\n"
+            "---\n\n"
+            "Closes #123\n\n"
+            "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
+            "```\n"
+            'source "$(erk pr checkout 42 --script)" && erk pr sync --dangerous\n'
+            "```\n"
         )
-        existing_body = f"{header}\n\nOld content\n\n---\n{footer_content.lstrip()}"
 
         git, graphite, github, executor = _make_standard_fakes(env, pr_body=existing_body)
 

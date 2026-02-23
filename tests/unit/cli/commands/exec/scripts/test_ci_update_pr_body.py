@@ -820,10 +820,14 @@ def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) 
     assert len(updated_bodies) == 1
     _pr_num, updated_body = updated_bodies[0]
 
-    # Should have metadata prefix preserved
-    assert updated_body.startswith(metadata_prefix)
-    # Should have summary (not title)
+    # Should have metadata block at the bottom (not the top)
+    assert not updated_body.startswith("<!-- erk:metadata-block:plan-header -->")
+    assert "plan-header" in updated_body
+    # Should have summary at the top
     assert "Generated summary" in updated_body
+    summary_pos = updated_body.find("Generated summary")
+    metadata_pos = updated_body.find("plan-header")
+    assert summary_pos < metadata_pos
     # Should NOT have Closes #N
     assert "Closes #42" not in updated_body
     # Should have original plan section
@@ -909,8 +913,9 @@ def test_cli_draft_pr_flag(tmp_path: Path) -> None:
     assert len(updated_bodies) == 1
     _pr_num, updated_body = updated_bodies[0]
 
-    # Should have metadata prefix preserved
-    assert updated_body.startswith(metadata_prefix)
+    # Should have metadata block at the bottom (not the top)
+    assert not updated_body.startswith("<!-- erk:metadata-block:plan-header -->")
+    assert "plan-header" in updated_body
     # Should NOT have Closes #N (draft-PR path)
     assert "Closes #42" not in updated_body
     # Should have original plan section

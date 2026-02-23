@@ -27,7 +27,10 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.naming import extract_leading_issue_number
-from erk_shared.plan_store.draft_pr_lifecycle import build_original_plan_section
+from erk_shared.plan_store.draft_pr_lifecycle import (
+    PLAN_CONTENT_SEPARATOR,
+    build_original_plan_section,
+)
 
 # ---------------------------------------------------------------------------
 # Branch Discovery
@@ -277,7 +280,19 @@ def assemble_pr_body(
         issue_number=issue_number,
         plans_repo=plans_repo,
     )
-    return metadata_prefix + header + pr_body_content + footer
+
+    # Place metadata and header below content, above footer
+    suffix = ""
+    if metadata_prefix:
+        # Strip the content separator that was used when metadata was at top
+        stripped = metadata_prefix
+        if stripped.endswith(PLAN_CONTENT_SEPARATOR):
+            stripped = stripped[: -len(PLAN_CONTENT_SEPARATOR)]
+        suffix = "\n\n" + stripped
+    if header:
+        suffix = "\n\n" + header.rstrip("\n") + suffix
+
+    return pr_body_content + suffix + footer
 
 
 def render_progress(event: ProgressEvent) -> None:
