@@ -625,19 +625,16 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
         assert "gh run list --workflow test-workflow.yml" in error_msg
 
 
-def test_trigger_workflow_skips_cancelled_runs(monkeypatch: MonkeyPatch) -> None:
-    """Test trigger_workflow skips runs with conclusion skipped/cancelled."""
+def test_trigger_workflow_raises_on_skipped_cancelled_runs(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow raises immediately when matched run is skipped/cancelled."""
     repo_root = Path("/repo")
-    call_count = 0
     captured_distinct_id = None
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        nonlocal call_count, captured_distinct_id
-        call_count += 1
+        nonlocal captured_distinct_id
 
         # First call: gh workflow run (trigger) - capture distinct_id from inputs
         if "workflow" in cmd and "run" in cmd:
-            # Extract distinct_id from the -f distinct_id=xxx argument
             for i, arg in enumerate(cmd):
                 if arg == "-f" and i + 1 < len(cmd) and cmd[i + 1].startswith("distinct_id="):
                     captured_distinct_id = cmd[i + 1].split("=", 1)[1]
@@ -649,37 +646,14 @@ def test_trigger_workflow_skips_cancelled_runs(monkeypatch: MonkeyPatch) -> None
                 stderr="",
             )
 
-        # Second call: returns skipped and cancelled runs with captured distinct_id
-        if call_count == 2:
-            run_data = json.dumps(
-                [
-                    {
-                        "databaseId": 111,
-                        "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                        "conclusion": "skipped",
-                    },
-                    {
-                        "databaseId": 222,
-                        "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                        "conclusion": "cancelled",
-                    },
-                ]
-            )
-            return subprocess.CompletedProcess(
-                args=cmd,
-                returncode=0,
-                stdout=run_data,
-                stderr="",
-            )
-
-        # Third call: returns valid run with captured distinct_id
+        # Second call: returns a skipped run matching the distinct_id
         run_data = json.dumps(
             [
                 {
-                    "databaseId": 333,
+                    "databaseId": 111,
                     "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                    "conclusion": None,
-                }
+                    "conclusion": "skipped",
+                },
             ]
         )
         return subprocess.CompletedProcess(
@@ -691,15 +665,12 @@ def test_trigger_workflow_skips_cancelled_runs(monkeypatch: MonkeyPatch) -> None
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub.for_test()
-        run_id = ops.trigger_workflow(
-            repo_root=repo_root,
-            workflow="test-workflow.yml",
-            inputs={"issue_number": "1"},
-        )
-
-        # Should find the non-skipped/cancelled run
-        assert run_id == "333"
-        assert call_count >= 3  # trigger + 2 polls
+        with pytest.raises(RuntimeError, match="run was skipped"):
+            ops.trigger_workflow(
+                repo_root=repo_root,
+                workflow="test-workflow.yml",
+                inputs={"issue_number": "1"},
+            )
 
 
 # ============================================================================
