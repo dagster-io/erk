@@ -1,5 +1,5 @@
 ---
-description: Implement a plan from GitHub issue, file path, or current .impl folder
+description: Implement a plan from GitHub issue, file path, current branch, or current .impl folder
 argument-hint: "[<issue-number-or-url-or-path>]"
 ---
 
@@ -20,12 +20,13 @@ This is the primary implementation workflow - it orchestrates:
 - One of:
   - An issue number, URL, or file path argument
   - An existing `.impl/` folder
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
   - A plan in `~/.claude/plans/` (from plan mode)
 
 ## Usage
 
 ```bash
-/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement                    # Use .impl/, detect from branch, or save current plan
 /erk:plan-implement 2521               # Fetch and implement issue #2521
 /erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
 /erk:plan-implement ./my-plan.md       # Implement from local markdown file
@@ -124,7 +125,39 @@ If this succeeds with `"valid": true`:
 - If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
 - If `has_issue_tracking: true`: **Call `setup-impl-from-issue <issue_number>`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
 
-If it fails or returns `"valid": false`, continue to Step 2.
+If it fails or returns `"valid": false`, continue to Step 1b-branch.
+
+#### 1b-branch. Detect plan from current branch
+
+If no `.impl/` folder exists (or it's invalid), try to detect the plan from the current branch name:
+
+```bash
+# Get current branch
+BRANCH=$(git branch --show-current)
+
+# Try issue-based detection: P{number}-slug or {number}-slug
+PLAN_NUMBER=$(echo "$BRANCH" | grep -oE '^[Pp]?([0-9]+)-' | grep -oE '[0-9]+' | head -1)
+
+# If not found, try draft-PR detection: look for an associated PR
+if [ -z "$PLAN_NUMBER" ]; then
+  PLAN_NUMBER=$(gh pr view --json number -q .number 2>/dev/null || echo "")
+fi
+```
+
+If `PLAN_NUMBER` is non-empty:
+
+1. Display: "Auto-detected plan #PLAN_NUMBER from branch"
+2. Set up from the detected plan:
+   ```bash
+   erk exec setup-impl-from-issue <PLAN_NUMBER>
+   ```
+3. Run impl-init:
+   ```bash
+   erk exec impl-init --json
+   ```
+4. Proceed to Step 2d.
+
+If `PLAN_NUMBER` is empty, continue to Step 1c.
 
 #### 1c. Fall back to saving current plan
 
