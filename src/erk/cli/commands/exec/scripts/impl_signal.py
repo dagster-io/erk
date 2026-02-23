@@ -249,7 +249,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     metadata: dict[str, object] = {
         "worktree_name": worktree_name,
         "branch_name": branch_name,
-        "lifecycle_stage": "implementing",
+        "lifecycle_stage": "impl",
     }
     if in_github_actions():
         metadata["last_remote_impl_at"] = timestamp
