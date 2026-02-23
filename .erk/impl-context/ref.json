@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Add \"implement locally\" copyable command to TUI command palette"
+}
