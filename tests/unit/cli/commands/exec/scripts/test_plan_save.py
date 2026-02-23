@@ -280,13 +280,46 @@ def test_draft_pr_tracks_branch_with_graphite(
     output = json.loads(result.output)
     branch_name = output["branch_name"]
 
-    # Verify track_branch was called with the plan branch and current branch as parent
-    # (branch_manager.create_branch uses base_branch as Graphite parent)
+    # Verify track_branch was called with the plan branch and trunk as parent
+    # (branch is created from origin/trunk, so Graphite parent should be trunk)
     assert len(fake_graphite.track_branch_calls) == 1
     tracked_call = fake_graphite.track_branch_calls[0]
     assert tracked_call[0] == tmp_path  # repo_root
     assert tracked_call[1] == branch_name  # branch_name
-    assert tracked_call[2] == "main"  # parent_branch (current branch used as base)
+    assert tracked_call[2] == "master"  # parent_branch (trunk used as base)
+
+
+def test_draft_pr_branch_not_stacked_on_current_branch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plan branch is created from trunk, not current feature branch."""
+    # Current branch is a feature branch, NOT trunk
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature/my-work"},
+        trunk_branches={tmp_path: "master"},
+    )
+    fake_graphite = FakeGraphite()
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    # Graphite parent should be trunk (master), NOT the current feature branch
+    assert len(fake_graphite.track_branch_calls) == 1
+    tracked_call = fake_graphite.track_branch_calls[0]
+    assert tracked_call[2] == "master"  # parent_branch is trunk, not "feature/my-work"
+
+    # Verify trunk was fetched before branch creation
+    assert ("origin", "master") in fake_git.fetched_branches
 
 
 # --- Title validation rejection tests (draft-PR path) ---
