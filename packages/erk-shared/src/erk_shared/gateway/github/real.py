@@ -335,8 +335,8 @@ class RealGitHub(GitHub):
 
         # Poll for the run by matching displayTitle containing the distinct ID
         # The workflow uses run-name: "<issue_number>:<distinct_id>"
-        # GitHub API eventual consistency: exponential backoff 1,2,4,8,8,8s (~31s total)
-        max_attempts = 7
+        # GitHub API eventual consistency: exponential backoff 1,2,4,8,...,8s (~62s, 11 attempts)
+        max_attempts = 11
         runs_data: list[dict[str, Any]] = []
         for attempt in range(max_attempts):
             user_output(f"  Waiting for workflow run... (attempt {attempt + 1}/{max_attempts})")
