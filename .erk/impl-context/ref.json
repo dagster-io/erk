@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Fix plan-save to include branch_name in skipped_duplicate response"
+}
