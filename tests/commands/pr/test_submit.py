@@ -42,6 +42,101 @@ def test_pr_submit_fails_when_claude_not_available() -> None:
         assert "claude.com/download" in result.output
 
 
+def test_pr_submit_skip_description_skips_claude_check() -> None:
+    """Test that --skip-description bypasses require_claude_available check.
+
+    When --skip-description is passed, the command should succeed even when
+    Claude is not available, proving both that the flag threads through to
+    SubmitState and that require_claude_available() is skipped.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+new content"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+            pr_info={"feature": pr_info},
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_bases={123: "main"},
+        )
+
+        # Claude is NOT available — this would fail without --skip-description
+        executor = FakePromptExecutor(available=False)
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit", "--skip-description"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "github.com/owner/repo/pull/123" in result.output
+        # No prompt calls should have been made (AI generation skipped)
+        assert len(executor.prompt_calls) == 0
+
+
 def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
     """Test that Graphite auth failure produces a warning (not a fatal error).
 

@@ -32,6 +32,7 @@ def _make_state(
     force: bool = False,
     debug: bool = False,
     session_id: str = "test-session",
+    skip_description: bool = False,
     issue_number: int | None = None,
     pr_number: int | None = 42,
     pr_url: str | None = "https://github.com/owner/repo/pull/42",
@@ -53,7 +54,7 @@ def _make_state(
         force=force,
         debug=debug,
         session_id=session_id,
-        skip_description=False,
+        skip_description=skip_description,
         issue_number=issue_number,
         pr_number=pr_number,
         pr_url=pr_url,
@@ -470,3 +471,13 @@ def test_does_not_publish_non_draft_pr(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     assert fake_github.marked_pr_ready == []
+
+
+def test_skip_description_returns_state_unchanged(tmp_path: Path) -> None:
+    """skip_description=True causes early return with state unchanged."""
+    ctx = context_for_test(cwd=tmp_path)
+    state = _make_state(cwd=tmp_path, skip_description=True)
+
+    result = finalize_pr(ctx, state)
+
+    assert result is state

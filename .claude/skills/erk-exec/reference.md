@@ -49,6 +49,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-plans-for-objective`         | Fetch erk-plan issues linked to an objective.                               |
 | `get-pr-body-footer`              | Generate PR body footer with checkout command.                              |
 | `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).               |
+| `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.               |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                   |
 | `get-pr-for-plan`                 | Get PR details for a plan issue.                                            |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                       |
@@ -92,6 +93,7 @@ Quick reference for all `erk exec` subcommands.
 | `resolve-review-threads`          | Resolve multiple PR review threads from JSON stdin.                         |
 | `run-review`                      | Run a code review using Claude.                                             |
 | `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                  |
+| `set-pr-description`              | Update PR title and body with agent-provided values.                        |
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.                 |
 | `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.            |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                          |
@@ -499,6 +501,18 @@ Fetch PR commits using REST API (avoids GraphQL rate limits).
 | Name        | Required | Description |
 | ----------- | -------- | ----------- |
 | `PR_NUMBER` | Yes      | -           |
+
+### get-pr-context
+
+Output JSON with branch, PR, diff, commits, and plan context.
+
+**Usage:** `erk exec get-pr-context`
+
+**Options:**
+
+| Flag      | Type | Required | Default | Description            |
+| --------- | ---- | -------- | ------- | ---------------------- |
+| `--debug` | FLAG | No       | -       | Show diagnostic output |
 
 ### get-pr-discussion-comments
 
@@ -1118,6 +1132,20 @@ Run a code review using Claude.
 Inject session ID into conversation context when relevant.
 
 **Usage:** `erk exec session-id-injector-hook`
+
+### set-pr-description
+
+Update PR title and body with agent-provided values.
+
+**Usage:** `erk exec set-pr-description`
+
+**Options:**
+
+| Flag          | Type | Required | Default        | Description       |
+| ------------- | ---- | -------- | -------------- | ----------------- |
+| `--title`     | TEXT | Yes      | Sentinel.UNSET | PR title          |
+| `--body`      | TEXT | No       | -              | PR body text      |
+| `--body-file` | PATH | No       | -              | File with PR body |
 
 ### setup-impl-from-issue
 
