@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Extract and update PR titles in ci-update-pr-body"
+}
