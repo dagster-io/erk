@@ -19,6 +19,7 @@ def _format_lifecycle(
     review_decision: str | None,
     checks_passing: bool | None = None,
     has_unresolved_comments: bool | None = None,
+    is_stacked: bool | None = None,
 ) -> str:
     """Test helper: wraps format_lifecycle_with_status with None defaults for check params."""
     return format_lifecycle_with_status(
@@ -28,6 +29,7 @@ def _format_lifecycle(
         review_decision=review_decision,
         checks_passing=checks_passing,
         has_unresolved_comments=has_unresolved_comments,
+        is_stacked=is_stacked,
     )
 
 
@@ -586,6 +588,7 @@ def _indicators(
     review_decision: str | None = None,
     checks_passing: bool | None = None,
     has_unresolved_comments: bool | None = None,
+    is_stacked: bool | None = None,
 ) -> str:
     """Test helper: wraps compute_status_indicators with None defaults."""
     return compute_status_indicators(
@@ -595,6 +598,7 @@ def _indicators(
         review_decision=review_decision,
         checks_passing=checks_passing,
         has_unresolved_comments=has_unresolved_comments,
+        is_stacked=is_stacked,
     )
 
 
@@ -657,3 +661,61 @@ def test_indicators_review_changes_requested_with_conflicts() -> None:
 def test_indicators_merged_returns_dash() -> None:
     """Merged stage returns dash (no indicators)."""
     assert _indicators("[green]merged[/green]", is_draft=False) == "-"
+
+
+# --- Stacked PR (pancake) indicator tests ---
+
+
+def test_indicators_stacked_shows_pancake() -> None:
+    """Stacked PR shows pancake emoji."""
+    assert _indicators("[cyan]impl[/cyan]", is_stacked=True) == "🥞"
+
+
+def test_indicators_stacked_with_draft() -> None:
+    """Stacked + draft shows pancake then construction."""
+    assert _indicators("[dim]planned[/dim]", is_draft=True, is_stacked=True) == "🥞 🚧"
+
+
+def test_indicators_stacked_with_conflicts() -> None:
+    """Stacked + conflicts shows pancake then explosion."""
+    assert _indicators("[yellow]impl[/yellow]", has_conflicts=True, is_stacked=True) == "🥞 💥"
+
+
+def test_indicators_stacked_implemented_ready_shows_both() -> None:
+    """Stacked + implemented + checks passing shows both pancake and rocket."""
+    result = _indicators(
+        "[cyan]impl[/cyan]",
+        is_stacked=True,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "🥞 🚀"
+
+
+def test_indicators_stacked_implemented_with_conflicts_no_rocket() -> None:
+    """Stacked + implemented + conflicts shows pancake and explosion, not rocket."""
+    result = _indicators(
+        "[cyan]impl[/cyan]",
+        is_stacked=True,
+        has_conflicts=True,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "🥞 💥"
+
+
+def test_indicators_not_stacked_no_pancake() -> None:
+    """is_stacked=False shows no pancake emoji."""
+    assert _indicators("[cyan]impl[/cyan]", is_stacked=False) == "-"
+
+
+def test_format_lifecycle_stacked_implementing() -> None:
+    """Stacked implementing stage shows pancake inside Rich markup."""
+    result = _format_lifecycle(
+        "[yellow]impl[/yellow]",
+        is_draft=None,
+        has_conflicts=False,
+        review_decision=None,
+        is_stacked=True,
+    )
+    assert result == "[yellow]impl 🥞[/yellow]"

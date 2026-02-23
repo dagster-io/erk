@@ -63,6 +63,7 @@ ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedE
       isDraft
       createdAt
       headRefName
+      baseRefName
       statusCheckRollup {
         state
         contexts(last: 1) {

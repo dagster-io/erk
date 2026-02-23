@@ -573,6 +573,7 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_review_decision: str | None = None
         pr_checks_passing: bool | None = None
         pr_has_unresolved_comments: bool | None = None
+        pr_is_stacked: bool | None = None
 
         if plan_id in pr_linkages:
             issue_prs = pr_linkages[plan_id]
@@ -597,6 +598,17 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_has_conflicts = selected_pr.has_conflicts
                 pr_review_decision = selected_pr.review_decision
                 pr_checks_passing = selected_pr.checks_passing
+                if selected_pr.base_ref_name is not None:
+                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+
+                # Supplement with Graphite's local stack tracking — plan PRs
+                # always target master on GitHub even when Graphite-stacked
+                if pr_is_stacked is not True and pr_head_branch is not None:
+                    parent = self._ctx.branch_manager.get_parent_branch(
+                        self._location.root, pr_head_branch
+                    )
+                    if parent is not None and parent not in ("master", "main"):
+                        pr_is_stacked = True
 
                 # Get review thread counts from batched PR data
                 if selected_pr.review_thread_counts is not None:
@@ -707,6 +719,7 @@ class RealPlanDataProvider(PlanDataProvider):
             review_decision=pr_review_decision,
             checks_passing=pr_checks_passing,
             has_unresolved_comments=pr_has_unresolved_comments,
+            is_stacked=pr_is_stacked,
         )
 
         return PlanRowData(
