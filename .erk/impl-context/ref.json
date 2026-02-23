@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Restore --oauth flag and refactor plan listing infrastructure"
+}
