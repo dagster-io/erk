@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Migrate `erk exec pr-check-complete` to `erk pr check --stage=impl`"
+}
