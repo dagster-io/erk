@@ -1,0 +1,1123 @@
+<session>
+  <meta branch="plnd/add-stacked-pr-emoji-02-23-0658" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="TaskUpdate" id="toolu_016VxjRb782zekkyiKtLDn9n">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="65294" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 332}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016VxjRb782zekkyiKtLDn9n">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Add `is_stacked` parameter to indicator functions**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="65626" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013ijgoYL5DsiviDC5a61HUH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="old_string">def compute_status_indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | Non...[truncated 1138 chars]...cks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )</param>
+    <param name="new_string">def compute_status_indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | Non...[truncated 1284 chars]...     has_unresolved_comments=has_unresolved_comments,
+        is_stacked=is_stacked,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="65626" output_tokens="949" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ijgoYL5DsiviDC5a61HUH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JWJaFkV4aoZgHvUs26csQk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="old_string">def format_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | ...[truncated 1530 chars]...cks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )</param>
+    <param name="new_string">def format_lifecycle_with_status(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | ...[truncated 1736 chars]...     has_unresolved_comments=has_unresolved_comments,
+        is_stacked=is_stacked,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1019" cache_read_input_tokens="65824" output_tokens="1147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1019, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JWJaFkV4aoZgHvUs26csQk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `_build_indicators` to accept and use `is_stacked`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1217" cache_read_input_tokens="66843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1217}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Gk55Svpi3LPdGr6XDENT1f">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="old_string">def _build_indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    h...[truncated 1353 chars]...sistency
+    indicators: list[str] = []
+
+    # Draft/published indicator for active stages</param>
+    <param name="new_string">def _build_indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    h...[truncated 1591 chars]...is True:
+        indicators.append("🥞")
+
+    # Draft/published indicator for active stages</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1217" cache_read_input_tokens="66843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1217}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gk55Svpi3LPdGr6XDENT1f">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01VLCTQwuwSrY7FWWAQ8Bqka">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1125" cache_read_input_tokens="68060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1125}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VLCTQwuwSrY7FWWAQ8Bqka">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014KDAYhCVxbKCqr8k1C6hpv">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1125" cache_read_input_tokens="68060" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1125, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014KDAYhCVxbKCqr8k1C6hpv">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 5: Thread `is_stacked` through the data provider**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="69185" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WVoXrGv7LuGSVxSdmRGNQP">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">        # PR status fields for lifecycle enrichment
+        pr_is_draft: bool | None = Non...[truncated 83 chars]..._checks_passing: bool | None = None
+        pr_has_unresolved_comments: bool | None = None</param>
+    <param name="new_string">        # PR status fields for lifecycle enrichment
+        pr_is_draft: bool | None = Non...[truncated 125 chars]...  pr_has_unresolved_comments: bool | None = None
+        pr_is_stacked: bool | None = None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="69185" output_tokens="347" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WVoXrGv7LuGSVxSdmRGNQP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the extraction of `base_ref_name` and `is_stacked` after the other status fields:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="69383" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019WzqNKjjyGndPDbiMxqbs3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">                pr_is_draft = selected_pr.is_draft
+                pr_has_conflicts = sele...[truncated 39 chars]...selected_pr.review_decision
+                pr_checks_passing = selected_pr.checks_passing</param>
+    <param name="new_string">                pr_is_draft = selected_pr.is_draft
+                pr_has_conflicts = sele...[truncated 219 chars]...e is not None:
+                    pr_is_stacked = base_ref_name not in ("master", "main")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="69383" output_tokens="355" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 417, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019WzqNKjjyGndPDbiMxqbs3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now pass `is_stacked` to `compute_status_indicators`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="69800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 425}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DSGfNVgMs4NwJv1nLvcgb5">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">        status_display = compute_status_indicators(
+            lifecycle_display,
+       ...[truncated 128 chars]..._checks_passing,
+            has_unresolved_comments=pr_has_unresolved_comments,
+        )</param>
+    <param name="new_string">        status_display = compute_status_indicators(
+            lifecycle_display,
+       ...[truncated 166 chars]...olved_comments=pr_has_unresolved_comments,
+            is_stacked=pr_is_stacked,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="69800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 425}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DSGfNVgMs4NwJv1nLvcgb5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <assistant>The plan also mentions adding `base_ref_name` to `pr_details_to_plan` metadata in conversion.py. Let me do that for completeness:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="70225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 436}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NkZg7sZSRva8cxbuVFPwf6">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/plan_store/conversion.py</param>
+    <param name="old_string">        metadata={
+            "number": pr.number,
+            "owner": pr.owner,
+       ...[truncated 26 chars]....author,
+            "is_draft": pr.is_draft,
+            "pr_state": pr.state,
+        },</param>
+    <param name="new_string">        metadata={
+            "number": pr.number,
+            "owner": pr.owner,
+       ...[truncated 73 chars]...           "pr_state": pr.state,
+            "base_ref_name": pr.base_ref_name,
+        },</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="70225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 436}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NkZg7sZSRva8cxbuVFPwf6">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/plan_store/conversion.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_019Fr3Ev31CqYYKXB8x61Vie">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="407" cache_read_input_tokens="70661" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 407}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Fr3Ev31CqYYKXB8x61Vie">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Kn75d17puM4SzYoauzbZLp">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="407" cache_read_input_tokens="70661" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 407}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kn75d17puM4SzYoauzbZLp">
+Updated task #6 status
+  </tool_result>
+  <assistant>**Phase 6: Update tests**
+
+Now let me update the test helpers and add new tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="71068" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01G7pXxm8MsLqVk3h6zdPEpC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">def _format_lifecycle(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    h...[truncated 418 chars]...cks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )</param>
+    <param name="new_string">def _format_lifecycle(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None,
+    h...[truncated 485 chars]...     has_unresolved_comments=has_unresolved_comments,
+        is_stacked=is_stacked,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="71068" output_tokens="558" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G7pXxm8MsLqVk3h6zdPEpC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ULq3MSHm6y8khihERX7NcH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">def _indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None = None,
+    ...[truncated 410 chars]...cks_passing=checks_passing,
+        has_unresolved_comments=has_unresolved_comments,
+    )</param>
+    <param name="new_string">def _indicators(
+    lifecycle_display: str,
+    *,
+    is_draft: bool | None = None,
+    ...[truncated 477 chars]...     has_unresolved_comments=has_unresolved_comments,
+        is_stacked=is_stacked,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="71266" output_tokens="530" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 618, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ULq3MSHm6y8khihERX7NcH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the new stacked indicator tests at the end of the file:</assistant>
+  <tool_use name="Edit" id="toolu_01W8rDAUeQXytF2DGGJEDJ5J">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="old_string">def test_indicators_merged_returns_dash() -&gt; None:
+    """Merged stage returns dash (no indicators)."""
+    assert _indicators("[green]merged[/green]", is_draft=False) == "-"</param>
+    <param name="new_string">def test_indicators_merged_returns_dash() -&gt; None:
+    """Merged stage returns dash (no in...[truncated 1127 chars]...cision=None,
+        is_stacked=True,
+    )
+    assert result == "[yellow]impl 🥞[/yellow]"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="72474" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="631" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W8rDAUeQXytF2DGGJEDJ5J">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/plan_store/test_lifecycle_display.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01CNDQ8HS8gJc52FCo6JYNRz">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="72474" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 691}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CNDQ8HS8gJc52FCo6JYNRz">
+Updated task #6 status
+  </tool_result>
+  <assistant>Now let me run the scoped tests to verify everything works.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="73165" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_013kq2NHv636EUUmVQi8MUUF">
+    <param name="description">Run lifecycle display tests</param>
+    <param name="prompt">Run the following command and report results:
+
+```
+cd /Users/schrockn/.erk/repos/erk/workt...[truncated 29 chars]..._store/test_lifecycle_display.py -v
+```
+
+Report all test results, especially any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="73165" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013kq2NHv636EUUmVQi8MUUF">
+**pytest passed: 67 tests in 0.07s**
+
+All 67 tests in `tests/unit/plan_store/test_lifecycle_display.py` passed successfully. No failures detected.
+agentId: a1d49a6ce1db52043 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13837
+tool_uses: 1
+duration_ms: 3637&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 67 tests pass. Now let me also check if there are any fakes that need updating for `PullRequestInfo.base_ref_name`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="73253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 293}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N4KJPdLfxrqbioGZNAoA5v">
+    <param name="pattern">PullRequestInfo\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="73253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 293}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N4KJPdLfxrqbioGZNAoA5v">
+Found 43 files
+tests/unit/services/test_plan_list_service.py
+tests/unit/status/test_github_pr_collector.py
+tests/unit/gateways/github/test_emoji.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/fakes/test_fake_github.py
+tests/unit/fakes/test_fake_graphite.py
+tests/unit/core/test_pr_utils.py
+tests/unit/commands/wt/test_list_helpers.py
+tests/unit/cli/test_navigation_helpers.py
+tests/unit/cli/commands/slot/test_repair_cmd.py
+tests/unit/cli/commands/exec/scripts/test_trigger_async_learn.py
+tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py
+tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+tests/tui/data/test_provider.py
+tests/test_utils/plan_helpers.py
+tests/test_utils/builders.py
+tests/commands/workspace/test_delete.py
+tests/commands/run/test_list.py
+tests/commands/pr/test_submit_graphite_disabled.py
+tests/commands/pr/test_submit_pr_cache_polling.py
+tests/commands/pr/test_sync_graphite_disabled.py
+tests/commands/pr/test_sync.py
+tests/commands/pr/test_submit.py
+tests/commands/pr/test_check.py
+tests/commands/pr/test_checkout.py
+tests/commands/navigation/test_up.py
+tests/commands/navigation/test_down.py
+
+... [14 lines omitted] ...
+
+tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <assistant>There are many test files constructing `PullRequestInfo`. Since `base_ref_name` has a default value of `None`, existing tests will continue to work without modification. Let me verify the impl is preserved, run broader CI, and submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="831" cache_read_input_tokens="73546" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 831}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01GnBCJ1hQgAE6gG51v3gCG5">
+    <param name="taskId">7</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="831" cache_read_input_tokens="73546" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 831}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GnBCJ1hQgAE6gG51v3gCG5">
+Updated task #7 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011o8wsGn9CdLcAfcuZPYu8U">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="144" cache_read_input_tokens="74377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 144}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011o8wsGn9CdLcAfcuZPYu8U">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.impl"}
+  </tool_result>
+  <assistant>Good, `.impl/` is preserved. Let me signal completion and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="74521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 132}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019eDtWyFmLK9yKEkuy3TnHE">
+    <param name="command">erk exec impl-signal ended --session-id="bb4a46c2-5de1-4b83-bb76-cb11a606586a" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="74521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 132}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019eDtWyFmLK9yKEkuy3TnHE">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 7964
+}
+  </tool_result>
+  <assistant>Now let me upload the session for async learn:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="74653" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 171}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GowED42ednmRveqtfVNadK">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(jq -r '.issue_number // empty' ....[truncated 154 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="74653" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 171, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GowED42ednmRveqtfVNadK">
+
+  </tool_result>
+  <assistant>Now let me run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="228" cache_read_input_tokens="74824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 228}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_015rKgbrC5WHBGZ8uBUaW2PH">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="228" cache_read_input_tokens="74824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 228}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015rKgbrC5WHBGZ8uBUaW2PH">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BjEX9WvXwfh5Q1wx2NaERg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="129" cache_read_input_tokens="75052" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 129}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BjEX9WvXwfh5Q1wx2NaERg">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01RY9NbPLDeTqcENwmU2ud1c">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="75181" output_tokens="54" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RY9NbPLDeTqcENwmU2ud1c">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run `make fast-ci` to validate all checks.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="75344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1699}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01A44SEeyVRwKPTNzmXcCnfn">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and run: make fast-ci
+
+Report all results including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="75344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1699}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A44SEeyVRwKPTNzmXcCnfn">
+Perfect! All checks passed. Here's a summary:
+
+## Fast CI Results - ALL PASSED
+
+**Lint Checks:**
+- ruff: All checks passed
+
+**Format Checks:**
+- ruff format: 1506 files already formatted
+- Prettier: All matched files use correct code style
+
+**Documentation Checks:**
+- AGENTS.md standard: PASSED
+- CLAUDE.md/AGENTS.md pairing: 19 files checked, 0 violations
+- Exec reference: Up to date
+
+**Type Checking:**
+- ty: All checks passed
+
+**Test Suite:**
+- erk unit tests: 5478 passed in 19.96s
+- erk-dev tests: 136 passed in 3.29s
+- erk-statusline tests: 126 passed in 0.73s
+
+**Total: 5,740 tests passed**
+agentId: a30f0b8b8526ebb27 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14601
+tool_uses: 1
+duration_ms: 37661&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 5,740 tests pass and all CI checks are green. Now let me submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="656" cache_read_input_tokens="77043" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WCbi69sK6AXzAuQM3EuwKy">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pr submit</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="656" cache_read_input_tokens="77043" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 656, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WCbi69sK6AXzAuQM3EuwKy">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EL67QYHobjuJhCk2GGZLbz">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="77699" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 147, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EL67QYHobjuJhCk2GGZLbz">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 7964
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Xxs7dPGrmJtyJ6yeKuLj2E">
+    <param name="command">erk pr check</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="77846" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xxs7dPGrmJtyJ6yeKuLj2E">
+Checking PR #7964 for branch plnd/add-stacked-pr-emoji-02-23-0658...
+
+[PASS] Branch name and plan reference agree (#7964)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01AitzKJK3rhY9pG2jtpnU3D">
+    <param name="taskId">7</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="77969" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 157}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AitzKJK3rhY9pG2jtpnU3D">
+Updated task #7 status
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of what was implemented:
+
+**PR #7964** - Add 🥞 stacked PR emoji to dashboard
+
+**Changes made across 7 files:**
+
+1. **`types.py`** - Added `base_ref_name: str | None = None` field to `PullRequestInfo` dataclass
+2. **`graphql_queries.py`** - Added `baseRefName` to the `ISSUE_PR_LINKAGE_FRAGMENT` GraphQL fragment
+3. **`real.py` (GitHub gateway)** - Populated `base_ref_name` in all 3 PR parser locations: `_parse_pr_from_timeline_event`, `_parse_plan_prs_with_details`, and `list_prs` REST path
+4. **`lifecycle.py`** - Added `is_stacked: bool | None = None` parameter to `compute_status_indicators`, `format_lifecycle_with_status`, and `_build_indicators`. Added 🥞 as the **first** indicator when `is_stacked is True`
+5. **`real.py` (data provider)** - Computes `is_stacked` from `base_ref_name` (true when not "master" or "main") and passes it through to `compute_status_indicators`
+6. **`conversion.py`** - Added `base_ref_name` to PR-to-plan metadata
+7. **`test_lifecycle_display.py`** - Updated test helpers and added 5 new tests covering stacked indicator behavior (stacked shows 🥞, stacked+draft, stacked+conflicts, not stacked, format_lifecycle with stacked)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="78126" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01LNcBFHcSa3fNhrzi9zm272">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick submit changes via Graphite</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="283" cache_read_input_tokens="78609" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LNcBFHcSa3fNhrzi9zm272">
+  Staging all changes...
+  Checking for staged changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": false,
+  "committed": false,
+  "message": "No new changes, submitted existing commits",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7964"
+}
+  </tool_result>
+  <assistant>No new changes to commit — existing commits were submitted. PR is at https://github.com/dagster-io/erk/pull/7964</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="78892" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 209}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="335" cache_read_input_tokens="79134" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;debug&lt;/command-message&gt;
+&lt;command-name&gt;/debug&lt;/command-name&gt;</user>
+  <user># Debug Skill
+
+Help the user debug an issue they're encountering in this current Claude Code session.
+
+## Session Debug Log
+
+The debug log for the current session is at: `/Users/schrockn/.claude/debug/bb4a46c2-5de1-4b83-bb76-cb11a606586a.txt`
+
+Total lines: 3171
+
+### Last 20 lines
+
+```
+2026-02-23T15:22:21.407Z [DEBUG] Temp file written successfully, size: 3148604 bytes
+2026-02-23T15:22:21.407Z [DEBUG] Applied original permissions to temp file
+2026-02-23T15:22:21.407Z [DEBUG] Renaming /Users/schrockn/.claude.json.tmp.78752.1771860141405 to /Users/schrockn/.claude.json
+2026-02-23T15:22:21.407Z [DEBUG] File /Users/schrockn/.claude.json written atomically
+2026-02-23T15:22:21.424Z [DEBUG] Writing to temp file: /Users/schrockn/.claude.json.tmp.78752.1771860141424
+2026-02-23T15:22:21.424Z [DEBUG] Preserving file permissions: 100644
+2026-02-23T15:22:21.425Z [DEBUG] Temp file written successfully, size: 3148604 bytes
+2026-02-23T15:22:21.425Z [DEBUG] Applied original permissions to temp file
+2026-02-23T15:22:21.425Z [DEBUG] Renaming /Users/schrockn/.claude.json.tmp.78752.1771860141424 to /Users/schrockn/.claude.json
+2026-02-23T15:22:21.426Z [DEBUG] File /Users/schrockn/.claude.json written atomically
+2026-02-23T15:22:21.462Z [DEBUG] High write ratio: blit=0, write=23831 (100.0% writes), screen=459x166
+2026-02-23T15:22:21.463Z [DEBUG] Stopped caffeinate, allowing sleep
+2026-02-23T15:22:21.509Z [ERROR] API error (attempt 1/11): undefined Request was aborted.
+2026-02-23T15:22:21.509Z [ERROR] Error in API request: Request was aborted.
+2026-02-23T15:22:21.509Z [ERROR] Error: Error: Request was aborted.
+    at makeRequest (/$bunfs/root/claude:301:3940)
+    at processTicksAndRejections (native:7:39)
+2026-02-23T15:22:21.510Z [DEBUG] Forked agent [prompt_suggestion] received message: type=user
+2026-02-23T15:22:21.510Z [DEBUG] Forked agent [prompt_suggestion] finished: 1 messages, types=[user], totalUsage: input=0 output=0 cacheRead=0 cacheCreate=0
+
+```
+
+For additional context, grep for [ERROR] and [WARN] lines across the full file.
+
+## Issue Description
+
+The user did not describe a specific issue. Read the debug log and summarize any errors, warnings, or notable issues.
+
+## Settings
+
+Remember that settings are in:
+* user - /Users/schrockn/.claude/settings.json
+* project - /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.claude/settings.json
+* local - /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.claude/settings.local.json
+
+## Instructions
+
+1. Review the user's issue description
+2. The last 20 lines show the debug file format. Look for [ERROR] and [WARN] entries, stack traces, and failure patterns across the file
+3. Consider launching the claude-code-guide subagent to understand the relevate Claude Code features
+4. Explain what you found in plain language
+5. Suggest concrete fixes or next steps
+</user>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;command-message&gt;local:debug-ci&lt;/command-message&gt;
+&lt;command-name&gt;/local:debug-ci&lt;/command-name&gt;</user>
+  <user># Debug CI
+
+Fetch and analyze failing CI logs for the current branch's PR.
+
+## Usage
+
+```bash
+/debug-ci
+```
+
+## Implementation
+
+### Step 1: Get Current Branch
+
+```bash
+git branch --show-current
+```
+
+### Step 2: Get Failed Run IDs
+
+Find the most recent failed workflow runs for this branch (REST-based, avoids GraphQL rate limits):
+
+```bash
+gh run list --branch &lt;branch&gt; --json conclusion,name,databaseId,status --jq '.[] | select(.conclusion == "failure") | "\(.databaseId) \(.name)"' | head -5
+```
+
+If no failures found, report "All CI checks are passing" and stop.
+
+### Step 3: Fetch Failed Logs
+
+For each failed run, fetch the logs:
+
+```bash
+gh run view &lt;run_id&gt; --log-failed | head -100
+```
+
+### Step 4: Analyze and Report
+
+Present the failure information clearly:
+
+```markdown
+## CI Failure Analysis
+
+**Branch**: &lt;branch&gt;
+**PR**: #&lt;number&gt;
+
+### Failed Checks
+
+1. **&lt;check_name&gt;**
+   - Run ID: &lt;id&gt;
+   - Error: &lt;error_summary&gt;
+
+### Failure Logs
+
+&lt;relevant log output&gt;
+
+### Suggested Fix
+
+&lt;based on the error, suggest what to do&gt;
+```
+
+## Common Failures and Fixes
+
+### docs-check / docs-sync-check
+
+**Error**: "Files out of sync: N change(s) needed"
+**Fix**: Run `erk docs sync` then commit
+
+### lint
+
+**Error**: Ruff linting errors
+**Fix**: Run `make fix` then commit
+
+### format-check
+
+**Error**: Files need reformatting
+**Fix**: Run `make format` then commit
+
+### prettier-check
+
+**Error**: Markdown files need formatting
+**Fix**: Run `make prettier` then commit
+
+### ty
+
+**Error**: Type checking failures
+**Fix**: Read the file and fix type annotations
+
+### unit-tests / integration-tests
+
+**Error**: Test failures
+**Fix**: Analyze test output and fix code or tests
+
+## Notes
+
+- This command only fetches and analyzes logs - it does NOT automatically fix issues
+- Use `/fast-ci` or `/all-ci` to run CI locally and fix issues iteratively
+- After fixing issues, inform the user that the fix is complete and they can push when ready
+- IMPORTANT: Do NOT push code automatically. The user will push when they choose to.
+</user>
+  <tool_use name="Bash" id="toolu_017EkerdHQsaUk3xSe2EZT4M">
+    <param name="command">git -C /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 branch --show-current</param>
+    <param name="description">Get current branch name</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1797" cache_read_input_tokens="79469" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1797, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017EkerdHQsaUk3xSe2EZT4M">
+plnd/add-stacked-pr-emoji-02-23-0658
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011qaMcjyXFx7PvmSbAj7oN2">
+    <param name="command">gh run list --repo dagster-io/erk --branch plnd/add-stacked-pr-emoji-02-23-0658 --json con...[truncated 4 chars]...status --jq '.[] | select(.conclusion == "failure") | "\(.databaseId) \(.name)"' | head -5</param>
+    <param name="description">Find failed CI runs for current branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="81266" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 138}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011qaMcjyXFx7PvmSbAj7oN2">
+22312234025 ci
+22312232372 ci
+22312165771 ci
+22312164376 ci
+  </tool_result>
+  <assistant>There are 4 failed CI runs. Let me fetch the logs from the most recent one.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="81404" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 186}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M2qVw8g1C2DjQnjet8GyTu">
+    <param name="command">gh run view 22312234025 --repo dagster-io/erk --log-failed 2&gt;&amp;1 | head -100</param>
+    <param name="description">Fetch failed logs from most recent CI run</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="81404" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 186, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M2qVw8g1C2DjQnjet8GyTu">
+integration-tests	Run integration tests	﻿2026-02-23T15:16:29.1250904Z ##[group]Run make test-integration
+integration-tests	Run integration tests	2026-02-23T15:16:29.1251204Z [36;1mmake test-integration[0m
+integration-tests	Run integration tests	2026-02-23T15:16:29.1273119Z shell: /usr/bin/bash -e {0}
+integration-tests	Run integration tests	2026-02-23T15:16:29.1273473Z env:
+integration-tests	Run integration tests	2026-02-23T15:16:29.1273841Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.12/x64
+integration-tests	Run integration tests	2026-02-23T15:16:29.1274501Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.12/x64/lib/pkgconfig
+integration-tests	Run integration tests	2026-02-23T15:16:29.1275130Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.12/x64
+integration-tests	Run integration tests	2026-02-23T15:16:29.1275682Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.12/x64
+integration-tests	Run integration tests	2026-02-23T15:16:29.1276026Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.12/x64
+integration-tests	Run integration tests	2026-02-23T15:16:29.1276366Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.12/x64/lib
+integration-tests	Run integration tests	2026-02-23T15:16:29.1276653Z ##[endgroup]
+integration-tests	Run integration tests	2026-02-23T15:16:29.1343239Z uv run pytest tests/integration/ -n auto
+integration-tests	Run integration tests	2026-02-23T15:16:29.5036049Z Downloading cpython-3.13.12-linux-x86_64-gnu (download) (33.5MiB)
+integration-tests	Run integration tests	2026-02-23T15:16:30.1342649Z  Downloaded cpython-3.13.12-linux-x86_64-gnu (download)
+integration-tests	Run integration tests	2026-02-23T15:16:30.2853185Z Using CPython 3.13.12
+integration-tests	Run integration tests	2026-02-23T15:16:30.3647419Z Removed virtual environment at: .venv
+integration-tests	Run integration tests	2026-02-23T15:16:30.3648205Z Creating virtual environment at: .venv
+integration-tests	Run integration tests	2026-02-23T15:16:30.3900482Z Downloading pydantic-core (2.0MiB)
+integration-tests	Run integration tests	2026-02-23T15:16:30.3921778Z Downloading aiohttp (1.7MiB)
+integration-tests	Run integration tests	2026-02-23T15:16:30.3958587Z Downloading libcst (2.2MiB)
+integration-tests	Run integration tests	2026-02-23T15:16:30.4554456Z  Downloaded pydantic-core
+integration-tests	Run integration tests	2026-02-23T15:16:30.4932972Z  Downloaded aiohttp
+integration-tests	Run integration tests	2026-02-23T15:16:30.5152625Z  Downloaded libcst
+integration-tests	Run integration tests	2026-02-23T15:16:30.6974443Z Installed 78 packages in 181ms
+integration-tests	Run integration tests	2026-02-23T15:16:35.9796640Z bringing up nodes...
+integration-tests	Run integration tests	2026-02-23T15:16:35.9799775Z bringing up nodes...
+integration-tests	Run integration tests	2026-02-23T15:16:35.9802080Z 
+integration-tests	Run integration tests	2026-02-23T15:16:36.0258938Z ........................................................................ [ 19%]
+integration-tests	Run integration tests	2026-02-23T15:16:36.0747543Z ..............................................................s.......ss [ 39%]
+integration-tests	Run integration tests	2026-02-23T15:16:37.2454921Z s....................................................................... [ 59%]
+
+... [70 lines omitted] ...
+
+integration-tests	Run integration tests	2026-02-23T15:16:48.2784042Z =================================== FAILURES ===================================
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EdMLwTQQfKYxWykPhZZVP7">
+    <param name="command">gh run view 22312234025 --repo dagster-io/erk --log-failed 2&gt;&amp;1 | tail -100</param>
+    <param name="description">Fetch tail of failed CI logs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3890" cache_read_input_tokens="81590" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3890, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EdMLwTQQfKYxWykPhZZVP7">
+integration-tests	Run integration tests	2026-02-23T15:16:48.2875612Z repo_root = PosixPath('/repo')
+integration-tests	Run integration tests	2026-02-23T15:16:48.2875763Z 
+integration-tests	Run integration tests	2026-02-23T15:16:48.2875838Z     def list_prs(
+integration-tests	Run integration tests	2026-02-23T15:16:48.2876019Z         self,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2876347Z         repo_root: Path,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2876550Z         *,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2876739Z         state: PRListState,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2876979Z         labels: list[str] | None = None,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2877253Z         author: str | None = None,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2877505Z         draft: bool | None = None,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2877758Z     ) -&gt; dict[str, PullRequestInfo]:
+integration-tests	Run integration tests	2026-02-23T15:16:48.2878095Z         """List PRs for the repository, keyed by head branch name.
+integration-tests	Run integration tests	2026-02-23T15:16:48.2878370Z     
+integration-tests	Run integration tests	2026-02-23T15:16:48.2878775Z         Uses REST API to fetch PRs in a single call. Filters by labels, author,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2879254Z         and draft status are applied client-side on the REST response data
+integration-tests	Run integration tests	2026-02-23T15:16:48.2879701Z         (the REST pulls endpoint does not support these filters natively).
+integration-tests	Run integration tests	2026-02-23T15:16:48.2880043Z     
+integration-tests	Run integration tests	2026-02-23T15:16:48.2880206Z         Args:
+integration-tests	Run integration tests	2026-02-23T15:16:48.2880433Z             repo_root: Repository root directory
+integration-tests	Run integration tests	2026-02-23T15:16:48.2880778Z             state: Filter by state - "open", "closed", or "all"
+integration-tests	Run integration tests	2026-02-23T15:16:48.2881208Z             labels: Filter to PRs with ALL specified labels. None means no label filter.
+integration-tests	Run integration tests	2026-02-23T15:16:48.2881714Z             author: Filter to PRs by this author username. None means no author filter.
+integration-tests	Run integration tests	2026-02-23T15:16:48.2882295Z             draft: Filter by draft status. True=only drafts, False=only non-drafts,
+integration-tests	Run integration tests	2026-02-23T15:16:48.2882659Z                 None=no draft filter.
+integration-tests	Run integration tests	2026-02-23T15:16:48.2882868Z     
+integration-tests	Run integration tests	2026-02-23T15:16:48.2883022Z         Returns:
+integration-tests	Run integration tests	2026-02-23T15:16:48.2883273Z             Dict mapping head branch name to PullRequestInfo.
+integration-tests	Run integration tests	2026-02-23T15:16:48.2883619Z             Empty dict if no PRs match or on API failure.
+integration-tests	Run integration tests	2026-02-23T15:16:48.2883879Z         """
+integration-tests	Run integration tests	2026-02-23T15:16:48.2884169Z         assert self._repo_info is not None, "repo_info required for list_prs"
+
+... [70 lines omitted] ...
+
+integration-tests	Run integration tests	2026-02-23T15:16:48.2887015Z         except RuntimeError:
+integration-tests	Run integration tests	2026-02-23T15:16:48.2887335Z             # API call failed - return empty dict for graceful degradation
+integration-tests	Run integration tests	2026-02-23T15:16:48.2901017Z E           KeyError: 'base'
+integration-tests	Run integration tests	2026-02-23T15:16:48.3288565Z packages/erk-shared/src/erk_shared/gateway/github/real.py:1594: KeyError
+integration-tests	Run integration tests	2026-02-23T15:16:48.3290843Z FAILED tests/integration/test_real_github.py::test_list_prs_success - KeyError: 'base'
+integration-tests	Run integration tests	2026-02-23T15:16:48.3291954Z FAILED tests/integration/test_real_github.py::test_list_prs_with_closed_state - KeyError: 'base'
+integration-tests	Run integration tests	2026-02-23T15:16:48.3293802Z FAILED tests/integration/test_real_github.py::test_list_prs_merged_state - KeyError: 'base'
+integration-tests	Run integration tests	2026-02-23T15:16:48.3295115Z 3 failed, 357 passed, 4 skipped in 16.43s
+integration-tests	Run integration tests	2026-02-23T15:16:48.3805503Z make: *** [Makefile:42: test-integration-erk] Error 1
+integration-tests	Run integration tests	2026-02-23T15:16:48.3819278Z ##[error]Process completed with exit code 2.
+  </tool_result>
+  <assistant>## CI Failure Analysis
+
+**Branch**: `plnd/add-stacked-pr-emoji-02-23-0658`
+**Failed**: 3 integration tests in `tests/integration/test_real_github.py`
+
+The issue is that the mock data in the integration tests doesn't include a `"base"` key, so `pr_data["base"]["ref"]` raises `KeyError`. I need to use `.get()` for safe access since the test fixtures don't include base branch data.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4528" cache_read_input_tokens="85480" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4528}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U6jFkT9HERYhGQKp32rtnz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">                base_ref_name=pr_data["base"]["ref"],</param>
+    <param name="new_string">                base_ref_name=pr_data.get("base", {}).get("ref"),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4528" cache_read_input_tokens="85480" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4528}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U6jFkT9HERYhGQKp32rtnz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the failing integration tests to confirm the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="90008" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 482}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01GETgBS9JKdLn9cbpVzdT49">
+    <param name="description">Run failing integration tests</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and run:
+
+uv run pytest tes...[truncated 108 chars]... tests/integration/test_real_github.py::test_list_prs_merged_state -v
+
+Report all results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="90008" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 482}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GETgBS9JKdLn9cbpVzdT49">
+pytest passed: 3 passed in 0.04s
+
+All three tests executed successfully:
+- `test_list_prs_success`
+- `test_list_prs_with_closed_state`
+- `test_list_prs_merged_state`
+agentId: af23d87bc1f74377d (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13815
+tool_uses: 1
+duration_ms: 3944&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 3 previously failing tests now pass. The fix was changing `pr_data["base"]["ref"]` to `pr_data.get("base", {}).get("ref")` for safe access when the REST response mock data doesn't include the `base` field.
+
+Let me quick-submit the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="90490" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 344}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WxHdcDYDzHGvv9ZGLQVnKh">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick submit the fix</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="90490" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 344}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WxHdcDYDzHGvv9ZGLQVnKh">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7964"
+}
+  </tool_result>
+  <assistant>Fix submitted. The `KeyError: 'base'` was caused by using direct dict access (`pr_data["base"]["ref"]`) instead of safe `.get()` access in the REST API path where test fixtures don't include all fields. Changed to `pr_data.get("base", {}).get("ref")`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="90834" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 276}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+</session>

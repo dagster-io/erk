@@ -1,0 +1,1250 @@
+<session>
+  <meta branch="plnd/add-stacked-pr-emoji-02-23-0658" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="bb4a46c2-5de1-4b83-bb76-cb11a606586a"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="bb4a46c2-5de1-4b83-bb76-cb11a606586a" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="bb4a46c2-5de1-4b83-bb76-cb11a606586a" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the steps outlined in the command.
+
+Step 0: No arguments provided, so no ISSUE_ARG or FILE_ARG.
+
+Step 1b: Check if `.impl/` already exists by running `erk exec impl-init --json`.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12962" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12962}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12962" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12962}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MS2pEu3VAq3bHYM5aQYVKB">
+    <param name="command">erk exec impl-init --json</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12962" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12962}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MS2pEu3VAq3bHYM5aQYVKB">
+{"valid": true, "impl_type": "impl", "has_plan_tracking": true, "related_docs": {"skills": [], "docs": []}, "plan_number": 7964}
+  </tool_result>
+  <assistant>`.impl/` exists and is valid with issue tracking (plan #7964). Let me sync with remote and read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="32003" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 249}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012vuPpaWgZaWboP8RmfUZrh">
+    <param name="command">erk exec setup-impl-from-issue 7964</param>
+    <param name="description">Sync local branch with remote for plan #7964</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="32003" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 249}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012vuPpaWgZaWboP8RmfUZrh">
+Found existing .impl/ for plan #7964, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.impl", "plan_number": 7964, "plan_url": "https://github.com/dagster-io/erk/pull/7964", "branch": "plnd/add-stacked-pr-emoji-02-23-0658", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QvDguZMPnau1XW3ya6vZ17">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="32003" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 249}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QvDguZMPnau1XW3ya6vZ17">
+     1→# Add 🥞 stacked PR emoji to dashboard
+     2→
+     3→## Context
+     4→
+     5→PRs deep in a Graphite stack (base branch != master) can show confusing status in the dashboard — they may appear as draft or conflicting when the real issue is just that they're waiting on parent PRs. The user wants a 🥞 pancake stack emoji to indicate when a PR's immediate parent is not master, making the stacked state visible at a glance.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Add `base_ref_name` field to `PullRequestInfo`
+    10→
+    11→**File:** `packages/erk-shared/src/erk_shared/gateway/github/types.py:201`
+    12→
+    13→Add `base_ref_name: str | None = None` after the existing `review_decision` field. Since it has a default, no existing constructors break.
+    14→
+    15→### 2. Add `baseRefName` to issue PR linkage GraphQL fragment
+    16→
+    17→**File:** `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py:56-78`
+    18→
+    19→Add `baseRefName` to the `ISSUE_PR_LINKAGE_FRAGMENT` `source` fields (it's already in `GET_PLAN_PRS_WITH_DETAILS_QUERY`).
+    20→
+    21→### 3. Populate `base_ref_name` in GraphQL parsers
+    22→
+    23→**File:** `packages/erk-shared/src/erk_shared/gateway/github/real.py`
+    24→
+    25→Three locations to update:
+    26→
+    27→- `_parse_pr_from_timeline_event` (~line 1262): Add `base_ref_name=source.get("baseRefName")` to PullRequestInfo constructor
+    28→- `_parse_plan_prs_with_details` (~line 1716): Add `base_ref_name=node.get("baseRefName")` to PullRequestInfo constructor
+    29→- `list_prs` REST path (~line 1581): Add `base_ref_name=pr_data["base"]["ref"]` to PullRequestInfo constructor
+    30→
+
+... [39 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me follow the steps. Let me check if `.erk/impl-context/` exists, clean it up if needed, then proceed.
+
+Let me also read the related files mentioned in the plan to understand the current code before making changes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1735" cache_read_input_tokens="32252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1735}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, the plan is loaded. Let me clean up impl-context if needed, then set up tasks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1735" cache_read_input_tokens="32252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1735}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011Kr4DjGzojh4x6RRy1n21E">
+    <param name="command">if [ -d .erk/impl-context/ ]; then git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove ...[truncated 32 chars]...h origin "$(git branch --show-current)"; else echo "No .erk/impl-context/ to clean up"; fi</param>
+    <param name="description">Clean up impl-context if it exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1735" cache_read_input_tokens="32252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1735}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Kr4DjGzojh4x6RRy1n21E">
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plnd/add-stacked-pr-emoji-02-23-0658 28b3f097b] Remove .erk/impl-context/ before implementation
+ 2 files changed, 72 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   e4310a31e..28b3f097b  plnd/add-stacked-pr-emoji-02-23-0658 -&gt; plnd/add-stacked-pr-emoji-02-23-0658
+  </tool_result>
+  <assistant>Now let me create the task list and start reading the relevant source files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="33987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01SmLdhi41Zp4xKYCbjbqqS7">
+    <param name="subject">Add base_ref_name field to PullRequestInfo</param>
+    <param name="description">Add `base_ref_name: str | None = None` to the PullRequestInfo dataclass in types.py after the review_decision field.</param>
+    <param name="activeForm">Adding base_ref_name to PullRequestInfo</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="33987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SmLdhi41Zp4xKYCbjbqqS7">
+Task #1 created successfully: Add base_ref_name field to PullRequestInfo
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01CrwUu3zujZ7d9kV6Cg355D">
+    <param name="subject">Add baseRefName to GraphQL fragment</param>
+    <param name="description">Add `baseRefName` to the ISSUE_PR_LINKAGE_FRAGMENT in graphql_queries.py.</param>
+    <param name="activeForm">Adding baseRefName to GraphQL fragment</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="33987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CrwUu3zujZ7d9kV6Cg355D">
+Task #2 created successfully: Add baseRefName to GraphQL fragment
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01C2r9eVE68r1NSzvNz3e6hh">
+    <param name="subject">Populate base_ref_name in GraphQL parsers</param>
+    <param name="description">Update three locations in real.py: _parse_pr_from_timeline_event, _parse_plan_prs_with_details, and list_prs REST path to populate base_ref_name.</param>
+    <param name="activeForm">Populating base_ref_name in parsers</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="33987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C2r9eVE68r1NSzvNz3e6hh">
+Task #3 created successfully: Populate base_ref_name in GraphQL parsers
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01PhXRDTrtJeNikCXQ2zMb2H">
+    <param name="subject">Add is_stacked parameter to indicator functions</param>
+    <param name="description">Add is_stacked: bool | None = None to compute_status_indicators, format_lifecycle_with_status, and _build_indicators in lifecycle.py. Add 🥞 as first indicator when is_stacked is True.</param>
+    <param name="activeForm">Adding is_stacked to indicator functions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="33987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PhXRDTrtJeNikCXQ2zMb2H">
+Task #4 created successfully: Add is_stacked parameter to indicator functions
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01WausgzgXbsnFbgre2rJ2aK">
+    <param name="subject">Thread is_stacked through data provider</param>
+    <param name="description">In real.py data provider, compute is_stacked from base_ref_name and pass to compute_status_indicators. Optionally add base_ref_name to pr_details_to_plan metadata.</param>
+    <param name="activeForm">Threading is_stacked through data provider</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="33987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WausgzgXbsnFbgre2rJ2aK">
+Task #5 created successfully: Thread is_stacked through data provider
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014uC9F4y2axxcYnXJNAxTx2">
+    <param name="subject">Update tests for stacked PR indicator</param>
+    <param name="description">Update test helpers and add tests for stacked indicator: shows 🥞, stacked+draft, stacked+conflicts, not stacked shows no 🥞.</param>
+    <param name="activeForm">Writing stacked PR indicator tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="33987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014uC9F4y2axxcYnXJNAxTx2">
+Task #6 created successfully: Update tests for stacked PR indicator
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01PnSwKADcyY7r18D3AHHet3">
+    <param name="subject">Run CI and submit PR</param>
+    <param name="description">Run CI checks iteratively and submit the PR via erk pr submit.</param>
+    <param name="activeForm">Running CI and submitting PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="33987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PnSwKADcyY7r18D3AHHet3">
+Task #7 created successfully: Run CI and submit PR
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01H23bskjFwhcu4D2hfCMxDt">
+    <param name="command">erk exec impl-signal started --session-id="bb4a46c2-5de1-4b83-bb76-cb11a606586a" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1162" cache_read_input_tokens="34504" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H23bskjFwhcu4D2hfCMxDt">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 7964
+}
+  </tool_result>
+  <assistant>Now let me read all the relevant source files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="35666" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 153}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AL7DYYMoa96WqY63Cfm1uY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">190</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="35666" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 153}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AL7DYYMoa96WqY63Cfm1uY">
+   190→    repo: str  # GitHub repo name (e.g., "erk")
+   191→    # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
+   192→    has_conflicts: bool | None = None
+   193→    checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
+   194→    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
+   195→    will_close_target: bool = False
+   196→    # Head branch name (the source branch) - optional, populated by some API calls
+   197→    head_branch: str | None = None
+   198→    # Review thread counts: (resolved_count, total_count) or None if not fetched
+   199→    review_thread_counts: tuple[int, int] | None = None
+   200→    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+   201→    review_decision: str | None = None
+   202→
+   203→
+   204→class _NotAvailable:
+   205→    """Sentinel for fields not available from certain API queries.
+   206→
+   207→    Raises AttributeError when accessed as a string, preventing silent bugs
+   208→    when code tries to use fields that weren't populated.
+   209→    """
+   210→
+   211→    def __init__(self, field_name: str, source: str) -&gt; None:
+   212→        self._field_name = field_name
+   213→        self._source = source
+   214→
+   215→    def __str__(self) -&gt; str:
+   216→        msg = f"'{self._field_name}' is not available from {self._source}"
+   217→        raise AttributeError(msg)
+   218→
+   219→    def __repr__(self) -&gt; str:
+  </tool_result>
+  <tool_use name="Read" id="toolu_0134HXFtQzKSKWbSa26vWaaw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+    <param name="offset">50</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="35666" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 153}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0134HXFtQzKSKWbSa26vWaaw">
+    50→    }
+    51→  }
+    52→}"""
+    53→
+    54→# Fragment for PR linkage data on CrossReferencedEvent
+    55→# Used by _build_issue_pr_linkage_query for batch issue queries
+    56→ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedEvent {
+    57→  willCloseTarget
+    58→  source {
+    59→    ... on PullRequest {
+    60→      number
+    61→      state
+    62→      url
+    63→      isDraft
+    64→      createdAt
+    65→      headRefName
+    66→      statusCheckRollup {
+    67→        state
+    68→        contexts(last: 1) {
+    69→          totalCount
+    70→          checkRunCountsByState { state count }
+    71→          statusContextCountsByState { state count }
+    72→        }
+    73→      }
+    74→      mergeable
+    75→      reviewDecision
+    76→    }
+    77→  }
+    78→}"""
+    79→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CT34vbyKL1gTGwv75sAwUL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="35666" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 153}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CT34vbyKL1gTGwv75sAwUL">
+     1→"""Lifecycle stage display computation for plans.
+     2→
+     3→Extracted to a standalone module to avoid circular imports when testing.
+     4→The main consumer is RealPlanDataProvider in real.py.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     8→from erk_shared.plan_store.conversion import header_str
+     9→from erk_shared.plan_store.types import Plan
+    10→
+    11→
+    12→def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+    13→    """Compute lifecycle stage display string for a plan.
+    14→
+    15→    Reads lifecycle_stage from plan header fields if present, otherwise
+    16→    infers from is_draft and pr_state in plan metadata. Returns a
+    17→    color-coded Rich markup string for table display.
+    18→
+    19→    When the resolved stage is "planned" and a workflow run exists,
+    20→    upgrades to "implementing" since the plan is actively being worked on.
+    21→
+    22→    Args:
+    23→        plan: Plan with header_fields and metadata populated
+    24→        has_workflow_run: Whether the plan has an associated workflow run
+    25→
+    26→    Returns:
+    27→        Display string (may contain Rich markup for color)
+    28→    """
+    29→    # Read from header fields first
+    30→    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+... [196 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Y4f4vtpkB2M9EbaJiNi2fK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/plan_store/test_lifecycle_display.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="35666" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 153}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y4f4vtpkB2M9EbaJiNi2fK">
+     1→"""Tests for lifecycle display functions."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     6→from erk_shared.gateway.plan_data_provider.lifecycle import (
+     7→    compute_lifecycle_display,
+     8→    compute_status_indicators,
+     9→    format_lifecycle_with_status,
+    10→)
+    11→from erk_shared.plan_store.types import Plan, PlanState
+    12→
+    13→
+    14→def _format_lifecycle(
+    15→    lifecycle_display: str,
+    16→    *,
+    17→    is_draft: bool | None,
+    18→    has_conflicts: bool | None,
+    19→    review_decision: str | None,
+    20→    checks_passing: bool | None = None,
+    21→    has_unresolved_comments: bool | None = None,
+    22→) -&gt; str:
+    23→    """Test helper: wraps format_lifecycle_with_status with None defaults for check params."""
+    24→    return format_lifecycle_with_status(
+    25→        lifecycle_display,
+    26→        is_draft=is_draft,
+    27→        has_conflicts=has_conflicts,
+    28→        review_decision=review_decision,
+    29→        checks_passing=checks_passing,
+    30→        has_unresolved_comments=has_unresolved_comments,
+
+... [630 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me read the real.py files I need to modify. Let me look at the three parser locations and the data provider.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="16915" cache_read_input_tokens="35819" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the real.py files for the parsers and data provider.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16915" cache_read_input_tokens="35819" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01J3zcYffp9Aa5BiZRyWgDZz">
+    <param name="pattern">_parse_pr_from_timeline_event</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16915" cache_read_input_tokens="35819" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J3zcYffp9Aa5BiZRyWgDZz">
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1232:    def _parse_pr_from_timeline_event(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1371:                result = self._parse_pr_from_timeline_event(event, repo_id)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QUb5wyDWjHDfbMBdDvCoFJ">
+    <param name="pattern">_parse_plan_prs_with_details</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16915" cache_read_input_tokens="35819" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QUb5wyDWjHDfbMBdDvCoFJ">
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1644:        return self._parse_plan_prs_with_details(response, repo_id, author=author)
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1646:    def _parse_plan_prs_with_details(
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CjefPdotHJFcmFcY23mRjX">
+    <param name="pattern">def list_prs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16915" cache_read_input_tokens="35819" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CjefPdotHJFcmFcY23mRjX">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:199:    def list_prs(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:384:    def list_prs(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1508:    def list_prs(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:189:    def list_prs(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:677:    def list_prs(
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MaRrnpTSTmqYyNWTBZAqep">
+    <param name="pattern">compute_status_indicators</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16915" cache_read_input_tokens="35819" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MaRrnpTSTmqYyNWTBZAqep">
+60:from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators
+703:        status_display = compute_status_indicators(
+  </tool_result>
+  <tool_use name="Read" id="toolu_011JswEkhh43A6CoHSphpKcT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1232</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1349" cache_read_input_tokens="52734" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1349}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011JswEkhh43A6CoHSphpKcT">
+  1232→    def _parse_pr_from_timeline_event(
+  1233→        self, event: dict[str, Any], repo_id: GitHubRepoId
+  1234→    ) -&gt; tuple[PullRequestInfo, str] | None:
+  1235→        """Parse PR info from a timeline CrossReferencedEvent.
+  1236→
+  1237→        Returns tuple of (PullRequestInfo, created_at_timestamp) or None if invalid.
+  1238→        The willCloseTarget field from the event indicates whether the PR will
+  1239→        close this issue when merged. PRs with willCloseTarget=False are still
+  1240→        included (they reference the issue but won't close it on merge).
+  1241→        """
+  1242→        source = event.get("source")
+  1243→        if source is None:
+  1244→            return None
+  1245→
+  1246→        pr_number = source.get("number")
+  1247→        pr_state = source.get("state")
+  1248→        pr_url = source.get("url")
+  1249→        created_at_pr = source.get("createdAt")
+  1250→
+  1251→        # Skip if essential fields are missing (source may be Issue, not PR)
+  1252→        if pr_number is None or pr_state is None or pr_url is None or created_at_pr is None:
+  1253→            return None
+  1254→
+  1255→        checks_passing, checks_counts = self._parse_status_rollup(source.get("statusCheckRollup"))
+  1256→        has_conflicts = self._parse_mergeable_status(source.get("mergeable"))
+  1257→        will_close_target = event.get("willCloseTarget", False)
+  1258→        review_thread_counts = self._parse_review_thread_counts(source.get("reviewThreads"))
+  1259→        head_ref_name = source.get("headRefName")
+  1260→        review_decision = source.get("reviewDecision")
+  1261→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01URiwNqmCQybpkd8pKztTqh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1646</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1349" cache_read_input_tokens="52734" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1349}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01URiwNqmCQybpkd8pKztTqh">
+  1646→    def _parse_plan_prs_with_details(
+  1647→        self,
+  1648→        response: dict[str, Any],
+  1649→        repo_id: GitHubRepoId,
+  1650→        *,
+  1651→        author: str | None,
+  1652→    ) -&gt; tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+  1653→        """Parse GraphQL response for plan PRs into PRDetails and PullRequestInfo."""
+  1654→        pr_details_list: list[PRDetails] = []
+  1655→        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+  1656→
+  1657→        repo_data = response.get("data", {}).get("repository")
+  1658→        if repo_data is None:
+  1659→            return ([], {})
+  1660→
+  1661→        nodes = repo_data.get("pullRequests", {}).get("nodes", [])
+  1662→        for node in nodes:
+  1663→            if node is None:
+  1664→                continue
+  1665→
+  1666→            pr_number = node.get("number")
+  1667→            if pr_number is None:
+  1668→                continue
+  1669→
+  1670→            # Client-side author filter
+  1671→            author_data = node.get("author")
+  1672→            pr_author = author_data.get("login", "") if author_data else ""
+  1673→            if author is not None and pr_author != author:
+  1674→                continue
+  1675→
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PAxujdgxxcmKFX71RiV4Gi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1508</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1349" cache_read_input_tokens="52734" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1349}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PAxujdgxxcmKFX71RiV4Gi">
+  1508→    def list_prs(
+  1509→        self,
+  1510→        repo_root: Path,
+  1511→        *,
+  1512→        state: PRListState,
+  1513→        labels: list[str] | None = None,
+  1514→        author: str | None = None,
+  1515→        draft: bool | None = None,
+  1516→    ) -&gt; dict[str, PullRequestInfo]:
+  1517→        """List PRs for the repository, keyed by head branch name.
+  1518→
+  1519→        Uses REST API to fetch PRs in a single call. Filters by labels, author,
+  1520→        and draft status are applied client-side on the REST response data
+  1521→        (the REST pulls endpoint does not support these filters natively).
+  1522→
+  1523→        Args:
+  1524→            repo_root: Repository root directory
+  1525→            state: Filter by state - "open", "closed", or "all"
+  1526→            labels: Filter to PRs with ALL specified labels. None means no label filter.
+  1527→            author: Filter to PRs by this author username. None means no author filter.
+  1528→            draft: Filter by draft status. True=only drafts, False=only non-drafts,
+  1529→                None=no draft filter.
+  1530→
+  1531→        Returns:
+  1532→            Dict mapping head branch name to PullRequestInfo.
+  1533→            Empty dict if no PRs match or on API failure.
+  1534→        """
+  1535→        assert self._repo_info is not None, "repo_info required for list_prs"
+  1536→
+  1537→        # GH-API-AUDIT: REST - GET pulls (list)
+
+... [50 lines omitted] ...
+
+  1546→        except RuntimeError:
+  1547→            # API call failed - return empty dict for graceful degradation
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KnHJ3oEJbNBgwc5pUfcBWQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">690</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1349" cache_read_input_tokens="52734" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1349}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KnHJ3oEJbNBgwc5pUfcBWQ">
+   690→
+   691→        # Format created_at display
+   692→        created_display = format_relative_time(plan.created_at.isoformat()) or "-"
+   693→
+   694→        # Determine if this is a learn plan
+   695→        is_learn_plan = "erk-learn" in plan.labels
+   696→
+   697→        # Compute lifecycle display from header or infer from metadata
+   698→        lifecycle_display = _compute_lifecycle_display(
+   699→            plan, has_workflow_run=workflow_run is not None
+   700→        )
+   701→
+   702→        # Compute status indicators separately for the "sts" column
+   703→        status_display = compute_status_indicators(
+   704→            lifecycle_display,
+   705→            is_draft=pr_is_draft,
+   706→            has_conflicts=pr_has_conflicts,
+   707→            review_decision=pr_review_decision,
+   708→            checks_passing=pr_checks_passing,
+   709→            has_unresolved_comments=pr_has_unresolved_comments,
+   710→        )
+   711→
+   712→        return PlanRowData(
+   713→            plan_id=plan_id,
+   714→            plan_url=plan.url,
+  </tool_result>
+  <thinking>Let me also read the rest of the list_prs method to see where the PullRequestInfo constructor ends, and check the data provider for where `selected_pr` and `base_ref_name` come from.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4241" cache_read_input_tokens="54083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XU2BmvF89Gf9zqosmN68eF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1580</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4241" cache_read_input_tokens="54083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XU2BmvF89Gf9zqosmN68eF">
+  1580→            branch = pr_data["head"]["ref"]
+  1581→            result[branch] = PullRequestInfo(
+  1582→                number=pr_data["number"],
+  1583→                state=pr_state,
+  1584→                url=pr_data["html_url"],
+  1585→                is_draft=pr_is_draft,
+  1586→                title=pr_data.get("title"),
+  1587→                checks_passing=None,  # Not fetched in batch API
+  1588→                owner=self._repo_info.owner,
+  1589→                repo=self._repo_info.name,
+  1590→                has_conflicts=None,  # Not fetched in batch API
+  1591→                checks_counts=None,
+  1592→                will_close_target=False,
+  1593→            )
+  1594→
+  1595→        return result
+  1596→
+  1597→    def list_plan_prs_with_details(
+  1598→        self,
+  1599→        location: GitHubRepoLocation,
+  </tool_result>
+  <tool_use name="Read" id="toolu_015odqyrQLzzugvSJoZbNksX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1716</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4241" cache_read_input_tokens="54083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015odqyrQLzzugvSJoZbNksX">
+  1716→            pr_info = PullRequestInfo(
+  1717→                number=pr_number,
+  1718→                state=pr_state,
+  1719→                url=node.get("url", ""),
+  1720→                is_draft=node.get("isDraft", False),
+  1721→                title=node.get("title"),
+  1722→                checks_passing=checks_passing,
+  1723→                owner=repo_id.owner,
+  1724→                repo=repo_id.repo,
+  1725→                has_conflicts=has_conflicts,
+  1726→                checks_counts=checks_counts,
+  1727→                review_thread_counts=review_thread_counts,
+  1728→                head_branch=node.get("headRefName"),
+  1729→                review_decision=review_decision,
+  1730→            )
+  1731→            pr_linkages[pr_number] = [pr_info]
+  1732→
+  1733→        return (pr_details_list, pr_linkages)
+  1734→
+  1735→    def update_pr_title_and_body(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BJVwFwjuwznesNi9WDx6b2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">660</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4241" cache_read_input_tokens="54083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BJVwFwjuwznesNi9WDx6b2">
+   660→                objective_slug_display = slug[:25]
+   661→            elif plan.title:
+   662→                stripped = plan.title.removeprefix("Objective: ")
+   663→                objective_slug_display = stripped[:25]
+   664→
+   665→        # Parse roadmap for objective-specific fields
+   666→        objective_done_nodes = 0
+   667→        objective_total_nodes = 0
+   668→        objective_progress_display = "-"
+   669→        objective_state_display = "-"
+   670→        objective_deps_display = "-"
+   671→        if plan.body:
+   672→            phases, _errors = parse_roadmap(plan.body)
+   673→            if phases:
+   674→                graph = build_graph(phases)
+   675→                summary = compute_graph_summary(graph)
+   676→                objective_done_nodes = summary["done"]
+   677→                objective_total_nodes = summary["total_nodes"]
+   678→                objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+   679→                objective_state_display = build_state_sparkline(graph.nodes)
+   680→                next_node = find_graph_next_node(graph, phases)
+   681→                if next_node is not None:
+   682→                    min_status = graph.min_dep_status(next_node["id"])
+   683→                    if min_status is None or min_status in _TERMINAL_STATUSES:
+   684→                        objective_deps_display = "ready"
+   685→                    else:
+   686→                        objective_deps_display = min_status.replace("_", " ")
+   687→
+   688→        # Format updated_at display
+   689→        updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to see where `pr_is_draft` etc. are extracted to understand where to add `base_ref_name` extraction.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1913" cache_read_input_tokens="58324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1913}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RsVdrc3VWpxtavMhust3Mv">
+    <param name="pattern">pr_is_draft</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1913" cache_read_input_tokens="58324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1913}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RsVdrc3VWpxtavMhust3Mv">
+571:        pr_is_draft: bool | None = None
+596:                pr_is_draft = selected_pr.is_draft
+705:            is_draft=pr_is_draft,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MCvbnfw2kGDR4B1rMTPkyV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">570</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="60237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 250}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MCvbnfw2kGDR4B1rMTPkyV">
+   570→        # PR status fields for lifecycle enrichment
+   571→        pr_is_draft: bool | None = None
+   572→        pr_has_conflicts: bool | None = None
+   573→        pr_review_decision: str | None = None
+   574→        pr_checks_passing: bool | None = None
+   575→        pr_has_unresolved_comments: bool | None = None
+   576→
+   577→        if plan_id in pr_linkages:
+   578→            issue_prs = pr_linkages[plan_id]
+   579→            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
+   580→            if selected_pr is not None:
+   581→                pr_number = selected_pr.number
+   582→                pr_title = selected_pr.title
+   583→                pr_state = selected_pr.state
+   584→                pr_head_branch = selected_pr.head_branch
+   585→                graphite_url = self._ctx.graphite.get_graphite_url(
+   586→                    GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
+   587→                )
+   588→                pr_url = graphite_url if use_graphite and graphite_url else selected_pr.url
+   589→                emoji = get_pr_status_emoji(selected_pr)
+   590→                if selected_pr.will_close_target:
+   591→                    emoji += "🔗"
+   592→                pr_display = f"#{selected_pr.number} {emoji}"
+   593→                checks_display = format_checks_cell(selected_pr)
+   594→
+   595→                # Extract status fields for lifecycle enrichment
+   596→                pr_is_draft = selected_pr.is_draft
+   597→                pr_has_conflicts = selected_pr.has_conflicts
+   598→                pr_review_decision = selected_pr.review_decision
+   599→                pr_checks_passing = selected_pr.checks_passing
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a complete picture. Let me also quickly check `conversion.py` as the plan mentions it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1036" cache_read_input_tokens="60487" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1036}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QjEQDfLVD51GYgU61FdMrb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/plan_store/conversion.py</param>
+    <param name="offset">95</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1036" cache_read_input_tokens="60487" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1036}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QjEQDfLVD51GYgU61FdMrb">
+    95→        state=state,
+    96→        url=pr.url,
+    97→        labels=list(pr.labels),
+    98→        assignees=[],
+    99→        created_at=pr.created_at,
+   100→        updated_at=pr.updated_at,
+   101→        metadata={
+   102→            "number": pr.number,
+   103→            "owner": pr.owner,
+   104→            "repo": pr.repo,
+   105→            "author": pr.author,
+   106→            "is_draft": pr.is_draft,
+   107→            "pr_state": pr.state,
+   108→        },
+   109→        objective_id=objective_id,
+   110→        header_fields=header_fields,
+   111→    )
+   112→
+   113→
+   114→def header_str(header_fields: dict[str, object], key: str) -&gt; str | None:
+  </tool_result>
+  <assistant>Good, I have all the context I need. Let me now implement all the changes. I'll start with phases 1-3 (the data layer changes).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="61523" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 399}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Hth3fQSnJEVaqzFuqRCyhs">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="61523" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 399, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hth3fQSnJEVaqzFuqRCyhs">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 1: Add `base_ref_name` field to `PullRequestInfo`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="125" cache_read_input_tokens="61922" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 125}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0196Yu9aiS8TijfDb2F9jgSy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="old_string">    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+    review_decision: str | None = None</param>
+    <param name="new_string">    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+    rev...[truncated 41 chars]...arget branch) - optional, populated by some API calls
+    base_ref_name: str | None = None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="125" cache_read_input_tokens="61922" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 125, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0196Yu9aiS8TijfDb2F9jgSy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01HMwJaUTFZ7XQBBq5uJcTtL">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="62047" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 348}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HMwJaUTFZ7XQBBq5uJcTtL">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_011zTLKnB1Cvmi1ASJi2U6Tr">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="62047" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 348}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011zTLKnB1Cvmi1ASJi2U6Tr">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 2: Add `baseRefName` to GraphQL fragment**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="62395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Tz2xLXHULWfRwkSzkdxpnk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+    <param name="old_string">      number
+      state
+      url
+      isDraft
+      createdAt
+      headRefName</param>
+    <param name="new_string">      number
+      state
+      url
+      isDraft
+      createdAt
+      headRefName
+      baseRefName</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="62395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tz2xLXHULWfRwkSzkdxpnk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01W7AvuPWBprQopT3c8vWFiZ">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="62593" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 293}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W7AvuPWBprQopT3c8vWFiZ">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01G2HLSp9m7bKGtsU8YFw3zk">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="62593" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 293}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G2HLSp9m7bKGtsU8YFw3zk">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 3: Populate `base_ref_name` in all three parser locations**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="62886" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VCdT47ru1m9xFc2M4GB8AE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">        pr_info = PullRequestInfo(
+                number=pr_number,
+                state...[truncated 438 chars]... head_branch=head_ref_name,
+                review_decision=review_decision,
+            )</param>
+    <param name="new_string">        pr_info = PullRequestInfo(
+                number=pr_number,
+                state...[truncated 495 chars]...on=review_decision,
+                base_ref_name=source.get("baseRefName"),
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="62886" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VCdT47ru1m9xFc2M4GB8AE">
+&lt;tool_use_error&gt;String to replace not found in file.
+String:         pr_info = PullRequestInfo(
+                number=pr_number,
+                state=pr_state,
+                url=pr_url,
+                is_draft=source.get("isDraft", False),
+                title=None,
+                checks_passing=checks_passing,
+                owner=repo_id.owner,
+                repo=repo_id.repo,
+                has_conflicts=has_conflicts,
+                checks_counts=checks_counts,
+                will_close_target=will_close_target,
+                review_thread_counts=review_thread_counts,
+                head_branch=head_ref_name,
+                review_decision=review_decision,
+            )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NWJJpCo2CpHJEj6KsFjFBH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">            pr_info = PullRequestInfo(
+                number=pr_number,
+                s...[truncated 423 chars]...ch=node.get("headRefName"),
+                review_decision=review_decision,
+            )</param>
+    <param name="new_string">            pr_info = PullRequestInfo(
+                number=pr_number,
+                s...[truncated 478 chars]...sion=review_decision,
+                base_ref_name=node.get("baseRefName"),
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="62886" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NWJJpCo2CpHJEj6KsFjFBH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MbLp8p9QTavwmFHMafmTF3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">            result[branch] = PullRequestInfo(
+                number=pr_data["number"],
+  ...[truncated 350 chars]...                checks_counts=None,
+                will_close_target=False,
+            )</param>
+    <param name="new_string">            result[branch] = PullRequestInfo(
+                number=pr_data["number"],
+  ...[truncated 404 chars]...ll_close_target=False,
+                base_ref_name=pr_data["base"]["ref"],
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="62886" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MbLp8p9QTavwmFHMafmTF3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>The first edit failed - let me re-read the exact indentation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1779" cache_read_input_tokens="63084" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1779}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JVotdk51UGdR6SixbYt5YU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1260</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1779" cache_read_input_tokens="63084" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1779}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JVotdk51UGdR6SixbYt5YU">
+  1260→        review_decision = source.get("reviewDecision")
+  1261→
+  1262→        pr_info = PullRequestInfo(
+  1263→            number=pr_number,
+  1264→            state=pr_state,
+  1265→            url=pr_url,
+  1266→            is_draft=source.get("isDraft", False),
+  1267→            title=None,
+  1268→            checks_passing=checks_passing,
+  1269→            owner=repo_id.owner,
+  1270→            repo=repo_id.repo,
+  1271→            has_conflicts=has_conflicts,
+  1272→            checks_counts=checks_counts,
+  1273→            will_close_target=will_close_target,
+  1274→            review_thread_counts=review_thread_counts,
+  1275→            head_branch=head_ref_name,
+  1276→            review_decision=review_decision,
+  1277→        )
+  1278→        return (pr_info, created_at_pr)
+  1279→
+  </tool_result>
+  <assistant>I see - 8 spaces indentation, not 16. Let me fix the edit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="431" cache_read_input_tokens="64863" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 431}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MGDq6qUqqphLip2CCF1Uid">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">            head_branch=head_ref_name,
+            review_decision=review_decision,
+        )
+        return (pr_info, created_at_pr)</param>
+    <param name="new_string">            head_branch=head_ref_name,
+            review_decision=review_decision,
+            base_ref_name=source.get("baseRefName"),
+        )
+        return (pr_info, created_at_pr)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="431" cache_read_input_tokens="64863" output_tokens="266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 431, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MGDq6qUqqphLip2CCF1Uid">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_017YXw2xJYFVGLnCfMA6EXKU">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="65294" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 332}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017YXw2xJYFVGLnCfMA6EXKU">
+Updated task #3 status
+  </tool_result>
+</session>

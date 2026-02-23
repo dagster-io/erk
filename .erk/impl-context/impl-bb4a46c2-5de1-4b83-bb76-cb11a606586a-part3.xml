@@ -1,0 +1,1007 @@
+<session>
+  <meta branch="plnd/add-stacked-pr-emoji-02-23-0658" />
+  <meta model="claude-opus-4-6" />
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="335" cache_read_input_tokens="91181" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:code-review&lt;/command-message&gt;
+&lt;command-name&gt;/local:code-review&lt;/command-name&gt;</user>
+  <user># /local:code-review
+
+Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
+
+## Instructions
+
+### Phase 1: Discover Changed Files and Match Reviews
+
+**Get changed files:**
+
+```bash
+git diff --name-only $(git merge-base master HEAD)...HEAD
+```
+
+If no changed files, report "No changes found relative to master" and stop.
+
+**Read review definitions:**
+
+Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+
+- `name`: Review name
+- `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
+- `enabled`: Whether the review is active (skip if `false`)
+- `model`: Which model to use
+
+**Match reviews to changed files:**
+
+For each enabled review, check if ANY changed file matches ANY of its `paths` glob patterns:
+
+- `**/*.py` matches any `.py` file at any depth
+- `src/**/*.py` matches `.py` files under `src/`
+- `docs/learned/**/*.md` matches `.md` files under `docs/learned/`
+- `.claude/**/*.md` matches `.md` files under `.claude/`
+
+Use Python's `fnmatch` or `pathlib.PurePath.match()` logic — a pattern like `**/*.py` should match `src/erk/cli/main.py`.
+
+**Report:**
+
+```
+Changed files: N
+Reviews matched: review-a, review-b (N of M enabled reviews)
+Reviews skipped (no matching files): review-c, review-d
+```
+
+If no reviews matched, report and stop.
+
+### Phase 2: Run Reviews in Parallel
+
+Generate a run ID: `review-&lt;timestamp&gt;` (e.g., `review-20260222-1930`).
+
+For each matching review, launch a Task agent in parallel with:
+
+- `subagent_type`: `general-purpose`
+- `model`: Use the `model` field from the review frontmatter. Map values: `claude-haiku-4-5` → `haiku`, `claude-sonnet-4-5` or `claude-sonnet-4-6` → `sonnet`
+
+**Agent prompt template:**
+
+```
+You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk/reviews/&lt;review-name&gt;.md`
+2. Follow the review instructions, with these adaptations for local execution:
+   - Instead of `gh pr diff`, use: `git diff $(git merge-base master HEAD)...HEAD`
+   - Skip ALL PR-interaction steps (posting comments, fetching existing comments, summary comments, activity logs)
+   - Skip any steps about checking for existing review markers or comments
+3. Write your findings to `.erk/scratch/&lt;run-id&gt;/&lt;review-name&gt;.md` using the Write tool
+
+Output format for the scratch file:
+
+# &lt;Review Name&gt; Results
+
+## Violations
+
+For each violation found:
+### &lt;file-path&gt;:&lt;line-number&gt;
+**Rule**: &lt;rule violated&gt;
+**Detail**: &lt;explanation&gt;
+
+If no violations found, write:
+## Violations
+None found.
+
+## Summary
+- Files reviewed: N
+- Violations found: N
+
+IMPORTANT:
+- You MUST write results to the scratch file using the Write tool
+- Do NOT return results inline only — write the file
+- Do NOT post PR comments or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps
+```
+
+Launch ALL matching review agents in a single message (parallel execution).
+
+### Phase 3: Collect and Report
+
+After all agents complete, read each scratch file from `.erk/scratch/&lt;run-id&gt;/`.
+
+**Verify output files exist** before reading. If any are missing, report which review failed.
+
+Present a unified report:
+
+```markdown
+## Local Code Review Results
+
+**Run ID**: &lt;run-id&gt;
+**Changed files**: N | **Reviews run**: N
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+---
+
+**Summary**: X total violations across Y reviews (Z reviews clean)
+```
+
+Group violations by review, then by file within each review.
+
+If all reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations.
+```
+</user>
+  <thinking>Let me follow the code review instructions step by step.
+
+Phase 1: Discover changed files and match reviews.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1227" cache_read_input_tokens="91516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me discover changed files and match them against review definitions.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1227" cache_read_input_tokens="91516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NtV8BygXrrN4ipc9yCSk3E">
+    <param name="command">git -C /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 diff --name-only $(git -C /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 merge-base master HEAD)...HEAD</param>
+    <param name="description">Get changed files relative to master</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1227" cache_read_input_tokens="91516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NtV8BygXrrN4ipc9yCSk3E">
+packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/types.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/src/erk_shared/plan_store/conversion.py
+tests/unit/plan_store/test_lifecycle_display.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01QXHxMq4mQXgJMec3H1H3oo">
+    <param name="pattern">.erk/reviews/*.md</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1227" cache_read_input_tokens="91516" output_tokens="283" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1227, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QXHxMq4mQXgJMec3H1H3oo">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/reviews/audit-pr-docs.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/reviews/dignified-code-simplifier.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/reviews/dignified-python.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/reviews/test-coverage.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/reviews/tripwires.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AM8wDUY8YjvdE7m3fEP9Mx">
+    <param name="command">for f in .erk/reviews/*.md; do echo "=== $f ==="; head -20 "$f"; echo; done</param>
+    <param name="description">Read review frontmatter</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="92743" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 696, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AM8wDUY8YjvdE7m3fEP9Mx">
+=== .erk/reviews/audit-pr-docs.md ===
+---
+name: Audit PR Docs
+paths:
+  - "docs/learned/**/*.md"
+marker: "&lt;!-- audit-pr-docs --&gt;"
+model: claude-sonnet-4-6
+timeout_minutes: 30
+allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+enabled: true
+---
+
+## Step 1: Load Standards and Analysis Methodology
+
+Read these files from the repository:
+
+1. `.claude/skills/learned-docs/learned-docs-core.md` — content rules, the One Code Rule, four exceptions
+2. `docs/learned/documentation/source-pointers.md` — replacement format, 5-line threshold, decision checklist
+3. `.claude/commands/local/audit-doc.md` — analysis methodology (Extract Code References through Code Block Triage) and verdict thresholds (Generate Report phase)
+
+These define what counts as a verbatim copy, what exceptions exist, the replacement format, and the full analysis methodology. The audit-doc command is the single source of truth for how to analyze a learned doc — this review file only defines the review mechanics (diff filtering, PR comment format, summary format).
+
+=== .erk/reviews/dignified-code-simplifier.md ===
+---
+name: Dignified Code Simplifier Review
+paths:
+  - "**/*.py"
+marker: "&lt;!-- dignified-code-simplifier-review --&gt;"
+model: claude-haiku-4-5
+timeout_minutes: 30
+
+... [79 lines omitted] ...
+
+2. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+  </tool_result>
+  <assistant>All 7 changed files are `.py` files. Let me match reviews:
+
+- **audit-pr-docs** (`docs/learned/**/*.md`): No match — skipped
+- **dignified-code-simplifier** (`**/*.py`): Matches all 7 files
+- **dignified-python** (`**/*.py`): Matches all 7 files
+- **test-coverage** (`src/**/*.py`, `packages/**/*.py`, `tests/**/*.py`): Matches all 7 files
+- **tripwires** (`**/*.py`, `**/*.sh`, `.claude/**/*.md`): Matches all 7 files
+
+```
+Changed files: 7
+Reviews matched: dignified-code-simplifier, dignified-python, test-coverage, tripwires (4 of 5 enabled reviews)
+Reviews skipped (no matching files): audit-pr-docs
+```
+
+Launching all 4 reviews in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1398" cache_read_input_tokens="93439" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1398}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PKV8e8Dgrj2XZUjdmNR3vc">
+    <param name="command">mkdir -p /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1522</param>
+    <param name="description">Create scratch dir for review run</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1398" cache_read_input_tokens="93439" output_tokens="335" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1398, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PKV8e8Dgrj2XZUjdmNR3vc">
+
+  </tool_result>
+  <tool_use name="Task" id="toolu_01LF65RUSm88DBBJCTSbowXs">
+    <param name="description">Run dignified-code-simplifier review</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1029 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="94837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 361}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SxS7gQxXGGd4QFJdHoKTAW">
+    <param name="description">Run dignified-python review</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1002 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="94837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 361}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01TqzeTTXEM5qi7yovBWSKjh">
+    <param name="description">Run test-coverage review</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 993 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="94837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 361}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_019PPvc7gn2q93i5tKPwsTyq">
+    <param name="description">Run tripwires review</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 981 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="94837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 361}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LF65RUSm88DBBJCTSbowXs">
+## Review Complete
+
+I've completed the dignified-code-simplifier review for the current branch changes. Here's what I found:
+
+### Summary
+
+I reviewed all Python files that were modified in this branch against the dignified-python coding standards, focusing on recently modified code (lines starting with `+` in the diff).
+
+**Files reviewed:** 8 Python files
+**Violations found:** 1
+
+### Violation Found
+
+**File:** `/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` (lines 601-603)
+
+**Rule:** Declare Variables Close to Use (from dignified-python-core.md)
+
+**Issue:** The variable `base_ref_name` is unnecessarily extracted from `selected_pr.base_ref_name` into a local variable that is only used in the immediately following line. This violates the principle of declaring variables close to their use site.
+
+**Current code:**
+```python
+base_ref_name = selected_pr.base_ref_name
+if base_ref_name is not None:
+    pr_is_stacked = base_ref_name not in ("master", "main")
+```
+
+**Recommended fix:**
+```python
+if selected_pr.base_ref_name is not None:
+    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SxS7gQxXGGd4QFJdHoKTAW">
+Perfect! I've completed the local code review. Here's a summary of what I found:
+
+## Code Review Summary
+
+I conducted a comprehensive dignified-python review of all 7 changed Python files in this branch, analyzing them against the dignified-python standards (LBYL patterns, modern type syntax, keyword-only arguments, frozen dataclasses, etc.).
+
+**Result: Zero violations found** ✓
+
+The changes implement a "stacked PR emoji" (🥞) feature by:
+
+1. Adding a `base_ref_name` field to GitHub PR data structures
+2. Computing whether a PR is "stacked" (base branch is not master/main)
+3. Displaying a pancake emoji indicator for stacked PRs in the dashboard
+
+All code follows dignified-python standards:
+- Uses LBYL pattern for checking `base_ref_name is not None`
+- All functions with 5+ parameters properly enforce keyword-only arguments with `*,` separator
+- Modern type syntax throughout (`str | None` not `Optional[str]`)
+- Frozen dataclasses maintained
+- Absolute imports used
+- No exception-based control flow
+
+The review results have been written to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1522/dignified-python.md`
+agentId: acf3fc8ef541e434e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 57097
+tool_uses: 13
+duration_ms: 36388&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01TqzeTTXEM5qi7yovBWSKjh">
+Perfect! The review has been completed and written to the scratch file. Let me provide a summary of the findings.
+
+## Test Coverage Review Complete
+
+I've successfully completed a local code review of the current branch and written the results to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1522/test-coverage.md`
+
+### Key Findings
+
+**Files Reviewed:** 7 modified files
+
+**Changes:** This PR adds support for stacked PR detection with a 🥞 emoji indicator displayed on the dashboard.
+
+**Significant Modifications Detected:** 2 files with substantive logic changes:
+
+1. **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`** — Added `is_stacked` parameter to indicator functions and implemented emoji rendering
+2. **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`** — Added stacked PR detection logic (checking if base branch is not master/main)
+
+**Test Coverage Assessment:**
+
+- ✅ **Lifecycle indicator logic:** Thoroughly tested with 5 new test cases in `test_lifecycle_display.py` covering stacked detection, combinations with draft/conflict states, and Rich markup preservation
+- ⚠️ **Stacked detection logic in `real.py`:** Missing direct unit tests. While functionally tested through downstream emoji indicator tests, the detection logic itself lacks explicit unit tests for edge cases (None handling, multiple API paths)
+
+**Violations Found:** 1
+
+The violation is that the stacked PR detection logic in `real.py` should have corresponding unit tests to verify the detection logic works correctly across all three locations where `base_ref_name` is populated, especially for handling None values.
+
+The full detailed analysis is available in the scratch file.
+agentId: abc60244ac816c80f (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 50871
+tool_uses: 19
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019PPvc7gn2q93i5tKPwsTyq">
+The review is complete. Here is a summary of what was done:
+
+**Review Process**
+
+1. Read `.erk/reviews/tripwires.md` for review instructions.
+2. Ran `git diff $(git merge-base master HEAD)...HEAD` to get the full diff (7 files changed).
+3. Loaded relevant category tripwire files based on the changed files: `architecture/tripwires.md`, `testing/tripwires.md`, `gateway/tripwires.md`, `erk/tripwires.md`, `pr-operations/tripwires.md`, and `conventions.md`.
+4. Loaded the `dignified-python` skill's `api-design.md` to understand default parameter exceptions.
+
+**Tier 1 Pattern Matching (Mechanical)**
+
+Ran all Tier 1 patterns with explicit `[pattern: ...]` from the loaded tripwire files against the diff. All 27+ patterns returned no matches.
+
+**Tier 2 Semantic Matching (LLM-derived)**
+
+Two potential issues were investigated:
+
+1. **Default parameter values** (`is_stacked: bool | None = None`) added to production functions — determined to be acceptable per `api-design.md`'s explicit exception: "Backwards compatibility — when adding a parameter to existing API". Test helper defaults are also explicitly exempt.
+
+2. **Chained `.get()` call** at `real.py:1594` (`pr_data.get("base", {}).get("ref")`) — matches the "LBYL Violations in Disguise" anti-pattern in `conventions.md` body content. However, this is not listed in any tripwires frontmatter, and the same pattern is endemic to the surrounding pre-existing code in `real.py` (found at 15+ other locations in the same file).
+
+**Result: 0 violations found.** Results written to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1522/tripwires.md`.
+agentId: acb84c0267ecd4d30 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 88537
+tool_uses: 64
+duration_ms: 258891&lt;/usage&gt;
+  </tool_result>
+  <assistant>Now let me read the scratch files and present the unified report.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3634" cache_read_input_tokens="95198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3634}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017CLvaZoRXHXwkxmv4pRzbG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1522/dignified-code-simplifier.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3634" cache_read_input_tokens="95198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3634}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017CLvaZoRXHXwkxmv4pRzbG">
+     1→# Dignified Code Simplifier Review Results
+     2→
+     3→## Violations
+     4→
+     5→### packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:601-603
+     6→**Rule**: Declare Variables Close to Use
+     7→**Detail**: The variable `base_ref_name` is extracted from `selected_pr.base_ref_name` into a local variable but is only used immediately in the next line's condition check. This violates the "Declare Variables Close to Use" principle. The check should directly reference `selected_pr.base_ref_name` in the condition: `if selected_pr.base_ref_name is not None: pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")`. This eliminates an unnecessary intermediate variable and makes the code more direct.
+     8→
+     9→## Summary
+    10→- Files reviewed: 8
+    11→- Violations found: 1
+    12→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FJt5Tnfs7YMMJXK54tuuVQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1522/test-coverage.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3634" cache_read_input_tokens="95198" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3634, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FJt5Tnfs7YMMJXK54tuuVQ">
+     1→# Test Coverage Review Results
+     2→
+     3→## Source Files Modified
+     4→
+     5→This PR adds support for stacked PR detection and display (🥞 emoji indicator). The following source files were categorized:
+     6→
+     7→| File | Category | Assessment |
+     8→|------|----------|------------|
+     9→| `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py` | source_modified | Minor: Field addition only |
+    10→| `packages/erk-shared/src/erk_shared/gateway/github/real.py` | source_modified | Significant: Added base_ref_name population logic |
+    11→| `packages/erk-shared/src/erk_shared/gateway/github/types.py` | source_modified | Minor: Field addition only |
+    12→| `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` | source_modified | Significant: Added is_stacked parameter and indicator logic |
+    13→| `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` | source_modified | Significant: Added pr_is_stacked calculation logic |
+    14→| `packages/erk-shared/src/erk_shared/plan_store/conversion.py` | source_modified | Minor: Metadata field addition only |
+    15→| `tests/unit/plan_store/test_lifecycle_display.py` | tests_modified | Tests added for new functionality |
+    16→
+    17→## Significant Modifications Detected
+    18→
+    19→Two files contain significant logic changes:
+    20→
+    21→1. **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`**
+    22→   - Added `is_stacked` parameter to three functions: `compute_status_indicators()`, `format_lifecycle_with_status()`, `_build_indicators()`
+    23→   - Implemented stacked PR detection logic: added check for `is_stacked is True` to append 🥞 emoji
+    24→   - Feature adds new UI indicator for stacked PRs (base branch != master/main)
+    25→
+    26→2. **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`**
+    27→   - Added `pr_is_stacked` variable initialization
+    28→   - Implemented logic to detect stacked PRs: checks if `base_ref_name` is not in ("master", "main")
+    29→   - Passes `is_stacked` parameter to `format_lifecycle_with_status()` call
+    30→
+
+... [63 lines omitted] ...
+  </tool_result>
+  <assistant>## Local Code Review Results
+
+**Run ID**: review-20260223-1522
+**Changed files**: 7 | **Reviews run**: 4
+
+### Dignified Code Simplifier Review
+
+**1 violation:**
+
+- **`real.py:601-603`** — Unnecessary intermediate variable `base_ref_name`. Can inline as `if selected_pr.base_ref_name is not None: pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")`
+
+### Dignified Python Review
+
+No violations found.
+
+### Test Coverage Review
+
+**1 violation (minor):**
+
+- **`real.py`** — Stacked detection logic in `RealPlanDataProvider` lacks direct unit tests. The logic is tested indirectly through `test_lifecycle_display.py` (which tests the indicator output), but direct tests for the `base_ref_name` check would improve maintainability.
+
+### Tripwires Review
+
+No violations found. The `is_stacked: bool | None = None` default parameters are acceptable per the backwards-compatibility exception. The chained `.get()` pattern matches existing code style in `real.py`.
+
+---
+
+**Summary**: 2 total violations across 4 reviews (2 reviews clean). Both are minor — one style simplification and one test coverage gap for the data provider layer.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2274" cache_read_input_tokens="98832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2274}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="444" cache_read_input_tokens="101417" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 444}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>fix the code simplifier violation and quick-submit</user>
+  <tool_use name="Edit" id="toolu_018S1c92EadLW6G3VVWQu1cf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">                base_ref_name = selected_pr.base_ref_name
+                if base_ref_name is not None:
+                    pr_is_stacked = base_ref_name not in ("master", "main")</param>
+    <param name="new_string">                if selected_pr.base_ref_name is not None:
+                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="167" cache_read_input_tokens="101872" output_tokens="253" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 167, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018S1c92EadLW6G3VVWQu1cf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014hxVjTsTZGxnKEC2b87jw1">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick submit the fix</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="102039" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014hxVjTsTZGxnKEC2b87jw1">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7964"
+}
+  </tool_result>
+  <assistant>Done. Inlined `base_ref_name` to remove the unnecessary intermediate variable.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="102364" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 207}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="335" cache_read_input_tokens="102591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="335" cache_read_input_tokens="102937" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:code-review&lt;/command-message&gt;
+&lt;command-name&gt;/local:code-review&lt;/command-name&gt;</user>
+  <user># /local:code-review
+
+Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
+
+## Instructions
+
+### Phase 1: Discover Changed Files and Match Reviews
+
+**Get changed files:**
+
+```bash
+git diff --name-only $(git merge-base master HEAD)...HEAD
+```
+
+If no changed files, report "No changes found relative to master" and stop.
+
+**Read review definitions:**
+
+Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+
+- `name`: Review name
+- `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
+- `enabled`: Whether the review is active (skip if `false`)
+- `model`: Which model to use
+
+**Match reviews to changed files:**
+
+For each enabled review, check if ANY changed file matches ANY of its `paths` glob patterns:
+
+- `**/*.py` matches any `.py` file at any depth
+- `src/**/*.py` matches `.py` files under `src/`
+- `docs/learned/**/*.md` matches `.md` files under `docs/learned/`
+- `.claude/**/*.md` matches `.md` files under `.claude/`
+
+Use Python's `fnmatch` or `pathlib.PurePath.match()` logic — a pattern like `**/*.py` should match `src/erk/cli/main.py`.
+
+**Report:**
+
+```
+Changed files: N
+Reviews matched: review-a, review-b (N of M enabled reviews)
+Reviews skipped (no matching files): review-c, review-d
+```
+
+If no reviews matched, report and stop.
+
+### Phase 2: Run Reviews in Parallel
+
+Generate a run ID: `review-&lt;timestamp&gt;` (e.g., `review-20260222-1930`).
+
+For each matching review, launch a Task agent in parallel with:
+
+- `subagent_type`: `general-purpose`
+- `model`: Use the `model` field from the review frontmatter. Map values: `claude-haiku-4-5` → `haiku`, `claude-sonnet-4-5` or `claude-sonnet-4-6` → `sonnet`
+
+**Agent prompt template:**
+
+```
+You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk/reviews/&lt;review-name&gt;.md`
+2. Follow the review instructions, with these adaptations for local execution:
+   - Instead of `gh pr diff`, use: `git diff $(git merge-base master HEAD)...HEAD`
+   - Skip ALL PR-interaction steps (posting comments, fetching existing comments, summary comments, activity logs)
+   - Skip any steps about checking for existing review markers or comments
+3. Write your findings to `.erk/scratch/&lt;run-id&gt;/&lt;review-name&gt;.md` using the Write tool
+
+Output format for the scratch file:
+
+# &lt;Review Name&gt; Results
+
+## Violations
+
+For each violation found:
+### &lt;file-path&gt;:&lt;line-number&gt;
+**Rule**: &lt;rule violated&gt;
+**Detail**: &lt;explanation&gt;
+
+If no violations found, write:
+## Violations
+None found.
+
+## Summary
+- Files reviewed: N
+- Violations found: N
+
+IMPORTANT:
+- You MUST write results to the scratch file using the Write tool
+- Do NOT return results inline only — write the file
+- Do NOT post PR comments or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps
+```
+
+Launch ALL matching review agents in a single message (parallel execution).
+
+### Phase 3: Collect and Report
+
+After all agents complete, read each scratch file from `.erk/scratch/&lt;run-id&gt;/`.
+
+**Verify output files exist** before reading. If any are missing, report which review failed.
+
+Present a unified report:
+
+```markdown
+## Local Code Review Results
+
+**Run ID**: &lt;run-id&gt;
+**Changed files**: N | **Reviews run**: N
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+---
+
+**Summary**: X total violations across Y reviews (Z reviews clean)
+```
+
+Group violations by review, then by file within each review.
+
+If all reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations.
+```
+</user>
+  <tool_use name="Bash" id="toolu_0198mXQhoKPLX5dgYTkNDoye">
+    <param name="command">git -C /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 diff --name-only $(git -C /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 merge-base master HEAD)...HEAD</param>
+    <param name="description">Get changed files relative to master</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1227" cache_read_input_tokens="103272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0198mXQhoKPLX5dgYTkNDoye">
+packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/types.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/src/erk_shared/plan_store/conversion.py
+tests/unit/plan_store/test_lifecycle_display.py
+  </tool_result>
+  <assistant>Same 7 `.py` files. Same review matching as before:
+
+```
+Changed files: 7
+Reviews matched: dignified-code-simplifier, dignified-python, test-coverage, tripwires (4 of 5 enabled reviews)
+Reviews skipped (no matching files): audit-pr-docs
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="104499" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 319}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XNjDj36Ay8GgmFghSDAJfU">
+    <param name="command">mkdir -p /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1530</param>
+    <param name="description">Create scratch dir for review run</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="104499" output_tokens="190" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 319, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XNjDj36Ay8GgmFghSDAJfU">
+
+  </tool_result>
+  <tool_use name="Task" id="toolu_017TVz4E3SKzgLR7aRa8MB8f">
+    <param name="description">Run dignified-code-simplifier review</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1029 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="104818" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 216}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01F6vjBZodCjhnVL8BdfPizE">
+    <param name="description">Run dignified-python review</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 1002 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="104818" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 216}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_011bAUQJ4RzWPkuF7cYtGP31">
+    <param name="description">Run test-coverage review</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 993 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="104818" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 216}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01DmqNES5y8mxs3TBZuuUnNQ">
+    <param name="description">Run tripwires review</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 981 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="104818" output_tokens="1677" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017TVz4E3SKzgLR7aRa8MB8f">
+Perfect! I have completed the local code review. Here's a summary of what I found:
+
+## Dignified Code Simplifier Review - Complete
+
+I've analyzed the diff for the "Add 🥞 stacked PR emoji to dashboard" feature against the dignified-python coding standards.
+
+### Results
+
+**Files reviewed:** 7 Python files
+**Violations found:** 0
+
+### Review Coverage
+
+I examined all changed code across:
+- GraphQL query additions
+- GitHub API response handling
+- Type definitions
+- Lifecycle display logic  
+- Plan data provider implementation
+- Plan store conversion
+- Unit tests
+
+### Key Findings
+
+All changes properly follow dignified-python standards:
+
+✅ **LBYL Pattern** - All conditional checks use safe dictionary access via `.get()` and membership testing
+✅ **Type Hints** - Proper use of `str | None` for optional fields
+✅ **Code Clarity** - Explicit parameter names and logic flow
+✅ **Indentation** - Maintains proper nesting levels
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011bAUQJ4RzWPkuF7cYtGP31">
+Perfect! The local code review is complete. Here's a summary of the findings:
+
+## Test Coverage Review Results
+
+**Files Analyzed:** 7 files total (6 source files modified, 1 test file modified)
+
+**Files Reviewed:**
+1. `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py` — Added `baseRefName` field to GraphQL query
+2. `packages/erk-shared/src/erk_shared/gateway/github/real.py` — Populated `base_ref_name` field in 3 code paths
+3. `packages/erk-shared/src/erk_shared/gateway/github/types.py` — Added `base_ref_name` field to `PullRequestInfo` dataclass
+4. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` — Added `is_stacked` parameter and stacked PR emoji logic (🥞)
+5. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` — Computes `is_stacked` from `base_ref_name`
+6. `packages/erk-shared/src/erk_shared/plan_store/conversion.py` — Added `base_ref_name` to PR details conversion
+7. `tests/unit/plan_store/test_lifecycle_display.py` — Added 39 lines of test coverage for the new feature
+
+**Key Findings:**
+- All 6 source modifications are significant (new data field, new logic, new feature)
+- Excellent test coverage: The modified test file adds 5 new test functions covering the stacked PR emoji feature
+- Tests verify correct emoji display for stacked vs non-stacked PRs and emoji interactions with other indicators
+- **No violations found** — all source modifications are properly tested
+
+**Results written to:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1530/test-coverage.md`
+agentId: a9650a1720bd23305 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 32943
+tool_uses: 15
+duration_ms: 36172&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01F6vjBZodCjhnVL8BdfPizE">
+## Summary
+
+I have completed the dignified-python code review for this branch. The results have been written to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1530/dignified-python.md`.
+
+**Review Results: No violations found** ✓
+
+**Files reviewed (7 total):**
+
+1. **graphql_queries.py** - GraphQL fragment update (compliant)
+2. **real.py** (GitHub gateway) - Added 3 base_ref_name assignments (compliant)
+3. **types.py** - Added base_ref_name field to PullRequestInfo dataclass (compliant)
+4. **lifecycle.py** - Updated 3 functions with new is_stacked parameter, all with proper keyword-only separator (`*`) (compliant)
+5. **real.py** (PlanDataProvider) - Added proper LBYL check for base_ref_name before use (compliant)
+6. **conversion.py** - Added base_ref_name to metadata dict (compliant)
+7. **test_lifecycle_display.py** - Updated test helpers and added new test cases (compliant)
+
+**Key patterns verified:**
+- All functions with 5+ parameters have proper keyword-only separators
+- Proper LBYL usage (checking None before accessing)
+- All new fields are properly typed (str | None)
+- All imports at module level
+- New dataclass field follows frozen dataclass pattern
+agentId: a8b43429a81696efc (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 51345
+tool_uses: 22
+duration_ms: 44251&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01DmqNES5y8mxs3TBZuuUnNQ">
+The review is complete. Here is a summary of what was done:
+
+**Review Process**
+
+1. Read the review definition at `.erk/reviews/tripwires.md`.
+2. Got the full diff via `git diff $(git merge-base master HEAD)...HEAD`, which covers 7 files across the stacked PR emoji feature.
+3. Loaded category tripwire files for `architecture` and `testing` (the two relevant categories based on the diff paths).
+4. Ran all Tier 1 mechanical pattern matches against the diff - all returned no matches.
+5. Performed Tier 2 semantic analysis on the actual code changes.
+6. For any potential matches (default parameters, frozen dataclass fields), loaded the full referenced documentation (`dignified-python/references/api-design.md`, `docs/learned/architecture/state-threading-pattern.md`) to check for exceptions.
+
+**Findings**
+
+No violations found. The diff is clean:
+
+- The `is_stacked: bool | None = None` parameters added to existing functions are a valid backwards-compatibility pattern (explicitly permitted by api-design.md).
+- The `base_ref_name: str | None = None` field added to `PullRequestInfo` follows the established pattern of optional fields on that frozen dataclass.
+- Test helper default parameters are explicitly exempt from the no-defaults rule.
+- All LBYL patterns are used correctly (checking `is not None` before using `base_ref_name`).
+- No try/except in gateways, no direct subprocess calls, no forbidden API patterns.
+
+Results written to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.erk/scratch/review-20260223-1530/tripwires.md`.
+agentId: a77e2f00df7dd2c3a (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 82894
+tool_uses: 69
+duration_ms: 327481&lt;/usage&gt;
+  </tool_result>
+  <assistant>## Local Code Review Results
+
+**Run ID**: review-20260223-1530
+**Changed files**: 7 | **Reviews run**: 4
+
+### Dignified Code Simplifier Review
+No violations found.
+
+### Dignified Python Review
+No violations found.
+
+### Test Coverage Review
+No violations found.
+
+### Tripwires Review
+No violations found.
+
+---
+
+All 4 reviews passed with no violations.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3741" cache_read_input_tokens="105034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3741}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+</session>
