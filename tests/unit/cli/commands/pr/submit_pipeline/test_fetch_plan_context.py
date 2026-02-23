@@ -1,14 +1,12 @@
-"""Unit tests for extract_diff pipeline step."""
+"""Unit tests for fetch_plan_context pipeline step."""
 
 from pathlib import Path
 
 from erk.cli.commands.pr.submit_pipeline import (
-    SubmitError,
     SubmitState,
-    extract_diff,
+    fetch_plan_context,
 )
 from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
 
 
 def _make_state(
@@ -58,41 +56,11 @@ def _make_state(
     )
 
 
-def test_no_base_branch_returns_error(tmp_path: Path) -> None:
-    """SubmitError(error_type='no_base_branch') when base_branch is None."""
-    fake_git = FakeGit()
-    ctx = context_for_test(git=fake_git, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path, base_branch=None)
-
-    result = extract_diff(ctx, state)
-
-    assert isinstance(result, SubmitError)
-    assert result.error_type == "no_base_branch"
-
-
-def test_writes_scratch_file(tmp_path: Path) -> None:
-    """diff_file path set and file exists after extraction."""
-    fake_git = FakeGit(
-        diff_to_branch={(tmp_path, "main"): "diff --git a/file.py\n+hello"},
-    )
-    ctx = context_for_test(git=fake_git, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path, base_branch="main")
-
-    result = extract_diff(ctx, state)
-
-    assert isinstance(result, SubmitState)
-    assert result.diff_file is not None
-    assert result.diff_file.exists()
-    content = result.diff_file.read_text()
-    assert "hello" in content
-
-
 def test_skip_description_returns_state_unchanged(tmp_path: Path) -> None:
     """skip_description=True causes early return with state unchanged."""
-    fake_git = FakeGit()
-    ctx = context_for_test(git=fake_git, cwd=tmp_path)
+    ctx = context_for_test(cwd=tmp_path)
     state = _make_state(cwd=tmp_path, skip_description=True)
 
-    result = extract_diff(ctx, state)
+    result = fetch_plan_context(ctx, state)
 
     assert result is state
