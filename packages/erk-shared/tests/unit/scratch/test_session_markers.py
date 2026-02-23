@@ -3,8 +3,10 @@
 from pathlib import Path
 
 from erk_shared.scratch.session_markers import (
+    create_plan_saved_branch_marker,
     create_plan_saved_issue_marker,
     create_plan_saved_marker,
+    get_existing_saved_branch,
     get_existing_saved_issue,
 )
 
@@ -96,6 +98,69 @@ def test_get_existing_saved_issue_returns_none_for_non_numeric(tmp_path: Path) -
     result = get_existing_saved_issue(session_id, tmp_path)
 
     assert result is None
+
+
+# create_plan_saved_branch_marker tests
+
+
+def test_create_plan_saved_branch_marker_stores_branch(tmp_path: Path) -> None:
+    """Verify branch name is stored correctly."""
+    session_id = "test-session-123"
+
+    create_plan_saved_branch_marker(session_id, tmp_path, "plnd/my-feature-02-22-1234")
+
+    marker_file = (
+        tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved-branch.marker"
+    )
+    assert marker_file.exists()
+    assert marker_file.read_text(encoding="utf-8") == "plnd/my-feature-02-22-1234"
+
+
+# get_existing_saved_branch tests
+
+
+def test_get_existing_saved_branch_returns_branch_name(tmp_path: Path) -> None:
+    """Verify stored branch name is returned."""
+    session_id = "test-session-123"
+    create_plan_saved_branch_marker(session_id, tmp_path, "plnd/feature-branch-01-01-0000")
+
+    result = get_existing_saved_branch(session_id, tmp_path)
+
+    assert result == "plnd/feature-branch-01-01-0000"
+
+
+def test_get_existing_saved_branch_returns_none_when_no_marker(tmp_path: Path) -> None:
+    """Verify None is returned when no marker exists."""
+    result = get_existing_saved_branch("nonexistent-session", tmp_path)
+
+    assert result is None
+
+
+def test_get_existing_saved_branch_returns_none_for_empty_content(tmp_path: Path) -> None:
+    """Verify None is returned when marker contains empty content."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "plan-saved-branch.marker"
+    marker_file.write_text("", encoding="utf-8")
+
+    result = get_existing_saved_branch(session_id, tmp_path)
+
+    assert result is None
+
+
+def test_branch_marker_roundtrip(tmp_path: Path) -> None:
+    """Verify create + get roundtrip works correctly for branch markers."""
+    session_id = "roundtrip-session"
+
+    # Initially no marker
+    assert get_existing_saved_branch(session_id, tmp_path) is None
+
+    # Create marker
+    create_plan_saved_branch_marker(session_id, tmp_path, "plnd/roundtrip-02-22-1234")
+
+    # Now returns the branch name
+    assert get_existing_saved_branch(session_id, tmp_path) == "plnd/roundtrip-02-22-1234"
 
 
 def test_marker_roundtrip(tmp_path: Path) -> None:

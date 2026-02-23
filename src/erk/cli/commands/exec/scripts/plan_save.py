@@ -56,8 +56,10 @@ from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_
 from erk_shared.plan_utils import get_title_tag_from_labels
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
+    create_plan_saved_branch_marker,
     create_plan_saved_issue_marker,
     create_plan_saved_marker,
+    get_existing_saved_branch,
     get_existing_saved_issue,
 )
 
@@ -250,6 +252,7 @@ def _save_as_draft_pr(
     if session_id is not None:
         create_plan_saved_marker(session_id, repo_root)
         create_plan_saved_issue_marker(session_id, repo_root, plan_number)
+        create_plan_saved_branch_marker(session_id, repo_root, branch_name)
 
         snapshot_result = _get_snapshot_result(
             session_id=session_id,
@@ -314,6 +317,7 @@ def _save_plan_via_draft_pr(
     if session_id is not None:
         existing_issue = get_existing_saved_issue(session_id, repo_root)
         if existing_issue is not None:
+            existing_branch = get_existing_saved_branch(session_id, repo_root)
             if output_format == "display":
                 click.echo(
                     f"This session already saved plan #{existing_issue}. "
@@ -321,16 +325,16 @@ def _save_plan_via_draft_pr(
                     err=True,
                 )
             else:
-                click.echo(
-                    json.dumps(
-                        {
-                            "success": True,
-                            "plan_number": existing_issue,
-                            "skipped_duplicate": True,
-                            "message": f"Session already saved plan #{existing_issue}",
-                        }
-                    )
-                )
+                dedup_response: dict[str, str | int | bool] = {
+                    "success": True,
+                    "plan_number": existing_issue,
+                    "skipped_duplicate": True,
+                    "message": f"Session already saved plan #{existing_issue}",
+                    "plan_backend": "draft_pr",
+                }
+                if existing_branch is not None:
+                    dedup_response["branch_name"] = existing_branch
+                click.echo(json.dumps(dedup_response))
             return
 
     # Extract plan content (same priority as plan-save-to-issue)
