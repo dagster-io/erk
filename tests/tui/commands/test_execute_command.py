@@ -426,6 +426,61 @@ class TestExecuteCommandFixConflictsRemote:
         assert executor.refresh_count == 0
 
 
+class TestExecuteCommandCopyClosePlan:
+    """Tests for copy_close_plan command."""
+
+    def test_copy_close_plan_copies_command(self) -> None:
+        """copy_close_plan copies the close plan command."""
+        row = make_plan_row(123, "Test")
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor)
+        screen.execute_command("copy_close_plan")
+        assert executor.copied_texts == ["erk plan close 123"]
+        assert "Copied: erk plan close 123" in executor.notifications
+
+
+class TestExecuteCommandCopyFixConflictsRemote:
+    """Tests for copy_fix_conflicts_remote command."""
+
+    def test_copy_fix_conflicts_remote_copies_command(self) -> None:
+        """copy_fix_conflicts_remote copies the launch command when PR exists."""
+        row = make_plan_row(123, "Test", pr_number=456)
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor)
+        screen.execute_command("copy_fix_conflicts_remote")
+        assert executor.copied_texts == ["erk launch pr-fix-conflicts --pr 456"]
+        assert "Copied: erk launch pr-fix-conflicts --pr 456" in executor.notifications
+
+    def test_copy_fix_conflicts_remote_does_nothing_without_pr(self) -> None:
+        """copy_fix_conflicts_remote does nothing when no PR number."""
+        row = make_plan_row(123, "Test")  # No pr_number
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor)
+        screen.execute_command("copy_fix_conflicts_remote")
+        assert executor.copied_texts == []
+
+
+class TestExecuteCommandCopyAddressRemote:
+    """Tests for copy_address_remote command."""
+
+    def test_copy_address_remote_copies_command(self) -> None:
+        """copy_address_remote copies the launch command when PR exists."""
+        row = make_plan_row(123, "Test", pr_number=456)
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor)
+        screen.execute_command("copy_address_remote")
+        assert executor.copied_texts == ["erk launch pr-address --pr 456"]
+        assert "Copied: erk launch pr-address --pr 456" in executor.notifications
+
+    def test_copy_address_remote_does_nothing_without_pr(self) -> None:
+        """copy_address_remote does nothing when no PR number."""
+        row = make_plan_row(123, "Test")  # No pr_number
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor)
+        screen.execute_command("copy_address_remote")
+        assert executor.copied_texts == []
+
+
 class TestExecuteCommandNoExecutor:
     """Tests for behavior when no executor is provided."""
 
@@ -440,3 +495,6 @@ class TestExecuteCommandNoExecutor:
         screen.execute_command("submit_to_queue")
         screen.execute_command("land_pr")
         screen.execute_command("fix_conflicts_remote")
+        screen.execute_command("copy_close_plan")
+        screen.execute_command("copy_fix_conflicts_remote")
+        screen.execute_command("copy_address_remote")

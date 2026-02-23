@@ -811,6 +811,67 @@ class TestCommandPaletteFromMain:
             assert detail_screen._auto_open_palette is False
 
 
+class TestCommandPaletteFromMainCopyVariants:
+    """Tests for copy variant commands from main list view."""
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_copy_close_plan(self) -> None:
+        """Execute palette command copies close plan command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app.execute_palette_command("copy_close_plan")
+
+            assert clipboard.last_copied == "erk plan close 123"
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_copy_fix_conflicts_remote(self) -> None:
+        """Execute palette command copies fix conflicts remote command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app.execute_palette_command("copy_fix_conflicts_remote")
+
+            assert clipboard.last_copied == "erk launch pr-fix-conflicts --pr 456"
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_copy_address_remote(self) -> None:
+        """Execute palette command copies address remote command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app.execute_palette_command("copy_address_remote")
+
+            assert clipboard.last_copied == "erk launch pr-address --pr 456"
+
+
 class TestExecutePaletteCommandLandPR:
     """Tests for execute_palette_command('land_pr').
 
