@@ -337,7 +337,11 @@ def make_plan_row(
         comments_display = f"{resolved_count}/{total_count}"
 
     # Compute objective display
-    objective_url = f"https://github.com/test/repo/issues/{objective_issue}" if objective_issue is not None else None
+    objective_url = (
+        f"https://github.com/test/repo/issues/{objective_issue}"
+        if objective_issue is not None
+        else None
+    )
     objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
 
     # Default created_at to a fixed sentinel datetime
