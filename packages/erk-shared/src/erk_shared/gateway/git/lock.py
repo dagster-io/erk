@@ -13,6 +13,7 @@ import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.time.abc import Time
+from erk_shared.output.output import user_output
 
 # Feature flag: set to False to disable index lock waiting
 INDEX_LOCK_WAITING_ENABLED = True
@@ -80,8 +81,12 @@ def wait_for_index_lock(
         return True
 
     elapsed = 0.0
+    printed = False
 
     while lock_path.exists() and elapsed < max_wait_seconds:
+        if not printed:
+            user_output("  Waiting for git index.lock to be released...")
+            printed = True
         time.sleep(poll_interval)
         elapsed += poll_interval
 
