@@ -230,10 +230,22 @@ def test_compute_summary() -> None:
             name="Test",
             nodes=[
                 RoadmapNode(
-                    id="1.1", description="A", status="done", plan=None, pr="#1", depends_on=None
+                    id="1.1",
+                    description="A",
+                    status="done",
+                    plan=None,
+                    pr="#1",
+                    depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
-                    id="1.2", description="B", status="pending", plan=None, pr=None, depends_on=None
+                    id="1.2",
+                    description="B",
+                    status="pending",
+                    plan=None,
+                    pr=None,
+                    depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
                     id="1.3",
@@ -242,12 +254,25 @@ def test_compute_summary() -> None:
                     plan="#2",
                     pr=None,
                     depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
-                    id="1.4", description="D", status="blocked", plan=None, pr=None, depends_on=None
+                    id="1.4",
+                    description="D",
+                    status="blocked",
+                    plan=None,
+                    pr=None,
+                    depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
-                    id="1.5", description="E", status="skipped", plan=None, pr=None, depends_on=None
+                    id="1.5",
+                    description="E",
+                    status="skipped",
+                    plan=None,
+                    pr=None,
+                    depends_on=None,
+                    slug=None,
                 ),
             ],
         )
@@ -279,7 +304,13 @@ def test_serialize_phases() -> None:
             name="Test",
             nodes=[
                 RoadmapNode(
-                    id="1.1", description="A", status="done", plan=None, pr="#1", depends_on=None
+                    id="1.1",
+                    description="A",
+                    status="done",
+                    plan=None,
+                    pr="#1",
+                    depends_on=None,
+                    slug=None,
                 ),
             ],
         )
@@ -306,7 +337,13 @@ def test_find_next_node_returns_first_pending() -> None:
             name="Phase One",
             nodes=[
                 RoadmapNode(
-                    id="1.1", description="Done", status="done", plan=None, pr="#1", depends_on=None
+                    id="1.1",
+                    description="Done",
+                    status="done",
+                    plan=None,
+                    pr="#1",
+                    depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
                     id="1.2",
@@ -315,6 +352,7 @@ def test_find_next_node_returns_first_pending() -> None:
                     plan=None,
                     pr=None,
                     depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
                     id="1.3",
@@ -323,6 +361,7 @@ def test_find_next_node_returns_first_pending() -> None:
                     plan=None,
                     pr=None,
                     depends_on=None,
+                    slug=None,
                 ),
             ],
         )
@@ -343,7 +382,13 @@ def test_find_next_node_returns_none_when_all_done() -> None:
             name="Done",
             nodes=[
                 RoadmapNode(
-                    id="1.1", description="A", status="done", plan=None, pr="#1", depends_on=None
+                    id="1.1",
+                    description="A",
+                    status="done",
+                    plan=None,
+                    pr="#1",
+                    depends_on=None,
+                    slug=None,
                 ),
             ],
         )
@@ -368,12 +413,25 @@ def test_compute_summary_counts_planning() -> None:
                     plan=None,
                     pr="#200",
                     depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
-                    id="1.2", description="B", status="pending", plan=None, pr=None, depends_on=None
+                    id="1.2",
+                    description="B",
+                    status="pending",
+                    plan=None,
+                    pr=None,
+                    depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
-                    id="1.3", description="C", status="done", plan=None, pr="#1", depends_on=None
+                    id="1.3",
+                    description="C",
+                    status="done",
+                    plan=None,
+                    pr="#1",
+                    depends_on=None,
+                    slug=None,
                 ),
             ],
         )
@@ -401,6 +459,7 @@ def test_find_next_node_skips_planning() -> None:
                     plan=None,
                     pr="#200",
                     depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
                     id="1.2",
@@ -409,6 +468,7 @@ def test_find_next_node_skips_planning() -> None:
                     plan=None,
                     pr=None,
                     depends_on=None,
+                    slug=None,
                 ),
             ],
         )
@@ -428,7 +488,13 @@ def test_find_next_node_all_planning_returns_none() -> None:
             name="Phase One",
             nodes=[
                 RoadmapNode(
-                    id="1.1", description="Done", status="done", plan=None, pr="#1", depends_on=None
+                    id="1.1",
+                    description="Done",
+                    status="done",
+                    plan=None,
+                    pr="#1",
+                    depends_on=None,
+                    slug=None,
                 ),
                 RoadmapNode(
                     id="1.2",
@@ -437,6 +503,7 @@ def test_find_next_node_all_planning_returns_none() -> None:
                     plan=None,
                     pr="#200",
                     depends_on=None,
+                    slug=None,
                 ),
             ],
         )
@@ -652,11 +719,11 @@ def test_parse_roadmap_v3_well_formed() -> None:
 
     assert phases[0].number == 1
     assert phases[0].name == "Foundation"
-    assert len(phases[0].steps) == 2
+    assert len(phases[0].nodes) == 2
 
     assert phases[1].number == 2
     assert phases[1].name == "Core"
-    assert len(phases[1].steps) == 1
+    assert len(phases[1].nodes) == 1
 
 
 def test_parse_v2_roadmap_accepts_v3() -> None:
@@ -713,29 +780,35 @@ def test_validate_roadmap_frontmatter_missing_both_keys() -> None:
     assert "nodes" in errors[0]
 
 
-def test_render_roadmap_block_inner_emits_v3() -> None:
-    """render_roadmap_block_inner emits schema_version '3' and 'nodes' key."""
+def test_render_roadmap_block_inner_emits_v4() -> None:
+    """render_roadmap_block_inner emits schema_version '4' and 'nodes' key."""
     steps = [
         RoadmapNode(
-            id="1.1", description="Test", status="pending", plan=None, pr=None, depends_on=None
+            id="1.1",
+            description="Test",
+            status="pending",
+            plan=None,
+            pr=None,
+            depends_on=None,
+            slug=None,
         ),
     ]
     result = render_roadmap_block_inner(steps)
 
-    assert "schema_version: '3'" in result
+    assert "schema_version: '4'" in result
     assert "nodes:" in result
     assert "steps:" not in result
 
 
-def test_v2_body_round_trips_through_v3_render() -> None:
-    """Parsing a v2 body and re-rendering produces v3 output."""
+def test_v2_body_round_trips_through_v4_render() -> None:
+    """Parsing a v2 body and re-rendering produces v4 output."""
     phases, errors = parse_roadmap(WELL_FORMED_V2_BODY)
     assert errors == []
 
-    all_steps = [step for phase in phases for step in phase.steps]
+    all_steps = [step for phase in phases for step in phase.nodes]
     rendered = render_roadmap_block_inner(all_steps)
 
-    assert "schema_version: '3'" in rendered
+    assert "schema_version: '4'" in rendered
     assert "nodes:" in rendered
 
 
@@ -759,6 +832,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr="#10",
                         depends_on=None,
+                        slug=None,
                     ),
                     RoadmapNode(
                         id="1.2",
@@ -767,6 +841,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             )
@@ -791,6 +866,7 @@ class TestRenderRoadmapTables:
                         plan="#50",
                         pr=None,
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             )
@@ -814,6 +890,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             )
@@ -836,6 +913,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr="#1",
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             ),
@@ -851,6 +929,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             ),
@@ -874,6 +953,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             )
@@ -896,6 +976,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             )
@@ -920,6 +1001,7 @@ class TestRenderRoadmapTables:
                         plan="#100",
                         pr="#200",
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             )
@@ -943,6 +1025,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr="#10",
                         depends_on=None,
+                        slug=None,
                     ),
                     RoadmapNode(
                         id="1.2",
@@ -951,6 +1034,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=("1.1",),
+                        slug=None,
                     ),
                 ],
             )
@@ -976,6 +1060,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=None,
+                        slug=None,
                     ),
                 ],
             )
@@ -1000,6 +1085,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=(),
+                        slug=None,
                     ),
                     RoadmapNode(
                         id="1.2",
@@ -1008,6 +1094,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=("1.1",),
+                        slug=None,
                     ),
                     RoadmapNode(
                         id="1.3",
@@ -1016,6 +1103,7 @@ class TestRenderRoadmapTables:
                         plan=None,
                         pr=None,
                         depends_on=("1.1", "1.2"),
+                        slug=None,
                     ),
                 ],
             )
@@ -1028,3 +1116,316 @@ class TestRenderRoadmapTables:
         assert "| 1.2 | One dep | 1.1 | pending | - | - |" in result
         # ("1.1", "1.2") renders as "1.1, 1.2"
         assert "| 1.3 | Two deps | 1.1, 1.2 | pending | - | - |" in result
+
+
+# ---------------------------------------------------------------------------
+# v4 schema slug tests
+# ---------------------------------------------------------------------------
+
+WELL_FORMED_V4_BODY = """\
+# Objective: Test
+
+## Roadmap
+
+### Phase 1: Foundation
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '4'
+nodes:
+- id: '1.1'
+  slug: setup-infra
+  description: Setup infra
+  status: done
+  plan: null
+  pr: '#100'
+- id: '1.2'
+  slug: add-tests
+  description: Add tests
+  status: pending
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+def test_parse_v4_roadmap_with_slugs() -> None:
+    """v4 schema body with slugs parses correctly."""
+    phases, errors = parse_roadmap(WELL_FORMED_V4_BODY)
+
+    assert errors == []
+    assert len(phases) == 1
+    assert phases[0].nodes[0].slug == "setup-infra"
+    assert phases[0].nodes[1].slug == "add-tests"
+
+
+def test_parse_v2_roadmap_accepts_v4() -> None:
+    """parse_v2_roadmap accepts v4 schema."""
+    result = parse_v2_roadmap(WELL_FORMED_V4_BODY)
+
+    assert result is not None
+    phases, errors = result
+    assert errors == []
+    assert phases[0].nodes[0].slug == "setup-infra"
+
+
+def test_validate_roadmap_frontmatter_v4_with_slugs() -> None:
+    """validate_roadmap_frontmatter accepts v4 with slug fields."""
+    data = {
+        "schema_version": "4",
+        "nodes": [
+            {
+                "id": "1.1",
+                "slug": "setup-infra",
+                "description": "Setup infra",
+                "status": "done",
+                "plan": None,
+                "pr": None,
+            },
+        ],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is not None
+    assert errors == []
+    assert steps[0].slug == "setup-infra"
+
+
+def test_validate_roadmap_frontmatter_auto_generates_missing_slugs() -> None:
+    """Nodes without slugs get deterministic slugs via lazy migration."""
+    data = {
+        "schema_version": "2",
+        "steps": [
+            {
+                "id": "1.1",
+                "description": "Add user model",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+            },
+            {
+                "id": "1.2",
+                "description": "Wire into CLI",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+            },
+        ],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is not None
+    assert errors == []
+    assert steps[0].slug == "add-user-model"
+    assert steps[1].slug == "wire-cli"
+
+
+def test_validate_roadmap_frontmatter_deduplicates_generated_slugs() -> None:
+    """Auto-generated slugs that collide get numeric suffixes."""
+    data = {
+        "schema_version": "3",
+        "nodes": [
+            {
+                "id": "1.1",
+                "description": "Add model",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+            },
+            {
+                "id": "1.2",
+                "description": "Add model",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+            },
+        ],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is not None
+    assert errors == []
+    assert steps[0].slug == "add-model"
+    assert steps[1].slug == "add-model-2"
+
+
+def test_validate_roadmap_frontmatter_preserves_existing_slugs() -> None:
+    """Existing slugs are preserved during lazy migration."""
+    data = {
+        "schema_version": "4",
+        "nodes": [
+            {
+                "id": "1.1",
+                "slug": "custom-slug",
+                "description": "Add user model",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+            },
+            {
+                "id": "1.2",
+                "description": "Wire into CLI",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+            },
+        ],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is not None
+    assert steps[0].slug == "custom-slug"
+    assert steps[1].slug == "wire-cli"
+
+
+def test_validate_roadmap_frontmatter_invalid_slug_type() -> None:
+    """Non-string slug field produces validation error."""
+    data = {
+        "schema_version": "4",
+        "nodes": [
+            {
+                "id": "1.1",
+                "slug": 123,
+                "description": "Test",
+                "status": "pending",
+                "plan": None,
+                "pr": None,
+            },
+        ],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is None
+    assert any("slug" in e for e in errors)
+
+
+def test_render_roadmap_block_inner_includes_slug() -> None:
+    """Rendered YAML includes slug field for each node."""
+    nodes = [
+        RoadmapNode(
+            id="1.1",
+            description="Setup infra",
+            status="done",
+            plan=None,
+            pr="#100",
+            depends_on=None,
+            slug="setup-infra",
+        ),
+    ]
+    result = render_roadmap_block_inner(nodes)
+
+    assert "slug: setup-infra" in result
+    assert "schema_version: '4'" in result
+
+
+def test_slug_round_trip_through_parse_and_render() -> None:
+    """Slugs survive parse -> render -> parse cycle."""
+    phases, errors = parse_roadmap(WELL_FORMED_V4_BODY)
+    assert errors == []
+
+    all_nodes = [node for phase in phases for node in phase.nodes]
+    rendered = render_roadmap_block_inner(all_nodes)
+
+    # Re-wrap in metadata block for parsing
+    body = (
+        "<!-- erk:metadata-block:objective-roadmap -->\n"
+        + rendered
+        + "\n<!-- /erk:metadata-block:objective-roadmap -->\n"
+        "\n### Phase 1: Foundation\n"
+    )
+    phases2, errors2 = parse_roadmap(body)
+    assert errors2 == []
+    assert phases2[0].nodes[0].slug == "setup-infra"
+    assert phases2[0].nodes[1].slug == "add-tests"
+
+
+def test_serialize_phases_includes_slug() -> None:
+    """serialize_phases includes slug in output dicts."""
+    phases = [
+        RoadmapPhase(
+            number=1,
+            suffix="",
+            name="Test",
+            nodes=[
+                RoadmapNode(
+                    id="1.1",
+                    description="A",
+                    status="done",
+                    plan=None,
+                    pr="#1",
+                    depends_on=None,
+                    slug="setup-a",
+                ),
+            ],
+        )
+    ]
+    result = serialize_phases(phases)
+
+    assert result[0]["nodes"][0]["slug"] == "setup-a"
+
+
+def test_find_next_node_includes_slug() -> None:
+    """find_next_node includes slug in returned dict."""
+    phases = [
+        RoadmapPhase(
+            number=1,
+            suffix="",
+            name="Phase One",
+            nodes=[
+                RoadmapNode(
+                    id="1.1",
+                    description="Done",
+                    status="done",
+                    plan=None,
+                    pr="#1",
+                    depends_on=None,
+                    slug="done-step",
+                ),
+                RoadmapNode(
+                    id="1.2",
+                    description="Pending",
+                    status="pending",
+                    plan=None,
+                    pr=None,
+                    depends_on=None,
+                    slug="pending-step",
+                ),
+            ],
+        )
+    ]
+    result = find_next_node(phases)
+
+    assert result is not None
+    assert result["slug"] == "pending-step"
+
+
+def test_find_next_node_no_slug_returns_empty_string() -> None:
+    """find_next_node returns empty string for slug when node has None."""
+    phases = [
+        RoadmapPhase(
+            number=1,
+            suffix="",
+            name="Phase One",
+            nodes=[
+                RoadmapNode(
+                    id="1.1",
+                    description="Pending",
+                    status="pending",
+                    plan=None,
+                    pr=None,
+                    depends_on=None,
+                    slug=None,
+                ),
+            ],
+        )
+    ]
+    result = find_next_node(phases)
+
+    assert result is not None
+    assert result["slug"] == ""

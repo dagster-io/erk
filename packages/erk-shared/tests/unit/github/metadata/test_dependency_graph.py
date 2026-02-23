@@ -34,6 +34,7 @@ def _node(
         plan=None,
         pr=None,
         depends_on=depends_on,
+        slug=None,
     )
 
 
@@ -51,6 +52,7 @@ def _step(
         plan=plan,
         pr=pr,
         depends_on=None,
+        slug=None,
     )
 
 
@@ -67,6 +69,7 @@ def _step_with_deps(
         plan=None,
         pr=None,
         depends_on=depends_on,
+        slug=None,
     )
 
 
@@ -448,6 +451,7 @@ class TestStepsFromGraph:
                     plan="#100",
                     pr="#200",
                     depends_on=(),
+                    slug=None,
                 ),
             )
         )
@@ -961,7 +965,13 @@ class TestGraphFromNodes:
         """graph_from_nodes uses explicit depends_on from RoadmapNode."""
         nodes = [
             RoadmapNode(
-                id="1.1", description="A", status="done", plan=None, pr=None, depends_on=()
+                id="1.1",
+                description="A",
+                status="done",
+                plan=None,
+                pr=None,
+                depends_on=(),
+                slug=None,
             ),
             RoadmapNode(
                 id="1.2",
@@ -970,6 +980,7 @@ class TestGraphFromNodes:
                 plan=None,
                 pr=None,
                 depends_on=("1.1",),
+                slug=None,
             ),
         ]
         graph = graph_from_nodes(nodes)
@@ -982,7 +993,13 @@ class TestGraphFromNodes:
         """Two nodes depend on the same parent (fan-out)."""
         nodes = [
             RoadmapNode(
-                id="1.1", description="Root", status="done", plan=None, pr=None, depends_on=()
+                id="1.1",
+                description="Root",
+                status="done",
+                plan=None,
+                pr=None,
+                depends_on=(),
+                slug=None,
             ),
             RoadmapNode(
                 id="2.1",
@@ -991,6 +1008,7 @@ class TestGraphFromNodes:
                 plan=None,
                 pr=None,
                 depends_on=("1.1",),
+                slug=None,
             ),
             RoadmapNode(
                 id="2.2",
@@ -999,6 +1017,7 @@ class TestGraphFromNodes:
                 plan=None,
                 pr=None,
                 depends_on=("1.1",),
+                slug=None,
             ),
         ]
         graph = graph_from_nodes(nodes)
@@ -1011,10 +1030,22 @@ class TestGraphFromNodes:
         """One node depends on two parents (fan-in)."""
         nodes = [
             RoadmapNode(
-                id="1.1", description="A", status="done", plan=None, pr=None, depends_on=()
+                id="1.1",
+                description="A",
+                status="done",
+                plan=None,
+                pr=None,
+                depends_on=(),
+                slug=None,
             ),
             RoadmapNode(
-                id="2.1", description="B", status="done", plan=None, pr=None, depends_on=()
+                id="2.1",
+                description="B",
+                status="done",
+                plan=None,
+                pr=None,
+                depends_on=(),
+                slug=None,
             ),
             RoadmapNode(
                 id="3.1",
@@ -1023,6 +1054,7 @@ class TestGraphFromNodes:
                 plan=None,
                 pr=None,
                 depends_on=("1.1", "2.1"),
+                slug=None,
             ),
         ]
         graph = graph_from_nodes(nodes)
@@ -1034,7 +1066,13 @@ class TestGraphFromNodes:
         """Nodes with depends_on=None are treated as having no dependencies."""
         nodes = [
             RoadmapNode(
-                id="1.1", description="A", status="pending", plan=None, pr=None, depends_on=None
+                id="1.1",
+                description="A",
+                status="pending",
+                plan=None,
+                pr=None,
+                depends_on=None,
+                slug=None,
             ),
         ]
         graph = graph_from_nodes(nodes)
@@ -1175,7 +1213,13 @@ def test_fan_out_fan_in_round_trip() -> None:
     """Create nodes with fan-out + fan-in → render to YAML → parse back → verify."""
     nodes = [
         RoadmapNode(
-            id="1.1", description="Root", status="done", plan=None, pr="#100", depends_on=()
+            id="1.1",
+            description="Root",
+            status="done",
+            plan=None,
+            pr="#100",
+            depends_on=(),
+            slug=None,
         ),
         RoadmapNode(
             id="2.1",
@@ -1184,6 +1228,7 @@ def test_fan_out_fan_in_round_trip() -> None:
             plan=None,
             pr=None,
             depends_on=("1.1",),
+            slug=None,
         ),
         RoadmapNode(
             id="2.2",
@@ -1192,6 +1237,7 @@ def test_fan_out_fan_in_round_trip() -> None:
             plan=None,
             pr=None,
             depends_on=("1.1",),
+            slug=None,
         ),
         RoadmapNode(
             id="3.1",
@@ -1200,6 +1246,7 @@ def test_fan_out_fan_in_round_trip() -> None:
             plan=None,
             pr=None,
             depends_on=("2.1", "2.2"),
+            slug=None,
         ),
     ]
 

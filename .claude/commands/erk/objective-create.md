@@ -101,7 +101,7 @@ echo '<json>' | erk exec objective-render-roadmap
 
 This outputs a complete `## Roadmap` section with phase headers, tables, test sections, and a machine-readable metadata block (auto-generated, guaranteed consistent with tables). Include the command's output directly in the objective body.
 
-**JSON input format:** Each phase needs `name` (string) and `steps` (list of `{"id": "...", "description": "..."}`). Optional fields: `description` (phase description), `pr_count` (defaults to "1 PR"), `test` (acceptance test description).
+**JSON input format:** Each phase needs `name` (string) and `steps` (list of `{"id": "...", "description": "..."}`). Optional fields: `description` (phase description), `pr_count` (defaults to "1 PR"), `test` (acceptance test description). Each step can optionally include `"slug": "kebab-case-slug"` — if omitted, a slug is auto-generated from the description.
 
 #### Steelthread Template (Recommended)
 

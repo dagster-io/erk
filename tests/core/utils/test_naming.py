@@ -5,9 +5,11 @@ import pytest
 
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
+    InvalidNodeSlug,
     InvalidObjectiveSlug,
     InvalidPlanTitle,
     InvalidWorktreeName,
+    ValidNodeSlug,
     ValidObjectiveSlug,
     ValidPlanTitle,
     ValidWorktreeName,
@@ -21,7 +23,9 @@ from erk_shared.naming import (
     generate_issue_branch_name,
     sanitize_branch_component,
     sanitize_worktree_name,
+    slugify_node_description,
     strip_plan_from_filename,
+    validate_node_slug,
     validate_objective_slug,
     validate_plan_title,
     validate_worktree_name,
@@ -871,3 +875,89 @@ def test_validate_worktree_name_roundtrip_with_sanitize() -> None:
     valid_names = ["my-feature", "fix-bug", "add-v2-support", "work", "a" * 31]
     for name in valid_names:
         assert sanitize_worktree_name(name) == name, f"Valid name {name!r} changed by sanitize"
+
+
+# ---------------------------------------------------------------------------
+# validate_node_slug tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "slug",
+    [
+        "ab",
+        "add-user-model",
+        "wire-cli",
+        "fix-auth",
+        "a" * 30,
+        "x1",
+        "refactor-gateway-layer",
+    ],
+)
+def test_validate_node_slug_valid(slug: str) -> None:
+    """Valid node slugs return ValidNodeSlug."""
+    result = validate_node_slug(slug)
+    assert isinstance(result, ValidNodeSlug)
+    assert result.slug == slug
+
+
+@pytest.mark.parametrize(
+    ("slug", "reason_fragment"),
+    [
+        ("a", "Too short"),
+        ("", "Too short"),
+        ("a" * 31, "Too long"),
+        ("AB-test", "pattern"),
+        ("1-start", "pattern"),
+        ("my--slug", "pattern"),
+        ("-leading", "pattern"),
+        ("trailing-", "pattern"),
+        ("has space", "pattern"),
+    ],
+)
+def test_validate_node_slug_invalid(slug: str, reason_fragment: str) -> None:
+    """Invalid node slugs return InvalidNodeSlug with matching reason."""
+    result = validate_node_slug(slug)
+    assert isinstance(result, InvalidNodeSlug)
+    assert reason_fragment.lower() in result.reason.lower()
+
+
+def test_validate_node_slug_message_includes_rules() -> None:
+    """InvalidNodeSlug.message includes rules and examples."""
+    result = validate_node_slug("X")
+    assert isinstance(result, InvalidNodeSlug)
+    msg = result.message
+    assert "2-30 characters" in msg
+    assert "Valid examples" in msg
+    assert "Invalid examples" in msg
+
+
+# ---------------------------------------------------------------------------
+# slugify_node_description tests
+# ---------------------------------------------------------------------------
+
+
+def test_slugify_node_description_returns_hash_based_slug() -> None:
+    """Hash-based slug generation produces node-<shorthash> format."""
+    result = slugify_node_description("Add user model")
+    assert result.startswith("node-")
+    assert len(result) == 13  # "node-" + 8 hex chars
+
+
+def test_slugify_node_description_deterministic() -> None:
+    """Same description always produces the same slug."""
+    assert slugify_node_description("Add user model") == slugify_node_description("Add user model")
+
+
+def test_slugify_node_description_different_inputs() -> None:
+    """Different descriptions produce different slugs."""
+    a = slugify_node_description("Add user model")
+    b = slugify_node_description("Wire into the CLI")
+    assert a != b
+
+
+def test_slugify_node_description_empty_string() -> None:
+    """Empty description still produces a valid hash-based slug."""
+    result = slugify_node_description("")
+    assert result.startswith("node-")
+    assert len(result) == 13

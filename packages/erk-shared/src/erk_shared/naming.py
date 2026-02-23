@@ -8,6 +8,7 @@ Functions that require git operations accept a git_ops parameter via dependency
 injection to maintain separation from I/O concerns.
 """
 
+import hashlib
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -77,6 +78,11 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
 # See docs/learned/architecture/agent-backpressure-gates.md for the pattern.
 
 _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+
+# Node slug constraints
+_NODE_SLUG_MIN_LENGTH = 2
+_NODE_SLUG_MAX_LENGTH = 30
+
 
 # Plan title constraints
 _PLAN_TITLE_MIN_LENGTH = 5
@@ -386,6 +392,93 @@ def validate_objective_slug(slug: str) -> ValidObjectiveSlug | InvalidObjectiveS
     if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
         return InvalidObjectiveSlug(raw_slug=slug, reason="Does not match required pattern")
     return ValidObjectiveSlug(slug=slug)
+
+
+@dataclass(frozen=True)
+class ValidNodeSlug:
+    """Validation success for a node slug.
+
+    Attributes:
+        slug: The validated slug value.
+    """
+
+    slug: str
+
+
+@dataclass(frozen=True)
+class InvalidNodeSlug:
+    """Validation failure for a node slug.
+
+    Attributes:
+        raw_slug: The original slug value that failed validation.
+        reason: A short description of why validation failed.
+    """
+
+    raw_slug: str
+    reason: str
+
+    @property
+    def message(self) -> str:
+        """Full error message with pattern, rules, actual value, and examples.
+
+        Designed so an agent receiving this message can self-correct.
+        """
+        return (
+            f"Invalid node slug: {self.reason}\n"
+            f"  Actual value: {self.raw_slug!r}\n"
+            f"  Pattern: ^[a-z][a-z0-9]*(-[a-z0-9]+)*$\n"
+            f"  Rules:\n"
+            f"    - {_NODE_SLUG_MIN_LENGTH}-{_NODE_SLUG_MAX_LENGTH} characters\n"
+            f"    - Lowercase letters and digits only\n"
+            f"    - Must start with a letter\n"
+            f"    - Hyphens allowed between words (no consecutive hyphens)\n"
+            f"  Valid examples: add-user-model, wire-cli, fix-auth\n"
+            f"  Invalid examples: Add-User, 123-start, a, my--slug"
+        )
+
+
+def validate_node_slug(slug: str) -> ValidNodeSlug | InvalidNodeSlug:
+    """Validate a node slug against the required format.
+
+    Node slugs follow the same pattern as objective slugs but with
+    different length constraints (2-30 characters).
+
+    Args:
+        slug: The slug string to validate.
+
+    Returns:
+        ValidNodeSlug if valid, InvalidNodeSlug if invalid.
+    """
+    if len(slug) < _NODE_SLUG_MIN_LENGTH:
+        return InvalidNodeSlug(
+            raw_slug=slug,
+            reason=f"Too short (minimum {_NODE_SLUG_MIN_LENGTH} characters)",
+        )
+    if len(slug) > _NODE_SLUG_MAX_LENGTH:
+        return InvalidNodeSlug(
+            raw_slug=slug,
+            reason=f"Too long (maximum {_NODE_SLUG_MAX_LENGTH} characters)",
+        )
+    if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
+        return InvalidNodeSlug(raw_slug=slug, reason="Does not match required pattern")
+    return ValidNodeSlug(slug=slug)
+
+
+def slugify_node_description(description: str) -> str:
+    """Generate a hash-based slug from a node description.
+
+    Deterministic fallback for when LLM is unavailable. Produces a
+    ``node-<shorthash>`` slug using the first 8 hex characters of
+    the SHA-256 hash of the description.
+
+    Args:
+        description: Node description to slugify.
+
+    Returns:
+        A slug in the form ``node-<8-hex-chars>``.
+    """
+    digest = hashlib.sha256(description.encode()).hexdigest()[:8]
+    return f"node-{digest}"
 
 
 def sanitize_worktree_name(name: str) -> str:

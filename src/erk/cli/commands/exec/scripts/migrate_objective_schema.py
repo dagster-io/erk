@@ -1,9 +1,9 @@
-"""Migrate an objective's roadmap YAML from schema v2 to v3.
+"""Migrate an objective's roadmap YAML to the latest schema version (v4).
 
-Objectives created before the v2→v3 rename ("step" → "node") may still
-contain v2 frontmatter.  The parser accepts both, and the writer always
-emits v3, but this command lets you explicitly migrate an issue in-place
-so that every objective converges on the v3 format.
+Objectives created before the v4 upgrade may contain v2 or v3 frontmatter.
+The parser accepts all versions, and the writer always emits v4, but this
+command lets you explicitly migrate an issue in-place so that every
+objective converges on the v4 format (with slug fields).
 
 Usage:
     erk exec migrate-objective-schema 7391
@@ -45,7 +45,7 @@ def migrate_objective_schema(
     *,
     dry_run: bool,
 ) -> None:
-    """Migrate an objective's roadmap YAML from schema v2 to v3."""
+    """Migrate an objective's roadmap YAML to the latest schema (v4)."""
     github = require_issues(ctx)
     repo_root = require_repo_root(ctx)
 
@@ -100,20 +100,20 @@ def migrate_objective_schema(
 
     schema_version = data.get("schema_version")
 
-    if schema_version == "3":
+    if schema_version == "4":
         click.echo(
             json.dumps(
                 {
                     "success": True,
                     "issue_number": issue_number,
                     "migrated": False,
-                    "message": "Already v3, nothing to do",
+                    "message": "Already v4, nothing to do",
                 }
             )
         )
         raise SystemExit(0)
 
-    if schema_version != "2":
+    if schema_version not in ("2", "3"):
         click.echo(
             json.dumps(
                 {
@@ -139,7 +139,7 @@ def migrate_objective_schema(
         )
         raise SystemExit(0)
 
-    # Re-render as v3
+    # Re-render as v4
     new_block_inner = render_roadmap_block_inner(nodes)
     new_block_with_markers = (
         f"<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
@@ -156,8 +156,8 @@ def migrate_objective_schema(
                     "issue_number": issue_number,
                     "migrated": True,
                     "dry_run": True,
-                    "previous_version": "2",
-                    "new_version": "3",
+                    "previous_version": schema_version,
+                    "new_version": "4",
                 }
             )
         )
@@ -191,8 +191,8 @@ def migrate_objective_schema(
                 "success": True,
                 "issue_number": issue_number,
                 "migrated": True,
-                "previous_version": "2",
-                "new_version": "3",
+                "previous_version": schema_version,
+                "new_version": "4",
             }
         )
     )

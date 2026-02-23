@@ -145,6 +145,7 @@ def _display_json(
             "nodes": [
                 {
                     "id": n.id,
+                    "slug": n.slug,
                     "description": n.description,
                     "status": n.status,
                     "plan": n.plan,

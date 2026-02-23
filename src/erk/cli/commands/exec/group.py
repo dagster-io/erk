@@ -41,6 +41,7 @@ from erk.cli.commands.exec.scripts.download_remote_session import (
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
 from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
 from erk.cli.commands.exec.scripts.find_project_dir import find_project_dir
+from erk.cli.commands.exec.scripts.generate_node_slugs import generate_node_slugs
 from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
 )
@@ -198,6 +199,7 @@ exec_group.add_command(download_remote_session, name="download-remote-session")
 exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
 exec_group.add_command(find_project_dir, name="find-project-dir")
+exec_group.add_command(generate_node_slugs, name="generate-node-slugs")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
 exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
 exec_group.add_command(get_closing_text, name="get-closing-text")

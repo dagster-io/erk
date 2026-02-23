@@ -47,6 +47,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNode,
     render_roadmap_block_inner,
 )
+from erk_shared.naming import slugify_node_description
 
 
 def _validate_input(data: Any) -> tuple[list[dict[str, Any]], str | None]:
@@ -156,6 +157,13 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
                 tuple(raw_depends_on) if raw_depends_on is not None else None
             )
 
+            # Handle slug: use provided, or generate hash-based fallback
+            raw_slug = step_data.get("slug")
+            if isinstance(raw_slug, str) and raw_slug:
+                slug = raw_slug
+            else:
+                slug = slugify_node_description(step_desc)
+
             if any_has_depends_on:
                 depends_display = ", ".join(depends_on) if depends_on else "-"
                 sections.append(
@@ -172,6 +180,7 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
                     plan=None,
                     pr=None,
                     depends_on=depends_on,
+                    slug=slug,
                 )
             )
 
