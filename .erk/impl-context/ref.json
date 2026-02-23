@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Add `dispatch_workflow()` for Fire-and-Forget Workflow Launches"
-}
