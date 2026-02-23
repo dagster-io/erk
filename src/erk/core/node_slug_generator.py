@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.naming import (
     InvalidNodeSlug,
-    make_unique_slug,
     slugify_node_description,
     validate_node_slug,
 )
@@ -92,29 +91,20 @@ class NodeSlugGenerator:
         if len(raw_slugs) != len(descriptions):
             return self._fallback(descriptions)
 
-        # Validate and deduplicate
+        # Validate slugs
         slugs: list[str] = []
-        seen: set[str] = set()
         for i, raw_slug in enumerate(raw_slugs):
             slug = _postprocess_node_slug(raw_slug)
             if slug is None:
-                # Individual slug failed validation, use deterministic fallback
+                # Individual slug failed validation, use hash-based fallback
                 slug = slugify_node_description(descriptions[i])
-            slug = make_unique_slug(slug, seen)
-            seen.add(slug)
             slugs.append(slug)
 
         return NodeSlugResult(success=True, slugs=slugs, error_message=None)
 
     def _fallback(self, descriptions: list[str]) -> NodeSlugResult:
-        """Generate slugs deterministically when LLM fails."""
-        slugs: list[str] = []
-        seen: set[str] = set()
-        for desc in descriptions:
-            slug = slugify_node_description(desc)
-            slug = make_unique_slug(slug, seen)
-            seen.add(slug)
-            slugs.append(slug)
+        """Generate slugs using hash-based fallback when LLM fails."""
+        slugs = [slugify_node_description(desc) for desc in descriptions]
         return NodeSlugResult(success=True, slugs=slugs, error_message=None)
 
 

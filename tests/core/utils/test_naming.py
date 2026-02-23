@@ -21,7 +21,6 @@ from erk_shared.naming import (
     extract_trailing_number,
     generate_draft_pr_branch_name,
     generate_issue_branch_name,
-    make_unique_slug,
     sanitize_branch_component,
     sanitize_worktree_name,
     slugify_node_description,
@@ -938,54 +937,27 @@ def test_validate_node_slug_message_includes_rules() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    ("description", "expected"),
-    [
-        ("Add user model", "add-user-model"),
-        ("Wire into the CLI", "wire-cli"),
-        ("Fix the authentication bug", "fix-authentication-bug"),
-        ("Create a new API endpoint for users", "create-new-api-endpoint"),
-        ("", "node"),
-        ("the a an and", "the-a-an-and"),  # all filler, falls back to first 4
-        ("Implement", "implement"),
-        ("Add support for OAuth2 tokens", "add-support-oauth2-tokens"),
-    ],
-)
-def test_slugify_node_description(description: str, expected: str) -> None:
-    """Deterministic slug generation from descriptions."""
-    assert slugify_node_description(description) == expected
+def test_slugify_node_description_returns_hash_based_slug() -> None:
+    """Hash-based slug generation produces node-<shorthash> format."""
+    result = slugify_node_description("Add user model")
+    assert result.startswith("node-")
+    assert len(result) == 13  # "node-" + 8 hex chars
 
 
-def test_slugify_node_description_truncates_at_30() -> None:
-    """Long descriptions are truncated to 30 characters."""
-    long_desc = "implement extremely complex distributed database replication system"
-    result = slugify_node_description(long_desc)
-    assert len(result) <= 30
+def test_slugify_node_description_deterministic() -> None:
+    """Same description always produces the same slug."""
+    assert slugify_node_description("Add user model") == slugify_node_description("Add user model")
 
 
-def test_slugify_node_description_strips_special_chars() -> None:
-    """Non-alphanumeric characters are replaced with spaces then hyphenated."""
-    result = slugify_node_description("Fix bug #123 in auth!")
-    assert result == "fix-bug-123-auth"
+def test_slugify_node_description_different_inputs() -> None:
+    """Different descriptions produce different slugs."""
+    a = slugify_node_description("Add user model")
+    b = slugify_node_description("Wire into the CLI")
+    assert a != b
 
 
-# ---------------------------------------------------------------------------
-# make_unique_slug tests
-# ---------------------------------------------------------------------------
-
-
-def test_make_unique_slug_no_collision() -> None:
-    """Returns original slug when no collision."""
-    assert make_unique_slug("add-user", set()) == "add-user"
-    assert make_unique_slug("add-user", {"wire-cli"}) == "add-user"
-
-
-def test_make_unique_slug_with_collision() -> None:
-    """Appends -2 on first collision."""
-    assert make_unique_slug("add-user", {"add-user"}) == "add-user-2"
-
-
-def test_make_unique_slug_multiple_collisions() -> None:
-    """Appends incrementing numbers for repeated collisions."""
-    existing = {"add-user", "add-user-2", "add-user-3"}
-    assert make_unique_slug("add-user", existing) == "add-user-4"
+def test_slugify_node_description_empty_string() -> None:
+    """Empty description still produces a valid hash-based slug."""
+    result = slugify_node_description("")
+    assert result.startswith("node-")
+    assert len(result) == 13

@@ -22,7 +22,6 @@ from erk_shared.gateway.github.metadata.core import (
     extract_raw_metadata_blocks,
     parse_metadata_block_body,
 )
-from erk_shared.naming import make_unique_slug, slugify_node_description
 
 RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
 
@@ -162,24 +161,7 @@ def validate_roadmap_frontmatter(
             )
         )
 
-    # Auto-generate slugs for nodes that don't have them (lazy migration)
-    seen_slugs: set[str] = set()
-    # First pass: collect existing slugs
-    for step in steps:
-        if step.slug is not None:
-            seen_slugs.add(step.slug)
-    # Second pass: generate missing slugs
-    migrated_steps: list[RoadmapNode] = []
-    for step in steps:
-        if step.slug is not None:
-            migrated_steps.append(step)
-        else:
-            generated = slugify_node_description(step.description)
-            unique_slug = make_unique_slug(generated, seen_slugs)
-            seen_slugs.add(unique_slug)
-            migrated_steps.append(replace(step, slug=unique_slug))
-
-    return migrated_steps, errors
+    return steps, errors
 
 
 def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapNode] | None:

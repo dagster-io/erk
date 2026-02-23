@@ -8,6 +8,7 @@ Functions that require git operations accept a git_ops parameter via dependency
 injection to maintain separation from I/O concerns.
 """
 
+import hashlib
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -82,29 +83,6 @@ _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 _NODE_SLUG_MIN_LENGTH = 2
 _NODE_SLUG_MAX_LENGTH = 30
 
-# Common filler words to strip in deterministic slug generation
-_FILLER_WORDS = frozenset(
-    {
-        "a",
-        "an",
-        "and",
-        "the",
-        "to",
-        "for",
-        "of",
-        "in",
-        "on",
-        "with",
-        "from",
-        "by",
-        "into",
-        "this",
-        "that",
-        "is",
-        "are",
-        "be",
-    }
-)
 
 # Plan title constraints
 _PLAN_TITLE_MIN_LENGTH = 5
@@ -487,59 +465,21 @@ def validate_node_slug(slug: str) -> ValidNodeSlug | InvalidNodeSlug:
 
 
 def slugify_node_description(description: str) -> str:
-    """Generate a deterministic slug from a node description.
+    """Generate a hash-based slug from a node description.
 
-    Deterministic fallback for when LLM is unavailable. Transforms a
-    description into a kebab-case slug by:
-    1. Lowercasing
-    2. Stripping filler words
-    3. Taking first 4 meaningful words
-    4. Hyphenating
-    5. Truncating to 30 characters
+    Deterministic fallback for when LLM is unavailable. Produces a
+    ``node-<shorthash>`` slug using the first 8 hex characters of
+    the SHA-256 hash of the description.
 
     Args:
         description: Node description to slugify.
 
     Returns:
-        A kebab-case slug, max 30 characters.
+        A slug in the form ``node-<8-hex-chars>``.
     """
-    lowered = description.strip().lower()
-    # Replace non-alphanumeric with spaces for splitting
-    cleaned = re.sub(r"[^a-z0-9]+", " ", lowered)
-    words = cleaned.split()
-    # Strip filler words
-    meaningful = [w for w in words if w not in _FILLER_WORDS]
-    if not meaningful:
-        meaningful = words[:4] if words else ["node"]
-    # Take first 4 words
-    slug_words = meaningful[:4]
-    slug = "-".join(slug_words)
-    # Truncate to 30 chars, strip trailing hyphen
-    if len(slug) > _NODE_SLUG_MAX_LENGTH:
-        slug = slug[:_NODE_SLUG_MAX_LENGTH].rstrip("-")
-    return slug
+    digest = hashlib.sha256(description.encode()).hexdigest()[:8]
+    return f"node-{digest}"
 
-
-def make_unique_slug(slug: str, existing_slugs: set[str]) -> str:
-    """Ensure a slug is unique within a set by appending a numeric suffix.
-
-    If the slug already exists, appends -2, -3, etc. until unique.
-
-    Args:
-        slug: The base slug to check.
-        existing_slugs: Set of slugs already in use.
-
-    Returns:
-        A unique slug, either the original or with a numeric suffix.
-    """
-    if slug not in existing_slugs:
-        return slug
-    counter = 2
-    while True:
-        candidate = f"{slug}-{counter}"
-        if candidate not in existing_slugs:
-            return candidate
-        counter += 1
 
 
 def sanitize_worktree_name(name: str) -> str:

@@ -47,7 +47,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNode,
     render_roadmap_block_inner,
 )
-from erk_shared.naming import make_unique_slug, slugify_node_description
+from erk_shared.naming import slugify_node_description
 
 
 def _validate_input(data: Any) -> tuple[list[dict[str, Any]], str | None]:
@@ -117,7 +117,6 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
     """
     all_steps: list[RoadmapNode] = []
     sections: list[str] = []
-    seen_slugs: set[str] = set()
 
     # Check if any step across all phases has depends_on
     any_has_depends_on = any(
@@ -158,14 +157,12 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
                 tuple(raw_depends_on) if raw_depends_on is not None else None
             )
 
-            # Handle slug: use provided, or generate deterministically
+            # Handle slug: use provided, or generate hash-based fallback
             raw_slug = step_data.get("slug")
             if isinstance(raw_slug, str) and raw_slug:
-                slug = make_unique_slug(raw_slug, seen_slugs)
+                slug = raw_slug
             else:
-                generated = slugify_node_description(step_desc)
-                slug = make_unique_slug(generated, seen_slugs)
-            seen_slugs.add(slug)
+                slug = slugify_node_description(step_desc)
 
             if any_has_depends_on:
                 depends_display = ", ".join(depends_on) if depends_on else "-"

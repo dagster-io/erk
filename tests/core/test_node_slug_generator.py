@@ -42,7 +42,7 @@ def test_single_description() -> None:
 
 
 def test_falls_back_on_executor_failure() -> None:
-    """Executor failure triggers deterministic fallback."""
+    """Executor failure triggers hash-based fallback."""
     executor = FakePromptExecutor(
         available=True,
         simulated_prompt_error="LLM unavailable",
@@ -52,9 +52,9 @@ def test_falls_back_on_executor_failure() -> None:
 
     assert result.success is True
     assert len(result.slugs) == 2
-    # Fallback uses slugify_node_description
-    assert result.slugs[0] == "add-user-model"
-    assert result.slugs[1] == "wire-cli"
+    # Fallback uses hash-based slugify_node_description
+    assert result.slugs[0].startswith("node-")
+    assert result.slugs[1].startswith("node-")
 
 
 def test_falls_back_on_wrong_count() -> None:
@@ -68,13 +68,13 @@ def test_falls_back_on_wrong_count() -> None:
 
     assert result.success is True
     assert len(result.slugs) == 2
-    # Fallback deterministic slugs
-    assert result.slugs[0] == "add-user-model"
-    assert result.slugs[1] == "wire-cli"
+    # Fallback hash-based slugs
+    assert result.slugs[0].startswith("node-")
+    assert result.slugs[1].startswith("node-")
 
 
-def test_deduplicates_slugs() -> None:
-    """Duplicate slugs from LLM get numeric suffixes."""
+def test_duplicate_slugs_from_llm_preserved() -> None:
+    """Duplicate slugs from LLM are preserved as-is (no deduplication)."""
     executor = FakePromptExecutor(
         available=True,
         simulated_prompt_output="add-model\nadd-model",
@@ -83,7 +83,7 @@ def test_deduplicates_slugs() -> None:
     result = generator.generate(["Add user model", "Add data model"])
 
     assert result.success is True
-    assert result.slugs == ["add-model", "add-model-2"]
+    assert result.slugs == ["add-model", "add-model"]
 
 
 def test_invalid_slug_falls_back_per_item() -> None:
@@ -97,8 +97,8 @@ def test_invalid_slug_falls_back_per_item() -> None:
 
     assert result.success is True
     assert result.slugs[0] == "add-user-model"
-    # "X" is invalid (too short), falls back to deterministic
-    assert result.slugs[1] == "wire-cli"
+    # "X" is invalid (too short), falls back to hash-based
+    assert result.slugs[1].startswith("node-")
     assert result.slugs[2] == "fix-auth"
 
 
