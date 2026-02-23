@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Restrict CI to impl-stage PRs only"
+  "plan_id": "8004",
+  "url": "https://github.com/dagster-io/erk/pull/8004",
+  "created_at": "2026-02-23T14:16:48.813722",
+  "synced_at": "2026-02-23T14:16:48.813722",
+  "labels": [],
+  "objective_id": null
 }
