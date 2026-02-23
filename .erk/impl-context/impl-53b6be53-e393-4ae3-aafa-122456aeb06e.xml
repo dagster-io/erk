@@ -1,0 +1,938 @@
+<session>
+  <meta branch="plnd/align-plan-dash-02-22-1844" />
+  <meta model="claude-opus-4-6" />
+  <user>linkifying/bolded pr numbers look wrong (extra space)</user>
+  <thinking>The user is pointing out that the PR numbers in the table (like `#7944`, `#7942`, etc.) appear to have extra spacing or formatting issues. They mention "linkifying/bolded pr numbers look wrong (extra space)". This is likely in the `erk plan list` or `erk dash` command output.
+
+Let me explore the codebase to find where PR numbers are rendered in the table to understand the formatting issue.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12574" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12574}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the code that renders PR numbers in the plan list/dash table.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12574" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12574}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01C62JGHbwjK9HWXJJJjXNVJ">
+    <param name="description">Find PR number rendering code</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 529 chars]..." column
+
+Focus on files in `src/erk/` that handle plan list or dashboard table rendering.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12574" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12574}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C62JGHbwjK9HWXJJJjXNVJ">
+Perfect! Now I have the complete picture. Let me create a summary document of my findings:
+
+## Summary of Findings
+
+I've successfully located all the code responsible for rendering PR numbers in the `erk plan list` and `erk dash` table output. Here's what I found:
+
+### 1. **PR Display Formatting - Where It Starts**
+
+**File**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`
+
+**Lines 577-592** - In the `_build_row_data()` method:
+```python
+if plan_id in pr_linkages:
+    issue_prs = pr_linkages[plan_id]
+    selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
+    if selected_pr is not None:
+        pr_number = selected_pr.number
+        # ... other fields ...
+        emoji = get_pr_status_emoji(selected_pr)
+        if selected_pr.will_close_target:
+            emoji += "🔗"
+        pr_display = f"#{selected_pr.number} {emoji}"  # &lt;-- LINE 592: Initial format
+```
+
+This creates the base `pr_display` string as: `"#123 👀"` (with a space between number and emoji)
+
+### 2. **CLI Static Table Rendering - `erk plan list`**
+
+**File**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py`
+
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FqdB6avELUB647cCN4a7yS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="offset">20</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1651" cache_read_input_tokens="31615" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1651}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FqdB6avELUB647cCN4a7yS">
+    20→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    21→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    22→from erk_shared.gateway.clipboard.real import RealClipboard
+    23→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    24→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+    25→from erk_shared.gateway.http.auth import fetch_github_token
+    26→from erk_shared.gateway.http.fake import FakeHttpClient
+    27→from erk_shared.gateway.http.real import RealHttpClient
+    28→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.plan_store import get_plan_backend
+    31→
+    32→P = ParamSpec("P")
+    33→T = TypeVar("T")
+    34→
+    35→
+    36→def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -&gt; str:
+    37→    """Format PR cell with clickable link and emoji: #123 👀 or #123 👀🔗
+    38→
+    39→    The 🔗 emoji is appended for PRs that will auto-close the linked issue when merged.
+    40→
+    41→    Args:
+    42→        pr: PR information
+    43→        use_graphite: If True, use Graphite URL; if False, use GitHub URL
+    44→        graphite_url: Graphite URL for the PR (None if unavailable)
+    45→
+    46→    Returns:
+    47→        Formatted string for table cell with OSC 8 hyperlink
+    48→    """
+    49→    emoji = get_pr_status_emoji(pr)
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_015wM5VnLUZbr2xYG6CePLQJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">575</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1651" cache_read_input_tokens="31615" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1651}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015wM5VnLUZbr2xYG6CePLQJ">
+   575→        pr_has_unresolved_comments: bool | None = None
+   576→
+   577→        if plan_id in pr_linkages:
+   578→            issue_prs = pr_linkages[plan_id]
+   579→            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
+   580→            if selected_pr is not None:
+   581→                pr_number = selected_pr.number
+   582→                pr_title = selected_pr.title
+   583→                pr_state = selected_pr.state
+   584→                pr_head_branch = selected_pr.head_branch
+   585→                graphite_url = self._ctx.graphite.get_graphite_url(
+   586→                    GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
+   587→                )
+   588→                pr_url = graphite_url if use_graphite and graphite_url else selected_pr.url
+   589→                emoji = get_pr_status_emoji(selected_pr)
+   590→                if selected_pr.will_close_target:
+   591→                    emoji += "🔗"
+   592→                pr_display = f"#{selected_pr.number} {emoji}"
+   593→                checks_display = format_checks_cell(selected_pr)
+   594→
+   595→                # Extract status fields for lifecycle enrichment
+   596→                pr_is_draft = selected_pr.is_draft
+   597→                pr_has_conflicts = selected_pr.has_conflicts
+   598→                pr_review_decision = selected_pr.review_decision
+   599→                pr_checks_passing = selected_pr.checks_passing
+   600→
+   601→                # Get review thread counts from batched PR data
+   602→                if selected_pr.review_thread_counts is not None:
+   603→                    resolved_comment_count, total_comment_count = selected_pr.review_thread_counts
+   604→                    comments_display = f"{resolved_comment_count}/{total_comment_count}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CcbupcfvSNScegrKDksgGJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="offset">200</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1705" cache_read_input_tokens="33266" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1705}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CcbupcfvSNScegrKDksgGJ">
+   200→    if row.run_url is not None:
+   201→        location_parts.append("\u2601")
+   202→    location_cell = "".join(location_parts) if location_parts else "-"
+   203→
+   204→    # run-id and run-state
+   205→    run_id: str | Text = strip_rich_markup(row.run_id_display)
+   206→    if row.run_url:
+   207→        run_id = Text(run_id, style="cyan underline")
+   208→    run_state_text = strip_rich_markup(row.run_state_display)
+   209→    run_state_emoji = run_state_text.split(" ", 1)[0] if run_state_text.strip() else "-"
+   210→
+   211→    # Build values list matching column order
+   212→    values: list[str | Text] = [plan_cell]
+   213→    if plan_backend == "draft_pr":
+   214→        stage_display = strip_rich_markup(row.lifecycle_display)
+   215→        values.append(stage_display)
+   216→        values.append(row.status_display)
+   217→        values.append(row.created_display)
+   218→    values.extend(
+   219→        [
+   220→            objective_cell,
+   221→            location_cell,
+   222→            row.pr_head_branch or row.worktree_branch or "-",
+   223→            run_id,
+   224→            run_state_emoji,
+   225→        ]
+   226→    )
+   227→    if plan_backend != "draft_pr":
+   228→        values.append(row.created_display)
+   229→    values.append(row.author)
+
+... [50 lines omitted] ...
+
+   263→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+  </tool_result>
+  <thinking>Now I see the issue. Let me look at how the PR column is rendered. The `format_pr_cell` function (lines 36-64) creates a string with Rich markup like `[link={url}]#{pr.number}[/link] {emoji}`. 
+
+But in `_row_to_static_values` (line 234-236), `strip_rich_markup(row.pr_display)` strips the rich markup from `row.pr_display`, then wraps it in `Text(pr_display, style="cyan underline")`.
+
+The issue is that `row.pr_display` (from `real.py` line 592) is `f"#{selected_pr.number} {emoji}"` - this is just a plain string with no Rich markup.
+
+
+Let me trace through where `pr_display` actually gets populated and whether it's using the formatted version with the link markup or just the plain string.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1295" cache_read_input_tokens="34971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1295}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at how the first column (plan/PR number) is formatted.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1295" cache_read_input_tokens="34971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1295}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JP4xNWqW4vNtnJiX63sv6G">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="offset">155</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1295" cache_read_input_tokens="34971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1295}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JP4xNWqW4vNtnJiX63sv6G">
+   155→        table.add_column("pr", no_wrap=True, width=10)
+   156→    table.add_column("chks", no_wrap=True, width=8)
+   157→    table.add_column("cmts", no_wrap=True, width=5)
+   158→
+   159→    for row in rows:
+   160→        values = _row_to_static_values(
+   161→            row, plan_backend=plan_backend, show_pr_column=show_pr_column
+   162→        )
+   163→        table.add_row(*values)
+   164→
+   165→    return table
+   166→
+   167→
+   168→def _row_to_static_values(
+   169→    row: PlanRowData,
+   170→    *,
+   171→    plan_backend: str,
+   172→    show_pr_column: bool,
+   173→) -&gt; tuple[str | Text, ...]:
+   174→    """Convert PlanRowData to static table cell values.
+   175→
+   176→    Mirrors PlanDataTable._row_to_values() for Rich Console rendering.
+   177→
+   178→    Args:
+   179→        row: Plan row data
+   180→        plan_backend: Plan backend type ("github" or "draft_pr")
+   181→        show_pr_column: Whether to show a separate PR column
+   182→
+   183→    Returns:
+   184→        Tuple of cell values matching column order
+
+... [20 lines omitted] ...
+  </tool_result>
+  <thinking>Now I see it. On line 187-189:
+
+```python
+plan_cell: str | Text = f"#{row.plan_id}"
+if row.plan_url:
+    plan_cell = Text(plan_cell, style="cyan underline")
+```
+
+When there's a `plan_url`, the plan cell becomes a `Text` object with "cyan underline" style. But it's not actually a clickable link - it's just styled text. Looking at the screenshot, the PR numbers appear underlined (linkified style), which is the "cyan underline" styling.
+
+The "extra space" issue - let me think about this. Looking at the screenshot, the PR numbers like `#7944` appear to have extra width compared to what you'd expect. This is 6 characters (`#7944` = 5 chars, `#7944` with a space = 6 chars), but the column seems wider than needed.
+
+
+I need to check how the table columns are configured to see if there's explicit width settings that might be causing the extra padding around the plan cell.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1267" cache_read_input_tokens="36266" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1267}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RezUFapMfpsdJUC6YDBUAG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="offset">100</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1267" cache_read_input_tokens="36266" output_tokens="383" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1267, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RezUFapMfpsdJUC6YDBUAG">
+   100→        type=click.Choice(["issue", "activity"], case_sensitive=False),
+   101→        default="issue",
+   102→        help="Sort order: by issue number (default) or recent branch activity",
+   103→    )(f)
+   104→    return f
+   105→
+   106→
+   107→def dash_options(f: Callable[P, T]) -&gt; Callable[P, T]:
+   108→    """TUI-specific options for dash command."""
+   109→    f = click.option(
+   110→        "--interval",
+   111→        type=float,
+   112→        default=15.0,
+   113→        help="Refresh interval in seconds (default: 15.0)",
+   114→    )(f)
+   115→    return f
+   116→
+   117→
+   118→def _build_static_table(
+   119→    rows: list[PlanRowData],
+   120→    *,
+   121→    plan_backend: str,
+   122→    show_pr_column: bool,
+   123→) -&gt; Table:
+   124→    """Build a Rich static table from PlanRowData rows.
+   125→
+   126→    Column order matches the TUI PlanDataTable exactly.
+   127→
+   128→    Args:
+   129→        rows: List of PlanRowData to display
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>Now I see the structure. The first column is defined on line 140:
+
+```python
+table.add_column(plan_col_header, style="cyan", no_wrap=True, width=6)
+```
+
+This is the plan/PR number column, 6 chars wide with a `style="cyan"` applied at the column level. Then on lines 187-189:
+
+```python
+plan_cell: str | Text = f"#{row.plan_id}"
+if row.plan_url:
+    plan_cell = Text(plan_cell, style="cyan underline")
+```
+
+When `plan_url` exists, the cell becomes a `Text` object with `"cyan underline"`. But the column already has `style="cyan"`.
+
+
+Looking at the screenshot, the PR numbers like `#7944` appear underlined but there's extra spacing between them and the next column that seems off. The column width of 6 should fit `#7944` fine at 5 characters, so the issue might be how the underlined text is being rendered or padded within that space.
+
+When Rich renders a styled `Text` object inside a table cell, there could be an interaction between the column's style and the text's own styling that's affecting the spacing. I'm noticing that the code applies both a column-level style and then wraps the cell content in a `Text` object with its own style, which might be causing Rich to measure or render the text differently than expected.
+
+Looking more closely at the actual rendering, I think the issue might be that when text is underlined in a terminal, the underline extends through the padding spaces that Rich adds for alignment, making those spaces visually more prominent. The `Text` object with the underline style could be making the padding more noticeable than it would be with plain text. Looking at the screenshot more carefully, I notice the PR numbers in the first column all have consistent spacing, though I'm realizing these are actually plan/issue numbers rather than PR numbers. The column header is a bit misleading since for the `draft_pr` backend, the plan itself functions as a PR. I'm examining whether there's something odd about how the `#` symbol is being rendered or positioned relative to the number.
+
+The column is defined with a width of 6 characters, and `#7944` is only 5 characters, so Rich is padding it to fit. The cyan styling applies to both the content and the padding, which might be creating that visual artifact the user mentioned—the padding could appear as an underlined space next to the number. at the screenshot more carefully now. The PR numbers in the first column all look properly aligned and underlined as expected. But I'm wondering if the spacing issue the user mentioned is actually in the "obj" column instead, where those linkified entries like `#7911` and `#7159` appear to have some extra whitespace around them.
+
+Looking at how the objective cell is being styled with cyan underline formatting, and checking the column width definition of 5 characters — those issue numbers fit perfectly since they're exactly 5 characters long. But if there were larger issue numbers like `#79111` with 6 characters, they'd overflow that constraint. Let me reconsider what the actual alignment problem might be. I'm realizing the spacing issue might be from Rich's standard column padding—each column gets padding on both sides, plus the separator character between columns, which adds up to about 3 characters of whitespace total. But looking at the screenshot, every PR number is underlined since they all have URLs, so I can't compare linkified versus non-linkified rows to spot a difference. Let me examine the other columns more carefully to see if there's an actual rendering inconsistency I'm missing. Looking at the actual rendering pipeline, I suspect the issue is a trailing space being included inside the underlined text itself—like the plan ID is being formatted as `#7944 ` with the space underlined rather than just the number. Let me trace through how the plan_id gets converted to a Text object to see where that extra space might be sneaking in. because there's a shell prompt at the bottom. So it's the `erk plan list` command output.
+
+Let me look at the table more carefully. The "pr" column in the screenshot appears to have underlined text. When Rich renders underlined text, the underline extends under all characters including spaces within the Text object. If the column width forces padding, and the padding is part of the Text styling... hmm, but that's not how Rich works. The column padding is separate from the cell content.
+
+Wait, actually, I just thought of something. When you pass a `Text` object to a Rich table cell, Rich doesn't pad the `Text` object - it pads the cell around the Text object. The padding uses the column style, not the Text's style. So the underline should only be under the actual text content, not the padding.
+
+But what if Rich measures the underlined text differently than plain text, causing the column to be wider? No, width is specified explicitly as 6, so Rich should enforce that. Let me just look at the code more carefully and see if there's an obvious spacing issue. I'm examining the plan cell creation where it wraps the plan ID in a Text object with cyan underline styling, and then the objective cell which appears to be doing something similar with the objective display. I'm looking at the `format_pr_cell` function and how Rich applies styling when both the column and the cell have style attributes—the column's cyan style gets applied first, then the cell's cyan underline overrides it, but the underline only affects the text content itself.
+
+Let me step back and compare what the TUI version is doing versus the CLI version to see where the discrepancy might be. The user mentioned "bolded" PR numbers specifically, so I need to figure out where bold styling could be coming from in the table setup.
+
+Looking at the table configuration, only the headers are bolded, not the data cells themselves. The PR display is just plain text without any Rich markup. So the most likely explanation is that the visual difference between underlined and non-underlined text is creating an optical illusion of extra spacing.
+
+But since the user is reporting this as an actual issue, I should trust that and dig deeper. There could be a rendering quirk in Rich where styled text objects with underlines affect column width calculations, or perhaps the `strip_rich_markup` function is handling the styled text incorrectly. Let me trace through the full rendering pipeline to find where the extra space is actually coming from. I'm realizing this extra space issue was likely introduced when the branch recently aligned `erk plan list` with `erk dash` and started reusing the data provider, so I should check the git diff to see what actually changed in that refactor.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1254" cache_read_input_tokens="37533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at what changed in this branch to understand the PR number rendering issue better.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1254" cache_read_input_tokens="37533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L4wiJPYRLmHVXZ1jKaNPv9">
+    <param name="command">git diff master...HEAD -- src/erk/cli/commands/plan/list_cmd.py | head -300</param>
+    <param name="description">Show diff for list_cmd.py on this branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1254" cache_read_input_tokens="37533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L4wiJPYRLmHVXZ1jKaNPv9">
+diff --git a/src/erk/cli/commands/plan/list_cmd.py b/src/erk/cli/commands/plan/list_cmd.py
+index e23ca2dd4..4b98841e1 100644
+--- a/src/erk/cli/commands/plan/list_cmd.py
++++ b/src/erk/cli/commands/plan/list_cmd.py
+@@ -1,48 +1,33 @@
+ """Command to list plans with filtering."""
+ 
+ from collections.abc import Callable
+-from datetime import datetime
+ from typing import ParamSpec, TypeVar
+ 
+ import click
+-from rich.console import Console, Group
+-from rich.panel import Panel
++from rich.console import Console
+ from rich.table import Table
+ from rich.text import Text
+ 
+ from erk.cli.core import discover_repo_context
+ from erk.core.context import ErkContext
+-from erk.core.display_utils import (
+-    format_relative_time,
+-    format_workflow_outcome,
+-    format_workflow_run_id,
+-    get_workflow_run_state,
+-)
+-from erk.core.pr_utils import select_display_pr
++from erk.core.display_utils import strip_rich_markup
+ from erk.core.repo_discovery import ensure_erk_metadata_dir
+ from erk.tui.app import ErkDashApp
+
+... [270 lines omitted] ...
+
+         user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GPzjryrQY8GDoM9CaiyNbw">
+    <param name="pattern">strip_rich_markup</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1254" cache_read_input_tokens="37533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GPzjryrQY8GDoM9CaiyNbw">
+Found 4 files
+src/erk/cli/commands/plan/list_cmd.py
+tests/tui/test_plan_table.py
+src/erk/core/display_utils.py
+src/erk/tui/widgets/plan_table.py
+  </tool_result>
+  <thinking>Let me look at the `strip_rich_markup` function and also look at how the TUI version handles it for comparison.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="8678" cache_read_input_tokens="38787" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8678}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HFRVAt2SmLRxDSWBCdRpdX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/core/display_utils.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8678" cache_read_input_tokens="38787" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8678}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HFRVAt2SmLRxDSWBCdRpdX">
+     1→"""Display formatting utilities for erk.
+     2→
+     3→This module contains pure business logic for formatting and displaying worktree
+     4→information in the CLI. All functions are pure (no I/O) and can be tested without
+     5→filesystem access.
+     6→"""
+     7→
+     8→import base64
+     9→import re
+    10→from datetime import datetime
+    11→
+    12→import click
+    13→
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→
+    16→
+    17→def get_visible_length(text: str) -&gt; int:
+    18→    """Calculate the visible length of text, excluding ANSI and OSC escape sequences.
+    19→
+    20→    Args:
+    21→        text: Text that may contain escape sequences
+    22→
+    23→    Returns:
+    24→        Number of visible characters
+    25→    """
+    26→    # Remove ANSI color codes (\033[...m)
+    27→    text = re.sub(r"\033\[[0-9;]*m", "", text)
+    28→    # Remove OSC 8 hyperlink sequences (\033]8;;URL\033\\)
+    29→    text = re.sub(r"\033\]8;;[^\033]*\033\\", "", text)
+    30→    return len(text)
+
+... [525 lines omitted] ...
+
+   134→        if workflow_run.conclusion == "failure":
+   211→        One of: "queued", "in_progress", "success", "failure", "cancelled"
+   216→        if workflow_run.conclusion == "failure":
+   217→            return "failure"
+   220→        # Other conclusions (skipped, timed_out, etc.) map to failure
+   221→        return "failure"
+   249→    if state == "failure":
+   250→        return "[red]❌ Failure[/red]"
+   498→    except ValueError:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BM8FiBpFsVyv1d4qddfJVj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">310</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8678" cache_read_input_tokens="38787" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8678}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BM8FiBpFsVyv1d4qddfJVj">
+   310→        run_state_emoji = run_state_text.split(" ", 1)[0] if run_state_text.strip() else "-"
+   311→
+   312→        # Build values list based on columns
+   313→        values: list[str | Text] = [
+   314→            plan_cell,
+   315→        ]
+   316→        if self._plan_backend == "draft_pr":
+   317→            stage_display = strip_rich_markup(row.lifecycle_display)
+   318→            values.append(stage_display)
+   319→            values.append(row.status_display)
+   320→            values.append(row.created_display)
+   321→        values.extend(
+   322→            [
+   323→                objective_cell,
+   324→                location_cell,
+   325→                row.pr_head_branch or row.worktree_branch or "-",
+   326→                run_id,
+   327→                run_state_emoji,
+   328→            ]
+   329→        )
+   330→        if self._plan_backend != "draft_pr":
+   331→            values.append(row.created_display)
+   332→        values.append(row.author)
+   333→
+   334→        checks_display = strip_rich_markup(row.checks_display)
+   335→        comments_display = strip_rich_markup(row.comments_display)
+   336→        if self._plan_filters.show_pr_column:
+   337→            # Strip Rich markup and colorize if clickable
+   338→            pr_display = strip_rich_markup(row.pr_display)
+   339→            if row.pr_url:
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>Now I see the code clearly. Looking at the TUI version of the plan table, let me check how the plan cell is formatted there:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10165" cache_read_input_tokens="47465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JkSBsEybje3qJeXnW2sWcE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">275</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10165" cache_read_input_tokens="47465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10165}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JkSBsEybje3qJeXnW2sWcE">
+   275→        if self._view_mode == ViewMode.OBJECTIVES:
+   276→            return (
+   277→                plan_cell,
+   278→                row.objective_slug_display,
+   279→                row.objective_progress_display,
+   280→                Text(row.objective_state_display),
+   281→                row.objective_deps_display,
+   282→                row.updated_display,
+   283→                row.author,
+   284→            )
+   285→
+   286→        # Format worktree
+   287→        if row.exists_locally:
+   288→            wt_cell = row.worktree_name
+   289→        else:
+   290→            wt_cell = "-"
+   291→
+   292→        # Format objective cell - colorize if clickable
+   293→        objective_cell: str | Text = row.objective_display
+   294→        if row.objective_issue is not None:
+   295→            objective_cell = Text(row.objective_display, style="cyan underline")
+   296→
+   297→        # Compact location emoji: 💻 = local checkout, ☁️ = remote run
+   298→        location_parts: list[str] = []
+   299→        if row.exists_locally:
+   300→            location_parts.append("\U0001f4bb")
+   301→        if row.run_url is not None:
+   302→            location_parts.append("\u2601")
+   303→        location_cell = "".join(location_parts) if location_parts else "-"
+   304→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KHoPdcPQuvaUGfz69w5TDb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">250</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="747" cache_read_input_tokens="57630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 747}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KHoPdcPQuvaUGfz69w5TDb">
+   250→                for idx, row in enumerate(rows):
+   251→                    if str(row.plan_id) == selected_key:
+   252→                        self.move_cursor(row=idx)
+   253→                        return
+   254→
+   255→            # Plan disappeared - stay at same row index, clamped to valid range
+   256→            if saved_cursor_row is not None and saved_cursor_row &gt;= 0:
+   257→                target_row = min(saved_cursor_row, len(rows) - 1)
+   258→                self.move_cursor(row=target_row)
+   259→
+   260→    def _row_to_values(self, row: PlanRowData) -&gt; tuple[str | Text, ...]:
+   261→        """Convert PlanRowData to table cell values.
+   262→
+   263→        Args:
+   264→            row: Plan row data
+   265→
+   266→        Returns:
+   267→            Tuple of cell values matching column order
+   268→        """
+   269→        # Format issue number - colorize if clickable
+   270→        plan_cell: str | Text = f"#{row.plan_id}"
+   271→        if row.plan_url:
+   272→            plan_cell = Text(plan_cell, style="cyan underline")
+   273→
+   274→        # Objectives view: plan, slug, progress, state, deps, updated, author
+   275→        if self._view_mode == ViewMode.OBJECTIVES:
+   276→            return (
+   277→                plan_cell,
+   278→                row.objective_slug_display,
+   279→                row.objective_progress_display,
+  </tool_result>
+  <thinking>OK, so the TUI and CLI versions both do the same thing for plan_cell:
+
+```python
+plan_cell: str | Text = f"#{row.plan_id}"
+if row.plan_url:
+    plan_cell = Text(plan_cell, style="cyan underline")
+```
+
+Now let me think about the "extra space" issue. Looking at the screenshot closely, all the PR numbers in the first column are underlined (they have `plan_url` set). The column width is 6, and `#7944` is 5 chars. So there's 1 char of right padding.
+
+But wait - the user said "linkifying/bolded". The column has `style="cyan"` set (line 140). When a cell contains a `Text` object, does Rich still apply the column style? Let me think about how Rich handles this.
+
+
+When I pass a `Text` object to a cell in a column with `style="cyan"`, the Text's own styling takes precedence for the content itself, but the column style still applies to the padding and container around it. So the underlined cyan text is rendering correctly, but the padding around it is also getting the cyan styling from the column definition.
+
+Looking back at the user's complaint about "linkifying/bolded pr numbers look wrong (extra space)", I think I've been overcomplicating this. The real issue might be that the Text objects are being rendered with link markup or bold formatting that's creating unexpected spacing, not the column styling itself. I think I've found the issue. When Rich renders a `Text` object inside a table cell, the Text's style takes precedence over the column style, so the underline from the Text object applies to just the content while the column padding only gets the base cyan color.
+
+Looking more carefully at the screenshot, I notice the underlined PR numbers like `#7944` appear to take up slightly more horizontal space than regular text, which suggests terminal emulators render underlined text with different metrics.
+
+I'm tracing through the code flow to find where the extra space might be coming from. The `format_pr_cell` function has a space between the closing link tag and the emoji, but I need to verify if that's actually being used in the main rendering path.
+
+Looking at the actual column construction, the first column shows just `#7944` without any emoji—that's the plan ID, not the PR display. So the width is 6 characters for the column but only 5 characters of actual content, which could explain the spacing issue I'm seeing.
+
+The key question is whether Rich extends the "cyan underline" style to the padding character when fitting a 5-character Text object into a 6-character cell, or if the padding stays unstyled.
+
+Actually, wait—I'm wondering if the real issue is something else entirely. What if `strip_rich_markup` is leaving behind extra whitespace that's affecting the display? Let me trace through what happens when I format the PR display with the emoji...
+
+But hold on, I'm looking at the wrong column. For the draft_pr backend, the first column shows the PR number as `Text("#7944", style="cyan underline")`, which should render cleanly without any extra space in the content itself. Maybe the problem isn't the text content at all—maybe it's how Rich is calculating the column width. The width=6 constraint might be forcing extra padding, or Rich might be measuring the Text object's width differently than I expect.
+
+Let me compare the actual column widths in the screenshot. The "pr" column is set to width=6 while the "obj" column is width=5, and looking at how `#7944` appears versus `#7911`, the spacing between the underlined text and the next column might be the real issue here.
+
+Rich tables add default padding on each side of cells, so combined with that extra width in the "pr" column, there could be noticeable extra space. But I'm realizing the user mentioned "bolded" text looking wrong—the headers are bold, but the data cells shouldn't be unless the cyan style is doing something unexpected.
+
+Actually, I think the real issue might be how Rich layers styles. When a cell contains a plain string, the column's cyan style applies directly. But when it's a Text object with "cyan underline", the Text's style takes precedence while the column style might still affect the padding around it, creating a visual inconsistency in spacing.
+
+Rather than getting lost in Rich's internal style composition, let me focus on what the user is actually seeing—extra space appearing with the styled PR numbers. The most likely culprit is that underlined text renders with different character widths or padding behavior than plain cyan text, even if the actual content is the same width.
+
+The real fix is probably to either drop the underline styling entirely and just use cyan, remove the column-level style and let the Text object handle everything, or tighten the column width since the visual artifact is making the padding feel excessive.
+
+Looking at the actual issue numbers in the screenshot—they're all 4-digit numbers with the `#` prefix, so 5 characters total—width 6 should be sufficient with just 1 character of padding. But I'm wondering if the problem isn't the width at all, but rather how the Text object itself is being rendered in Rich when it has inline styling applied.
+
+When I use a plain string in a table cell, Rich applies the column style uniformly across the entire cell including padding. But when I use a Text object with its own style, Rich renders the text content separately from the padding, which means the underline only applies to the actual text characters and stops abruptly at the boundary. That creates a visual discontinuity that makes it look like there's an extra gap between the underlined text and the next column. The fix would be to extend the underline styling to cover the full cell width, or switch to using plain strings with the column-level styling instead. I'm realizing the real issue might be something different than what I initially thought. The underline styling on the Text object is being applied manually with `style="cyan underline"`, whereas Rich's built-in `[link=...]` markup handles underlining automatically. To properly fix this, I should either strip the underline and rely on the cyan color alone for visual distinction, or switch to using Rich's markup syntax to make the links actually clickable and let Rich handle the styling consistently. Looking at the full list of PR numbers in the first column, they're all consistently underlined and formatted the same way. Comparing them to the "obj" column entries, the spacing and alignment look proportional between columns. I'm struggling to pinpoint the exact visual issue from the screenshot alone, so let me examine the code itself for any bugs that might be causing unexpected spacing or formatting.
+
+The user mentioned the linkified PR numbers look wrong with extra space, which makes me wonder if they're seeing actual bold text rendering differently in their terminal, or if there's an issue with ANSI escape sequences being counted as visible characters. The `strip_rich_markup` function removes Rich markup tags but not ANSI codes, and while the PR display is just a simple f-string with a number and emoji, the plan cell uses a Rich Text object with styling applied, which could be introducing invisible characters that affect spacing calculations. The underline styling might be creating visual spacing issues that make the text appear misaligned compared to non-underlined cells. I should try using Rich's link markup instead, which handles the rendering more cleanly. Let me take another close look at that first row to see exactly what's happening.
+
+Looking at the PR column and stage column alignment, the spacing actually seems consistent. But examining the object column more carefully, I notice the underlined values and the dash placeholders are positioned the same way, so the columns are properly aligned. Maybe the extra space is coming from within the link markup itself. Let me check the `format_pr_cell` function to see how it's constructing the cell content.
+
+The function wraps the PR number in link markup with the emoji placed after the closing tag, so when the markup gets stripped, I'd expect to see the PR number followed by the emoji with a space between them. That should be correct, but I'm wondering if something else is happening with how the markup is being processed.
+
+Actually, looking at the real code path, `format_pr_cell` might not even be used here—the `pr_display` is being built directly in `real.py` as just the number and emoji without any markup. So that function could be dead code or used somewhere else entirely.
+
+I think I've been going in circles trying to trace through the code mentally. The user is reporting extra spacing around linkified or bolded PR numbers, and from what I can see, it's likely either the column width padding making the gap more noticeable, or something about how the `Text` object is rendering the styled content.
+
+Looking at the column definition with `width=6`, that's actually one character wider than needed for the current PR IDs in the screenshot. If the styling is adding any extra padding or the column width is creating visual gaps, that could explain the spacing issue.
+
+The real problem might be that the underline styling combined with the cyan color is making the text appear visually wider in the terminal, creating that "extra space" effect the user mentioned. Removing the underline and relying on just the cyan color for visual distinction could be the simpler fix here. I'm realizing the real issue might be how Rich renders styled text within table cells—the underline could be extending across the entire cell width rather than just the text itself, which would make the padding space appear underlined and create that visual gap. So Rich is likely padding the Text object itself to fill the cell width, which means the underline style extends across the entire cell including the trailing space—that's the extra underlined space the user is seeing. I could fix this by using plain strings instead, or by using Rich's markup syntax to apply styling more selectively. ]"` which makes it a proper link
+3. Use a different visual indicator for linked items
+
+OK let me finally write a plan. I think the issue is that `Text(style="cyan underline")` extends the underline to fill the entire cell width in Rich tables, creating a visible trailing underlined space.
+
+For a CLI-only fix, the options are:
+1. **Remove underline, keep cyan**: Just pass `f"#{row.plan_id}"` as a plain string; the column already has `style="cyan"` which will apply. This is the simplest but loses the visual distinction between linked and non-linked items.
+2. **Use link markup**: Change to something like `Text.from_markup(f"[link={url}]#{plan_id}[/link]")`. This makes it properly clickable with OSC 8 links and Rich handles the rendering.
+
+Actually, option 1 means all cells get the column's cyan color, so I'd lose the ability to distinguish which ones are actually linked. Option 2 uses Rich's link markup to create proper OSC 8 hyperlinks that terminals can click, and Rich should handle the width correctly since it knows the link markers are zero-width. I'm leaning toward option 2 as the fix. Let me check what the TUI does since the code mirrors it—it's doing the same thing with `Text` and "cyan underline" in `_row_to_values`. So the fix should apply to both.
+
+Hmm, but in a TUI (Textual), links might not work the same way. Let me keep this in mind.
+
+For the plan, the simplest and most effective fix is: use Rich's link markup for the plan cell and any other linkified cells, instead of manual `Text(style="cyan underline")`. This makes links properly clickable AND fixes the visual spacing because Rich correctly measures link markup as zero-width.
+
+Wait, but `[link=...]` in Rich table cells... does that work properly? Let me check. Yes, Rich supports `[link=URL]text[/link]` markup in tables. The link text is rendered with terminal link support, and the markup tags are zero-width.
+
+To use link markup, I'd pass a plain string with the markup syntax rather than a Text object, since Rich parses markup in string cell values by default. If I use `f"[link={url}]#{plan_id}[/link]"`, Rich will render it as a linked text. The column's cyan style would apply to the whole cell, including the link, which should be fine visually.
+
+So the plan: replace the Text object approach with link markup strings for any cells that need to be clickable.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="58377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand the code structure. Let me look at how Rich handles `Text` objects with underline in table cells to confirm my theory about the spacing issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="58377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011GGn7TooaFeJrap5NmAbj4">
+    <param name="command">python3 -c "
+from rich.table import Table
+from rich.text import Text
+from rich.console imp...[truncated 622 chars]...SI codes
+for i, line in enumerate(output.split('\n')):
+    print(f'Line {i}: {line!r}')
+"
+</param>
+    <param name="description">Test Rich table rendering with Text underline vs plain string</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="58377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011GGn7TooaFeJrap5NmAbj4">
+Line 0: '┏━━━━━━━━┳━━━━━━━━━━┓'
+Line 1: '┃\x1b[1m \x1b[0m\x1b[1mpr    \x1b[0m\x1b[1m \x1b[0m┃\x1b[1m \x1b[0m\x1b[1mstage   \x1b[0m\x1b[1m \x1b[0m┃'
+Line 2: '┡━━━━━━━━╇━━━━━━━━━━┩'
+Line 3: '│\x1b[36m \x1b[0m\x1b[4;36m#7944 \x1b[0m\x1b[36m \x1b[0m│ planned  │'
+Line 4: '│\x1b[36m \x1b[0m\x1b[36m#7943 \x1b[0m\x1b[36m \x1b[0m│ planned  │'
+Line 5: '└────────┴──────────┘'
+Line 6: ''
+  </tool_result>
+  <thinking>Now I can see the issue clearly from the raw ANSI output:
+
+Line 3 (linked row): `│\x1b[36m \x1b[0m\x1b[4;36m#7944 \x1b[0m\x1b[36m \x1b[0m│ planned  │`
+Line 4 (plain row):  `│\x1b[36m \x1b[0m\x1b[36m#7943 \x1b[0m\x1b[36m \x1b[0m│ planned  │`
+
+
+The key difference is that Line 3 applies underline formatting to the ID with a trailing space included, while Line 4 just uses plain cyan coloring without the underline effect. I see the root cause now—Rich is padding the Text object to fill the column width, and the underline style extends across that padding, which is why there's an extra underlined space appearing. The fix is to remove the underline style from the Text object itself and instead apply styling at the column level, or keep the Text unpadded and let the column handle the spacing.
+
+I'm considering a few approaches: using just cyan color without underline to keep things simple, leveraging Rich's link markup syntax which creates zero-width terminal links that won't extend to padding, or switching to bold styling instead of underline for visual distinction.
+
+Option 2 with Rich's link markup seems most promising—it would parse the markup into a Text object with link metadata while keeping the underline confined to just the linked text rather than the padded space. Let me verify how Rich actually handles this rendering.
+
+The tradeoff is that terminals without OSC 8 support would lose the visual distinction entirely, so I might need to combine the link markup with additional styling like bold to ensure the linked items stand out regardless of terminal capabilities.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="11603" cache_read_input_tokens="58923" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11603}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Found it. The raw ANSI output confirms the issue:
+
+- **Line 3 (linked)**: `\x1b[4;36m#7944 \x1b[0m` — underline+cyan extends to `#7944 ` (with trailing space underlined)
+- **Line 4 (plain)**: `\x1b[36m#7943 \x1b[0m` — cyan `#7943 ` (trailing space not underlined)
+
+Rich pads the `Text` object content to fill the column width, and the underline style extends to the padding space. So `#7944` gets rendered as `#7944_` (underscore = visible underlined space).
+
+This affects all cells using `Text(content, style="cyan underline")`: the plan column, objective column, run-id column, and PR display column.
+
+The fix is to use Rich's `[link=URL]text[/link]` markup instead of `Text(style="cyan underline")`. This creates proper OSC 8 hyperlinks where the terminal controls the underline rendering (only under linked text, not padding).
+
+Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11603" cache_read_input_tokens="58923" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11603}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011ZxCvyhr2PCQqmHKmRXN41">
+    <param name="file_path">/Users/schrockn/.claude/plans/async-kindling-dawn.md</param>
+    <param name="content"># Fix: Linkified PR numbers have extra underlined space in table cells
+
+## Context
+
+When `...[truncated 2036 chars]...ckable in iTerm2 (Cmd+click)
+3. Run existing tests: `pytest tests/tui/test_plan_table.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11603" cache_read_input_tokens="58923" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11603}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ZxCvyhr2PCQqmHKmRXN41">
+File created successfully at: /Users/schrockn/.claude/plans/async-kindling-dawn.md
+  </tool_result>
+  <assistant>Let me verify whether `PlanRowData` has an objective URL field and whether Textual supports `[link=...]` markup.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2565" cache_read_input_tokens="70526" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2565}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H3ykHobAFnVvhKYRaxHnNH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2565" cache_read_input_tokens="70526" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2565}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H3ykHobAFnVvhKYRaxHnNH">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class PlanRowData:
+    11→    """Row data for displaying a plan in the TUI table.
+    12→
+    13→    Contains pre-formatted display strings and raw data needed for actions.
+    14→    Immutable to ensure table state consistency.
+    15→
+    16→    Attributes:
+    17→        plan_id: GitHub issue number (e.g., 123)
+    18→        plan_url: Full URL to the GitHub issue
+    19→        pr_number: PR number if linked, None otherwise
+    20→        pr_url: URL to PR (GitHub or Graphite), None if no PR
+    21→        pr_display: Formatted PR cell content (e.g., "#123 👀")
+    22→        checks_display: Formatted checks cell (e.g., "✓" or "✗")
+    23→        worktree_name: Name of local worktree, empty string if none
+    24→        exists_locally: Whether worktree exists on local machine
+    25→        local_impl_display: Relative time since last local impl (e.g., "2h ago")
+    26→        remote_impl_display: Relative time since last remote impl
+    27→        run_id_display: Formatted workflow run ID
+    28→        run_state_display: Formatted workflow run state
+    29→        run_url: URL to the GitHub Actions run page
+    30→        full_title: Complete untruncated plan title
+
+... [129 lines omitted] ...
+
+    40→        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BVTxwJXH9AqGv6qTRdYob8">
+    <param name="command">python3 -c "
+from rich.table import Table
+from rich.console import Console
+import io
+
+# Te...[truncated 476 chars]...value()
+
+for i, line in enumerate(output.split('\n')):
+    print(f'Line {i}: {line!r}')
+"
+</param>
+    <param name="description">Test Rich link markup vs Text underline in table</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2565" cache_read_input_tokens="70526" output_tokens="413" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2565, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BVTxwJXH9AqGv6qTRdYob8">
+Line 0: '┏━━━━━━━━┳━━━━━━━━━━┓'
+Line 1: '┃\x1b[1m \x1b[0m\x1b[1mpr    \x1b[0m\x1b[1m \x1b[0m┃\x1b[1m \x1b[0m\x1b[1mstage   \x1b[0m\x1b[1m \x1b[0m┃'
+Line 2: '┡━━━━━━━━╇━━━━━━━━━━┩'
+Line 3: '│\x1b[36m \x1b[0m\x1b]8;id=313157;https://example.com\x1b\\\x1b[36m#7944\x1b[0m\x1b]8;;\x1b\\\x1b[36m \x1b[0m\x1b[36m \x1b[0m│ planned  │'
+Line 4: '│\x1b[36m \x1b[0m\x1b[36m#7943 \x1b[0m\x1b[36m \x1b[0m│ planned  │'
+Line 5: '└────────┴──────────┘'
+Line 6: ''
+  </tool_result>
+  <thinking>Now I can see the difference:
+
+**With `[link=...]` markup (Line 3):**
+```
+│\x1b[36m \x1b[0m\x1b]8;id=313157;https://example.com\x1b\\\x1b[36m#7944\x1b[0m\x1b]8;;\x1b\\\x1b[36m \x1b[0m\x1b[36m \x1b[0m│
+```
+Breaking down:
+- `\x1b[36m \x1b[0m` — cyan left padding (1 space)
+
+
+- `\x1b]8;id=313157;https://example.com\x1b\\` — OSC 8 link start
+- `\x1b[36m#7944\x1b[0m` — cyan text "#7944" (5 chars)
+- `\x1b]8;;\x1b\\` — OSC 8 link end
+- `\x1b[36m \x1b[0m` — cyan space (1 char padding to fill width=6)
+- `\x1b[36m \x1b[0m` — cyan right padding (1 space)
+
+The link wraps only "#7944" while the padding space stays unlinked and ununderlined. When using `Text(style="cyan underline")` instead, the underline extends across both the text and trailing space, which isn't ideal. The link markup approach solves this by keeping the padding separate from the link. Now I'm realizing `PlanRowData` doesn't have an `objective_url` field to work with.
+
+I could add `objective_url` to `PlanRowData`, construct it from the issue number and repo info like we do for plan URLs, or just stick with the `Text(style="cyan underline")` approach for objectives since they're less critical than plan links.
+
+For the CLI table in `list_cmd.py`, constructing the URL in the rendering function would be simpler than passing repo info around. But I'm realizing the real issue here: the user said the bolded PR numbers look wrong with extra spacing, so maybe the problem isn't about adding links at all—it's that the current styling itself is causing visual issues, and I should reconsider whether bold or underline is even the right approach. For cells without URLs, I'll just use plain text styling instead of trying to construct links. The objective column doesn't have a cyan style defined anyway, so I need to check what the current Text styling is doing and whether I should apply it consistently or let the column defaults handle it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3340" cache_read_input_tokens="73091" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3340}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The ANSI output confirms the fix works. With `[link=...]` markup, the link only wraps the text `#7944`, and the padding space is separately styled without underline. `PlanRowData` has `plan_url`, `pr_url`, and `run_url` but no `objective_url`. Let me update the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3340" cache_read_input_tokens="73091" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3340}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01SMzzUHAdr44XoAmb83HAr8">
+    <param name="file_path">/Users/schrockn/.claude/plans/async-kindling-dawn.md</param>
+    <param name="content"># Fix: Linkified PR numbers have extra underlined space in table cells
+
+## Context
+
+When `...[truncated 1479 chars]...fy links are clickable (Cmd+click in iTerm2)
+3. Run `pytest tests/tui/test_plan_table.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3340" cache_read_input_tokens="73091" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3340}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SMzzUHAdr44XoAmb83HAr8">
+The file /Users/schrockn/.claude/plans/async-kindling-dawn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_0191nwFebNyCHpY3vczj4d1A">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Fix: Linkified PR numbers have extra underlined space in table cells
+
+## Context
+
+When `...[truncated 1479 chars]...fy links are clickable (Cmd+click in iTerm2)
+3. Run `pytest tests/tui/test_plan_table.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2158" cache_read_input_tokens="76431" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2158}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0191nwFebNyCHpY3vczj4d1A">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/async-kindling-dawn.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Linkified PR numbers have extra underlined space in table cells
+Current context: (wt:erk-slot-38) (br:plnd/align-plan-dash-02-22-1844) (pr:#7937) (plan:#7937)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/alig"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 53b6be53-e393-4ae3-aafa-122456aeb06e \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0112xQAuDnYKhK41vL4Nay8h">
+    <param name="file_path">/Users/schrockn/.claude/plans/async-kindling-dawn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="685" cache_read_input_tokens="78589" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 685}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0112xQAuDnYKhK41vL4Nay8h">
+     1→# Fix: Linkified PR numbers have extra underlined space in table cells
+     2→
+     3→## Context
+     4→
+     5→When `erk plan list` renders linkified values (PR numbers, objective IDs, run IDs) using `Text(content, style="cyan underline")`, Rich pads the Text content to fill the column width, and the **underline extends to the padding space**. This creates a visible trailing underlined space after each linked value.
+     6→
+     7→Confirmed via ANSI analysis:
+     8→- `Text("cyan underline")`: `\x1b[4;36m#7944 \x1b[0m` — underline covers `#7944 ` (trailing space underlined)
+     9→- `[link=...]` markup: link wraps only `#7944`, padding space is plain cyan — no trailing underline
+    10→
+    11→## Changes
+    12→
+    13→### `src/erk/cli/commands/plan/list_cmd.py` — `_row_to_static_values()`
+    14→
+    15→Replace `Text(content, style="cyan underline")` with Rich `[link=URL]` markup for cells that have URLs:
+    16→
+    17→1. **Plan cell** (~line 187-189): `f"[link={row.plan_url}]#{row.plan_id}[/link]"` when `row.plan_url` exists
+    18→2. **Objective cell** (~line 192-194): `Text(row.objective_display, style="cyan")` (drop underline; no URL available on `PlanRowData`)
+    19→3. **Run ID** (~line 205-208): `f"[link={row.run_url}]{run_id}[/link]"` when `row.run_url` exists
+    20→4. **PR display** (~line 235-236): `f"[link={row.pr_url}]{pr_display}[/link]"` when `row.pr_url` exists
+    21→
+    22→### `src/erk/tui/widgets/plan_table.py` — `_row_to_values()`
+    23→
+    24→Same changes (lines ~270-272, ~293-295, ~306-308, ~339-340). Textual's DataTable renders Rich Text objects, so `[link=...]` markup should work.
+    25→
+    26→## Verification
+    27→
+    28→1. Run `erk plan list` — confirm linked items no longer have trailing underlined space
+    29→2. Verify links are clickable (Cmd+click in iTerm2)
+    30→3. Run `pytest tests/tui/test_plan_table.py`
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+# Fix: Linkified PR numbers have extra underlined space in table cells
+
+## Context
+
+When `erk plan list` renders linkified values (PR numbers, objective IDs, run IDs) using `Text(content, style="cyan underline")`, Rich pads the Text content to fill the column width, and the **underline extends to the padding space**. This creates a visible trailing underlined space after each linked value.
+
+Confirmed via ANSI analysis:
+- `Text("cyan underline")`: `\x1b[4;36m#7944 \x1b[0m` — underline covers `#7944 ` (trailing space underlined)
+- `[link=...]` markup: link wraps only `#7944`, padding space is plain cyan — no trailing underline
+
+## Changes
+
+### `src/erk/cli/commands/plan/list_cmd.py` — `_row_to_static_values()`
+
+Replace `Text(content, style="cyan underline")` with Rich `[link=URL]` markup for cells that have URLs:
+
+1. **Plan cell** (~line 187-189): `f"[link={row.plan_url}]#{row.plan_id}[/link]"` when `row.plan_url` exists
+2. **Objective cell** (~line 192-194): `Text(row.objective_display, style="cyan")` (drop underline; no URL available on `PlanRowData`)
+3. **Run ID** (~line 205-208): `f"[link={row.run_url}]{run_id}[/link]"` when `row.run_url` exists
+4. **PR display** (~line 235-236): `f"[link={row.pr_url}]{pr_display}[/link]"` when `row.pr_url` exists
+
+### `src/erk/tui/widgets/plan_table.py` — `_row_to_values()`
+
+Same changes (lines ~270-272, ~293-295, ~306-308, ~339-340).
+
+## Verification
+
+1. Run `erk plan list` — confirm linked items no longer have trailing underlined space
+2. Verify links are clickable (Cmd+click in iTerm2)
+3. Run `pytest tests/tui/test_plan_table.py`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="79274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 758}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01CmoaGmRuPBUHhCEdbNtKoQ">
+    <param name="questions">[{'question': '📋 Fix: Linkified PR numbers have extra underlined space in table cells\nCur...[truncated 512 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="79274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 758}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CmoaGmRuPBUHhCEdbNtKoQ">
+User has answered your questions: "📋 Fix: Linkified PR numbers have extra underlined space in table cells
+Current context: (wt:erk-slot-38) (br:plnd/align-plan-dash-02-22-1844) (pr:#7937) (plan:#7937)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015bXny1EbXNona31eRfiHuz">
+    <param name="command">erk exec marker create --session-id 53b6be53-e393-4ae3-aafa-122456aeb06e exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2129" cache_read_input_tokens="80032" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2129, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015bXny1EbXNona31eRfiHuz">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01YWtFJy9hF9PT24wRPHt6Au">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Fix: Linkified PR numbers have extra underlined space in table cells
+
+## Context
+
+When `...[truncated 1479 chars]...fy links are clickable (Cmd+click in iTerm2)
+3. Run `pytest tests/tui/test_plan_table.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="82161" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 224}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YWtFJy9hF9PT24wRPHt6Au">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

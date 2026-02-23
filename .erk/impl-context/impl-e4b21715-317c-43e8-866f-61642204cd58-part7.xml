@@ -1,0 +1,794 @@
+<session>
+  <meta branch="plnd/align-plan-dash-02-22-1844" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01PFHRfPfzwKN3SB5z8twHBH">
+**Result: All tests passed**
+
+The make target ran the full test suite (not just the specific tests named), which executed 5443 tests total and all passed in 12.71 seconds.
+
+Note: The `make test-unit-erk` target appears to ignore the `PYTEST_ARGS` environment variable and runs the complete unit test suite instead of just the three specific tests you requested. The three target tests mentioned are included in the overall test run and passed as part of the 5443 total passing tests.
+agentId: a94fa95691743189f (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14500
+tool_uses: 1
+duration_ms: 17043&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 5443 tests pass. Now let me run the full CI pipeline.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="83534" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 444}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_012V7UWjg3hVY7dcedfnCbEM">
+    <param name="description">Run lint format ty checks</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and report results:
+
+make lint format ty
+
+Report pass/fail status and any error output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="83534" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 444}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012V7UWjg3hVY7dcedfnCbEM">
+All checks passed successfully!
+
+**Summary:**
+- **ruff check** (lint): All checks passed
+- **ruff format**: 1499 files left unchanged (code is properly formatted)
+- **ty check** (type checking): All checks passed
+
+No errors or issues to report.
+agentId: a2652723bf781a59a (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13557
+tool_uses: 1
+duration_ms: 3807&lt;/usage&gt;
+  </tool_result>
+  <assistant>All lint, format, and type checks pass. All 5443 unit tests pass. Let me now complete the remaining plan-implement steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="83978" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014WK11qU8n5cf89fUaCiSkp">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="83978" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014WK11qU8n5cf89fUaCiSkp">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/.impl"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AG6uk8M6gzpWznqqAas9Dy">
+    <param name="command">erk exec impl-signal ended --session-id="e4b21715-317c-43e8-866f-61642204cd58" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="84272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AG6uk8M6gzpWznqqAas9Dy">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 7937
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01C4GTaMzWq1QgkYqwKJkTCZ">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(jq -r '.issue_number // empty' ....[truncated 154 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="84435" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 150, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C4GTaMzWq1QgkYqwKJkTCZ">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JnNsgyeYoLn8yN2W4RhKk5">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="217" cache_read_input_tokens="84585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 217}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JnNsgyeYoLn8yN2W4RhKk5">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G7urw1V7pDNJ7nVhxJN8BW">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="84802" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 120, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G7urw1V7pDNJ7nVhxJN8BW">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 7937
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Gkp11Y44CX6GMTKyNfKxSR">
+    <param name="command">erk pr check</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="84922" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 357}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gkp11Y44CX6GMTKyNfKxSR">
+Checking PR #7937 for branch plnd/align-plan-dash-02-22-1844...
+
+[PASS] Branch name and plan reference agree (#7937)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Sub6fZMNvKeRgLQUkxM6rH">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="85279" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sub6fZMNvKeRgLQUkxM6rH">
+Updated task #6 status
+  </tool_result>
+  <assistant>Implementation complete. Here's a summary of what was done:
+
+**Plan #7937: Align `erk plan list` with `erk dash` layout**
+
+### Changes made:
+- **`list_cmd.py`**: Rewrote `_list_plans_impl()` to use `RealPlanDataProvider` (same data source as TUI), added `_build_static_table()` and `_row_to_static_values()` matching TUI column layout, removed the `--runs` flag (runs always shown)
+- **`display_utils.py`**: Moved `strip_rich_markup()` to shared module
+- **Column width fixes**: `pr` 8→10 (fits `#NNN 👀💥`), `remote-impl` 10→11 (fits header)
+- **Test updates**: Removed title assertions, removed `--runs` flag usage, fixed worktree branch naming to use `P{id}-` prefix, added autouse fixture for `github` plan backend, used shorter worktree names for column width constraints
+
+### CI results:
+- All 5443 unit tests pass
+- Lint, format, and type checks all pass
+- PR #7937 submitted and all checks passed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="85433" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+  <assistant>No response requested.</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <user>local-wt       ┃ local-impl ┃ remote-impl
+
+drop these columns from plan list</user>
+  <tool_use name="Read" id="toolu_01R4A7xvem4wzR4qf3Wzwbdx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="offset">118</param>
+    <param name="limit">133</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="42160" cache_read_input_tokens="19041" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 42160, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R4A7xvem4wzR4qf3Wzwbdx">
+   118→def _build_static_table(
+   119→    rows: list[PlanRowData],
+   120→    *,
+   121→    plan_backend: str,
+   122→    show_pr_column: bool,
+   123→) -&gt; Table:
+   124→    """Build a Rich static table from PlanRowData rows.
+   125→
+   126→    Column order matches the TUI PlanDataTable exactly.
+   127→
+   128→    Args:
+   129→        rows: List of PlanRowData to display
+   130→        plan_backend: Plan backend type ("github" or "draft_pr")
+   131→        show_pr_column: Whether to show a separate PR column
+   132→
+   133→    Returns:
+   134→        Rich Table populated with rows
+   135→    """
+   136→    table = Table(show_header=True, header_style="bold")
+   137→
+   138→    # Column setup mirrors PlanDataTable._setup_columns()
+   139→    plan_col_header = "pr" if plan_backend == "draft_pr" else "plan"
+   140→    table.add_column(plan_col_header, style="cyan", no_wrap=True, width=6)
+   141→
+   142→    if plan_backend == "draft_pr":
+   143→        table.add_column("stage", no_wrap=True, width=8)
+   144→        table.add_column("sts", no_wrap=True, width=4)
+   145→        table.add_column("created", no_wrap=True, width=7)
+   146→    table.add_column("obj", no_wrap=True, width=5)
+   147→    table.add_column("loc", no_wrap=True, width=3)
+
+... [103 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Dn2yG7s5ouumYXB1nWnB8J">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">    table.add_column("chks", no_wrap=True, width=8)
+    table.add_column("cmts", no_wrap=T...[truncated 79 chars]...impl", no_wrap=True, width=10)
+    table.add_column("remote-impl", no_wrap=True, width=11)</param>
+    <param name="new_string">    table.add_column("chks", no_wrap=True, width=8)
+    table.add_column("cmts", no_wrap=True, width=5)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2066" cache_read_input_tokens="61201" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2066, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Dn2yG7s5ouumYXB1nWnB8J">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JCjg2qqjwwXnJGNfDZhKZV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">    values.extend([wt_cell, row.local_impl_display])
+    remote_impl = strip_rich_markup(row.remote_impl_display)
+    values.append(remote_impl)
+
+    return tuple(values)</param>
+    <param name="new_string">    return tuple(values)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="63267" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JCjg2qqjwwXnJGNfDZhKZV">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the unused `wt_cell` variable.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="63897" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 63897}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GDbkw4wPd96j4EjFCo1SkG">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">    # Format worktree
+    wt_cell = row.worktree_name if row.exists_locally else "-"
+
+    # Format objective cell</param>
+    <param name="new_string">    # Format objective cell</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="63897" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 63897}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GDbkw4wPd96j4EjFCo1SkG">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the tests that assert on these dropped columns. Let me find them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="63897" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 264}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0181Cc3AXui3tUqq5bamnbWH">
+    <param name="pattern">local-wt|local-impl|remote-impl|local_impl|remote_impl|worktree_name|feature-worktree|feat-wt</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="63897" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 264}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0181Cc3AXui3tUqq5bamnbWH">
+tests/commands/dash/test_impl_columns.py:3:Tests run columns (always shown) and impl column headers (lcl-impl, remote-impl).
+tests/commands/dash/test_impl_columns.py:92:    """Verify local-impl and remote-impl column headers render correctly."""
+tests/commands/dash/test_impl_columns.py:100:last_local_impl_at: '2024-11-20T10:00:00Z'
+tests/commands/dash/test_impl_columns.py:101:last_remote_impl_at: '2024-11-21T12:00:00Z'
+tests/commands/dash/test_impl_columns.py:126:        # Act - local-impl and remote-impl columns are always shown
+tests/commands/dash/test_impl_columns.py:131:        assert "local-impl" in result.output
+tests/commands/dash/test_impl_columns.py:132:        assert "remote-impl" in result.output
+tests/commands/dash/test_worktree_detection.py:3:Tests verifying that the local-wt column shows worktree status from
+tests/commands/dash/test_worktree_detection.py:26:    When a plan has a worktree_name in the issue body but no local worktree,
+tests/commands/dash/test_worktree_detection.py:27:    the local-wt column should show "-" (not the remote worktree name).
+tests/commands/dash/test_worktree_detection.py:29:    # Arrange - Create issue with plan-header block containing worktree_name
+tests/commands/dash/test_worktree_detection.py:36:worktree_name: rename-erk-slash-commands
+tests/commands/dash/test_worktree_detection.py:96:    When the plan-header contains a worktree_name but no local worktree exists,
+tests/commands/dash/test_worktree_detection.py:97:    the local-wt column should show "-" instead of the remote worktree name.
+tests/commands/dash/test_worktree_detection.py:106:worktree_name: second-attempt
+tests/commands/dash/test_worktree_detection.py:145:def test_plan_list_shows_worktree_from_local_impl() -&gt; None:
+tests/commands/dash/test_worktree_detection.py:165:        worktree_path = env.cwd.parent / "feat-wt"
+tests/commands/dash/test_worktree_detection.py:202:        assert "feat-wt" in result.output
+tests/commands/dash/test_worktree_detection.py:229:worktree_name: old-github-worktree
+tests/commands/dash/test_worktree_detection.py:284:    """Test that local-wt column shows dash when no local worktree exists.
+tests/commands/dash/test_worktree_detection.py:286:    Even when the issue body contains a worktree_name, if there's no local
+tests/commands/dash/test_worktree_detection.py:287:    worktree, the local-wt column should show "-".
+tests/commands/dash/test_worktree_detection.py:289:    # Arrange - Issue with plan-header containing worktree_name
+tests/commands/dash/test_worktree_detection.py:296:worktree_name: github-worktree
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Woay3Mes7BPf3gpDNmHtUz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_impl_columns.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1584" cache_read_input_tokens="63625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1584}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Woay3Mes7BPf3gpDNmHtUz">
+     1→"""Tests for implementation column display in plan list command.
+     2→
+     3→Tests run columns (always shown) and impl column headers (lcl-impl, remote-impl).
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→
+    19→
+    20→def test_plan_list_run_columns_always_shown() -&gt; None:
+    21→    """Test that run columns are always shown (runs always visible)."""
+    22→    # Arrange - Create plan with PR and workflow run data
+    23→    plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+    24→&lt;details&gt;
+    25→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+    26→
+    27→```yaml
+    28→schema_version: '2'
+    29→last_dispatched_run_id: '99999'
+    30→last_dispatched_node_id: 'WFR_all_flag'
+
+... [103 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_015ZZ4YPs4ZpQK1EKnYZKUDS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_worktree_detection.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1584" cache_read_input_tokens="63625" output_tokens="169" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1584, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015ZZ4YPs4ZpQK1EKnYZKUDS">
+     1→"""Tests for local worktree detection in plan list command.
+     2→
+     3→Tests verifying that the local-wt column shows worktree status from
+     4→local .impl/issue.json files, not from GitHub metadata.
+     5→"""
+     6→
+     7→import json
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.cli import cli
+    13→from erk_shared.gateway.git.abc import WorktreeInfo
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→from erk_shared.gateway.github.fake import FakeGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.plan_store.types import Plan, PlanState
+    18→from tests.commands.dash.conftest import plan_to_issue
+    19→from tests.test_utils.context_builders import build_workspace_test_context
+    20→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    21→
+    22→
+    23→def test_plan_list_shows_worktree_status() -&gt; None:
+    24→    """Test that plan list shows dash for non-local worktrees.
+    25→
+    26→    When a plan has a worktree_name in the issue body but no local worktree,
+    27→    the local-wt column should show "-" (not the remote worktree name).
+    28→    """
+    29→    # Arrange - Create issue with plan-header block containing worktree_name
+    30→    body_with_worktree = """&lt;!-- erk:metadata-block:plan-header --&gt;
+
+... [375 lines omitted] ...
+  </tool_result>
+  <thinking>The tests that assert on these dropped columns:
+
+1. `test_impl_columns.py::test_dash_displays_impl_column_headers` - asserts `"local-impl"` and `"remote-impl"` in output. This test should be deleted since those columns are gone.
+
+2. `test_worktree_detection.py` - Several tests assert on worktree names appearing or not appearing in output. Since the `local-wt` column is dropped, worktree names won't appear. These tests need to be updated or deleted.
+
+Let me think about which tests to delete vs update:
+
+- `test_plan_list_shows_worktree_status` - asserts `rename-erk-slash-commands` NOT in output. This should still pass since the column is removed. 
+
+But it also asserts `"Found 2 plan(s)"`, so I need to check if that assertion still holds. Looking at the other tests: `test_plan_list_shows_dash_for_non_local_worktree` and `test_plan_list_shows_worktree_from_local_impl` both assert worktree names ARE in output, which will fail now. `test_plan_list_prefers_local_over_github` also asserts specific worktree names in the output, so that'll fail too.
+
+The remaining tests like `test_plan_list_shows_dash_when_no_local_worktree` and `test_plan_list_handles_multiple_local_worktrees` follow the same pattern—they're all checking for the presence or absence of the local worktree column that's being removed. Tests checking for absence will pass trivially since the column is gone, but they're no longer testing anything meaningful. The ones checking for presence will fail. Since the entire `test_worktree_detection.py` file is built around testing this column functionality, the whole file should be deleted along with `test_dash_displays_impl_column_headers`.
+
+Now I need to look more carefully at `test_impl_columns.py`—the first test there actually tests run columns, not impl columns, so that one should be kept. I should also scan the other test files to see if there are any other references to these columns I'm removing.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12980" cache_read_input_tokens="65209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The `test_worktree_detection.py` file entirely tests the `local-wt` column, and `test_dash_displays_impl_column_headers` tests the `local-impl`/`remote-impl` headers. Since all three columns are dropped, I need to delete the worktree test file and the impl column header test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12980" cache_read_input_tokens="65209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01746SYjJYihpFzyJeA8ssuj">
+    <param name="command">rm /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_worktree_detection.py</param>
+    <param name="description">Delete worktree detection tests (local-wt column removed)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12980" cache_read_input_tokens="65209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01746SYjJYihpFzyJeA8ssuj">
+
+  </tool_result>
+  <assistant>Now remove `test_dash_displays_impl_column_headers` from `test_impl_columns.py` while keeping the `test_plan_list_run_columns_always_shown` test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="836" cache_read_input_tokens="78189" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 836}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014btESPQy3ZQXdpPdkbJ4Tc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_impl_columns.py</param>
+    <param name="old_string">"""Tests for implementation column display in plan list command.
+
+Tests run columns (always shown) and impl column headers (lcl-impl, remote-impl).
+"""</param>
+    <param name="new_string">"""Tests for run column display in plan list command.
+
+Tests run columns (always shown).
+"""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="836" cache_read_input_tokens="78189" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 836, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014btESPQy3ZQXdpPdkbJ4Tc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_impl_columns.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XiedmXZGGiP2k3wfeTAzUZ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_impl_columns.py</param>
+    <param name="old_string">def test_dash_displays_impl_column_headers() -&gt; None:
+    """Verify local-impl and remote-...[truncated 1290 chars]...        assert "local-impl" in result.output
+        assert "remote-impl" in result.output</param>
+    <param name="new_string"></param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="79025" output_tokens="630" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 307, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XiedmXZGGiP2k3wfeTAzUZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_impl_columns.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the affected tests to verify everything passes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="79332" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01T1FdPrgLp48rq6Unf1Y1Eq">
+    <param name="description">Run dash tests after column removal</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktree...[truncated 103 chars]...nds/plan/test_list.py -x -v 2&gt;&amp;1 | tail -60
+
+Report pass/fail status and any error output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="79332" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T1FdPrgLp48rq6Unf1Y1Eq">
+pytest passed: All 38 tests passed in 1.37s
+
+The test suite ran successfully with no failures:
+- `tests/commands/dash/` - 17 tests passed
+- `tests/commands/test_dash_workflow_runs.py` - 7 tests passed
+- `tests/commands/plan/test_list.py` - 9 tests passed
+agentId: a96de92f6d741ede2 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13929
+tool_uses: 1
+duration_ms: 5413&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 38 tests pass. Dropped the `local-wt`, `local-impl`, and `remote-impl` columns from `plan list`, deleted `test_worktree_detection.py`, and removed `test_dash_displays_impl_column_headers`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="80020" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 359}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01NmRppKyhfLAEAbDyokGvdT">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick submit all changes via Graphite</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="61722" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 61722}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NmRppKyhfLAEAbDyokGvdT">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7937"
+}
+  </tool_result>
+  <assistant>Changes submitted: https://github.com/dagster-io/erk/pull/7937</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="213" cache_read_input_tokens="80763" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 213}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="441" cache_read_input_tokens="80998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 441}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:fast-ci&lt;/command-message&gt;
+&lt;command-name&gt;/local:fast-ci&lt;/command-name&gt;</user>
+  <user>You are an implementation finalizer for rapid development feedback. Your task is to run `make fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the fast CI pipeline (`make fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**Fast CI vs All CI**: The `fast-ci` target runs unit tests only, providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
+
+## CI Pipeline (make fast-ci)
+
+The `make fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format-check** - Ruff code formatting checks
+3. **prettier-check** - Markdown formatting checks
+4. **md-check** - AGENTS.md standard compliance validation
+5. **docs-validate** - Agent documentation frontmatter validation
+6. **ty** - Type checking
+7. **test** - Pytest unit tests only (fast feedback loop)
+8. **exec-reference-check** - Exec subcommand reference documentation validation
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on linting and type checking issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint ty` together. If EITHER fails, stop immediately to fix issues before proceeding to remaining checks.
+2. **Phase 2 (Remaining Checks)**: Only after phase 1 passes, run remaining checks via `make fast-ci`.
+
+This ensures that common issues (linting/formatting and type errors) are caught and fixed first, providing rapid feedback without waiting for slower test runs.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with `make fast-ci` to run the complete fast CI pipeline. Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <tool_use name="Task" id="toolu_01SKE7fJFHcWWUePXjYmfWYV">
+    <param name="description">Run lint and ty checks</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and report results:
+
+make lint ty
+
+Report pass/fail status and any error output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="740" cache_read_input_tokens="81450" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 740}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SKE7fJFHcWWUePXjYmfWYV">
+**Result: PASSED**
+
+Both commands completed successfully:
+
+- **ruff check**: All checks passed!
+- **ty check**: All checks passed!
+
+No linting violations or type errors were found in the codebase.
+agentId: a915f30cad6377a8a (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13487
+tool_uses: 1
+duration_ms: 3645&lt;/usage&gt;
+  </tool_result>
+  <assistant>Lint and ty pass. Running full fast-ci.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="82190" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 265}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_016sTZwfQDidrukAxaE2mKCA">
+    <param name="description">Run full fast-ci pipeline</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktree...[truncated 39 chars]...s/fail status and any error output. If there are failures, include the full error details.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="timeout">300000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="82190" output_tokens="190" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 265, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016sTZwfQDidrukAxaE2mKCA">
+**FAILED: make fast-ci**
+
+The fast-ci target failed with exit code 2 (make error). Here's the issue:
+
+**Format Check Failure:**
+```
+Would reformat: tests/commands/dash/test_impl_columns.py
+1 file would be reformatted, 1497 files already formatted
+```
+
+**Summary:**
+- Lint: PASSED
+- Format Check: **FAILED** - 1 file needs reformatting (tests/commands/dash/test_impl_columns.py)
+- Prettier Check: PASSED
+- Markdown Check: PASSED
+- Exec Reference Check: PASSED
+- Type Check (ty): PASSED
+- Unit Tests (erk): 5436 passed
+- Unit Tests (erk-dev): 136 passed
+- Unit Tests (erk-statusline): 126 passed
+
+The make target exits with error status because the format check detected that `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_impl_columns.py` would be reformatted by the code formatter. This file needs formatting before the CI check will pass.
+agentId: a168dd5ce66748318 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15044
+tool_uses: 1
+duration_ms: 30039&lt;/usage&gt;
+  </tool_result>
+  <assistant>One formatting issue. Let me fix it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="82455" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 529}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01NEz3y7UKdRKSo8GZZ7mQTw">
+    <param name="description">Format the impl columns test</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and report results:
+
+make format
+
+Report pass/fail status.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="82455" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 529, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NEz3y7UKdRKSo8GZZ7mQTw">
+**make format passed**: 1 file reformatted, 1497 files left unchanged
+
+The format command completed successfully. One file was reformatted to match the code style, and the remaining 1,497 files were already properly formatted.
+agentId: a3d62579ec2ae4709 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13481
+tool_uses: 1
+duration_ms: 2674&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+Fixed. Now re-running fast-ci to confirm clean.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="492" cache_read_input_tokens="82984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 492}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01HBkviSJHmDrrkWjyGvyogH">
+    <param name="description">Re-run fast-ci after format fix</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and report results:
+
+make fast-ci
+
+Report pass/fail status and any error output.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="timeout">300000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="492" cache_read_input_tokens="82984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 492}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HBkviSJHmDrrkWjyGvyogH">
+**make fast-ci: PASSED**
+
+All checks passed successfully. Summary:
+
+- **Lint**: All checks passed
+- **Format Check**: 1498 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: All CLAUDE.md and AGENTS.md files properly paired (19 files checked, 0 violations)
+- **Exec Reference Check**: reference.md is up to date
+- **Type Checking (ty)**: All checks passed
+- **Unit Tests (erk)**: 5436 passed in 12.42s
+- **Unit Tests (erk-dev)**: 136 passed in 2.62s
+- **Unit Tests (erk-statusline)**: 126 passed in 0.66s
+
+Total: 5698 tests passed, zero failures across all test suites and checks.
+agentId: abefdf017a692782c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14571
+tool_uses: 1
+duration_ms: 26622&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass — 5698 tests, lint, format, prettier, type checking, and docs validation all green.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="451" cache_read_input_tokens="83476" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 451}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_01G2xySZKKYmqrGzxQKH6Sj3">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick submit all changes via Graphite</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="280" cache_read_input_tokens="83954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 280}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G2xySZKKYmqrGzxQKH6Sj3">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7937"
+}
+  </tool_result>
+  <assistant>Submitted: https://github.com/dagster-io/erk/pull/7937</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="84234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 323}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="332" cache_read_input_tokens="84579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 332}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="332" cache_read_input_tokens="84922" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 332}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/7937&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>

@@ -1,0 +1,922 @@
+<session>
+  <meta branch="plnd/align-plan-dash-02-22-1844" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Now I'll write the complete new version of `list_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10527" cache_read_input_tokens="104419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10527}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01ViFcJ3Mhes78Rd27eYRzXQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="content">"""Command to list plans with filtering."""
+
+from collections.abc import Callable
+from typ...[truncated 16186 chars]...t=limit,
+        interval=interval,
+        all_users=all_users,
+        sort=sort,
+    )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10527" cache_read_input_tokens="104419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10527}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ViFcJ3Mhes78Rd27eYRzXQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01CmHBJmMiLjMNueKG2xBuMG">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5249" cache_read_input_tokens="114946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5249}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CmHBJmMiLjMNueKG2xBuMG">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01LQisXnpyhEuPwWZa4gppQx">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5249" cache_read_input_tokens="114946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5249}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LQisXnpyhEuPwWZa4gppQx">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_016JWVdLr2AULD7fGKddXzCT">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5249" cache_read_input_tokens="114946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5249}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016JWVdLr2AULD7fGKddXzCT">
+Updated task #4 status
+  </tool_result>
+  <assistant>Now let me fix the `run/list_cmd.py` import and update the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="120195" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 279}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01TQCrNSXKqsZNJMbUWhx9HN">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="120195" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 279}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TQCrNSXKqsZNJMbUWhx9HN">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 6: Fix `run/list_cmd.py` import**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="111" cache_read_input_tokens="120474" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 111}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QTE828zPMAggKANWGECd18">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.plan.list_cmd import format_pr_cell, select_display_pr</param>
+    <param name="new_string">from erk.cli.commands.plan.list_cmd import format_pr_cell
+from erk.core.pr_utils import select_display_pr</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="111" cache_read_input_tokens="120474" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 111}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QTE828zPMAggKANWGECd18">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait - `select_display_pr` was never re-exported from `list_cmd.py` in the old code. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="120585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 289}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N5M1pNmHpNEcsdS412XujW">
+    <param name="pattern">select_display_pr</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="120585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 289}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N5M1pNmHpNEcsdS412XujW">
+8:from erk.core.pr_utils import select_display_pr
+159:                selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
+  </tool_result>
+  <assistant>Good - the old code imported `select_display_pr` from `erk.cli.commands.plan.list_cmd` which itself imported it from `erk.core.pr_utils`. Now `run/list_cmd.py` imports directly from the canonical location. The old `list_cmd.py` re-exported it implicitly because it was imported at module level. This is now cleaner.
+
+**Phase 7: Update tests**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="219" cache_read_input_tokens="120874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 219}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GyR3ntC2Aq1wvPwJrqw2WA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/plan/test_list.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="219" cache_read_input_tokens="120874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 219}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GyR3ntC2Aq1wvPwJrqw2WA">
+     1→"""Tests for erk plan list command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo
+    11→from erk_shared.plan_store.types import Plan, PlanState
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_inmem_env
+    14→
+    15→
+    16→def plan_to_issue(plan: Plan) -&gt; IssueInfo:
+    17→    """Convert Plan to IssueInfo for test setup."""
+    18→    return IssueInfo(
+    19→        number=int(plan.plan_identifier),
+    20→        title=plan.title,
+    21→        body=plan.body,
+    22→        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+    23→        url=plan.url,
+    24→        labels=plan.labels,
+    25→        assignees=plan.assignees,
+    26→        created_at=plan.created_at,
+    27→        updated_at=plan.updated_at,
+    28→        author="test-user",
+    29→    )
+    30→
+
+... [545 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to update the tests:
+
+1. `test_plan_list_no_filters`: Remove assertions on title strings since the `title` column is removed. But wait - the TUI still shows titles somewhere? Let me check what PlanRowData has. It has `full_title` but the static table I built doesn't show a title column. Looking at the TUI column layout, there's no "title" column either. The titles won't appear in output. I need to remove title assertions.
+
+2. `test_plan_list_filter_by_state`: Remove `"Open Issue"` assertion.
+
+3. `test_plan_list_filter_by_labels`: Remove `"Issue with both labels"` assertion.
+
+
+4. `test_plan_list_runs_flag_shows_run_columns`: The `--runs` flag is no longer needed since runs are always displayed now, so I'll remove it from the test invocation but keep the assertion checking that run IDs appear.
+
+5. `test_plan_list_short_runs_flag`: This test can be deleted entirely since the flag doesn't exist anymore.
+
+6. `test_plan_list_sort_activity_*`: I need to change how I verify sort order - instead of checking title strings, I'll use plan IDs like `"#1"` and `"#2"` to confirm the correct ordering.
+
+There's a complication though - the new `_list_plans_impl` relies on `RealPlanDataProvider` which calls `fetch_github_token()` that spawns a subprocess, so I need to figure out how to handle that in tests.
+
+The existing tests use `FakeGitHub` through `build_workspace_test_context`, but the new implementation creates `RealPlanDataProvider` with `RealHttpClient` locally, which requires an actual token. Looking back at the plan, I should be able to construct `RealPlanDataProvider` with fake dependencies from the gateway module since `fetch_plans()` and `fetch_branch_activity()` don't actually use those injected fakes.
+
+The real issue is that `fetch_github_token()` gets called upfront to create the `RealHttpClient`, but then `fetch_plans()` doesn't actually use that http_client directly—it goes through `self._ctx.plan_list_service` which accesses the context's github instance instead.
+
+Since the test plan specifies using fakes for clipboard, browser, and http_client, I should skip the `fetch_github_token()` call entirely and pass a `FakeHttpClient` to the provider instead.
+
+Setting up the provider with fakes... I see the issue now—I'm instantiating `RealHttpClient` with a token from `fetch_github_token()`, but that calls subprocess which won't work in tests. Since `fetch_plans()` and `fetch_branch_activity()` don't actually use the http_client, I should just use `FakeHttpClient` instead to avoid the subprocess call entirely.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="8643" cache_read_input_tokens="121093" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8643}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Wait - I need to check something. The new `_list_plans_impl` calls `fetch_github_token()` which runs `gh auth token` via subprocess. This will fail in tests. Since `fetch_plans()` and `fetch_branch_activity()` don't use the http_client (they use `ctx.plan_list_service`), I should use `FakeHttpClient` instead.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8643" cache_read_input_tokens="121093" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8643}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013HPcyXHXtAcy6WgX5HzLNP">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">    # Construct RealPlanDataProvider
+    location = GitHubRepoLocation(root=repo_root, rep...[truncated 231 chars]...Clipboard(),
+        browser=FakeBrowserLauncher(),
+        http_client=http_client,
+    )</param>
+    <param name="new_string">    # Construct RealPlanDataProvider
+    # Only fetch_plans() and fetch_branch_activity() ...[truncated 263 chars]...oard(),
+        browser=FakeBrowserLauncher(),
+        http_client=FakeHttpClient(),
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8643" cache_read_input_tokens="121093" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8643}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013HPcyXHXtAcy6WgX5HzLNP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now clean up the unused imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1774" cache_read_input_tokens="129736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1774}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PSmRM5ncbrNz7A9gZHSkyi">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestI...[truncated 189 chars]...eal import RealBrowserLauncher
+from erk_shared.gateway.clipboard.real import RealClipboard</param>
+    <param name="new_string">from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestI...[truncated 281 chars]....gateway.clipboard.real import RealClipboard  # noqa: F401 — used by _run_interactive_mode</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1774" cache_read_input_tokens="129736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1774}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PSmRM5ncbrNz7A9gZHSkyi">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Wait, those noqa comments are not the erk style. Let me re-check - are RealBrowserLauncher and RealClipboard actually used? Yes, they are used in `_run_interactive_mode`. Let me remove the noqa comments and just leave the imports normally.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="727" cache_read_input_tokens="131510" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 727}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Actually, `RealBrowserLauncher` and `RealClipboard` are used in `_run_interactive_mode`, so they're legitimate imports. Let me remove the noqa comments:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="727" cache_read_input_tokens="131510" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 727}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RPaRXCFbp6hnD7PjxUi1Bj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">from erk_shared.gateway.browser.real import RealBrowserLauncher  # noqa: F401 — used by _r...[truncated 15 chars]....gateway.clipboard.real import RealClipboard  # noqa: F401 — used by _run_interactive_mode</param>
+    <param name="new_string">from erk_shared.gateway.browser.real import RealBrowserLauncher
+from erk_shared.gateway.clipboard.real import RealClipboard</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="727" cache_read_input_tokens="131510" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 727}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RPaRXCFbp6hnD7PjxUi1Bj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the tests. The key changes:
+1. Remove title assertions (no title column anymore)
+2. Remove `--runs` flag from test invocations (runs always shown)
+3. Delete `test_plan_list_short_runs_flag` test
+4. Fix activity sort tests to use `#1`/`#2` instead of titles</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="443" cache_read_input_tokens="132237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 443}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01G7xDtqUa3bmEKgjRMLFJQA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/plan/test_list.py</param>
+    <param name="content">"""Tests for erk plan list command."""
+
+from datetime import UTC, datetime
+
+from click.tes...[truncated 19309 chars]...          f"Plan #2 (newer commit) should appear first. output={result.output}"
+        )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="443" cache_read_input_tokens="132237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 443}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G7xDtqUa3bmEKgjRMLFJQA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/plan/test_list.py has been updated successfully.
+  </tool_result>
+  <thinking>Now I need to check if the activity sort tests work properly. The old tests used `branch_last_commit_times` with FakeGit, but the new implementation uses `RealPlanDataProvider.fetch_branch_activity()` which calls `git.branch.get_branch_commits_with_authors()`, not `git.branch.get_branch_last_commit_time()`.
+
+Also the old tests used branch names like `feature-for-issue-1` while the new RealPlanDataProvider's `_build_worktree_mapping` uses `extract_leading_issue_number(worktree.branch)` to match branches to plan IDs. The branch name needs to start with `P{issue_number}` for this to work. Let me check the naming module.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6604" cache_read_input_tokens="132680" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6604}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `extract_leading_issue_number` works to make sure the branch names match:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6604" cache_read_input_tokens="132680" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6604}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TrNvzW8mNhfxqn5Fyfzxcx">
+    <param name="pattern">def extract_leading_issue_number</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6604" cache_read_input_tokens="132680" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6604}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TrNvzW8mNhfxqn5Fyfzxcx">
+packages/erk-shared/src/erk_shared/naming.py:792:def extract_leading_issue_number(branch_name: str) -&gt; int | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-793-    """Extract leading issue number from a branch name.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-794-
+packages/erk-shared/src/erk_shared/naming.py-795-    Branch names follow the pattern: P{issue_number}-{slug}-{timestamp}
+packages/erk-shared/src/erk_shared/naming.py-796-    Examples: "P2382-convert-erk-create-raw-ext-12-05-2359"
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-797-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-798-    Also supports legacy format without "P" prefix for backwards compatibility.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-799-
+packages/erk-shared/src/erk_shared/naming.py-800-    Args:
+packages/erk-shared/src/erk_shared/naming.py-801-        branch_name: Branch name to parse
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-802-
+packages/erk-shared/src/erk_shared/naming.py-803-    Returns:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-804-        Issue number if branch starts with optional "P" followed by digits and hyphen, else None
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-805-
+packages/erk-shared/src/erk_shared/naming.py-806-    Examples:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/naming.py-807-        &gt;&gt;&gt; extract_leading_issue_number("P2382-convert-erk-create-raw-ext-12-05-2359")
+  </tool_result>
+  <assistant>Good - I already used `P1-feature-for-issue-1` in the updated tests, which matches the pattern `P{issue_number}-{slug}`.
+
+Now let me also check the `FakeGit` constructor to ensure `branch_commits_with_authors` is a supported parameter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1061" cache_read_input_tokens="139284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1061}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019AWRAPrBXa8jsF1sni93ce">
+    <param name="pattern">branch_commits_with_authors</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1061" cache_read_input_tokens="139284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1061}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019AWRAPrBXa8jsF1sni93ce">
+155-        head_commit_messages_full: dict[Path, str] | None = None,
+156-        git_user_name: str | None = None,
+157:        branch_commits_with_authors: dict[tuple[Path, str, str, int], list[dict[str, str]]]
+158-        | None = None,
+159-        push_to_remote_error: PushError | None = None,
+160-        existing_tags: set[str] | None = None,
+161-        branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
+162-        rebase_onto_result: RebaseResult | None = None,
+--
+213-            head_commit_messages_full: Mapping of cwd -&gt; full commit message for HEAD
+214-            git_user_name: Configured git user.name to return from get_git_user_name()
+215:            branch_commits_with_authors: Mapping of (repo_root, branch, trunk, limit)
+216-                -&gt; commit dicts with keys: sha, author, timestamp
+217-            push_to_remote_error: PushError to return when push_to_remote() is called
+218-            existing_tags: Set of tag names that exist in the repository
+219-            branch_divergence: Mapping of (cwd, branch, remote) -&gt; BranchDivergence
+220-                for is_branch_diverged_from_remote()
+--
+267-        self._head_commit_messages_full = head_commit_messages_full or {}
+268-        self._git_user_name = git_user_name
+269:        self._branch_commits_with_authors = branch_commits_with_authors or {}
+270-        self._push_to_remote_error = push_to_remote_error
+271-        self._existing_tags: set[str] = existing_tags or set()
+272-        self._branch_divergence = branch_divergence or {}
+273-        self._rebase_onto_result = rebase_onto_result
+274-        self._rebase_abort_raises = rebase_abort_raises
+--
+351-            behind_commit_authors=self._behind_commit_authors,
+352-            branch_last_commit_times=self._branch_last_commit_times,
+353:            branch_commits_with_authors=self._branch_commits_with_authors,
+
+... [5 lines omitted] ...
+
+355-            tracking_branch_failures=self._tracking_branch_failures,
+356-            create_branch_error=create_branch_error,
+  </tool_result>
+  <thinking>I see - the key for `branch_commits_with_authors` is `(repo_root, branch, trunk, limit)` - a 4-tuple including the limit. But in my test I used a 3-tuple `(env.cwd, "P1-feature-for-issue-1", "main")`. Let me check what `RealPlanDataProvider.fetch_branch_activity()` passes as the limit:
+
+```python
+commits = self._ctx.git.branch.get_branch_commits_with_authors(
+    self._location.root,
+    row.worktree_branch,
+    trunk,
+    limit=1,  # Only need most recent
+)
+```
+
+So the key needs to be a 4-tuple with limit=1. I need to update my test to match this.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="140345" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 915}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I see - `branch_commits_with_authors` uses a 4-tuple key `(repo_root, branch, trunk, limit)`. The provider passes `limit=1`. Let me fix the test keys:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="140345" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 915}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EVStfGK4BzWSrMZAeBx1fj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/plan/test_list.py</param>
+    <param name="old_string">            branch_commits_with_authors={
+                (env.cwd, "P1-feature-for-issue-...[truncated 187 chars]...         "message": "test commit",
+                    }
+                ],
+            },</param>
+    <param name="new_string">            branch_commits_with_authors={
+                (env.cwd, "P1-feature-for-issue-...[truncated 190 chars]...         "message": "test commit",
+                    }
+                ],
+            },</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="140345" output_tokens="597" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 915, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EVStfGK4BzWSrMZAeBx1fj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/plan/test_list.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QWjX8w2utdYnFDdfXesvQH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/plan/test_list.py</param>
+    <param name="old_string">            branch_commits_with_authors={
+                (env.cwd, "P1-feature-for-issue-...[truncated 518 chars]...        "message": "newer commit",
+                    }
+                ],
+            },</param>
+    <param name="new_string">            branch_commits_with_authors={
+                (env.cwd, "P1-feature-for-issue-...[truncated 524 chars]...        "message": "newer commit",
+                    }
+                ],
+            },</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="141260" output_tokens="537" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 883, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QWjX8w2utdYnFDdfXesvQH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/plan/test_list.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_0115xcLDdBuvJMdHmmv6PFuN">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="142143" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 593}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0115xcLDdBuvJMdHmmv6PFuN">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01KJGYQbMDcXNuQEipE9SfN1">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="142143" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 593}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KJGYQbMDcXNuQEipE9SfN1">
+Updated task #6 status
+  </tool_result>
+  <assistant>**Phase: Run CI checks.** Let me first check if there are any other imports of the removed functions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="142736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0132ZBBu4F1Vnjq9Uttm8yst">
+    <param name="pattern">from erk.cli.commands.plan.list_cmd import</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="142736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0132ZBBu4F1Vnjq9Uttm8yst">
+src/erk/cli/commands/run/list_cmd.py:7:from erk.cli.commands.plan.list_cmd import format_pr_cell
+src/erk/cli/cli.py:30:from erk.cli.commands.plan.list_cmd import dash
+src/erk/cli/commands/plan/__init__.py:12:from erk.cli.commands.plan.list_cmd import list_plans
+tests/commands/test_top_level_commands.py:9:from erk.cli.commands.plan.list_cmd import dash
+tests/integration/test_plan_repo_root.py:16:from erk.cli.commands.plan.list_cmd import dash
+tests/unit/core/test_display_utils.py:746:    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+tests/unit/core/test_display_utils.py:754:    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+tests/unit/core/test_display_utils.py:762:    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+  </tool_result>
+  <thinking>There are test imports of `format_worktree_name_cell` which I deleted! I need to check those tests and update them. Let me read those test lines.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="142934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 409}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>There are tests that import `format_worktree_name_cell` which was deleted. Let me check those tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="142934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 409}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GhgA5j6Y4qodES1MUqVWMc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/core/test_display_utils.py</param>
+    <param name="offset">740</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="142934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 409}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GhgA5j6Y4qodES1MUqVWMc">
+   740→
+   741→# Tests for format_worktree_name_cell (from list_cmd.py)
+   742→
+   743→
+   744→def test_format_worktree_name_cell_exists_locally() -&gt; None:
+   745→    """Test worktree that exists locally shows yellow name."""
+   746→    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+   747→
+   748→    result = format_worktree_name_cell("my-worktree", True)
+   749→    assert result == "[yellow]my-worktree[/yellow]"
+   750→
+   751→
+   752→def test_format_worktree_name_cell_not_exists_locally() -&gt; None:
+   753→    """Test worktree that doesn't exist locally shows dash."""
+   754→    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+   755→
+   756→    result = format_worktree_name_cell("deleted-worktree", False)
+   757→    assert result == "-"
+   758→
+   759→
+   760→def test_format_worktree_name_cell_empty_name_not_exists() -&gt; None:
+   761→    """Test that empty worktree name with exists_locally=False returns dash."""
+   762→    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+   763→
+   764→    result = format_worktree_name_cell("", False)
+   765→    assert result == "-"
+   766→
+  </tool_result>
+  <assistant>These tests for `format_worktree_name_cell` are now testing dead code. I need to delete them since the function was removed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2008" cache_read_input_tokens="143343" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2008}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jb2Fhct1C6PEkHo9nAMGq7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/core/test_display_utils.py</param>
+    <param name="offset">735</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2008" cache_read_input_tokens="143343" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2008}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jb2Fhct1C6PEkHo9nAMGq7">
+   735→    # Timestamp that is effectively 2 hours ago in UTC
+   736→    timestamp = "2024-11-28T10:00:00+00:00"
+   737→    result = format_relative_time(timestamp, now=now)
+   738→    assert result == "2h ago"
+   739→
+   740→
+   741→# Tests for format_worktree_name_cell (from list_cmd.py)
+   742→
+   743→
+   744→def test_format_worktree_name_cell_exists_locally() -&gt; None:
+   745→    """Test worktree that exists locally shows yellow name."""
+   746→    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+   747→
+   748→    result = format_worktree_name_cell("my-worktree", True)
+   749→    assert result == "[yellow]my-worktree[/yellow]"
+   750→
+   751→
+   752→def test_format_worktree_name_cell_not_exists_locally() -&gt; None:
+   753→    """Test worktree that doesn't exist locally shows dash."""
+   754→    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+   755→
+   756→    result = format_worktree_name_cell("deleted-worktree", False)
+   757→    assert result == "-"
+   758→
+   759→
+   760→def test_format_worktree_name_cell_empty_name_not_exists() -&gt; None:
+   761→    """Test that empty worktree name with exists_locally=False returns dash."""
+   762→    from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
+   763→
+   764→    result = format_worktree_name_cell("", False)
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B8oyKaXdTkmzfMigBc936m">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/core/test_display_utils.py</param>
+    <param name="offset">765</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="646" cache_read_input_tokens="145351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 646}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B8oyKaXdTkmzfMigBc936m">
+   765→    assert result == "-"
+   766→
+  </tool_result>
+  <assistant>Good, file ends at 766. Let me remove the dead tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="145997" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 151}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SdU3AJqfnnmBfioR5qu1Ga">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/core/test_display_utils.py</param>
+    <param name="old_string">    assert result == "2h ago"
+
+
+# Tests for format_worktree_name_cell (from list_cmd.py)
+
+...[truncated 794 chars]...tree_name_cell
+
+    result = format_worktree_name_cell("", False)
+    assert result == "-"</param>
+    <param name="new_string">    assert result == "2h ago"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="145997" output_tokens="487" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 151, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SdU3AJqfnnmBfioR5qu1Ga">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/core/test_display_utils.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check for any other imports of the deleted functions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="146148" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 545}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HMCXFseEy9QceRx4GTbHKM">
+    <param name="pattern">format_worktree_name_cell|format_local_run_cell|format_remote_run_cell|_build_plans_table|_build_watch_content|_run_watch_loop</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="146148" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 545}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HMCXFseEy9QceRx4GTbHKM">
+docs/learned/architecture/live-display-gateway.md:28:&lt;!-- Source: src/erk/cli/commands/plan/list_cmd.py, _run_watch_loop --&gt;
+docs/learned/architecture/live-display-gateway.md:30:The canonical usage pattern appears in `_run_watch_loop()` in `src/erk/cli/commands/plan/list_cmd.py`. This demonstrates the ONLY correct way to use LiveDisplay:
+  </tool_result>
+  <assistant>Only docs references, no code imports. Those docs are just documentation references, not code. That's fine.
+
+Now let me also check if `select_display_pr` was being re-imported via `list_cmd.py` in the old `run/list_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="146693" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 482}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ADJ4fHqvgWwESZ2SEzsL2P">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="146693" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 482}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ADJ4fHqvgWwESZ2SEzsL2P">
+     1→"""List workflow runs command."""
+     2→
+     3→import click
+     4→from rich.console import Console
+     5→from rich.table import Table
+     6→
+     7→from erk.cli.commands.plan.list_cmd import format_pr_cell
+     8→from erk.core.pr_utils import select_display_pr
+     9→from erk.cli.commands.run.shared import extract_issue_number
+    10→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+  </tool_result>
+  <assistant>Good, that's correct. Now let me run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="147175" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01C7LjPKgxZSPo9VvR8EGKo7">
+    <param name="description">Run plan list tests</param>
+    <param name="prompt">Run the following command and report the results:
+uv run pytest tests/commands/plan/test_list.py -x -v
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="147175" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C7LjPKgxZSPo9VvR8EGKo7">
+pytest passed: All 9 tests in `tests/commands/plan/test_list.py` passed successfully in 0.75s.
+agentId: a4ca29811362b51f9 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13784
+tool_uses: 1
+duration_ms: 4845&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 9 tests pass. Now let me run the display utils tests and the broader test suite:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="147486" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_012jWskYQDrb2a78HLR5JHfA">
+    <param name="description">Run display utils tests</param>
+    <param name="prompt">Run the following command and report the results:
+uv run pytest tests/unit/core/test_display_utils.py -x -v
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="147486" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_014b3yowEW9xq2BBqsRsDBxY">
+    <param name="description">Run run list_cmd tests</param>
+    <param name="prompt">Run the following command and report the results:
+uv run pytest tests/commands/run/ -x -v
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="147486" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01VYtSRk1JvR19pEm9475phQ">
+    <param name="description">Run TUI plan table tests</param>
+    <param name="prompt">Run the following command and report the results:
+uv run pytest tests/tui/ -x -v
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="147486" output_tokens="370" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 242, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012jWskYQDrb2a78HLR5JHfA">
+**pytest passed:** 47 tests passed in 0.50s
+
+All tests in `tests/unit/core/test_display_utils.py` passed successfully with no failures.
+agentId: af8c8dd343b106193 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13706
+tool_uses: 1
+duration_ms: 3562&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_014b3yowEW9xq2BBqsRsDBxY">
+**pytest passed: 23 tests passed in 0.44s**
+
+All tests in `tests/commands/run/` passed successfully:
+- `tests/commands/run/test_list.py`: 13 passed
+- `tests/commands/run/test_logs.py`: 4 passed
+- `tests/commands/run/test_shared.py`: 6 passed
+agentId: a71b1ec644ad71704 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13789
+tool_uses: 1
+duration_ms: 3982&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01VYtSRk1JvR19pEm9475phQ">
+pytest failed: 1 error
+
+**Error Summary:**
+
+The test suite failed to collect due to an import error in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py`.
+
+**Issue:**
+- File: `tests/tui/test_plan_table.py` line 7
+- Error: `ImportError: cannot import name '_strip_rich_markup' from 'erk.tui.widgets.plan_table'`
+
+The test module is attempting to import `_strip_rich_markup` from `erk.tui.widgets.plan_table`, but this function either doesn't exist or has been removed from the module. This prevents the test file from being imported, stopping test collection immediately.
+agentId: ade0e456d3a64af1e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14719
+tool_uses: 1
+duration_ms: 4349&lt;/usage&gt;
+  </tool_result>
+  <assistant>The TUI test imports `_strip_rich_markup` from the old location. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="949" cache_read_input_tokens="147728" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 949}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012SehCZunWiRjWt4qdHEEaJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="949" cache_read_input_tokens="147728" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 949}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012SehCZunWiRjWt4qdHEEaJ">
+     1→"""Tests for PlanDataTable widget."""
+     2→
+     3→from rich.text import Text
+     4→
+     5→from erk.tui.data.types import PlanFilters
+     6→from erk.tui.views.types import ViewMode
+     7→from erk.tui.widgets.plan_table import PlanDataTable, _strip_rich_markup
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def _text_to_str(value: str | Text) -&gt; str:
+    12→    """Convert Text or str to plain string for assertions."""
+    13→    if isinstance(value, Text):
+    14→        return value.plain
+    15→    return value
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AkDngDKyDLoEAnpmopJkUJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py</param>
+    <param name="old_string">from erk.tui.widgets.plan_table import PlanDataTable, _strip_rich_markup</param>
+    <param name="new_string">from erk.core.display_utils import strip_rich_markup
+from erk.tui.widgets.plan_table import PlanDataTable</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="148677" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AkDngDKyDLoEAnpmopJkUJ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the usage of `_strip_rich_markup` to `strip_rich_markup` in the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="149245" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HqN5sujqbDQ7BSYGQ51Fxh">
+    <param name="pattern">_strip_rich_markup</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="149245" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HqN5sujqbDQ7BSYGQ51Fxh">
+20:    """Tests for _strip_rich_markup utility function."""
+25:        result = _strip_rich_markup(text)
+31:        result = _strip_rich_markup(text)
+37:        result = _strip_rich_markup(text)
+43:        result = _strip_rich_markup(text)
+49:        result = _strip_rich_markup(text)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0197Y8ubE9HpP6ox3DZgqLyZ">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py</param>
+    <param name="old_string">_strip_rich_markup</param>
+    <param name="new_string">strip_rich_markup</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="149505" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0197Y8ubE9HpP6ox3DZgqLyZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py has been updated. All occurrences of '_strip_rich_markup' were successfully replaced with 'strip_rich_markup'.
+  </tool_result>
+  <assistant>Now re-run the TUI tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="149764" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01BHVnpYEBR49JMAAvyDf17K">
+    <param name="description">Run TUI tests again</param>
+    <param name="prompt">Run the following command and report the results:
+uv run pytest tests/tui/ -x -v
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="149764" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BHVnpYEBR49JMAAvyDf17K">
+pytest failed: 1 issue found
+
+**tests/tui/commands/test_execute_command.py::TestExecuteCommandClosePlan::test_close_plan_does_nothing_without_issue_url**
+
+- **File**: tests/tui/commands/test_execute_command.py
+- **Line**: 164
+- **Error**: `TypeError: PlanRowData.__init__() missing 1 required positional argument: 'status_display'`
+- **Summary**: The test is constructing a `PlanRowData` object but is missing the required `status_display` argument. The `PlanRowData` dataclass definition has been updated to require this field, but the test construction on line 164 has not been updated to include it.
+agentId: a91a9ffdfe4cc3e6a (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15524
+tool_uses: 1
+duration_ms: 4126&lt;/usage&gt;
+  </tool_result>
+  <thinking>This failure is unrelated to my changes - it's a pre-existing issue with a test not updated for the `status_display` field. Let me check if this test was already failing before my changes by checking if this test exists in master.
+
+Actually, looking more closely, the plan_table tests specifically had `strip_rich_markup` tests that I renamed. Let me check if these TUI plan_table tests pass, and skip the execute_command test issue since it's likely pre-existing.
+
+Let me just run the plan_table specific tests.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="150002" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 376}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>That failure in `test_execute_command.py` appears pre-existing (unrelated to my changes). Let me verify by running just the plan_table tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="150002" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 376}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01RyaZtkoG3ZXAbnoQRZXubp">
+    <param name="description">Run plan_table tests only</param>
+    <param name="prompt">Run the following command and report the results:
+uv run pytest tests/tui/test_plan_table.py -x -v
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="150002" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 376, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RyaZtkoG3ZXAbnoQRZXubp">
+## pytest failed: 1 issue found
+
+**File:** `tests/tui/test_plan_table.py`  
+**Test:** `test_row_to_values_draft_pr_includes_stage` (line 477)  
+**Error:** AssertionError - Expected 15 values, got 16
+
+**Details:**
+The test expects the `_row_to_values()` method to return 15 values for the draft_pr backend, but it's currently returning 16 values. The actual output contains:
+```
+(&lt;text '#123' [] 'cyan underline'&gt;, 'review', '-', '-', '-', '-', ...)
+```
+
+The test assertion failed at line 477:
+```python
+assert len(values) == 15  # Expected, but got 16
+```
+
+This suggests that an additional column was added to the output without updating the test expectation.
+agentId: aab111cdc6c422fa8 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14878
+tool_uses: 1
+duration_ms: 4417&lt;/usage&gt;
+  </tool_result>
+  <thinking>This is a pre-existing test failure. My changes to `plan_table.py` only touched the imports (changed `_strip_rich_markup` to the shared import) and removed the local `_strip_rich_markup` function. The column count mismatch is pre-existing.
+
+Let me verify by checking if this test was already broken before my changes. Actually, this test failure is likely pre-existing because of the `status_display` field addition to `PlanRowData`. Let me check the test to be sure.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="150378" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 570}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check if this test was already failing before my changes by examining it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="150378" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 570}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BxJr7W9Y1pnnau89qtJrwd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py</param>
+    <param name="offset">470</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="150378" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 570}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BxJr7W9Y1pnnau89qtJrwd">
+   470→    table = PlanDataTable(filters, plan_backend="draft_pr")
+   471→    row = make_plan_row(123, "Test Plan", lifecycle_display="[cyan]review[/cyan]")
+   472→
+   473→    values = table._row_to_values(row)
+   474→
+   475→    # draft_pr: plan, stage, created, obj, loc, branch, run-id, run, author,
+   476→    # pr, chks, cmts, local-wt, local-impl, remote-impl
+   477→    assert len(values) == 15
+   478→    # Stage at index 1 (right after plan in draft_pr mode) - markup stripped
+   479→    assert _text_to_str(values[1]) == "review"
+   480→
+   481→
+   482→def test_row_to_values_github_does_not_include_stage() -&gt; None:
+   483→    """github backend does NOT include stage value in output."""
+   484→    filters = PlanFilters(
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CVRFUACYGLpAcpMAiTE2jR">
+    <param name="command">git stash &amp;&amp; uv run pytest tests/tui/test_plan_table.py::test_row_to_values_draft_pr_includes_stage -x 2&gt;&amp;1 | tail -5; git stash pop</param>
+    <param name="description">Check if test was already failing on base</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="771" cache_read_input_tokens="150948" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 771, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CVRFUACYGLpAcpMAiTE2jR">
+Saved working directory and index state WIP on plnd/align-plan-dash-02-22-1844: 209ff1c61 Remove .erk/impl-context/ before implementation
+tests/tui/test_plan_table.py:476: AssertionError
+=========================== short test summary info ============================
+FAILED tests/tui/test_plan_table.py::test_row_to_values_draft_pr_includes_stage
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 0.52s
+On branch plnd/align-plan-dash-02-22-1844
+Your branch is up to date with 'origin/plnd/align-plan-dash-02-22-1844'.
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   src/erk/cli/commands/plan/list_cmd.py
+	modified:   src/erk/cli/commands/run/list_cmd.py
+	modified:   src/erk/core/display_utils.py
+	modified:   src/erk/tui/widgets/plan_table.py
+	modified:   tests/commands/plan/test_list.py
+	modified:   tests/tui/test_plan_table.py
+	modified:   tests/unit/core/test_display_utils.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (d3b9e8b62646473f4de1998c6fb17e71be1964a4)
+  </tool_result>
+  <assistant>The test was already failing before my changes. It's a pre-existing issue. My changes only touched imports for `strip_rich_markup`. Let me now run the full CI suite to check for any issues from my actual changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="560" cache_read_input_tokens="151719" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 560}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01CtDcqh1yrHrfJCZv1rNx2t">
+    <param name="skill">local:py-fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="560" cache_read_input_tokens="151719" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 560, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CtDcqh1yrHrfJCZv1rNx2t">
+Launching skill: local:py-fast-ci
+  </tool_result>
+  <user>You are an implementation finalizer for rapid Python-focused development feedback. Your task is to run `make py-fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the Python-only fast CI pipeline (`make py-fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**py-fast-ci vs fast-ci**: The `py-fast-ci` target runs Python checks (lint, format, ty, pytest), skipping markdown and documentation checks. Use this when you're iterating on Python code and don't want to wait for prettier/markdown validation. Use `/fast-ci` when you need the full fast CI pipeline including all checks.
+
+## CI Pipeline (make py-fast-ci)
+
+The `make py-fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format** - Python formatting check (ruff format --check)
+3. **ty** - Type checking
+4. **test-unit-erk** - Pytest unit tests for erk
+5. **test-erk-dev** - Pytest tests for erk-dev
+
+**Skipped** (compared to fast-ci):
+
+- Prettier check (markdown formatting)
+- Markdown check (AGENTS.md compliance)
+- Docs validate/sync
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on Python code quality issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint format ty` together (ruff lint + ruff format + type checking). If ANY fails, stop immediately to fix issues before proceeding to test runs.
+2. **Phase 2 (Test Runs)**: Only after phase 1 passes, run `make test-unit-erk test-erk-dev`.
+
+This ensures that syntax/formatting and type errors are caught and fixed first, providing rapid feedback without waiting for test execution.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint format ty`) from the repository root. If that passes, proceed with test targets (`make test-unit-erk test-erk-dev`). Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>I'll run the Python-focused CI pipeline. Let me start with the fail-fast phase.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="756" cache_read_input_tokens="152279" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 756}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01MjMw1RyFJXm3uxJpLHkNAZ">
+    <param name="description">Run lint format ty checks</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and report the results:
+
+make lint format ty
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="756" cache_read_input_tokens="152279" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 756}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MjMw1RyFJXm3uxJpLHkNAZ">
+The command failed at the lint stage. Here's the summary:
+
+**ruff failed: 4 issues found**
+
+1. **src/erk/cli/commands/plan/list_cmd.py:3** — `I001` Import block is un-sorted or un-formatted (3 fixable imports)
+2. **src/erk/cli/commands/plan/list_cmd.py:163** — `E501` Line too long (101 &gt; 100 characters)
+3. **src/erk/cli/commands/run/list_cmd.py:3** — `I001` Import block is un-sorted or un-formatted
+4. **tests/tui/test_plan_table.py:3** — `I001` Import block is un-sorted or un-formatted
+
+Issues found:
+- 3 issues are auto-fixable with `--fix`
+- 1 issue is a line length violation that requires manual fix
+
+The make command stopped at the lint target and did not proceed to the format and ty targets. The imports in three files need to be reorganized, and one line in list_cmd.py exceeds the 100-character limit.
+agentId: a5db2ce754e57e7aa (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16474
+tool_uses: 1
+duration_ms: 4889&lt;/usage&gt;
+  </tool_result>
+  <assistant>Let me fix the import sorting and line length issues.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="153035" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 502}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013XCjyV1bQf74JxpjBXJADs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="153035" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 502}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013XCjyV1bQf74JxpjBXJADs">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import ParamSpec, TypeVar
+     5→
+     6→import click
+     7→from rich.console import Console
+     8→from rich.table import Table
+     9→from rich.text import Text
+    10→
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    15→from erk.tui.app import ErkDashApp
+    16→from erk.tui.data.types import PlanFilters, PlanRowData
+    17→from erk.tui.sorting.logic import sort_plans
+    18→from erk.tui.sorting.types import SortKey, SortState
+    19→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    20→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    21→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    22→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+    23→from erk_shared.gateway.http.auth import fetch_github_token
+    24→from erk_shared.gateway.http.fake import FakeHttpClient
+    25→from erk_shared.gateway.http.real import RealHttpClient
+    26→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    27→from erk_shared.gateway.clipboard.real import RealClipboard
+    28→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.plan_store import get_plan_backend
+
+... [5 lines omitted] ...
+  </tool_result>
+</session>

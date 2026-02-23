@@ -1,0 +1,1001 @@
+<session>
+  <meta branch="plnd/align-plan-dash-02-22-1844" />
+  <meta model="claude-opus-4-6" />
+  <assistant>The imports are out of order - the `browser.real` and `clipboard.real` imports should be sorted. Let me fix them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="153537" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 677}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011MmZsViWkPF9DNYy7f8QRw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+from erk_shared.gateway.cl...[truncated 553 chars]...shared.output.output import user_output
+from erk_shared.plan_store import get_plan_backend</param>
+    <param name="new_string">from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+from erk_shared.gateway.br...[truncated 553 chars]...shared.output.output import user_output
+from erk_shared.plan_store import get_plan_backend</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="153537" output_tokens="642" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 677, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011MmZsViWkPF9DNYy7f8QRw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the line length issue at line 163:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="154214" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 703}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QeontRYscEQp7yjzSZ4Pcp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="offset">160</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="154214" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 703}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QeontRYscEQp7yjzSZ4Pcp">
+   160→    table.add_column("remote-impl", no_wrap=True, width=10)
+   161→
+   162→    for row in rows:
+   163→        values = _row_to_static_values(row, plan_backend=plan_backend, show_pr_column=show_pr_column)
+   164→        table.add_row(*values)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016Zr9BJsdky5PTBXN8KvjN4">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">        values = _row_to_static_values(row, plan_backend=plan_backend, show_pr_column=show_pr_column)</param>
+    <param name="new_string">        values = _row_to_static_values(
+            row, plan_backend=plan_backend, show_pr_column=show_pr_column
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="154917" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Zr9BJsdky5PTBXN8KvjN4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the import sorting in `run/list_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="155391" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 282}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LNgrzvWh6vJfUbjDULmYvS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="155391" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 282, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LNgrzvWh6vJfUbjDULmYvS">
+     1→"""List workflow runs command."""
+     2→
+     3→import click
+     4→from rich.console import Console
+     5→from rich.table import Table
+     6→
+     7→from erk.cli.commands.plan.list_cmd import format_pr_cell
+     8→from erk.core.pr_utils import select_display_pr
+     9→from erk.cli.commands.run.shared import extract_issue_number
+    10→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.cli.ensure import Ensure
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013nx3T6Ju8whfedyS7Mok99">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.plan.list_cmd import format_pr_cell
+from erk.core.pr_utils import select_display_pr
+from erk.cli.commands.run.shared import extract_issue_number</param>
+    <param name="new_string">from erk.cli.commands.plan.list_cmd import format_pr_cell
+from erk.cli.commands.run.shared import extract_issue_number
+from erk.core.pr_utils import select_display_pr</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="155673" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 296}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013nx3T6Ju8whfedyS7Mok99">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the import sorting in `tests/tui/test_plan_table.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="155969" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 317}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B6MgKvtf3dFrDYmNZ75WRm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="155969" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 317}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B6MgKvtf3dFrDYmNZ75WRm">
+     1→"""Tests for PlanDataTable widget."""
+     2→
+     3→from rich.text import Text
+     4→
+     5→from erk.tui.data.types import PlanFilters
+     6→from erk.tui.views.types import ViewMode
+     7→from erk.core.display_utils import strip_rich_markup
+     8→from erk.tui.widgets.plan_table import PlanDataTable
+     9→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+    10→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Hzqpx9ve6vWaWGmxJcXUnV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py</param>
+    <param name="old_string">from erk.tui.data.types import PlanFilters
+from erk.tui.views.types import ViewMode
+from erk.core.display_utils import strip_rich_markup
+from erk.tui.widgets.plan_table import PlanDataTable</param>
+    <param name="new_string">from erk.core.display_utils import strip_rich_markup
+from erk.tui.data.types import PlanFilters
+from erk.tui.views.types import ViewMode
+from erk.tui.widgets.plan_table import PlanDataTable</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="156286" output_tokens="272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 276, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hzqpx9ve6vWaWGmxJcXUnV">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/test_plan_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check for unused imports in the main file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="156562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 329}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015nBxXkdg5qMm3zgym8ft3z">
+    <param name="pattern">fetch_github_token|RealHttpClient|RealBrowserLauncher|RealClipboard|get_pr_status_emoji|PullRequestInfo</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="156562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 329}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015nBxXkdg5qMm3zgym8ft3z">
+20:from erk_shared.gateway.browser.real import RealBrowserLauncher
+22:from erk_shared.gateway.clipboard.real import RealClipboard
+23:from erk_shared.gateway.github.emoji import get_pr_status_emoji
+24:from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+25:from erk_shared.gateway.http.auth import fetch_github_token
+27:from erk_shared.gateway.http.real import RealHttpClient
+36:def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -&gt; str:
+49:    emoji = get_pr_status_emoji(pr)
+391:    clipboard = RealClipboard()
+392:    browser = RealBrowserLauncher()
+397:    token = fetch_github_token()
+398:    http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+  </tool_result>
+  <assistant>Good - `RealBrowserLauncher`, `RealClipboard`, `fetch_github_token`, `RealHttpClient` are all used in `_run_interactive_mode`. `get_pr_status_emoji` and `PullRequestInfo` are used in `format_pr_cell`. All imports are needed.
+
+Now re-run the lint/format/ty checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="156891" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01WLEtKwuyJLxqsgcDWjN4C3">
+    <param name="description">Re-run lint format ty</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and report the results:
+
+make lint format ty
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="156891" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WLEtKwuyJLxqsgcDWjN4C3">
+**ruff lint failed**: 1 issue found
+
+The linting command failed due to an unsorted import block in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py`. The imports are not organized correctly.
+
+**Error Details:**
+- **File**: `src/erk/cli/commands/run/list_cmd.py`
+- **Lines**: 3-22
+- **Rule**: `I001` (Import block is un-sorted or un-formatted)
+- **Status**: Fixable with `--fix` option
+
+The imports starting at line 3 need to be organized. The issue is that the import block mixes standard library imports (`import click`, `from rich...`) with relative imports (`from erk...`) without proper grouping and sorting.
+
+The make command halted at the lint stage and did not proceed to the `format` and `ty` checks.
+agentId: a3ea13068cd08d304 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14571
+tool_uses: 1
+duration_ms: 4286&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+Let me check the full import block in run/list_cmd.py:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="762" cache_read_input_tokens="157339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 762}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UCfaMSXwRSLxsNDcARwSY7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="limit">22</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="762" cache_read_input_tokens="157339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 762}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UCfaMSXwRSLxsNDcARwSY7">
+     1→"""List workflow runs command."""
+     2→
+     3→import click
+     4→from rich.console import Console
+     5→from rich.table import Table
+     6→
+     7→from erk.cli.commands.plan.list_cmd import format_pr_cell
+     8→from erk.cli.commands.run.shared import extract_issue_number
+     9→from erk.core.pr_utils import select_display_pr
+    10→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.cli.ensure import Ensure
+    13→from erk.core.context import ErkContext
+    14→from erk.core.display_utils import (
+    15→    format_submission_time,
+    16→    format_workflow_outcome,
+    17→    format_workflow_run_id,
+    18→)
+    19→from erk_shared.gateway.github.emoji import format_checks_cell
+    20→from erk_shared.gateway.github.parsing import github_repo_location_from_url
+    21→from erk_shared.gateway.github.types import GitHubRepoId
+    22→from erk_shared.output.output import user_output
+  </tool_result>
+  <assistant>The issue is `erk.core.pr_utils` is between `erk.cli.commands.run.shared` and `erk.cli.constants` - it should be sorted alphabetically within the `erk.` block:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="158101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 456}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013yi4E21grfmhVxB5ibndqV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.plan.list_cmd import format_pr_cell
+from erk.cli.commands.run.shared...[truncated 264 chars]...t (
+    format_submission_time,
+    format_workflow_outcome,
+    format_workflow_run_id,
+)</param>
+    <param name="new_string">from erk.cli.commands.plan.list_cmd import format_pr_cell
+from erk.cli.commands.run.shared...[truncated 264 chars]...low_outcome,
+    format_workflow_run_id,
+)
+from erk.core.pr_utils import select_display_pr</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="158101" output_tokens="494" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 456, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013yi4E21grfmhVxB5ibndqV">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01SmoqfKW64bUTcTQRNYpi6Y">
+    <param name="description">Re-run lint format ty again</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and report the results:
+
+make lint format ty
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="158557" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 555}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SmoqfKW64bUTcTQRNYpi6Y">
+The checks completed successfully. Here's the summary:
+
+**make lint format ty passed**
+
+Results:
+- **ruff lint check**: All checks passed
+- **ruff format**: 1 file reformatted, 1498 files left unchanged
+- **ty type check**: All checks passed
+
+All three tools completed without errors. One file required formatting adjustments, but no linting or type checking issues were found.
+agentId: a443f4e33135293b9 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13584
+tool_uses: 1
+duration_ms: 3068&lt;/usage&gt;
+  </tool_result>
+  <assistant>Lint, format, and type checks all pass. Now let me run the test targets:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="759" cache_read_input_tokens="159112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 759}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_016Q7BzFmSC5jHt68oY9MQJb">
+    <param name="description">Run unit and erk-dev tests</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktree...[truncated 55 chars]...ort the full output including any failures. Focus on reporting which tests failed and why.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="759" cache_read_input_tokens="159112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 759}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Q7BzFmSC5jHt68oY9MQJb">
+## Test Results Summary
+
+**Result: 26 failed, 5418 passed in 12.28s**
+
+The test suite has failures related to dashboard/plan list functionality. Here are the key issues:
+
+### Main Failure Categories:
+
+**1. Missing CLI Option `--runs` (8 tests)**
+- `test_plan_list_runs_flag_shows_run_columns`
+- `test_plan_list_runs_flag_short_form`
+- `test_plan_list_handles_missing_workflow_run`
+- `test_plan_list_handles_batch_query_failure`
+- And other tests in `test_dash_workflow_runs.py`
+
+Error: `No such option: --runs` with suggestion `Did you mean --run-state?`
+
+This indicates the `--runs` flag was removed or renamed to `--run-state` but tests still reference the old flag name.
+
+**2. Output Content Assertion Failures (18 tests)**
+- Tests expect plan titles like "Test Local Detection", "Plan with API failure", etc. to appear in the output
+- The actual table output doesn't contain these titles
+- Examples:
+  - `test_plan_list_shows_worktree_from_local_impl`
+  - `test_plan_list_prefers_local_over_github`
+  - `test_plan_list_shows_worktree_status`
+  - `test_plan_list_filter_by_state`
+  - `test_plan_list_filter_by_labels`
+
+The issue appears to be that plan titles are not being displayed in the dashboard output table, or the table columns have changed.
+
+... [14 lines omitted] ...
+
+**3. Failed Test Files:**
+- `tests/commands/dash/test_pr_columns.py` - 5 failures
+- `tests/commands/dash/test_workflow_run_state.py` - 2 failures
+- `tests/commands/dash/test_worktree_detection.py` - 3 failures
+- `tests/commands/dash/test_filtering.py` - 3 failures
+- `tests/commands/dash/test_impl_columns.py` - 3 failures
+- `tests/commands/test_dash_workflow_runs.py` - 7 failures
+The failures suggest recent changes to the `erk plan list` output formatting that haven't been reflected in the test expectations.
+  </tool_result>
+  <thinking>There are more test files that test `erk plan list` beyond the ones I updated. Let me look at the failing test files to understand what needs to be updated.
+
+The main issues:
+1. Tests reference `--runs` flag which was removed
+2. Tests assert on title strings in output which are no longer in the new column layout
+
+Let me look at the failing test files.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="803" cache_read_input_tokens="159871" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 803}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>There are more test files testing `erk plan list` that need updating. Let me investigate the failing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="803" cache_read_input_tokens="159871" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 803}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SrQHAZeYWtXVVcAH4dKU9j">
+    <param name="description">Find failing dash test files</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 262 chars]... look for any tests that assert on plan titles appearing in output or use the --runs flag.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="803" cache_read_input_tokens="159871" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 803, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SrQHAZeYWtXVVcAH4dKU9j">
+Perfect! Now I have all the information needed. Let me create a comprehensive summary:
+
+## Test Files Summary
+
+I found **9 test files** in the dash command tests directory. Here's the complete list with their structure:
+
+### Test Files Located:
+
+1. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/__init__.py`** (0 lines)
+   - Empty init file for package
+
+2. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py`** (48 lines)
+   - **Initial content:** Imports from `erk_shared.gateway.github.issues.types` and `erk_shared.plan_store.types`
+   - **Helper functions:**
+     - `plan_to_issue(plan: Plan) -&gt; IssueInfo` - Converts Plan to IssueInfo for test setup
+     - `make_plan(...)` - Factory function to create Plan objects with common defaults for testing
+   - **Key aspect:** Plan titles are set directly in test setup (e.g., `title="Issue 1"`)
+
+3. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_action_state.py`** (220 lines)
+   - **Imports:** CliRunner, cli, FakeGitHub, FakeGitHubIssues
+   - **Focus:** Tests workflow status display (Pending, Running, Complete, Failed)
+   - **Plan title assertions:** Tests use `assert "#1001" in result.output` but do NOT explicitly assert on plan titles in output
+   - **5 test functions:** Testing various action states with plans named "Regular Plan", "Pending Plan", "Running Plan", "Complete Plan", "Failed Plan"
+
+4. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_filtering.py`** (321 lines)
+   - **Imports:** CliRunner, cli, FakeGitHub, FakeGitHubIssues, IssueInfo
+   - **Focus:** Tests state, labels, limit, and combined filters for plan list command
+   - **Plan title assertions:** **ACTIVELY ASSERTS ON PLAN TITLES:**
+     - `assert "Issue 1" in result.output`
+     - `assert "Open Issue" in result.output`
+
+... [74 lines omitted] ...
+  </tool_result>
+  <thinking>I need to update all these failing tests. Let me read each failing test file and fix them. The key changes needed:
+
+1. **`test_filtering.py`**: Remove title assertions (titles no longer in output)
+2. **`test_impl_columns.py`**: Remove `--runs` flag usage (runs always shown now), remove `-r` flag test
+3. **`test_dash_workflow_runs.py`**: Remove `--runs` flag from invocations
+4. **`test_pr_columns.py`**: Probably has title assertions too - need to check
+5. **`test_workflow_run_state.py`**: Remove `--runs` flag if used
+
+
+6. **`test_worktree_detection.py`**: Need to check what's failing there
+
+Let me go through each failing test file systematically to understand what needs to be fixed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2527" cache_read_input_tokens="160674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2527}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to update multiple test files. Let me read and fix them all.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2527" cache_read_input_tokens="160674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2527}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0142ps7FB93nj1TKbRDChHrX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_filtering.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2527" cache_read_input_tokens="160674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2527}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0142ps7FB93nj1TKbRDChHrX">
+     1→"""Tests for plan list filtering functionality.
+     2→
+     3→Tests state, labels, limit, and combined filters for plan list command.
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→
+    19→
+    20→def test_plan_list_no_filters() -&gt; None:
+    21→    """Test listing all plan issues with no filters (defaults to open plans only)."""
+    22→    # Arrange - Create two OPEN plans (no filter defaults to open state)
+    23→    plan1 = Plan(
+    24→        plan_identifier="1",
+    25→        title="Issue 1",
+    26→        body="",
+    27→        state=PlanState.OPEN,
+    28→        url="https://github.com/owner/repo/issues/1",
+    29→        labels=["erk-plan"],
+    30→        assignees=[],
+
+... [292 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_014BS3ympEp2E4vRGzyViyDR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_impl_columns.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2527" cache_read_input_tokens="160674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2527}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014BS3ympEp2E4vRGzyViyDR">
+     1→"""Tests for implementation column display in plan list command.
+     2→
+     3→Tests --runs flag behavior and impl column headers (lcl-impl, remote-impl).
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→
+    19→
+    20→def test_plan_list_runs_flag_shows_run_columns() -&gt; None:
+    21→    """Test that --runs flag enables run columns (PR columns always visible)."""
+    22→    # Arrange - Create plan with PR and workflow run data
+    23→    plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+    24→&lt;details&gt;
+    25→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+    26→
+    27→```yaml
+    28→schema_version: '2'
+    29→last_dispatched_run_id: '99999'
+    30→last_dispatched_node_id: 'WFR_all_flag'
+
+... [177 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016G8sxft3SxTE8wzQ32sfUW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_worktree_detection.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2527" cache_read_input_tokens="160674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2527}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016G8sxft3SxTE8wzQ32sfUW">
+     1→"""Tests for local worktree detection in plan list command.
+     2→
+     3→Tests verifying that the local-wt column shows worktree status from
+     4→local .impl/issue.json files, not from GitHub metadata.
+     5→"""
+     6→
+     7→import json
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.cli import cli
+    13→from erk_shared.gateway.git.abc import WorktreeInfo
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→from erk_shared.gateway.github.fake import FakeGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.plan_store.types import Plan, PlanState
+    18→from tests.commands.dash.conftest import plan_to_issue
+    19→from tests.test_utils.context_builders import build_workspace_test_context
+    20→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    21→
+    22→
+    23→def test_plan_list_shows_worktree_status() -&gt; None:
+    24→    """Test that plan list shows dash for non-local worktrees.
+    25→
+    26→    When a plan has a worktree_name in the issue body but no local worktree,
+    27→    the local-wt column should show "-" (not the remote worktree name).
+    28→    """
+    29→    # Arrange - Create issue with plan-header block containing worktree_name
+    30→    body_with_worktree = """&lt;!-- erk:metadata-block:plan-header --&gt;
+
+... [378 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01M5Pu4wpvPJnFoERcbg8yrC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_pr_columns.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2527" cache_read_input_tokens="160674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2527}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. The user invoked `/erk:plan-implement` which is a skill that implements a plan from a GitHub issue or `.impl/` folder.
+
+2. The plan (#7937) is to "Align `erk plan list` with `erk dash` layout" - making the static CLI table match the TUI dashboard columns.
+
+3. I followed the plan-implement workflow:
+   - Checked `.impl/` exists and is valid (has_plan_tracking: true, plan #7937)
+   - Synced with remote via `erk exec setup-impl-from-issue 7937`
+   - Cleaned up `.erk/impl-context/` (git rm'd tracked files)
+   - Read the plan from `.impl/plan.md`
+   - Created 6 tasks for tracking
+   - Signaled implementation started
+
+4. The plan has 7 steps:
+   - Step 1: Move `_strip_rich_markup` to shared `display_utils.py`
+   - Step 2: Rewrite `_list_plans_impl` to use `RealPlanDataProvider`
+   - Step 3: Add `_build_static_table` and `_row_to_static_values`
+   - Step 4: Remove `--runs` flag
+   - Step 5: Delete dead code
+   - Step 6: Fix `run/list_cmd.py` import
+   - Step 7: Update tests
+
+5. Implementation:
+   - Read all key source files first
+   - Step 1: Added `strip_rich_markup()` to `display_utils.py`, updated `plan_table.py` to import from shared location, removed old local function
+   - Steps 2-5: Rewrote entire `list_cmd.py` - removed `_build_plans_table`, `format_worktree_name_cell`, `format_local_run_cell`, `format_remote_run_cell`, `_build_watch_content`, `_run_watch_loop`, removed `--runs` flag. Added new `_build_static_table` and `_row_to_static_values` functions. Rewrote `_list_plans_impl` to use `RealPlanDataProvider`.
+   - Step 6: Fixed `run/list_cmd.py` import of `select_display_pr` to use canonical location
+   - Step 7: Updated `tests/commands/plan/test_list.py` - removed title assertions, removed `--runs` test, updated activity sort tests to use P-prefixed branch names and `branch_commits_with_authors` with 4-tuple keys
+
+6. Key design decision: Used `FakeClipboard`, `FakeBrowserLauncher`, and `FakeHttpClient` in `_list_plans_impl` since only `fetch_plans()` and `fetch_branch_activity()` are needed (neither uses those deps). This avoids calling `fetch_github_token()` which would fail in tests.
+
+7. CI iteration:
+   - First run: 4 lint errors (import sorting in 3 files, line length in 1)
+   - Fixed import ordering in `list_cmd.py`, `run/list_cmd.py`, `test_plan_table.py`
+   - Fixed line length by breaking long function call
+   - Second run: Still had import sorting in `run/list_cmd.py` (pr_utils was between cli imports)
+   - Fixed by moving `erk.core.pr_utils` after `erk.core.display_utils`
+   - Third run: lint/format/ty all passed
+   - Test run: 26 failures in `tests/commands/dash/` and `tests/commands/test_dash_workflow_runs.py`
+   - These are additional test files beyond `tests/commands/plan/test_list.py` that also test `erk plan list`
+
+8. Also found and fixed:
+   - `tests/tui/test_plan_table.py` imported `_strip_rich_markup` from old location - updated to import `strip_rich_markup` from `erk.core.display_utils`
+   - `tests/unit/core/test_display_utils.py` had 3 tests for `format_worktree_name_cell` - deleted since function was removed
+   - Pre-existing test failure in `test_row_to_values_draft_pr_includes_stage` (verified with git stash)
+
+9. Current state: 26 test failures remain in:
+   - `tests/commands/dash/test_filtering.py` - 3 failures (title assertions)
+   - `tests/commands/dash/test_impl_columns.py` - 3 failures (--runs flag)
+   - `tests/commands/dash/test_pr_columns.py` - 5 failures (need investigation)
+   - `tests/commands/dash/test_workflow_run_state.py` - 2 failures
+   - `tests/commands/dash/test_worktree_detection.py` - 3 failures (title assertions)
+   - `tests/commands/test_dash_workflow_runs.py` - 7 failures (--runs flag)
+
+10. I have just read all the failing test files to understand what changes are needed. The main patterns:
+    - Remove `--runs` flag from test invocations (runs always shown)
+    - Remove title assertions (title column removed from output)
+    - Some PR tests may have assertion issues with the new column layout (emojis like 🔄 and 🚫 may not exist in the new format since checks_display comes from `format_checks_cell` via `RealPlanDataProvider`)
+
+Summary:
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement` to implement plan #7937: "Align `erk plan list` with `erk dash` layout". The goal is to make the static CLI command `erk plan list` display the same columns in the same order as the `erk dash` TUI. This involves reusing `RealPlanDataProvider` for data assembly (eliminating ~280 lines of duplicated logic in `_build_plans_table`), matching the TUI's column layout exactly, removing the `--runs` flag (runs always shown), and deleting dead code.
+
+2. Key Technical Concepts:
+   - `RealPlanDataProvider` - Production data provider that fetches plans via `PlanListService` and transforms to `PlanRowData`
+   - `PlanRowData` - Frozen dataclass with pre-formatted display strings for table cells
+   - `PlanDataTable._setup_columns()` and `_row_to_values()` - TUI column configuration that the static table must mirror
+   - `sort_plans()` - Shared sorting logic from `erk.tui.sorting.logic`
+   - `strip_rich_markup()` - Utility to remove Rich markup tags, moved to shared location
+   - `FakeClipboard`/`FakeBrowserLauncher`/`FakeHttpClient` - Used in `_list_plans_impl` since only `fetch_plans()` and `fetch_branch_activity()` are called (neither uses these deps)
+   - `extract_leading_issue_number()` - Matches branch names like `P{issue_number}-{slug}` to plan IDs
+   - Plan backend types: `"github"` vs `"draft_pr"` determine column layout differences
+
+3. Files and Code Sections:
+   - **`src/erk/core/display_utils.py`**
+     - Added shared `strip_rich_markup()` function (moved from `plan_table.py`)
+     ```python
+     def strip_rich_markup(text: str) -&gt; str:
+         """Remove Rich markup tags from text."""
+         return re.sub(r"\[/?[^\]]+\]", "", text)
+     ```
+
+   - **`src/erk/tui/widgets/plan_table.py`**
+     - Updated import to use shared `strip_rich_markup` from `erk.core.display_utils`
+     - Replaced all `_strip_rich_markup(` calls with `strip_rich_markup(`
+     - Deleted the local `_strip_rich_markup` function definition at bottom of file
+
+   - **`src/erk/cli/commands/plan/list_cmd.py`** (PRIMARY - complete rewrite)
+     - This is the main file being changed. Completely rewritten to use `RealPlanDataProvider`.
+     - **Deleted functions**: `_build_plans_table`, `format_worktree_name_cell`, `format_local_run_cell`, `format_remote_run_cell`, `_build_watch_content`, `_run_watch_loop`
+     - **Kept**: `format_pr_cell` (imported by `run/list_cmd.py`), `plan_filter_options`, `dash_options`, `_run_interactive_mode`, `list_plans`, `dash`
+     - **Added**: `_build_static_table()`, `_row_to_static_values()` - mirror TUI column layout
+     - **Removed**: `--runs`/`-r` CLI option from `list_plans` command
+     - **Rewritten**: `_list_plans_impl()` now uses `RealPlanDataProvider` + `sort_plans()` + `_build_static_table()`
+     - Key new `_list_plans_impl`:
+     ```python
+     def _list_plans_impl(ctx, *, label, state, run_state, limit, all_users, sort):
+         # ... repo discovery, creator filter ...
+         provider = RealPlanDataProvider(
+             ctx, location=location,
+             clipboard=FakeClipboard(), browser=FakeBrowserLauncher(),
+             http_client=FakeHttpClient(),
+         )
+         filters = PlanFilters(labels=labels, state=state, run_state=run_state,
+             limit=limit, show_prs=True, show_runs=True, creator=creator,
+             show_pr_column=show_pr_column)
+         rows = provider.fetch_plans(filters)
+         # ... sort, build table, print ...
+     ```
+     - Key new `_build_static_table` column order for `draft_pr` backend: pr, stage, sts, created, obj, loc, branch, run-id, run, author, chks, cmts, local-wt, local-impl, remote-impl
+     - For `github` backend: plan, obj, loc, branch, run-id, run, created, author, pr, chks, cmts, local-wt, local-impl, remote-impl
+     - Removed imports: `datetime`, `ParamSpec` (kept), `TypeVar` (kept), `Group`, `Panel`, many `erk_shared` schema imports, `Plan`, `read_plan_ref`, `LiveDisplay`, etc.
+     - Added imports: `FakeBrowserLauncher`, `FakeClipboard`, `FakeHttpClient`, `strip_rich_markup`, `PlanRowData`, `sort_plans`
+
+   - **`src/erk/cli/commands/run/list_cmd.py`**
+     - Changed import of `select_display_pr` from `erk.cli.commands.plan.list_cmd` to canonical `erk.core.pr_utils`
+     - Fixed import ordering to satisfy ruff I001
+
+   - **`tests/commands/plan/test_list.py`** (updated)
+     - Removed title assertions (`"Issue 1"`, `"Issue 2"`, `"Open Issue"`, etc.)
+     - Renamed `test_plan_list_runs_flag_shows_run_columns` to `test_plan_list_run_columns_always_shown` (no `--runs` flag)
+     - Deleted `test_plan_list_short_runs_flag` (flag no longer exists)
+     - Updated activity sort tests to use `P1-` prefixed branch names and `branch_commits_with_authors` with 4-tuple keys `(env.cwd, branch, trunk, limit)`
+     - Changed sort order assertions from title-based to plan ID line position-based
+
+   - **`tests/tui/test_plan_table.py`**
+     - Updated import from `erk.tui.widgets.plan_table._strip_rich_markup` to `erk.core.display_utils.strip_rich_markup`
+     - Renamed all test references from `_strip_rich_markup` to `strip_rich_markup`
+
+   - **`tests/unit/core/test_display_utils.py`**
+     - Deleted 3 tests for `format_worktree_name_cell` (function was removed from `list_cmd.py`)
+
+   - **Files read but not modified** (for context understanding):
+     - `src/erk/tui/data/types.py` - `PlanRowData` and `PlanFilters` dataclasses
+     - `src/erk/tui/sorting/logic.py` - `sort_plans()` function
+     - `src/erk/tui/sorting/types.py` - `SortKey`, `BranchActivity`, `SortState`
+     - `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` - `RealPlanDataProvider`
+     - `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py` - `PlanDataProvider` ABC
+     - `tests/test_utils/context_builders.py` - `build_workspace_test_context`
+     - `tests/commands/dash/test_filtering.py` - Has title assertions that need removing
+     - `tests/commands/dash/test_impl_columns.py` - Uses `--runs` flag that needs removing
+     - `tests/commands/dash/test_worktree_detection.py` - Has title assertions that need removing
+     - `tests/commands/dash/test_pr_columns.py` - Has emoji assertions that may need updating
+
+4. Errors and fixes:
+   - **`replace_all` renamed function definition**: When using `replace_all` to change `_strip_rich_markup(` to `strip_rich_markup(`, it also renamed the function definition. Had to manually delete the renamed local function afterward.
+   - **Import sorting (I001)**: Three files had unsorted imports after edits. Fixed by reordering imports alphabetically within blocks.
+   - **Line too long (E501)**: Line 163 of `list_cmd.py` was 101 chars. Fixed by breaking the function call across lines.
+   - **`run/list_cmd.py` import order**: `erk.core.pr_utils` was between `erk.cli.commands.run.shared` and `erk.cli.constants` - moved after `erk.core.display_utils` block.
+   - **TUI test import error**: `tests/tui/test_plan_table.py` still imported `_strip_rich_markup` from old location. Updated to import from `erk.core.display_utils`.
+   - **Dead test references**: `tests/unit/core/test_display_utils.py` had tests importing deleted `format_worktree_name_cell`. Removed these tests.
+   - **Pre-existing test failure**: `test_row_to_values_draft_pr_includes_stage` was already failing before changes (verified with `git stash`).
+   - **Activity sort test key format**: `FakeGit.branch_commits_with_authors` uses 4-tuple keys `(repo_root, branch, trunk, limit)` not 3-tuple. Updated test keys to include `limit=1`.
+   - **Branch naming for worktree detection**: `RealPlanDataProvider._build_worktree_mapping()` uses `extract_leading_issue_number()` which expects `P{number}-` prefix. Updated test branch names from `feature-for-issue-1` to `P1-feature-for-issue-1`.
+
+5. Problem Solving:
+   - **Design decision on FakeHttpClient**: Realized `fetch_github_token()` would fail in tests (calls `gh auth token` subprocess). Since `fetch_plans()` and `fetch_branch_activity()` don't use the http_client (they go through `ctx.plan_list_service`), used `FakeHttpClient()` instead of `RealHttpClient`.
+   - **Lint/format/ty checks**: All passing after 3 iterations of fixes.
+   - **Unit tests for `tests/commands/plan/test_list.py`**: All 9 tests passing.
+   - **Remaining 26 test failures**: In `tests/commands/dash/` and `tests/commands/test_dash_workflow_runs.py` - these additional test files need the same pattern of updates (remove `--runs` flag, remove title assertions).
+
+6. All user messages:
+   - User invoked `/erk:plan-implement` (no arguments) - triggering the plan implementation workflow
+   - User invoked `/local:py-fast-ci` - triggering Python-focused CI checks
+   - The "Your task is to create a detailed summary" message (this current request)
+   - Note: Most "user" messages were system reminders/hooks, not direct user input
+
+7. Pending Tasks:
+   - Fix 26 remaining test failures in `tests/commands/dash/` directory:
+     - `test_filtering.py` - Remove title assertions (3 failures)
+     - `test_impl_columns.py` - Remove `--runs` flag from invocations (3 failures)
+     - `test_pr_columns.py` - Fix emoji assertions for new format (5 failures)
+     - `test_workflow_run_state.py` - Fix assertions (2 failures)
+     - `test_worktree_detection.py` - Remove title assertions (3 failures)
+     - `test_dash_workflow_runs.py` - Remove `--runs` flag from invocations (7 failures)
+   - After tests pass: Verify `.impl/` preserved, signal ended, upload session, submit PR
+
+8. Current Work:
+   I was in the middle of the CI iteration loop (`/local:py-fast-ci`). Lint/format/ty all pass. The test run (`make test-unit-erk test-erk-dev`) showed 26 failures across 6 test files in `tests/commands/dash/` and `tests/commands/test_dash_workflow_runs.py`. I had just finished reading all 4 of the main failing test files (`test_filtering.py`, `test_impl_columns.py`, `test_worktree_detection.py`, `test_pr_columns.py`) to understand the changes needed. I have not yet read `test_dash_workflow_runs.py` or `test_workflow_run_state.py`.
+
+   The test failure patterns are:
+   1. Tests using `--runs` flag which was removed → remove flag from invocation (runs always shown now)
+   2. Tests asserting plan titles in output → remove those assertions (no title column)
+   3. PR column tests asserting emojis like `🔄` and `🚫` → these may not match the new `format_checks_cell` output from `RealPlanDataProvider`
+
+9. Optional Next Step:
+   Fix the remaining 26 test failures. The immediate next action is to update the test files in `tests/commands/dash/` and `tests/commands/test_dash_workflow_runs.py` following the same patterns already applied to `tests/commands/plan/test_list.py`:
+   - Remove `--runs`/`-r` flag from all test invocations
+   - Remove title assertions (title column no longer in output)
+   - Update PR emoji assertions if needed (the new code path through `RealPlanDataProvider` may produce different check formatting)
+   
+   Then re-run tests, and once passing, complete the plan-implement workflow steps (verify `.impl/`, signal ended, upload session, submit PR).
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-38/e4b21715-317c-43e8-866f-61642204cd58.jsonl
+Please continue the conversation from where we left off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <thinking>Let me continue fixing the remaining 26 test failures. I need to read the failing test files and update them. Let me start by reading the files I haven't fully analyzed yet, and then fix all of them.
+
+Let me read the failing test files to understand what changes are needed.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="18450" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18450}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll continue fixing the remaining 26 test failures. Let me read the failing test files I haven't fully analyzed yet.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18450" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18450}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Nn8eEU13sq6uWCHoBsortP">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/test_dash_workflow_runs.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18450" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18450}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nn8eEU13sq6uWCHoBsortP">
+     1→"""Tests for workflow run ID display in erk dash command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from erk_shared.gateway.github.types import WorkflowRun
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.test_utils.context_builders import build_workspace_test_context
+    16→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    17→from tests.test_utils.output_helpers import strip_ansi
+    18→
+    19→
+    20→def plan_to_issue(plan: Plan) -&gt; IssueInfo:
+    21→    """Convert Plan to IssueInfo for test setup."""
+    22→    return IssueInfo(
+    23→        number=int(plan.plan_identifier),
+    24→        title=plan.title,
+    25→        body=plan.body,
+    26→        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+    27→        url=plan.url or "",
+    28→        labels=plan.labels,
+    29→        assignees=plan.assignees,
+    30→        created_at=plan.created_at,
+
+... [590 lines omitted] ...
+
+   276→            conclusion="failure",
+   368→def test_plan_list_handles_batch_query_failure() -&gt; None:
+   389→            title="Plan with API failure",
+   411→        # No workflow runs configured (simulates API failure or no runs found)
+   423→        # Command should succeed despite API failure
+   429→        assert "Plan with API failure" in output
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CPeQZv9DeyrjY795CwzemF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_workflow_run_state.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18450" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18450}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CPeQZv9DeyrjY795CwzemF">
+     1→"""Tests for --run-state filtering in plan list command.
+     2→
+     3→Tests filtering plans by workflow run state (queued, in_progress, success).
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.types import WorkflowRun
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→
+    19→
+    20→def test_plan_list_filter_by_run_state_queued() -&gt; None:
+    21→    """Test filtering plans by workflow run state (queued)."""
+    22→    # Arrange - Create plans with workflow run node_ids in plan-header
+    23→    queued_plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+    24→&lt;details&gt;
+    25→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+    26→
+    27→```yaml
+    28→schema_version: '2'
+    29→last_dispatched_run_id: '11111'
+    30→last_dispatched_node_id: 'WFR_queued'
+
+... [213 lines omitted] ...
+
+   127→    failed_plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+   134→last_dispatched_node_id: 'WFR_failed'
+   153→    failed_plan = Plan(
+   155→        title="Failed Plan",
+   156→        body=failed_plan_body,
+   175→    failed_run = WorkflowRun(
+   178→        conclusion="failure",
+   186→            issues={1020: plan_to_issue(success_plan), 1021: plan_to_issue(failed_plan)},
+   189→            issues_data=[plan_to_issue(success_plan), plan_to_issue(failed_plan)],
+   190→            workflow_runs_by_node_id={"WFR_success": success_run, "WFR_failed": failed_run},
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QT6MK16CLCxNWPwCuN2VDG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_filtering.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18450" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18450}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QT6MK16CLCxNWPwCuN2VDG">
+     1→"""Tests for plan list filtering functionality.
+     2→
+     3→Tests state, labels, limit, and combined filters for plan list command.
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→
+    19→
+    20→def test_plan_list_no_filters() -&gt; None:
+    21→    """Test listing all plan issues with no filters (defaults to open plans only)."""
+    22→    # Arrange - Create two OPEN plans (no filter defaults to open state)
+    23→    plan1 = Plan(
+    24→        plan_identifier="1",
+    25→        title="Issue 1",
+    26→        body="",
+    27→        state=PlanState.OPEN,
+    28→        url="https://github.com/owner/repo/issues/1",
+    29→        labels=["erk-plan"],
+    30→        assignees=[],
+
+... [292 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0197h1HFzhQbpdJxqDvPQswR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_impl_columns.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18450" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18450}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0197h1HFzhQbpdJxqDvPQswR">
+     1→"""Tests for implementation column display in plan list command.
+     2→
+     3→Tests --runs flag behavior and impl column headers (lcl-impl, remote-impl).
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→
+    19→
+    20→def test_plan_list_runs_flag_shows_run_columns() -&gt; None:
+    21→    """Test that --runs flag enables run columns (PR columns always visible)."""
+    22→    # Arrange - Create plan with PR and workflow run data
+    23→    plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+    24→&lt;details&gt;
+    25→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+    26→
+    27→```yaml
+    28→schema_version: '2'
+    29→last_dispatched_run_id: '99999'
+    30→last_dispatched_node_id: 'WFR_all_flag'
+
+... [177 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the remaining failing test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="27590" cache_read_input_tokens="37491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27590}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QgwKSwdZqUgkNKHYwTcGcB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_worktree_detection.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="27590" cache_read_input_tokens="37491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27590}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QgwKSwdZqUgkNKHYwTcGcB">
+     1→"""Tests for local worktree detection in plan list command.
+     2→
+     3→Tests verifying that the local-wt column shows worktree status from
+     4→local .impl/issue.json files, not from GitHub metadata.
+     5→"""
+     6→
+     7→import json
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.cli import cli
+    13→from erk_shared.gateway.git.abc import WorktreeInfo
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→from erk_shared.gateway.github.fake import FakeGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.plan_store.types import Plan, PlanState
+    18→from tests.commands.dash.conftest import plan_to_issue
+    19→from tests.test_utils.context_builders import build_workspace_test_context
+    20→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    21→
+    22→
+    23→def test_plan_list_shows_worktree_status() -&gt; None:
+    24→    """Test that plan list shows dash for non-local worktrees.
+    25→
+    26→    When a plan has a worktree_name in the issue body but no local worktree,
+    27→    the local-wt column should show "-" (not the remote worktree name).
+    28→    """
+    29→    # Arrange - Create issue with plan-header block containing worktree_name
+    30→    body_with_worktree = """&lt;!-- erk:metadata-block:plan-header --&gt;
+
+... [378 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_014VLdJX2uDFgF1qhDDGrvUB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_pr_columns.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="27590" cache_read_input_tokens="37491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27590}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014VLdJX2uDFgF1qhDDGrvUB">
+     1→"""Tests for PR status column display in plan list command.
+     2→
+     3→Tests PR emoji display (open 👀, draft 🚧, merged 🎉, closed ⛔, conflict 💥).
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.types import PullRequestInfo
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→
+    19→
+    20→def test_plan_list_pr_column_open_pr() -&gt; None:
+    21→    """Test PR column displays open PR with 👀 emoji."""
+    22→    # Arrange
+    23→    plan = Plan(
+    24→        plan_identifier="100",
+    25→        title="Plan with Open PR",
+    26→        body="",
+    27→        state=PlanState.OPEN,
+    28→        url="https://github.com/owner/repo/issues/100",
+    29→        labels=["erk-plan"],
+    30→        assignees=[],
+
+... [334 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand all the failing tests. Let me analyze the patterns:
+
+1. **`test_filtering.py`** - Tests asserting titles like `"Issue 1"`, `"Open Issue"`, `"Matching Issue"` in output. Since the new code uses `RealPlanDataProvider` which goes through `PlanListService`, the title column is no longer in the output. Wait, actually... let me re-read what happened. The plan says to remove the title column, but looking at the `_build_static_table` function I wrote earlier, I need to check what columns it has.
+
+Actually wait, I need to re-read the current state of `list_cmd.py` to understand what columns are being displayed now. 
+
+Looking at the context summary, the column order for `github` backend is: `plan, obj, loc, branch, run-id, run, created, author, pr, chks, cmts, local-wt, local-impl, remote-impl`. There's no title column anymore, which explains why the tests asserting titles are failing. The other failures in `test_impl_columns.py` and the truncated `test_pr` are likely related to the `--runs` flag or other column-related changes.
+
+Going through each test file, I need to remove title assertions from `test_filtering.py` since those columns no longer exist in the output. I'm counting up which tests will actually fail based on the title assertions — looks like four might break, though the summary only mentions three. Rather than trying to reconcile that discrepancy, I should just systematically remove the title assertions and the `--runs` flag from all the test cases, then verify the "Found N plan(s)" messages still match what the new code produces. I need to check what `_build_static_table` and `_row_to_static_values` are actually doing to understand the output format.
+
+For the PR columns tests, I'm concerned about whether the emoji formatting — the `👀`, `🚧`, `🎉`, `⛔`, `💥`, `✅`, `🚫`, `🔄` symbols — will still appear correctly when the data flows through `RealPlanDataProvider` and gets converted by `_row_to_static_values`. The new code path uses `format_pr_cell` and `format_checks_cell` from the TUI's `PlanRowData`, so I need to verify those functions are producing the same emoji output.
+
+I should also check whether the "Found N plan(s)" message is still being generated in the updated code, and I need to review the current `list_cmd.py` to see exactly how everything fits together.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="11123" cache_read_input_tokens="65081" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11123}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the current state of the rewritten `list_cmd.py` to understand the output format.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11123" cache_read_input_tokens="65081" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11123}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EL1PzXeE9r1igDYg5UoKtr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11123" cache_read_input_tokens="65081" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11123}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EL1PzXeE9r1igDYg5UoKtr">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import ParamSpec, TypeVar
+     5→
+     6→import click
+     7→from rich.console import Console
+     8→from rich.table import Table
+     9→from rich.text import Text
+    10→
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    15→from erk.tui.app import ErkDashApp
+    16→from erk.tui.data.types import PlanFilters, PlanRowData
+    17→from erk.tui.sorting.logic import sort_plans
+    18→from erk.tui.sorting.types import SortKey, SortState
+    19→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    20→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    21→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    22→from erk_shared.gateway.clipboard.real import RealClipboard
+    23→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    24→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+    25→from erk_shared.gateway.http.auth import fetch_github_token
+    26→from erk_shared.gateway.http.fake import FakeHttpClient
+    27→from erk_shared.gateway.http.real import RealHttpClient
+    28→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.plan_store import get_plan_backend
+
+... [493 lines omitted] ...
+
+    82→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   273→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   376→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>contineu</user>
+</session>

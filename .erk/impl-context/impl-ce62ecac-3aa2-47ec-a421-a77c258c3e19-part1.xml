@@ -1,0 +1,968 @@
+<session>
+  <meta branch="plnd/align-plan-dash-02-22-1844" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Fix: Make issue/PR numbers actually clickable in `erk plan list`
+
+## Context
+
+The previous change replaced `Text(content, style="cyan underline")` with `[link=URL]text[/link]` Rich markup, but **links aren't actually clickable** because Rich requires URLs to be **quoted**: `[link="URL"]` not `[link=URL]`. Without quotes, Rich's parser treats `https` as a markup modifier and silently fails. See `docs/learned/textual/quirks.md` lines 154-180.
+
+Additionally, objective issue numbers (e.g., `#7911` in the `obj` column) should also be clickable, requiring a new `objective_url` field on `PlanRowData`.
+
+## Changes
+
+### 1. Add `objective_url` to `PlanRowData` — `src/erk/tui/data/types.py`
+
+Add field after `objective_issue` (~line 104):
+```python
+objective_url: str | None  # NEW — between objective_issue and objective_display
+```
+
+### 2. Populate `objective_url` in real provider
+
+**`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`**
+
+After computing `objective_display` (~line 648):
+```python
+objective_url = f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}" if objective_issue is not None else None
+```
+Pass `objective_url=objective_url` in `PlanRowData(...)` constructor (~line 743).
+
+### 3. Populate `objective_url` in fake helper
+
+**`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`**
+
+In `make_plan_row()`: derive `objective_url` from `objective_issue` using same pattern as `plan_url` default (`https://github.com/test/repo/issues/{objective_issue}`). Pass through to `PlanRowData(...)`.
+
+### 4. Quote URLs in `_row_to_static_values()` — `src/erk/cli/commands/plan/list_cmd.py`
+
+All four link cells — add quotes around URLs and use `[link=...]` for objective:
+
+- **Plan cell** (line 189): `f'[link="{row.plan_url}"]#{row.plan_id}[/link]'`
+- **Objective cell** (line 194): `f'[link="{row.objective_url}"]{row.objective_display}[/link]'` (replacing `Text(..., style="cyan")`)
+- **Run-id** (line 207): `f'[link="{row.run_url}"]{run_id}[/link]'`
+- **PR display** (line 236): `f'[link="{row.pr_url}"]{pr_display}[/link]'`
+
+### 5. Quote URLs in `_row_to_values()` — `src/erk/tui/widgets/plan_table.py`
+
+Same four fixes (lines 272, 295, 308, 340).
+
+### 6. Quote URL in `format_pr_cell()` — `src/erk/cli/commands/plan/list_cmd.py`
+
+Line 62: `f'[link="{url}"]{pr_text}[/link] {emoji}'`
+
+### 7. Quote URL in `_format_pr_cell()` — `src/erk/cli/commands/wt/list_cmd.py`
+
+Line 139: `f'{emoji} [link="{url}"]{pr_text}[/link]'`
+
+## Verification
+
+1. `erk plan list` — confirm plan numbers, objective numbers, and run IDs are Cmd+clickable in iTerm2
+2. `pytest tests/tui/test_plan_table.py`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-38/95abc75c-6f6e-4cbb-aeea-ecf29f33776d.jsonl</user>
+  <thinking>Let me implement this plan step by step. First, let me read the relevant files to understand the current state.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by reading all the files that need to be modified in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012QVybV7gHqDWhUgYJibZWM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012QVybV7gHqDWhUgYJibZWM">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class PlanRowData:
+    11→    """Row data for displaying a plan in the TUI table.
+    12→
+    13→    Contains pre-formatted display strings and raw data needed for actions.
+    14→    Immutable to ensure table state consistency.
+    15→
+    16→    Attributes:
+    17→        plan_id: GitHub issue number (e.g., 123)
+    18→        plan_url: Full URL to the GitHub issue
+    19→        pr_number: PR number if linked, None otherwise
+    20→        pr_url: URL to PR (GitHub or Graphite), None if no PR
+    21→        pr_display: Formatted PR cell content (e.g., "#123 👀")
+    22→        checks_display: Formatted checks cell (e.g., "✓" or "✗")
+    23→        worktree_name: Name of local worktree, empty string if none
+    24→        exists_locally: Whether worktree exists on local machine
+    25→        local_impl_display: Relative time since last local impl (e.g., "2h ago")
+    26→        remote_impl_display: Relative time since last remote impl
+    27→        run_id_display: Formatted workflow run ID
+    28→        run_state_display: Formatted workflow run state
+    29→        run_url: URL to the GitHub Actions run page
+    30→        full_title: Complete untruncated plan title
+
+... [129 lines omitted] ...
+
+    40→        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+  </tool_result>
+  <tool_use name="Read" id="toolu_0143bzZbHZYiRzLsfFdx9sST">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0143bzZbHZYiRzLsfFdx9sST">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.issues.types import IssueNotFound
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    extract_objective_slug,
+    27→    find_metadata_block,
+    28→)
+    29→from erk_shared.gateway.github.metadata.dependency_graph import (
+    30→    _TERMINAL_STATUSES,
+
+... [833 lines omitted] ...
+
+   667→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EWnN4Eas9K3s1mdVgmuM2c">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EWnN4Eas9K3s1mdVgmuM2c">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRReviewThread
+    13→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [370 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    81→            RuntimeError: If fetch_error is set
+    84→        if self._fetch_error is not None:
+    85→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NopJBoCfGRL5LHWmNy6hKg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NopJBoCfGRL5LHWmNy6hKg">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import ParamSpec, TypeVar
+     5→
+     6→import click
+     7→from rich.console import Console
+     8→from rich.table import Table
+     9→from rich.text import Text
+    10→
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    15→from erk.tui.app import ErkDashApp
+    16→from erk.tui.data.types import PlanFilters, PlanRowData
+    17→from erk.tui.sorting.logic import sort_plans
+    18→from erk.tui.sorting.types import SortKey, SortState
+    19→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    20→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    21→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    22→from erk_shared.gateway.clipboard.real import RealClipboard
+    23→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    24→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+    25→from erk_shared.gateway.http.auth import fetch_github_token
+    26→from erk_shared.gateway.http.fake import FakeHttpClient
+    27→from erk_shared.gateway.http.real import RealHttpClient
+    28→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.plan_store import get_plan_backend
+
+... [483 lines omitted] ...
+
+    82→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   263→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   366→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01V1BzYZbMshAh9r9BMr96kv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V1BzYZbMshAh9r9BMr96kv">
+     1→"""Plan table widget for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from rich.text import Text
+     8→from textual.events import Click
+     9→from textual.message import Message
+    10→from textual.widgets import DataTable
+    11→
+    12→from erk.core.display_utils import strip_rich_markup
+    13→from erk.tui.data.types import PlanFilters, PlanRowData
+    14→from erk.tui.views.types import ViewMode
+    15→from erk_shared.context.types import PlanBackendType
+    16→
+    17→if TYPE_CHECKING:
+    18→    from erk.tui.app import ErkDashApp
+    19→
+    20→
+    21→class PlanDataTable(DataTable):
+    22→    """DataTable subclass for displaying plans.
+    23→
+    24→    Manages column configuration and row population from PlanRowData.
+    25→    Uses row selection mode (not cell selection) for simpler navigation.
+    26→    """
+    27→
+    28→    class LocalWtClicked(Message):
+    29→        """Posted when user clicks local-wt column on a row with existing worktree."""
+    30→
+
+... [402 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016CVeAYfnLNSrKrC3v2WfMh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016CVeAYfnLNSrKrC3v2WfMh">
+     1→"""Fast local-only worktree listing command."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→from rich.console import Console
+     7→from rich.table import Table
+     8→
+     9→from erk.cli.alias import alias
+    10→from erk.cli.commands.slot.common import is_placeholder_branch
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import format_relative_time, get_pr_status_emoji
+    14→from erk.core.repo_discovery import RepoContext
+    15→from erk.core.worktree_utils import find_current_worktree
+    16→from erk_shared.gateway.git.abc import BranchSyncInfo
+    17→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+    18→from erk_shared.impl_folder import get_impl_path, read_plan_ref
+    19→
+    20→
+    21→def _get_sync_status(ctx: ErkContext, worktree_path: Path, branch: str | None) -&gt; str:
+    22→    """Get sync status description for a branch.
+    23→
+    24→    Args:
+    25→        ctx: Erk context with git operations
+    26→        worktree_path: Path to the worktree (used for git commands)
+    27→        branch: Branch name, or None if detached HEAD
+    28→
+    29→    Returns:
+    30→        Sync status: "current", "3↑", "2↓", "3↑ 2↓", or "-"
+
+... [320 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have all the files read. Let me implement the changes step by step:
+
+1. Add `objective_url` to `PlanRowData` in `types.py`
+2. Populate `objective_url` in `real.py`
+3. Populate `objective_url` in `fake.py`
+4. Quote URLs in `list_cmd.py` (plan list)
+5. Quote URLs in `plan_table.py` (TUI)
+6. Quote URL in `format_pr_cell()` in plan `list_cmd.py`
+7. Quote URL in `_format_pr_cell()` in wt `list_cmd.py`
+
+
+8. Quote URL in `_format_impl_cell()` in wt `list_cmd.py`
+
+I should also check for any other places where `PlanRowData` is constructed to make sure I'm not missing anything, and I need to apply URL quoting to the implementation cell formatter as well since it has the same link pattern.
+
+Now I'm mapping out the order of changes - I need to add the `objective_url` field to `PlanRowData` first since both the fake and real providers depend on it, then update each provider and the various formatting functions across the different files to compute and quote the URLs appropriately. Now I'm going through the remaining files to apply the same URL quoting and link formatting pattern—updating `plan_table.py` to quote URLs in the plan and run_id cells while using the link syntax for the objective, then doing the same for the two `list_cmd.py` files in the wt module.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have all the files. Let me implement all changes. I'll make the edits in parallel across all files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TsGJwJvybuGSQ9Ts2TtNBr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/data/types.py</param>
+    <param name="old_string">        objective_issue: Objective issue number (for linking plans to objectives)
+        objective_display: Formatted display string (e.g., "#123" or "-")</param>
+    <param name="new_string">        objective_issue: Objective issue number (for linking plans to objectives)
+        ...[truncated 32 chars]...clickable links)
+        objective_display: Formatted display string (e.g., "#123" or "-")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TsGJwJvybuGSQ9Ts2TtNBr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ATc2aMzF8cD4fHCyaHz7gr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/data/types.py</param>
+    <param name="old_string">    objective_issue: int | None
+    objective_display: str</param>
+    <param name="new_string">    objective_issue: int | None
+    objective_url: str | None
+    objective_display: str</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ATc2aMzF8cD4fHCyaHz7gr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01L5iQJ3Xwwe9QDcXcVuC1ev">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">        # Format objective display
+        objective_display = f"#{objective_issue}" if objective_issue is not None else "-"</param>
+    <param name="new_string">        # Format objective display
+        objective_url = f"https://github.com/{self._loc...[truncated 97 chars]...
+        objective_display = f"#{objective_issue}" if objective_issue is not None else "-"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L5iQJ3Xwwe9QDcXcVuC1ev">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01L1XxEFAjo6wmKxDgGPUVuT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="old_string">            objective_issue=objective_issue,
+            objective_display=objective_display,</param>
+    <param name="new_string">            objective_issue=objective_issue,
+            objective_url=objective_url,
+            objective_display=objective_display,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L1XxEFAjo6wmKxDgGPUVuT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QsbXNw5KJPNWnSuwqrB6Xd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="old_string">    # Compute objective display
+    objective_display = f"#{objective_issue}" if objective_issue is not None else "-"</param>
+    <param name="new_string">    # Compute objective display
+    objective_url = f"https://github.com/test/repo/issues/...[truncated 35 chars]...None
+    objective_display = f"#{objective_issue}" if objective_issue is not None else "-"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QsbXNw5KJPNWnSuwqrB6Xd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TbBnr7Bgqsu1sbXpbVd5eT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="old_string">        objective_issue=objective_issue,
+        objective_display=objective_display,</param>
+    <param name="new_string">        objective_issue=objective_issue,
+        objective_url=objective_url,
+        objective_display=objective_display,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TbBnr7Bgqsu1sbXpbVd5eT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CgmYhgajGsjbnoa1TRKo3v">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">    if url:
+        return f"[link={url}]{pr_text}[/link] {emoji}"</param>
+    <param name="new_string">    if url:
+        return f'[link="{url}"]{pr_text}[/link] {emoji}'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CgmYhgajGsjbnoa1TRKo3v">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TpYYtEZHfd69mH5cfbQcdT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">    # Format plan/PR number
+    plan_cell: str | Text = f"#{row.plan_id}"
+    if row.plan_...[truncated 151 chars]...tive_issue is not None:
+        objective_cell = Text(row.objective_display, style="cyan")</param>
+    <param name="new_string">    # Format plan/PR number
+    plan_cell: str | Text = f"#{row.plan_id}"
+    if row.plan_...[truncated 316 chars]...tive_issue is not None:
+        objective_cell = Text(row.objective_display, style="cyan")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TpYYtEZHfd69mH5cfbQcdT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ANf1qKMeYB16BNpkmMv64E">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">    run_id: str | Text = strip_rich_markup(row.run_id_display)
+    if row.run_url:
+        run_id = f"[link={row.run_url}]{run_id}[/link]"</param>
+    <param name="new_string">    run_id: str | Text = strip_rich_markup(row.run_id_display)
+    if row.run_url:
+        run_id = f'[link="{row.run_url}"]{run_id}[/link]'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ANf1qKMeYB16BNpkmMv64E">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012ef2o8EH62XhCy7jFHKr95">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">        pr_display = strip_rich_markup(row.pr_display)
+        if row.pr_url:
+            pr_display = f"[link={row.pr_url}]{pr_display}[/link]"</param>
+    <param name="new_string">        pr_display = strip_rich_markup(row.pr_display)
+        if row.pr_url:
+            pr_display = f'[link="{row.pr_url}"]{pr_display}[/link]'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012ef2o8EH62XhCy7jFHKr95">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CNUNm8CGvMfcBANg7AtJnk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # Format issue number - colorize if clickable
+        plan_cell: str | Text = f"#{row.plan_id}"
+        if row.plan_url:
+            plan_cell = f"[link={row.plan_url}]#{row.plan_id}[/link]"</param>
+    <param name="new_string">        # Format issue number - colorize if clickable
+        plan_cell: str | Text = f"#{row.plan_id}"
+        if row.plan_url:
+            plan_cell = f'[link="{row.plan_url}"]#{row.plan_id}[/link]'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CNUNm8CGvMfcBANg7AtJnk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014smqAz3ftcQopnbJDGDHYh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        # Format objective cell - colorize if clickable
+        objective_cell: str | Text...[truncated 29 chars]..._issue is not None:
+            objective_cell = Text(row.objective_display, style="cyan")</param>
+    <param name="new_string">        # Format objective cell - colorize if clickable
+        objective_cell: str | Text...[truncated 200 chars]..._issue is not None:
+            objective_cell = Text(row.objective_display, style="cyan")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014smqAz3ftcQopnbJDGDHYh">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FbHNoLjo5WPufC5khtYiZP">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">        run_id: str | Text = strip_rich_markup(row.run_id_display)
+        if row.run_url:
+            run_id = f"[link={row.run_url}]{run_id}[/link]"</param>
+    <param name="new_string">        run_id: str | Text = strip_rich_markup(row.run_id_display)
+        if row.run_url:
+            run_id = f'[link="{row.run_url}"]{run_id}[/link]'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FbHNoLjo5WPufC5khtYiZP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Qr9rqKaRKBjgL62Bq8nUV2">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+    <param name="old_string">            pr_display = strip_rich_markup(row.pr_display)
+            if row.pr_url:
+                pr_display = f"[link={row.pr_url}]{pr_display}[/link]"</param>
+    <param name="new_string">            pr_display = strip_rich_markup(row.pr_display)
+            if row.pr_url:
+                pr_display = f'[link="{row.pr_url}"]{pr_display}[/link]'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qr9rqKaRKBjgL62Bq8nUV2">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015JNEerwoHCpZzr6Lzof3aM">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py</param>
+    <param name="old_string">    if url:
+        return f"{emoji} [link={url}]{pr_text}[/link]"</param>
+    <param name="new_string">    if url:
+        return f'{emoji} [link="{url}"]{pr_text}[/link]'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015JNEerwoHCpZzr6Lzof3aM">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018P3qWhF46rGKGgbeYP2VBs">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py</param>
+    <param name="old_string">    if issue_url:
+        return f"[link={issue_url}]{issue_text}[/link]"</param>
+    <param name="new_string">    if issue_url:
+        return f'[link="{issue_url}"]{issue_text}[/link]'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="43040" cache_read_input_tokens="26790" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 43040}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018P3qWhF46rGKGgbeYP2VBs">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>All edits are done. Now let me check if there are any other places that construct `PlanRowData` that I might have missed. Let me search for other callers.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5983" cache_read_input_tokens="69830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5983}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>All edits are applied. Now let me check if there are other places that construct `PlanRowData` directly that need the new `objective_url` field.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5983" cache_read_input_tokens="69830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5983}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0179FZvT2y2ZQkFT5KM4g2tz">
+    <param name="pattern">PlanRowData\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5983" cache_read_input_tokens="69830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5983}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0179FZvT2y2ZQkFT5KM4g2tz">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+tests/unit/cli/commands/exec/scripts/test_dash_data.py
+tests/tui/commands/test_execute_command.py
+docs/learned/architecture/pipeline-transformation-patterns.md
+docs/learned/architecture/optional-field-propagation.md
+  </tool_result>
+  <thinking>Let me check the two test files that directly construct PlanRowData.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="75813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 344}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the test files that directly construct `PlanRowData`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="75813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 344}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GpTV81VDCys8hcGGKXYxLy">
+    <param name="pattern">PlanRowData\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="75813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 344}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GpTV81VDCys8hcGGKXYxLy">
+25-    """Test that datetime fields are converted to ISO 8601 strings."""
+26-    now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
+27:    row = PlanRowData(
+28-        plan_id=456,
+29-        plan_url="https://github.com/test/repo/issues/456",
+30-        pr_number=None,
+31-        pr_url=None,
+32-        pr_display="-",
+--
+87-def test_serialize_plan_row_tuple_to_list() -&gt; None:
+88-    """Test that tuple fields (log_entries) are converted to lists."""
+89:    row = PlanRowData(
+90-        plan_id=789,
+91-        plan_url="https://github.com/test/repo/issues/789",
+92-        pr_number=None,
+93-        pr_url=None,
+94-        pr_display="-",
+--
+230-    """Test that serialized output is valid JSON."""
+231-    now = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
+232:    row = PlanRowData(
+233-        plan_id=42,
+234-        plan_url="https://github.com/test/repo/issues/42",
+235-        pr_number=99,
+236-        pr_url="https://github.com/test/repo/pull/99",
+237-        pr_display="#99 ✅",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DmCkQ9syaRv2sVpDNxecLm">
+    <param name="pattern">PlanRowData\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="75813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 344}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DmCkQ9syaRv2sVpDNxecLm">
+162-        """close_plan does nothing if no issue URL."""
+163-        # Create row directly to set plan_url=None (make_plan_row defaults it)
+164:        row = PlanRowData(
+165-            plan_id=123,
+166-            plan_url=None,  # Explicitly None
+167-            pr_number=None,
+168-            pr_url=None,
+169-            pr_display="-",
+--
+240-    def test_submit_to_queue_does_nothing_without_issue_url(self) -&gt; None:
+241-        """submit_to_queue does nothing if no issue URL."""
+242:        row = PlanRowData(
+243-            plan_id=123,
+244-            plan_url=None,  # Explicitly None
+245-            pr_number=None,
+246-            pr_url=None,
+247-            pr_display="-",
+  </tool_result>
+  <assistant>I need to update these test files too. Let me read the full constructions to add the `objective_url` field in the right position.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1023" cache_read_input_tokens="76157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1023}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y4dWrHczJy1RzgcWyPYezj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1023" cache_read_input_tokens="76157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1023}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y4dWrHczJy1RzgcWyPYezj">
+     1→"""Unit tests for dash-data exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def test_serialize_plan_row_basic() -&gt; None:
+    12→    """Test basic serialization of PlanRowData to dict."""
+    13→    row = make_plan_row(123, "Test Plan")
+    14→    result = _serialize_plan_row(row)
+    15→
+    16→    assert result["plan_id"] == 123
+    17→    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
+    18→    assert result["pr_number"] is None
+    19→    assert result["exists_locally"] is False
+    20→    assert result["last_local_impl_at"] is None
+    21→    assert result["last_remote_impl_at"] is None
+    22→
+    23→
+    24→def test_serialize_plan_row_datetime_fields() -&gt; None:
+    25→    """Test that datetime fields are converted to ISO 8601 strings."""
+    26→    now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
+    27→    row = PlanRowData(
+    28→        plan_id=456,
+    29→        plan_url="https://github.com/test/repo/issues/456",
+    30→        pr_number=None,
+
+... [265 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012wDBfj73EVTwzpLN3pBJnC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">155</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1023" cache_read_input_tokens="76157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1023}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012wDBfj73EVTwzpLN3pBJnC">
+   155→
+   156→    Note: close_plan now uses in-process HTTP client (no subprocess).
+   157→    These tests verify the guard conditions. The HTTP client behavior
+   158→    is tested in tests/tui/data/test_provider.py.
+   159→    """
+   160→
+   161→    def test_close_plan_does_nothing_without_issue_url(self) -&gt; None:
+   162→        """close_plan does nothing if no issue URL."""
+   163→        # Create row directly to set plan_url=None (make_plan_row defaults it)
+   164→        row = PlanRowData(
+   165→            plan_id=123,
+   166→            plan_url=None,  # Explicitly None
+   167→            pr_number=None,
+   168→            pr_url=None,
+   169→            pr_display="-",
+   170→            checks_display="-",
+   171→            worktree_name="",
+   172→            exists_locally=False,
+   173→            local_impl_display="-",
+   174→            remote_impl_display="-",
+   175→            run_id_display="-",
+   176→            run_state_display="-",
+   177→            run_url=None,
+   178→            full_title="Test",
+   179→            plan_body="",
+   180→            pr_title=None,
+   181→            pr_state=None,
+   182→            pr_head_branch=None,
+   183→            worktree_branch=None,
+   184→            last_local_impl_at=None,
+
+... [90 lines omitted] ...
+  </tool_result>
+  <thinking>I need to read the rest of the test_execute_command.py file to see the second PlanRowData constructor.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9929" cache_read_input_tokens="77180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9929}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to add `objective_url` to the direct `PlanRowData(...)` constructors in these test files. Let me also read the rest of the second test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9929" cache_read_input_tokens="77180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9929}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Rsf87YATkoWo6AqzEXPhfK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">270</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9929" cache_read_input_tokens="77180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9929}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rsf87YATkoWo6AqzEXPhfK">
+   270→            comments_display="-",
+   271→            learn_status=None,
+   272→            learn_plan_issue=None,
+   273→            learn_plan_issue_closed=None,
+   274→            learn_plan_pr=None,
+   275→            learn_run_url=None,
+   276→            learn_display="- not started",
+   277→            learn_display_icon="-",
+   278→            objective_issue=None,
+   279→            objective_display="-",
+   280→            objective_done_nodes=0,
+   281→            objective_total_nodes=0,
+   282→            objective_progress_display="-",
+   283→            objective_slug_display="-",
+   284→            objective_state_display="-",
+   285→            objective_deps_display="-",
+   286→            updated_at=datetime(2025, 1, 1, tzinfo=UTC),
+   287→            updated_display="-",
+   288→            created_at=datetime(2025, 1, 1, tzinfo=UTC),
+   289→            created_display="-",
+   290→            author="test-user",
+   291→            is_learn_plan=False,
+   292→            lifecycle_display="-",
+   293→        )
+   294→        executor = FakeCommandExecutor()
+   295→        screen = PlanDetailScreen(row=row, executor=executor)
+   296→        screen.execute_command("submit_to_queue")
+   297→        assert executor.refresh_count == 0
+   298→
+   299→
+  </tool_result>
+  <thinking>I see that the test_execute_command.py instances are missing the `status_display` field too (line 292 ends at `lifecycle_display`). Wait, looking at the first one at line 214, it ends at `lifecycle_display="-",` without `status_display`. That means these tests were already out of date before my changes. But they must have been working somehow... Let me check - maybe `status_display` has a default value? No, looking at the PlanRowData dataclass, it's a required field. So these tests might already be broken, or they were written before `status_display` was added and haven't been run yet.
+
+
+Actually, I'm realizing this is probably an existing issue in the codebase. Rather than getting sidetracked fixing that, I should just focus on adding `objective_url=None` after `objective_issue=None` in each test constructor, and if the tests are already broken due to missing `status_display`, that's a separate problem.
+
+Looking at the field order in the dataclass, I need to insert `objective_url: str | None` right after `objective_issue: int | None`, then update the test files accordingly. In `test_dash_data.py` there are three PlanRowData constructions where I need to add this field, and in `test_execute_command.py` there are two more.
+
+I also need to add `objective_url` to the `expected_fields` set in the field validation test.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="87109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me add `objective_url` to all direct `PlanRowData(...)` constructors in the test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="87109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GgWjafxmd3qryVmTekD82d">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">        objective_issue=None,
+        objective_display="-",</param>
+    <param name="new_string">        objective_issue=None,
+        objective_url=None,
+        objective_display="-",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="87109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GgWjafxmd3qryVmTekD82d">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated. All occurrences of '        objective_issue=None,
+        objective_display="-",' were successfully replaced with '        objective_issue=None,
+        objective_url=None,
+        objective_display="-",'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BGUANnyaCaismMuS6GNSih">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">        objective_issue=100,
+        objective_display="#100",</param>
+    <param name="new_string">        objective_issue=100,
+        objective_url="https://github.com/test/repo/issues/100",
+        objective_display="#100",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="87109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BGUANnyaCaismMuS6GNSih">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019NYKnfmfgCeyhk1cpH7JvV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+    <param name="old_string">        "objective_issue",
+        "objective_display",</param>
+    <param name="new_string">        "objective_issue",
+        "objective_url",
+        "objective_display",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="87109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019NYKnfmfgCeyhk1cpH7JvV">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/unit/cli/commands/exec/scripts/test_dash_data.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013xn9iDRdLjfMjEMaRdkCrP">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py</param>
+    <param name="old_string">            objective_issue=None,
+            objective_display="-",</param>
+    <param name="new_string">            objective_issue=None,
+            objective_url=None,
+            objective_display="-",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="87109" output_tokens="1333" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 715, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013xn9iDRdLjfMjEMaRdkCrP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py has been updated. All occurrences of '            objective_issue=None,
+            objective_display="-",' were successfully replaced with '            objective_issue=None,
+            objective_url=None,
+            objective_display="-",'.
+  </tool_result>
+  <assistant>Now let me run the tests to verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1737" cache_read_input_tokens="87824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1737}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01PD3xwYart9xNhPZsnUsvxg">
+    <param name="description">Run plan table tests</param>
+    <param name="prompt">Run the following tests and report results:
+1. `uv run pytest tests/tui/test_plan_table.py...[truncated 168 chars]...ckn/.erk/repos/erk/worktrees/erk-slot-38
+
+Report pass/fail for each and any error details.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1737" cache_read_input_tokens="87824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1737}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PD3xwYart9xNhPZsnUsvxg">
+## Test Results
+
+**Test 1: `tests/tui/test_plan_table.py`**
+- **Status**: PASSED - 39 tests passed
+
+**Test 2: `tests/unit/cli/commands/exec/scripts/test_dash_data.py`**
+- **Status**: PASSED - 6 tests passed
+
+**Test 3: `tests/tui/commands/test_execute_command.py`**
+- **Status**: FAILED - 1 test failed
+  - **Failed test**: `TestExecuteCommandClosePlan::test_close_plan_does_nothing_without_issue_url`
+  - **Error**: `TypeError: PlanRowData.__init__() missing 1 required positional argument: 'status_display'`
+  - **Location**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py:164`
+  - **Issue**: The test is constructing a `PlanRowData` object but is missing the `status_display` argument. The `PlanRowData` dataclass has been updated with a new required field `status_display`, but this test hasn't been updated to provide it.
+agentId: a2ec94059ac8950e0 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15538
+tool_uses: 3
+duration_ms: 6676&lt;/usage&gt;
+  </tool_result>
+  <thinking>The `test_execute_command.py` has a pre-existing issue - it's missing the `status_display` field. This is not caused by my changes. But since I'm editing this file anyway, let me fix it.
+
+Looking at the test file again, the two PlanRowData constructors at lines ~164 and ~242 both end with `lifecycle_display="-",` without `status_display`. This is a pre-existing bug. Let me fix it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="89561" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 595}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The test failure is a pre-existing issue (missing `status_display`), not caused by my changes. Let me fix it since I'm already editing this file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="89561" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 595}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BVzCPNujdZVwEBPR6dhcyW">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py</param>
+    <param name="old_string">            is_learn_plan=False,
+            lifecycle_display="-",
+        )
+        executor = FakeCommandExecutor()</param>
+    <param name="new_string">            is_learn_plan=False,
+            lifecycle_display="-",
+            status_display="-",
+        )
+        executor = FakeCommandExecutor()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="89561" output_tokens="372" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 595, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BVzCPNujdZVwEBPR6dhcyW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py has been updated. All occurrences of '            is_learn_plan=False,
+            lifecycle_display="-",
+        )
+        executor = FakeCommandExecutor()' were successfully replaced with '            is_learn_plan=False,
+            lifecycle_display="-",
+            status_display="-",
+        )
+        executor = FakeCommandExecutor()'.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01TXXpW5FFaq97TEU3D173nj">
+    <param name="description">Re-run execute command tests</param>
+    <param name="prompt">Run `uv run pytest tests/tui/commands/test_execute_command.py -x -q` from /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38 and report results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="512" cache_read_input_tokens="90156" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 512}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TXXpW5FFaq97TEU3D173nj">
+pytest passed: 23 tests passed in 0.53s
+
+All tests in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/tui/commands/test_execute_command.py` are passing.
+agentId: aabdfe8632f5fddeb (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13479
+tool_uses: 1
+duration_ms: 3614&lt;/usage&gt;
+  </tool_result>
+  <assistant>All tests pass. Here's a summary of the changes:
+
+**7 files modified:**
+
+1. **`src/erk/tui/data/types.py`** — Added `objective_url: str | None` field to `PlanRowData`
+
+2. **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`** — Compute `objective_url` from repo location and pass to `PlanRowData`
+
+3. **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`** — Derive `objective_url` from `objective_issue` in `make_plan_row()` and pass to `PlanRowData`
+
+4. **`src/erk/cli/commands/plan/list_cmd.py`** — Quoted URLs in all 4 link cells (`plan_cell`, `objective_cell`, `run_id`, `pr_display`) in `_row_to_static_values()`, plus `format_pr_cell()`. Changed objective cell from `Text(..., style="cyan")` to `[link="URL"]` markup.
+
+5. **`src/erk/tui/widgets/plan_table.py`** — Same 4 URL quoting fixes in `_row_to_values()`
+
+6. **`src/erk/cli/commands/wt/list_cmd.py`** — Quoted URLs in `_format_pr_cell()` and `_format_impl_cell()`
+
+7. **`tests/tui/commands/test_execute_command.py`** — Added `objective_url=None` and fixed pre-existing missing `status_display` field
+
+8. **`tests/unit/cli/commands/exec/scripts/test_dash_data.py`** — Added `objective_url` to all direct `PlanRowData` constructions and expected fields set</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="394" cache_read_input_tokens="90668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 394}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+  <assistant>No response requested.</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <user>q/exit</user>
+  <assistant>No response requested.</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <user>claude --resume ce62ecac-3aa2-47ec-a421-a77c258c3e19
+(erk) ➜  erk-slot-38 git:(plnd/align-plan-dash-02-22-1844) ✗ erk plan list
+
+Found 22 plan(s):
+
+┏━━━━━━━━┳━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━┓
+┃ pr     ┃ stage    ┃ sts  ┃ created ┃ obj   ┃ loc ┃ branch                                     ┃ run-id     ┃ run ┃ author    ┃ chks     ┃ cmts  ┃
+┡━━━━━━━━╇━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━┩
+│ #7949  │ impl     │ -    │ 8m ago  │ -     │ 💻  │ plnd/fix-cleanup-no-worktree-cr-02-23-1027 │ -          │ -   │ schrockn  │ 🚫 39/40 │ 0/0   │
+│ #7948  │ impl     │ 🚧   │ 8m ago  │ -     │ ☁   │ plnd/fix-warning-comment-accumu-02-23-1027 │ 223022087… │ ❌  │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7947  │ planned  │ 👀   │ 12m ago │ -     │ 💻  │ plnd/add-polling-coverage-02-23-0223       │ -          │ -   │ schrockn  │ ✅ 28/28 │ 0/0   │
+│ #7946  │ planned  │ 🚧   │ 16m ago │ -     │ -   │ plnd/extract-ai-generation-02-23-0219      │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7944  │ planned  │ 🚧   │ 6h ago  │ -     │ -   │ plnd/add-branch-duplicate-02-22-1954       │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7942  │ planned  │ 🚧   │ 6h ago  │ -     │ -   │ plnd/rename-code-review-02-22-1938         │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7941  │ planned  │ 🚧   │ 7h ago  │ -     │ -   │ plnd/clear-workflow-error-02-22-1926       │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7938  │ impl     │ 🚧   │ 7h ago  │ -     │ ☁   │ plnd/restore-oauth-status-02-22-1851       │ 222912897… │ ❌  │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7937  │ impl     │ 🚀   │ 7h ago  │ -     │ 💻  │ plnd/align-plan-dash-02-22-1844            │ -          │ -   │ schrockn  │ ✅ 28/28 │ 0/0   │
+│ #7936  │ planned  │ 🚧   │ 8h ago  │ -     │ -   │ plnd/update-ci-pr-title-02-22-1836         │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7934  │ planning │ -    │ 8h ago  │ -     │ ☁   │ plnd/in-the-prs-that-get-genera-02-22-1808 │ 222904969… │ ❌  │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7933  │ planned  │ 🚧   │ 8h ago  │ #7911 │ -   │ plnd/O7911-remove-backend-dispa-02-23-0204 │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7928  │ impl     │ 🚀   │ 10h ago │ -     │ ☁   │ plnd/plan-update-plan-row-data-02-23-0015  │ 222885202… │ ✅  │ schrockn  │ ✅ 7/7   │ 0/0   │
+│ #7927  │ impl     │ -    │ 10h ago │ -     │ -   │ plnd/plan-add-erk-plan-runs-com-02-23-0014 │ -          │ -   │ schrockn  │ ✅ 18/18 │ 0/3   │
+│ #7926  │ planned  │ 🚧   │ 10h ago │ -     │ -   │ plnd/fix-worker-impl-consolidat-02-23-0004 │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7921  │ impl     │ 🚀   │ 10h ago │ -     │ ☁   │ plnd/plan-commit-plan-to-branch-02-22-2339 │ 222883010… │ ✅  │ schrockn  │ ✅ 7/7   │ 0/0   │
+│ #7916  │ impl     │ 🚧   │ 11h ago │ #7911 │ ☁   │ plnd/O7911-plan-delete-githubpl-02-22-2310 │ 222874445… │ ❌  │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7890  │ planned  │ 🚧   │ 14h ago │ -     │ -   │ plnd/documentation-plan-remove-02-22-2001  │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7864  │ planned  │ 🚧   │ 18h ago │ -     │ -   │ plnd/consolidate-unreleased-cha-02-22-1601 │ -          │ -   │ schrockn  │ ✅ 12/12 │ 0/0   │
+│ #7799  │ impl     │ 💥   │ 1d ago  │ -     │ -   │ planned/plan-consolidated-docum-02-22-0354 │ -          │ -   │ schrockn  │ ✅ 7/7   │ 13/15 │
+│ #7760  │ impl     │ 🚧   │ 1d ago  │ -     │ ☁   │ plan/plan-consolidated-document-02-21-1149 │ 222745663… │ ✅  │ schrockn  │ ✅ 25/25 │ 0/0   │
+│ #7614  │ impl     │ 🚀   │ 3d ago  │ #7159 │ ☁   │ plan-O7159-erk-plan-backend-cli-02-19-1317 │ 221194498… │ ✅  │ schrockn  │ ✅ 20/20 │ 0/0   │
+└────────┴──────────┴──────┴─────────┴───────┴─────┴────────────────────────────────────────────┴────────────┴─────┴───────────┴──────────┴───────┘
+
+in this cli interaction the links are not clickable</user>
+  <user>[Request interrupted by user]</user>
+  <user>specifically the references to pr and issue numbers in erk and pbj</user>
+</session>

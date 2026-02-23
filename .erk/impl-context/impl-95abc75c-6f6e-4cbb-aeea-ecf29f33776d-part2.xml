@@ -1,0 +1,857 @@
+<session>
+  <meta branch="plnd/align-plan-dash-02-22-1844" />
+  <meta model="claude-opus-4-6" />
+  <thinking>The user is saying the PR/issue numbers still aren't clickable links in the output. Let me analyze this:
+
+Looking at the output, the `#7947` etc. in the `pr` column are NOT showing as clickable links. This means our `[link=...]` markup isn't being rendered by Rich. 
+
+The issue is likely that we're using `[link=...]` markup as plain strings, but Rich only interprets markup in strings when using `Console.print()` directly or when columns have `markup=True`. When strings are added to a `Table` via `add_row()`, Rich by default treats them as plain text unless the column is configured with `markup=True`.
+ 
+Let me double-check the Rich Table documentation behavior. When adding strings to table rows, Rich should render markup by default, but I'm wondering if the `style="cyan"` attribute on the column is interfering with how the markup gets processed. I need to verify whether the column styling is preventing the link markup from being interpreted correctly. This should work with Rich's markup rendering. But looking at the output, it's NOT rendering as clickable. The PR numbers just appear as plain text.
+
+Wait, maybe the issue is that `[link=...]` markup requires `Console(highlight=False)` or that the table needs to render with markup enabled? Let me think about what could be wrong.
+
+Actually, I think the issue is more fundamental. Looking at the Rich docs:
+- `[link=URL]text[/link]` is Rich markup for OSC 8 hyperlinks
+- Rich tables DO process markup by default
+
+But wait, maybe the issue is that `force_terminal=True` is set on the Console but not `force_jupyter=False`? Or maybe the terminal doesn't support OSC 8?
+
+Actually, looking at the user's output more carefully - the PR numbers DO appear as plain `#7947` etc. They're not showing as underlined or colored differently than the rest of the cyan column. If the markup was being processed, the tags would be stripped but the links should still be there invisibly. The fact that we see plain text without any markup characters means Rich IS processing the markup, but OSC 8 hyperlinks might just not be visible in this paste.
+
+OSC 8 hyperlinks are invisible by default - they only become apparent when you hover or cmd-click in a supporting terminal. The user might not realize the links are already there but just not visually differentiated. But they said "can you make the pr numbers clickable links" which suggests they tried cmd-clicking and nothing happened.
+
+Let me reconsider this. The `draft_pr` backend doesn't show a separate PR column, so maybe that's where the disconnect is. I need to figure out why the clickable links aren't working for the plan IDs, objectives, and run IDs. The `plan_url` might be null for draft_pr backend plans, and I also need to add URL support for objective issue numbers and run IDs since the user wants all of these to be clickable. Let me trace through how `PlanRowData` is constructed to see what's actually being populated.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6474" cache_read_input_tokens="62331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6474}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I see — the `[link=...]` markup changes we made aren't producing clickable links. Let me investigate why.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6474" cache_read_input_tokens="62331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6474}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_013cZndPCgQ3eJvqDJeDo3Zc">
+    <param name="description">Explore link rendering issue</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 1076 chars]...hether Rich table columns need explicit markup=True or similar to render `[link=...]` tags</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6474" cache_read_input_tokens="62331" output_tokens="1670" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6474, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013cZndPCgQ3eJvqDJeDo3Zc">
+Perfect! I now have all the information I need. Let me compile my findings:
+
+## FINDINGS REPORT
+
+Based on my investigation of the `erk plan list` Rich markup issue, here are the key findings:
+
+### 1. **Plan URL Population for draft_pr Backend**
+
+**Status: YES, plan_url IS populated for draft_pr plans**
+
+From `src/erk_shared/gateway/plan_data_provider/real.py` lines 707-709:
+```python
+return PlanRowData(
+    plan_id=plan_id,
+    plan_url=plan.url,  # ← Always populated from the Plan object
+```
+
+The `plan.url` field comes from the Plan objects returned by the plan list service, which includes draft PR plans. Looking at the data flow:
+- Line 131-149: The `fetch_plans()` method routes to either `plan_list_service` (for erk-plan labeled issues) or `objective_list_service`
+- Both services return pre-converted `Plan` objects with `.url` fields populated
+- This URL is then directly assigned to `PlanRowData.plan_url`
+
+**Conclusion**: For draft_pr backend plans, `plan_url` should be populated with the GitHub PR URL.
+
+### 2. **Objective URL Fields**
+
+**Status: NO objective_url field exists; objective_issue number exists instead**
+
+From `src/erk/tui/data/types.py` lines 104-110:
+```python
+
+... [83 lines omitted] ...
+
+# WRONG - causes MarkupError at render time
+  </tool_result>
+  <thinking>The agent found the issue. The URLs need to be quoted in the Rich `[link=...]` markup. Let me also check:
+
+1. Whether the objective needs a URL too — the user wants all issue numbers to be clickable.
+2. The format_pr_cell function also has an unquoted URL.
+
+Let me also check the Textual quirks doc about URL quoting.
+
+Also, for the objective cell, there's no `objective_url` on `PlanRowData`, but we could construct one from `objective_issue` and the repo info. However, looking at the static table code, we don't have easy access to the repo URL. Let me think about this...
+
+
+The `_row_to_static_values` function doesn't have access to repo information, so I'll need to add an `objective_url` field to `PlanRowData` and compute it in the data provider. My plan is to fix the URL quoting in the Rich markup across both files, then add the objective_url field to the data structure.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="68805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Found the root cause. Let me also check the Textual quirks doc and how objective URLs could be constructed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="68805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014iEfwpbcrziqsDAPMyzxhU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/docs/learned/textual/quirks.md</param>
+    <param name="offset">150</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="68805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014iEfwpbcrziqsDAPMyzxhU">
+   150→**Solution**: For loading states, use a container and toggle visibility of children, or use `widget.styles.display = "none"` for complete removal from layout.
+   151→
+   152→## Rich Markup Quirks
+   153→
+   154→### URLs Must Be Quoted in Link Tags
+   155→
+   156→**Problem**: Rich markup's `[link=...]` syntax fails silently during widget creation but crashes at render time if the URL is unquoted:
+   157→
+   158→```python
+   159→# WRONG - causes MarkupError at render time
+   160→f"[link={url}]{text}[/link]"
+   161→```
+   162→
+   163→**Error signature:**
+   164→
+   165→```
+   166→MarkupError: Expected markup value (found '://github.com/...')
+   167→```
+   168→
+   169→The `https` prefix appears to be consumed by the parser as a markup modifier.
+   170→
+   171→**Solution**: Always quote URLs in link tags and escape display text:
+   172→
+   173→```python
+   174→from rich.markup import escape as escape_markup
+   175→
+   176→# CORRECT - escape display text, quote URL, handle special chars in URL
+   177→def make_link(url: str, text: str) -&gt; str:
+   178→    escaped_text = escape_markup(text)
+   179→    safe_url = url.replace('"', "%22")  # Escape quotes in URL
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01T6xNZduAbUfmveWER49cqq">
+    <param name="pattern">objective_issue|objective_url|objective_display</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/data/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="68805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T6xNZduAbUfmveWER49cqq">
+49-        learn_run_url: URL to GitHub Actions workflow run (for pending status)
+50-        learn_display: Formatted display string with text (e.g., "- not started", "⟳ in progress")
+51-        learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12")
+52:        objective_issue: Objective issue number (for linking plans to objectives)
+53:        objective_display: Formatted display string (e.g., "#123" or "-")
+54-        objective_done_nodes: Count of done nodes in objective roadmap
+55-        objective_total_nodes: Total nodes in objective roadmap
+56-        objective_progress_display: Progress display (e.g., "3/7" or "-")
+--
+101-    learn_run_url: str | None
+102-    learn_display: str
+103-    learn_display_icon: str
+104:    objective_issue: int | None
+105:    objective_display: str
+106-    objective_done_nodes: int
+107-    objective_total_nodes: int
+108-    objective_progress_display: str
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Bm5wBTA3JrW8gPEc4PnUFj">
+    <param name="pattern">objective_issue|objective_url|objective_display</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="68805" output_tokens="815" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3220, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bm5wBTA3JrW8gPEc4PnUFj">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk_shared/gateway/plan_data_provider/real.py. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01T5tHQpzrEntGGetk3uWcgi">
+    <param name="pattern">**/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1847" cache_read_input_tokens="72025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1847}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T5tHQpzrEntGGetk3uWcgi">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GrtULziZrZWufWfevtVc3m">
+    <param name="pattern">objective_issue|objective_display|objective_url</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="125" cache_read_input_tokens="73872" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 125}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GrtULziZrZWufWfevtVc3m">
+521-            learn_plan_pr = header_int(plan.header_fields, LEARN_PLAN_PR)
+522-            learn_run_id = header_str(plan.header_fields, LEARN_RUN_ID)
+523-
+524:        # Extract objective_issue from pre-parsed header fields
+525:        objective_issue = header_int(plan.header_fields, OBJECTIVE_ISSUE)
+526-
+527-        # Look up learn plan issue closed state
+528-        learn_plan_issue_closed: bool | None = None
+--
+645-                )
+646-
+647-        # Format objective display
+648:        objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
+649-
+650-        # Compute slug display
+651-        objective_slug_display = "-"
+--
+740-            learn_run_url=learn_run_url,
+741-            learn_display=learn_display,
+742-            learn_display_icon=learn_display_icon,
+743:            objective_issue=objective_issue,
+744:            objective_display=objective_display,
+745-            objective_done_nodes=objective_done_nodes,
+746-            objective_total_nodes=objective_total_nodes,
+747-            objective_progress_display=objective_progress_display,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GNbU9AuyLJ7aJrrChLouAF">
+    <param name="pattern">plan_url</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="73997" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 603}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GNbU9AuyLJ7aJrrChLouAF">
+217-            result[issue_number] = issue_info.state == "CLOSED"
+218-        return result
+219-
+220:    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+221-        """Close a plan and its linked PRs using direct HTTP calls.
+222-
+223-        This method uses the HTTP client directly instead of subprocess calls
+--
+225-
+226-        Args:
+227-            plan_id: The plan ID to close
+228:            plan_url: The plan URL for PR linkage lookup
+229-
+230-        Returns:
+231-            List of PR numbers that were also closed
+232-        """
+233-        # Parse owner/repo from issue URL
+234:        owner_repo = self._parse_owner_repo_from_url(plan_url)
+235-        if owner_repo is None:
+236-            return []
+237-        owner, repo = owner_repo
+--
+303-
+304-        return closed_prs
+305-
+306:    def submit_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+307-        """Submit a plan to the implementation queue.
+308-
+309-        Runs 'erk plan submit' as a subprocess to handle the complex workflow
+--
+
+... [15 lines omitted] ...
+  </tool_result>
+  <thinking>So `plan_url` is always populated from `plan.url`. Now I need to understand how to construct an objective URL. Looking at the data, we have `objective_issue` (an int) and we need a URL like `https://github.com/dagster-io/erk/issues/7911`.
+
+The repo URL can be derived from existing URLs. Let me check `PlanRowData` for `plan_url` - it's always populated. We could construct the objective URL from the same base.
+
+Actually, a simpler approach: the provider already has access to the repo location. Let me check if there's a way to construct the URL there.
+
+
+I can extract the repo information from `plan.url` to build the objective URL, or use the provider's `self._location` which contains `repo_id` with owner and repo fields to construct it directly.
+
+Looking at the output the user shared, this is `draft_pr` mode where the PR is the plan itself, so there's no separate PR column. The core issues are that Rich markup requires quoted URLs in `[link="URL"]` format, objective cells are missing URLs entirely, and both `list_cmd.py` and `plan_table.py` need these fixes applied.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="633" cache_read_input_tokens="74600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me also check how `format_pr_cell` is used, then write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="633" cache_read_input_tokens="74600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LoYYVN1Hn662UF6mph3jDR">
+    <param name="pattern">format_pr_cell</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="633" cache_read_input_tokens="74600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LoYYVN1Hn662UF6mph3jDR">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-113-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-114-
+src/erk/cli/commands/wt/list_cmd.py:115:def _format_pr_cell(
+src/erk/cli/commands/wt/list_cmd.py-116-    pr: PullRequestInfo | None, *, use_graphite: bool, graphite_url: str | None
+src/erk/cli/commands/wt/list_cmd.py-117-) -&gt; str:
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-264-        else None
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-265-    )
+src/erk/cli/commands/wt/list_cmd.py:266:    root_pr_cell = _format_pr_cell(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-267-        root_pr, use_graphite=use_graphite, graphite_url=root_graphite_url
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-268-    )
+--
+src/erk/cli/commands/wt/list_cmd.py-303-        if pr:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-304-            graphite_url = ctx.graphite.get_graphite_url(GitHubRepoId(pr.owner, pr.repo), pr.number)
+src/erk/cli/commands/wt/list_cmd.py:305:        pr_cell = _format_pr_cell(pr, use_graphite=use_graphite, graphite_url=graphite_url)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-306-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py-307-        # Sync status
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py-34-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py-35-
+src/erk/cli/commands/plan/list_cmd.py:36:def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -&gt; str:
+src/erk/cli/commands/plan/list_cmd.py-37-    """Format PR cell with clickable link and emoji: #123 👀 or #123 👀🔗
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py-38-
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py-5-from rich.table import Table
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py-6-
+src/erk/cli/commands/run/list_cmd.py:7:from erk.cli.commands.plan.list_cmd import format_pr_cell
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py-8-from erk.cli.commands.run.shared import extract_issue_number
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/run/list_cmd.py-9-from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+--
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>Now I see there are multiple places with the same unquoted URL issue:
+
+1. `format_pr_cell` in `plan/list_cmd.py` line 62: `f"[link={url}]{pr_text}[/link] {emoji}"`
+2. `_format_pr_cell` in `wt/list_cmd.py` - separate function, probably has the same issue
+3. `_row_to_static_values` in `plan/list_cmd.py` - our recent changes  
+4. `_row_to_values` in `plan_table.py` - our recent changes
+
+
+5. The `wt/list_cmd.py` function likely has the same problem
+
+Since the user specifically asked about making PR numbers clickable in `erk plan list`, I should focus on quoting all URLs in the `[link=...]` markup and adding objective_url support to PlanRowData for objective cells.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2306" cache_read_input_tokens="75233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2306}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N6kdkHduvY3xxXwha1oqqu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/wt/list_cmd.py</param>
+    <param name="offset">115</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2306" cache_read_input_tokens="75233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2306}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N6kdkHduvY3xxXwha1oqqu">
+   115→def _format_pr_cell(
+   116→    pr: PullRequestInfo | None, *, use_graphite: bool, graphite_url: str | None
+   117→) -&gt; str:
+   118→    """Format PR cell for Rich table: emoji + clickable #number or "-".
+   119→
+   120→    Args:
+   121→        pr: Pull request info, or None if no PR
+   122→        use_graphite: If True, use Graphite URL; if False, use GitHub URL
+   123→        graphite_url: Graphite URL for the PR (None if unavailable)
+   124→
+   125→    Returns:
+   126→        Formatted string for table cell with Rich link markup
+   127→    """
+   128→    if pr is None:
+   129→        return "-"
+   130→
+   131→    emoji = get_pr_status_emoji(pr)
+   132→    pr_text = f"#{pr.number}"
+   133→
+   134→    # Determine which URL to use
+   135→    url = graphite_url if use_graphite else pr.url
+   136→
+   137→    # Make PR number clickable if URL is available using Rich [link=...] markup
+   138→    if url:
+   139→        return f"{emoji} [link={url}]{pr_text}[/link]"
+   140→    else:
+   141→        return f"{emoji} {pr_text}"
+   142→
+   143→
+   144→def _format_impl_cell(issue_text: str | None, issue_url: str | None) -&gt; str:
+  </tool_result>
+  <assistant>Now I have the full picture. Let me check how `PlanRowData` can get an `objective_url`, then write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="795" cache_read_input_tokens="77539" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 795}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017pjpYcks4tRW9sYQiTHcA9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">640</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="795" cache_read_input_tokens="77539" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 795}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017pjpYcks4tRW9sYQiTHcA9">
+   640→            if len(parts) &gt;= 5:
+   641→                owner = parts[-4]
+   642→                repo_name = parts[-3]
+   643→                learn_run_url = (
+   644→                    f"https://github.com/{owner}/{repo_name}/actions/runs/{learn_run_id}"
+   645→                )
+   646→
+   647→        # Format objective display
+   648→        objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
+   649→
+   650→        # Compute slug display
+   651→        objective_slug_display = "-"
+   652→        if plan.body:
+   653→            slug = extract_objective_slug(plan.body)
+   654→            if slug is not None:
+   655→                objective_slug_display = slug[:25]
+   656→            elif plan.title:
+   657→                stripped = plan.title.removeprefix("Objective: ")
+   658→                objective_slug_display = stripped[:25]
+   659→
+   660→        # Parse roadmap for objective-specific fields
+   661→        objective_done_nodes = 0
+   662→        objective_total_nodes = 0
+   663→        objective_progress_display = "-"
+   664→        objective_state_display = "-"
+   665→        objective_deps_display = "-"
+   666→        if plan.body:
+   667→            phases, _errors = parse_roadmap(plan.body)
+   668→            if phases:
+   669→                graph = build_graph(phases)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EvjPfu46H718PDx2cVjJn7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">700</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="561" cache_read_input_tokens="78334" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 561}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EvjPfu46H718PDx2cVjJn7">
+   700→            is_draft=pr_is_draft,
+   701→            has_conflicts=pr_has_conflicts,
+   702→            review_decision=pr_review_decision,
+   703→            checks_passing=pr_checks_passing,
+   704→            has_unresolved_comments=pr_has_unresolved_comments,
+   705→        )
+   706→
+   707→        return PlanRowData(
+   708→            plan_id=plan_id,
+   709→            plan_url=plan.url,
+   710→            pr_number=pr_number,
+   711→            pr_url=pr_url,
+   712→            pr_display=pr_display,
+   713→            checks_display=checks_display,
+   714→            worktree_name=worktree_name,
+   715→            exists_locally=exists_locally,
+   716→            local_impl_display=local_impl_display,
+   717→            remote_impl_display=remote_impl_display,
+   718→            run_id_display=run_id_display,
+   719→            run_state_display=run_state_display,
+   720→            run_url=run_url,
+   721→            full_title=full_title,
+   722→            plan_body=plan.body or "",
+   723→            pr_title=pr_title,
+   724→            pr_state=pr_state,
+   725→            pr_head_branch=pr_head_branch,
+   726→            worktree_branch=worktree_branch,
+   727→            last_local_impl_at=last_local_impl_at,
+   728→            last_remote_impl_at=last_remote_impl_at,
+   729→            run_id=run_id,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>OK, I need to understand how to construct the objective URL. The plan's URL is like `https://github.com/dagster-io/erk/issues/7944`. The objective URL would be `https://github.com/dagster-io/erk/issues/7911`. I can derive the base URL from `plan.url`.
+
+Actually, looking at the real.py code, there's a `self._location` which has `repo_id` with `owner` and `repo`:```python
+location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
+
+
+```
+
+And in the class, it's stored as `self._location`. So I could construct the URL as:
+```python
+objective_url = f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}"
+```
+
+Or even simpler, since `plan.url` is already available, I could parse the base from it:
+```python
+# plan.url is like "https://github.com/dagster-io/erk/issues/7944"
+# Replace the issue number with objective_issue
+base_url = plan.url.rsplit("/", 1)[0]
+```
+
+I could either use the location attributes to build the URL directly, or just extract the base path from the existing plan URL and swap in the objective issue number.
+
+Now I need to look at the `_build_row` method to understand what parameters it expects and how I can pass this information through.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="969" cache_read_input_tokens="78895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 969}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01S3qWPY1TxqpMjinZ1uALxQ">
+    <param name="pattern">def _build_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="969" cache_read_input_tokens="78895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 969}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S3qWPY1TxqpMjinZ1uALxQ">
+478-                        worktree.path.name,
+479-                        worktree.branch,
+480-                    )
+481-        return worktree_by_plan_id
+482-
+483:    def _build_row_data(
+484-        self,
+485-        *,
+486-        plan: Plan,
+487-        plan_id: int,
+488-        pr_linkages: dict[int, list[PullRequestInfo]],
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01YHCSY83Y4KuWFWpNDoGPE4">
+    <param name="pattern">self._location</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="772" cache_read_input_tokens="79864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 772}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YHCSY83Y4KuWFWpNDoGPE4">
+98:        self._location = location
+106:        return self._location.root
+133:                location=self._location,
+144:                location=self._location,
+212:            issue_info = self._ctx.github.issues.get_issue(self._location.root, issue_number)
+288:            root=self._location.root,
+320:            cwd=self._location.root,
+337:        trunk = self._ctx.git.branch.detect_trunk_branch(self._location.root)
+346:                self._location.root,
+395:        owner = self._location.repo_id.owner
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <assistant>Good. The provider has `self._location.repo_id.owner` and `self._location.repo_id.repo` available. Now let me check the `PlanRowData` type definition to understand where to add the new field.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="80636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 334}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QHr8QvgkFbRaUSHGmphbgz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/data/types.py</param>
+    <param name="offset">35</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="80636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 334}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QHr8QvgkFbRaUSHGmphbgz">
+    35→        worktree_branch: Branch name in the worktree (if exists locally)
+    36→        last_local_impl_at: Raw timestamp for local impl
+    37→        last_remote_impl_at: Raw timestamp for remote impl
+    38→        run_id: Raw workflow run ID (for display and URL construction)
+    39→        run_status: Workflow run status (e.g., "completed", "in_progress")
+    40→        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+    41→        log_entries: List of (event_name, timestamp, comment_url) for plan log
+    42→        resolved_comment_count: Count of resolved PR review comments
+    43→        total_comment_count: Total count of PR review comments
+    44→        comments_display: Formatted display of comments (e.g., "3/5" or "-")
+    45→        learn_status: Raw learn status value from plan header
+    46→        learn_plan_issue: Plan issue number (for completed_with_plan status)
+    47→        learn_plan_issue_closed: Whether the learn plan issue is closed (True/False/None)
+    48→        learn_plan_pr: PR number (for plan_completed status)
+    49→        learn_run_url: URL to GitHub Actions workflow run (for pending status)
+    50→        learn_display: Formatted display string with text (e.g., "- not started", "⟳ in progress")
+    51→        learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12")
+    52→        objective_issue: Objective issue number (for linking plans to objectives)
+    53→        objective_display: Formatted display string (e.g., "#123" or "-")
+    54→        objective_done_nodes: Count of done nodes in objective roadmap
+    55→        objective_total_nodes: Total nodes in objective roadmap
+    56→        objective_progress_display: Progress display (e.g., "3/7" or "-")
+    57→        objective_slug_display: Slug or stripped title fallback (max 25 chars)
+    58→        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
+    59→        objective_deps_display: Dependency status of next node (e.g., "ready", "in progress", "-")
+    60→        updated_at: Last update datetime of the issue
+    61→        updated_display: Formatted relative time for last update (e.g., "2h ago")
+    62→        created_at: Creation datetime of the issue
+    63→        created_display: Formatted relative time string (e.g., "2d ago")
+    64→        author: GitHub login of the issue creator
+
+... [50 lines omitted] ...
+  </tool_result>
+  <assistant>Now I also need to check the fake `make_plan_row` to know what needs updating there.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3520" cache_read_input_tokens="80970" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3520}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012Re3xboSHqDzRjjJoQF8K8">
+    <param name="pattern">def make_plan_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3520" cache_read_input_tokens="80970" output_tokens="185" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3520, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012Re3xboSHqDzRjjJoQF8K8">
+212:def make_plan_row(
+213-    plan_id: int,
+214-    full_title: str = "Test Plan",
+215-    *,
+216-    plan_url: str | None = None,
+217-    plan_body: str = "",
+218-    pr_number: int | None = None,
+219-    pr_url: str | None = None,
+220-    pr_title: str | None = None,
+221-    pr_state: str | None = None,
+222-    pr_head_branch: str | None = None,
+223-    pr_display: str | None = None,
+224-    worktree_name: str = "",
+225-    worktree_branch: str | None = None,
+226-    exists_locally: bool = False,
+227-    run_url: str | None = None,
+228-    run_id: str | None = None,
+229-    run_status: str | None = None,
+230-    run_conclusion: str | None = None,
+231-    comment_counts: tuple[int, int] | None = None,
+232-    learn_status: str | None = None,
+233-    learn_plan_issue: int | None = None,
+234-    learn_plan_issue_closed: bool | None = None,
+235-    learn_plan_pr: int | None = None,
+236-    learn_run_url: str | None = None,
+237-    objective_issue: int | None = None,
+238-    objective_done_nodes: int = 0,
+239-    objective_total_nodes: int = 0,
+240-    objective_progress_display: str = "-",
+241-    objective_slug_display: str = "-",
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Kvt4YaRKUKngXxrfsabTCc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="offset">292</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1504" cache_read_input_tokens="84490" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1504}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kvt4YaRKUKngXxrfsabTCc">
+   292→    if plan_url is None:
+   293→        plan_url = f"https://github.com/test/repo/issues/{plan_id}"
+   294→
+   295→    # Compute learn_display (full text) and learn_display_icon (icon-only)
+   296→    if learn_status is None or learn_status == "not_started":
+   297→        learn_display = "- not started"
+   298→        learn_display_icon = "-"
+   299→    elif learn_status == "pending":
+   300→        learn_display = "⟳ in progress"
+   301→        learn_display_icon = "⟳"
+   302→    elif learn_status == "completed_no_plan":
+   303→        learn_display = "∅ no insights"
+   304→        learn_display_icon = "∅"
+   305→    elif learn_status == "completed_with_plan" and learn_plan_issue is not None:
+   306→        if learn_plan_issue_closed is True:
+   307→            learn_display = f"✅ #{learn_plan_issue}"
+   308→            learn_display_icon = f"✅ #{learn_plan_issue}"
+   309→        else:
+   310→            learn_display = f"📋 #{learn_plan_issue}"
+   311→            learn_display_icon = f"📋 #{learn_plan_issue}"
+   312→    elif learn_status == "plan_completed" and learn_plan_pr is not None:
+   313→        learn_display = f"✓ #{learn_plan_pr}"
+   314→        learn_display_icon = f"✓ #{learn_plan_pr}"
+   315→    else:
+   316→        learn_display = "- not started"
+   317→        learn_display_icon = "-"
+   318→
+   319→    computed_pr_display = "-"
+   320→    if pr_number is not None:
+   321→        computed_pr_display = f"#{pr_number}"
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DhEYQRYSxHU5KysPwRtCQb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="offset">370</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1320" cache_read_input_tokens="85994" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1320}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DhEYQRYSxHU5KysPwRtCQb">
+   370→        run_status=run_status,
+   371→        run_conclusion=run_conclusion,
+   372→        log_entries=(),
+   373→        resolved_comment_count=resolved_count,
+   374→        total_comment_count=total_count,
+   375→        comments_display=comments_display,
+   376→        learn_status=learn_status,
+   377→        learn_plan_issue=learn_plan_issue,
+   378→        learn_plan_issue_closed=learn_plan_issue_closed,
+   379→        learn_plan_pr=learn_plan_pr,
+   380→        learn_run_url=learn_run_url,
+   381→        learn_display=learn_display,
+   382→        learn_display_icon=learn_display_icon,
+   383→        objective_issue=objective_issue,
+   384→        objective_display=objective_display,
+   385→        objective_done_nodes=objective_done_nodes,
+   386→        objective_total_nodes=objective_total_nodes,
+   387→        objective_progress_display=objective_progress_display,
+   388→        objective_slug_display=objective_slug_display,
+   389→        objective_state_display=objective_state_display,
+   390→        objective_deps_display=objective_deps_display,
+   391→        updated_at=effective_updated_at,
+   392→        updated_display=updated_display,
+   393→        created_at=effective_created_at,
+   394→        created_display=created_display,
+   395→        author=author,
+   396→        is_learn_plan=is_learn_plan,
+   397→        lifecycle_display=lifecycle_display,
+   398→        status_display=status_display,
+   399→    )
+  </tool_result>
+  <assistant>I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="585" cache_read_input_tokens="87314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 585}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01H3ydau4z1aPhGPQRtVjKiv">
+    <param name="file_path">/Users/schrockn/.claude/plans/async-kindling-dawn.md</param>
+    <param name="content"># Fix: Make issue/PR numbers clickable links in `erk plan list`
+
+## Context
+
+The previous ...[truncated 3007 chars]...able.py` — tests pass (no assertion changes needed; `_text_to_str` already strips markup)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="585" cache_read_input_tokens="87314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 585}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H3ydau4z1aPhGPQRtVjKiv">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LhsYupYwyESd57BSQau41M">
+    <param name="file_path">/Users/schrockn/.claude/plans/async-kindling-dawn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1318" cache_read_input_tokens="87899" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1318}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LhsYupYwyESd57BSQau41M">
+     1→# Fix: Linkified PR numbers have extra underlined space in table cells
+     2→
+     3→## Context
+     4→
+     5→When `erk plan list` renders linkified values (PR numbers, objective IDs, run IDs) using `Text(content, style="cyan underline")`, Rich pads the Text content to fill the column width, and the **underline extends to the padding space**. This creates a visible trailing underlined space after each linked value.
+     6→
+     7→Confirmed via ANSI analysis:
+     8→- `Text("cyan underline")`: `\x1b[4;36m#7944 \x1b[0m` — underline covers `#7944 ` (trailing space underlined)
+     9→- `[link=...]` markup: link wraps only `#7944`, padding space is plain cyan — no trailing underline
+    10→
+    11→## Changes
+    12→
+    13→### `src/erk/cli/commands/plan/list_cmd.py` — `_row_to_static_values()`
+    14→
+    15→Replace `Text(content, style="cyan underline")` with Rich `[link=URL]` markup for cells that have URLs:
+    16→
+    17→1. **Plan cell** (~line 187-189): `f"[link={row.plan_url}]#{row.plan_id}[/link]"` when `row.plan_url` exists
+    18→2. **Objective cell** (~line 192-194): `Text(row.objective_display, style="cyan")` (drop underline; no URL available on `PlanRowData`)
+    19→3. **Run ID** (~line 205-208): `f"[link={row.run_url}]{run_id}[/link]"` when `row.run_url` exists
+    20→4. **PR display** (~line 235-236): `f"[link={row.pr_url}]{pr_display}[/link]"` when `row.pr_url` exists
+    21→
+    22→### `src/erk/tui/widgets/plan_table.py` — `_row_to_values()`
+    23→
+    24→Same changes (lines ~270-272, ~293-295, ~306-308, ~339-340). Textual's DataTable renders Rich Text objects, so `[link=...]` markup should work.
+    25→
+    26→## Verification
+    27→
+    28→1. Run `erk plan list` — confirm linked items no longer have trailing underlined space
+    29→2. Verify links are clickable (Cmd+click in iTerm2)
+    30→3. Run `pytest tests/tui/test_plan_table.py`
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Q1Rmqk3aekHn2EpndFDMkM">
+    <param name="file_path">/Users/schrockn/.claude/plans/async-kindling-dawn.md</param>
+    <param name="content"># Fix: Make issue/PR numbers actually clickable in `erk plan list`
+
+## Context
+
+The previo...[truncated 2488 chars]...numbers, and run IDs are Cmd+clickable in iTerm2
+2. `pytest tests/tui/test_plan_table.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1954" cache_read_input_tokens="89217" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1954}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q1Rmqk3aekHn2EpndFDMkM">
+The file /Users/schrockn/.claude/plans/async-kindling-dawn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01DYLtuNqn2B8bChVNYDJ8J5">
+    <param name="plan"># Fix: Make issue/PR numbers actually clickable in `erk plan list`
+
+## Context
+
+The previo...[truncated 2488 chars]...numbers, and run IDs are Cmd+clickable in iTerm2
+2. `pytest tests/tui/test_plan_table.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1066" cache_read_input_tokens="91171" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1066}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DYLtuNqn2B8bChVNYDJ8J5">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/async-kindling-dawn.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Make issue/PR numbers actually clickable in `erk plan list`
+Current context: (wt:erk-slot-38) (br:plnd/align-plan-dash-02-22-1844) (pr:#7937) (plan:#7937)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/alig"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 95abc75c-6f6e-4cbb-aeea-ecf29f33776d \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RVaHYoGVCKsGrtKasG2nqB">
+    <param name="file_path">/Users/schrockn/.claude/plans/async-kindling-dawn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="92237" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 655, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RVaHYoGVCKsGrtKasG2nqB">
+     1→# Fix: Make issue/PR numbers actually clickable in `erk plan list`
+     2→
+     3→## Context
+     4→
+     5→The previous change replaced `Text(content, style="cyan underline")` with `[link=URL]text[/link]` Rich markup, but **links aren't actually clickable** because Rich requires URLs to be **quoted**: `[link="URL"]` not `[link=URL]`. Without quotes, Rich's parser treats `https` as a markup modifier and silently fails. See `docs/learned/textual/quirks.md` lines 154-180.
+     6→
+     7→Additionally, objective issue numbers (e.g., `#7911` in the `obj` column) should also be clickable, requiring a new `objective_url` field on `PlanRowData`.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Add `objective_url` to `PlanRowData` — `src/erk/tui/data/types.py`
+    12→
+    13→Add field after `objective_issue` (~line 104):
+    14→```python
+    15→objective_url: str | None  # NEW — between objective_issue and objective_display
+    16→```
+    17→
+    18→### 2. Populate `objective_url` in real provider
+    19→
+    20→**`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`**
+    21→
+    22→After computing `objective_display` (~line 648):
+    23→```python
+    24→objective_url = f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}" if objective_issue is not None else None
+    25→```
+    26→Pass `objective_url=objective_url` in `PlanRowData(...)` constructor (~line 743).
+    27→
+    28→### 3. Populate `objective_url` in fake helper
+    29→
+    30→**`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`**
+
+... [29 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+# Fix: Make issue/PR numbers actually clickable in `erk plan list`
+
+## Context
+
+The previous change replaced `Text(content, style="cyan underline")` with `[link=URL]text[/link]` Rich markup, but **links aren't actually clickable** because Rich requires URLs to be **quoted**: `[link="URL"]` not `[link=URL]`. Without quotes, Rich's parser treats `https` as a markup modifier and silently fails. See `docs/learned/textual/quirks.md` lines 154-180.
+
+Additionally, objective issue numbers (e.g., `#7911` in the `obj` column) should also be clickable, requiring a new `objective_url` field on `PlanRowData`.
+
+## Changes
+
+1. **Add `objective_url: str | None`** to `PlanRowData` in `src/erk/tui/data/types.py`
+2. **Populate `objective_url`** in real provider and fake helper
+3. **Quote all URLs** in `[link="URL"]` markup across both `list_cmd.py` and `plan_table.py` (4 cells each)
+4. **Fix `format_pr_cell()`** and **`_format_pr_cell()`** URL quoting in `plan/list_cmd.py` and `wt/list_cmd.py`
+
+## Verification
+
+1. `erk plan list` — Cmd+click plan/objective/run-id numbers
+2. `pytest tests/tui/test_plan_table.py`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1333" cache_read_input_tokens="92892" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01S2JbUpbdjQopr77BLxQTd8">
+    <param name="questions">[{'question': '📋 Fix: Make issue/PR numbers actually clickable in `erk plan list`\nCurrent...[truncated 508 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1333" cache_read_input_tokens="92892" output_tokens="638" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S2JbUpbdjQopr77BLxQTd8">
+User has answered your questions: "📋 Fix: Make issue/PR numbers actually clickable in `erk plan list`
+Current context: (wt:erk-slot-38) (br:plnd/align-plan-dash-02-22-1844) (pr:#7937) (plan:#7937)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PvjbwjAsjZuepcNfX65H4b">
+    <param name="command">erk exec marker create --session-id 95abc75c-6f6e-4cbb-aeea-ecf29f33776d exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="848" cache_read_input_tokens="94225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 848}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PvjbwjAsjZuepcNfX65H4b">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01KQ521FysTvJXtLpQRcYNfP">
+    <param name="plan"># Fix: Make issue/PR numbers actually clickable in `erk plan list`
+
+## Context
+
+The previo...[truncated 2488 chars]...numbers, and run IDs are Cmd+clickable in iTerm2
+2. `pytest tests/tui/test_plan_table.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="227" cache_read_input_tokens="95073" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 227}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KQ521FysTvJXtLpQRcYNfP">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

@@ -1,0 +1,937 @@
+<session>
+  <meta branch="plnd/align-plan-dash-02-22-1844" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_01BLEQ87nEQgQg11hyNMR3cW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py</param>
+    <param name="old_string">@pytest.fixture(autouse=True)
+def _force_github_plan_backend(monkeypatch: pytest.MonkeyPat...[truncated 232 chars]...d plan-first table structure.
+    """
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "github")</param>
+    <param name="new_string">@pytest.fixture(autouse=True)
+def _force_github_plan_backend(monkeypatch: pytest.MonkeyPat...[truncated 286 chars]...setattr(
+        "erk.cli.commands.plan.list_cmd.get_plan_backend", lambda: "github"
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="158526" output_tokens="1092" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 592, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BLEQ87nEQgQg11hyNMR3cW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01LX5MX4TAmpu5ffqwFWvbCB">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run 3 failing tests again</param>
+    <param name="prompt">Run the following pytest command from the repository root /Users/schrockn/.erk/repos/erk/w...[truncated 303 chars]...cal_impl"
+
+Report which tests pass and which fail with full error output for any failures.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1138" cache_read_input_tokens="159118" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1138, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LX5MX4TAmpu5ffqwFWvbCB">
+## Test Results Summary
+
+**All 3 tests FAILED with setup errors:**
+
+1. **test_dash_displays_impl_column_headers** - ERROR at setup
+2. **test_plan_list_pr_column_with_conflicts** - ERROR at setup  
+3. **test_plan_list_shows_worktree_from_local_impl** - ERROR at setup
+
+### Root Cause
+
+The fixture `_force_github_plan_backend` in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py` at line 19 is attempting to monkeypatch:
+
+```python
+monkeypatch.setattr(
+    "erk.cli.commands.plan.list_cmd.get_plan_backend", lambda: "github"
+)
+```
+
+However, this path is invalid. The error indicates:
+
+```
+AttributeError: 'dict' object at erk.cli.commands.plan has no attribute 'plan'
+```
+
+This suggests that `erk.cli.commands.plan` is a dictionary (likely a module namespace) and doesn't have a `plan` attribute, making it impossible to access `plan.list_cmd`.
+
+The conftest fixture needs to be corrected to use the proper import path for `get_plan_backend`. The tests cannot run until this fixture setup issue is resolved.
+agentId: a053749ebf1b10e91 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 19560
+tool_uses: 2
+
+... [1 lines omitted] ...
+  </tool_result>
+  <thinking>OK, the module path is wrong. The `monkeypatch.setattr` is having trouble with the dotted path. Let me try a different approach: import the module first and then patch it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="642" cache_read_input_tokens="160256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 642}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The dotted path is causing issues. Let me fix the conftest to import and patch directly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="642" cache_read_input_tokens="160256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 642}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AiZREHx4PqiBXwz28W3JEq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py</param>
+    <param name="old_string">@pytest.fixture(autouse=True)
+def _force_github_plan_backend(monkeypatch: pytest.MonkeyPat...[truncated 286 chars]...setattr(
+        "erk.cli.commands.plan.list_cmd.get_plan_backend", lambda: "github"
+    )</param>
+    <param name="new_string">@pytest.fixture(autouse=True)
+def _force_github_plan_backend(monkeypatch: pytest.MonkeyPat...[truncated 320 chars]...cmd_module
+
+    monkeypatch.setattr(list_cmd_module, "get_plan_backend", lambda: "github")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="642" cache_read_input_tokens="160256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 642}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AiZREHx4PqiBXwz28W3JEq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01G3cjAjL3L6Rfrfy7kPaRbT">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run 3 failing tests again</param>
+    <param name="prompt">Run the following pytest command from the repository root /Users/schrockn/.erk/repos/erk/w...[truncated 304 chars]...al_impl"
+
+Report which tests pass and which fail, with full error output for any failures.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="561" cache_read_input_tokens="160898" output_tokens="253" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 561, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G3cjAjL3L6Rfrfy7kPaRbT">
+The test execution failed at the setup stage. All three target tests failed due to a fixture setup error. Let me extract the specific error details:
+
+**Test Results Summary:**
+
+**Failed Tests (3):**
+
+1. `test_impl_columns.py::test_dash_displays_impl_column_headers` - **ERROR at setup**
+2. `test_pr_columns.py::test_plan_list_pr_column_with_conflicts` - **ERROR at setup**
+3. `test_worktree_detection.py::test_plan_list_shows_worktree_from_local_impl` - **ERROR at setup**
+
+**Error Details:**
+
+All three tests failed during fixture setup with the same error originating from `/tests/commands/dash/conftest.py:19`:
+
+```
+ImportError: cannot import name 'plan' from '&lt;unknown module name&gt;' (unknown location)
+```
+
+The error occurs in the `_force_github_plan_backend` fixture which attempts to import:
+
+```python
+import erk.cli.commands.plan.list_cmd as list_cmd_module
+```
+
+**Root Cause:**
+
+The import statement in the `_force_github_plan_backend` fixture is failing. The module path `erk.cli.commands.plan.list_cmd` cannot be resolved. This could indicate:
+- The `plan` submodule doesn't exist at that location
+- The `list_cmd` module hasn't been created yet
+- There's a package structure issue preventing the import
+
+... [6 lines omitted] ...
+
+The fixture setup failure prevents all tests in the `tests/commands/dash/` suite from running.
+  </tool_result>
+  <thinking>The import fails. This is strange because the module `erk.cli.commands.plan.list_cmd` definitely exists. Let me check if there's a circular import issue or if `plan` is an `__init__.py` that doesn't export things properly.
+
+Wait, maybe the issue is that `erk.cli.commands.plan` is a Click group, and when you try to import its `list_cmd` submodule, there's a circular import because the `__init__.py` of `erk.cli.commands.plan` imports from `list_cmd`.
+
+Let me check the `__init__.py` of `erk.cli.commands.plan`:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="161459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 682}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_016PmynD7fUZtRqYkhBMqb49">
+    <param name="pattern">src/erk/cli/commands/plan/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="161459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 682}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016PmynD7fUZtRqYkhBMqb49">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/__init__.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MaQbuj53hT6UgX6Sd9KsYq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="162141" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MaQbuj53hT6UgX6Sd9KsYq">
+     1→"""Plan command group."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.capability_check import is_learned_docs_available
+     8→from erk.cli.commands.plan.check_cmd import check_plan
+     9→from erk.cli.commands.plan.checkout_cmd import checkout_plan
+    10→from erk.cli.commands.plan.close_cmd import close_plan
+    11→from erk.cli.commands.plan.create_cmd import create_plan
+    12→from erk.cli.commands.plan.list_cmd import list_plans
+    13→from erk.cli.commands.plan.log_cmd import plan_log
+    14→from erk.cli.commands.plan.replan_cmd import replan_plan
+    15→from erk.cli.commands.plan.view import view_plan
+    16→from erk.cli.commands.submit import submit_cmd
+    17→from erk_shared.gateway.git.repo_ops.real import RealGitRepoOps
+    18→
+    19→
+    20→@click.group("plan")
+    21→def plan_group() -&gt; None:
+    22→    """Manage implementation plans."""
+    23→    pass
+    24→
+    25→
+    26→plan_group.add_command(check_plan)
+    27→plan_group.add_command(checkout_plan, name="co")
+    28→plan_group.add_command(close_plan)
+    29→plan_group.add_command(create_plan, name="create")
+    30→if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
+
+... [11 lines omitted] ...
+  </tool_result>
+  <thinking>The issue is clear now. The `__init__.py` for `plan` imports from `list_cmd` at module level:
+```python
+from erk.cli.commands.plan.list_cmd import list_plans
+```
+
+This causes a circular import when trying to import `erk.cli.commands.plan.list_cmd` from the conftest. Well, not exactly circular, but the `__init__.py` already imported `list_cmd`, so the import should work. But there might be side effects from importing the plan module.
+
+Actually, the real issue is likely that the `__init__.py` calls `Path.cwd()` at import time (line 30), which might fail or cause issues in the test environment.
+
+
+Let me try a different approach. Instead of importing the module directly, I'll use monkeypatch to set attributes on the `erk_shared.plan_store` module, which should avoid triggering the problematic import-time code execution.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="162422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 717}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The import fails because the `plan/__init__.py` has side effects (calls `Path.cwd()` at import time). Let me patch at the source module instead:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="162422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 717}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FLPMoNfTpxwPQUuCdZhbth">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py</param>
+    <param name="old_string">@pytest.fixture(autouse=True)
+def _force_github_plan_backend(monkeypatch: pytest.MonkeyPat...[truncated 320 chars]...cmd_module
+
+    monkeypatch.setattr(list_cmd_module, "get_plan_backend", lambda: "github")</param>
+    <param name="new_string">@pytest.fixture(autouse=True)
+def _force_github_plan_backend(monkeypatch: pytest.MonkeyPat...[truncated 298 chars]...tore
+
+    monkeypatch.setattr(erk_shared.plan_store, "get_plan_backend", lambda: "github")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="162422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 717}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FLPMoNfTpxwPQUuCdZhbth">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py has been updated successfully.
+  </tool_result>
+  <thinking>Wait, but the issue is that `list_cmd.py` imports `get_plan_backend` from `erk_shared.plan_store`:
+```python
+from erk_shared.plan_store import get_plan_backend
+```
+
+If I patch `erk_shared.plan_store.get_plan_backend`, that won't affect the already-imported name in `list_cmd.py`. I need to patch where it's used, not where it's defined.
+
+But importing `erk.cli.commands.plan.list_cmd` fails because of the side effects in `plan/__init__.py`. 
+
+
+Let me reconsider - the `Path.cwd()` call shouldn't actually cause an import failure, so maybe I'm misdiagnosing the real problem. I need to look at the actual error message to understand what's really blocking the import.
+
+The error messages are contradictory - first it says `erk.cli.commands.plan` is a dict without a `plan` attribute, then it says `plan` can't be imported from an unknown module. This suggests the test environment isn't resolving the module structure correctly, possibly because of how the import path is being constructed.
+
+I'm trying a different approach: instead of patching the function directly, I'll set the environment variable before the module gets imported so the backend selection happens at import time.
+
+But wait, that creates cleanup issues across tests. Let me step back and verify whether `monkeypatch.setenv` is actually working—maybe there's caching happening in `get_plan_backend()` that's preventing the environment variable change from taking effect.
+
+Looking at the function, there's no `lru_cache` or similar, so monkeypatch should override it fine. The real issue might be that Click's `CliRunner.invoke()` creates an isolated environment context that doesn't pick up the monkeypatched values unless I explicitly pass them through the `env` parameter.
+
+Actually, I realize the core problem: when `list_cmd.py` does `from erk_shared.plan_store import get_plan_backend`, it creates a direct reference to that function in its own namespace. Patching the original function in `erk_shared.plan_store` won't affect the already-imported reference, so I need to patch it directly in the `list_cmd` module where it's actually being called.
+
+I'm trying a different approach using `importlib` to directly import the `list_cmd` module and patch the function reference there, but this will trigger the parent package's `__init__.py` files, which might cause issues with `Path.cwd()` in the test environment.
+
+Looking at the earlier error message about not being able to import `plan` from an unknown module, it seems like the Python import system can't locate the `plan` package within `erk.cli.commands` at all. This could be a path setup issue during `conftest.py` evaluation, especially if the project relies on `uv` and has `src/erk` in the path but that path isn't configured correctly when the test runner starts.
+
+Let me try a completely different approach instead.
+
+Setting the environment variable directly in the fixture without relying on monkeypatch...</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="163139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me use a simpler approach without monkeypatch import issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="163139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016K2KMcNmUMqT9ecYo7f3NT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py</param>
+    <param name="old_string">@pytest.fixture(autouse=True)
+def _force_github_plan_backend(monkeypatch: pytest.MonkeyPat...[truncated 298 chars]...tore
+
+    monkeypatch.setattr(erk_shared.plan_store, "get_plan_backend", lambda: "github")</param>
+    <param name="new_string">@pytest.fixture(autouse=True)
+def _force_github_plan_backend() -&gt; None:
+    """Force githu...[truncated 425 chars]....pop("ERK_PLAN_BACKEND", None)
+    else:
+        os.environ["ERK_PLAN_BACKEND"] = original</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="163139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016K2KMcNmUMqT9ecYo7f3NT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/conftest.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_019PB2JQ7aanagf24exLm7rp">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run 3 failing tests again</param>
+    <param name="prompt">Run the following pytest command from the repository root /Users/schrockn/.erk/repos/erk/w...[truncated 339 chars]...s and which fail. For failures, report the full error message including the actual output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2423" cache_read_input_tokens="164110" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2423, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. **Context Recovery**: This session is a continuation from a previous conversation that ran out of context. The summary from the previous session covers the initial plan implementation of issue #7937 "Align `erk plan list` with `erk dash` layout". The previous session completed Steps 1-6 of the implementation and was in the CI iteration loop with 26 test failures remaining.
+
+2. **Continuation**: The user said "contineu" (typo for "continue"), indicating I should keep fixing the remaining test failures.
+
+3. **Reading failing test files**: I read all 6 failing test files:
+   - `tests/commands/test_dash_workflow_runs.py` - 7 tests using `--runs` flag and title assertions
+   - `tests/commands/dash/test_workflow_run_state.py` - 2 tests with title assertions
+   - `tests/commands/dash/test_filtering.py` - tests with title assertions
+   - `tests/commands/dash/test_impl_columns.py` - tests using `--runs` flag
+   - `tests/commands/dash/test_worktree_detection.py` - tests with title assertions and worktree branch naming
+   - `tests/commands/dash/test_pr_columns.py` - tests checking PR emojis
+
+4. **First round of fixes**: Applied pattern fixes across all files:
+   - Removed `--runs`/`-r` flag from test invocations (flag was removed)
+   - Removed title assertions (no title column in new layout)
+   - Deleted `test_plan_list_runs_flag_short_form` test (flag no longer exists)
+   - Renamed `test_plan_list_runs_flag_shows_run_columns` to `test_plan_list_run_columns_always_shown`
+   - Updated `lcl-impl` to `local-impl` in assertion
+   - Updated module docstring
+
+5. **First test run**: Down from 26 to 11 failures. Remaining failures were about missing data (PR numbers, worktree names, column headers not appearing in output).
+
+6. **Root cause investigation**: Read `RealPlanDataProvider` (real.py) to understand data flow. Found two root causes:
+   - `get_plan_backend()` returns `"draft_pr"` by default → `show_pr_column = False` → no separate PR column
+   - `_build_worktree_mapping()` uses `extract_leading_issue_number()` expecting `P{id}-` prefix branch names
+
+7. **Explored data flow**: Used Explore agent to understand PlanListService, PlanListData, extract_leading_issue_number, and build_workspace_test_context.
+
+8. **Second round of fixes**:
+   - Added conftest fixture to force `github` plan backend
+   - Changed worktree branch names in `test_worktree_detection.py` to use `P{id}-` prefix
+
+9. **Second test run**: Down from 11 to 3 failures.
+
+10. **Debugging conftest fixture**: The `monkeypatch.setenv("ERK_PLAN_BACKEND", "github")` wasn't working. Tried multiple approaches:
+    - `monkeypatch.setattr` with string path → `AttributeError`
+    - Direct module import → `ImportError` (plan/__init__.py has side effects)
+    - `monkeypatch.setattr` on `erk_shared.plan_store` → wouldn't work because `list_cmd.py` copies the reference at import time
+    - Finally used `os.environ` directly with manual cleanup in a generator fixture
+
+11. **Third test run**: Still 3 failures but now the fixture works (no setup errors):
+    - `test_dash_displays_impl_column_headers` - "remote-impl" truncated to "remote-im…" (width=10 but header is 11 chars)
+    - `test_plan_list_pr_column_with_conflicts` - `💥` emoji not in output (PR emoji shows but conflict indicator doesn't)
+    - `test_plan_list_shows_worktree_from_local_impl` - "feature-worktree" truncated to "feature-workt…" (width=14 but name is 16 chars)
+
+Key files modified:
+- `src/erk/cli/commands/plan/list_cmd.py` - Complete rewrite (from previous session)
+- `src/erk/core/display_utils.py` - Added `strip_rich_markup()` (from previous session)
+- `src/erk/tui/widgets/plan_table.py` - Updated import (from previous session)
+- `src/erk/cli/commands/run/list_cmd.py` - Fixed import (from previous session)
+- `tests/commands/plan/test_list.py` - Updated (from previous session)
+- `tests/tui/test_plan_table.py` - Updated import (from previous session)
+- `tests/unit/core/test_display_utils.py` - Deleted dead tests (from previous session)
+- `tests/commands/dash/conftest.py` - Added autouse fixture for github backend
+- `tests/commands/dash/test_filtering.py` - Removed title assertions
+- `tests/commands/dash/test_impl_columns.py` - Removed --runs flag, deleted short form test
+- `tests/commands/dash/test_worktree_detection.py` - Removed title assertions, fixed branch names
+- `tests/commands/dash/test_workflow_run_state.py` - Removed title assertions
+- `tests/commands/dash/test_pr_columns.py` - No changes yet (still investigating)
+- `tests/commands/test_dash_workflow_runs.py` - Removed --runs flag and title assertions
+
+Summary:
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement` to implement plan #7937: "Align `erk plan list` with `erk dash` layout". The goal is to make the static CLI command `erk plan list` display the same columns in the same order as the `erk dash` TUI by reusing `RealPlanDataProvider` for data assembly, matching the TUI's column layout exactly, removing the `--runs` flag (runs always shown), and deleting ~280 lines of duplicated logic. The implementation was mostly completed in a prior session. This continuation session focuses on fixing remaining test failures after the core implementation changes.
+
+2. Key Technical Concepts:
+   - `RealPlanDataProvider` - Production data provider that fetches plans via `PlanListService` and transforms to `PlanRowData`
+   - `PlanRowData` - Frozen dataclass with pre-formatted display strings for table cells
+   - `PlanDataTable._setup_columns()` and `_row_to_values()` - TUI column configuration that the static table mirrors
+   - `sort_plans()` - Shared sorting logic from `erk.tui.sorting.logic`
+   - `strip_rich_markup()` - Utility moved to shared `display_utils.py`
+   - `extract_leading_issue_number()` - Matches branch names like `P{issue_number}-{slug}` or `{issue_number}-{slug}` to plan IDs (regex: `^[Pp]?(\d+)-`)
+   - `get_plan_backend()` - Returns `"draft_pr"` (default) or `"github"` based on `ERK_PLAN_BACKEND` env var
+   - `PlanListService.get_plan_list_data()` - Uses unified GraphQL query `get_issues_with_pr_linkages()` for `RealPlanListService` 
+   - `PlanListData` - Frozen dataclass with `plans`, `pr_linkages` (dict[int, list[PullRequestInfo]]), `workflow_runs`
+   - `_build_worktree_mapping()` - Uses `extract_leading_issue_number(branch)` for matching, fallback to `.impl/plan-ref.json` for `plnd/` branches only
+   - `build_workspace_test_context()` - Always creates `RealPlanListService(github, issues)` in test contexts (line 359-362 of context.py), regardless of plan backend
+   - `FakeGitHub` defaults: `authenticated=True`, `auth_username="test-user"`, `pr_issue_linkages` used by `get_issues_with_pr_linkages()`
+   - Column widths in Rich Table truncate content with `…` when content exceeds width
+
+3. Files and Code Sections:
+
+   - **`src/erk/cli/commands/plan/list_cmd.py`** (PRIMARY - rewritten in prior session)
+     - The main file that was rewritten. Contains `_build_static_table()`, `_row_to_static_values()`, and rewritten `_list_plans_impl()` using `RealPlanDataProvider`.
+     - `--runs`/`-r` CLI option removed from `list_plans` command
+     - Column layout: For `github` backend: plan, obj, loc, branch, run-id, run, created, author, pr, chks, cmts, local-wt, local-impl, remote-impl
+     - For `draft_pr` backend: pr, stage, sts, created, obj, loc, branch, run-id, run, author, chks, cmts, local-wt, local-impl, remote-impl
+     - `show_pr_column = plan_backend != "draft_pr"` — controls whether a separate PR column is shown
+     - Column widths: `local-wt: width=14`, `local-impl: width=10`, `remote-impl: width=10`
+     - Key issue: `remote-impl` header is 11 chars but width=10, causing truncation to `remote-im…`
+
+   - **`tests/commands/dash/conftest.py`** (modified)
+     - Added autouse fixture to force `github` plan backend for all dash tests
+     - Multiple attempts to patch `get_plan_backend`:
+       1. `monkeypatch.setenv("ERK_PLAN_BACKEND", "github")` — didn't take effect (unclear why)
+       2. `monkeypatch.setattr("erk.cli.commands.plan.list_cmd.get_plan_backend", ...)` — AttributeError with dotted path
+       3. `import erk.cli.commands.plan.list_cmd` — ImportError due to `plan/__init__.py` side effects (`Path.cwd()` at import time)
+       4. `monkeypatch.setattr(erk_shared.plan_store, ...)` — won't work because `list_cmd.py` copies reference at import time
+       5. Final working approach: direct `os.environ` manipulation with manual cleanup
+     - Current state of conftest fixture:
+     ```python
+     @pytest.fixture(autouse=True)
+     def _force_github_plan_backend() -&gt; None:
+         import os
+         original = os.environ.get("ERK_PLAN_BACKEND")
+         os.environ["ERK_PLAN_BACKEND"] = "github"
+         yield  # type: ignore[misc]
+         if original is None:
+             os.environ.pop("ERK_PLAN_BACKEND", None)
+         else:
+             os.environ["ERK_PLAN_BACKEND"] = original
+     ```
+
+   - **`tests/commands/dash/test_filtering.py`** (modified)
+     - Removed title assertions from 4 tests (`"Issue 1"`, `"Issue 2"`, `"Open Issue"`, `"Issue with both labels"`, `"Matching Issue"`)
+     - All 6 tests now pass
+
+   - **`tests/commands/dash/test_impl_columns.py`** (modified)
+     - Renamed `test_plan_list_runs_flag_shows_run_columns` → `test_plan_list_run_columns_always_shown`
+     - Deleted `test_plan_list_runs_flag_short_form` entirely (flag no longer exists)
+     - Removed `--runs` flag from remaining test invocations
+     - Updated `"lcl-impl"` assertion to `"local-impl"` 
+     - `test_dash_displays_impl_column_headers` still fails: `"remote-impl"` truncated to `"remote-im…"` in Rich table
+
+   - **`tests/commands/dash/test_worktree_detection.py`** (modified)
+     - Removed title assertions (`"Rename Erk Slash Commands"`, `"Issue Without Worktree"`, `"Test Local Detection"`)
+     - Changed branch names to use `P{id}-` prefix: `"feature-branch"` → `"P950-feature-branch"`, `"feature"` → `"P960-feature"`, `"branch1"` → `"P980-branch1"`, `"branch2"` → `"P980-branch2"`
+     - `test_plan_list_shows_worktree_from_local_impl` still fails: `"feature-worktree"` (16 chars) truncated to `"feature-workt…"` in local-wt column (width=14)
+
+   - **`tests/commands/dash/test_workflow_run_state.py`** (modified)
+     - Removed title assertions (`"Queued Plan"`, `"Success Plan"`)
+     - All 3 tests now pass
+
+   - **`tests/commands/dash/test_pr_columns.py`** (NOT yet modified)
+     - `test_plan_list_pr_column_with_conflicts` still fails: `💥` (conflict emoji) not in output
+     - From test output: PR `#204` and `👀` emoji ARE in output, but `💥` is not
+     - The `format_pr_cell` function combines status emoji + conflict emoji: `#204 👀💥`. But through `RealPlanDataProvider._build_row_data`, the `pr_display` is built differently: `emoji = get_pr_status_emoji(selected_pr)` then `pr_display = f"#{selected_pr.number} {emoji}"`. The conflict indicator `💥` is added in `format_pr_cell` but NOT in `_build_row_data`.
+     - Other 6 PR tests now pass
+
+   - **`tests/commands/test_dash_workflow_runs.py`** (modified)
+     - Removed `--runs` flag from 5 test invocations
+     - Removed title assertions from 2 tests (`"Plan with API failure"`, `"Plan without worktree"`)
+     - All 7 tests now pass
+
+   - **`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`** (read, not modified)
+     - `_build_worktree_mapping()` uses `extract_leading_issue_number(branch)` — expects `P{id}-` or `{id}-` prefix
+     - `_build_row_data()` builds `pr_display` as `f"#{selected_pr.number} {emoji}"` where `emoji = get_pr_status_emoji(selected_pr)` — does NOT include `💥` conflict indicator (unlike `format_pr_cell` which appends `will_close_target` emoji, but conflict indicator is only added for the `has_conflicts` case in the OLD code path, not in `_build_row_data`)
+     - Actually looking again: `_build_row_data` at line 589-591: `emoji = get_pr_status_emoji(selected_pr)` then `if selected_pr.will_close_target: emoji += "🔗"` then `pr_display = f"#{selected_pr.number} {emoji}"`. The `get_pr_status_emoji` function handles the standard status emojis (👀, 🚧, 🎉, ⛔) but may not include the conflict `💥`.
+
+   - **`packages/erk-shared/src/erk_shared/plan_store/__init__.py`** (read, not modified)
+     - `get_plan_backend()` reads `os.environ.get("ERK_PLAN_BACKEND")`, defaults to `"draft_pr"`
+
+   - **`src/erk/cli/commands/plan/__init__.py`** (read, not modified)
+     - Has side effects at import time: calls `Path.cwd()` at line 30, causing import failures when monkeypatching
+
+   - **`packages/erk-shared/src/erk_shared/gateway/github/fake.py`** (read, not modified)
+     - `get_issues_with_pr_linkages()` filters by labels, state, creator, and returns matching PR linkages from `_pr_issue_linkages`
+     - `check_auth_status()` returns `(True, "test-user", None)` by default
+     - `FakeGitHub` constructor defaults: `authenticated=True`, `auth_username="test-user"`
+
+   - **`tests/test_utils/context_builders.py`** (read, not modified)
+     - `build_workspace_test_context()` always creates `RealPlanListService(github, issues)` regardless of plan backend (line 359-362)
+
+4. Errors and fixes:
+   - **`monkeypatch.setenv("ERK_PLAN_BACKEND", "github")` not taking effect**: The env var monkeypatch appeared to not work (table output still showed draft_pr layout with "pr" first column). Root cause unclear. Fixed by switching to direct `os.environ` manipulation with manual cleanup in generator fixture.
+   
+   - **`monkeypatch.setattr` with dotted string path**: `monkeypatch.setattr("erk.cli.commands.plan.list_cmd.get_plan_backend", lambda: "github")` → `AttributeError: 'dict' object at erk.cli.commands.plan has no attribute 'plan'`. Python's import system couldn't resolve the dotted path.
+   
+   - **Direct module import fails**: `import erk.cli.commands.plan.list_cmd as list_cmd_module` → `ImportError: cannot import name 'plan' from '&lt;unknown module name&gt;'`. Caused by `plan/__init__.py` having side effects (`Path.cwd()` call at line 30 and multiple CLI module imports).
+   
+   - **Column header truncation**: Rich Table truncates "remote-impl" (11 chars) to "remote-im…" when column width=10. Not yet fixed.
+   
+   - **Worktree name truncation**: Rich Table truncates "feature-worktree" (16 chars) to "feature-workt…" when column width=14. Not yet fixed.
+   
+   - **Conflict emoji `💥` missing**: `RealPlanDataProvider._build_row_data()` builds `pr_display` using `get_pr_status_emoji()` which may not include the conflict indicator. The old `format_pr_cell` function handled this differently. Not yet fixed.
+
+5. Problem Solving:
+   - Successfully reduced test failures from 26 → 11 → 3 through systematic fixes
+   - Identified two root causes for the 11→3 drop: plan backend defaulting to `draft_pr` (affecting column layout) and branch naming pattern mismatch for worktree detection
+   - Still investigating 3 remaining failures:
+     1. Column width truncation (2 tests) - needs width increase for `remote-impl` and potentially worktree name handling
+     2. Missing conflict emoji (1 test) - needs investigation of `get_pr_status_emoji()` vs old `format_pr_cell` behavior regarding conflict indicator
+
+6. All user messages:
+   - User invoked `/erk:plan-implement` (from prior session) - triggering the plan implementation workflow
+   - User invoked `/local:py-fast-ci` (from prior session) - triggering Python-focused CI checks
+   - "contineu" - User asking to continue fixing the remaining test failures from the prior session
+   - No other direct user messages; all other "messages" were system reminders/hooks
+
+7. Pending Tasks:
+   - Fix 3 remaining test failures:
+     1. `test_dash_displays_impl_column_headers` - "remote-impl" header truncated (width=10, need 11)
+     2. `test_plan_list_pr_column_with_conflicts` - `💥` conflict emoji not in output
+     3. `test_plan_list_shows_worktree_from_local_impl` - "feature-worktree" truncated (width=14, need 16)
+   - After tests pass: Run full CI (`/local:py-fast-ci`)
+   - Verify `.impl/` preserved (`erk exec impl-verify`)
+   - Signal ended (`erk exec impl-signal ended`)
+   - Upload session for async learn
+   - Submit PR (`erk pr submit`)
+   - Pre-existing test failure: `test_row_to_values_draft_pr_includes_stage` was already failing before changes
+
+8. Current Work:
+   Working on fixing the last 3 test failures from the CI iteration. The conftest fixture to force `github` plan backend is now working (using direct `os.environ` manipulation). The latest test run showed 3 failures:
+   - `test_dash_displays_impl_column_headers`: Column header "remote-impl" truncated to "remote-im…" because `width=10` but header is 11 chars
+   - `test_plan_list_pr_column_with_conflicts`: `💥` conflict emoji not appearing. From output, PR `#204` and `👀` are visible, but conflict indicator is not shown. The `chks` column shows `✅`.
+   - `test_plan_list_shows_worktree_from_local_impl`: Worktree name "feature-worktree" truncated to "feature-workt…" because `width=14` but name is 16 chars
+
+9. Optional Next Step:
+   Fix the 3 remaining test failures. The approaches are:
+   1. For truncation issues: Either increase column widths in `_build_static_table()` (change `remote-impl` width from 10 to 11) OR update test assertions to match truncated output (e.g., assert `"remote-im"` instead of `"remote-impl"`, assert `"feature-workt"` instead of `"feature-worktree"`)
+   2. For the conflict emoji: Investigate `get_pr_status_emoji()` to understand if it includes `💥` for conflicts, or if the conflict indicator is only added by `format_pr_cell`. May need to update the test assertion since `_build_row_data` constructs `pr_display` differently than the old code.
+   
+   After fixing these 3 tests, run the full CI suite with `/local:py-fast-ci`, then complete the remaining plan-implement steps (verify `.impl/`, signal ended, upload session, submit PR).
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-38/e4b21715-317c-43e8-866f-61642204cd58.jsonl
+Please continue the conversation from where we left off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <thinking>Let me continue fixing the 3 remaining test failures:
+
+1. `test_dash_displays_impl_column_headers` - "remote-impl" header truncated (width=10, need 11)
+2. `test_plan_list_pr_column_with_conflicts` - `💥` conflict emoji not in output
+3. `test_plan_list_shows_worktree_from_local_impl` - "feature-worktree" truncated (width=14, need 16)
+
+Let me read the current state of `list_cmd.py` to understand the column widths, and also look at `get_pr_status_emoji` to understand the conflict emoji issue.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="29268" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29268}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Continuing with the 3 remaining test failures. Let me read the current state of the relevant files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="29268" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29268}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WXuNXQ3CCykh8vCPcTbj5d">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29268" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29268}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WXuNXQ3CCykh8vCPcTbj5d">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import ParamSpec, TypeVar
+     5→
+     6→import click
+     7→from rich.console import Console
+     8→from rich.table import Table
+     9→from rich.text import Text
+    10→
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    15→from erk.tui.app import ErkDashApp
+    16→from erk.tui.data.types import PlanFilters, PlanRowData
+    17→from erk.tui.sorting.logic import sort_plans
+    18→from erk.tui.sorting.types import SortKey, SortState
+    19→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    20→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    21→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    22→from erk_shared.gateway.clipboard.real import RealClipboard
+    23→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    24→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+    25→from erk_shared.gateway.http.auth import fetch_github_token
+    26→from erk_shared.gateway.http.fake import FakeHttpClient
+    27→from erk_shared.gateway.http.real import RealHttpClient
+    28→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.plan_store import get_plan_backend
+
+... [493 lines omitted] ...
+
+    82→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   273→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   376→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01D8W9HbtAjPA35DDJw7xHpE">
+    <param name="pattern">def get_pr_status_emoji</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29268" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29268}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D8W9HbtAjPA35DDJw7xHpE">
+Found 2 files
+src/erk/core/display_utils.py
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_013GNxjNyBqhRKSsbjoJyahW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_pr_columns.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29268" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29268}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013GNxjNyBqhRKSsbjoJyahW">
+     1→"""Tests for PR status column display in plan list command.
+     2→
+     3→Tests PR emoji display (open 👀, draft 🚧, merged 🎉, closed ⛔, conflict 💥).
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.types import PullRequestInfo
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→
+    19→
+    20→def test_plan_list_pr_column_open_pr() -&gt; None:
+    21→    """Test PR column displays open PR with 👀 emoji."""
+    22→    # Arrange
+    23→    plan = Plan(
+    24→        plan_identifier="100",
+    25→        title="Plan with Open PR",
+    26→        body="",
+    27→        state=PlanState.OPEN,
+    28→        url="https://github.com/owner/repo/issues/100",
+    29→        labels=["erk-plan"],
+    30→        assignees=[],
+
+... [334 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the emoji module and the `_build_row_data` method in the real provider to understand the conflict emoji issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="20173" cache_read_input_tokens="48309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20173}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015AoEUhvuckGnkGGxhJa79o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/emoji.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20173" cache_read_input_tokens="48309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20173}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015AoEUhvuckGnkGGxhJa79o">
+     1→"""GitHub PR and checks status emojis.
+     2→
+     3→This module provides emoji constants and formatting functions for displaying
+     4→GitHub PR states, checks status, and merge conflicts in CLI output.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.types import PullRequestInfo
+     8→
+     9→# PR state emojis (aligned with erk-statusline conventions)
+    10→PR_STATE_EMOJIS = {
+    11→    "OPEN": "👀",  # published/open PR
+    12→    "DRAFT": "🚧",  # draft PR
+    13→    "MERGED": "🎉",  # merged PR
+    14→    "CLOSED": "⛔",  # closed PR
+    15→}
+    16→
+    17→# Additional status indicators
+    18→CONFLICTS_EMOJI = "💥"  # merge conflicts
+    19→CHECKS_PENDING_EMOJI = "🔄"  # checks pending or no checks
+    20→CHECKS_PASSING_EMOJI = "✅"  # all checks passing
+    21→CHECKS_FAILING_EMOJI = "🚫"  # any checks failing
+    22→
+    23→
+    24→def get_pr_status_emoji(pr: PullRequestInfo) -&gt; str:
+    25→    """Get emoji representation of PR status (state + conflicts).
+    26→
+    27→    Returns a combination of state emoji (👀/🚧/🎉/⛔) and optionally
+    28→    a conflicts indicator (💥) for open/draft PRs with merge conflicts.
+    29→
+    30→    Args:
+
+... [86 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PdPQyeKcioxXwpjpMpbhHA">
+    <param name="pattern">pr_display|has_conflicts|conflict</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20173" cache_read_input_tokens="48309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20173}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PdPQyeKcioxXwpjpMpbhHA">
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py:4:GitHub PR states, checks status, and merge conflicts in CLI output.
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py:18:CONFLICTS_EMOJI = "💥"  # merge conflicts
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py:25:    """Get emoji representation of PR status (state + conflicts).
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py:28:    a conflicts indicator (💥) for open/draft PRs with merge conflicts.
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py:42:    # Add conflicts indicator for open/draft PRs (draft PRs also have state="OPEN")
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py:43:    if pr.state == "OPEN" and pr.has_conflicts:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:1081:                        has_conflicts=pr.has_conflicts,
+packages/erk-shared/src/erk_shared/gateway/github/types.py:192:    has_conflicts: bool | None = None
+packages/erk-shared/src/erk_shared/gateway/github/real.py:767:                # Parse conflicts status
+packages/erk-shared/src/erk_shared/gateway/github/real.py:768:                has_conflicts = None
+packages/erk-shared/src/erk_shared/gateway/github/real.py:771:                    has_conflicts = True
+packages/erk-shared/src/erk_shared/gateway/github/real.py:773:                    has_conflicts = False
+packages/erk-shared/src/erk_shared/gateway/github/real.py:788:                    has_conflicts=has_conflicts,
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1247:        has_conflicts = self._parse_mergeable_status(source.get("mergeable"))
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1262:            has_conflicts=has_conflicts,
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1302:        """Parse has_conflicts from mergeable field."""
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1581:                has_conflicts=None,  # Not fetched in batch API
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1703:            has_conflicts = self._parse_mergeable_status(node.get("mergeable"))
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1716:                has_conflicts=has_conflicts,
+packages/erk-shared/src/erk_shared/gateway/github/real.py:2205:                    has_conflicts=None,  # Not fetched in this API call
+  </tool_result>
+  <thinking>So `get_pr_status_emoji()` DOES include the conflict emoji `💥` - it checks `pr.state == "OPEN" and pr.has_conflicts`. The test creates a PR with `has_conflicts=True` and `state="OPEN"`, so `get_pr_status_emoji()` should return `"👀💥"`.
+
+The issue must be somewhere in how the `pr_display` is built in `_build_row_data`. Let me look at that method.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2492" cache_read_input_tokens="68482" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2492}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good - `get_pr_status_emoji()` already handles the `💥` conflict emoji. So the issue must be in how `_build_row_data` builds the PR display. Let me check that.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2492" cache_read_input_tokens="68482" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2492}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AohWZ4s43tcDCqX2uQPMjw">
+    <param name="pattern">pr_display|_build_row_data</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2492" cache_read_input_tokens="68482" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2492}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AohWZ4s43tcDCqX2uQPMjw">
+185:            row = self._build_row_data(
+483:    def _build_row_data(
+562:        pr_display = "-"
+592:                pr_display = f"#{selected_pr.number} {emoji}"
+712:            pr_display=pr_display,
+  </tool_result>
+  <tool_use name="Read" id="toolu_013QfzZjvMRDCUsT4VcqRrk6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">555</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="70974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 422}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013QfzZjvMRDCUsT4VcqRrk6">
+   555→
+   556→        # PR info
+   557→        pr_number: int | None = None
+   558→        pr_url: str | None = None
+   559→        pr_title: str | None = None
+   560→        pr_state: str | None = None
+   561→        pr_head_branch: str | None = None
+   562→        pr_display = "-"
+   563→        checks_display = "-"
+   564→
+   565→        # Comment counts - "-" when no PR
+   566→        resolved_comment_count = 0
+   567→        total_comment_count = 0
+   568→        comments_display = "-"
+   569→
+   570→        # PR status fields for lifecycle enrichment
+   571→        pr_is_draft: bool | None = None
+   572→        pr_has_conflicts: bool | None = None
+   573→        pr_review_decision: str | None = None
+   574→        pr_checks_passing: bool | None = None
+   575→        pr_has_unresolved_comments: bool | None = None
+   576→
+   577→        if plan_id in pr_linkages:
+   578→            issue_prs = pr_linkages[plan_id]
+   579→            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
+   580→            if selected_pr is not None:
+   581→                pr_number = selected_pr.number
+   582→                pr_title = selected_pr.title
+   583→                pr_state = selected_pr.state
+   584→                pr_head_branch = selected_pr.head_branch
+
+... [20 lines omitted] ...
+  </tool_result>
+  <thinking>OK so `_build_row_data` at line 589 calls `get_pr_status_emoji(selected_pr)` which already handles conflicts. And `get_pr_status_emoji` does check `pr.state == "OPEN" and pr.has_conflicts` to add `💥`.
+
+So if the test has `state="OPEN"` and `has_conflicts=True`, the emoji should include `💥`. Let me think about what might be going wrong...
+
+The test creates a `PullRequestInfo` with `has_conflicts=True` and `state="OPEN"`. It passes this via `pr_issue_linkages={104: [pr]}` to `FakeGitHub`. Then `RealPlanDataProvider._build_row_data` should get these PR linkages and call `get_pr_status_emoji(selected_pr)`.
+ 
+I need to check whether `FakeGitHub.get_issues_with_pr_linkages()` is actually preserving the `has_conflicts` flag when it returns the PR data, or if it's creating fresh `PullRequestInfo` objects that lose that attribute.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1137" cache_read_input_tokens="71396" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1137}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `FakeGitHub.get_issues_with_pr_linkages()` handles PR data - it might not preserve `has_conflicts`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1137" cache_read_input_tokens="71396" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1137}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FGZZtffJ5Zo8QHf8rfzS7C">
+    <param name="pattern">get_issues_with_pr_linkages</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1137" cache_read_input_tokens="71396" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1137}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FGZZtffJ5Zo8QHf8rfzS7C">
+94:            issues_data: List of IssueInfo objects for get_issues_with_pr_linkages()
+95-            pr_titles: Mapping of pr_number -&gt; title for explicit title storage
+96-            pr_bodies_by_number: Mapping of pr_number -&gt; body for explicit body storage
+97-            pr_diffs: Mapping of pr_number -&gt; diff content
+98-            pr_changed_files: Mapping of pr_number -&gt; list of changed file paths
+99-            merge_should_succeed: Whether merge_pr() should succeed (default True)
+100-            pr_update_should_succeed: Whether PR updates should succeed (default True)
+101-            pr_review_threads: Mapping of pr_number -&gt; list[PRReviewThread]
+102-            review_threads_rate_limited: Whether get_pr_review_threads() should raise
+103-                RuntimeError simulating GraphQL rate limit
+104-            resolve_thread_failures: Set of thread IDs that should fail when resolved
+105-            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+106-                Use to simulate HTTP 406 "diff too large" errors.
+107-            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+108-                RuntimeError with this message. Use to simulate API failures.
+109-            artifact_download_callback: Optional callback invoked when download_run_artifact()
+110-                is called. Callback receives (run_id, artifact_name, destination) and can create
+111-                files in destination to simulate artifact content. Return True for success,
+112-                False or raise to simulate failure.
+113-        plan_pr_details: Pre-configured data for list_plan_prs_with_details().
+114-            Tuple of (pr_details_list, pr_linkages). Defaults to empty.
+115-        """
+116-        # Default to test values if not provided
+117-        self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
+118-        self._prs = prs or {}
+119-        self._pr_bases = pr_bases or {}
+120-        self._pr_details = pr_details or {}
+121-        self._prs_by_branch = prs_by_branch or {}
+122-        self._workflow_runs = workflow_runs or []
+123-        self._workflow_runs_by_node_id = workflow_runs_by_node_id or {}
+
+... [93 lines omitted] ...
+
+146-        self._resolve_thread_failures = resolve_thread_failures or set()
+147-        self._pr_diff_error = pr_diff_error
+148-        self._workflow_runs_error = workflow_runs_error
+  </tool_result>
+  <thinking>OK so `get_issues_with_pr_linkages` returns the PR objects directly from `self._pr_issue_linkages`. And the test sets `pr_issue_linkages={104: [pr]}` where `pr` has `has_conflicts=True`. So the `PullRequestInfo` should be passed through correctly.
+
+Let me check what `select_display_pr` does - maybe it filters or transforms the PR.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="72533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The PR objects are passed through directly. Let me check `select_display_pr`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="72533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019omnxLuJZJb7FRGyGRiV1h">
+    <param name="pattern">def select_display_pr</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="72533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019omnxLuJZJb7FRGyGRiV1h">
+Found 1 file
+src/erk/core/pr_utils.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CSR4TnpPHHcTQLaEJCnZkA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/core/pr_utils.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="74898" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 240}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CSR4TnpPHHcTQLaEJCnZkA">
+     1→"""Utility functions for PR handling."""
+     2→
+     3→from erk_shared.gateway.github.types import PullRequestInfo
+     4→
+     5→
+     6→def select_display_pr(
+     7→    prs: list[PullRequestInfo],
+     8→    *,
+     9→    exclude_pr_numbers: set[int] | None,
+    10→) -&gt; PullRequestInfo | None:
+    11→    """Select PR to display: prefer open, then merged, then closed.
+    12→
+    13→    Excludes PRs matching exclude_pr_numbers so the implementation PR is
+    14→    preferred.  Falls back to unfiltered selection if excluding leaves no
+    15→    candidates.
+    16→
+    17→    Args:
+    18→        prs: List of PRs sorted by created_at descending (most recent first)
+    19→        exclude_pr_numbers: PR numbers to exclude from selection
+    20→
+    21→    Returns:
+    22→        PR to display, or None if no PRs
+    23→    """
+    24→    candidates = prs
+    25→    if exclude_pr_numbers is not None:
+    26→        filtered = [pr for pr in prs if pr.number not in exclude_pr_numbers]
+    27→        if filtered:
+    28→            candidates = filtered
+    29→
+    30→    # Check for open PRs (published or draft)
+
+... [16 lines omitted] ...
+  </tool_result>
+  <thinking>OK so the PR data flow looks correct. `get_pr_status_emoji(selected_pr)` checks `pr.state == "OPEN" and pr.has_conflicts` which should give `"👀💥"`. Then `pr_display = f"#{selected_pr.number} {emoji}"` would give `"#204 👀💥"`.
+
+Now in `_row_to_static_values`, the `pr_display` is accessed via `row.pr_display` and then `strip_rich_markup(row.pr_display)`. The `pr_display` field would be `"#204 👀💥"` which has no Rich markup, so `strip_rich_markup` would return it as-is.
+ 
+But I'm realizing the emoji are taking up more display width than I initially thought. The string `"#204 👀💥"` looks like 7 characters, but Rich renders emoji as 2 cells wide each, so the actual display width is 9 cells—which exceeds the column width of 8.
+
+The solution is to bump the PR column width up to 10 to safely handle cases like `#NNN 👀💥🔗`, accounting for up to 5-digit PR numbers plus space plus multiple emoji.  I also need to increase the `remote-impl` column from 10 to 11 to prevent similar truncation issues. For the worktree column, `local-wt` is currently width 14 but `feature-worktree` is 16 characters, so I'll need to adjust that test case as well.
+
+Let me check what the TUI's column widths are to make sure I'm not breaking anything else.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3812" cache_read_input_tokens="75138" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3812}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the TUI column widths to make sure I align properly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3812" cache_read_input_tokens="75138" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3812}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RVLgXZ8J577ZjjDh4ZK8ys">
+    <param name="pattern">add_column|width=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/tui/widgets/plan_table.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3812" cache_read_input_tokens="75138" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3812}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RVLgXZ8J577ZjjDh4ZK8ys">
+157:        self.add_column(plan_col_header, key="plan", width=6)
+162:            self.add_column("slug", key="slug", width=25)
+164:            self.add_column("prog", key="progress", width=5)
+166:            self.add_column("state", key="state", width=20)
+168:            self.add_column("deps", key="deps", width=12)
+170:            self.add_column("updated", key="updated", width=7)
+172:            self.add_column("created by", key="author", width=12)
+178:            self.add_column("stage", key="stage", width=8)
+180:            self.add_column("sts", key="sts", width=4)
+182:            self.add_column("created", key="created", width=7)
+184:        self.add_column("obj", key="objective", width=5)
+190:        self.add_column("loc", key="location", width=3)
+193:        self.add_column("branch", key="branch", width=42)
+196:        self.add_column("run-id", key="run_id", width=10)
+198:        self.add_column("run", key="run_state", width=3)
+201:            self.add_column("created", key="created", width=7)
+203:        self.add_column("author", key="author", width=9)
+208:            self.add_column("pr", key="pr", width=8)
+210:        self.add_column("chks", key="chks", width=8)
+212:        self.add_column("cmts", key="comments", width=5)
+215:        self.add_column("local-wt", key="local_wt", width=14)
+217:        self.add_column("local-impl", key="local_impl", width=10)
+219:        self.add_column("remote-impl", key="remote_impl", width=10)
+  </tool_result>
+  <thinking>OK so the TUI also has `remote-impl` at `width=10` and `local-wt` at `width=14` and `pr` at `width=8`. The TUI uses Textual's DataTable, not Rich's Table, so the truncation behavior might differ. But the static CLI version uses Rich's Table.
+
+I have two options:
+1. Increase column widths in the static table to accommodate the content (diverge from TUI widths)
+2. Update the test assertions to match the truncated output
+
+The plan says to match TUI column widths exactly, so I should update the test assertions instead. But wait - if the TUI shows the same truncation, then the test assertions are wrong in both cases. 
+
+Actually, I'm realizing the TUI's DataTable handles overflow differently than Rich's Table. Textual's DataTable columns stretch with content and scroll horizontally, so `width=` is just a minimum, not a hard limit. The static Rich Table with `no_wrap=True` truncates strictly to the specified width. So I need to increase the column widths in the static table to fit the content—`remote-impl` needs at least 11 characters for its header, and `pr` needs adjusting too. 10 to accommodate `#NNN 👀💥` (9 cells). Actually wait, the TUI has it at 8 too. The question is whether the TUI truncates...
+3. For `local-wt`: update the test to use a shorter worktree name that fits in 14 chars.
+
+Actually, let me reconsider. The important thing is:
+- The `remote-impl` column header is 11 chars but width=10. This is a real issue - even the TUI would show this incorrectly. I should increase to 11.
+- The `pr` column: the `💥` is being truncated because `#204 👀💥` is 9 display cells but width=8. I should increase to 10.
+- The `local-wt` column: `feature-worktree` (16 chars) doesn't fit in 14. This is expected behavior - long names get truncated. The test should use a shorter name.
+
+Let me check what the TUI actually renders for the PR cell to be sure. Actually, I'll just make the fixes: bump `remote-impl` width to 11 to fit the header, increase `pr` width to 10 for the emoji, and swap the test worktree name to something shorter like `feat-wt` that still demonstrates the detection works without needing a long name. I'll apply those three fixes now: updating the column widths in the static table and adjusting the test to use a shorter worktree name.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1452" cache_read_input_tokens="78950" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1452}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand all three issues:
+
+1. **`remote-impl`** header is 11 chars but column width=10, truncating to `remote-im…`
+2. **`pr`** column: `#204 👀💥` is 9 display cells (emoji are 2 cells each) but width=8, truncating `💥`
+3. **`local-wt`** column: `feature-worktree` is 16 chars but width=14, truncating the name
+
+Fix approach:
+- Increase `remote-impl` width from 10 to 11
+- Increase `pr` width from 8 to 10
+- Use a shorter worktree name in the test (14 chars is a reasonable column width)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1452" cache_read_input_tokens="78950" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1452}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Lr5qRD9Y2oN6G5GGCwBkBh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py</param>
+    <param name="old_string">    if show_pr_column:
+        table.add_column("pr", no_wrap=True, width=8)
+    table.add...[truncated 156 chars]...impl", no_wrap=True, width=10)
+    table.add_column("remote-impl", no_wrap=True, width=10)</param>
+    <param name="new_string">    if show_pr_column:
+        table.add_column("pr", no_wrap=True, width=10)
+    table.ad...[truncated 157 chars]...impl", no_wrap=True, width=10)
+    table.add_column("remote-impl", no_wrap=True, width=11)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1452" cache_read_input_tokens="78950" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1452}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lr5qRD9Y2oN6G5GGCwBkBh">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/src/erk/cli/commands/plan/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01N8C3EgcFbo1ahL6C8kcirs">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_worktree_detection.py</param>
+    <param name="old_string">        worktree_path = env.cwd.parent / "feature-worktree"
+        worktree_path.mkdir(pa...[truncated 1398 chars]...
+        assert "#950" in result.output
+        assert "feature-worktree" in result.output</param>
+    <param name="new_string">        worktree_path = env.cwd.parent / "feat-wt"
+        worktree_path.mkdir(parents=Tru...[truncated 1380 chars]...code == 0
+        assert "#950" in result.output
+        assert "feat-wt" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1452" cache_read_input_tokens="78950" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1452}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N8C3EgcFbo1ahL6C8kcirs">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-38/tests/commands/dash/test_worktree_detection.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the 3 previously-failing tests to verify they pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3132" cache_read_input_tokens="80402" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3132}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01PFHRfPfzwKN3SB5z8twHBH">
+    <param name="description">Run 3 failing dash tests</param>
+    <param name="prompt">Run the following pytest command from the repository root /Users/schrockn/.erk/repos/erk/w...[truncated 264 chars]...n.py::test_plan_list_shows_worktree_from_local_impl"
+
+Report: pass/fail, any error output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3132" cache_read_input_tokens="80402" output_tokens="266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3132, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
