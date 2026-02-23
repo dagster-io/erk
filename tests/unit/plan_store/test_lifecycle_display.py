@@ -31,6 +31,20 @@ def _format_lifecycle(
     )
 
 
+def _lifecycle(
+    plan: Plan,
+    *,
+    has_workflow_run: bool = False,
+    has_local_worktree: bool = False,
+) -> str:
+    """Test helper: wraps compute_lifecycle_display with False defaults."""
+    return compute_lifecycle_display(
+        plan,
+        has_workflow_run=has_workflow_run,
+        has_local_worktree=has_local_worktree,
+    )
+
+
 def _make_plan(
     *,
     header_fields: dict[str, object] | None = None,
@@ -59,44 +73,45 @@ def _make_plan(
 def test_prompted_stage_returns_magenta_markup() -> None:
     """prompted header field returns magenta markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "prompted"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[magenta]prompted[/magenta]"
+    result = _lifecycle(plan)
+    assert result == "[magenta]prompted[/magenta]"
 
 
 def test_planning_stage_returns_magenta_markup() -> None:
     """planning header field returns magenta markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planning"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[magenta]planning[/magenta]"
+    assert _lifecycle(plan) == "[magenta]planning[/magenta]"
 
 
 def test_planned_stage_returns_dim_markup() -> None:
     """planned header field returns dim markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[dim]planned[/dim]"
+    assert _lifecycle(plan) == "[dim]planned[/dim]"
 
 
 def test_implementing_stage_returns_yellow_markup() -> None:
     """implementing header field returns yellow markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
-    result = compute_lifecycle_display(plan, has_workflow_run=False)
+    result = _lifecycle(plan)
     assert result == "[yellow]impl[/yellow]"
 
 
 def test_implemented_stage_returns_cyan_markup() -> None:
     """implemented header field returns cyan markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]impl[/cyan]"
+    assert _lifecycle(plan) == "[cyan]impl[/cyan]"
 
 
 def test_merged_stage_returns_green_markup() -> None:
     """merged header field returns green markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "merged"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[green]merged[/green]"
+    assert _lifecycle(plan) == "[green]merged[/green]"
 
 
 def test_closed_stage_returns_dim_red_markup() -> None:
     """closed header field returns dim red markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "closed"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[dim red]closed[/dim red]"
+    assert _lifecycle(plan) == "[dim red]closed[/dim red]"
 
 
 # --- No header field, infer from metadata ---
@@ -105,25 +120,25 @@ def test_closed_stage_returns_dim_red_markup() -> None:
 def test_infer_planned_from_draft_open_pr() -> None:
     """Draft + OPEN PR infers planned stage."""
     plan = _make_plan(metadata={"is_draft": True, "pr_state": "OPEN"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[dim]planned[/dim]"
+    assert _lifecycle(plan) == "[dim]planned[/dim]"
 
 
 def test_infer_review_from_non_draft_open_pr() -> None:
     """Non-draft + OPEN PR infers implemented stage."""
     plan = _make_plan(metadata={"is_draft": False, "pr_state": "OPEN"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[cyan]impl[/cyan]"
+    assert _lifecycle(plan) == "[cyan]impl[/cyan]"
 
 
 def test_infer_merged_from_merged_pr() -> None:
     """Non-draft + MERGED PR infers merged stage."""
     plan = _make_plan(metadata={"is_draft": False, "pr_state": "MERGED"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[green]merged[/green]"
+    assert _lifecycle(plan) == "[green]merged[/green]"
 
 
 def test_infer_closed_from_closed_pr() -> None:
     """Non-draft + CLOSED PR infers closed stage."""
     plan = _make_plan(metadata={"is_draft": False, "pr_state": "CLOSED"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[dim red]closed[/dim red]"
+    assert _lifecycle(plan) == "[dim red]closed[/dim red]"
 
 
 # --- No header field, no metadata ---
@@ -132,13 +147,13 @@ def test_infer_closed_from_closed_pr() -> None:
 def test_no_header_no_metadata_returns_dash() -> None:
     """No header field and no metadata returns dash."""
     plan = _make_plan()
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "-"
+    assert _lifecycle(plan) == "-"
 
 
 def test_empty_metadata_returns_dash() -> None:
     """Empty metadata dict returns dash."""
     plan = _make_plan(metadata={})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "-"
+    assert _lifecycle(plan) == "-"
 
 
 # --- Unknown stage string ---
@@ -147,7 +162,7 @@ def test_empty_metadata_returns_dash() -> None:
 def test_unknown_stage_returns_stage_without_markup() -> None:
     """Unknown stage string returns stage with no markup."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "custom-stage"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "custom-stage"
+    assert _lifecycle(plan) == "custom-stage"
 
 
 # --- Header field takes precedence over metadata ---
@@ -159,7 +174,7 @@ def test_header_field_takes_precedence_over_metadata() -> None:
         header_fields={LIFECYCLE_STAGE: "implementing"},
         metadata={"is_draft": False, "pr_state": "MERGED"},
     )
-    result = compute_lifecycle_display(plan, has_workflow_run=False)
+    result = _lifecycle(plan)
     assert result == "[yellow]impl[/yellow]"
 
 
@@ -542,37 +557,83 @@ def test_implementing_checks_passing_no_rocket() -> None:
 def test_planned_with_workflow_run_upgrades_to_implementing() -> None:
     """Header "planned" with workflow run upgrades to implementing."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
+    assert _lifecycle(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
 
 
 def test_planned_without_workflow_run_stays_planned() -> None:
     """Header "planned" without workflow run stays planned."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
-    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[dim]planned[/dim]"
+    assert _lifecycle(plan) == "[dim]planned[/dim]"
 
 
 def test_inferred_planned_with_workflow_run_upgrades_to_implementing() -> None:
     """Draft + OPEN (inferred planned) with workflow run upgrades to implementing."""
     plan = _make_plan(metadata={"is_draft": True, "pr_state": "OPEN"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
+    assert _lifecycle(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
 
 
 def test_implementing_with_workflow_run_stays_implementing() -> None:
     """Already implementing with workflow run stays implementing (no double-upgrade)."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
+    assert _lifecycle(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
 
 
 def test_implemented_with_workflow_run_stays_implemented() -> None:
     """Past implementing stage with workflow run does not downgrade."""
     plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[cyan]impl[/cyan]"
+    assert _lifecycle(plan, has_workflow_run=True) == "[cyan]impl[/cyan]"
 
 
 def test_no_stage_with_workflow_run_returns_dash() -> None:
     """No stage resolved with workflow run still returns dash."""
     plan = _make_plan()
-    assert compute_lifecycle_display(plan, has_workflow_run=True) == "-"
+    assert _lifecycle(plan, has_workflow_run=True) == "-"
+
+
+# --- Local worktree inference tests ---
+
+
+def test_planned_with_local_worktree_upgrades_to_implementing() -> None:
+    """Header "planned" with local worktree upgrades to implementing."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
+    assert _lifecycle(plan, has_local_worktree=True) == "[yellow]impl[/yellow]"
+
+
+def test_planned_without_local_worktree_stays_planned() -> None:
+    """Header "planned" without local worktree stays planned."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
+    assert _lifecycle(plan) == "[dim]planned[/dim]"
+
+
+def test_inferred_planned_with_local_worktree_upgrades_to_implementing() -> None:
+    """Draft + OPEN (inferred planned) with local worktree upgrades to implementing."""
+    plan = _make_plan(metadata={"is_draft": True, "pr_state": "OPEN"})
+    assert _lifecycle(plan, has_local_worktree=True) == "[yellow]impl[/yellow]"
+
+
+def test_planned_with_both_workflow_run_and_worktree_upgrades() -> None:
+    """Planned with both workflow run and local worktree upgrades to implementing."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
+    result = _lifecycle(plan, has_workflow_run=True, has_local_worktree=True)
+    assert result == "[yellow]impl[/yellow]"
+
+
+def test_already_implementing_with_local_worktree_stays_implementing() -> None:
+    """Already implementing with local worktree stays implementing (no double-upgrade)."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
+    assert _lifecycle(plan, has_local_worktree=True) == "[yellow]impl[/yellow]"
+
+
+def test_implemented_with_local_worktree_stays_implemented() -> None:
+    """Past implementing stage with local worktree does not downgrade."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implemented"})
+    assert _lifecycle(plan, has_local_worktree=True) == "[cyan]impl[/cyan]"
+
+
+def test_no_stage_with_local_worktree_returns_dash() -> None:
+    """No stage resolved with local worktree still returns dash."""
+    plan = _make_plan()
+    assert _lifecycle(plan, has_local_worktree=True) == "-"
 
 
 # --- compute_status_indicators tests ---

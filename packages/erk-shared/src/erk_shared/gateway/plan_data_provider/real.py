@@ -696,7 +696,9 @@ class RealPlanDataProvider(PlanDataProvider):
 
         # Compute lifecycle display from header or infer from metadata
         lifecycle_display = _compute_lifecycle_display(
-            plan, has_workflow_run=workflow_run is not None
+            plan,
+            has_workflow_run=workflow_run is not None,
+            has_local_worktree=exists_locally,
         )
 
         # Compute status indicators separately for the "sts" column
@@ -851,7 +853,9 @@ def _format_learn_display_icon(
     return "-"
 
 
-def _compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
+def _compute_lifecycle_display(
+    plan: Plan, *, has_workflow_run: bool, has_local_worktree: bool
+) -> str:
     """Compute lifecycle stage display string for a plan.
 
     Delegates to lifecycle.compute_lifecycle_display. This wrapper preserves
@@ -859,7 +863,9 @@ def _compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
     """
     from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
 
-    return compute_lifecycle_display(plan, has_workflow_run=has_workflow_run)
+    return compute_lifecycle_display(
+        plan, has_workflow_run=has_workflow_run, has_local_worktree=has_local_worktree
+    )
 
 
 def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -> None:
