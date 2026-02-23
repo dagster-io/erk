@@ -1591,7 +1591,7 @@ query {{
                 has_conflicts=None,  # Not fetched in batch API
                 checks_counts=None,
                 will_close_target=False,
-                base_ref_name=pr_data["base"]["ref"],
+                base_ref_name=pr_data.get("base", {}).get("ref"),
             )
 
         return result
