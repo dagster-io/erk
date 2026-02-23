@@ -1,0 +1,891 @@
+<session>
+  <meta branch="plnd/extract-ai-generation-02-23-0219" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="2c990b4b-adfc-4ad2-920e-ba328170c73a"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="2c990b4b-adfc-4ad2-920e-ba328170c73a" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="2c990b4b-adfc-4ad2-920e-ba328170c73a" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the instructions step by step.
+
+Step 0: No arguments provided, so no ISSUE_ARG or FILE_ARG.
+
+Step 1b: Check if `.impl/` already exists by running `erk exec impl-init --json`.
+
+Let me start by checking if `.impl/` exists.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12889" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12889}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12889" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12889}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PyV3gP8LUp2MBUyMmH9ACb">
+    <param name="command">erk exec impl-init --json</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12889" cache_read_input_tokens="19041" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12889, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PyV3gP8LUp2MBUyMmH9ACb">
+{"valid": true, "impl_type": "impl", "has_plan_tracking": true, "related_docs": {"skills": [], "docs": []}, "plan_number": 7946}
+  </tool_result>
+  <assistant>Valid `.impl/` found with issue tracking (plan #7946). Let me sync with remote and read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15652" cache_read_input_tokens="16826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15652}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FTEaAisRTbz2tCi7XTNwkM">
+    <param name="command">erk exec setup-impl-from-issue 7946</param>
+    <param name="description">Sync local branch with remote for plan #7946</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15652" cache_read_input_tokens="16826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15652}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FTEaAisRTbz2tCi7XTNwkM">
+Found existing .impl/ for plan #7946, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl", "plan_number": 7946, "plan_url": "https://github.com/dagster-io/erk/pull/7946", "branch": "plnd/extract-ai-generation-02-23-0219", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ho16LH8dSDHWrzXAbxMViq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15652" cache_read_input_tokens="16826" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15652, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ho16LH8dSDHWrzXAbxMViq">
+     1→# Plan: Split AI Generation Out of `erk pr submit`
+     2→
+     3→## Context
+     4→
+     5→`erk pr submit` internally calls Claude (via `CommitMessageGenerator` → `ctx.prompt_executor`) to generate PR title and body. When invoked from a Claude Code skill, this creates a nested Claude API call that runs as an opaque subprocess — taking 9+ minutes with zero progress visibility, confusing the agent and blocking the session.
+     6→
+     7→The fix: give the agent two `erk exec` commands to bookend the AI step, so the agent generates the description natively (no subprocess) and a thin exec command applies the result.
+     8→
+     9→## New Flow (in `/erk:pr-submit` skill)
+    10→
+    11→```
+    12→erk pr submit --skip-description       # git/graphite ops only — no AI
+    13→erk exec get-pr-context                # agent reads diff + plan + commits
+    14→[agent generates title + body]
+    15→erk exec set-pr-description --title "..." --body "..."  # applies result to PR
+    16→```
+    17→
+    18→## Changes
+    19→
+    20→### 1. `erk pr submit --skip-description` flag
+    21→
+    22→**File:** `src/erk/cli/commands/pr/submit_cmd.py` (add `--skip-description` option)
+    23→**File:** `src/erk/cli/commands/pr/submit_pipeline.py` (pass flag through `SubmitState`, skip phases 4-5)
+    24→
+    25→When `--skip-description` is set, the pipeline executes phases 1-3 (push + create PR + PR footer) then exits early — skipping `generate_description` and the PR title/body update in `finalize_pr`. The PR gets created with a placeholder title (branch name or first commit subject) and empty body.
+    26→
+    27→### 2. `erk exec get-pr-context` (new)
+    28→
+    29→**File:** `src/erk/cli/commands/exec/scripts/get_pr_context.py`
+    30→
+
+... [89 lines omitted] ...
+
+    99→- No PR found: exits 1 with clear error
+   105→- Issue mismatch: exits 1 with error
+  </tool_result>
+  <thinking>Good, I have the plan. Now let me follow the steps:
+
+Step 2d: Clean up `.erk/impl-context/` if it exists
+Step 3: I've already read the plan
+Step 4: No related documentation skills listed
+Step 5: Create TodoWrite entries for each phase
+Step 6: Signal GitHub started
+Step 7: Execute phases
+
+Let me first clean up impl-context and check for the post-plan-implement-ci hook, then create tasks.
+
+Let me also check what files already exist on this branch to understand what work may have already been done.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="32478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UKQavNYQG42xJi3MjaVRqx">
+    <param name="command">if [ -d .erk/impl-context/ ]; then git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove ...[truncated 29 chars]...push origin "$(git branch --show-current)"; else echo "No .erk/impl-context/ to clean"; fi</param>
+    <param name="description">Clean up impl-context directory if it exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="32478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UKQavNYQG42xJi3MjaVRqx">
+No .erk/impl-context/ to clean
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01A7vpx3QKbRDfKEsWpSPKQe">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Check recent commits on this branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="32478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A7vpx3QKbRDfKEsWpSPKQe">
+65e094002 WIP: Prepare for PR submission
+d79268854 WIP: Prepare for PR submission
+6feab9148 Remove .erk/impl-context/ before implementation
+df6632fa3 Add plan for PR #7946
+f80dbbb39 Add plan: Plan: Split AI Generation Out of `erk pr submit`
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017kR5KKzhyH2mEddisWvRMB">
+    <param name="command">git diff --name-only master...HEAD</param>
+    <param name="description">See what files have changed from master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="32478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017kR5KKzhyH2mEddisWvRMB">
+.claude/commands/erk/pr-submit.md
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/exec/scripts/get_pr_context.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+src/erk/cli/commands/pr/submit_cmd.py
+src/erk/cli/commands/pr/submit_pipeline.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+tests/unit/cli/commands/exec/scripts/test_set_pr_description.py
+tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+  </tool_result>
+  <thinking>It looks like there's already been some implementation work on this branch - WIP commits. Let me read the current state of these files to understand what's already been done and what still needs work. Let me read the key files.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="34843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 936}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>There's already WIP work on this branch. Let me read the current state of the implementation to understand what's done and what needs fixing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="34843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 936}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018NYncASJoCW7mtwK8cNQ9A">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/get_pr_context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="34843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 936}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018NYncASJoCW7mtwK8cNQ9A">
+     1→"""Get PR context for agent-driven description generation.
+     2→
+     3→Outputs JSON to stdout with branch info, PR info, diff file path,
+     4→commit messages, and plan context. Designed for use by Claude Code
+     5→agents that generate PR descriptions natively rather than via subprocess.
+     6→
+     7→Usage:
+     8→    erk exec get-pr-context
+     9→
+    10→Exit Codes:
+    11→    0: Success (JSON output on stdout)
+    12→    1: Error (no branch, no PR, diff extraction failure)
+    13→"""
+    14→
+    15→import json
+    16→import uuid
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    discover_branch_context,
+    22→    echo_plan_context_status,
+    23→    run_diff_extraction,
+    24→)
+    25→from erk.core.plan_context_provider import PlanContextProvider
+    26→from erk_shared.context.helpers import require_context
+    27→from erk_shared.gateway.github.types import PRNotFound
+    28→
+    29→
+    30→@click.command(name="get-pr-context")
+
+... [75 lines omitted] ...
+
+    49→        raise click.ClickException(
+    64→        raise click.ClickException("Failed to extract diff")
+  </tool_result>
+  <tool_use name="Read" id="toolu_017B4RPbJLejpYo3FDDXGcbs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/set_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="34843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 936}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017B4RPbJLejpYo3FDDXGcbs">
+     1→"""Set PR title and body from agent-provided values.
+     2→
+     3→Takes --title and --body (or --body-file) and updates the PR on GitHub,
+     4→preserving existing header, footer, and metadata. This command does NOT
+     5→call Claude — it applies values already generated by the calling agent.
+     6→
+     7→Usage:
+     8→    erk exec set-pr-description --title "Fix auth bug" --body "Fixes the auth issue..."
+     9→    erk exec set-pr-description --title "Fix auth bug" --body-file /tmp/body.md
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (no PR, linkage mismatch)
+    14→"""
+    15→
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    IssueLinkageMismatch,
+    22→    assemble_pr_body,
+    23→    discover_branch_context,
+    24→    discover_issue_for_footer,
+    25→)
+    26→from erk.core.plan_context_provider import PlanContextProvider
+    27→from erk_shared.context.helpers import require_context
+    28→from erk_shared.gateway.github.pr_footer import extract_header_from_body
+    29→from erk_shared.gateway.github.types import BodyText, PRNotFound
+    30→from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
+
+... [98 lines omitted] ...
+
+    67→        raise click.ClickException(
+   105→            raise click.ClickException(issue_discovery.message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NFfH5gbWLfkzSdEmwriCm5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="34843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 936}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NFfH5gbWLfkzSdEmwriCm5">
+     1→"""Submit current branch as a pull request.
+     2→
+     3→Runs a linear pipeline of functions transforming a frozen SubmitState:
+     4→1. Prepare state (resolve repo, branch, parent, issue)
+     5→2. Commit WIP changes
+     6→3. Push and create/find PR (Graphite-first or core path)
+     7→4. Extract diff for AI
+     8→5. Fetch plan context
+     9→6. Generate AI PR description
+    10→7. Enhance with Graphite (if applicable)
+    11→8. Finalize PR metadata
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.pr.shared import require_claude_available
+    19→from erk.cli.commands.pr.submit_pipeline import (
+    20→    SubmitError,
+    21→    make_initial_state,
+    22→    run_submit_pipeline,
+    23→)
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.output.output import user_output
+    26→
+    27→# Set to False to disable polling for PR in Graphite cache after submission.
+    28→# This feature ensures the status line can immediately display the PR number.
+    29→ENABLE_PR_CACHE_POLLING = True
+    30→
+
+... [139 lines omitted] ...
+
+   145→    if isinstance(result, SubmitError):
+   146→        raise click.ClickException(result.message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DNd8pxWnq8kjo1Y8aWwHiV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="34843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 936}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DNd8pxWnq8kjo1Y8aWwHiV">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import uuid
+    11→from collections.abc import Callable
+    12→from dataclasses import dataclass
+    13→from functools import cache
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.pr.shared import (
+    19→    assemble_pr_body,
+    20→    echo_plan_context_status,
+    21→    run_commit_message_generation,
+    22→)
+    23→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    24→from erk.cli.ensure import UserFacingCliError
+    25→from erk.core.commit_message_generator import CommitMessageGenerator
+    26→from erk.core.context import ErkContext
+    27→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+    28→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+    29→from erk_shared.gateway.github.parsing import parse_git_remote_url
+    30→from erk_shared.gateway.github.pr_footer import (
+
+... [851 lines omitted] ...
+
+   100→class SubmitError:
+   101→    """Error result from a pipeline step."""
+   104→    error_type: str
+   113→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   116→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   127→        return SubmitError(
+   129→            error_type="no_branch",
+   144→    except ValueError as e:
+   145→        return SubmitError(
+   147→            error_type="issue_linkage_mismatch",
+   177→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   186→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   201→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   219→            return SubmitError(
+   221→                error_type="remote_diverged",
+   248→    except RuntimeError as e:
+   249→        error_str = str(e)
+   250→        if "restack" in error_str.lower():
+   251→            return SubmitError(
+   253→                error_type="graphite_restack_required",
+   262→        return SubmitError(
+   264→            error_type="graphite_submit_failed",
+   265→            message=f"Graphite submit failed: {e}",
+   275→        return SubmitError(
+   277→            error_type="pr_not_found",
+   305→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   312→        return SubmitError(
+   314→            error_type="github_auth_failed",
+   324→        return SubmitError(
+   326→            error_type="no_commits",
+   344→        if isinstance(pull_result, PullRebaseError):
+   345→            return SubmitError(
+   347→                error_type="rebase_failed",
+   349→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   350→                    f"Error: {pull_result.message}\n\n"
+   360→        return SubmitError(
+   362→            error_type="branch_diverged",
+   381→    if isinstance(push_result, PushError):
+   383→            return SubmitError(
+   385→                error_type="branch_diverged",
+   394→        raise UserFacingCliError(push_result.message)
+   405→                return SubmitError(
+   407→                    error_type="parent_branch_no_pr",
+   493→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   500→        return SubmitError(
+   502→            error_type="no_base_branch",
+   532→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   551→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   558→        return SubmitError(
+   560→            error_type="no_diff_file",
+   561→            message="Failed to extract diff for AI analysis",
+   581→        return SubmitError(
+   583→            error_type="ai_generation_failed",
+   584→            message=f"Failed to generate message: {msg_result.error_message}",
+   597→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   640→    except RuntimeError as e:
+   641→        error_msg = str(e).lower()
+   642→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   646→        return SubmitError(
+   648→            error_type="graphite_enhance_failed",
+   649→            message=f"Graphite enhancement failed: {e}",
+   666→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   673→        return SubmitError(
+   675→            error_type="no_pr_number",
+   755→        except OSError as e:
+   757→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   826→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   827→    """Run the submit pipeline, returning final state or first error."""
+   831→        except Exception as e:
+   833→            return SubmitError(
+   835→                error_type="unhandled_exception",
+   836→                message=f"Unexpected error in {step_name}: {e}",
+   839→        if isinstance(result, SubmitError):
+  </tool_result>
+  <tool_use name="Read" id="toolu_015MSPb4qNievZHFh8qBZ5y1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="34843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 936}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015MSPb4qNievZHFh8qBZ5y1">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    11→from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
+    12→    add_reaction_to_comment,
+    13→)
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.check_impl import check_impl
+    21→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    22→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    23→from erk.cli.commands.exec.scripts.close_issue_with_comment import (
+    24→    close_issue_with_comment,
+    25→)
+    26→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    27→    create_impl_context_from_plan,
+    28→)
+    29→from erk.cli.commands.exec.scripts.create_issue_from_session import (
+    30→    create_issue_from_session,
+
+... [247 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0189hN5gkbXDf8DNGASzkd9M">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/commands/erk/pr-submit.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="34843" output_tokens="579" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 936, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0189hN5gkbXDf8DNGASzkd9M">
+     1→---
+     2→description:
+     3→  Create git commit and submit current branch with Graphite (squashes commits
+     4→  and rebases stack)
+     5→argument-hint: &lt;description&gt;
+     6→---
+     7→
+     8→# Submit PR
+     9→
+    10→Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
+    11→
+    12→**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
+    13→
+    14→## Usage
+    15→
+    16→```bash
+    17→# Invoke the command (description argument is optional but recommended)
+    18→/erk:pr-submit "Add user authentication feature"
+    19→
+    20→# Without argument (will analyze changes automatically)
+    21→/erk:pr-submit
+    22→```
+    23→
+    24→## Implementation
+    25→
+    26→This command uses a three-step flow to avoid nested Claude subprocess calls:
+    27→
+    28→1. **Push + create PR** (no AI) via `erk pr submit --skip-description`
+    29→2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+    30→3. **Generate title + body** natively (you are the agent — no subprocess)
+
+... [69 lines omitted] ...
+
+    41→If this fails, display the error and stop.
+    56→Parse the JSON output. If this fails, display the error and stop.
+    74→If this fails, display the error and stop.
+    90→## Error Handling
+    92→If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+    94→Common errors:
+  </tool_result>
+  <thinking>Great, I now have a thorough understanding of the current state. The WIP commits show the implementation is already done. Let me look at the test files to check the current state of those as well.
+
+Let me now run CI to see if things pass. But first, let me understand what's there:
+
+1. `submit_cmd.py` - Has `--skip-description` flag ✓
+2. `submit_pipeline.py` - Has `skip_description` in SubmitState, pipeline steps skip when flag is set ✓
+3. `get_pr_context.py` - New exec script ✓
+4. `set_pr_description.py` - New exec script ✓
+
+
+5. `group.py` - Both commands registered ✓
+6. `pr-submit.md` - Updated with three-step flow ✓
+
+Now I'll check the test files and run CI to verify everything passes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="25156" cache_read_input_tokens="35779" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The implementation looks complete. Let me read the test files and then run CI to verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="25156" cache_read_input_tokens="35779" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011VdWC916yq8T62FLvmvbyT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/exec/scripts/test_get_pr_context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25156" cache_read_input_tokens="35779" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011VdWC916yq8T62FLvmvbyT">
+     1→"""Tests for erk exec get-pr-context command."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from erk_shared.gateway.github.fake import FakeGitHub
+    10→from erk_shared.gateway.github.types import PRDetails
+    11→from erk_shared.gateway.graphite.fake import FakeGraphite
+    12→from erk_shared.gateway.graphite.types import BranchMetadata
+    13→from tests.test_utils.context_builders import build_workspace_test_context
+    14→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    15→
+    16→
+    17→def _make_pr_details(
+    18→    *,
+    19→    number: int,
+    20→    branch: str,
+    21→    body: str = "",
+    22→) -&gt; PRDetails:
+    23→    return PRDetails(
+    24→        number=number,
+    25→        url=f"https://github.com/owner/repo/pull/{number}",
+    26→        title="WIP",
+    27→        body=body,
+    28→        base_ref_name="main",
+    29→        head_ref_name=branch,
+    30→        state="OPEN",
+
+... [128 lines omitted] ...
+
+    97→    """Exits 1 with clear error when no PR exists for the branch."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_014zBznUAdjj6QYpS5Hz7CBn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/exec/scripts/test_set_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25156" cache_read_input_tokens="35779" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014zBznUAdjj6QYpS5Hz7CBn">
+     1→"""Tests for erk exec set-pr-description command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.github.fake import FakeGitHub
+     8→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+     9→from erk_shared.gateway.github.types import PRDetails
+    10→from erk_shared.gateway.graphite.fake import FakeGraphite
+    11→from erk_shared.gateway.graphite.types import BranchMetadata
+    12→from erk_shared.gateway.time.fake import FakeTime
+    13→from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+    14→from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+    15→from tests.test_utils.context_builders import build_workspace_test_context
+    16→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    17→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    18→
+    19→
+    20→def _make_pr_details(
+    21→    *,
+    22→    number: int,
+    23→    branch: str,
+    24→    body: str = "",
+    25→) -&gt; PRDetails:
+    26→    return PRDetails(
+    27→        number=number,
+    28→        url=f"https://github.com/owner/repo/pull/{number}",
+    29→        title="WIP",
+    30→        body=body,
+
+... [226 lines omitted] ...
+  </tool_result>
+  <thinking>The implementation looks complete across all 6 planned changes. Let me now also check the existing submit pipeline tests to see if they were updated to account for the new `skip_description` parameter. Let me also check the test files that were modified.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9956" cache_read_input_tokens="60935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9956}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me create tasks, signal started, and run CI. Let me first check if the existing tests were properly updated for the `skip_description` field.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9956" cache_read_input_tokens="60935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9956}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01LXWkQG37VvFLHa6Q8MGCSz">
+    <param name="subject">Verify implementation completeness</param>
+    <param name="description">Check all 6 plan phases are implemented: --skip-description flag, get-pr-context, set-pr-description, command registration, pr-submit skill update, tests</param>
+    <param name="activeForm">Verifying implementation completeness</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9956" cache_read_input_tokens="60935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9956}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LXWkQG37VvFLHa6Q8MGCSz">
+Task #1 created successfully: Verify implementation completeness
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>

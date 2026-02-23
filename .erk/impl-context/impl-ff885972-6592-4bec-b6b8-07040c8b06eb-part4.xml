@@ -1,0 +1,651 @@
+<session>
+  <meta branch="plnd/extract-ai-generation-02-23-0219" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01RhgKNv4iGcqPjfoWtzoXkx">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now re-run the submit pipeline tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="159057" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 275}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01KfZDPYe6nm5a2Qr3EefXQe">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Re-run submit pipeline tests</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/commands/pr/submit_pipeline/ -x -q` and report the full output. Do not fix anything, just report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="159057" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 275}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KfZDPYe6nm5a2Qr3EefXQe">
+pytest passed: 55 tests passed in submit_pipeline test suite
+
+All tests in the submit_pipeline directory passed successfully.
+agentId: a07263f13ef9d4df9 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13468
+tool_uses: 1
+duration_ms: 5012&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 55 tests pass. Let me also check if there are any other test files that construct `SubmitState` that I might have missed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="159332" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JpN2Fiz5Nkv3B1Ne1g1FHA">
+    <param name="pattern">SubmitState\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="159332" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JpN2Fiz5Nkv3B1Ne1g1FHA">
+Found 7 files
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+  </tool_result>
+  <assistant>Good, all 7 files are the ones I already updated. Let me also run a broader test to make sure nothing else is broken — checking the update-pr-description tests and the submit_cmd tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="550" cache_read_input_tokens="159570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 550}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_015XzT6AtV4EVZr5BCCbxEwZ">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run broader PR tests</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/commands/exec/scripts/test_update_pr_description.py test...[truncated 86 chars]...escription.py -x -q` and report the full output. Do not fix anything, just report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="550" cache_read_input_tokens="159570" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 550, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015XzT6AtV4EVZr5BCCbxEwZ">
+pytest passed: 16 tests passed in test files covering PR description and context operations.
+agentId: a4a50759abce59c80 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13536
+tool_uses: 1
+duration_ms: 5010&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 16 tests pass. Let me mark the test task as complete and verify the `.impl/` folder is preserved.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="160120" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01CEDB9TRMZzk2pSC3zjuSwR">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="160120" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CEDB9TRMZzk2pSC3zjuSwR">
+Updated task #6 status
+  </tool_result>
+  <assistant>Now let me signal implementation ended and verify `.impl/` is preserved.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="160431" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 115}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JGWA1jf1vgPmiHtcC62nHs">
+    <param name="command">erk exec impl-signal ended --session-id="ff885972-6592-4bec-b6b8-07040c8b06eb" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="160431" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 115}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JGWA1jf1vgPmiHtcC62nHs">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 7946
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DYWVohtGhiQFk3Xn2NjDYK">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(python3 -c "import json; print(j...[truncated 191 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="160546" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 168, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DYWVohtGhiQFk3Xn2NjDYK">
+
+  </tool_result>
+  <tool_use name="Task" id="toolu_01R7YpWJwE89qgGYFY4ZBVz9">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Verify impl folder preserved</param>
+    <param name="prompt">Run `erk exec impl-verify` and report the full output. Do not fix anything, just report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="160714" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 247, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R7YpWJwE89qgGYFY4ZBVz9">
+Output:
+```
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl"}
+```
+
+The impl-verify command executed successfully. The result shows:
+- **valid**: true — the .impl/ directory state is valid
+- **impl_dir**: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl — path to the implementation directory
+agentId: a9ded34b865c409c1 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13536
+tool_uses: 1
+duration_ms: 6316&lt;/usage&gt;
+  </tool_result>
+  <assistant>`.impl/` preserved. Now let me run CI iteratively.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="160961" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01NFgKeuc8JcEK1HQD2QuxiW">
+    <param name="skill">local:py-fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="160961" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NFgKeuc8JcEK1HQD2QuxiW">
+Launching skill: local:py-fast-ci
+  </tool_result>
+  <user>You are an implementation finalizer for rapid Python-focused development feedback. Your task is to run `make py-fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the Python-only fast CI pipeline (`make py-fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**py-fast-ci vs fast-ci**: The `py-fast-ci` target runs Python checks (lint, format, ty, pytest), skipping markdown and documentation checks. Use this when you're iterating on Python code and don't want to wait for prettier/markdown validation. Use `/fast-ci` when you need the full fast CI pipeline including all checks.
+
+## CI Pipeline (make py-fast-ci)
+
+The `make py-fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format** - Python formatting check (ruff format --check)
+3. **ty** - Type checking
+4. **test-unit-erk** - Pytest unit tests for erk
+5. **test-erk-dev** - Pytest tests for erk-dev
+
+**Skipped** (compared to fast-ci):
+
+- Prettier check (markdown formatting)
+- Markdown check (AGENTS.md compliance)
+- Docs validate/sync
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on Python code quality issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint format ty` together (ruff lint + ruff format + type checking). If ANY fails, stop immediately to fix issues before proceeding to test runs.
+2. **Phase 2 (Test Runs)**: Only after phase 1 passes, run `make test-unit-erk test-erk-dev`.
+
+This ensures that syntax/formatting and type errors are caught and fixed first, providing rapid feedback without waiting for test execution.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint format ty`) from the repository root. If that passes, proceed with test targets (`make test-unit-erk test-erk-dev`). Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run the fail-fast phase first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="722" cache_read_input_tokens="161262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 722}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01CULhqrMKVpHr4LytW5BG7H">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run lint format ty checks</param>
+    <param name="prompt">Run `make lint format ty` from the repository root `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40` and report the full output. Do not fix anything, just report results.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="722" cache_read_input_tokens="161262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 722}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CULhqrMKVpHr4LytW5BG7H">
+The `make lint format ty` command failed during the lint phase. Here are the issues found:
+
+**Linting Results:**
+
+3 errors found:
+
+1. **Import sorting error** in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/group.py:7`
+   - Issue: Import block is unsorted or unformatted
+   - Status: Fixable with `--fix`
+
+2. **Unused import** in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/get_pr_context.py:17`
+   - Issue: `pathlib.Path` imported but unused
+   - Status: Fixable with `--fix`
+
+3. **Line too long** in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/set_pr_description.py:36`
+   - Issue: Line is 112 characters (exceeds 100 character limit)
+   - Problematic text: Help string "Path to file containing PR body"
+   - Status: Not automatically fixable
+
+The command stopped at the lint phase due to these errors, so format and ty checks were not executed.
+agentId: a184a39a4c5c72162 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17349
+tool_uses: 1
+duration_ms: 5713&lt;/usage&gt;
+  </tool_result>
+  <assistant>Three lint issues. Let me fix them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="161984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 556}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015k2xftUb8M5pBcaow4Ej1F">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/get_pr_context.py</param>
+    <param name="old_string">import json
+import uuid
+from pathlib import Path
+
+import click</param>
+    <param name="new_string">import json
+import uuid
+
+import click</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="161984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 556}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015k2xftUb8M5pBcaow4Ej1F">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/get_pr_context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01U1faFkF7rLVBgpPzWvKqKT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/set_pr_description.py</param>
+    <param name="old_string">@click.option("--body-file", default=None, type=click.Path(exists=True), help="Path to file containing PR body")</param>
+    <param name="new_string">@click.option(
+    "--body-file", default=None, type=click.Path(exists=True), help="File with PR body"
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="162540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 362}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U1faFkF7rLVBgpPzWvKqKT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/set_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the import sorting in group.py. Let me read around the area to see the issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="162902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 286}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dgsrb1WiHEzZX1DKtWyPfQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">60</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="162902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 286}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dgsrb1WiHEzZX1DKtWyPfQ">
+    60→)
+    61→from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
+    62→from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
+    63→from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
+    64→from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
+    65→    get_pr_discussion_comments,
+    66→)
+    67→from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
+    68→from erk.cli.commands.exec.scripts.get_pr_review_comments import (
+    69→    get_pr_review_comments,
+  </tool_result>
+  <assistant>The import for `get_pr_context` should be after `get_pr_commits` alphabetically. Let me fix the ordering.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="163188" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 362}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VWCJzV9fnRravecixkKhGk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
+from erk.c...[truncated 23 chars]...ort get_pr_context
+from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
+from erk.c...[truncated 23 chars]...ort get_pr_commits
+from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="163188" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 362, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VWCJzV9fnRravecixkKhGk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <assistant>Also check if the `set_pr_description` import is in the right alphabetical position.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="163550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 387}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013j7U8WnHsfJLY99XnhJwr9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">142</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="163550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 387}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013j7U8WnHsfJLY99XnhJwr9">
+   142→from erk.cli.commands.exec.scripts.run_review import run_review
+   143→from erk.cli.commands.exec.scripts.session_id_injector_hook import (
+   144→    session_id_injector_hook,
+   145→)
+   146→from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
+   147→from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
+   148→    setup_impl_from_issue,
+   149→)
+   150→from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+   151→    store_tripwire_candidates,
+  </tool_result>
+  <assistant>Good, `set_pr_description` is correctly between `session_id_injector_hook` and `setup_impl_from_issue` alphabetically. Now re-run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="163937" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01WJ9AcGGz4xCCVy5QYUq8Kk">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Re-run lint format ty</param>
+    <param name="prompt">Run `make lint format ty` from the repository root `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40` and report the full output. Do not fix anything, just report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="163937" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WJ9AcGGz4xCCVy5QYUq8Kk">
+**Results Summary:**
+
+- **ruff check (linting)**: Passed - All checks passed!
+- **ruff format (formatting)**: 4 files reformatted, 1501 files left unchanged
+- **ty check (type checking)**: Passed - All checks passed!
+
+The linting and type checking both passed without issues. The formatting check found 4 files that needed reformatting (which were then reformatted by the `ruff format` command).
+agentId: aa49fc7108284a943 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13570
+tool_uses: 1
+duration_ms: 4452&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+Lint, format, and type checks all pass. Now let me run the test phase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2936" cache_read_input_tokens="164272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2936}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01UdhPUu458vffqCa9xmb2zN">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run unit tests</param>
+    <param name="prompt">Run `make test-unit-erk test-erk-dev` from the repository root `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40` and report the full output. Do not fix anything, just report results.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2936" cache_read_input_tokens="164272" output_tokens="173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2936, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me analyze the conversation chronologically:
+
+1. The user invoked `/erk:plan-implement` which loaded the plan-implement skill instructions
+2. The plan is issue #7946 - "Split AI Generation Out of `erk pr submit`"
+3. The core problem: `erk pr submit` internally calls Claude via subprocess for PR description generation, creating nested Claude API calls that take 9+ minutes with zero visibility
+4. The solution: Split into three steps - `erk pr submit --skip-description`, `erk exec get-pr-context`, agent generates description natively, `erk exec set-pr-description`
+
+Files read and modified:
+- `.impl/plan.md` - the implementation plan
+- `src/erk/cli/commands/pr/submit_cmd.py` - added `--skip-description` flag
+- `src/erk/cli/commands/pr/submit_pipeline.py` - added `skip_description` to SubmitState, early returns in 4 pipeline steps
+- `src/erk/cli/commands/exec/__init__.py` - read for context
+- `src/erk/cli/commands/exec/group.py` - registered new commands
+- `src/erk/cli/commands/pr/shared.py` - read for reusable functions
+- `src/erk/cli/commands/exec/scripts/update_pr_description.py` - read as reference pattern
+- `src/erk/cli/commands/exec/scripts/get_pr_body_footer.py` - read as reference
+- `src/erk/core/plan_context_provider.py` - read for PlanContext/PlanContextProvider
+- `.claude/commands/erk/pr-submit.md` - updated skill with 3-step flow
+- New: `src/erk/cli/commands/exec/scripts/get_pr_context.py`
+- New: `src/erk/cli/commands/exec/scripts/set_pr_description.py`
+- New: `tests/unit/cli/commands/exec/scripts/test_get_pr_context.py`
+- New: `tests/unit/cli/commands/exec/scripts/test_set_pr_description.py`
+- Updated 8 test files in `tests/unit/cli/commands/pr/submit_pipeline/` to add `skip_description=False`
+
+Skills loaded: `dignified-python`, `fake-driven-testing`
+
+Errors encountered:
+1. Git push failed (non-fast-forward) after removing `.erk/impl-context/` - fixed by pulling with rebase first
+2. `test_make_initial_state_sets_placeholders` in test_run_pipeline.py failed - missing `skip_description` parameter in one of the `make_initial_state` calls that wasn't caught by the replace_all
+3. Lint errors: unused `Path` import in get_pr_context.py, unsorted imports in group.py, line too long in set_pr_description.py
+
+CI status: All passing - lint, format, ty, test-unit-erk (5463 passed), test-erk-dev (136 passed)
+
+The implementation is complete. The plan-implement workflow says the next steps are:
+- Step 13: Submit PR via `erk pr submit` (or the skill equivalent)
+- Step 14: Output format
+
+The last thing happening was running CI checks via `/local:py-fast-ci` which completed successfully. All tasks are completed.
+
+Summary:
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement` to implement plan #7946 "Split AI Generation Out of `erk pr submit`". The core problem is that `erk pr submit` internally calls Claude via subprocess (`CommitMessageGenerator` → `ctx.prompt_executor`) for PR description generation, creating nested Claude API calls that take 9+ minutes with zero visibility when invoked from a Claude Code skill. The fix: give the agent two `erk exec` commands to bookend the AI step, so the agent generates the description natively (no subprocess) and a thin exec command applies the result.
+
+2. Key Technical Concepts:
+   - Erk's plan-implement workflow (`.impl/` folder, impl-init, impl-signal lifecycle)
+   - Click CLI command patterns with `@click.command`, `@click.pass_context`, dependency injection via `ErkContext`
+   - Frozen dataclass pipeline pattern (`SubmitState` threaded through pipeline steps)
+   - Exec script pattern using `require_context(ctx)` from `erk_shared.context.helpers`
+   - Fake-driven testing with `FakeGit`, `FakeGitHub`, `FakeGraphite`, `FakePromptExecutor`
+   - `build_workspace_test_context()` and `erk_isolated_fs_env()` test helpers
+   - PR body assembly: `assemble_pr_body()`, `discover_issue_for_footer()`, `extract_header_from_body()`, `extract_metadata_prefix()`
+   - `PlanContextProvider` for fetching plan context from linked erk-plan issues
+   - Graphite stack-aware PR submission
+
+3. Files and Code Sections:
+
+   - **`src/erk/cli/commands/pr/submit_cmd.py`** - Entry point for `erk pr submit` CLI command
+     - Added `--skip-description` flag that skips Claude availability check and passes through to pipeline
+     - Key change: conditional `require_claude_available(ctx)` and `skip_description=skip_description` in `make_initial_state()`
+
+   - **`src/erk/cli/commands/pr/submit_pipeline.py`** - Linear pipeline for PR submission
+     - Added `skip_description: bool` field to `SubmitState` frozen dataclass (after `session_id`)
+     - Added early returns (`if state.skip_description: return state`) in 4 steps: `extract_diff`, `fetch_plan_context`, `generate_description`, `finalize_pr`
+     - Updated `make_initial_state()` to accept and pass through `skip_description`
+
+   - **`src/erk/cli/commands/exec/scripts/get_pr_context.py`** (NEW) - Outputs JSON with PR context for agent-driven description generation
+     ```python
+     @click.command(name="get-pr-context")
+     @click.option("--debug", is_flag=True, help="Show diagnostic output")
+     @click.pass_context
+     def get_pr_context(ctx: click.Context, *, debug: bool) -&gt; None:
+     ```
+     - Uses `discover_branch_context()`, `get_pr_for_branch()`, `run_diff_extraction()`, `PlanContextProvider`, `get_commit_messages_since()`
+     - Outputs JSON with `branch`, `pr`, `diff_file`, `commit_messages`, `plan_context` fields
+
+   - **`src/erk/cli/commands/exec/scripts/set_pr_description.py`** (NEW) - Applies agent-generated title/body to PR
+     ```python
+     @click.command(name="set-pr-description")
+     @click.option("--title", required=True, help="PR title")
+     @click.option("--body", "body_text", default=None, help="PR body text")
+     @click.option("--body-file", default=None, type=click.Path(exists=True), help="File with PR body")
+     @click.pass_context
+     def set_pr_description(ctx: click.Context, *, title: str, body_text: str | None, body_file: str | None) -&gt; None:
+     ```
+     - Reuses `discover_branch_context()`, `discover_issue_for_footer()`, `extract_header_from_body()`, `extract_metadata_prefix()`, `assemble_pr_body()`
+     - Handles both issue-based and draft-PR backends
+
+   - **`src/erk/cli/commands/exec/group.py`** - Registered both new commands
+     - Added imports for `get_pr_context` and `set_pr_description`
+     - Added `exec_group.add_command()` calls in alphabetical position
+
+   - **`.claude/commands/erk/pr-submit.md`** - Updated skill with three-step flow
+     - Step 1: `erk pr submit --skip-description` (push + create PR)
+     - Step 2: `erk exec get-pr-context` (get JSON context)
+     - Step 3: Agent generates title + body natively using `erk-diff-analysis` skill
+     - Step 4: `erk exec set-pr-description --title "..." --body-file "..."`
+
+   - **`tests/unit/cli/commands/exec/scripts/test_get_pr_context.py`** (NEW) - 3 tests
+     - `test_outputs_valid_json`: Happy path with JSON output validation
+     - `test_fails_when_no_pr`: Error when no PR exists
+     - `test_fails_when_not_on_branch`: Error in detached HEAD state
+
+   - **`tests/unit/cli/commands/exec/scripts/test_set_pr_description.py`** (NEW) - 5 tests
+     - `test_updates_pr_title_and_body`: Happy path
+     - `test_preserves_header_and_footer`: Metadata preservation
+     - `test_fails_when_no_pr`: Error when no PR exists
+     - `test_draft_pr_backend_preserves_metadata`: Draft PR metadata prefix preserved
+     - `test_body_file_option`: Body from file
+
+   - **8 existing test files in `tests/unit/cli/commands/pr/submit_pipeline/`** - Updated all `_make_state()` helpers and `make_initial_state()` calls to include `skip_description=False`
+
+4. Errors and fixes:
+   - **Git push non-fast-forward error**: After committing removal of `.erk/impl-context/`, push was rejected because branch was behind remote. Fixed with `git pull --rebase origin &lt;branch&gt; &amp;&amp; git push`.
+   - **Missing `skip_description` in `test_make_initial_state_sets_placeholders`**: The `replace_all` on `session_id="test",` pattern didn't catch the `session_id="my-session",` variant. Fixed by manually adding `skip_description=False,` to that specific call.
+   - **Ruff lint: unused import**: `from pathlib import Path` was unused in `get_pr_context.py`. Fixed by removing the import.
+   - **Ruff lint: unsorted imports**: In `group.py`, `get_pr_context` import was before `get_pr_commits` (wrong alphabetical order). Fixed by swapping the order.
+   - **Ruff lint: line too long**: `--body-file` option help text in `set_pr_description.py` exceeded 100 chars. Fixed by shortening help text to `"File with PR body"` and wrapping the decorator.
+
+5. Problem Solving:
+   - Successfully split the AI generation out of the monolithic `erk pr submit` pipeline into discrete, agent-composable steps
+   - Maintained backward compatibility: `erk pr submit` (without `--skip-description`) works exactly as before
+   - All existing tests updated and passing (5463 + 136 = 5599 tests)
+   - 8 new tests added for the two new commands
+   - Lint, format, and type checks all passing
+
+6. All user messages:
+   - User invoked `/erk:plan-implement` (no arguments) which triggered the plan-implement skill
+   - User invoked `/local:py-fast-ci` to run CI checks after implementation
+
+7. Pending Tasks:
+   - Step 13 of plan-implement: Submit PR via `erk pr submit` (the skill says to use `erk pr submit` after CI passes)
+   - Step 14: Output format / final summary
+
+8. Current Work:
+   The CI checks have all passed successfully. The `/local:py-fast-ci` skill was invoked and completed:
+   - Lint: passed
+   - Format: 4 files reformatted (auto-fixed by ruff)
+   - Type checking: passed
+   - test-unit-erk: 5463 passed
+   - test-erk-dev: 136 passed
+
+   All 6 implementation tasks are completed:
+   1. ✅ Add --skip-description flag to erk pr submit
+   2. ✅ Create erk exec get-pr-context command
+   3. ✅ Create erk exec set-pr-description command
+   4. ✅ Register new commands in exec group
+   5. ✅ Update /erk:pr-submit skill
+   6. ✅ Write tests for new commands
+
+9. Optional Next Step:
+   Per the plan-implement workflow Step 13: "Push the branch and create or update the PR using the Graphite-aware submit pipeline: `erk pr submit`". Then Step 14 says to report "Plan execution complete. [Summary]". After that, `erk exec impl-signal submitted` should be called.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-40/ff885972-6592-4bec-b6b8-07040c8b06eb.jsonl
+Please continue the conversation from where we left off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <thinking>The implementation is complete and CI has passed. According to the plan-implement workflow, the next steps are:
+
+- Step 10: Signal GitHub Ended
+- Step 10b: Upload Session for Async Learn
+- Step 11: Verify .impl/ Preserved
+- Step 12: Run CI Iteratively (already done)
+- Step 13: Submit PR via `erk pr submit`
+- Step 14: Output Format
+
+Let me proceed with the remaining steps.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="33854" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33854}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>All CI checks passed. Proceeding with the remaining plan-implement steps.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="33854" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33854}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MCFn84DaKY22Db2fqqHpiG">
+    <param name="command">erk exec impl-signal ended --session-id="ff885972-6592-4bec-b6b8-07040c8b06eb" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation ended</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="33854" cache_read_input_tokens="19041" output_tokens="283" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 33854, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MCFn84DaKY22Db2fqqHpiG">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 7946
+}
+  </tool_result>
+  <assistant>Now uploading the session for async learn and verifying `.impl/`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8413" cache_read_input_tokens="52895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8413}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BSw87kUnbsSLxA3sCmJdTc">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(jq -r '.issue_number // empty' ....[truncated 154 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8413" cache_read_input_tokens="52895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8413}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WpedRzyEy254QfMcSSximS">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8413" cache_read_input_tokens="52895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8413}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BSw87kUnbsSLxA3sCmJdTc">
+
+  </tool_result>
+  <tool_result tool="toolu_01WpedRzyEy254QfMcSSximS">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl"}
+  </tool_result>
+  <assistant>`.impl/` is preserved. Now submitting the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="61308" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 376}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01YTop41pmWXxSixTJ38utN4">
+    <param name="skill">erk:pr-submit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="61308" output_tokens="71" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 376, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YTop41pmWXxSixTJ38utN4">
+Skill "erk:pr-submit" completed (forked execution).
+
+Result:
+The PR submission failed because Graphite reports that the branch `plnd/extract-ai-generation-02-23-0219` has diverged from Graphite's tracking.
+
+**Error:** Graphite submit failed because the branch has diverged from Graphite's tracking. This typically happens when a Git command run outside of Graphite changed the commit history.
+
+**To fix this, you can run:**
+
+```bash
+gt track --no-interactive plnd/extract-ai-generation-02-23-0219
+```
+
+This will re-track the branch so Graphite recognizes the current state. After that, re-run `/erk:pr-submit` to submit the PR.
+  </tool_result>
+  <assistant>The branch diverged from Graphite's tracking. Let me fix that and resubmit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="61684" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01FMpDYTzDU7Lr9VWFLjdnaT">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Re-track branch with Graphite</param>
+    <param name="prompt">Run `gt track --no-interactive plnd/extract-ai-generation-02-23-0219` from /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40 and report the results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="61684" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 255, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FMpDYTzDU7Lr9VWFLjdnaT">
+The command succeeded successfully. Here's a summary of the results:
+
+**Branch Tracking Status:**
+- Branch `plnd/extract-ai-generation-02-23-0219` was successfully tracked
+- Parent: `master`
+- Contains 8 commits total
+
+**Latest Commits on This Branch:**
+1. 7a9627205 - WIP: Prepare for PR submission
+2. 5fd4b8f06 - Remove .erk/impl-context/ before implementation
+3. e1cdc8b08 - Remove GitHub repository variables feature and related infrastructure (#7947)
+4. dedf3ba16 - Add user-visible progress output to polling loops (#7945)
+5. 27ae32b68 - Fix: pr-address workflow now updates plan metadata after remote execution (#7929)
+6. 973a882e2 - Add copyable variants for close_plan, fix_conflicts_remote, and address_remote (#7930)
+7. 6a9458c6c - Add plan for PR #7946
+8. 971570d8e - Add plan: Split AI Generation Out of `erk pr submit`
+
+**Warning:** There is a diverged branch (`plnd/update-ci-pr-title-02-22-1836`) that has gone out of sync with Graphite's tracking. This can be remediated by running `gt track &lt;branch&gt;` or silenced with `gt untrack &lt;branch&gt;`.
+agentId: aba21c378c5129a3b (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14181
+tool_uses: 1
+duration_ms: 5524&lt;/usage&gt;
+  </tool_result>
+  <assistant>Branch re-tracked. Now resubmitting.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="61939" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 572}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_017sr7QtgtAK2PV5LhgN921o">
+    <param name="skill">erk:pr-submit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="61939" output_tokens="69" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 572, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017sr7QtgtAK2PV5LhgN921o">
+Skill "erk:pr-submit" completed (forked execution).
+
+Result:
+Step 5: Report results.
+
+PR submitted successfully.
+
+- **PR URL:** https://github.com/dagster-io/erk/pull/7946
+- **PR #7946** updated with title and description.
+
+The PR splits AI-powered description generation out of `erk pr submit` into two new `erk exec` commands (`get-pr-context` and `set-pr-description`), enabling Claude Code agents to generate descriptions natively. It also rewrites `erk plan list` to render directly from `PlanListService` with new columns for title, local worktree detection, and activity, plus an optional `--runs` flag for workflow run columns.
+
+🔄 Status line refreshed
+  </tool_result>
+  <assistant>PR submitted. Now signaling the lifecycle transition and running PR check.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="62511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 370}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YbAtrzoN4Jc3yyW1tUQvpz">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal impl submitted lifecycle</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="62511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 370}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CLmCzueFkxF19GJb9VqMQD">
+    <param name="command">erk pr check 2&gt;&amp;1 || true</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="62511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 370}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YbAtrzoN4Jc3yyW1tUQvpz">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 7946
+}
+  </tool_result>
+  <tool_result tool="toolu_01CLmCzueFkxF19GJb9VqMQD">
+Checking PR #7946 for branch plnd/extract-ai-generation-02-23-0219...
+
+[PASS] Branch name and plan reference agree (#7946)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks passed. Plan execution complete.
+
+**Summary — PR #7946: Split AI Generation Out of `erk pr submit`**
+
+**Problem:** `erk pr submit` called Claude via subprocess for PR description generation, creating nested Claude API calls that took 9+ minutes with zero visibility when invoked from a Claude Code skill.
+
+**Solution:** Three new touchpoints that let the agent generate descriptions natively:
+
+1. **`--skip-description` flag** on `erk pr submit` — pushes code and creates/updates the PR without invoking Claude
+2. **`erk exec get-pr-context`** — outputs JSON with branch info, PR details, diff file path, commit messages, and plan context
+3. **`erk exec set-pr-description`** — applies agent-generated title/body to the PR, preserving headers, footers, and metadata prefixes
+
+**Changes:**
+- `submit_cmd.py` / `submit_pipeline.py` — added `skip_description` flag with early returns in 4 pipeline steps
+- Two new exec scripts with full metadata preservation (issue-based and draft-PR backends)
+- Updated `.claude/commands/erk/pr-submit.md` skill with the 3-step flow
+- 8 new tests, all existing tests updated (5599 total passing)
+
+**PR:** https://github.com/dagster-io/erk/pull/7946</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="62881" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 320}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>

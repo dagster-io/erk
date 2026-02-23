@@ -1,0 +1,989 @@
+<session>
+  <meta branch="plnd/extract-ai-generation-02-23-0219" />
+  <meta model="claude-opus-4-6" />
+  <user>  Step 1: Push and Create PR
+
+⏺ Bash(erk pr submit --skip-description)
+  ⎿  🚀 Submitting PR...
+
+        Committing uncommitted changes...
+     Phase 1: Graphite Submit
+        Running gt submit...
+     Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ✏️ Preparing to submit PRs for the following branches...
+     ▸ plnd/extract-ai-generation-02-23-0219 (Update code)
+
+     🚀 Pushing branches to remote...
+
+     📨 Creating/updating PRs...
+     plnd/extract-ai-generation-02-23-0219: https://app.graphite.com/github/pr/dagster-io/erk/7946 (updated)
+        Graphite submit completed
+
+        Getting PR info...
+        PR #7946 ready
+
+       Waiting for PR to appear in Graphite cache...
+     ✅ https://github.com/dagster-io/erk/pull/7946
+     📊 https://app.graphite.com/github/pr/dagster-io/erk/7946
+  ⎿  (timeout 2m)
+
+instead of this we should use an erk exec command</user>
+  <thinking>The user is saying that instead of using `erk pr submit --skip-description`, we should use an `erk exec` command. Let me explore what erk exec commands are available for PR submission/pushing.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11602" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11602}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore what `erk exec` commands are available for this purpose.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11602" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11602}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_019V1C3jrH9DEU6Zb1ngppmh">
+    <param name="description">Find erk exec PR commands</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 525 chars]...for guidance
+
+Be thorough - find the exact erk exec commands available and their purposes.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11602" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11602}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019V1C3jrH9DEU6Zb1ngppmh">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary of the findings.
+
+## Summary: `erk exec` Subcommands Related to PR Submission/Pushing
+
+Based on my thorough exploration of the codebase and documentation, here are the key `erk exec` subcommands related to PR submission and pushing:
+
+### Core PR Submission Flow
+
+**1. `erk pr submit --skip-description`** (Primary Command)
+- **Purpose**: Push changes and create/find PR without AI description generation
+- **File**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_cmd.py`
+- **Key Flags**:
+  - `--skip-description`: Skips AI description generation, only pushes and creates PR
+  - `--no-graphite`: Skips Graphite enhancement (use git + gh only)
+  - `-f/--force`: Force push when branch has diverged
+  - `--debug`: Show diagnostic output
+  - `--session-id`: Claude session ID for tracing
+
+**Documentation**: The command docstring states:
+&gt; "Use `--skip-description` to skip AI description generation. This is useful when the calling agent will generate the description itself and apply it via `erk exec set-pr-description`."
+
+### Related `erk exec` Scripts for PR Operations
+
+**2. `erk exec set-pr-description`**
+- **Purpose**: Apply agent-generated PR title and body without calling Claude
+- **File**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/set_pr_description.py`
+- **Usage**: `erk exec set-pr-description --title "Title" --body "Body"` or `--body-file &lt;path&gt;`
+- **Key Feature**: Preserves existing header, footer, and metadata; doesn't call Claude
+
+**3. `erk exec get-pr-context`**
+
+... [84 lines omitted] ...
+  </tool_result>
+  <thinking>The user is looking at what appears to be a Claude command (like `/erk:pr-submit`) that runs `erk pr submit --skip-description` and wants to replace it with an `erk exec` command. Let me understand the context better.
+
+Looking at the Bash output, it shows `erk pr submit --skip-description` being run. The user says "instead of this we should use an erk exec command."
+
+The relevant `erk exec` commands found are:
+- `erk exec quick-submit` - Quick commit and submit with Graphite or git push
+
+But the user is probably talking about a specific exec command. Let me look at the context more carefully.
+
+
+I'm on the branch `plnd/extract-ai-generation-02-23-0219` where recent commits suggest extracting AI generation out of `erk pr submit`, so this is likely about swapping the `/erk:pr-submit` command to use `erk exec quick-submit` instead of `erk pr submit --skip-description`. I need to look at the `/erk:pr-submit` command definition to see where this substitution should happen.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2384" cache_read_input_tokens="30643" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2384}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the current `/erk:pr-submit` command to understand where `erk pr submit --skip-description` is being called.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2384" cache_read_input_tokens="30643" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2384}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AQFXKWAB93UBSqeCp3MYnM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/commands/erk/pr-submit.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2384" cache_read_input_tokens="30643" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2384}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AQFXKWAB93UBSqeCp3MYnM">
+     1→---
+     2→description:
+     3→  Create git commit and submit current branch with Graphite (squashes commits
+     4→  and rebases stack)
+     5→argument-hint: &lt;description&gt;
+     6→---
+     7→
+     8→# Submit PR
+     9→
+    10→Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
+    11→
+    12→**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
+    13→
+    14→## Usage
+    15→
+    16→```bash
+    17→# Invoke the command (description argument is optional but recommended)
+    18→/erk:pr-submit "Add user authentication feature"
+    19→
+    20→# Without argument (will analyze changes automatically)
+    21→/erk:pr-submit
+    22→```
+    23→
+    24→## Implementation
+    25→
+    26→This command uses a three-step flow to avoid nested Claude subprocess calls:
+    27→
+    28→1. **Push + create PR** (no AI) via `erk pr submit --skip-description`
+    29→2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+    30→3. **Generate title + body** natively (you are the agent — no subprocess)
+
+... [69 lines omitted] ...
+
+    41→If this fails, display the error and stop.
+    56→Parse the JSON output. If this fails, display the error and stop.
+    74→If this fails, display the error and stop.
+    90→## Error Handling
+    92→If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+    94→Common errors:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JxBufH3QywuGAnWwYkbYXF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/quick_submit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2384" cache_read_input_tokens="30643" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2384}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JxBufH3QywuGAnWwYkbYXF">
+     1→"""Quick commit all changes and submit with Graphite or git push."""
+     2→
+     3→import json
+     4→from dataclasses import asdict
+     5→
+     6→import click
+     7→
+     8→from erk_shared.context.helpers import require_cwd
+     9→from erk_shared.gateway.gt.cli import render_events
+    10→from erk_shared.gateway.gt.operations.quick_submit import execute_quick_submit
+    11→from erk_shared.gateway.gt.types import QuickSubmitError
+    12→
+    13→
+    14→@click.command("quick-submit")
+    15→@click.pass_context
+    16→def quick_submit(ctx: click.Context) -&gt; None:
+    17→    """Quick commit all changes and submit.
+    18→
+    19→    Stages all changes, commits with "update" message if there are changes,
+    20→    then submits via Graphite (gt submit) or git push depending on config.
+    21→    This is a fast iteration shortcut.
+    22→
+    23→    For proper commit messages, use the pr-submit command instead.
+    24→    """
+    25→    cwd = require_cwd(ctx)
+    26→    # ErkContext satisfies GtKit Protocol (git, github, graphite, time, branch_manager)
+    27→    result = render_events(execute_quick_submit(ctx.obj, cwd))
+    28→
+    29→    # Output JSON result
+    30→    click.echo(json.dumps(asdict(result), indent=2))
+
+... [4 lines omitted] ...
+
+    32→    if isinstance(result, QuickSubmitError):
+  </tool_result>
+  <thinking>Now I understand the context. The user is looking at the `/erk:pr-submit` command and specifically Step 1 which uses `erk pr submit --skip-description`. They want to replace this with an `erk exec` command instead.
+
+Looking at the quick-submit exec command, it does: stage all changes, commit with "update" message, then submit via Graphite or git push. But this is described as a "fast iteration shortcut" and "for proper commit messages, use the pr-submit command instead."
+
+The user's branch name is `plnd/extract-ai-generation-02-23-0219` and recent commits include "WIP: Prepare for PR submission" - so this branch is about extracting AI generation out of `erk pr submit`. This makes sense - they want to make `erk pr submit --skip-description` into an `erk exec` command since it's just the push+create-PR part without AI.
+
+
+Now I need to check what `erk pr submit --skip-description` actually does in the submit_cmd.py file so I can figure out the right exec command to replace it with.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2922" cache_read_input_tokens="33027" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2922}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the current `erk pr submit` implementation to understand what `--skip-description` does.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2922" cache_read_input_tokens="33027" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2922}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012NHZzi4m7RkDjn77UdNG4Z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2922" cache_read_input_tokens="33027" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2922}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012NHZzi4m7RkDjn77UdNG4Z">
+     1→"""Submit current branch as a pull request.
+     2→
+     3→Runs a linear pipeline of functions transforming a frozen SubmitState:
+     4→1. Prepare state (resolve repo, branch, parent, issue)
+     5→2. Commit WIP changes
+     6→3. Push and create/find PR (Graphite-first or core path)
+     7→4. Extract diff for AI
+     8→5. Fetch plan context
+     9→6. Generate AI PR description
+    10→7. Enhance with Graphite (if applicable)
+    11→8. Finalize PR metadata
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.pr.shared import require_claude_available
+    19→from erk.cli.commands.pr.submit_pipeline import (
+    20→    SubmitError,
+    21→    make_initial_state,
+    22→    run_submit_pipeline,
+    23→)
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.output.output import user_output
+    26→
+    27→# Set to False to disable polling for PR in Graphite cache after submission.
+    28→# This feature ensures the status line can immediately display the PR number.
+    29→ENABLE_PR_CACHE_POLLING = True
+    30→
+
+... [139 lines omitted] ...
+
+   145→    if isinstance(result, SubmitError):
+   146→        raise click.ClickException(result.message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RomFHb6bNG3zvcikg3BQfU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/commands/erk/git-pr-push.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2922" cache_read_input_tokens="33027" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2922}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RomFHb6bNG3zvcikg3BQfU">
+     1→---
+     2→description: Create git commit and push branch as PR using git + GitHub CLI
+     3→argument-hint: &lt;description&gt;
+     4→---
+     5→
+     6→# Push PR (Git Only)
+     7→
+     8→Automatically create a git commit with a helpful summary message and push the current branch as a pull request using standard git + GitHub CLI (no Graphite required).
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→# Invoke the command (description argument is optional but recommended)
+    14→/erk:git-pr-push "Add user authentication feature"
+    15→
+    16→# Without argument (will analyze changes automatically)
+    17→/erk:git-pr-push
+    18→```
+    19→
+    20→## What This Command Does
+    21→
+    22→Handles the complete git-only push-pr workflow:
+    23→
+    24→1. Check for uncommitted changes and stage/commit them if needed
+    25→2. Analyze git diff to generate meaningful commit message
+    26→3. Create commit with AI-generated message
+    27→4. Push to origin with upstream tracking
+    28→5. Create GitHub PR (or find existing one)
+    29→6. Report results with PR URL
+    30→
+
+... [379 lines omitted] ...
+
+    65→If `gh auth status` fails, report error and tell user to run `gh auth login`.
+   297→## Error Handling
+   299→When errors occur, provide clear guidance:
+   318→**Push failed (diverged branches):**
+   321→❌ Push failed: branch has diverged
+   375→- Provide clear error guidance
+   386→- Retry failed operations automatically
+   408→- [ ] Any errors handled with helpful guidance
+  </tool_result>
+  <thinking>Now I understand the full picture. The user is working on branch `plnd/extract-ai-generation-02-23-0219` which is about extracting AI generation out of `erk pr submit`. They're looking at the `/erk:pr-submit` command, specifically Step 1 which uses `erk pr submit --skip-description`, and they want to replace this with an `erk exec` command.
+
+Let me also look at the submit pipeline to understand what `--skip-description` actually does in the pipeline, so we can figure out the right exec command.
+
+The existing `erk exec quick-submit` is somewhat similar - it stages all changes, commits with "update" message, then submits via Graphite or git push. 
+
+I need to check what the submit pipeline looks like when `--skip-description` is used, since that's the specific behavior we're trying to replicate with an exec command instead.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7170" cache_read_input_tokens="35949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7170}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the submit pipeline to understand what the `--skip-description` path actually does.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7170" cache_read_input_tokens="35949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7170}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BMEX6ExuPEFtMyv3gLqfgw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7170" cache_read_input_tokens="35949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7170}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BMEX6ExuPEFtMyv3gLqfgw">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import uuid
+    11→from collections.abc import Callable
+    12→from dataclasses import dataclass
+    13→from functools import cache
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.pr.shared import (
+    19→    assemble_pr_body,
+    20→    echo_plan_context_status,
+    21→    run_commit_message_generation,
+    22→)
+    23→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    24→from erk.cli.ensure import UserFacingCliError
+    25→from erk.core.commit_message_generator import CommitMessageGenerator
+    26→from erk.core.context import ErkContext
+    27→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+    28→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+    29→from erk_shared.gateway.github.parsing import parse_git_remote_url
+    30→from erk_shared.gateway.github.pr_footer import (
+
+... [851 lines omitted] ...
+
+   100→class SubmitError:
+   101→    """Error result from a pipeline step."""
+   104→    error_type: str
+   113→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   116→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   127→        return SubmitError(
+   129→            error_type="no_branch",
+   144→    except ValueError as e:
+   145→        return SubmitError(
+   147→            error_type="issue_linkage_mismatch",
+   177→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   186→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   201→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   219→            return SubmitError(
+   221→                error_type="remote_diverged",
+   248→    except RuntimeError as e:
+   249→        error_str = str(e)
+   250→        if "restack" in error_str.lower():
+   251→            return SubmitError(
+   253→                error_type="graphite_restack_required",
+   262→        return SubmitError(
+   264→            error_type="graphite_submit_failed",
+   265→            message=f"Graphite submit failed: {e}",
+   275→        return SubmitError(
+   277→            error_type="pr_not_found",
+   305→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   312→        return SubmitError(
+   314→            error_type="github_auth_failed",
+   324→        return SubmitError(
+   326→            error_type="no_commits",
+   344→        if isinstance(pull_result, PullRebaseError):
+   345→            return SubmitError(
+   347→                error_type="rebase_failed",
+   349→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   350→                    f"Error: {pull_result.message}\n\n"
+   360→        return SubmitError(
+   362→            error_type="branch_diverged",
+   381→    if isinstance(push_result, PushError):
+   383→            return SubmitError(
+   385→                error_type="branch_diverged",
+   394→        raise UserFacingCliError(push_result.message)
+   405→                return SubmitError(
+   407→                    error_type="parent_branch_no_pr",
+   493→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   500→        return SubmitError(
+   502→            error_type="no_base_branch",
+   532→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   551→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   558→        return SubmitError(
+   560→            error_type="no_diff_file",
+   561→            message="Failed to extract diff for AI analysis",
+   581→        return SubmitError(
+   583→            error_type="ai_generation_failed",
+   584→            message=f"Failed to generate message: {msg_result.error_message}",
+   597→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   640→    except RuntimeError as e:
+   641→        error_msg = str(e).lower()
+   642→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   646→        return SubmitError(
+   648→            error_type="graphite_enhance_failed",
+   649→            message=f"Graphite enhancement failed: {e}",
+   666→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   673→        return SubmitError(
+   675→            error_type="no_pr_number",
+   755→        except OSError as e:
+   757→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   826→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   827→    """Run the submit pipeline, returning final state or first error."""
+   831→        except Exception as e:
+   833→            return SubmitError(
+   835→                error_type="unhandled_exception",
+   836→                message=f"Unexpected error in {step_name}: {e}",
+   839→        if isinstance(result, SubmitError):
+  </tool_result>
+  <thinking>Now I have a clear picture. The user wants to replace Step 1 of `/erk:pr-submit` - which currently uses `erk pr submit --skip-description` - with an `erk exec` command.
+
+Looking at what `erk pr submit --skip-description` does:
+1. `prepare_state` - resolves repo_root, branch, parent, trunk, issue_number
+2. `commit_wip` - commits uncommitted changes with "WIP" message
+3. `push_and_create_pr` - pushes branch, creates/finds PR (Graphite or core path)
+4. Steps 4-8 are all skipped when `skip_description=True`
+
+
+5. The flow ends with a success output
+
+So the user is looking to extract this exact workflow into a standalone `erk exec` command, similar to how `erk exec quick-submit` exists but with the specific behavior of `--skip-description`.
+
+I should check what's already been implemented on this branch before deciding whether to create a new command or adapt the existing one.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12488" cache_read_input_tokens="43119" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12488}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what changes have already been made on this branch to understand the current state of the work.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12488" cache_read_input_tokens="43119" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12488}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011EJxPmfmmqvokSHvmoGi53">
+    <param name="command">git log --oneline master..HEAD</param>
+    <param name="description">Show commits on this branch since master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12488" cache_read_input_tokens="43119" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12488}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011EJxPmfmmqvokSHvmoGi53">
+65e094002 WIP: Prepare for PR submission
+d79268854 WIP: Prepare for PR submission
+6feab9148 Remove .erk/impl-context/ before implementation
+df6632fa3 Add plan for PR #7946
+f80dbbb39 Add plan: Plan: Split AI Generation Out of `erk pr submit`
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MRPUURCMkS8S2Mgyvcby9u">
+    <param name="command">git diff master --stat</param>
+    <param name="description">Show changed files since master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12488" cache_read_input_tokens="43119" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12488}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MRPUURCMkS8S2Mgyvcby9u">
+ .claude/commands/erk/pr-submit.md                  |  73 ++++--
+ src/erk/cli/commands/exec/group.py                 |   4 +
+ .../cli/commands/exec/scripts/get_pr_context.py    | 104 +++++++++
+ .../commands/exec/scripts/set_pr_description.py    | 127 ++++++++++
+ src/erk/cli/commands/pr/submit_cmd.py              |  17 +-
+ src/erk/cli/commands/pr/submit_pipeline.py         |  11 +
+ .../commands/exec/scripts/test_get_pr_context.py   | 157 +++++++++++++
+ .../exec/scripts/test_set_pr_description.py        | 255 +++++++++++++++++++++
+ .../commands/pr/submit_pipeline/test_commit_wip.py |   1 +
+ .../pr/submit_pipeline/test_core_submit_flow.py    |   1 +
+ .../submit_pipeline/test_enhance_with_graphite.py  |   1 +
+ .../pr/submit_pipeline/test_extract_diff.py        |   1 +
+ .../pr/submit_pipeline/test_finalize_pr.py         |   1 +
+ .../pr/submit_pipeline/test_graphite_first_flow.py |   1 +
+ .../pr/submit_pipeline/test_prepare_state.py       |   1 +
+ .../pr/submit_pipeline/test_run_pipeline.py        |   4 +
+ 16 files changed, 737 insertions(+), 22 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013WkiTiHC3G3dD9Bug19tMW">
+    <param name="command">git diff master -- .claude/commands/erk/pr-submit.md</param>
+    <param name="description">Show changes to pr-submit command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1096" cache_read_input_tokens="55607" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1096}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013WkiTiHC3G3dD9Bug19tMW">
+diff --git a/.claude/commands/erk/pr-submit.md b/.claude/commands/erk/pr-submit.md
+index e48d22954..5704ef8b6 100644
+--- a/.claude/commands/erk/pr-submit.md
++++ b/.claude/commands/erk/pr-submit.md
+@@ -3,7 +3,6 @@ description:
+   Create git commit and submit current branch with Graphite (squashes commits
+   and rebases stack)
+ argument-hint: &lt;description&gt;
+-context: fork
+ ---
+ 
+ # Submit PR
+@@ -24,39 +23,61 @@ Automatically create a git commit with a helpful summary message and submit the
+ 
+ ## Implementation
+ 
+-This command delegates to `erk pr submit` which handles everything:
++This command uses a three-step flow to avoid nested Claude subprocess calls:
+ 
+-- Preflight checks (auth, squash commits, submit to Graphite)
+-- AI-powered commit message generation
+-- PR metadata update with title and body
+-- PR validation
++1. **Push + create PR** (no AI) via `erk pr submit --skip-description`
++2. **Gather context** via `erk exec get-pr-context` (returns JSON)
++3. **Generate title + body** natively (you are the agent — no subprocess)
++4. **Apply description** via `erk exec set-pr-description`
+ 
+-### Execute
++### Step 1: Push and Create PR
+
+... [78 lines omitted] ...
+
++If this fails, display the error and stop.
++Parse the JSON output. If this fails, display the error and stop.
+-## Error Handling
+-If `erk pr submit` fails, display the error and stop. The Python implementation handles all error cases including:
+-- Submission failures
+-Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
++If this fails, display the error and stop.
++## Error Handling
++If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
++Common errors:
+  </tool_result>
+  <thinking>Now I see the full picture. The branch already has changes that split the AI generation out of `erk pr submit` into a multi-step flow. The current Step 1 uses `erk pr submit --skip-description`, and the user wants to replace that with an `erk exec` command.
+
+Looking at what `erk pr submit --skip-description` does:
+1. prepare_state (resolve repo, branch, parent, issue)
+2. commit_wip (commit uncommitted changes)
+3. push_and_create_pr (push + create/find PR via Graphite or core)
+4. Skip all AI-related steps (extract_diff, fetch_plan_context, generate_description, enhance_with_graphite, finalize_pr)
+
+
+So the user wants a new `erk exec` command that handles the non-AI portion: committing WIP, pushing, and creating or finding the PR. I need to figure out whether to create a new command like `erk exec push-pr` or extend the existing `erk exec quick-submit` to do this, so I should check what `quick-submit` currently does to see if it's a good fit.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1154" cache_read_input_tokens="56703" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1154}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the quick-submit implementation to understand how it compares.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1154" cache_read_input_tokens="56703" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1154}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011C1tK3Ydwv64EUEuNRxpwk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/quick_submit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1154" cache_read_input_tokens="56703" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1154}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011C1tK3Ydwv64EUEuNRxpwk">
+     1→"""Quick commit all changes and submit with Graphite or git push."""
+     2→
+     3→import json
+     4→from dataclasses import asdict
+     5→
+     6→import click
+     7→
+     8→from erk_shared.context.helpers import require_cwd
+     9→from erk_shared.gateway.gt.cli import render_events
+    10→from erk_shared.gateway.gt.operations.quick_submit import execute_quick_submit
+    11→from erk_shared.gateway.gt.types import QuickSubmitError
+    12→
+    13→
+    14→@click.command("quick-submit")
+    15→@click.pass_context
+    16→def quick_submit(ctx: click.Context) -&gt; None:
+    17→    """Quick commit all changes and submit.
+    18→
+    19→    Stages all changes, commits with "update" message if there are changes,
+    20→    then submits via Graphite (gt submit) or git push depending on config.
+    21→    This is a fast iteration shortcut.
+    22→
+    23→    For proper commit messages, use the pr-submit command instead.
+    24→    """
+    25→    cwd = require_cwd(ctx)
+    26→    # ErkContext satisfies GtKit Protocol (git, github, graphite, time, branch_manager)
+    27→    result = render_events(execute_quick_submit(ctx.obj, cwd))
+    28→
+    29→    # Output JSON result
+    30→    click.echo(json.dumps(asdict(result), indent=2))
+
+... [4 lines omitted] ...
+
+    32→    if isinstance(result, QuickSubmitError):
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01VSRiAQ724S1pipRTATpmn7">
+    <param name="pattern">execute_quick_submit</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1154" cache_read_input_tokens="56703" output_tokens="509" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1154, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VSRiAQ724S1pipRTATpmn7">
+Found 5 files
+tests/unit/gateways/gt/test_quick_submit.py
+packages/erk-shared/src/erk_shared/gateway/gt/operations/quick_submit.py
+docs/learned/architecture/erk-architecture.md
+docs/learned/architecture/event-progress-pattern.md
+src/erk/cli/commands/exec/scripts/quick_submit.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_017BMyeNQMRsc6KQtmTAhFuQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/gt/operations/quick_submit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1182" cache_read_input_tokens="57857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1182}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017BMyeNQMRsc6KQtmTAhFuQ">
+     1→"""Quick commit and submit operation for rapid iteration.
+     2→
+     3→This operation stages all changes, commits with "update" message if there are changes,
+     4→then submits via Graphite or git push. Returns the PR URL for easy access.
+     5→"""
+     6→
+     7→from collections.abc import Generator
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    11→from erk_shared.gateway.github.types import PRNotFound
+    12→from erk_shared.gateway.gt.abc import GtKit
+    13→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    14→from erk_shared.gateway.gt.types import QuickSubmitError, QuickSubmitSuccess
+    15→
+    16→
+    17→def execute_quick_submit(
+    18→    ops: GtKit,
+    19→    cwd: Path,
+    20→) -&gt; Generator[ProgressEvent | CompletionEvent[QuickSubmitSuccess | QuickSubmitError]]:
+    21→    """Execute the quick-submit workflow.
+    22→
+    23→    Stages all changes, commits with "update" message if there are changes,
+    24→    then submits via BranchManager (Graphite or git push). Returns the PR URL
+    25→    after successful submit.
+    26→
+    27→    Args:
+    28→        ops: GtKit operations interface.
+    29→        cwd: Working directory (repository path).
+    30→
+
+... [94 lines omitted] ...
+
+    33→        CompletionEvent with QuickSubmitSuccess or QuickSubmitError
+    39→    except Exception as e:
+    41→            QuickSubmitError(
+    43→                error_type="stage-failed",
+    44→                message=f"Failed to stage changes: {e}",
+    60→        except Exception as e:
+    62→                QuickSubmitError(
+    64→                    error_type="commit-failed",
+    65→                    message=f"Failed to commit changes: {e}",
+    76→            QuickSubmitError(
+    78→                error_type="submit-failed",
+    79→                message="Failed to determine current branch",
+    90→    if isinstance(submit_result, SubmitBranchError):
+    91→        error_verb = "submit" if ops.branch_manager.is_graphite_managed() else "push"
+    93→            QuickSubmitError(
+    95→                error_type="submit-failed",
+    96→                message=f"Failed to {error_verb}: {submit_result.message}",
+  </tool_result>
+  <thinking>Now I understand the full picture. The user wants to replace `erk pr submit --skip-description` (Step 1 of `/erk:pr-submit`) with an `erk exec` command.
+
+Looking at the two options:
+
+1. `erk exec quick-submit` - already exists, does: stage → commit "update" → submit via BranchManager (Graphite or git push) → get PR URL. But it's simpler and doesn't do: issue linkage/plan-ref validation, divergence pre-checks, PR body footer creation, force push support, etc.
+
+2. `erk pr submit --skip-description` - does: prepare_state (resolve repo, branch, parent, trunk, issue) → commit_wip → push_and_create_pr (with full divergence handling, Graphite-first vs core path, PR footer creation, etc.)
+
+
+The user likely wants to create a new `erk exec` command that mirrors the full pipeline of `erk pr submit --skip-description`, including all the validation and PR footer logic, rather than using the existing `quick-submit` which lacks those features.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1600" cache_read_input_tokens="59039" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1600}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the existing plan for this PR to understand the intended direction.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1600" cache_read_input_tokens="59039" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1600}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01R1bZPKatvKTLNv7GAhHsBE">
+    <param name="command">gh issue view 7946 --json body --jq '.body' | head -100</param>
+    <param name="description">View plan issue body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1600" cache_read_input_tokens="59039" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1600}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R1bZPKatvKTLNv7GAhHsBE">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:plan-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;plan-header&lt;/summary&gt;
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-23T02:19:50.191130+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: null
+last_dispatched_node_id: null
+last_dispatched_at: null
+last_local_impl_at: '2026-02-23T12:49:38.423601+00:00'
+last_local_impl_event: ended
+last_local_impl_session: ff885972-6592-4bec-b6b8-07040c8b06eb
+last_local_impl_user: schrockn
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plnd/extract-ai-generation-02-23-0219
+created_from_session: 43fc37cc-2e5b-46a9-a814-a230dfef64d8
+lifecycle_stage: implemented
+worktree_name: erk-slot-40
+
+
+... [69 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have full context. The user is saying that Step 1 of the `/erk:pr-submit` command currently uses `erk pr submit --skip-description`, but they want it to use an `erk exec` command instead.
+
+The distinction is:
+- `erk pr submit --skip-description` is a user-facing CLI command with flags, running the full submit pipeline but skipping AI steps
+- `erk exec` commands are thin, composable building blocks for agent orchestration
+
+The user wants to extract the "push + create PR" functionality from `erk pr submit` into an `erk exec` command, so the `/erk:pr-submit` skill would use only `erk exec` commands throughout (making it fully agent-composable).
+
+
+So I'd need to create a new exec command like `erk exec push-pr` that handles repo resolution, committing changes, pushing, and creating or finding the PR while outputting JSON with the PR details. Then I'd update the pr-submit skill to call this new exec command instead. I'm also wondering whether `erk pr submit` should continue existing as a wrapper around these exec commands or if it should be refactored entirely.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2033" cache_read_input_tokens="60639" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2033}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2033" cache_read_input_tokens="60639" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2033}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_015kBtE7aNZnQqBzaR8Vyd74">
+    <param name="description">Plan exec push-pr command</param>
+    <param name="prompt">You are designing an implementation plan for replacing `erk pr submit --skip-description` ...[truncated 2334 chars]...oday including the complex Graphite-first flow, divergence checks, and PR footer creation.</param>
+    <param name="subagent_type">Plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2033" cache_read_input_tokens="60639" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2033}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015kBtE7aNZnQqBzaR8Vyd74">
+Now I have a thorough understanding of the codebase. Let me compile the plan.
+
+---
+
+## Implementation Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`
+
+### 1. Command Name
+
+**Recommended name: `push-and-create-pr`**
+
+Rationale:
+- Accurately describes the two core operations: push the branch and create (or find) the PR
+- Follows the existing exec naming convention of verb-noun-noun (`set-pr-description`, `get-pr-context`, `pr-sync-commit`)
+- Distinguishes from `quick-submit` (which is a simplified iteration shortcut)
+- Does not conflict with `submit` which implies the full pipeline including description generation
+
+Other candidates considered:
+- `submit-pr` -- too close to `erk pr submit`, could cause confusion about which to use
+- `create-pr` -- undersells it; the command also pushes, checks divergence, does Graphite flow
+- `push-pr` -- better but "push" alone doesn't convey the PR creation aspect
+
+### 2. Architecture: Reuse the Existing Pipeline Steps
+
+The new exec command should **reuse the existing `submit_pipeline.py` functions directly** rather than creating a standalone reimplementation. The existing pipeline was designed with `skip_description` as a concern, and the first three steps (`prepare_state`, `commit_wip`, `push_and_create_pr`) contain substantial, well-tested logic.
+
+**Approach**: Create a new function `run_push_and_create_pipeline` that runs only the first three steps of the pipeline, then returns the resulting `SubmitState` as JSON output. This avoids duplicating the complex Graphite-first flow, divergence checks, plan linkage validation, and PR footer creation.
+
+```python
+def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    """Run only the push+create subset of the submit pipeline."""
+
+... [208 lines omitted] ...
+
+        if isinstance(result, SubmitError):
+On error:
+  "error": {
+    "error_type": "remote_diverged",
+Also update the error message hints in `get_pr_context.py` and `set_pr_description.py` that say "Create a PR first with `erk pr submit --skip-description`" to reference the new command.
+def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+        if isinstance(result, SubmitError):
+- Convert `SubmitState` or `SubmitError` to JSON and output via `click.echo`
+- Exit with code 1 on error, 0 on success
+**Step 5: Update error message hints**
+- Test JSON error output on failure (divergence, no branch, no commits, etc.)
+- Test exit code 0 on success, 1 on error
+- Test that errors from any of the 3 steps are returned
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/get_pr_context.py` - Update error message hint referencing old command
+  </tool_result>
+  <thinking>The user confirmed the plan agent's output. Now let me synthesize this into a final plan. But first, I have a key question: the user said "instead of this we should use an erk exec command" - I should clarify whether they want a new exec command or want to repurpose `quick-submit`.
+
+Actually, looking at the plan agent's analysis, it's pretty clear that a new exec command is the right approach since `quick-submit` has a fundamentally different purpose. Let me also consider the `quiet` mode issue - the pipeline steps use `click.echo` which would pollute JSON stdout.
+
+Let me also check if there's an important detail about whether the exec command should use `ErkContext` or `click.Context` - the exec scripts pattern uses `click.Context` with `require_cwd(ctx)`.
+
+
+Now I need to examine the existing exec scripts on this branch to understand the established pattern.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="8895" cache_read_input_tokens="62672" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8895}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the new exec scripts already on this branch to understand the DI pattern they use.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="8895" cache_read_input_tokens="62672" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8895}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SAFB3F7NFX4BLATWdoTwHJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/get_pr_context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8895" cache_read_input_tokens="62672" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8895}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SAFB3F7NFX4BLATWdoTwHJ">
+     1→"""Get PR context for agent-driven description generation.
+     2→
+     3→Outputs JSON to stdout with branch info, PR info, diff file path,
+     4→commit messages, and plan context. Designed for use by Claude Code
+     5→agents that generate PR descriptions natively rather than via subprocess.
+     6→
+     7→Usage:
+     8→    erk exec get-pr-context
+     9→
+    10→Exit Codes:
+    11→    0: Success (JSON output on stdout)
+    12→    1: Error (no branch, no PR, diff extraction failure)
+    13→"""
+    14→
+    15→import json
+    16→import uuid
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    discover_branch_context,
+    22→    echo_plan_context_status,
+    23→    run_diff_extraction,
+    24→)
+    25→from erk.core.plan_context_provider import PlanContextProvider
+    26→from erk_shared.context.helpers import require_context
+    27→from erk_shared.gateway.github.types import PRNotFound
+    28→
+    29→
+    30→@click.command(name="get-pr-context")
+
+... [75 lines omitted] ...
+
+    49→        raise click.ClickException(
+    64→        raise click.ClickException("Failed to extract diff")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DQPkPmB19ZwPzZ2Ye81qiC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8895" cache_read_input_tokens="62672" output_tokens="415" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8895, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DQPkPmB19ZwPzZ2Ye81qiC">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    11→from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
+    12→    add_reaction_to_comment,
+    13→)
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.check_impl import check_impl
+    21→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    22→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    23→from erk.cli.commands.exec.scripts.close_issue_with_comment import (
+    24→    close_issue_with_comment,
+    25→)
+    26→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    27→    create_impl_context_from_plan,
+    28→)
+    29→from erk.cli.commands.exec.scripts.create_issue_from_session import (
+    30→    create_issue_from_session,
+
+... [247 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me check the `require_context` helper vs `require_cwd` to understand what pattern the new exec scripts on this branch use.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7275" cache_read_input_tokens="71567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7275}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the `require_context` helper and the `discover_branch_context` function, since the new exec scripts use those.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7275" cache_read_input_tokens="71567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7275}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CK2FVuoYrfSxrEBpBvZWfN">
+    <param name="pattern">def require_context</param>
+    <param name="output_mode">content</param>
+    <param name="context">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7275" cache_read_input_tokens="71567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7275}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CK2FVuoYrfSxrEBpBvZWfN">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-26-from erk_shared.gateway.github.issues.abc import GitHubIssues
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-27-from erk_shared.gateway.time.abc import Time
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-28-from erk_shared.plan_store.backend import PlanBackend
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-29-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-30-
+packages/erk-shared/src/erk_shared/context/helpers.py:31:def require_context(ctx: click.Context) -&gt; ErkContext:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-32-    """Get the full ErkContext, exiting with error if not initialized.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-33-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-34-    Uses LBYL pattern to check context before accessing. If context is not
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-35-    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-36-
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UP1zdSqdr2brkTLoiSduUG">
+    <param name="pattern">def discover_branch_context</param>
+    <param name="output_mode">content</param>
+    <param name="context">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7275" cache_read_input_tokens="71567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7275}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UP1zdSqdr2brkTLoiSduUG">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-32-# ---------------------------------------------------------------------------
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-33-# Branch Discovery
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-34-# ---------------------------------------------------------------------------
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-35-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-36-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-37-@dataclass(frozen=True)
+src/erk/cli/commands/pr/shared.py-38-class BranchDiscovery:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-39-    """Result of discovering branch context for PR commands."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-40-
+src/erk/cli/commands/pr/shared.py-41-    current_branch: str
+src/erk/cli/commands/pr/shared.py-42-    repo_root: Path
+src/erk/cli/commands/pr/shared.py-43-    trunk_branch: str
+src/erk/cli/commands/pr/shared.py-44-    parent_branch: str
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-45-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-46-
+src/erk/cli/commands/pr/shared.py:47:def discover_branch_context(ctx: ErkContext, *, cwd: Path) -&gt; BranchDiscovery:
+src/erk/cli/commands/pr/shared.py-48-    """Discover branch context: current branch, repo root, trunk, and parent.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-49-
+src/erk/cli/commands/pr/shared.py-50-    Raises:
+src/erk/cli/commands/pr/shared.py-51-        click.ClickException: If in detached HEAD state
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-52-    """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-53-    current_branch = ctx.git.branch.get_current_branch(cwd)
+src/erk/cli/commands/pr/shared.py-54-    if current_branch is None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-55-        raise click.ClickException("Not on a branch (detached HEAD state)")
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-56-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-57-    repo_root = ctx.git.repo.get_repository_root(cwd)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-58-    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-59-    parent_branch = ctx.branch_manager.get_parent_branch(repo_root, current_branch) or trunk_branch
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-60-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/shared.py-61-    return BranchDiscovery(
+
+... [1 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a very thorough understanding. Let me also check how `submit_cmd.py` gets its `ErkContext` vs how exec scripts get theirs - to understand the DI boundary. The submit_cmd uses `@click.pass_obj` which gives `ErkContext` directly, while exec scripts use `@click.pass_context` with `require_context(ctx)`.
+
+The key issue is: the submit pipeline functions (`prepare_state`, `commit_wip`, `push_and_create_pr`) take `ErkContext` directly (the erk-specific context, not `click.Context`). The exec scripts use `require_context(ctx)` to extract `ErkContext` from `click.Context`. So the new exec script would:
+
+
+1. Use `@click.pass_context` 
+2. Call `require_context(ctx)` to get `ErkContext`
+3. Create `SubmitState` and call the pipeline functions
+
+The real problem is that the submit pipeline functions use `click.echo` for progress output, whereas `get_pr_context` and similar functions don't have this stdout pollution issue. The pipeline's `prepare_state`, `commit_wip`, and `push_and_create_pr` all emit progress messages that would interfere with JSON output.
+
+I'm weighing three approaches: adding a `quiet` field to `SubmitState` (but that means updating all test constructors), using `click.echo(..., err=True)` to redirect output to stderr (requires modifying existing functions), or extracting the core logic from the pipeline steps and calling it directly without the progress output. The cleanest solution is probably to skip reusing the pipeline functions entirely and just call the underlying logic. reuse the pipeline functions directly but instead build the exec command from the same building blocks the pipeline uses - the gateway methods. But that duplicates logic.
+
+Actually, I think the cleanest approach is: the exec command outputs JSON as the last line, and uses stderr for progress. But Click doesn't make that easy...
+
+Or we could: capture stdout, parse it, and only output JSON. But that's fragile.
+
+Actually, looking at how `quick_submit` handles this: it uses the event-based pattern (`ProgressEvent`, `CompletionEvent`) with `render_events()`. The events go to stderr and the final result is JSON on stdout. That's the clean pattern.
+
+But refactoring the submit pipeline to use events would be a much larger change.
+
+I think the pragmatic approach is to add a `quiet` flag to `SubmitState` that guards the progress output in the first three pipeline steps, then reuse those steps directly in the exec command while outputting the final result as JSON. I should present this recommendation to the user and let them decide if they want to go with it or explore a different direction. The exec command could call the same gateway methods directly instead of reusing the pipeline functions, but that means duplicating about 330 lines of complex logic across prepare_state and the submit flows. I need to extract the core logic into shared functions that both the pipeline and exec command can use without the click.echo calls getting in the way.
+
+The cleanest approach is adding a `quiet` flag to `SubmitState` and conditionally guarding the echo statements throughout the pipeline steps—it's a small mechanical change that keeps the logic centralized. I'm checking how many echo calls are scattered across the first few pipeline steps to estimate the scope of this refactor.
+
+Actually, I'm realizing there's another option: let progress output go to stderr while JSON goes to stdout. That's the standard Unix pattern and would give Claude Code clean JSON without needing to modify the echo calls. But that would still require changing `click.echo` calls to use `err=True`, which is essentially the same amount of work as the `quiet` flag approach.
+
+The real question is whether this behavior change—moving progress to stderr for regular CLI usage too—is worth it. I think I'm overcomplicating this. Let me just go with the `quiet` field approach since it's the most surgical change, and if the user wants something different they can clarify.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3520" cache_read_input_tokens="78842" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3520}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a thorough understanding now. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3520" cache_read_input_tokens="78842" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3520}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01VKbd4amDryAnPAmtNgmUJy">
+    <param name="file_path">/Users/schrockn/.claude/plans/lively-floating-puddle.md</param>
+    <param name="content"># Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`
+
+## ...[truncated 3560 chars]...uv run pytest tests/unit/cli/commands/pr/submit_pipeline/`
+3. Run full CI: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3520" cache_read_input_tokens="78842" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3520}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VKbd4amDryAnPAmtNgmUJy">
+File created successfully at: /Users/schrockn/.claude/plans/lively-floating-puddle.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_019o8ujsAoyoer9j1yvRg49Q">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}, {'tool': 'Bash', 'prompt': 'run make targets via devrun agent'}, {'tool': 'Bash', 'prompt': 'run erk exec commands'}]</param>
+    <param name="plan"># Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`
+
+## ...[truncated 3560 chars]...uv run pytest tests/unit/cli/commands/pr/submit_pipeline/`
+3. Run full CI: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3417" cache_read_input_tokens="82362" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3417}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019o8ujsAoyoer9j1yvRg49Q">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/lively-floating-puddle.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`
+Current context: (wt:erk-slot-40) (br:plnd/extract-ai-generation-02-23-0219) (pr:#7946) (plan:#7946)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/extr"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 1b0aba8b-d686-4e1f-833a-c04f5566643f \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017haW221Gh71ipWijTaXmoQ">
+    <param name="file_path">/Users/schrockn/.claude/plans/lively-floating-puddle.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="744" cache_read_input_tokens="85779" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 744, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

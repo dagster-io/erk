@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "pr_number": 7946,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wIFJA",
+      "path": "src/erk/cli/commands/pr/submit_cmd.py",
+      "line": 128,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Test Coverage**: The `--skip-description` flag logic and conditional Claude availability check are not tested. Add test cases to verify: (1) flag is properly threaded to SubmitState, (2) Claude check is skipped when flag is True.",
+          "created_at": "2026-02-23T12:58:40Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already covered: test_pr_submit_skip_description_skips_claude_check (tests/commands/pr/test_submit.py:45) verifies both that --skip-description threads to SubmitState and that require_claude_available is skipped when True.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 06:26 PST_",
+          "created_at": "2026-02-23T14:26:25Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wIFEq",
+      "path": "src/erk/cli/commands/pr/submit_pipeline.py",
+      "line": 495,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Test Coverage**: Early return paths for `skip_description=True` in extract_diff (line 495), fetch_plan_context (line 534), generate_description (line 553), and finalize_pr (line 668) are not tested. Erk requires comprehensive test coverage for all code paths.",
+          "created_at": "2026-02-23T12:58:35Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already covered: All 4 pipeline steps have test_skip_description_returns_state_unchanged tests \u2014 test_extract_diff.py:94, test_fetch_plan_context.py:59, test_generate_description.py:59, test_finalize_pr.py:480.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 06:26 PST_",
+          "created_at": "2026-02-23T14:26:28Z"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,547 @@
+<session>
+  <meta branch="plnd/extract-ai-generation-02-23-0219" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_017haW221Gh71ipWijTaXmoQ">
+     1→# Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`
+     2→
+     3→## Context
+     4→
+     5→The `/erk:pr-submit` command's Step 1 currently uses `erk pr submit --skip-description` to push the branch and create/find the PR. Since the whole point of this PR is to make the agent orchestrate PR submission via composable `erk exec` building blocks, Step 1 should also be an `erk exec` command rather than a flag on the monolithic `erk pr submit`.
+     6→
+     7→## Approach
+     8→
+     9→Create `erk exec push-and-create-pr` that reuses the existing submit pipeline's first 3 steps (`prepare_state`, `commit_wip`, `push_and_create_pr`) and outputs JSON.
+    10→
+    11→**Key design decision**: The pipeline steps use `click.echo` for progress output which would pollute JSON stdout. Solution: add a `quiet: bool` field to `SubmitState`. When `True`, all `click.echo` calls in the first 3 pipeline steps are suppressed. The exec command sets `quiet=True`; the existing `erk pr submit` sets `quiet=False`.
+    12→
+    13→## Steps
+    14→
+    15→### 1. Add `quiet` field to `SubmitState` and guard echo calls
+    16→
+    17→**File**: `src/erk/cli/commands/pr/submit_pipeline.py`
+    18→
+    19→- Add `quiet: bool` to the `SubmitState` frozen dataclass
+    20→- Guard all `click.echo` calls in `commit_wip`, `_graphite_first_flow`, and `_core_submit_flow` with `if not state.quiet:`
+    21→- Add `quiet` parameter to `make_initial_state()`
+    22→- Add `run_push_and_create_pipeline()` function that runs only `(prepare_state, commit_wip, push_and_create_pr)`
+    23→
+    24→### 2. Create exec script
+    25→
+    26→**File**: `src/erk/cli/commands/exec/scripts/push_and_create_pr.py` (new)
+    27→
+    28→```
+    29→@click.command(name="push-and-create-pr")
+    30→@click.option("--force", "-f", is_flag=True)
+
+... [61 lines omitted] ...
+
+    40→- On error: output JSON with `success: false`, `error` object; exit code 1
+    56→### 5. Update error message hints in sibling exec scripts
+    81→- Test JSON error output structure
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`
+
+## Context
+
+The `/erk:pr-submit` command's Step 1 currently uses `erk pr submit --skip-description` to push the branch and create/find the PR. Since the whole point of this PR is to make the agent orchestrate PR submission via composable `erk exec` building blocks, Step 1 should also be an `erk exec` command rather than a flag on the monolithic `erk pr submit`.
+
+## Approach
+
+Create `erk exec push-and-create-pr` that reuses the existing submit pipeline's first 3 steps (`prepare_state`, `commit_wip`, `push_and_create_pr`) and outputs JSON.
+
+**Key design decision**: The pipeline steps use `click.echo` for progress output which would pollute JSON stdout. Solution: add a `quiet: bool` field to `SubmitState`. When `True`, all `click.echo` calls in the first 3 pipeline steps are suppressed. The exec command sets `quiet=True`; the existing `erk pr submit` sets `quiet=False`.
+
+## Steps
+
+1. Add `quiet` field to `SubmitState` and guard echo calls in pipeline
+2. Create `erk exec push-and-create-pr` exec script outputting JSON
+3. Register in group.py
+4. Update `/erk:pr-submit` command to use new exec command
+5. Update error message hints in `get-pr-context` and `set-pr-description`
+6. Update `erk pr submit` to pass `quiet=False`
+7. Update all test SubmitState constructors (7 files)
+8. Write tests for new exec command
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1623" cache_read_input_tokens="86523" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1623}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01DKkfQMXZrqNww8aXkXH8Ch">
+    <param name="questions">[{'question': '📋 Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-...[truncated 533 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1623" cache_read_input_tokens="86523" output_tokens="692" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1623, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DKkfQMXZrqNww8aXkXH8Ch">
+User has answered your questions: "📋 Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`
+Current context: (wt:erk-slot-40) (br:plnd/extract-ai-generation-02-23-0219) (pr:#7946) (plan:#7946)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01EqQNRDjSrTbKVPv8wz8ZWM">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="88146" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 915, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EqQNRDjSrTbKVPv8wz8ZWM">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --objective-issue=3679    # Plan linked to objective
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+```
+
+When creating a plan from an objective (via `/erk:objective-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
+
+The JSON output contract is the same for both backends (`plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`).
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--objective-issue` and `--plan-type` flags:
+
+```
+If  contains "--objective-issue=&lt;number&gt;":
+  - Extract the number
+  - Store as OBJECTIVE_ISSUE variable
+  - Set OBJECTIVE_FLAG to "--objective-issue=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+```
+
+### Step 2: Run Save Command
+
+Run this command with the session ID and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="1b0aba8b-d686-4e1f-833a-c04f5566643f" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `--objective-issue` was provided in arguments.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt; and re-run:
+  /erk:plan-save --objective-issue=&lt;expected&gt;
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `--objective-issue` was provided and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "1b0aba8b-d686-4e1f-833a-c04f5566643f" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --plan "#&lt;plan_number&gt;"
+```
+
+This atomically fetches the issue body, finds the matching node row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+On success, display based on `plan_backend` from JSON output:
+
+**Header (both backends):**
+
+```
+Plan "&lt;title&gt;" saved as &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Submit to Queue: erk plan submit &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Submit to Queue: erk plan submit &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"draft_pr"`:**
+
+```
+Next steps:
+
+View PR: gh pr view &lt;plan_number&gt; --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk br co --for-plan &lt;plan_number&gt;
+  Prepare+Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+  Submit to Queue: erk plan submit &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"github"` (or absent):**
+
+```
+Next steps:
+
+View Issue: gh issue view &lt;plan_number&gt; --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk br co --for-plan &lt;plan_number&gt;
+  Prepare+Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+  Submit to Queue: erk plan submit &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved issue number:**
+
+```bash
+erk exec marker read --session-id "1b0aba8b-d686-4e1f-833a-c04f5566643f" plan-saved-issue
+```
+
+This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <tool_use name="Bash" id="toolu_016p2DirA92CXUnQvVvdaCrT">
+    <param name="command">git branch --show-current</param>
+    <param name="description">Check current branch</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2199" cache_read_input_tokens="89061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2199}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016p2DirA92CXUnQvVvdaCrT">
+plnd/extract-ai-generation-02-23-0219
+  </tool_result>
+  <thinking>The user wants me to save the plan. Let me check if we're on trunk or not to determine the slot options display.
+
+The current branch is `plnd/extract-ai-generation-02-23-0219` - not trunk. So we're in a slot.
+
+Let me also check: this plan is for an incremental change to the existing PR #7946. The plan issue already exists as #7946. So saving a new plan issue might not be the right thing - we might want to update the existing plan.
+
+Actually wait, looking at the plan-save command instructions more carefully - it says to run `erk exec plan-save --format json --session-id="1b0aba8b-d686-4e1f-833a-c04f5566643f"`. Let me just follow the instructions.
+
+
+Since no objective issue or plan-type flag was provided, I'm working with empty flags.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="91260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 105}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me run the plan save command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="91260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 105}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FyR1pm641bi85fVtjcMu4B">
+    <param name="command">erk exec plan-save --format json --session-id="1b0aba8b-d686-4e1f-833a-c04f5566643f"</param>
+    <param name="description">Save plan to GitHub</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="91260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 105}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FyR1pm641bi85fVtjcMu4B">
+
+  </tool_result>
+  <thinking>The command ran without output. That's strange - it should have output JSON. Let me check if there was an error.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="91365" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 382}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The command produced no output. Let me check if there's an issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="91365" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 382}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CyqYV9QtUpArVnWeTDboZf">
+    <param name="command">erk exec plan-save --format json --session-id="1b0aba8b-d686-4e1f-833a-c04f5566643f" 2&gt;&amp;1</param>
+    <param name="description">Save plan to GitHub with stderr</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="91365" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 382}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CyqYV9QtUpArVnWeTDboZf">
+{"success": true, "plan_number": 7955, "skipped_duplicate": true, "message": "Session already saved plan #7955"}
+  </tool_result>
+  <thinking>The plan was already saved as #7955 (it was a duplicate save from this session). Let me check the plan backend from the output. It doesn't specify - let me check by looking at the issue.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="91747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 445}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The plan was already saved in this session as issue #7955. Let me check the details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="91747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 445}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MMzQeTBizyWwo2L4dVcz4X">
+    <param name="command">gh issue view 7955 --json title,url,state --jq '{title, url, state}'</param>
+    <param name="description">View plan issue details</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="91747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 445}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MMzQeTBizyWwo2L4dVcz4X">
+{"state":"OPEN","title":"[erk-plan] Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`","url":"https://github.com/dagster-io/erk/pull/7955"}
+  </tool_result>
+  <assistant>Plan "Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`" saved as draft PR #7955
+URL: https://github.com/dagster-io/erk/pull/7955
+
+**Next steps:**
+
+View PR: `gh pr view 7955 --web`
+
+In Claude Code:
+  Submit to queue: `/erk:plan-submit` -- Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended -- you're in a slot):
+    Local: `erk br co --for-plan 7955`
+    Implement: `source "$(erk br co --for-plan 7955 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+    Local: `erk br co --new-slot --for-plan 7955`
+    Implement: `source "$(erk br co --new-slot --for-plan 7955 --script)" &amp;&amp; erk implement --dangerous`
+
+  Submit to Queue: `erk plan submit 7955`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="92192" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 249}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_013y1X8beAGXxfzXggRdiyZ3">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1357" cache_read_input_tokens="92441" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1357}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013y1X8beAGXxfzXggRdiyZ3">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="482" cache_read_input_tokens="93798" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 482}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>

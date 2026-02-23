@@ -1,0 +1,883 @@
+<session>
+  <meta branch="plnd/extract-ai-generation-02-23-0219" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Read" id="toolu_01HeDcaYvwPRk9qp47u6fEe3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="560" cache_read_input_tokens="76900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 560}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HeDcaYvwPRk9qp47u6fEe3">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    11→from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
+    12→    add_reaction_to_comment,
+    13→)
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.check_impl import check_impl
+    21→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    22→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    23→from erk.cli.commands.exec.scripts.close_issue_with_comment import (
+    24→    close_issue_with_comment,
+    25→)
+    26→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    27→    create_impl_context_from_plan,
+    28→)
+    29→from erk.cli.commands.exec.scripts.create_issue_from_session import (
+    30→    create_issue_from_session,
+
+... [243 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_015E7U6NDE4Be3G6njJ8purT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="560" cache_read_input_tokens="76900" output_tokens="176" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 560, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015E7U6NDE4Be3G6njJ8purT">
+     1→"""Tests for erk exec update-pr-description command.
+     2→
+     3→These tests verify the CLI layer behavior of the update-pr-description exec command.
+     4→The command generates an AI-powered PR title/body and updates the PR on GitHub,
+     5→preserving existing header and footer metadata.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    16→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    17→from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+    18→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    19→from erk_shared.gateway.github.types import PRDetails
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.graphite.types import BranchMetadata
+    22→from erk_shared.gateway.time.fake import FakeTime
+    23→from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+    24→from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+    25→from tests.fakes.prompt_executor import FakePromptExecutor
+    26→from tests.test_utils.context_builders import build_workspace_test_context
+    27→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    28→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    29→
+    30→
+
+... [404 lines omitted] ...
+
+    87→    prompt_error: str | None = None,
+   135→        simulated_prompt_output=prompt_output if prompt_error is None else None,
+   136→        simulated_prompt_error=prompt_error,
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the codebase. Let me also look at the `build_workspace_test_context` and `erk_isolated_fs_env` utilities, and `FakePromptExecutor` to understand how to set up tests.
+
+Let me also look at `erk_shared.context.helpers` and `ErkContext.for_test`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="15637" cache_read_input_tokens="77460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check key test helpers and the `require_context` function.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15637" cache_read_input_tokens="77460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PaWRornbe9mf3vd8Qrqtpa">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15637" cache_read_input_tokens="77460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PaWRornbe9mf3vd8Qrqtpa">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.gateway.git.dry_run import DryRunGit
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from tests.fakes.shell import FakeShell
+    13→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    14→
+    15→
+    16→def build_workspace_test_context(
+    17→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    18→    *,
+    19→    dry_run: bool = False,
+    20→    use_graphite: bool = False,
+    21→    current_branch: str | None = None,
+    22→    **kwargs,
+    23→) -&gt; ErkContext:
+    24→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    25→
+    26→    This builder provides a standard context configuration for workspace manipulation
+    27→    commands with sensible defaults and support for common testing scenarios.
+    28→
+    29→    Args:
+    30→        env: Pure or isolated erk environment fixture
+
+... [96 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Fa5Joqm87pebYr95PLFQjc">
+    <param name="pattern">def require_context|def require_cwd</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk_shared/context/helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15637" cache_read_input_tokens="77460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Fa5Joqm87pebYr95PLFQjc">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk_shared/context/helpers.py. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EM6tZW7cDP8ruHL4yLN5Bu">
+    <param name="pattern">def require_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2306" cache_read_input_tokens="93097" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2306}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EM6tZW7cDP8ruHL4yLN5Bu">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0192fvTw5ZXvzuQqTNtRuXHh">
+    <param name="pattern">extract_header_from_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk_shared/gateway/github/pr_footer.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2306" cache_read_input_tokens="93097" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2306}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0192fvTw5ZXvzuQqTNtRuXHh">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk_shared/gateway/github/pr_footer.py. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Rcxc4fJSyrKhBFWqDQnXXw">
+    <param name="pattern">def require_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="95403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 417}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rcxc4fJSyrKhBFWqDQnXXw">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DfeJ7KeJsuX7nZbKnQATvm">
+    <param name="pattern">extract_header_from_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="95403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 417}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DfeJ7KeJsuX7nZbKnQATvm">
+Found 3 files
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py
+  </tool_result>
+  <thinking>Let me find `require_context` and `extract_header_from_body` - they may have been renamed or are in a different package.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="95820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 397}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UVBBN6yLb4M8aeyhqn2QGX">
+    <param name="pattern">from erk_shared.context.helpers import require_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="95820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 397}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UVBBN6yLb4M8aeyhqn2QGX">
+Found 4 files
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/exec/scripts/objective_update_after_land.py
+src/erk/cli/commands/exec/scripts/land_execute.py
+src/erk/cli/commands/exec/scripts/dash_data.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01A5GdAKv68K8vc96EdSUpdA">
+    <param name="pattern">def extract_header_from_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="95820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 397}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A5GdAKv68K8vc96EdSUpdA">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01VwtfcFvhC6LzuqUwaRMfXA">
+    <param name="pattern">extract_header_from_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+    <param name="-A">10</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="561" cache_read_input_tokens="96217" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 561}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VwtfcFvhC6LzuqUwaRMfXA">
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py:47:    extract_header_from_body,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-48-    rebuild_pr_body,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-49-)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-50-from erk_shared.gateway.github.types import BodyFile, PRNotFound
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-51-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-52-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-53-@dataclass(frozen=True)
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py-54-class SyncSuccess:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-55-    """Success result when PR is synced."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-56-
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py-57-    success: bool
+--
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py:124:    header = extract_header_from_body(existing_body) if existing_body else ""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-125-    footer = extract_footer_from_body(existing_body) if existing_body else None
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-126-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-127-    # Build new body
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-128-    new_body = rebuild_pr_body(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-129-        header=header,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-130-        content=commit_body,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-131-        footer=footer if footer else "",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-132-    )
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-133-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/pr_sync_commit.py-134-    # Write body to temp file to avoid shell argument length limits for large bodies
+--
+src/erk/cli/commands/pr/rewrite_cmd.py:30:from erk_shared.gateway.github.pr_footer import extract_header_from_body
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/rewrite_cmd.py-31-from erk_shared.gateway.github.types import BodyText, PRNotFound
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/rewrite_cmd.py-32-from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/rewrite_cmd.py-33-from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/rewrite_cmd.py-34-from erk_shared.gateway.gt.operations.squash import execute_squash
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/rewrite_cmd.py-35-from erk_shared.gateway.gt.types import SquashError
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017rWWMxHrVBTbyJJkA149t5">
+    <param name="pattern">def require_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="561" cache_read_input_tokens="96217" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 561}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017rWWMxHrVBTbyJJkA149t5">
+packages/erk-shared/src/erk_shared/context/helpers.py:31:def require_context(ctx: click.Context) -&gt; ErkContext:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-32-    """Get the full ErkContext, exiting with error if not initialized.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-33-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-34-    Uses LBYL pattern to check context before accessing. If context is not
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-35-    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-36-
+packages/erk-shared/src/erk_shared/context/helpers.py-37-    Args:
+packages/erk-shared/src/erk_shared/context/helpers.py-38-        ctx: Click context (must have ErkContext in ctx.obj)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-39-
+packages/erk-shared/src/erk_shared/context/helpers.py-40-    Returns:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/context/helpers.py-41-        ErkContext instance from context
+  </tool_result>
+  <thinking>Now I have all the context I need. Let me also find the `extract_header_from_body` function in the shared package.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2493" cache_read_input_tokens="96778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2493}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018kG5obHwgzwGZpiv284rph">
+    <param name="pattern">def extract_header_from_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2493" cache_read_input_tokens="96778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2493}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018kG5obHwgzwGZpiv284rph">
+packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py:72:def extract_header_from_body(body: str) -&gt; str:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-73-    """Extract header lines from the beginning of a PR body.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-74-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-75-    Header lines are lines at the start that match known patterns like
+packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-76-    `**Plan:** #123` or `**Remotely executed:** [Run #...]`.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-77-
+packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-78-    Args:
+packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-79-        body: Full PR body content
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-80-
+packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-81-    Returns:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-82-        Header content (including trailing newlines) or empty string if no header
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-83-    """
+packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-84-    if not body:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-85-        return ""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-86-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py-87-    lines = body.split("\n")
+  </tool_result>
+  <assistant>Good. Now I have all the context I need. Let me create task entries and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="99271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01XQYFcXiZioF2DRCqXUdYgq">
+    <param name="subject">Add --skip-description flag to erk pr submit</param>
+    <param name="description">Add --skip-description option to submit_cmd.py that skips Claude availability check and pa...[truncated 126 chars]...tion, and the title/body update in finalize_pr. Add skip_description field to SubmitState.</param>
+    <param name="activeForm">Adding --skip-description flag</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="99271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XQYFcXiZioF2DRCqXUdYgq">
+Task #1 created successfully: Add --skip-description flag to erk pr submit
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01AoJjN1Bb3i21ChfJ1CgNCH">
+    <param name="subject">Create erk exec get-pr-context command</param>
+    <param name="description">Create src/erk/cli/commands/exec/scripts/get_pr_context.py that outputs JSON with branch i...[truncated 78 chars]...et_pr_for_branch, run_diff_extraction, PlanContextProvider, and get_commit_messages_since.</param>
+    <param name="activeForm">Creating get-pr-context command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="99271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AoJjN1Bb3i21ChfJ1CgNCH">
+Task #2 created successfully: Create erk exec get-pr-context command
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Kqv5T87RL6unR9cfKgHT9r">
+    <param name="subject">Create erk exec set-pr-description command</param>
+    <param name="description">Create src/erk/cli/commands/exec/scripts/set_pr_description.py that takes --title and --bo...[truncated 88 chars]...header_from_body, extract_metadata_prefix, assemble_pr_body, and update_pr_title_and_body.</param>
+    <param name="activeForm">Creating set-pr-description command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="99271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kqv5T87RL6unR9cfKgHT9r">
+Task #3 created successfully: Create erk exec set-pr-description command
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01VV5ZTcEin76xXfNJynbbNM">
+    <param name="subject">Register new commands in exec group</param>
+    <param name="description">Add both get-pr-context and set-pr-description to the exec group in src/erk/cli/commands/exec/group.py.</param>
+    <param name="activeForm">Registering exec commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="99271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VV5ZTcEin76xXfNJynbbNM">
+Task #4 created successfully: Register new commands in exec group
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XKXt2N6FQgM6AvpuwW1cB5">
+    <param name="subject">Update /erk:pr-submit skill</param>
+    <param name="description">Replace the single erk pr submit call in .claude/commands/erk/pr-submit.md with the three-...[truncated 32 chars]... erk exec get-pr-context, (3) agent generates title+body, (4) erk exec set-pr-description.</param>
+    <param name="activeForm">Updating pr-submit skill</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="99271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XKXt2N6FQgM6AvpuwW1cB5">
+Task #5 created successfully: Update /erk:pr-submit skill
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Q4xEQvZteZ9muLFtNEU38b">
+    <param name="subject">Write tests for new commands</param>
+    <param name="description">Write tests for get-pr-context and set-pr-description following the same pattern as test_u...[truncated 15 chars]...ner + FakeGit + FakeGitHub + FakeGitHubIssues injected via build_workspace_test_context().</param>
+    <param name="activeForm">Writing tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="99271" output_tokens="937" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1007, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q4xEQvZteZ9muLFtNEU38b">
+Task #6 created successfully: Write tests for new commands
+  </tool_result>
+  <assistant>Now let me signal implementation started and begin.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1187" cache_read_input_tokens="100278" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1187}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UWf4xQZcDSZunSDsZ1GxsK">
+    <param name="command">erk exec impl-signal started --session-id="ff885972-6592-4bec-b6b8-07040c8b06eb" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1187" cache_read_input_tokens="100278" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1187}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_015s6Um611oWQrrHB1t6T64q">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1187" cache_read_input_tokens="100278" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1187}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UWf4xQZcDSZunSDsZ1GxsK">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 7946
+}
+  </tool_result>
+  <tool_result tool="toolu_015s6Um611oWQrrHB1t6T64q">
+Updated task #1 status
+  </tool_result>
+  <assistant>Phase 1: Adding `--skip-description` flag to `erk pr submit`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="101465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 272}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QEMo42AkiFnaUD4KTW2HfY">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="old_string">@click.command("submit")
+@click.option("--debug", is_flag=True, help="Show diagnostic outp...[truncated 1426 chars]...o_graphite,
+        force=force,
+        debug=debug,
+        session_id=session_id,
+    )</param>
+    <param name="new_string">@click.command("submit")
+@click.option("--debug", is_flag=True, help="Show diagnostic outp...[truncated 1944 chars]...bug=debug,
+        session_id=session_id,
+        skip_description=skip_description,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="101465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 272}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QEMo42AkiFnaUD4KTW2HfY">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `submit_pipeline.py` to add `skip_description` to `SubmitState` and modify the pipeline.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1339" cache_read_input_tokens="101737" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1339}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BfPBb2o8zC3RphU9SxvuAd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class SubmitState:
+    """Immutable state threaded through the sub...[truncated 346 chars]...ath | None
+    plan_context: PlanContext | None
+    title: str | None
+    body: str | None</param>
+    <param name="new_string">@dataclass(frozen=True)
+class SubmitState:
+    """Immutable state threaded through the sub...[truncated 373 chars]...ath | None
+    plan_context: PlanContext | None
+    title: str | None
+    body: str | None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1339" cache_read_input_tokens="101737" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1339}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BfPBb2o8zC3RphU9SxvuAd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now modify `extract_diff` and `fetch_plan_context` and `generate_description` to skip when `skip_description` is set.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="598" cache_read_input_tokens="103076" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 598}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0135Y57WPXsbhqAafH8wpjeu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    ""...[truncated 37 chars]...te, write scratch file."""
+    click.echo(click.style("Phase 2: Getting diff", bold=True))</param>
+    <param name="new_string">def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    ""...[truncated 89 chars]...tion:
+        return state
+    click.echo(click.style("Phase 2: Getting diff", bold=True))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="598" cache_read_input_tokens="103076" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 598}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0135Y57WPXsbhqAafH8wpjeu">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GCisqhaoqnGE6gVZyxxCW5">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+...[truncated 19 chars]...rk-plan issue."""
+    click.echo(click.style("Phase 3: Fetching plan context", bold=True))</param>
+    <param name="new_string">def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+...[truncated 71 chars]...     return state
+    click.echo(click.style("Phase 3: Fetching plan context", bold=True))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="103674" output_tokens="303" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 399, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GCisqhaoqnGE6gVZyxxCW5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0185dwmcXaPcxi7XMqK6yjAr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError...[truncated 36 chars]...Generator."""
+    click.echo(click.style("Phase 4: Generating PR description", bold=True))</param>
+    <param name="new_string">def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError...[truncated 88 chars]... return state
+    click.echo(click.style("Phase 4: Generating PR description", bold=True))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="104073" output_tokens="297" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 364, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0185dwmcXaPcxi7XMqK6yjAr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now modify `finalize_pr` to skip when `skip_description` is set.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="104437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015XL7oByAsL9CjybSQhUG9S">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    """...[truncated 50 chars]...n up diff file."""
+    click.echo(click.style("Phase 6: Updating PR metadata", bold=True))</param>
+    <param name="new_string">def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    """...[truncated 102 chars]...      return state
+    click.echo(click.style("Phase 6: Updating PR metadata", bold=True))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="104437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015XL7oByAsL9CjybSQhUG9S">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `make_initial_state` function to accept and pass through `skip_description`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="611" cache_read_input_tokens="104795" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 611}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015dUHPWfYcJbSNuaJYuhaJz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">def make_initial_state(
+    *,
+    cwd: Path,
+    use_graphite: bool,
+    force: bool,
+   ...[truncated 696 chars]...   diff_file=None,
+        plan_context=None,
+        title=None,
+        body=None,
+    )</param>
+    <param name="new_string">def make_initial_state(
+    *,
+    cwd: Path,
+    use_graphite: bool,
+    force: bool,
+   ...[truncated 767 chars]...   diff_file=None,
+        plan_context=None,
+        title=None,
+        body=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="611" cache_read_input_tokens="104795" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 611}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015dUHPWfYcJbSNuaJYuhaJz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to remove the unused import of `require_claude_available` from submit_cmd.py when `skip_description` is used. Actually, it's still used conditionally, so the import should stay. Let me check if there are any other callers of `make_initial_state` that need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="815" cache_read_input_tokens="105406" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 815}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YPNQtMZ8PMEEU3dX6Ycmgd">
+    <param name="pattern">make_initial_state</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="815" cache_read_input_tokens="105406" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 815}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YPNQtMZ8PMEEU3dX6Ycmgd">
+src/erk/cli/commands/land_cmd.py:27:    make_initial_state,
+src/erk/cli/commands/land_cmd.py:1947:    initial_state = make_initial_state(
+src/erk/cli/commands/land_pipeline.py:540:def make_initial_state(
+src/erk/cli/commands/pr/submit_cmd.py:21:    make_initial_state,
+src/erk/cli/commands/pr/submit_cmd.py:134:    state = make_initial_state(
+src/erk/cli/commands/pr/submit_pipeline.py:845:def make_initial_state(
+  </tool_result>
+  <assistant>There's also a `make_initial_state` in `land_cmd.py` that imports from `submit_pipeline` - let me check if that one needs updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="106221" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 381}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N2Ezg62oRGuSVZHgDsU6DP">
+    <param name="pattern">make_initial_state\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="106221" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 381, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N2Ezg62oRGuSVZHgDsU6DP">
+1945-
+1946-    # Run validation pipeline (resolve target, validate PR, gather confirmations)
+1947:    initial_state = make_initial_state(
+1948-        cwd=ctx.cwd,
+1949-        force=force,
+1950-        script=script,
+1951-        pull_flag=pull_flag,
+1952-        no_delete=no_delete,
+1953-        up_flag=up_flag,
+1954-        dry_run=ctx.dry_run,
+1955-        target_arg=target,
+1956-        repo_root=repo.root,
+1957-        main_repo_root=main_repo_root,
+  </tool_result>
+  <assistant>That's a different `make_initial_state` in `land_pipeline.py`, not `submit_pipeline.py`. The one in `land_cmd.py` imports from `land_pipeline`, not from `submit_pipeline`. Let me confirm.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="106602" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 384}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SPiNyP84YrDFdWwXr6iBGS">
+    <param name="pattern">from erk.cli.commands.pr.submit_pipeline import</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="106602" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 384}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SPiNyP84YrDFdWwXr6iBGS">
+No matches found
+  </tool_result>
+  <assistant>Good, it's a different `make_initial_state`. No other callers to update. Now let me also check tests that use `make_initial_state` from submit_pipeline.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="106986" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 212}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015BVmWPiMoPyjP5wnynmoey">
+    <param name="pattern">from erk.cli.commands.pr.submit_pipeline import</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="106986" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015BVmWPiMoPyjP5wnynmoey">
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:5:from erk.cli.commands.pr.submit_pipeline import (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-6-    SubmitError,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-7-    SubmitState,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-8-    enhance_with_graphite,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-9-)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-10-from erk.core.context import context_for_test
+--
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:5:from erk.cli.commands.pr.submit_pipeline import (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py-6-    SubmitError,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py-7-    SubmitState,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py-8-    _graphite_first_flow,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py-9-)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py-10-from erk.core.context import context_for_test
+--
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py:5:from erk.cli.commands.pr.submit_pipeline import (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-6-    SubmitError,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-7-    SubmitState,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-8-    _core_submit_flow,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-9-)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-10-from erk.core.context import context_for_test
+--
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py:5:from erk.cli.commands.pr.submit_pipeline import (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py-6-    SubmitError,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py-7-    SubmitState,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py-8-    extract_diff,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py-9-)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py-10-from erk.core.context import context_for_test
+--
+tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py:6:from erk.cli.commands.pr.submit_pipeline import (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py-7-    SubmitError,
+
+... [25 lines omitted] ...
+
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py-8-    SubmitError,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py-7-    SubmitError,
+  </tool_result>
+  <assistant>Tests construct `SubmitState` directly. I need to find how they create SubmitState and add the `skip_description` field. Let me check one to see the pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3142" cache_read_input_tokens="107198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3142}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WKLVtLN9eYChpbkGxxSyyt">
+    <param name="pattern">SubmitState\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+    <param name="head_limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3142" cache_read_input_tokens="107198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3142}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WKLVtLN9eYChpbkGxxSyyt">
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:39:    return SubmitState(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-40-        cwd=cwd,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-41-        repo_root=repo_root if repo_root is not None else cwd,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-42-        branch_name=branch_name,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-43-        parent_branch=parent_branch,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-44-        trunk_branch=trunk_branch,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-45-        use_graphite=use_graphite,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-46-        force=force,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-47-        debug=debug,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-48-        session_id=session_id,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-49-        issue_number=issue_number,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-50-        pr_number=pr_number,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-51-        pr_url=pr_url,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-52-        was_created=was_created,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-53-        base_branch=base_branch,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-54-        graphite_url=graphite_url,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-55-        diff_file=diff_file,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-56-        plan_context=plan_context,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-57-        title=title,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-58-        body=body,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py-59-    )
+--
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py:40:    return SubmitState(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-41-        cwd=cwd,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-42-        repo_root=repo_root if repo_root is not None else cwd,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-43-        branch_name=branch_name,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-44-        parent_branch=parent_branch,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-45-        trunk_branch=trunk_branch,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-46-        use_graphite=use_graphite,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py-47-        force=force,
+
+... [32 lines omitted] ...
+  </tool_result>
+  <assistant>I need to add `skip_description=False` to all existing test helper functions that construct `SubmitState`. Let me use a batch approach with libcst-refactor since there are many files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3797" cache_read_input_tokens="110340" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3797}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01WkUbCfJ75MGYK5vT7Ge67u">
+    <param name="pattern">tests/unit/cli/commands/pr/submit_pipeline/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3797" cache_read_input_tokens="110340" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3797}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WkUbCfJ75MGYK5vT7Ge67u">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+  </tool_result>
+  <assistant>Each file constructs SubmitState with positional-looking keyword args. I need to add `skip_description=False` after `session_id=session_id,` in each builder function. Let me do this efficiently.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="114137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 568}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V49cxFGvGUBpiDeBnfGCEF">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="old_string">        session_id=session_id,
+        issue_number=issue_number,</param>
+    <param name="new_string">        session_id=session_id,
+        skip_description=False,
+        issue_number=issue_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="114137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 568}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V49cxFGvGUBpiDeBnfGCEF">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GyUuWJ2gbdyJXb3GS1Kt1N">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py</param>
+    <param name="old_string">        session_id=session_id,
+        issue_number=issue_number,</param>
+    <param name="new_string">        session_id=session_id,
+        skip_description=False,
+        issue_number=issue_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="114137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 568}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GyUuWJ2gbdyJXb3GS1Kt1N">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XRsM2gMeFimBXL1RL8ve8d">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py</param>
+    <param name="old_string">        session_id=session_id,
+        issue_number=issue_number,</param>
+    <param name="new_string">        session_id=session_id,
+        skip_description=False,
+        issue_number=issue_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="114137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 568}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XRsM2gMeFimBXL1RL8ve8d">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Tg5ZRqe37F6WAXtoHE4dzr">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+    <param name="old_string">        session_id=session_id,
+        issue_number=issue_number,</param>
+    <param name="new_string">        session_id=session_id,
+        skip_description=False,
+        issue_number=issue_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="114137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 568}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tg5ZRqe37F6WAXtoHE4dzr">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I need to read the files first. Let me read them all in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="114705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1021}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PMWRjq5YyihuiTdYWw2dmq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="114705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1021}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PMWRjq5YyihuiTdYWw2dmq">
+     1→"""Unit tests for enhance_with_graphite pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    enhance_with_graphite,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.context.types import GlobalConfig
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.graphite.fake import FakeGraphite
+    14→from erk_shared.gateway.graphite.types import BranchMetadata
+    15→
+    16→
+    17→def _make_state(
+    18→    *,
+    19→    cwd: Path,
+    20→    repo_root: Path | None = None,
+    21→    branch_name: str = "feature",
+    22→    parent_branch: str = "main",
+    23→    trunk_branch: str = "main",
+    24→    use_graphite: bool = True,
+    25→    force: bool = False,
+    26→    debug: bool = False,
+    27→    session_id: str = "test-session",
+    28→    issue_number: int | None = None,
+    29→    pr_number: int | None = 42,
+    30→    pr_url: str | None = "https://github.com/owner/repo/pull/42",
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016ZC8R9GCzzj6eLNzRYM4jH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="114705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1021}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016ZC8R9GCzzj6eLNzRYM4jH">
+     1→"""Unit tests for _core_submit_flow pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    _core_submit_flow,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.gateway.git.abc import BranchDivergence
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.git.remote_ops.types import PushError
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→
+    17→
+    18→def _make_state(
+    19→    *,
+    20→    cwd: Path,
+    21→    repo_root: Path | None = None,
+    22→    branch_name: str = "feature",
+    23→    parent_branch: str = "main",
+    24→    trunk_branch: str = "main",
+    25→    use_graphite: bool = False,
+    26→    force: bool = False,
+    27→    debug: bool = False,
+    28→    session_id: str = "test-session",
+    29→    issue_number: int | None = None,
+    30→    pr_number: int | None = None,
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Hdmh3CXwX5ssJdzDtaTAvL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py</param>
+    <param name="limit">75</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="114705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1021}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hdmh3CXwX5ssJdzDtaTAvL">
+     1→"""Unit tests for finalize_pr pipeline step."""
+     2→
+     3→import dataclasses
+     4→import json
+     5→from pathlib import Path
+     6→
+     7→from erk.cli.commands.pr.submit_pipeline import (
+     8→    SubmitError,
+     9→    SubmitState,
+    10→    finalize_pr,
+    11→)
+    12→from erk.core.context import context_for_test
+    13→from erk.core.plan_context_provider import PlanContext
+    14→from erk_shared.context.types import GlobalConfig
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.types import PRDetails
+    18→from erk_shared.gateway.time.fake import FakeTime
+    19→from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+    20→from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+    21→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    22→
+    23→
+    24→def _make_state(
+    25→    *,
+    26→    cwd: Path,
+    27→    repo_root: Path | None = None,
+    28→    branch_name: str = "feature",
+    29→    parent_branch: str = "main",
+    30→    trunk_branch: str = "main",
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0198oDAmUHaHASzRdAtr4a8F">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="114705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1021}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0198oDAmUHaHASzRdAtr4a8F">
+     1→"""Unit tests for _graphite_first_flow pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    _graphite_first_flow,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.context.types import GlobalConfig
+    12→from erk_shared.gateway.git.abc import BranchDivergence
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→from erk_shared.gateway.graphite.fake import FakeGraphite
+    17→
+    18→
+    19→def _make_state(
+    20→    *,
+    21→    cwd: Path,
+    22→    repo_root: Path | None = None,
+    23→    branch_name: str = "feature",
+    24→    parent_branch: str = "main",
+    25→    trunk_branch: str = "main",
+    26→    use_graphite: bool = True,
+    27→    force: bool = False,
+    28→    debug: bool = False,
+    29→    session_id: str = "test-session",
+    30→    issue_number: int | None = None,
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YGvciWzgvK6WbZPyA4xKMu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="114705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1021}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

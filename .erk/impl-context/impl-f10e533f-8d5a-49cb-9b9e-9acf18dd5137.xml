@@ -1,0 +1,816 @@
+<session>
+  <meta branch="plnd/extract-ai-generation-02-23-0219" />
+  <meta model="claude-opus-4-6" />
+  <user>➜  erk-slot-40 git:(plnd/extract-ai-generation-02-23-0219) pwd
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40
+➜  erk-slot-40 git:(plnd/extract-ai-generation-02-23-0219) gt ls
+➜  erk-slot-40 git:(plnd/extract-ai-generation-02-23-0219) source "$(erk br co --for-plan 7955 --script)"
+Using existing branch: plnd/migrate-pr-submit-02-23-0504
+✓ Stacked plnd/migrate-pr-submit-02-23-0504 in erk-slot-40 (in place)
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.venv (3.13.1)
+Prepared plan #7955 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40
+(erk) ➜  erk-slot-40 git:(plnd/extract-ai-generation-02-23-0219)
+
+this appears to have worked ended for the part where we checked out the branch</user>
+  <assistant>
+
+Looking at the output, I see the issue. The command said "Using existing branch: plnd/migrate-pr-submit-02-23-0504" and "Stacked plnd/migrate-pr-submit-02-23-0504 in erk-slot-40 (in place)", but the shell prompt still shows `git:(plnd/extract-ai-generation-02-23-0219)` — the branch didn't actually change.
+
+Let me investigate what happened.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14190" cache_read_input_tokens="16826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14190}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01X4Sn8LXW72BWR2ggB4EdWZ">
+    <param name="command">git branch --show-current</param>
+    <param name="description">Check current branch in worktree</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14190" cache_read_input_tokens="16826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14190}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X4Sn8LXW72BWR2ggB4EdWZ">
+plnd/extract-ai-generation-02-23-0219
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HjUqwdnNh74S5hnrm2hNiY">
+    <param name="command">git log --oneline -3</param>
+    <param name="description">Check recent commits</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14190" cache_read_input_tokens="16826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14190}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HjUqwdnNh74S5hnrm2hNiY">
+296e26c8e WIP: Prepare for PR submission
+492a7b9ab WIP: Prepare for PR submission
+7a2a6e277 Remove .erk/impl-context/ before implementation
+  </tool_result>
+  <thinking>The branch is still `plnd/extract-ai-generation-02-23-0219`. The `erk br co --for-plan 7955 --script` command output said it stacked the new branch "in place" but didn't actually switch to it. Let me look at what `gt ls` shows and check if the branch exists locally.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="31016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 378}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Confirmed — the branch is still `plnd/extract-ai-generation-02-23-0219`. The checkout didn't actually happen even though the output claimed success. Let me dig into why.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="31016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 378}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019Gjqou6XYZ28FjD2o3YSMW">
+    <param name="command">git branch --list 'plnd/migrate*'</param>
+    <param name="description">Check if target branch exists locally</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="31016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 378}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Gjqou6XYZ28FjD2o3YSMW">
+  plnd/migrate-pr-submit-02-23-0504
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KSysVFFCp5p8WtHqB38ZGz">
+    <param name="command">gt ls 2&gt;&amp;1</param>
+    <param name="description">List Graphite stack</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="31016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 378}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KSysVFFCp5p8WtHqB38ZGz">
+◯                              P7508-erk-learn-generalize-plan-02-19-0400 (needs restack)
+│ ◯                            P7637-erk-plan-fix-tui-plan-bod-02-19-1837 (needs restack)
+│ │ ◯                          P7640-erk-learn-documentation-p-02-19-1839 (needs restack)
+│ │ │ ◯                        plan/plan-consolidated-document-02-21-1149 (needs restack)
+│ │ │ │ ◯                      planned/O7775-erk-objective-pla-02-22-0858
+│ │ │ │ │ ◯                    planned/O7823-erk-objective-pla-02-22-0859
+│ │ │ │ │ │ ◯                  planned/plan-consolidated-docum-02-22-0354 (needs restack)
+│ │ │ │ │ │ │ ◯                plnd/clear-workflow-error-02-22-1926
+│ │ │ │ │ │ │ │ ◉              plnd/extract-ai-generation-02-23-0219
+│ │ │ │ │ │ │ │ │ ◯            plnd/in-the-prs-that-get-genera-02-22-1808 (needs restack)
+│ │ │ │ │ │ │ │ │ │ ◯          plnd/migrate-pr-submit-02-23-0504 (needs restack)
+│ │ │ │ │ │ │ │ │ │ │ ◯        plnd/O7775-erk-objective-plan-7-02-22-1244
+│ │ │ │ │ │ │ │ │ │ │ │ ◯      plnd/plan-add-slugs-to-objectiv-02-22-2308
+│ │ │ │ │ │ │ │ │ │ │ │ │ ◯    plnd/update-ci-pr-title-02-22-1836
+│ │ │ │ │ │ │ │ │ │ │ │ │ │ ◯  release-0.8.1 (needs restack)
+◯─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘  master
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DKKBM9rLR3eQELPh99Ch7X">
+    <param name="command">cat /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl/plan.md 2&gt;/dev/null || echo "No plan file"</param>
+    <param name="description">Check if plan was prepared</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="31016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 378}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DKKBM9rLR3eQELPh99Ch7X">
+# Plan: Replace `erk pr submit --skip-description` with `erk exec push-and-create-pr`
+
+## Context
+
+The `/erk:pr-submit` command's Step 1 currently uses `erk pr submit --skip-description` to push the branch and create/find the PR. Since the whole point of this PR is to make the agent orchestrate PR submission via composable `erk exec` building blocks, Step 1 should also be an `erk exec` command rather than a flag on the monolithic `erk pr submit`.
+
+## Approach
+
+Create `erk exec push-and-create-pr` that reuses the existing submit pipeline's first 3 steps (`prepare_state`, `commit_wip`, `push_and_create_pr`) and outputs JSON.
+
+**Key design decision**: The pipeline steps use `click.echo` for progress output which would pollute JSON stdout. Solution: add a `quiet: bool` field to `SubmitState`. When `True`, all `click.echo` calls in the first 3 pipeline steps are suppressed. The exec command sets `quiet=True`; the existing `erk pr submit` sets `quiet=False`.
+
+## Steps
+
+### 1. Add `quiet` field to `SubmitState` and guard echo calls
+
+**File**: `src/erk/cli/commands/pr/submit_pipeline.py`
+
+- Add `quiet: bool` to the `SubmitState` frozen dataclass
+- Guard all `click.echo` calls in `commit_wip`, `_graphite_first_flow`, and `_core_submit_flow` with `if not state.quiet:`
+- Add `quiet` parameter to `make_initial_state()`
+- Add `run_push_and_create_pipeline()` function that runs only `(prepare_state, commit_wip, push_and_create_pr)`
+
+### 2. Create exec script
+
+**File**: `src/erk/cli/commands/exec/scripts/push_and_create_pr.py` (new)
+
+```
+@click.command(name="push-and-create-pr")
+@click.option("--force", "-f", is_flag=True)
+
+... [60 lines omitted] ...
+
+- On error: output JSON with `success: false`, `error` object; exit code 1
+### 5. Update error message hints in sibling exec scripts
+- Test JSON error output structure
+  </tool_result>
+  <thinking>So the branch `plnd/migrate-pr-submit-02-23-0504` exists locally and is in the Graphite stack, but the worktree is still on `plnd/extract-ai-generation-02-23-0219`. The `.impl/plan.md` was prepared though.
+
+The issue is that `erk br co --for-plan 7955 --script` said it "stacked" the branch "in place" but didn't actually switch the worktree to that branch. The `source` command evaluated the script output, which probably included a `cd` command but not a `git checkout` or `gt checkout`.
+ 
+I need to look at what the `erk br co` command is actually outputting to understand why the checkout didn't happen.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2460" cache_read_input_tokens="31394" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2460}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>So the situation is clear:
+
+- The branch `plnd/migrate-pr-submit-02-23-0504` exists locally and is in the Graphite stack
+- The `.impl/plan.md` was prepared (plan content is there)
+- But the worktree is still on `plnd/extract-ai-generation-02-23-0219` — the branch checkout didn't happen
+
+Let me investigate the `erk br co` command to understand the bug.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2460" cache_read_input_tokens="31394" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2460}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01MheZ7iqngQYHNRSoEmR3Fe">
+    <param name="description">Explore erk br co command</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1103 chars]...ch checkout didn't happen despite the command reporting success. Trace the full code path.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2460" cache_read_input_tokens="31394" output_tokens="894" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2460, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MheZ7iqngQYHNRSoEmR3Fe">
+Perfect! Now I understand the flow. Let me trace back through the code paths more carefully. The key issue is in `_setup_impl_for_plan` at line 313-326 in `branch/checkout_cmd.py`. When `script=True`, it exits via `sys.exit(0)` after outputting the script. But let me check if `_perform_checkout` ever gets called in the "stack in place" scenario:
+
+Looking at the code flow for `erk br co --for-plan &lt;issue&gt; --script` when the branch should be stacked in place:
+
+1. Lines 529-567 in `branch/checkout_cmd.py` handle the "stack in place" case
+2. Line 552-555: If `setup is not None` (which it is for `--for-plan`), it calls `_setup_impl_for_plan()`
+3. `_setup_impl_for_plan()` at lines 313-326 will:
+   - Create the `.impl/` folder
+   - **If `script=True`, output the activation script and call `sys.exit(0)` at line 326**
+   - This exit happens BEFORE `_perform_checkout()` is called at line 558!
+
+The problem is that the code flow is:
+
+```python
+if setup is not None:
+    _setup_impl_for_plan(ctx, setup=setup, worktree_path=target_wt.path, script=script)
+    # ^^^ If script=True, this calls sys.exit(0) and never returns
+    # So the code below never runs:
+    
+worktrees = ctx.git.worktree.list_worktrees(repo.root)  # &lt;-- Line 557 (NEVER REACHED in script mode)
+_perform_checkout(...)  # &lt;-- Line 558 (NEVER REACHED in script mode)
+return  # &lt;-- Line 567 (NEVER REACHED in script mode)
+```
+
+Now let me verify the activation script being generated. Looking at `_setup_impl_for_plan()` lines 313-319:
+
+```python
+if script:
+    activation_script = render_activation_script(
+        worktree_path=worktree_path,
+
+... [106 lines omitted] ...
+  </tool_result>
+  <thinking>The explore agent found the root cause. Let me now read the key file to verify this and understand the fix needed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2964" cache_read_input_tokens="33854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2964}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Excellent find. The agent traced the root cause clearly. Let me verify by reading the critical code path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2964" cache_read_input_tokens="33854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2964}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019W4vUQN3vHGjckCV1io6Cw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">525</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2964" cache_read_input_tokens="33854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2964}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019W4vUQN3vHGjckCV1io6Cw">
+   525→                current_assignment = None
+   526→                if state is not None and not new_slot:
+   527→                    current_assignment = _find_current_slot_assignment(state, repo.root)
+   528→
+   529→                if current_assignment is not None:
+   530→                    # Stack in place — update assignment to new tip, no new slot
+   531→                    assert state is not None
+   532→                    slot_result = update_slot_assignment_tip(
+   533→                        repo.pool_json_path,
+   534→                        state,
+   535→                        current_assignment,
+   536→                        branch_name=branch,
+   537→                        now=ctx.time.now().isoformat(),
+   538→                    )
+   539→                    user_output(
+   540→                        click.style(
+   541→                            f"✓ Stacked {branch} in {slot_result.slot_name} (in place)", fg="green"
+   542→                        )
+   543→                    )
+   544→
+   545→                    # Build a synthetic WorktreeInfo for the existing worktree.
+   546→                    # The branch will be checked out by _perform_checkout below.
+   547→                    target_wt = WorktreeInfo(
+   548→                        path=slot_result.worktree_path,
+   549→                        branch=current_assignment.branch_name,
+   550→                    )
+   551→
+   552→                    if setup is not None:
+   553→                        _setup_impl_for_plan(
+   554→                            ctx, setup=setup, worktree_path=target_wt.path, script=script
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R7bHxTxeFPtEdv5Ssxvief">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">279</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2964" cache_read_input_tokens="33854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2964}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R7bHxTxeFPtEdv5Ssxvief">
+   279→def _setup_impl_for_plan(
+   280→    ctx: ErkContext,
+   281→    *,
+   282→    setup: IssueBranchSetup,
+   283→    worktree_path: Path,
+   284→    script: bool,
+   285→) -&gt; None:
+   286→    """Create .impl/ folder and save plan ref after checkout for --for-plan.
+   287→
+   288→    In script mode, outputs an activation script and exits. In normal mode,
+   289→    prints a confirmation message.
+   290→
+   291→    Args:
+   292→        ctx: Erk context
+   293→        setup: Plan setup info from prepare_plan_for_worktree
+   294→        worktree_path: Path to the target worktree
+   295→        script: Whether to output only the activation script
+   296→    """
+   297→    impl_path = create_impl_folder(
+   298→        worktree_path,
+   299→        setup.plan_content,
+   300→        overwrite=True,
+   301→    )
+   302→
+   303→    save_plan_ref(
+   304→        impl_path,
+   305→        provider="github",
+   306→        plan_id=str(setup.issue_number),
+   307→        url=setup.issue_url,
+   308→        labels=(),
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>Now I can see the bug clearly:
+
+1. At line 552-555: `_setup_impl_for_plan()` is called
+2. Inside that function (line 326): when `script=True`, it calls `sys.exit(0)` — **exiting the entire process**
+3. Lines 557-566: `_perform_checkout()` is never reached
+
+The comment on line 546 even says "The branch will be checked out by _perform_checkout below" — but in script mode, the process exits before getting there.
+
+Now let me also look at `_perform_checkout` to understand what it does in script mode.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1879" cache_read_input_tokens="36818" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1879}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read `_perform_checkout` to understand what it does in script mode, so I can design the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1879" cache_read_input_tokens="36818" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1879}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KnrtnGn8Nz411b94coetye">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">178</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1879" cache_read_input_tokens="36818" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1879}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KnrtnGn8Nz411b94coetye">
+   178→
+   179→    # Check if branch is already checked out in the worktree
+   180→    need_checkout = current_branch_in_worktree != branch
+   181→
+   182→    # If we need to checkout, do it before generating the activation script
+   183→    if need_checkout:
+   184→        ctx.branch_manager.checkout_branch(target_path, branch)
+   185→
+   186→    # Ensure branch is tracked with Graphite (idempotent)
+   187→    _ensure_graphite_tracking(
+   188→        ctx, repo_root=repo_root, target_path=target_path, branch=branch, script=script
+   189→    )
+   190→
+   191→    if need_checkout and not script:
+   192→        # Show stack context in non-script mode
+   193→        stack = ctx.branch_manager.get_branch_stack(repo_root, branch)
+   194→        if stack:
+   195→            user_output(f"Stack: {' -&gt; '.join(stack)}")
+   196→        user_output(f"Checked out '{branch}' in worktree")
+   197→
+   198→    # Compute four-case message for script and user output
+   199→    worktree_name = target_path.name
+   200→    is_switching_location = current_cwd != target_path
+   201→
+   202→    # Generate styled script message (used for script mode and as basis for user output)
+   203→    styled_wt = click.style(worktree_name, fg="cyan", bold=True)
+   204→    styled_branch = click.style(branch, fg="yellow")
+   205→
+   206→    if is_newly_created:
+   207→        script_message = f'echo "Switched to new worktree {styled_wt}"'
+
+... [70 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the full picture. Let me read `_perform_checkout` from the beginning to understand the full signature.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1705" cache_read_input_tokens="38697" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1705}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AUH2ygttcyxoWc9QBbmsgQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">136</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1705" cache_read_input_tokens="38697" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1705}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AUH2ygttcyxoWc9QBbmsgQ">
+   136→        wt: WorktreeInfo to format
+   137→        repo_root: Path to repository root (used to identify root worktree)
+   138→
+   139→    Returns:
+   140→        Formatted string like "root (currently on 'main')" or "wt-name (currently on 'feature')"
+   141→    """
+   142→    current = wt.branch or "(detached HEAD)"
+   143→    if wt.path == repo_root:
+   144→        return f"  - root (currently on '{current}')"
+   145→    else:
+   146→        # Get worktree name from path
+   147→        wt_name = wt.path.name
+   148→        return f"  - {wt_name} (currently on '{current}')"
+   149→
+   150→
+   151→def _perform_checkout(
+   152→    ctx: ErkContext,
+   153→    *,
+   154→    repo_root: Path,
+   155→    target_worktree: WorktreeInfo,
+   156→    branch: str,
+   157→    script: bool,
+   158→    is_newly_created: bool,
+   159→    worktrees: list[WorktreeInfo] | None,
+   160→) -&gt; None:
+   161→    """Perform the actual checkout and switch to a worktree.
+   162→
+   163→    Args:
+   164→        ctx: Erk context
+   165→        repo_root: Repository root path
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a complete picture. Let me now design the fix with a Plan agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="843" cache_read_input_tokens="40402" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 843}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01WCRW6cwB29XxveBHm1t1B3">
+    <param name="description">Plan fix for checkout bug</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+## Problem
+
+I...[truncated 3770 chars]...s a post-cd command.
+
+Please design the minimal fix and identify what tests need updating.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="843" cache_read_input_tokens="40402" output_tokens="1293" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 843, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WCRW6cwB29XxveBHm1t1B3">
+I have enough context now. Let me also verify the non-script mode path for the stack-in-place case to confirm it works correctly.
+
+Looking at the code flow for the non-script case in the stack-in-place path (lines 529-567):
+
+1. Line 532-543: Pool assignment updated, success message printed
+2. Line 547-550: Synthetic `WorktreeInfo` created with OLD branch name (`current_assignment.branch_name`)
+3. Line 552-555: `_setup_impl_for_plan()` called -- when `script=False`, it creates the `.impl/` folder and prints a message, then **returns** (does NOT exit)
+4. Line 557: `list_worktrees` refreshed
+5. Line 558-566: `_perform_checkout()` called -- this checks `current_branch_in_worktree != branch` and since `target_wt.branch` is the OLD branch and `branch` is the NEW branch, `need_checkout` is True, and `checkout_branch` is called
+
+So the non-script path works correctly. The bug is exclusively in the script path where `_setup_impl_for_plan` calls `sys.exit(0)` before `_perform_checkout` is reached.
+
+Now let me also check the other two call sites (lines 594-597 and 619-622) more carefully. In those paths, `matching_worktrees` already found worktrees containing the branch, so the branch IS already checked out. The `_perform_checkout` does the `need_checkout` check and skips the actual `git checkout`. So those paths are fine -- the `sys.exit(0)` in `_setup_impl_for_plan` just means we skip the message generation, but the checkout itself is not needed.
+
+Now I have a complete understanding. Let me design the fix.
+
+Here is my comprehensive analysis and plan:
+
+---
+
+## Analysis
+
+### Bug Summary
+
+In `src/erk/cli/commands/branch/checkout_cmd.py`, the "stack in place" code path (lines 529-567) has a bug when both `--for-plan` and `--script` are used together.
+
+### Root Cause
+
+The function `_setup_impl_for_plan()` (line 312-326) calls `sys.exit(0)` when `script=True`, which terminates the entire process before `_perform_checkout()` can execute. The activation script it generates does NOT include a `git checkout` command, so the worktree remains on the old branch.
+
+
+... [145 lines omitted] ...
+  </tool_result>
+  <assistant>
+
+The analysis is thorough and the fix is clear. Let me write the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4483" cache_read_input_tokens="41245" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4483}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011Zx6XqYFWhTCdds5BGvuEn">
+    <param name="file_path">/Users/schrockn/.claude/plans/sunny-juggling-lightning.md</param>
+    <param name="content"># Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-place path
+
+## ...[truncated 1731 chars]...kout_cmd.py` — all existing tests pass, new test passes
+2. `make fast-ci` — full CI green
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4483" cache_read_input_tokens="41245" output_tokens="686" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4483, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011Zx6XqYFWhTCdds5BGvuEn">
+File created successfully at: /Users/schrockn/.claude/plans/sunny-juggling-lightning.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01JnZ5jxxvYRN1RZrNZgrzsP">
+    <param name="plan"># Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-place path
+
+## ...[truncated 1731 chars]...kout_cmd.py` — all existing tests pass, new test passes
+2. `make fast-ci` — full CI green
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="45728" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 726, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JnZ5jxxvYRN1RZrNZgrzsP">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/sunny-juggling-lightning.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-place path
+Current context: (wt:erk-slot-40) (br:plnd/extract-ai-generation-02-23-0219) (pr:#7946) (plan:#7955)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/extr"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id f10e533f-8d5a-49cb-9b9e-9acf18dd5137 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-place path
+
+## Context
+
+When running `source "$(erk br co --for-plan 7955 --script)"` from a worktree that already has a slot assignment, the command reports success ("Stacked ... in place") but the branch never actually changes. The pool assignment is updated and `.impl/` is created, but the worktree stays on the old branch.
+
+**Root cause**: In the stack-in-place path (line 529-567 of `checkout_cmd.py`), `_setup_impl_for_plan()` calls `sys.exit(0)` in script mode (line 326), which terminates the process before `_perform_checkout()` (line 558) can run `git checkout`.
+
+## Fix
+
+**File**: `src/erk/cli/commands/branch/checkout_cmd.py` (lines 529-567)
+
+Move the git checkout to happen **before** `_setup_impl_for_plan()`:
+
+1. Insert `ctx.branch_manager.checkout_branch(slot_result.worktree_path, branch)` after the pool assignment update but before the `_setup_impl_for_plan` call
+2. Change `WorktreeInfo(branch=current_assignment.branch_name)` to `WorktreeInfo(branch=branch)` since checkout already happened
+
+After the fix, `_perform_checkout` sees `need_checkout=False` and handles only navigation/activation — no double checkout.
+
+## Test
+
+**File**: `tests/commands/branch/test_checkout_cmd.py`
+
+Add regression test `test_checkout_stacks_in_place_for_plan_with_script`:
+- Set up pool state with CWD assigned to a slot on "old-branch"
+- Invoke `["checkout", "--for-plan", "500", "--script"]`
+- Assert the new branch was checked out (via `branch_manager.checked_out_branches`)
+- Assert `.impl/` folder was created
+- Assert exit code 0
+
+## Verification
+
+1. `uv run pytest tests/commands/branch/test_checkout_cmd.py` — all existing tests pass, new test passes
+2. `make fast-ci` — full CI green
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="46454" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 664}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01XNouEBSRBaK6ma3MzeRXsQ">
+    <param name="questions">[{'question': "Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-pl...[truncated 531 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="46454" output_tokens="807" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 664, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XNouEBSRBaK6ma3MzeRXsQ">
+User has answered your questions: "Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-place path
+Current context: (wt:erk-slot-40) (br:plnd/extract-ai-generation-02-23-0219) (pr:#7946) (plan:#7955)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_015y8JY8ememNZPDceKo6rGN">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1376" cache_read_input_tokens="47118" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1376}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015y8JY8ememNZPDceKo6rGN">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --objective-issue=3679    # Plan linked to objective
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+```
+
+When creating a plan from an objective (via `/erk:objective-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
+
+The JSON output contract is the same for both backends (`plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`).
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--objective-issue` and `--plan-type` flags:
+
+```
+If  contains "--objective-issue=&lt;number&gt;":
+  - Extract the number
+  - Store as OBJECTIVE_ISSUE variable
+  - Set OBJECTIVE_FLAG to "--objective-issue=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+```
+
+### Step 2: Run Save Command
+
+Run this command with the session ID and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="f10e533f-8d5a-49cb-9b9e-9acf18dd5137" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `--objective-issue` was provided in arguments.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt; and re-run:
+  /erk:plan-save --objective-issue=&lt;expected&gt;
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `--objective-issue` was provided and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "f10e533f-8d5a-49cb-9b9e-9acf18dd5137" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --plan "#&lt;plan_number&gt;"
+```
+
+This atomically fetches the issue body, finds the matching node row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below (using the `plan_backend` field to choose the correct format).
+
+If `branch_name` is absent, display only: `View PR: gh pr view &lt;plan_number&gt; --web`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display based on `plan_backend` from JSON output:
+
+**Header (both backends):**
+
+```
+Plan "&lt;title&gt;" saved as &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Submit to Queue: erk plan submit &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Submit to Queue: erk plan submit &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"draft_pr"`:**
+
+```
+Next steps:
+
+View PR: gh pr view &lt;plan_number&gt; --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk br co --for-plan &lt;plan_number&gt;
+  Prepare+Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+  Submit to Queue: erk plan submit &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"github"` (or absent):**
+
+```
+Next steps:
+
+View Issue: gh issue view &lt;plan_number&gt; --web
+
+In Claude Code:
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
+
+OR exit Claude Code first, then run one of:
+  Local: erk br co --for-plan &lt;plan_number&gt;
+  Prepare+Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+  Submit to Queue: erk plan submit &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved issue number:**
+
+```bash
+erk exec marker read --session-id "f10e533f-8d5a-49cb-9b9e-9acf18dd5137" plan-saved-issue
+```
+
+This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose "Create a plan PR (Recommended)" and the `/erk:plan-save` skill has been loaded. I need to follow the instructions to save the plan to GitHub.
+
+Let me parse the arguments first - there are no `--objective-issue` or `--plan-type` flags, so both are empty.
+
+Step 2: Run the save command.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2323" cache_read_input_tokens="48494" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2323}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Running the plan save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2323" cache_read_input_tokens="48494" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2323}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015uU5aWChTWUNxCtcvMGk9t">
+    <param name="command">erk exec plan-save --format json --session-id="f10e533f-8d5a-49cb-9b9e-9acf18dd5137"</param>
+    <param name="description">Save plan to GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2323" cache_read_input_tokens="48494" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2323}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015uU5aWChTWUNxCtcvMGk9t">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012ygh5QZDa8kz4HdDYsiRRT">
+    <param name="command">erk exec plan-save --format json --session-id="f10e533f-8d5a-49cb-9b9e-9acf18dd5137" 2&gt;&amp;1</param>
+    <param name="description">Save plan to GitHub (capture all output)</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="50817" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 258}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012ygh5QZDa8kz4HdDYsiRRT">
+{"success": true, "plan_number": 7956, "skipped_duplicate": true, "message": "Session already saved plan #7956", "plan_backend": "draft_pr", "branch_name": "plnd/fix-checkout-stack-02-23-0515"}
+  </tool_result>
+  <assistant>The plan was already saved as a duplicate. Let me check if this is from a previous session or if it matches our plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="51075" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 216}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Kor5vZysMMM4EECzY3ea8k">
+    <param name="command">gh pr view 7956 --json title,url,state 2&gt;&amp;1</param>
+    <param name="description">View the saved plan PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="51075" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 216}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kor5vZysMMM4EECzY3ea8k">
+{"state":"OPEN","title":"[erk-plan] Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-place path","url":"https://github.com/dagster-io/erk/pull/7956"}
+  </tool_result>
+  <assistant>Plan already saved as draft PR #7956 (duplicate skipped).
+
+**Plan "Fix: `erk br co --for-plan --script` doesn't checkout branch in stack-in-place path" saved as draft PR #7956**
+URL: https://github.com/dagster-io/erk/pull/7956
+
+**Next steps:**
+
+View PR: `gh pr view 7956 --web`
+
+In Claude Code:
+  Submit to queue: `/erk:plan-submit` — Submit plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: `erk br co --for-plan 7956`
+    Implement: `source "$(erk br co --for-plan 7956 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+    Local: `erk br co --new-slot --for-plan 7956`
+    Implement: `source "$(erk br co --new-slot --for-plan 7956 --script)" &amp;&amp; erk implement --dangerous`
+
+  Submit to Queue: `erk plan submit 7956`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1387" cache_read_input_tokens="51291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1387}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>

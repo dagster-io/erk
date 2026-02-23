@@ -1,0 +1,373 @@
+<session>
+  <meta branch="plnd/extract-ai-generation-02-23-0219" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-submit&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-submit&lt;/command-name&gt;</user>
+  <user># Submit PR
+
+Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
+
+**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
+
+## Usage
+
+```bash
+# Invoke the command (description argument is optional but recommended)
+/erk:pr-submit "Add user authentication feature"
+
+# Without argument (will analyze changes automatically)
+/erk:pr-submit
+```
+
+## Implementation
+
+This command uses a three-step flow to avoid nested Claude subprocess calls:
+
+1. **Push + create PR** (no AI) via `erk pr submit --skip-description`
+2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+3. **Generate title + body** natively (you are the agent — no subprocess)
+4. **Apply description** via `erk exec set-pr-description`
+
+### Step 1: Push and Create PR
+
+```bash
+erk pr submit --skip-description
+```
+
+This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title.
+
+If this fails, display the error and stop.
+
+### Step 2: Get PR Context
+
+```bash
+erk exec get-pr-context
+```
+
+This outputs JSON to stdout with:
+- `branch.current` and `branch.parent`
+- `pr.number` and `pr.url`
+- `diff_file` path to the diff content
+- `commit_messages` array
+- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`
+
+Parse the JSON output. If this fails, display the error and stop.
+
+### Step 3: Generate Title and Body
+
+1. Read the diff file from the `diff_file` path in the JSON
+2. Load the `erk-diff-analysis` skill for the commit message prompt format
+3. Consider the `commit_messages` and `plan_context` from the JSON
+4. If the user provided a `` argument, use it to guide the description
+5. Generate a PR title (first line) and body following the diff analysis format
+
+### Step 4: Apply Description
+
+Write the generated body to a temp file, then apply:
+
+```bash
+erk exec set-pr-description --title "&lt;generated title&gt;" --body-file "&lt;temp file path&gt;"
+```
+
+If this fails, display the error and stop.
+
+### Step 5: Report Results
+
+Report:
+- PR URL (from step 2 JSON)
+- Success message
+
+### Refresh Status Line
+
+After reporting results, output the following to trigger a status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+## Error Handling
+
+If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+
+Common errors:
+- Authentication issues (Graphite/GitHub)
+- Merge conflicts
+- No commits to submit
+- No PR found for branch
+</user>
+  <thinking>The user wants to submit a PR using the `/erk:pr-submit` command. Let me follow the steps outlined in the command.
+
+Let me start with Step 1: Push and Create PR.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="31341" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31341}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll follow the PR submit flow. Let me start by pushing and creating the PR.
+
+**Step 1: Push and Create PR**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="31341" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31341}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015pfTLFKgkbh8Qv1JHL24En">
+    <param name="command">erk pr submit --skip-description</param>
+    <param name="description">Push branch and create PR via Graphite</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="31341" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31341}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015pfTLFKgkbh8Qv1JHL24En">
+🚀 Submitting PR...
+
+   Committing uncommitted changes...
+Phase 1: Graphite Submit
+   Running gt submit...
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/extract-ai-generation-02-23-0219 (Update code)
+
+🚀 Pushing branches to remote...
+
+📨 Creating/updating PRs...
+plnd/extract-ai-generation-02-23-0219: https://app.graphite.com/github/pr/dagster-io/erk/7946 (updated)
+   Graphite submit completed
+
+   Getting PR info...
+   PR #7946 ready
+
+  Waiting for PR to appear in Graphite cache...
+✅ ]8;;https://github.com/dagster-io/erk/pull/7946\https://github.com/dagster-io/erk/pull/7946]8;;\
+📊 ]8;;https://app.graphite.com/github/pr/dagster-io/erk/7946\https://app.graphite.com/github/pr/dagster-io/erk/7946]8;;\
+  </tool_result>
+  <assistant>Step 1 succeeded. Now Step 2: Get PR context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="31341" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 521}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Edqpqzhkjmsxtu1mqW8vGB">
+    <param name="command">erk exec get-pr-context</param>
+    <param name="description">Get PR context JSON for description generation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="31341" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 521, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Edqpqzhkjmsxtu1mqW8vGB">
+{
+  "branch": {
+    "current": "plnd/extract-ai-generation-02-23-0219",
+    "parent": "master"
+  },
+  "pr": {
+    "number": 7946,
+    "url": "https://github.com/dagster-io/erk/pull/7946"
+  },
+  "diff_file": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/scratch/sessions/c09a100b-3041-4509-b2f8-3a126702fe25/pr-diff-4599720b.diff",
+  "commit_messages": [
+    "Add plan: Plan: Split AI Generation Out of `erk pr submit`",
+    "Add plan for PR #7946",
+    "Remove .erk/impl-context/ before implementation",
+    "WIP: Prepare for PR submission",
+    "WIP: Prepare for PR submission"
+  ],
+  "plan_context": {
+    "plan_id": "7946",
+    "plan_content": "# Plan: Split AI Generation Out of `erk pr submit`\n\n## Context\n\n`erk pr submit` internally calls Claude (via `CommitMessageGenerator` \u2192 `ctx.prompt_executor`) to generate PR title and body. When invoked from a Claude Code skill, this creates a nested Claude API call that runs as an opaque subprocess \u2014 taking 9+ minutes with zero progress visibility, confusing the agent and blocking the session.\n\nThe fix: give the agent two `erk exec` commands to bookend the AI step, so the agent generates the description natively (no subprocess) and a thin exec command applies the result.\n\n## New Flow (in `/erk:pr-submit` skill)\n\n```\nerk pr submit --skip-description       # git/graphite ops only \u2014 no AI\nerk exec get-pr-context                # agent reads diff + plan + commits\n[agent generates title + body]\nerk exec set-pr-description --title \"...\" --body \"...\"  # applies result to PR\n```\n\n## Changes\n\n### 1. `erk pr submit --skip-description` flag\n\n**File:** `src/erk/cli/commands/pr/submit_cmd.py` (add `--skip-description` option)\n**File:** `src/erk/cli/commands/pr/submit_pipeline.py` (pass flag through `SubmitState`, skip phases 4-5)\n\nWhen `--skip-description` is set, the pipeline executes phases 1-3 (push + create PR + PR footer) then exits early \u2014 skipping `generate_description` and the PR title/body update in `finalize_pr`. The PR gets created with a placeholder title (branch name or first commit subject) and empty body.\n\n### 2. `erk exec get-pr-context` (new)\n\n**File:** `src/erk/cli/commands/exec/scripts/get_pr_context.py`\n\nOutputs JSON to stdout:\n```json\n{\n  \"branch\": { \"current\": \"plnd/...\", \"parent\": \"master\" },\n  \"pr\": { \"number\": 7930, \"url\": \"https://...\" },\n  \"diff_file\": \"/tmp/pr-diff-xxx.diff\",\n  \"commit_messages\": [\"msg1\", \"msg2\"],\n  \"plan_context\": {\n    \"plan_id\": \"7930\",\n    \"plan_content\": \"# Plan...\",\n    \"objective_summary\": null\n  }\n}\n```\n\nImplementation reuses:\n- `discover_branch_context(ctx, cwd)` \u2192 `src/erk/cli/commands/pr/shared.py`\n- `ctx.github.get_pr_for_branch()` \u2192 get PR number/URL\n- `run_diff_extraction(ctx, ...)` \u2192 writes diff to temp file, returns `Path`\n- `PlanContextProvider(ctx.plan_backend, ctx.github_issues).get_plan_context()` \u2192 `src/erk/core/plan_context_provider.py`\n- `ctx.git.commit.get_commit_messages_since(cwd, parent_branch)`\n\nNo `--session-id` needed (uses `uuid.uuid4()` internally for diff file isolation).\n\n### 3. `erk exec set-pr-description --title \"...\" --body \"...\"` (new)\n\n**File:** `src/erk/cli/commands/exec/scripts/set_pr_description.py`\n\nTakes `--title` and `--body` (and optional `--body-file` for large bodies) and updates the PR with proper metadata assembly.\n\nImplementation reuses:\n- `discover_branch_context(ctx, cwd)` \u2192 branch/PR discovery\n- `ctx.github.get_pr_for_branch()` \u2192 get existing PR body for header/footer extraction\n- `discover_issue_for_footer(impl_dir, branch_name, existing_body, plans_repo)` \u2192 `src/erk/cli/commands/pr/shared.py`\n- `extract_header_from_body(existing_body)` \u2192 `erk_shared.gateway.github.pr_footer`\n- `extract_metadata_prefix(existing_body)` \u2192 `erk_shared.plan_store.draft_pr_lifecycle` (for draft-PR backend)\n- `assemble_pr_body(body, plan_context, pr_number, issue_number, plans_repo, header, metadata_prefix)` \u2192 `src/erk/cli/commands/pr/shared.py`\n- `ctx.github.update_pr_title_and_body()` \u2192 write result\n\nNote: This command does NOT call Claude. It takes agent-generated title/body as arguments.\n\n### 4. Register new commands\n\n**File:** `src/erk/cli/commands/exec/__init__.py`\nAdd both new commands to the exec group.\n\n### 5. Update `/erk:pr-submit` skill\n\n**File:** `.claude/commands/erk/pr-submit.md`\n\nReplace the single `erk pr submit` call with the three-step flow. The skill now:\n1. Runs `erk pr submit --skip-description` (git/graphite only)\n2. Calls `erk exec get-pr-context`, reads the JSON output\n3. Reads the diff file path from JSON and scans the diff\n4. Generates title + body (natively, as the running agent \u2014 no subprocess)\n5. Calls `erk exec set-pr-description --title \"...\" --body \"...\"`\n6. Reports PR URL and success\n\n### 6. Tests\n\n**Files to create:**\n- `tests/unit/cli/commands/exec/scripts/test_get_pr_context.py`\n- `tests/unit/cli/commands/exec/scripts/test_set_pr_description.py`\n\nTest pattern: `CliRunner` + `FakeGit` + `FakeGitHub` + `FakeGitHubIssues` injected via `build_workspace_test_context()` (same pattern as `test_update_pr_description.py`).\n\nKey test cases for `get-pr-context`:\n- Happy path: outputs valid JSON with all fields\n- No PR found: exits 1 with clear error\n- No plan context: `plan_context` is null in output\n\nKey test cases for `set-pr-description`:\n- Happy path: PR title + body updated, header/footer preserved\n- Draft-PR mode: metadata prefix preserved\n- Issue mismatch: exits 1 with error\n\n## Verification\n\n```bash\n# Unit tests\nmake fast-ci\n\n# Manual smoke test (in a worktree with a plan branch + PR)\nerk pr submit --skip-description\nerk exec get-pr-context  # verify JSON output\nerk exec set-pr-description --title \"Test title\" --body \"Test body\"\n# Check PR on GitHub: title/body updated, footer preserved\n```\n",
+    "objective_summary": null
+  }
+}
+  </tool_result>
+  <thinking>Now I need to:
+1. Read the diff file
+2. Load the `erk-diff-analysis` skill
+3. Generate the title and body
+
+Let me read the diff file and load the skill.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2235" cache_read_input_tokens="31862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2235}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Step 2 succeeded. Now let me read the diff and load the diff analysis skill.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2235" cache_read_input_tokens="31862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2235}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GEpqAW3nrjmhLMVhpirn7g">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/scratch/sessions/c09a100b-3041-4509-b2f8-3a126702fe25/pr-diff-4599720b.diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2235" cache_read_input_tokens="31862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2235}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GEpqAW3nrjmhLMVhpirn7g">
+     1→diff --git a/.claude/commands/erk/pr-submit.md b/.claude/commands/erk/pr-submit.md
+     2→index e48d22954..5704ef8b6 100644
+     3→--- a/.claude/commands/erk/pr-submit.md
+     4→+++ b/.claude/commands/erk/pr-submit.md
+     5→@@ -3,7 +3,6 @@ description:
+     6→   Create git commit and submit current branch with Graphite (squashes commits
+     7→   and rebases stack)
+     8→ argument-hint: &lt;description&gt;
+     9→-context: fork
+    10→ ---
+    11→ 
+    12→ # Submit PR
+    13→@@ -24,39 +23,61 @@ Automatically create a git commit with a helpful summary message and submit the
+    14→ 
+    15→ ## Implementation
+    16→ 
+    17→-This command delegates to `erk pr submit` which handles everything:
+    18→+This command uses a three-step flow to avoid nested Claude subprocess calls:
+    19→ 
+    20→-- Preflight checks (auth, squash commits, submit to Graphite)
+    21→-- AI-powered commit message generation
+    22→-- PR metadata update with title and body
+    23→-- PR validation
+    24→+1. **Push + create PR** (no AI) via `erk pr submit --skip-description`
+    25→+2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+    26→+3. **Generate title + body** natively (you are the agent — no subprocess)
+    27→+4. **Apply description** via `erk exec set-pr-description`
+    28→ 
+    29→-### Execute
+    30→+### Step 1: Push and Create PR
+
+... [1024 lines omitted] ...
+
+    39→+If this fails, display the error and stop.
+    57→+Parse the JSON output. If this fails, display the error and stop.
+    64→-## Error Handling
+    71→-If `erk pr submit` fails, display the error and stop. The Python implementation handles all error cases including:
+    77→-- Submission failures
+    80→-Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+    85→+If this fails, display the error and stop.
+   100→+## Error Handling
+   102→+If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+   104→+Common errors:
+   162→+    1: Error (no branch, no PR, diff extraction failure)
+   199→+        raise click.ClickException(
+   214→+        raise click.ClickException("Failed to extract diff")
+   273→+    1: Error (no PR, linkage mismatch)
+   327→+        raise click.ClickException(
+   365→+            raise click.ClickException(issue_discovery.message)
+   460→ def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   469→ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   478→ def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   487→ def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   612→+    """Exits 1 with clear error when no PR exists for the branch."""
+  1022→@@ -27,6 +27,7 @@ def test_stops_at_first_error(tmp_path: Path) -&gt; None:
+  1046→@@ -112,6 +115,7 @@ def test_catches_unhandled_exception_from_step(tmp_path: Path) -&gt; None:
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01MokVKsRE7MogrdRyBCSzTA">
+    <param name="skill">erk-diff-analysis</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2235" cache_read_input_tokens="31862" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2235, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MokVKsRE7MogrdRyBCSzTA">
+Launching skill: erk-diff-analysis
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/skills/erk-diff-analysis
+
+# Diff Analysis
+
+This skill provides the commit message generation prompt used by PR submission commands.
+
+## When to Use
+
+Only load this skill when:
+
+- Explicitly requested by name (`erk-diff-analysis`)
+- Invoked by commands like `/erk:git-pr-push`
+
+## Usage
+
+Load `references/commit-message-prompt.md` when analyzing a diff, then apply its principles to generate output.
+
+## Key Principles
+
+- Be concise and strategic - focus on significant changes
+- Use component-level descriptions - reference modules/components, not individual functions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+</user>
+  <thinking>Now I need to read the commit message prompt reference file and then generate the PR title and body.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="16598" cache_read_input_tokens="34097" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16598}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VPARefYbY8EgLMLSQh6img">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/skills/erk-diff-analysis/references/commit-message-prompt.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16598" cache_read_input_tokens="34097" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16598}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VPARefYbY8EgLMLSQh6img">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Files Changed
+    28→
+    29→&lt;details&gt;
+    30→&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+... [54 lines omitted] ...
+
+    69→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <thinking>Now I have all the context I need. Let me generate the PR title and body based on the diff analysis.
+
+The diff shows:
+1. New `erk exec get-pr-context` command - outputs JSON with branch, PR, diff, commits, and plan context
+2. New `erk exec set-pr-description` command - takes title and body, updates PR preserving metadata
+3. `--skip-description` flag on `erk pr submit` - skips AI description generation phases
+4. Updated `/erk:pr-submit` skill to use the 3-step flow
+5. Tests for both new commands
+6. Updated existing test files to include `skip_description=False` in SubmitState
+
+
+7. The plan context explains this well - it's about splitting AI generation out of `erk pr submit` to avoid nested Claude subprocess calls
+
+Now I'll write the body to a temp file and then set the PR description.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1041" cache_read_input_tokens="50695" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1041}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have everything I need. Let me generate the title and body, then apply it.
+
+**Step 3: Generate Title and Body**
+
+Based on the diff and plan context, this PR splits AI description generation out of `erk pr submit` so the Claude Code agent generates descriptions natively instead of via a nested subprocess call.
+
+**Step 4: Apply Description**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1041" cache_read_input_tokens="50695" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1041}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VFNZF77L5uT3HRfQPHppoz">
+    <param name="command">cat &gt; /tmp/pr-body-7946.md &lt;&lt; 'BODY_EOF'
+Splits AI-powered PR description generation out o...[truncated 2501 chars]...streaming visibility instead of as an opaque subprocess.
+BODY_EOF
+echo "Body file written"</param>
+    <param name="description">Write PR body to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1041" cache_read_input_tokens="50695" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1041}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VFNZF77L5uT3HRfQPHppoz">
+Body file written
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WUXjCHgxkCKQzSXpjWfKZR">
+    <param name="command">erk exec set-pr-description --title "Split AI description generation out of \`erk pr submit\` into agent-native flow" --body-file /tmp/pr-body-7946.md</param>
+    <param name="description">Apply generated PR title and body</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1282" cache_read_input_tokens="51736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1282}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WUXjCHgxkCKQzSXpjWfKZR">
+PR #7946 updated: Split AI description generation out of `erk pr submit` into agent-native flow
+  </tool_result>
+  <assistant>**Step 5: Report Results**
+
+PR submitted successfully:
+- **PR #7946**: https://github.com/dagster-io/erk/pull/7946
+- Title: *Split AI description generation out of `erk pr submit` into agent-native flow*
+
+🔄 Status line refreshed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="173" cache_read_input_tokens="53018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 173}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
