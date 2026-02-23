@@ -380,16 +380,24 @@ class RealGitHub(GitHub):
 
             # Find run by matching distinct_id in displayTitle
             for run in runs_data:
-                conclusion = run.get("conclusion")
-                if conclusion in ("skipped", "cancelled"):
-                    continue
-
                 display_title = run.get("displayTitle", "")
                 # Check for match pattern: :<distinct_id> (new format: issue_number:distinct_id)
-                if f":{distinct_id}" in display_title:
-                    run_id = run["databaseId"]
-                    debug_log(f"trigger_workflow: found run {run_id}, title='{display_title}'")
-                    return str(run_id)
+                if f":{distinct_id}" not in display_title:
+                    continue
+
+                conclusion = run.get("conclusion")
+                if conclusion in ("skipped", "cancelled"):
+                    # Matched run was skipped/cancelled — no point polling further
+                    raise RuntimeError(
+                        f"Workflow '{workflow}' run was {conclusion}.\n"
+                        f"Run ID: {run['databaseId']}, title: '{display_title}'\n"
+                        f"This usually means a job-level condition was not met "
+                        f"(e.g., vars.CLAUDE_ENABLED is 'false')."
+                    )
+
+                run_id = run["databaseId"]
+                debug_log(f"trigger_workflow: found run {run_id}, title='{display_title}'")
+                return str(run_id)
 
             # No matching run found, retry if attempts remaining
             # Fast path: 1s delay for first 5 attempts, then 2s delay for remaining
