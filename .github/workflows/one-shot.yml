@@ -219,6 +219,45 @@ jobs:
             --node "$NODE_ID" \
             --plan "$PLAN_NUMBER"
 
+      - name: Commit plan to branch (plan-only mode)
+        if: >
+          inputs.plan_only
+          && steps.plan.outputs.plan_success == 'true'
+          && steps.read_result.outputs.plan_id != ''
+        env:
+          PLAN_ID: ${{ steps.read_result.outputs.plan_id }}
+          PLAN_TITLE: ${{ steps.read_result.outputs.plan_title }}
+        run: |
+          # Copy plan from local .impl/ to committed .erk/impl-context/
+          mkdir -p .erk/impl-context
+          cp .impl/plan.md .erk/impl-context/plan.md
+
+          # Create ref.json with plan metadata
+          jq -n \
+            --arg provider "github" \
+            --arg plan_id "$PLAN_ID" \
+            --arg title "$PLAN_TITLE" \
+            '{provider: $provider, plan_id: $plan_id, title: $title}' \
+            > .erk/impl-context/ref.json
+
+          # Remove prompt files from the branch (they served their purpose)
+          if git ls-files --error-unmatch .erk/impl-context/prompt.md >/dev/null 2>&1; then
+            git rm -f .erk/impl-context/prompt.md
+          fi
+          if git ls-files --error-unmatch .worker-impl/prompt.md >/dev/null 2>&1; then
+            git rm -rf .worker-impl/
+          fi
+
+          # Stage and commit
+          git add .erk/impl-context/
+          if [[ -n $(git status --porcelain) ]]; then
+            git commit -m "Add plan for PR #$PLAN_ID"
+            git push origin "$(git branch --show-current)"
+            echo "Committed plan for #$PLAN_ID to branch"
+          else
+            echo "No changes to commit"
+          fi
+
       - name: Fail workflow if planning failed
         if: steps.plan.outputs.plan_success != 'true'
         run: |

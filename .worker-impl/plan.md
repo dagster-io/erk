@@ -32,6 +32,7 @@ This runs after the plan is already saved to GitHub, so even if the commit/push 
 The cleanup step currently does `git rm -rf .erk/impl-context/`. For plan-only PRs, `plan.md` IS the PR content and must be preserved.
 
 Change: if `.erk/impl-context/plan.md` is tracked, skip the entire `.erk/impl-context/` cleanup. Rationale:
+
 - For plan-only PRs: all files in `.erk/impl-context/` are meaningful
 - For implementation PRs: `plan-implement.yml` already handles its own cleanup of `.erk/impl-context/` before implementation runs
 - `pr-address` doesn't need to clean up what `plan-implement` already cleaned
@@ -44,10 +45,10 @@ Currently only checks for `.worker-impl/prompt.md`. Add an `elif` branch to also
 
 ## Files
 
-| File | Change |
-|------|--------|
-| `.github/workflows/one-shot.yml` | Add plan commit step (change 1), update prompt reading (change 3) |
-| `.github/workflows/pr-address.yml` | Preserve plan.md in cleanup (change 2) |
+| File                               | Change                                                            |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| `.github/workflows/one-shot.yml`   | Add plan commit step (change 1), update prompt reading (change 3) |
+| `.github/workflows/pr-address.yml` | Preserve plan.md in cleanup (change 2)                            |
 
 ## Not Changing
 
