@@ -1,0 +1,1106 @@
+<session>
+  <meta branch="plnd/add-local-code-review-02-22-1854" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="396380b6-a653-4cf2-8101-87a91b3eeb41"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="396380b6-a653-4cf2-8101-87a91b3eeb41" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="396380b6-a653-4cf2-8101-87a91b3eeb41" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement`. Let me follow the agent instructions. First, I need to parse arguments - there are no arguments provided (the args section is empty based on the command invocation).
+
+Let me start with Step 1: Determine Implementation Source.
+
+Since no argument was provided, I should check if `.impl/` already exists.
+
+Let me run `erk exec impl-init --json` to check.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12815" cache_read_input_tokens="18998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12815}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V8NgHqH3JeGMWTEH4gEFUb">
+    <param name="command">erk exec impl-init --json 2&gt;&amp;1</param>
+    <param name="description">Check if .impl/ already exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12815" cache_read_input_tokens="18998" output_tokens="228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12815, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V8NgHqH3JeGMWTEH4gEFUb">
+{"valid": true, "impl_type": "impl", "has_plan_tracking": true, "related_docs": {"skills": [], "docs": []}, "plan_number": 7939}
+  </tool_result>
+  <thinking>The `.impl/` folder already exists and is valid. It has `has_plan_tracking: true` and `plan_number: 7939`. But wait - the schema I see here doesn't have `has_issue_tracking`, it has `has_plan_tracking`. Let me check if there's an issue.json to get the issue number.
+
+Based on Step 1b: "If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`."
+
+
+I need to look at both `.impl/issue.json` and `.impl/plan.md` to figure out what's actually configured here.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="31813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, `.impl/` exists with `has_plan_tracking: true` and `plan_number: 7939`. Let me check for the issue tracking and sync.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="31813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LFetuaDHD1pWRqQm5cQ9qt">
+    <param name="command">cat /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl/issue.json 2&gt;/dev/null &amp;&amp; echo "---" &amp;&amp; ls /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl/ 2&gt;/dev/null</param>
+    <param name="description">Check .impl/issue.json and list .impl/ contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="31813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LFetuaDHD1pWRqQm5cQ9qt">
+Exit code 1
+  </tool_result>
+  <tool_use name="Glob" id="toolu_019AiVcFKegsCuzbhkFgiuAR">
+    <param name="pattern">.impl/**/*</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="32067" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019AiVcFKegsCuzbhkFgiuAR">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl/plan.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl/plan-ref.json
+  </tool_result>
+  <tool_use name="Read" id="toolu_01V1rBZwcY7fbP1VKyoHktsp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl/plan-ref.json</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="32493" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V1rBZwcY7fbP1VKyoHktsp">
+     1→{
+     2→  "provider": "github-draft-pr",
+     3→  "plan_id": "7939",
+     4→  "url": "https://github.com/dagster-io/erk/pull/7939",
+     5→  "created_at": "2026-02-23T03:09:03.599804+00:00",
+     6→  "synced_at": "2026-02-23T03:09:03.599804+00:00",
+     7→  "labels": [],
+     8→  "objective_id": null
+     9→}
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GWzRuTu6ZEGaqQb41EcDp8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="32493" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GWzRuTu6ZEGaqQb41EcDp8">
+     1→# Plan: Local Code Review Command
+     2→
+     3→## Context
+     4→
+     5→CI runs 5 code reviews in parallel on every PR via `.github/workflows/code-reviews.yml`. Each review is defined as a markdown file in `.erk/reviews/` with frontmatter (paths, model, etc.) and step-by-step instructions. The existing `erk exec run-review --name &lt;name&gt; --local` can run a single review locally, but there's no easy way to run all applicable reviews at once. The user wants a `/local:review` slash command to replicate the CI review experience locally.
+     6→
+     7→## Approach
+     8→
+     9→Create a single file: `.claude/commands/local/review.md`
+    10→
+    11→The command will:
+    12→1. Discover changed files via `git diff --name-only` against trunk
+    13→2. Read all `.erk/reviews/*.md` files and match against changed files using frontmatter `paths` patterns
+    14→3. Launch parallel Task agents (one per matching review) that each apply the review instructions to the local diff
+    15→4. Collect results and present a unified report
+    16→
+    17→Each Task agent directly applies the review logic (reads the review definition, gets the diff, follows the instructions, writes violations to a scratch file). This avoids spawning nested Claude sessions via `erk exec run-review --local`.
+    18→
+    19→## Implementation
+    20→
+    21→### File: `.claude/commands/local/review.md`
+    22→
+    23→**Phase 1: Discover**
+    24→- Run `git diff --name-only $(git merge-base master HEAD)...HEAD` to get changed files
+    25→- If no changes, report and exit
+    26→- Read each `.erk/reviews/*.md` file (just frontmatter) to get `name`, `paths`, `enabled`
+    27→- Skip disabled reviews
+    28→- Match: a review applies if any changed file matches any of its `paths` glob patterns (gitignore-style, supports `**`)
+    29→- Report which reviews matched and which were skipped
+    30→
+
+... [47 lines omitted] ...
+  </tool_result>
+  <thinking>The plan is for PR #7939. It's a draft-PR plan. I have `has_plan_tracking: true`, so per Step 1b, I should call `setup-impl-from-issue` to sync the local branch with remote.
+
+Wait, but looking at the impl-init response again: `"has_plan_tracking": true` (not `has_issue_tracking`). The plan instructions refer to `has_issue_tracking` but the actual JSON field is `has_plan_tracking`. Given they're equivalent (plan tracking = issue tracking), I should proceed with the sync.
+
+Let me call `setup-impl-from-issue` with the plan number to sync:
+
+
+I'm trying to sync with the remote using the plan ID, but I notice the instructions reference `.impl/issue.json` while I actually have `.impl/plan-ref.json` with plan_id 7939 instead. Let me proceed with syncing using the plan number I have.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1705" cache_read_input_tokens="32668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1705}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The `.impl/` is set up with PR #7939 (draft-PR plan). Let me sync the branch with remote.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1705" cache_read_input_tokens="32668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1705}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ALx44ferSA4grUQPP5FhJ6">
+    <param name="command">erk exec setup-impl-from-issue 7939 2&gt;&amp;1</param>
+    <param name="description">Sync local branch with remote for plan #7939</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1705" cache_read_input_tokens="32668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1705}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ALx44ferSA4grUQPP5FhJ6">
+Found existing .impl/ for plan #7939, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl", "plan_number": 7939, "plan_url": "https://github.com/dagster-io/erk/pull/7939", "branch": "plnd/add-local-code-review-02-22-1854", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <thinking>Good. Now let me proceed to Step 2d: Clean Up Plan Staging Directory.
+
+But first, let me check if `.erk/impl-context/` exists.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="34373" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 555}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. Now Step 2d - check if `.erk/impl-context/` needs cleanup.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="34373" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 555}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013YYJveHJCTFJiiVmu8Xysf">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/impl-context/ 2&gt;/dev/null &amp;&amp; echo "exists" || echo "not present"</param>
+    <param name="description">Check if .erk/impl-context/ directory exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="34373" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 555}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013YYJveHJCTFJiiVmu8Xysf">
+plan.md
+ref.json
+exists
+  </tool_result>
+  <thinking>The `.erk/impl-context/` directory exists. Let me clean it up per Step 2d.
+
+"If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi"
+
+Let me check if it's tracked in git:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="34928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 338}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QWwjXBEsiv6owRSU2qB9ad">
+    <param name="command">git ls-files .erk/impl-context/ 2&gt;&amp;1</param>
+    <param name="description">Check if .erk/impl-context/ is git-tracked</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="34928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 338}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QWwjXBEsiv6owRSU2qB9ad">
+.erk/impl-context/plan.md
+.erk/impl-context/ref.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01A6MW83CjnYhzJRc598ecTq">
+    <param name="command">git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove .erk/impl-context/ before implementation" &amp;&amp; git push origin "$(git branch --show-current)"</param>
+    <param name="description">Remove .erk/impl-context/ from git tracking and push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="35266" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 272, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A6MW83CjnYhzJRc598ecTq">
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plnd/add-local-code-review-02-22-1854 bae35eb56] Remove .erk/impl-context/ before implementation
+ 2 files changed, 80 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   193085b22..bae35eb56  plnd/add-local-code-review-02-22-1854 -&gt; plnd/add-local-code-review-02-22-1854
+  </tool_result>
+  <thinking>Good. Now let me proceed to Step 3: Read Plan and Load Context. I already read the plan. Let me now look at the existing review definitions and audit-scan.md command to understand patterns.
+
+The plan says:
+1. Create a single file: `.claude/commands/local/review.md`
+2. It's a 3-phase workflow: Discover, Run Reviews in Parallel, Collect and Report
+
+The plan references:
+- `audit-scan.md`: for parallel Task agents writing to `.erk/scratch/` files pattern
+- `fast-ci.md`: for iterative check workflow pattern
+- Review definitions in `.erk/reviews/*.md`
+  
+Now I need to examine the existing command files and review definitions to understand the patterns I should follow, then figure out what `erk exec run-review --local` currently does. I'll start by looking at audit-scan.md and fast-ci.md for reference patterns, then check the review definitions. After that, I can outline the implementation tasks for creating the new review.md command file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35538" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 394}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me signal implementation started and load context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35538" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 394}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01B57NCqPWmr3AvkVVUXt2gx">
+    <param name="command">erk exec impl-signal started --session-id="396380b6-a653-4cf2-8101-87a91b3eeb41" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started on GitHub</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35538" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 394}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B57NCqPWmr3AvkVVUXt2gx">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 7939
+}
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_0125iMmiMB48yU4nf7PdhhR1">
+    <param name="subject">Create `.claude/commands/local/review.md` slash command</param>
+    <param name="description">Create a new slash command that runs all applicable code reviews locally. The command disc...[truncated 43 chars]...ws/*.md, runs matching reviews in parallel via Task agents, and presents a unified report.</param>
+    <param name="activeForm">Creating /local:review command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="35932" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 481}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0125iMmiMB48yU4nf7PdhhR1">
+Task #1 created successfully: Create `.claude/commands/local/review.md` slash command
+  </tool_result>
+  <assistant>Now let me read the reference patterns and review definitions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="36413" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 182}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016yh9wCT4aRhvZNHBgPoWAy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/commands/local/audit-scan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="36413" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 182}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016yh9wCT4aRhvZNHBgPoWAy">
+     1→---
+     2→description: Scan docs/learned/ for documents most in need of audit
+     3→context: fork
+     4→agent: general-purpose
+     5→---
+     6→
+     7→# /local:audit-scan
+     8→
+     9→Scan all `docs/learned/` files, score them by audit priority using heuristic signals, including indicators of prose-reality drift risk, and present a tiered report of candidates for deep audit via `/local:audit-doc`.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/local:audit-scan                        # Scan all docs/learned/
+    15→/local:audit-scan --category planning    # Scope to a specific category
+    16→```
+    17→
+    18→## Instructions
+    19→
+    20→### Phase 1: Parse Arguments and Discover Documents
+    21→
+    22→Parse `$ARGUMENTS` for optional `--category &lt;name&gt;` flag to scope the scan to `docs/learned/&lt;name&gt;/`.
+    23→
+    24→**Discover all documents:**
+    25→
+    26→1. Glob for all `.md` files in `docs/learned/` recursively (or scoped category if specified)
+    27→2. Read the first 5 lines of each file to check for auto-generated markers
+    28→3. **Skip** files whose first line starts with `&lt;!-- AUTO-GENERATED` — these are generated index/tripwire files (e.g., `index.md`, `tripwires.md`, `tripwires-index.md`)
+    29→4. **Exclude recently audited**: Use Grep to find `last_audited` across all remaining files. Parse the date values and exclude any document whose `last_audited` date is within the last 7 days. These docs are too fresh to need re-audit.
+    30→5. Build a working list of document paths for scoring
+
+... [178 lines omitted] ...
+
+   104→**Verify agent output files exist** before reading. For each batch file (`.erk/scratch/&lt;run-id&gt;/batch-&lt;N&gt;.md`), run `ls` to confirm it was written. If any file is missing, report which batch failed and stop — do not silently proceed with partial data.
+  </tool_result>
+  <tool_use name="Read" id="toolu_016D1toJS9RvSA1N2PEVEhnj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/commands/local/fast-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="36413" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 182}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016D1toJS9RvSA1N2PEVEhnj">
+     1→---
+     2→description: Run fast CI checks iteratively (unit tests only)
+     3→---
+     4→
+     5→You are an implementation finalizer for rapid development feedback. Your task is to run `make fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+     6→
+     7→## Your Mission
+     8→
+     9→Run the fast CI pipeline (`make fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+    10→
+    11→**Fast CI vs All CI**: The `fast-ci` target runs unit tests only, providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
+    12→
+    13→## CI Pipeline (make fast-ci)
+    14→
+    15→The `make fast-ci` target runs these checks in order:
+    16→
+    17→1. **lint** - Ruff linting checks
+    18→2. **format-check** - Ruff code formatting checks
+    19→3. **prettier-check** - Markdown formatting checks
+    20→4. **md-check** - AGENTS.md standard compliance validation
+    21→5. **docs-validate** - Agent documentation frontmatter validation
+    22→6. **ty** - Type checking
+    23→7. **test** - Pytest unit tests only (fast feedback loop)
+    24→8. **exec-reference-check** - Exec subcommand reference documentation validation
+    25→
+    26→## Iteration Process
+    27→
+    28→Load the `ci-iteration` skill for the iterative fix workflow.
+    29→
+    30→## Fail-Fast Workflow
+
+... [24 lines omitted] ...
+
+    37→This ensures that common issues (linting/formatting and type errors) are caught and fixed first, providing rapid feedback without waiting for slower test runs.
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01LVcZixRtmRRA36KFBM1DXf">
+    <param name="pattern">.erk/reviews/*.md</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="36413" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 182}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LVcZixRtmRRA36KFBM1DXf">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/audit-pr-docs.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-code-simplifier.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-python.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/test-coverage.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/tripwires.md
+  </tool_result>
+  <thinking>Now let me read the review definitions to understand the frontmatter structure:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4723" cache_read_input_tokens="36595" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4723}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the review definitions to understand their structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4723" cache_read_input_tokens="36595" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4723}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011SzUxoQnfhqW47M7T7KTwV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-python.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4723" cache_read_input_tokens="36595" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4723}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011SzUxoQnfhqW47M7T7KTwV">
+     1→---
+     2→name: Dignified Python Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-python-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Dignified Python Standards
+    13→
+    14→Read these skill files from the repository:
+    15→
+    16→1. .claude/skills/dignified-python/SKILL.md (routing and version detection)
+    17→2. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+    18→3. .claude/skills/dignified-python/cli-patterns.md (Click best practices)
+    19→4. .claude/skills/dignified-python/subprocess.md (subprocess handling)
+    20→
+    21→## Step 2: Identify Changed Lines
+    22→
+    23→For each Python file, determine which lines were actually modified (not just context):
+    24→
+    25→- Lines starting with `+` in the diff are additions/modifications
+    26→- Lines starting with ` ` (space) are unchanged context
+    27→
+    28→For the `__all__` / re-export rule specifically:
+    29→
+    30→- If `__all__` appears on a `+` line → Flag as violation (actively being modified)
+
+... [94 lines omitted] ...
+
+    40→- Exception handling (no silent swallowing, log at boundaries)
+    80→**CRITICAL: Check for exceptions before flagging violations.**
+    82→Many rules have explicit exceptions documented in the skill files you loaded in Step 1. Before flagging a violation, verify that NO exception applies. Common exceptions include:
+    85→- **LBYL rule**: Exceptions allowed at error boundaries, for third-party API compatibility, or when adding context before re-raising. `assert` used purely for type narrowing after a guard check is NOT a violation (e.g., `assert x is not None` after `if not is_valid: return None` where `is_valid` checks `x is not None`)
+    88→If the code matches a documented exception, it is NOT a violation. Do not flag it.
+   116→- "False positive dismissed: CLI error boundary pattern"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TAqHAKZEAQ8avnHApyRs6b">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4723" cache_read_input_tokens="36595" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4723}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TAqHAKZEAQ8avnHApyRs6b">
+     1→---
+     2→name: Tripwires Review
+     3→paths:
+     4→  - "**/*.py"
+     5→  - "**/*.sh"
+     6→  - ".claude/**/*.md"
+     7→marker: "&lt;!-- tripwires-review --&gt;"
+     8→model: claude-sonnet-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Bash(grep:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Load Tripwire Index
+    15→
+    16→Tripwires are organized by category. Universal tripwires are in `AGENTS.md`. Category-specific tripwires are in `docs/learned/&lt;category&gt;/tripwires.md` (e.g., `docs/learned/architecture/tripwires.md`, `docs/learned/cli/tripwires.md`).
+    17→
+    18→For comprehensive coverage, read these category tripwire files based on the diff:
+    19→
+    20→- Changes in `src/erk/gateway/` or `packages/erk-shared/src/*/gateway/` → Read `docs/learned/architecture/tripwires.md`
+    21→- Changes in `src/erk/cli/` → Read `docs/learned/cli/tripwires.md`
+    22→- Changes in `tests/` → Read `docs/learned/testing/tripwires.md`
+    23→- Changes in `.github/` → Read `docs/learned/ci/tripwires.md`
+    24→- Changes in `src/erk/tui/` → Read `docs/learned/tui/tripwires.md`
+    25→- Planning-related changes → Read `docs/learned/planning/tripwires.md`
+    26→
+    27→Tripwires come in two formats:
+    28→
+    29→**With explicit pattern** (Tier 1 — mechanical matching):
+    30→
+
+... [118 lines omitted] ...
+
+    81→2. Extract ALL rules AND EXCEPTIONS from that doc
+    82→3. Check if any exceptions apply to the code being reviewed
+    83→4. Only flag as a violation if NO exception applies
+    85→**CRITICAL: Read the full doc to understand exceptions.**
+    87→Many rules have explicit exceptions. For example, the "5+ parameters" rule has exceptions for:
+    92→If the code matches an exception, it is NOT a violation. Do not flag it.
+    94→**You MUST load and read the linked documentation before deciding if something is a violation.** The tripwire summary in tripwires.md is abbreviated - the full exceptions are only in the linked docs.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KGiUUJJxAQ3834CeY2oa5o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/audit-pr-docs.md</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4723" cache_read_input_tokens="36595" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4723}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KGiUUJJxAQ3834CeY2oa5o">
+     1→---
+     2→name: Audit PR Docs
+     3→paths:
+     4→  - "docs/learned/**/*.md"
+     5→marker: "&lt;!-- audit-pr-docs --&gt;"
+     6→model: claude-sonnet-4-6
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load Standards and Analysis Methodology
+    13→
+    14→Read these files from the repository:
+    15→
+    16→1. `.claude/skills/learned-docs/learned-docs-core.md` — content rules, the One Code Rule, four exceptions
+    17→2. `docs/learned/documentation/source-pointers.md` — replacement format, 5-line threshold, decision checklist
+    18→3. `.claude/commands/local/audit-doc.md` — analysis methodology (Extract Code References through Code Block Triage) and verdict thresholds (Generate Report phase)
+    19→
+    20→These define what counts as a verbatim copy, what exceptions exist, the replacement format, and the full analysis methodology. The audit-doc command is the single source of truth for how to analyze a learned doc — this review file only defines the review mechanics (diff filtering, PR comment format, summary format).
+    21→
+    22→## Step 2: Identify Changed Doc Files
+    23→
+    24→Run `gh pr diff` and extract file paths matching `docs/learned/**/*.md`.
+    25→
+    26→For each changed doc file, read the **full file content** using the Read tool (not just the `+` lines from the diff). When a doc is touched in a PR, audit the entire document to surface pre-existing issues alongside new ones.
+    27→
+    28→## Step 3: Audit Each Changed Doc
+    29→
+    30→For each doc file identified in Step 2, apply audit-doc's analysis phases:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/model&lt;/command-name&gt;
+            &lt;command-message&gt;model&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Set model to [1mDefault (Opus 4.6 · Most capable for complex work)[22m&lt;/local-command-stdout&gt;</user>
+  <user>continue</user>
+  <thinking>The user wants me to continue with the implementation. I've read the plan and the reference patterns. Let me also read the remaining review definitions (dignified-code-simplifier and test-coverage) to understand all the frontmatter structures, then create the command file.
+
+Let me read the remaining reviews and then write the command.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="27171" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27171}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A3A2mSX8QyNbwnbySiocoq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-code-simplifier.md</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="27171" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27171}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A3A2mSX8QyNbwnbySiocoq">
+     1→---
+     2→name: Dignified Code Simplifier Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-code-simplifier-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Skill
+    13→
+    14→Read the skill file: `.claude/skills/dignified-code-simplifier/SKILL.md`
+    15→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BUdadwnXZqjEKJRvxzds8F">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/test-coverage.md</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="27171" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27171}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BUdadwnXZqjEKJRvxzds8F">
+     1→---
+     2→name: Test Coverage Review
+     3→paths:
+     4→  - "src/**/*.py"
+     5→  - "packages/**/*.py"
+     6→  - "tests/**/*.py"
+     7→marker: "&lt;!-- test-coverage-review --&gt;"
+     8→model: claude-haiku-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Categorize PR Files
+    15→
+  </tool_result>
+  <thinking>Good. Now I have a clear understanding of:
+
+1. All 5 review definitions and their frontmatter structure (name, paths, marker, model, enabled)
+2. The audit-scan.md pattern for parallel Task agents writing to `.erk/scratch/`
+3. The plan's 3-phase approach
+
+Let me now write the command file. The key design decisions:
+
+1. Phase 1: Discover changed files, read review frontmatter, match paths
+2. Phase 2: Launch parallel Task agents for matching reviews
+3. Phase 3: Collect results and present unified report
+
+For path matching, the reviews use glob patterns like `**/*.py`, `src/**/*.py`, `docs/learned/**/*.md`. 
+
+Now I'll write the command that instructs the agent to match changed files against these glob patterns and determine which reviews should run.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="46212" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 806}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01W3Fv4gcwdUr98SG3Appm8G">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="46212" output_tokens="272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 806, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W3Fv4gcwdUr98SG3Appm8G">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now let me write the command file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="47018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 285}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01ABzRxNt9pcaYW9X96pVP3X">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/commands/local/review.md</param>
+    <param name="content">---
+description: Run all applicable code reviews locally against the current branch
+---
+
+#...[truncated 3656 chars]...l reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations.
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="47018" output_tokens="1158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 285, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ABzRxNt9pcaYW9X96pVP3X">
+File created successfully at: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.claude/commands/local/review.md
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_011uQyw2t2XmWsCmCCDi14km">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="47303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1211}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011uQyw2t2XmWsCmCCDi14km">
+Updated task #1 status
+  </tool_result>
+  <assistant>Implementation complete. The command file `.claude/commands/local/review.md` has been created. Now let me proceed through the remaining plan-implement steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3219" cache_read_input_tokens="48514" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3219}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01D3N84N1M8UbNTrBxp1RhLs">
+    <param name="command">erk exec impl-signal ended --session-id="396380b6-a653-4cf2-8101-87a91b3eeb41" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended on GitHub</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3219" cache_read_input_tokens="48514" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3219}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RqbLcxLrS8aF6RG9PrjW74">
+    <param name="command">erk exec impl-verify 2&gt;&amp;1</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3219" cache_read_input_tokens="48514" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3219}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D3N84N1M8UbNTrBxp1RhLs">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 7939
+}
+  </tool_result>
+  <tool_result tool="toolu_01RqbLcxLrS8aF6RG9PrjW74">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.impl"}
+  </tool_result>
+  <assistant>Now let me check for the post-plan-implement CI hook and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="51733" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 344}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PtSFzDYJUEdi7HGX3RDS3Q">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="51733" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PtSFzDYJUEdi7HGX3RDS3Q">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Wt9m8mgkMwp8Fg4fX3BWQ8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="52077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 182}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wt9m8mgkMwp8Fg4fX3BWQ8">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <thinking>I need to run `make fast-ci` using the devrun agent. Let me do that. Since this is a markdown-only change (a new `.claude/commands/local/review.md` file), I expect most checks to pass. The only potential issue is prettier formatting on the markdown file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="52259" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me run CI checks via the devrun agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="52259" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01A7D2bmyzW2tTNrzXzwTBkV">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make fast-ci checks</param>
+    <param name="prompt">Run `make fast-ci` from the repository root at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40 and report the results. If there are failures, report them clearly with the exact error messages.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="52259" output_tokens="242" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A7D2bmyzW2tTNrzXzwTBkV">
+## Summary
+
+`make fast-ci` **failed** with 1 error.
+
+### Failure Details
+
+**FAIL: Exec Reference Check**
+- **File**: `.claude/skills/erk-exec/reference.md`
+- **Issue**: Out of date
+- **Resolution**: Run `erk-dev gen-exec-reference-docs` to regenerate it
+
+### Passing Checks
+
+All other checks passed successfully:
+- ✓ Lint: All checks passed
+- ✓ Format Check: 1499 files already formatted
+- ✓ Prettier Check: All matched files use Prettier code style
+- ✓ Markdown Check: All CLAUDE.md and AGENTS.md files properly paired (19 files, 0 violations)
+- ✓ Type Check (ty): All checks passed
+- ✓ Unit Tests (erk): 5448 passed in 17.99s
+- ✓ Unit Tests (erk-dev): 136 passed in 2.93s
+- ✓ Unit Tests (erk-statusline): 126 passed in 1.72s
+
+### Next Steps
+
+The `.claude/skills/erk-exec/reference.md` file needs to be regenerated. Run:
+```
+erk-dev gen-exec-reference-docs
+```
+agentId: a18a1edbfa64956b5 (for resuming to continue this agent's work if needed)
+
+... [3 lines omitted] ...
+  </tool_result>
+  <thinking>The exec-reference-check failed, but that's not related to my changes. That's a pre-existing issue — the reference docs are out of date. Let me check if this is a pre-existing failure by checking if it would fail on master too, or if my change triggered it.
+
+Actually, looking at this more carefully — my change only added a markdown file in `.claude/commands/local/review.md`. The exec-reference-check failure is about `.claude/skills/erk-exec/reference.md` being out of date, which is unrelated to my change. This is a pre-existing issue.
+
+Let me just regenerate the reference docs to fix this and move on.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="52422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 617}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The only failure is `exec-reference-check` — the exec reference docs are out of date. This is unrelated to my change (I only added a markdown command file). Let me regenerate them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="52422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 617}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YWWq76v2SxSfRDUVfQwYR8">
+    <param name="command">erk-dev gen-exec-reference-docs 2&gt;&amp;1</param>
+    <param name="description">Regenerate exec reference docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="52422" output_tokens="325" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 617, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YWWq76v2SxSfRDUVfQwYR8">
+Generated .claude/skills/erk-exec/reference.md (formatted)
+  86 top-level commands documented
+  </tool_result>
+  <assistant>Let me verify CI passes now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="53039" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 444}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_015xKaxtoSQURUJqCEz5oyfP">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Rerun make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40 and report the results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="53039" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 444}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015xKaxtoSQURUJqCEz5oyfP">
+make fast-ci passed: All checks passed successfully
+
+**Summary:**
+- Lint: Passed
+- Format Check: 1499 files already formatted
+- Prettier Check: All matched files use Prettier code style
+- Markdown Check: All CLAUDE.md/AGENTS.md files properly paired (19 files checked, 0 violations)
+- Exec Reference Check: reference.md is up to date
+- Type checking (ty): All checks passed
+- Unit Tests (erk): 5448 passed in 11.97s
+- Tests (erk-dev): 136 passed in 2.50s
+- Tests (erk-statusline): 126 passed in 0.65s
+
+**Total:** 5710 tests passed with no failures.
+agentId: a11d9ddea94772020 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14511
+tool_uses: 1
+duration_ms: 25281&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass (5710 tests, lint, format, types all green). Now let me submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3520" cache_read_input_tokens="53483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3520}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XiaB1xvRWsbYttXsR9KUgQ">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR via erk pr submit</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3520" cache_read_input_tokens="53483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3520}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XiaB1xvRWsbYttXsR9KUgQ">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01APsSm1y71uRvvZ1v9VK8XN">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="57003" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 154, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01APsSm1y71uRvvZ1v9VK8XN">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 7939
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HcJt7vVnMEfZEku6W2CVm2">
+    <param name="command">erk pr check 2&gt;&amp;1</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="57157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 123}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HcJt7vVnMEfZEku6W2CVm2">
+Checking PR #7939 for branch plnd/add-local-code-review-02-22-1854...
+
+[PASS] Branch name and plan reference agree (#7939)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Now let me upload the session for async learn.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="57280" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019UY13u9qbHtgTXbHMeyUS1">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(python3 -c "import json; print(j...[truncated 274 chars]..." || true; else echo "Missing vars: SESSION_ID=$SESSION_ID ISSUE_NUMBER=$ISSUE_NUMBER"; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="57280" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019UY13u9qbHtgTXbHMeyUS1">
+Usage: erk exec upload-session [OPTIONS]
+Try 'erk exec upload-session -h' for help.
+
+Error: No such option: --issue-number
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WVh9Paci83pStDnwY5Tg1g">
+    <param name="command">erk exec upload-session -h 2&gt;&amp;1</param>
+    <param name="description">Check upload-session options</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="57440" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 292}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WVh9Paci83pStDnwY5Tg1g">
+Usage: erk exec upload-session [OPTIONS]
+
+  Upload a session JSONL to a git branch and update plan header.
+
+  Creates an async-learn/{plan_id} branch from origin/master, commits the
+  session JSONL to .erk/session/{session_id}.jsonl, then updates the plan-
+  header metadata in the associated plan with the branch name and session
+  information.
+
+Options:
+  --session-file PATH      Path to the session JSONL file to upload
+                           [required]
+  --session-id TEXT        Claude Code session ID  [required]
+  --source [local|remote]  Session source: 'local' or 'remote'  [required]
+  --plan-id INTEGER        Plan identifier to create session branch and update
+                           plan header
+  -h, --help               Show this message and exit.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ASFtQyK8tcevu775rkg9oS">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; PLAN_ID=$(python3 -c "import json; print(json.l...[truncated 244 chars]... "$PLAN_ID" || true; else echo "Missing vars: SESSION_ID=$SESSION_ID PLAN_ID=$PLAN_ID"; fi</param>
+    <param name="description">Upload session for async learn with correct flag</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="57732" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 290}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ASFtQyK8tcevu775rkg9oS">
+{"success": true, "session_branch": "async-learn/7939", "session_id": "396380b6-a653-4cf2-8101-87a91b3eeb41", "plan_id": 7939, "issue_updated": true}
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary:**
+- Created `.claude/commands/local/review.md` — a new `/local:review` slash command that replicates the CI code review experience locally
+- The command discovers changed files via `git diff`, matches them against review definitions in `.erk/reviews/*.md`, runs matching reviews in parallel via Task agents, and presents a unified violations report
+- Also regenerated `.claude/skills/erk-exec/reference.md` (pre-existing staleness)
+- All CI checks pass (5710 tests, lint, format, types)
+- PR #7939 submitted and validated</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="58022" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 438}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>

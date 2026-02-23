@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "pr_number": 7939,
+  "comments": [
+    {
+      "id": 3942245726,
+      "author": "schrockn",
+      "body": "\ud83d\udd04 Plan Queued for Implementation\n\n<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n<!-- erk:metadata-block:submission-queued -->\n<details>\n<summary>submission-queued</summary>\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-02-23T02:55:24.388570+00:00'\nsubmitted_by: schrockn\nissue_number: 7939\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n</details>\n<!-- /erk:metadata-block:submission-queued -->\n\n---\n\nPlan submitted by **schrockn** at 2026-02-23T02:55:24.388570+00:00.\n\nThe `plan-implement` workflow has been triggered via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22291277656",
+      "url": "https://github.com/dagster-io/erk/pull/7939#issuecomment-3942245726"
+    },
+    {
+      "id": 3942246728,
+      "author": "schrockn",
+      "body": "\ud83d\udd04 Plan Queued for Implementation\n\n<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n<!-- erk:metadata-block:submission-queued -->\n<details>\n<summary>submission-queued</summary>\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-02-23T02:55:48.817838+00:00'\nsubmitted_by: schrockn\nissue_number: 7939\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n</details>\n<!-- /erk:metadata-block:submission-queued -->\n\n---\n\nPlan submitted by **schrockn** at 2026-02-23T02:55:48.817838+00:00.\n\nThe `plan-implement` workflow has been triggered via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22291285073",
+      "url": "https://github.com/dagster-io/erk/pull/7939#issuecomment-3942246728"
+    },
+    {
+      "id": 3942296139,
+      "author": "schrockn",
+      "body": "* **#7939** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7939?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7939?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7939#issuecomment-3942296139"
+    },
+    {
+      "id": 3942299677,
+      "author": "schrockn",
+      "body": "\ud83d\ude80 Starting implementation\n\n---\n\n**Worktree:** `erk-slot-40`\n**Branch:** `plnd/add-local-code-review-02-22-1854`",
+      "url": "https://github.com/dagster-io/erk/pull/7939#issuecomment-3942299677"
+    }
+  ]
+}

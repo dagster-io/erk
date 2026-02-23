@@ -1,0 +1,597 @@
+<session>
+  <meta branch="plnd/add-local-code-review-02-22-1854" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;local:review&lt;/command-message&gt;
+&lt;command-name&gt;/local:review&lt;/command-name&gt;</user>
+  <user># /local:review
+
+Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
+
+## Instructions
+
+### Phase 1: Discover Changed Files and Match Reviews
+
+**Get changed files:**
+
+```bash
+git diff --name-only $(git merge-base master HEAD)...HEAD
+```
+
+If no changed files, report "No changes found relative to master" and stop.
+
+**Read review definitions:**
+
+Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+
+- `name`: Review name
+- `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
+- `enabled`: Whether the review is active (skip if `false`)
+- `model`: Which model to use
+
+**Match reviews to changed files:**
+
+For each enabled review, check if ANY changed file matches ANY of its `paths` glob patterns:
+
+- `**/*.py` matches any `.py` file at any depth
+- `src/**/*.py` matches `.py` files under `src/`
+- `docs/learned/**/*.md` matches `.md` files under `docs/learned/`
+- `.claude/**/*.md` matches `.md` files under `.claude/`
+
+Use Python's `fnmatch` or `pathlib.PurePath.match()` logic — a pattern like `**/*.py` should match `src/erk/cli/main.py`.
+
+**Report:**
+
+```
+Changed files: N
+Reviews matched: review-a, review-b (N of M enabled reviews)
+Reviews skipped (no matching files): review-c, review-d
+```
+
+If no reviews matched, report and stop.
+
+### Phase 2: Run Reviews in Parallel
+
+Generate a run ID: `review-&lt;timestamp&gt;` (e.g., `review-20260222-1930`).
+
+For each matching review, launch a Task agent in parallel with:
+
+- `subagent_type`: `general-purpose`
+- `model`: Use the `model` field from the review frontmatter. Map values: `claude-haiku-4-5` → `haiku`, `claude-sonnet-4-5` or `claude-sonnet-4-6` → `sonnet`
+
+**Agent prompt template:**
+
+```
+You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk/reviews/&lt;review-name&gt;.md`
+2. Follow the review instructions, with these adaptations for local execution:
+   - Instead of `gh pr diff`, use: `git diff $(git merge-base master HEAD)...HEAD`
+   - Skip ALL PR-interaction steps (posting comments, fetching existing comments, summary comments, activity logs)
+   - Skip any steps about checking for existing review markers or comments
+3. Write your findings to `.erk/scratch/&lt;run-id&gt;/&lt;review-name&gt;.md` using the Write tool
+
+Output format for the scratch file:
+
+# &lt;Review Name&gt; Results
+
+## Violations
+
+For each violation found:
+### &lt;file-path&gt;:&lt;line-number&gt;
+**Rule**: &lt;rule violated&gt;
+**Detail**: &lt;explanation&gt;
+
+If no violations found, write:
+## Violations
+None found.
+
+## Summary
+- Files reviewed: N
+- Violations found: N
+
+IMPORTANT:
+- You MUST write results to the scratch file using the Write tool
+- Do NOT return results inline only — write the file
+- Do NOT post PR comments or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps
+```
+
+Launch ALL matching review agents in a single message (parallel execution).
+
+### Phase 3: Collect and Report
+
+After all agents complete, read each scratch file from `.erk/scratch/&lt;run-id&gt;/`.
+
+**Verify output files exist** before reading. If any are missing, report which review failed.
+
+Present a unified report:
+
+```markdown
+## Local Code Review Results
+
+**Run ID**: &lt;run-id&gt;
+**Changed files**: N | **Reviews run**: N
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+---
+
+**Summary**: X total violations across Y reviews (Z reviews clean)
+```
+
+Group violations by review, then by file within each review.
+
+If all reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations.
+```
+</user>
+  <thinking>The user wants me to run the local code review command. Let me follow the instructions step by step.
+
+Phase 1: Discover changed files and match reviews.
+
+Let me start by getting the changed files and reading the review definitions.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12246" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12246}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012eeNjYTJdTVzRbNYUUvqJA">
+    <param name="command">git diff --name-only $(git merge-base master HEAD)...HEAD</param>
+    <param name="description">Get changed files relative to master</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12246" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12246}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012eeNjYTJdTVzRbNYUUvqJA">
+.claude/commands/local/review.md
+.claude/skills/erk-exec/reference.md
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01CcTStvfF55XVsVCyMhC2c8">
+    <param name="pattern">.erk/reviews/*.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12246" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12246}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CcTStvfF55XVsVCyMhC2c8">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/audit-pr-docs.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-code-simplifier.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-python.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/test-coverage.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/tripwires.md
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>Unknown skill: fsdy</user>
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:review&lt;/command-message&gt;
+&lt;command-name&gt;/local:review&lt;/command-name&gt;</user>
+  <user># /local:review
+
+Run all applicable code reviews locally, replicating the CI review experience from `.github/workflows/code-reviews.yml`. Discovers changed files, matches review definitions, runs matching reviews in parallel, and presents a unified report.
+
+## Instructions
+
+### Phase 1: Discover Changed Files and Match Reviews
+
+**Get changed files:**
+
+```bash
+git diff --name-only $(git merge-base master HEAD)...HEAD
+```
+
+If no changed files, report "No changes found relative to master" and stop.
+
+**Read review definitions:**
+
+Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+
+- `name`: Review name
+- `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
+- `enabled`: Whether the review is active (skip if `false`)
+- `model`: Which model to use
+
+**Match reviews to changed files:**
+
+For each enabled review, check if ANY changed file matches ANY of its `paths` glob patterns:
+
+- `**/*.py` matches any `.py` file at any depth
+- `src/**/*.py` matches `.py` files under `src/`
+- `docs/learned/**/*.md` matches `.md` files under `docs/learned/`
+- `.claude/**/*.md` matches `.md` files under `.claude/`
+
+Use Python's `fnmatch` or `pathlib.PurePath.match()` logic — a pattern like `**/*.py` should match `src/erk/cli/main.py`.
+
+**Report:**
+
+```
+Changed files: N
+Reviews matched: review-a, review-b (N of M enabled reviews)
+Reviews skipped (no matching files): review-c, review-d
+```
+
+If no reviews matched, report and stop.
+
+### Phase 2: Run Reviews in Parallel
+
+Generate a run ID: `review-&lt;timestamp&gt;` (e.g., `review-20260222-1930`).
+
+For each matching review, launch a Task agent in parallel with:
+
+- `subagent_type`: `general-purpose`
+- `model`: Use the `model` field from the review frontmatter. Map values: `claude-haiku-4-5` → `haiku`, `claude-sonnet-4-5` or `claude-sonnet-4-6` → `sonnet`
+
+**Agent prompt template:**
+
+```
+You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk/reviews/&lt;review-name&gt;.md`
+2. Follow the review instructions, with these adaptations for local execution:
+   - Instead of `gh pr diff`, use: `git diff $(git merge-base master HEAD)...HEAD`
+   - Skip ALL PR-interaction steps (posting comments, fetching existing comments, summary comments, activity logs)
+   - Skip any steps about checking for existing review markers or comments
+3. Write your findings to `.erk/scratch/&lt;run-id&gt;/&lt;review-name&gt;.md` using the Write tool
+
+Output format for the scratch file:
+
+# &lt;Review Name&gt; Results
+
+## Violations
+
+For each violation found:
+### &lt;file-path&gt;:&lt;line-number&gt;
+**Rule**: &lt;rule violated&gt;
+**Detail**: &lt;explanation&gt;
+
+If no violations found, write:
+## Violations
+None found.
+
+## Summary
+- Files reviewed: N
+- Violations found: N
+
+IMPORTANT:
+- You MUST write results to the scratch file using the Write tool
+- Do NOT return results inline only — write the file
+- Do NOT post PR comments or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps
+```
+
+Launch ALL matching review agents in a single message (parallel execution).
+
+### Phase 3: Collect and Report
+
+After all agents complete, read each scratch file from `.erk/scratch/&lt;run-id&gt;/`.
+
+**Verify output files exist** before reading. If any are missing, report which review failed.
+
+Present a unified report:
+
+```markdown
+## Local Code Review Results
+
+**Run ID**: &lt;run-id&gt;
+**Changed files**: N | **Reviews run**: N
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+### &lt;Review Name&gt;
+
+&lt;violations or "No violations found"&gt;
+
+---
+
+**Summary**: X total violations across Y reviews (Z reviews clean)
+```
+
+Group violations by review, then by file within each review.
+
+If all reviews are clean, celebrate briefly:
+
+```
+All N reviews passed with no violations.
+```
+</user>
+  <assistant>
+
+**Phase 1: Discovering changed files and matching reviews.**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1596" cache_read_input_tokens="31482" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1596}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QYhTzsdTzf3usojKm9XgAT">
+    <param name="command">git diff --name-only $(git merge-base master HEAD)...HEAD</param>
+    <param name="description">Get changed files relative to master</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1596" cache_read_input_tokens="31482" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1596}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QYhTzsdTzf3usojKm9XgAT">
+.claude/commands/local/review.md
+.claude/skills/erk-exec/reference.md
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01BQ8htRmbNYuxHQgopKPc9m">
+    <param name="pattern">.erk/reviews/*.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1596" cache_read_input_tokens="31482" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1596}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BQ8htRmbNYuxHQgopKPc9m">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/audit-pr-docs.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-code-simplifier.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-python.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/test-coverage.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/tripwires.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QXmtoyoCRwek9B3YDRCj6A">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/audit-pr-docs.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="33078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QXmtoyoCRwek9B3YDRCj6A">
+     1→---
+     2→name: Audit PR Docs
+     3→paths:
+     4→  - "docs/learned/**/*.md"
+     5→marker: "&lt;!-- audit-pr-docs --&gt;"
+     6→model: claude-sonnet-4-6
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load Standards and Analysis Methodology
+    13→
+    14→Read these files from the repository:
+    15→
+    16→1. `.claude/skills/learned-docs/learned-docs-core.md` — content rules, the One Code Rule, four exceptions
+    17→2. `docs/learned/documentation/source-pointers.md` — replacement format, 5-line threshold, decision checklist
+    18→3. `.claude/commands/local/audit-doc.md` — analysis methodology (Extract Code References through Code Block Triage) and verdict thresholds (Generate Report phase)
+    19→
+    20→These define what counts as a verbatim copy, what exceptions exist, the replacement format, and the full analysis methodology. The audit-doc command is the single source of truth for how to analyze a learned doc — this review file only defines the review mechanics (diff filtering, PR comment format, summary format).
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UNLXjxyvQpZNUyNQwfcSAc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-code-simplifier.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="33078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UNLXjxyvQpZNUyNQwfcSAc">
+     1→---
+     2→name: Dignified Code Simplifier Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-code-simplifier-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Skill
+    13→
+    14→Read the skill file: `.claude/skills/dignified-code-simplifier/SKILL.md`
+    15→
+    16→This skill references `@.claude/skills/dignified-python/` which you should also load.
+    17→
+    18→## Step 2: Apply in Review Mode
+    19→
+    20→Apply the skill's refinement process to the PR diff, but instead of making changes:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ST4hMFMijPyrCAaqWuLNVq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/dignified-python.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="33078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ST4hMFMijPyrCAaqWuLNVq">
+     1→---
+     2→name: Dignified Python Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-python-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Dignified Python Standards
+    13→
+    14→Read these skill files from the repository:
+    15→
+    16→1. .claude/skills/dignified-python/SKILL.md (routing and version detection)
+    17→2. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+    18→3. .claude/skills/dignified-python/cli-patterns.md (Click best practices)
+    19→4. .claude/skills/dignified-python/subprocess.md (subprocess handling)
+    20→
+  </tool_result>
+  <tool_use name="Read" id="toolu_019FsqMBRwobVbKqqXxWzJoW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/test-coverage.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="33078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019FsqMBRwobVbKqqXxWzJoW">
+     1→---
+     2→name: Test Coverage Review
+     3→paths:
+     4→  - "src/**/*.py"
+     5→  - "packages/**/*.py"
+     6→  - "tests/**/*.py"
+     7→marker: "&lt;!-- test-coverage-review --&gt;"
+     8→model: claude-haiku-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Categorize PR Files
+    15→
+    16→Run `gh pr diff` and `gh pr view --json files` to get the full file list and diff.
+    17→
+    18→Categorize every Python file into these buckets:
+    19→
+    20→- **source_added**: New files in `src/` or `packages/` (not in `tests/`)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NUcV68rLLoFnMyxuAqLipT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/reviews/tripwires.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="33078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NUcV68rLLoFnMyxuAqLipT">
+     1→---
+     2→name: Tripwires Review
+     3→paths:
+     4→  - "**/*.py"
+     5→  - "**/*.sh"
+     6→  - ".claude/**/*.md"
+     7→marker: "&lt;!-- tripwires-review --&gt;"
+     8→model: claude-sonnet-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Bash(grep:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Load Tripwire Index
+    15→
+    16→Tripwires are organized by category. Universal tripwires are in `AGENTS.md`. Category-specific tripwires are in `docs/learned/&lt;category&gt;/tripwires.md` (e.g., `docs/learned/architecture/tripwires.md`, `docs/learned/cli/tripwires.md`).
+    17→
+    18→For comprehensive coverage, read these category tripwire files based on the diff:
+    19→
+    20→- Changes in `src/erk/gateway/` or `packages/erk-shared/src/*/gateway/` → Read `docs/learned/architecture/tripwires.md`
+  </tool_result>
+  <thinking>Now let me match the changed files against the review patterns:
+
+Changed files:
+1. `.claude/commands/local/review.md`
+2. `.claude/skills/erk-exec/reference.md`
+
+Reviews and their paths:
+1. **Audit PR Docs** - `docs/learned/**/*.md` - No match (changed files aren't in docs/learned/)
+2. **Dignified Code Simplifier** - `**/*.py` - No match (no .py files changed)
+3. **Dignified Python** - `**/*.py` - No match (no .py files changed)
+
+
+4. **Test Coverage** - `src/**/*.py`, `packages/**/*.py`, `tests/**/*.py` - No match
+5. **Tripwires** - `**/*.py`, `**/*.sh`, `.claude/**/*.md` - Both changed files match the `.claude/**/*.md` pattern, so this review applies.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2109" cache_read_input_tokens="33504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2109}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me match reviews to changed files.
+
+Changed files:
+1. `.claude/commands/local/review.md`
+2. `.claude/skills/erk-exec/reference.md`
+
+| Review | Paths | Match? |
+|--------|-------|--------|
+| Audit PR Docs | `docs/learned/**/*.md` | No |
+| Dignified Code Simplifier | `**/*.py` | No |
+| Dignified Python | `**/*.py` | No |
+| Test Coverage | `src/**/*.py`, `packages/**/*.py`, `tests/**/*.py` | No |
+| Tripwires | `**/*.py`, `**/*.sh`, `.claude/**/*.md` | **Yes** (both files match `.claude/**/*.md`) |
+
+```
+Changed files: 2
+Reviews matched: tripwires (1 of 5 enabled reviews)
+Reviews skipped (no matching files): audit-pr-docs, dignified-code-simplifier, dignified-python, test-coverage
+```
+
+**Phase 2: Running matched review.**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2109" cache_read_input_tokens="33504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2109}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01PY5jASh1jFdCS3eRVN6AAy">
+    <param name="description">Run tripwires code review</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">sonnet</param>
+    <param name="prompt">You are running a local code review. Your task:
+
+1. Read the review definition file: `.erk...[truncated 908 chars]... or interact with GitHub
+- Do NOT skip any analysis steps — only skip PR-interaction steps</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2109" cache_read_input_tokens="33504" output_tokens="921" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2109, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PY5jASh1jFdCS3eRVN6AAy">
+The review is complete. Here is the summary of findings:
+
+**Files reviewed:** 2
+- `.claude/commands/local/review.md` — new command that runs code reviews locally in parallel via Task subagents
+- `.claude/skills/erk-exec/reference.md` — documentation-only update (alphabetical re-sorting and description updates)
+
+**Tripwires loaded:**
+- `docs/learned/commands/tripwires.md` — triggered because changes are in `.claude/commands/`
+- `docs/learned/commands/tool-restriction-safety.md` — loaded because the new command delegates to Task subagents
+
+**Analysis:**
+
+The one triggered tripwire was: "creating commands that delegate to subagents → NEVER omit Task from allowed-tools if the command delegates to subagents." The new `/local:review` command does launch Task agents in Phase 2, but it has **no `allowed-tools` frontmatter at all** — meaning all tools are available (unrestricted). The tripwire specifically warns against omitting `Task` from an explicit `allowed-tools` list. Since there is no list, there is nothing to omit. The command correctly omits `allowed-tools` entirely because it needs broad tool access (Write for scratch files, Bash for git, Task for subagents, etc.) — consistent with the "Commands that create PRs or commits → No" row in the tool restriction table.
+
+**Violations found: 0**
+
+Results written to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/scratch/review-20260222-1856/tripwires.md`.
+agentId: ae721078dc98187d1 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 29138
+tool_uses: 7
+duration_ms: 57072&lt;/usage&gt;
+  </tool_result>
+  <assistant>**Phase 3: Collecting results.**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1361" cache_read_input_tokens="35613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1361}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RGrsGXcKsLSyYBUtxuP7rb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/.erk/scratch/review-20260222-1856/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1361" cache_read_input_tokens="35613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1361}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RGrsGXcKsLSyYBUtxuP7rb">
+     1→# Tripwires Review Results
+     2→
+     3→## Tripwires Triggered
+     4→
+     5→Based on the diff, the following categories were analyzed:
+     6→- **commands tripwires** (changes in `.claude/commands/`)
+     7→- **documentation tripwires** (changes in `.claude/skills/erk-exec/reference.md`)
+     8→
+     9→### Tier 1 Pattern Matches
+    10→
+    11→No Tier 1 tripwires (with explicit `[pattern: ...]`) were present in the commands tripwires file.
+    12→
+    13→### Tier 2 Semantic Matches
+    14→
+    15→**creating commands that delegate to subagents** — The new `.claude/commands/local/review.md` command delegates to Task subagents in Phase 2. Triggered → Read `docs/learned/commands/tool-restriction-safety.md`.
+    16→
+    17→After reading the doc: The tripwire warns "NEVER omit Task from allowed-tools **if** the command delegates to subagents." The new command has **no `allowed-tools` frontmatter at all**, which means no restrictions (all tools are allowed). The rule applies when an `allowed-tools` list is present — omitting `Task` from an explicit list would be the violation. Since there is no `allowed-tools` field in the frontmatter, there is nothing to omit `Task` from. The command is not restricted. No violation.
+    18→
+    19→**renaming any file in .claude/commands/ or .claude/skills/** — Not applicable. The diff adds a new file, not a rename.
+    20→
+    21→**adding allowed-tools to a command or agent frontmatter** — Not applicable. The new command does not add `allowed-tools` to its frontmatter.
+    22→
+    23→**writing allowed-tools frontmatter** — Not applicable. No `allowed-tools` is written in the diff.
+    24→
+    25→**using CLAUDE_SESSION_ID in hooks or Python code** — Not applicable. The diff does not use `CLAUDE_SESSION_ID` in hooks or Python code.
+    26→
+    27→## Violations
+    28→
+    29→None found.
+    30→
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>## Local Code Review Results
+
+**Run ID**: review-20260222-1856
+**Changed files**: 2 | **Reviews run**: 1
+
+### Tripwires Review
+
+No violations found.
+
+- 1 tripwire triggered (commands delegation to subagents) — analyzed and confirmed compliant
+- Files reviewed: `.claude/commands/local/review.md`, `.claude/skills/erk-exec/reference.md`
+
+---
+
+**Summary**: 0 total violations across 1 review (1 review clean)
+
+All 1 reviews passed with no violations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="777" cache_read_input_tokens="36974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 777}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/erk:pr-submit&lt;/command-name&gt;
+            &lt;command-message&gt;erk:pr-submit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
