@@ -137,6 +137,18 @@ assert fake_time.sleep_calls == [0.5, 1.0]  # Verify retry delays
 
 See [Erk Architecture Patterns](erk-architecture.md#time-abstraction-for-testing) for the full Time abstraction guide.
 
+## Workflow Run Polling Strategy
+
+The `poll_for_workflow_run()` method reuses `with_retries` for a different purpose: polling for a workflow run to appear. Unlike transient error retry (where the same call might succeed on retry), polling repeatedly queries the API until the expected data appears.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.poll_for_workflow_run -->
+
+See `RealGitHub.poll_for_workflow_run()` in `real.py` for the implementation.
+
+**Configuration**: `retry_delays=[float(poll_interval)] * max_attempts` where defaults are `poll_interval=2` and `timeout=30`, yielding 15 attempts at 2-second intervals. The callback returns `RetryRequested` when the run hasn't appeared yet and returns the run ID string on success.
+
+**Distinction from transient error retry**: Transient error retry uses exponential backoff (`[0.5, 1.0]`) for network failures. Polling uses uniform intervals for data that hasn't materialized yet. Both use `with_retries` but serve different purposes.
+
 ## Implementation Reference
 
 | File                                            | Purpose                                                |

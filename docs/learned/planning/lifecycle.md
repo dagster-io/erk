@@ -1076,6 +1076,12 @@ The backend validates that the plan exists, the field names are valid, and enum 
 
 The fallback inference handles two additional terminal states not in the `LifecycleStageValue` type: `merged` (green) and `closed` (dim red). These are derived from PR state, not stored in plan-header.
 
+### Stacked State
+
+The `is_stacked` parameter is an input to both `compute_status_indicators()` and `format_lifecycle_with_status()`. It is derived from `base_ref_name` on `PullRequestInfo`: if the PR's base branch is not master/main, the PR is stacked. When `is_stacked` is `True`, a pancake emoji (🥞) is prepended to the indicator list. This is an informational indicator that does not block the rocket emoji (🚀) in the implemented stage.
+
+See [Stacked PR Indicator](../tui/stacked-pr-indicator.md) for the full detection strategy and indicator classification.
+
 ---
 
 ## Draft-PR Plan Lifecycle

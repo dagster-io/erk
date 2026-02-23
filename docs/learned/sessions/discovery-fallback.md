@@ -95,6 +95,12 @@ Never `exit 1` or raise when a session file is unavailable. The entire fallback 
 
 Don't construct session paths manually (e.g., `~/.claude/projects/.../sessions/{id}.jsonl`). The `ClaudeInstallation` ABC provides `find_session_globally()` for existence checks — use it. Direct path construction bypasses the abstraction and breaks if Claude Code changes its storage layout.
 
+## Branch Matching Behavior
+
+The `get-learn-sessions` command matches sessions by git branch name. Each session's JSONL log contains a `gitBranch` field, and only sessions whose branch matches the plan's implementation branch are included. This means implementation sessions on feature branches are skipped when running learn from stub worktrees that are on a different branch.
+
+This is expected behavior, not a bug — it prevents cross-plan session contamination when worktree slots are reused for different plans. If you need sessions from a specific branch, check out that branch or use the remote session discovery path (Priority 3 in the fallback hierarchy above).
+
 ## Related Documentation
 
 - [Session Lifecycle](lifecycle.md) — Session file persistence, availability patterns, and LBYL principles
