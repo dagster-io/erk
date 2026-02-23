@@ -11,7 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.impl_context import build_impl_context_files, create_impl_context, impl_context_exists, remove_impl_context
+from erk_shared.impl_context import (
+    build_impl_context_files,
+    create_impl_context,
+    impl_context_exists,
+    remove_impl_context,
+)
 
 FAKE_NOW_ISO = "2025-01-15T10:30:00+00:00"
 
