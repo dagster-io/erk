@@ -1,0 +1,5 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Collapse \"implementing\"/\"implemented\" into single \"impl\" lifecycle stage",
+  "objective_id": 7978
+}
