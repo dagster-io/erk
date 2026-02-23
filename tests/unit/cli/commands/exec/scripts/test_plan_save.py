@@ -12,7 +12,6 @@ from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 
@@ -81,32 +80,6 @@ def test_draft_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert "Branch: plnd/" in result.output
     assert "erk br co" in result.output
     assert "plnd/" in result.output  # branch name appears in checkout command
-
-
-def test_delegates_to_issue_when_not_draft_pr(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """plan_backend="github" delegates to plan_save_to_issue."""
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "github")
-    fake_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
-    ctx = context_for_test(
-        github=fake_github,
-        github_issues=fake_issues,
-        claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
-        cwd=tmp_path,
-        repo_root=tmp_path,
-    )
-    runner = CliRunner()
-
-    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-    # Issue-based save creates issues, not PRs
-    assert len(fake_issues.created_issues) == 1
-    assert len(fake_github.created_prs) == 0
 
 
 def test_draft_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

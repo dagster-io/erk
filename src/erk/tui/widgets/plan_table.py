@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from rich.text import Text
 from textual.events import Click
@@ -12,7 +12,6 @@ from textual.widgets import DataTable
 from erk.core.display_utils import strip_rich_markup
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.views.types import ViewMode
-from erk_shared.context.types import PlanBackendType
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp
@@ -72,7 +71,7 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
-    def __init__(self, plan_filters: PlanFilters, *, plan_backend: PlanBackendType) -> None:
+    def __init__(self, plan_filters: PlanFilters, *, plan_backend: Literal["draft_pr"]) -> None:
         """Initialize table with column configuration based on filters.
 
         Args:
@@ -110,7 +109,7 @@ class PlanDataTable(DataTable):
         cast("ErkDashApp", self.app).action_next_view()
 
     def reconfigure(
-        self, *, plan_filters: PlanFilters, view_mode: ViewMode, plan_backend: PlanBackendType
+        self, *, plan_filters: PlanFilters, view_mode: ViewMode, plan_backend: Literal["draft_pr"]
     ) -> None:
         """Reconfigure the table for a new view mode.
 

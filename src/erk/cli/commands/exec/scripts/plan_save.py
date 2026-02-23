@@ -49,7 +49,6 @@ from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import InvalidPlanTitle, generate_draft_pr_branch_name, validate_plan_title
 from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
@@ -445,7 +444,7 @@ def plan_save(
     """
     # PLAN_BACKEND_SPLIT: dispatches to issue-based save or draft-PR save based on config/env
     # Default backend: delegate to issue-based save
-    if get_plan_backend() != "draft_pr":
+    if "draft_pr" != "draft_pr":
         ctx.invoke(
             plan_save_to_issue,
             output_format=output_format,

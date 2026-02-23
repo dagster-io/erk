@@ -11,7 +11,6 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
@@ -377,7 +376,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
             metadata={},
             objective_id=None,
         )
-        backend = get_plan_backend()
+        backend = "draft_pr"
         plan_store, _ = create_plan_store({"123": plan}, backend=backend)
 
         # draft_pr backend reuses an existing branch; pre-configure FakeGit with it
@@ -461,7 +460,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
             metadata={},
             objective_id=None,
         )
-        backend = get_plan_backend()
+        backend = "draft_pr"
         plan_store, _ = create_plan_store({"456": plan}, backend=backend)
 
         if backend == "draft_pr":
@@ -579,7 +578,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = get_plan_backend()
+        backend = "draft_pr"
         plan_store, _ = create_plan_store({"100": plan}, backend=backend)
 
         if backend == "draft_pr":
@@ -758,7 +757,7 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = get_plan_backend()
+        backend = "draft_pr"
         plan_store, _ = create_plan_store({"200": plan}, backend=backend)
 
         if backend == "draft_pr":
@@ -982,7 +981,7 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = get_plan_backend()
+        backend = "draft_pr"
         plan_store, _ = create_plan_store({"300": plan}, backend=backend)
 
         if backend == "draft_pr":

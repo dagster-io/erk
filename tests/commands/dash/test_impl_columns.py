@@ -82,7 +82,5 @@ last_dispatched_node_id: 'WFR_all_flag'
         # Assert
         assert result.exit_code == 0
         assert "#200" in result.output
-        # PR columns always appear
-        assert "#300" in result.output  # PR number
         # Run columns always shown
         assert "99999" in result.output  # run-id

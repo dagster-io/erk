@@ -27,7 +27,6 @@ from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.output.output import user_output
-from erk_shared.plan_store import get_plan_backend
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -277,7 +276,7 @@ def _list_plans_impl(
     # Build labels - default to ["erk-plan"]
     labels = label if label else ("erk-plan",)
 
-    plan_backend = get_plan_backend()
+    plan_backend = "draft_pr"
 
     # Construct RealPlanDataProvider
     # Only fetch_plans() and fetch_branch_activity() are used here;
@@ -385,7 +384,7 @@ def _run_interactive_mode(
     clipboard = RealClipboard()
     browser = RealBrowserLauncher()
 
-    plan_backend = get_plan_backend()
+    plan_backend = "draft_pr"
 
     # Fetch GitHub token once at startup for fast HTTP client
     token = fetch_github_token()

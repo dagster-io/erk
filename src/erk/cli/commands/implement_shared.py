@@ -26,7 +26,6 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store import get_plan_backend
 from erk_shared.plan_store.types import PlanNotFound
 
 # Valid model names and their aliases
@@ -531,7 +530,7 @@ def prepare_plan_source_from_issue(
 
     # Prepare and validate using shared helper (returns union type)
     result = prepare_plan_for_worktree(
-        plan, ctx.time.now(), plan_backend=get_plan_backend(), warn_non_open=True
+        plan, ctx.time.now(), plan_backend="draft_pr", warn_non_open=True
     )
 
     if isinstance(result, IssueValidationFailed):
