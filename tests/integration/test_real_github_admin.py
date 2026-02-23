@@ -374,3 +374,169 @@ def test_delete_secret_raises_on_failure(monkeypatch: MonkeyPatch) -> None:
         )
         with pytest.raises(RuntimeError):
             admin.delete_secret(location, "NONEXISTENT_SECRET")
+
+
+# ============================================================================
+# get_variable() Tests
+# ============================================================================
+
+
+def test_get_variable_returns_value_when_found(monkeypatch: MonkeyPatch) -> None:
+    """Test get_variable returns the variable value when it exists."""
+    from pathlib import Path
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        assert cmd == [
+            "gh",
+            "variable",
+            "get",
+            "CLAUDE_ENABLED",
+            "--repo",
+            "test-owner/test-repo",
+        ]
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="true\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.get_variable(location, "CLAUDE_ENABLED")
+
+        assert result == "true"
+
+
+def test_get_variable_returns_none_when_not_found(monkeypatch: MonkeyPatch) -> None:
+    """Test get_variable returns None when the variable doesn't exist."""
+    from pathlib import Path
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=1,
+            stdout="",
+            stderr="variable CLAUDE_ENABLED was not found",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.get_variable(location, "CLAUDE_ENABLED")
+
+        assert result is None
+
+
+def test_get_variable_returns_none_on_timeout(monkeypatch: MonkeyPatch) -> None:
+    """Test get_variable returns None when gh command times out."""
+    from pathlib import Path
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise subprocess.TimeoutExpired(cmd, 10)
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.get_variable(location, "CLAUDE_ENABLED")
+
+        assert result is None
+
+
+def test_get_variable_returns_none_on_os_error(monkeypatch: MonkeyPatch) -> None:
+    """Test get_variable returns None when gh not found."""
+    from pathlib import Path
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise OSError("No such file or directory: 'gh'")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.get_variable(location, "CLAUDE_ENABLED")
+
+        assert result is None
+
+
+# ============================================================================
+# set_variable() Tests
+# ============================================================================
+
+
+def test_set_variable_constructs_correct_command(monkeypatch: MonkeyPatch) -> None:
+    """Test set_variable calls gh variable set with correct args."""
+    from pathlib import Path
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        assert cmd == [
+            "gh",
+            "variable",
+            "set",
+            "CLAUDE_ENABLED",
+            "--body",
+            "true",
+            "--repo",
+            "test-owner/test-repo",
+        ]
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        admin.set_variable(location, "CLAUDE_ENABLED", "true")
+
+
+def test_set_variable_raises_on_failure(monkeypatch: MonkeyPatch) -> None:
+    """Test set_variable raises RuntimeError when gh command fails."""
+    from pathlib import Path
+
+    import pytest
+
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise subprocess.CalledProcessError(
+            returncode=1,
+            cmd=cmd,
+            stderr="gh: permission denied",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        with pytest.raises(RuntimeError):
+            admin.set_variable(location, "CLAUDE_ENABLED", "true")

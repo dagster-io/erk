@@ -194,3 +194,56 @@ class RealGitHubAdmin(GitHubAdmin):
             operation_context=f"delete secret {secret_name} for {repo_id.owner}/{repo_id.repo}",
             cwd=location.root,
         )
+
+    def get_variable(self, location: GitHubRepoLocation, variable_name: str) -> str | None:
+        """Get a repository variable value using gh CLI.
+
+        Returns the variable value, or None if the variable is not set.
+        """
+        repo_id = location.repo_id
+        cmd = [
+            "gh",
+            "variable",
+            "get",
+            variable_name,
+            "--repo",
+            f"{repo_id.owner}/{repo_id.repo}",
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+                cwd=location.root,
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+            return None
+        except (subprocess.TimeoutExpired, OSError):
+            # Graceful degradation: variable lookup is best-effort.
+            # Timeout or missing gh binary should not prevent the caller
+            # from proceeding with a default value.
+            return None
+
+    def set_variable(self, location: GitHubRepoLocation, variable_name: str, value: str) -> None:
+        """Set a repository variable using gh CLI."""
+        repo_id = location.repo_id
+        cmd = [
+            "gh",
+            "variable",
+            "set",
+            variable_name,
+            "--body",
+            value,
+            "--repo",
+            f"{repo_id.owner}/{repo_id.repo}",
+        ]
+
+        run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"set variable {variable_name} for {repo_id.owner}/{repo_id.repo}",
+            cwd=location.root,
+        )
