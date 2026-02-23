@@ -123,3 +123,44 @@ def impl_context_exists(repo_root: Path) -> bool:
 
     impl_context_dir = repo_root / IMPL_CONTEXT_DIR
     return impl_context_dir.exists()
+
+
+def build_impl_context_files(
+    plan_content: str,
+    plan_id: str,
+    url: str,
+    *,
+    provider: str,
+    objective_id: int | None,
+    now_iso: str,
+) -> dict[str, str]:
+    """Build impl-context file contents as an in-memory mapping.
+
+    Returns the same content as create_impl_context but without writing to disk,
+    suitable for use with commit_files_to_branch.
+
+    Args:
+        plan_content: Full plan markdown content from GitHub issue
+        plan_id: Provider-specific plan ID as string (e.g., "42")
+        url: Full plan URL
+        provider: Plan provider name (e.g., "github", "github-draft-pr")
+        objective_id: Optional linked objective issue number
+        now_iso: ISO 8601 UTC timestamp for created_at/synced_at fields
+
+    Returns:
+        Mapping of relative file paths to string content suitable for
+        passing to commit_files_to_branch.
+    """
+    ref_data: dict[str, str | int | list[str] | None] = {
+        "provider": provider,
+        "plan_id": plan_id,
+        "url": url,
+        "created_at": now_iso,
+        "synced_at": now_iso,
+        "labels": [],
+        "objective_id": objective_id,
+    }
+    return {
+        f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
+        f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+    }

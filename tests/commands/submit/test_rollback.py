@@ -14,12 +14,13 @@ from tests.commands.submit.conftest import create_plan
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
-def test_submit_rollback_on_push_failure(tmp_path: Path) -> None:
-    """Test submit restores original branch when push fails.
+def test_submit_push_failure_leaves_original_branch_intact(tmp_path: Path) -> None:
+    """Test submit leaves user on original branch when push fails.
 
-    When push_to_remote fails (e.g., network error), the user should be
-    restored to their original branch instead of being stranded on an
-    unpushed local branch.
+    When push_to_remote fails (e.g., network error), the user remains on
+    their original branch. Since the submit path uses git plumbing
+    (commit_files_to_branch) rather than checking out the plan branch,
+    no branch restore is needed on failure.
     """
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -58,16 +59,13 @@ def test_submit_rollback_on_push_failure(tmp_path: Path) -> None:
 
     # Command should fail with the push error
     assert result.exit_code != 0
-    assert "Operation failed, restoring original branch" in result.output
+    assert "Network error: Connection refused" in result.output
 
-    # Verify rollback: user should be restored to original branch "main"
-    # Check that checkout_branch was called with "main" after the failed push
-    # The sequence should be: checkout feature branch, then checkout main (rollback)
-    assert len(fake_git.checked_out_branches) >= 2
-
-    # Last checkout should be the rollback to original branch
-    last_checkout = fake_git.checked_out_branches[-1]
-    assert last_checkout == (repo_root, "main")
+    # Verify no checkout of the plan branch occurred (plumbing commit, no checkout)
+    plan_branch_checkouts = [
+        branch for _, branch in fake_git.checked_out_branches if branch.startswith("P123-")
+    ]
+    assert len(plan_branch_checkouts) == 0
 
     # Verify workflow was NOT triggered (failure happened before workflow dispatch)
     assert len(fake_github.triggered_workflows) == 0
