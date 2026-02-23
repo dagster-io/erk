@@ -55,7 +55,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.github.checks import GitHubChecks
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
-from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PRNotFound
 from erk_shared.non_ideal_state import GitHubAPIFailed
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -380,6 +380,21 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
     github_issues = require_issues(ctx)
     claude_installation = require_claude_installation(ctx)
     plan_backend = require_plan_backend(ctx)
+
+    # Check if CLAUDE_ENABLED is explicitly disabled before doing any work
+    location = GitHubRepoLocation(
+        root=repo_root,
+        repo_id=GitHubRepoId(owner=repo_info.owner, repo=repo_info.name),
+    )
+    claude_enabled_value = ctx.obj.github_admin.get_variable(location, "CLAUDE_ENABLED")
+    if claude_enabled_value == "false":
+        click.echo(
+            click.style("⚠ ", fg="yellow")
+            + "CLAUDE_ENABLED is explicitly set to 'false' — skipping learn workflow",
+            err=True,
+        )
+        _output_error("CLAUDE_ENABLED is explicitly set to 'false' — skipping learn workflow")
+        return
 
     # Step 1: Discover session sources for the plan (direct function call)
     message = click.style("📋 Discovering sessions...", fg="cyan")

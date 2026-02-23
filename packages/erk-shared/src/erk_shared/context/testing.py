@@ -31,6 +31,7 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+from erk_shared.gateway.github_admin.abc import GitHubAdmin
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
@@ -43,6 +44,7 @@ def context_for_test(
     github_issues: GitHubIssues | None = None,
     git: Git | None = None,
     github: GitHub | None = None,
+    github_admin: GitHubAdmin | None = None,
     graphite: Graphite | None = None,
     claude_installation: ClaudeInstallation | None = None,
     agent_launcher: AgentLauncher | None = None,
@@ -198,7 +200,7 @@ def context_for_test(
     return ErkContext(
         git=resolved_git,
         github=resolved_github,
-        github_admin=FakeGitHubAdmin(),
+        github_admin=github_admin if github_admin is not None else FakeGitHubAdmin(),
         claude_installation=resolved_claude_installation,
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
