@@ -218,6 +218,9 @@ def test_with_closing_ref_retries_and_succeeds(tmp_path: Path) -> None:
     assert result == 42
     output = captured.getvalue()
     assert "Closed plan issue #42" in output
+    # Verify polling progress output
+    assert "Waiting for issue #42 to close..." in output
+    assert "attempt 1/3" in output
     # Should have retried once (slept once)
     assert fake_time.sleep_calls == [1.0]
     # Initial call + 1 retry
@@ -253,6 +256,10 @@ def test_with_closing_ref_warns_after_max_retries(tmp_path: Path) -> None:
     output = captured.getvalue()
     assert "Plan issue #42 still open" in output
     assert "expected auto-close" in output
+    # Verify all polling progress messages appeared
+    assert "attempt 1/3" in output
+    assert "attempt 2/3" in output
+    assert "attempt 3/3" in output
     # Should have retried 3 times (max retries)
     assert fake_time.sleep_calls == [1.0, 1.0, 1.0]
     # Initial call + 3 retries = 4 calls
