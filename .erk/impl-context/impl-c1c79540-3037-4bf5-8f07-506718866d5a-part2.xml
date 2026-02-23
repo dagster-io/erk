@@ -1,0 +1,994 @@
+<session>
+  <meta branch="plnd/plan-update-objective-when-02-23-1417" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Grep" id="toolu_01MJQ9nQzMxKn5EG8K7djEM7">
+    <param name="pattern">prompt_executor"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="72105" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MJQ9nQzMxKn5EG8K7djEM7">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SkfWKraxFKDhUgUG3FkhRa">
+    <param name="pattern">prompt_executor</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="72259" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SkfWKraxFKDhUgUG3FkhRa">
+17-from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+18-from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+19:from erk.core.codex_prompt_executor import CodexPromptExecutor
+20-from erk.core.completion import RealCompletion
+21:from erk.core.prompt_executor import ClaudePromptExecutor
+22-from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+23-from erk.core.script_writer import RealScriptWriter
+--
+38-from erk_shared.core.objective_list_service import ObjectiveListService
+39-from erk_shared.core.plan_list_service import PlanListService
+40:from erk_shared.core.prompt_executor import PromptExecutor
+41-from erk_shared.core.script_writer import ScriptWriter
+42-from erk_shared.gateway.agent_docs.abc import AgentDocs
+--
+85-
+86-
+87:def create_prompt_executor(
+88-    *,
+89-    global_config: GlobalConfig | None,
+--
+125-        use context_for_test() instead.
+126-    """
+127:    from tests.fakes.prompt_executor import FakePromptExecutor
+128-    from tests.fakes.script_writer import FakeScriptWriter
+129-
+--
+179-        codespace_registry=FakeCodespaceRegistry(),
+180-        claude_installation=FakeClaudeInstallation.for_test(),
+181:        prompt_executor=FakePromptExecutor(),
+182-        cwd=cwd,
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012GqM2cc3jHw4K4iFWh2uth">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/core/context.py</param>
+    <param name="offset">200</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="812" cache_read_input_tokens="72419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 812}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012GqM2cc3jHw4K4iFWh2uth">
+   200→    console: Console | None = None,
+   201→    shell: Shell | None = None,
+   202→    codespace: Codespace | None = None,
+   203→    agent_launcher: AgentLauncher | None = None,
+   204→    agent_docs: AgentDocs | None = None,
+   205→    completion: Completion | None = None,
+   206→    time: Time | None = None,
+   207→    erk_installation: ErkInstallation | None = None,
+   208→    script_writer: ScriptWriter | None = None,
+   209→    plan_list_service: PlanListService | None = None,
+   210→    objective_list_service: ObjectiveListService | None = None,
+   211→    codespace_registry: CodespaceRegistry | None = None,
+   212→    claude_installation: ClaudeInstallation | None = None,
+   213→    prompt_executor: PromptExecutor | None = None,
+   214→    cwd: Path | None = None,
+   215→    global_config: GlobalConfig | None = None,
+   216→    local_config: LoadedConfig | None = None,
+   217→    repo: RepoContext | NoRepoSentinel | None = None,
+   218→    repo_info: RepoInfo | None = None,
+   219→    package_info: ErkPackageInfo | None = None,
+   220→    dry_run: bool = False,
+   221→    debug: bool = False,
+   222→) -&gt; ErkContext:
+   223→    """Create test context with optional pre-configured integration classes.
+   224→
+   225→    Provides full control over all context parameters with sensible test defaults
+   226→    for any unspecified values. Use this for complex test scenarios that need
+   227→    specific configurations for multiple integration classes.
+   228→
+   229→    Args:
+
+... [50 lines omitted] ...
+  </tool_result>
+  <thinking>I can see that `context_for_test` accepts `prompt_executor` as a parameter. And `build_workspace_test_context` passes **kwargs through to `env.build_context()`. So I should be able to pass `prompt_executor` through `build_workspace_test_context`.
+
+Let me now check the `env.build_context()` to see if it accepts `prompt_executor`. Let me check the env helpers.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="73231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1563}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01F69xhvU2SopPar2uH2UvSR">
+    <param name="pattern">def build_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/env_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="73231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1563}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F69xhvU2SopPar2uH2UvSR">
+380:    def build_context(
+381-        self,
+382-        *,
+383-        current_branch: str | None = None,
+384-        trunk_branch: str = "main",
+385-        use_graphite: bool = False,
+386-        git: Git | None = None,
+387-        graphite: FakeGraphite | None = None,
+388-        github: FakeGitHub | None = None,
+389-        shell: FakeShell | None = None,
+390-        repo: RepoContext | None = None,
+391-        dry_run: bool = False,
+392-        confirm_responses: list[bool] | None = None,
+393-        console: FakeConsole | None = None,
+394-        **kwargs,
+395-    ) -&gt; ErkContext:
+396-        """Build ErkContext with smart defaults for test scenarios.
+397-
+398-        This helper eliminates boilerplate by providing default ops and config
+399-        for tests that don't need custom setup. Custom values can be provided
+400-        via keyword arguments.
+--
+825:    def build_context(
+826-        self,
+827-        *,
+828-        current_branch: str | None = None,
+829-        trunk_branch: str = "main",
+830-        use_graphite: bool = False,
+831-        git: Git | None = None,
+832-        graphite: FakeGraphite | None = None,
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>Good - `build_context` accepts `**kwargs`, which will pass through to `context_for_test`. Since the tests for plan close use `erk_inmem_env` and `build_workspace_test_context`, I can pass `prompt_executor` through the kwargs chain.
+
+Now let me write the tests. I'll add them to the existing test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="795" cache_read_input_tokens="74794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 795}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SaMtV6udbqt6FUJQuxokjn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="795" cache_read_input_tokens="74794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 795}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SaMtV6udbqt6FUJQuxokjn">
+     1→"""Tests for plan close command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+    11→from erk_shared.plan_store.github import GitHubPlanStore
+    12→from erk_shared.plan_store.types import Plan, PlanState
+    13→from tests.test_utils.context_builders import build_workspace_test_context
+    14→from tests.test_utils.env_helpers import erk_inmem_env
+    15→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    16→
+    17→
+    18→def test_close_plan_with_issue_number() -&gt; None:
+    19→    """Test closing a plan with issue number."""
+    20→    # Arrange
+    21→    plan_issue = Plan(
+    22→        plan_identifier="42",
+    23→        title="Test Issue",
+    24→        body="This is a test issue",
+    25→        state=PlanState.OPEN,
+    26→        url="https://github.com/owner/repo/issues/42",
+    27→        labels=["erk-plan"],
+    28→        assignees=[],
+    29→        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+    30→        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+
+... [254 lines omitted] ...
+
+    64→        assert "Error" in result.output
+   173→    """Test closing a plan with no linked PRs works without error."""
+   211→    """Test closing a plan with invalid identifier fails with helpful error."""
+   228→    """Test closing a plan with invalid URL format gives specific error."""
+  </tool_result>
+  <assistant>Now I'll add the three new tests at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4260" cache_read_input_tokens="75589" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4260}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011rsPsW8tN6E5rBQuC5PRa9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py</param>
+    <param name="old_string">"""Tests for plan close command."""
+
+from datetime import UTC, datetime
+
+from click.testin...[truncated 446 chars]...mport erk_inmem_env
+from tests.test_utils.plan_helpers import create_plan_store_with_plans</param>
+    <param name="new_string">"""Tests for plan close command."""
+
+from datetime import UTC, datetime
+
+from click.testin...[truncated 505 chars]...mport erk_inmem_env
+from tests.test_utils.plan_helpers import create_plan_store_with_plans</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4260" cache_read_input_tokens="75589" output_tokens="564" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011rsPsW8tN6E5rBQuC5PRa9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the three test functions at the end:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="79849" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 620}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0116jBktfconMApfS6fxQySz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 0
+        assert "Closed 3 linked PR(s): #100, #200, #300" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 0
+        assert "Closed 3 linked PR(s...[truncated 3744 chars]...losed plan #42" in result.output
+        assert "Objective update failed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="79849" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 620}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0116jBktfconMApfS6fxQySz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests to see if they pass:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1433" cache_read_input_tokens="80469" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1433}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_017mnyu6ZY2BsRqEJhDXbLfR">
+    <param name="description">Run close plan tests</param>
+    <param name="prompt">Run the tests in tests/commands/plan/test_close.py and report the full output, including any failures. Command: uv run pytest tests/commands/plan/test_close.py -v</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1433" cache_read_input_tokens="80469" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1433, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017mnyu6ZY2BsRqEJhDXbLfR">
+pytest failed: 2 issues found
+
+**Summary:** 9 passed, 2 failed in 0.65s
+
+**Failures:**
+
+1. **tests/commands/plan/test_close.py::test_close_plan_with_objective_invokes_update** (Line 319)
+   - Assertion error: `assert len(executor.executed_commands) == 1`
+   - Expected the objective update command to be invoked when closing a plan linked to an objective, but `executed_commands` list is empty
+
+2. **tests/commands/plan/test_close.py::test_close_plan_objective_update_failure_does_not_break_close** (Line 392)
+   - Assertion error: `assert 'Objective update failed' in result.output`
+   - Expected "Objective update failed" message in output, but got only "Closed plan #42"
+
+Both failures indicate that the plan close command is not invoking an objective update when a plan with an `objective_id` is closed.
+agentId: a16d80163a6280bbf (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16345
+tool_uses: 1
+duration_ms: 9767&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+The tests show the integration isn't working. The issue is that `stream_command_with_feedback` uses `execute_command_streaming` (not `execute_command`), and the `FakePromptExecutor` tracks both separately. But more likely, the problem is that `stream_command_with_feedback` is being called but the `executed_commands` list only tracks `execute_command` calls. Let me check how `stream_command_with_feedback` works:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="652" cache_read_input_tokens="81902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 652}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0135d6qXd1PGNox7aYqmSdLV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/output.py</param>
+    <param name="offset">127</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="652" cache_read_input_tokens="81902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 652}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0135d6qXd1PGNox7aYqmSdLV">
+   127→def stream_command_with_feedback(
+   128→    *,
+   129→    executor: PromptExecutor,
+   130→    command: str,
+   131→    worktree_path: Path,
+   132→    dangerous: bool,
+   133→    model: str | None = None,
+   134→    debug: bool = False,
+   135→    permission_mode: PermissionMode,
+   136→    allow_dangerous: bool = False,
+   137→) -&gt; CommandResult:
+   138→    """Stream Claude command execution with live print-based feedback.
+   139→
+   140→    This function replaces spinner-based output with print-based feedback
+   141→    that works correctly (Rich's console.status() suppresses console.print()).
+   142→
+   143→    Visual output format:
+   144→    - Start: `--- /command ---` (bold)
+   145→    - Text events: content as-is (normal)
+   146→    - Tool events: `  &gt; tool summary` (dim)
+   147→    - Spinner updates: `  ... status` (dim, deduplicated)
+   148→    - Error events: `  ! error message` (red)
+   149→    - End (success): `--- Done (1m 23s) ---` (green)
+   150→    - End (failure): `--- Failed (1m 23s) ---` (red)
+   151→
+   152→    Args:
+   153→        executor: Prompt executor for command execution
+   154→        command: The slash command to execute (e.g., "/gt:pr-submit")
+   155→        worktree_path: Path to worktree directory to run command in
+   156→        dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
+
+... [50 lines omitted] ...
+
+   179→    error_message: str | None = None
+  </tool_result>
+  <thinking>I see - `stream_command_with_feedback` uses `execute_command_streaming`, not `execute_command`. The `FakePromptExecutor.execute_command_streaming` does record to `_executed_commands` (line 169 in prompt_executor.py), so that should be tracked. But looking at the test failures, it seems the `stream_command_with_feedback` function isn't being called at all.
+
+The issue is that `run_objective_update_after_close` calls `stream_command_with_feedback` which writes output to stderr using `click.echo(..., err=True)`. And the Click `CliRunner` by default captures stdout, not stderr. 
+
+So the output assertions might fail, but more critically, `executed_commands` is empty, meaning `stream_command_with_feedback` was never called. Looking at the code path in `close_cmd.py`, the condition checking `result.objective_id` should trigger when it's set to 99, so either the objective_id isn't being set properly by `create_plan_store_with_plans`, or an exception is being raised and swallowed somewhere. The `run_objective_update_after_close` function doesn't catch exceptions despite its docstring claiming it's "fail-open", so if `stream_command_with_feedback` raises an error, it would propagate up and crash the close command.
+
+I'm suspecting the real issue is that `prompt_executor` isn't being passed through correctly in `build_workspace_test_context`. The test creates a `FakePromptExecutor` and passes it to the context builder, but I need to verify that the function actually forwards this parameter through to where it's needed. The exit code is zero, so the command runs successfully, but `executor.executed_commands` stays empty. I'm wondering if the `FakePromptExecutor` instance being used inside `run_objective_update_after_close` is actually the same one we created in the test. We're passing `prompt_executor=executor` through to `build_workspace_test_context`, which chains through to `context_for_test`, and that function only creates a new executor if none is provided—so it should use ours. But maybe something in that chain isn't passing it through correctly. I'm tracing through how `prompt_executor` gets passed through the context chain, and it looks like it should work — `build_workspace_test_context` passes it via `**kwargs` to `env.build_context()`, which then forwards it to `context_for_test()`. But the test is asserting `exit_code == 0`, which means the close operation succeeds even though the executor never gets called, so maybe `env.build_context()` is creating its own `prompt_executor` and overriding the one I'm passing in.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1324" cache_read_input_tokens="82554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1324}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The tests fail because the executor's `executed_commands` is empty — meaning the objective update isn't being called. Let me trace the issue. Let me check how `env.build_context` wires through `prompt_executor`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1324" cache_read_input_tokens="82554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1324}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X4k5J5sh3u6CtBpVoSBEuY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/env_helpers.py</param>
+    <param name="offset">380</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1324" cache_read_input_tokens="82554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1324}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X4k5J5sh3u6CtBpVoSBEuY">
+   380→    def build_context(
+   381→        self,
+   382→        *,
+   383→        current_branch: str | None = None,
+   384→        trunk_branch: str = "main",
+   385→        use_graphite: bool = False,
+   386→        git: Git | None = None,
+   387→        graphite: FakeGraphite | None = None,
+   388→        github: FakeGitHub | None = None,
+   389→        shell: FakeShell | None = None,
+   390→        repo: RepoContext | None = None,
+   391→        dry_run: bool = False,
+   392→        confirm_responses: list[bool] | None = None,
+   393→        console: FakeConsole | None = None,
+   394→        **kwargs,
+   395→    ) -&gt; ErkContext:
+   396→        """Build ErkContext with smart defaults for test scenarios.
+   397→
+   398→        This helper eliminates boilerplate by providing default ops and config
+   399→        for tests that don't need custom setup. Custom values can be provided
+   400→        via keyword arguments.
+   401→
+   402→        Args:
+   403→            current_branch: If provided, auto-configures FakeGit.current_branches
+   404→            trunk_branch: Default branch name (default: "main")
+   405→            use_graphite: Enable Graphite integration (default: False)
+   406→            git: Custom FakeGit instance (overrides smart defaults)
+   407→            graphite: Custom FakeGraphite instance
+   408→            github: Custom FakeGitHub instance
+   409→            shell: Custom FakeShell instance
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012eEB8E9wTqGTHTaRKF65cd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/env_helpers.py</param>
+    <param name="offset">460</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3189" cache_read_input_tokens="83878" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3189}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012eEB8E9wTqGTHTaRKF65cd">
+   460→                },
+   461→                remote_urls={(self.cwd, "origin"): "https://github.com/owner/repo.git"},
+   462→            )
+   463→        else:
+   464→            from erk_shared.gateway.git.dry_run import DryRunGit
+   465→
+   466→            unwrapped_ops = git._wrapped if isinstance(git, DryRunGit) else git
+   467→
+   468→            # Add core paths to existing_paths if they're actually git repos
+   469→            # Only add paths that are in git_common_dirs (actual repos)
+   470→            has_existing = hasattr(unwrapped_ops, "_existing_paths")
+   471→            has_git_common = hasattr(unwrapped_ops, "_git_common_dirs")
+   472→            has_worktrees = hasattr(unwrapped_ops, "_worktrees")
+   473→            if has_existing and has_git_common:
+   474→                # Determine which cwd to use (custom or default)
+   475→                effective_cwd = kwargs.get("cwd", self.cwd)
+   476→
+   477→                # Collect core paths - always include cwd and erk_root
+   478→                core_paths = {
+   479→                    self.cwd,
+   480→                    effective_cwd,
+   481→                    self.erk_root,
+   482→                    repo.repo_dir,
+   483→                }
+   484→
+   485→                # Only add git_dir and repo.root if this is actually a git repo
+   486→                # (i.e., git_common_dirs is not empty)
+   487→                if unwrapped_ops._git_common_dirs:
+   488→                    core_paths.update({self.git_dir, repo.root})
+   489→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BsXqqphPTTheYjosFr6BWC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/env_helpers.py</param>
+    <param name="offset">519</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1016" cache_read_input_tokens="87067" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1016}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BsXqqphPTTheYjosFr6BWC">
+   519→
+   520→        if github is None:
+   521→            github = FakeGitHub()
+   522→
+   523→        if shell is None:
+   524→            shell = FakeShell()
+   525→
+   526→        # Create global config if not provided in kwargs
+   527→        if "global_config" in kwargs:
+   528→            # Use the provided global_config (might be None for init tests)
+   529→            global_config = kwargs.pop("global_config")
+   530→        else:
+   531→            # Create default global config
+   532→            global_config = GlobalConfig.test(
+   533→                self.erk_root,
+   534→                use_graphite=use_graphite,
+   535→                shell_setup_complete=False,
+   536→            )
+   537→
+   538→        # Build and return context
+   539→        # Default cwd and script_writer to env values unless overridden in kwargs
+   540→        if "cwd" not in kwargs:
+   541→            kwargs["cwd"] = self.cwd
+   542→        if "script_writer" not in kwargs:
+   543→            kwargs["script_writer"] = self.script_writer
+   544→
+   545→        # Filter out erk_root - it's already set in global_config above
+   546→        # Tests shouldn't override it via kwargs
+   547→        if "erk_root" in kwargs:
+   548→            kwargs.pop("erk_root")
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01V5fL4isaEL61kGVPzYMPzX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/env_helpers.py</param>
+    <param name="offset">559</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="88083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 617}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V5fL4isaEL61kGVPzYMPzX">
+   559→                is_stderr_tty=None,
+   560→                confirm_responses=confirm_responses,
+   561→            )
+   562→
+   563→        return context_for_test(
+   564→            git=git,
+   565→            graphite=graphite,
+   566→            github=github,
+   567→            shell=shell,
+   568→            console=console,
+   569→            global_config=global_config,
+   570→            repo=repo,
+   571→            dry_run=dry_run,
+   572→            **kwargs,
+   573→        )
+   574→
+   575→    def _build_stack_path(
+   576→        self,
+   577→        branches: dict[str, BranchMetadata],
+   578→        leaf: str,
+   579→    ) -&gt; list[str]:
+   580→        """Build stack path from trunk to leaf.
+   581→
+   582→        Args:
+   583→            branches: All branch metadata
+   584→            leaf: Leaf branch name
+   585→
+   586→        Returns:
+   587→            List of branch names from trunk to leaf (inclusive)
+   588→        """
+  </tool_result>
+  <thinking>OK, the chain is: `build_workspace_test_context(env, ..., prompt_executor=executor)` → `env.build_context(**kwargs)` where `prompt_executor=executor` is in kwargs → `context_for_test(..., **kwargs)` where `prompt_executor=executor` is still in kwargs → sets `ctx.prompt_executor = executor`.
+
+So the `prompt_executor` should be wired correctly. Let me think about what else could be happening.
+
+Wait, let me look more closely. The `build_workspace_test_context` function has this logic:
+
+```python
+def build_workspace_test_context(
+
+
+```
+
+It extracts `plan_store` from kwargs? No, it passes kwargs through. But `plan_store` is a parameter - let me check if `context_for_test()` accepts `plan_store`:
+
+Looking at context.py line 198+, I see the function signature with various parameters like `git`, `github`, `issues`, `graphite`, `console`, `shell`, and `prompt_executor`, but I don't see `plan_store` explicitly listed. Let me check if it's accepted.
+
+Actually, wait. The existing tests for `test_close_plan_with_issue_number` pass `plan_store=store` and `issues=fake_issues`, and those tests work, so `plan_store` must be accepted somewhere. Let me search for it in the context.
+
+Actually, let me think about the real problem differently. The existing tests pass (9 passed), which means `plan_store` works. My new tests also pass the `exit_code == 0` assertion in 2 of the 3 tests. The issue is specifically that `executor.executed_commands` is empty.
+
+Maybe the issue is simpler than I think. Let me check if `run_objective_update_after_close` is actually being called. Could there be an exception happening in `user_output()` or `stream_command_with_feedback()` that gets caught somewhere?
+
+Looking at the `run_objective_update_after_close` function, it calls `user_output()` to print status messages, then constructs a command string and passes it to `stream_command_with_feedback()` with the executor. Wait—
+
+this function doesn't have fail-open error handling. If `stream_command_with_feedback` throws, the whole close command would fail. But the test shows exit code 0, so no exception is being raised.
+
+Let me re-read the test output more carefully. The assertion error shows `executor.executed_commands` is empty, which means either a different FakePromptExecutor instance is being used (maybe the default one created inside `context_for_test`), or `run_objective_update_after_close` isn't being called at all.
+
+Let me trace through how the executor gets passed. When I call `build_workspace_test_context(env, plan_store=store, issues=fake_issues, prompt_executor=executor)`, the kwargs include my executor instance. Then `env.build_context()` is called with these kwargs. Inside `build_context`, parameters like `github`, `git`, and `shell` are extracted as named parameters, but `plan_store`, `issues`, and `prompt_executor` aren't named parameters, so they stay in `**kwargs`. Then `context_for_test()` is called with these kwargs, and since `prompt_executor` is passed explicitly, it should use my instance instead of creating a new one.
+
+```
+
+python
+if prompt_executor is None:
+    prompt_executor = FakePromptExecutor()
+```
+
+So the executor should be the right one. But I need to check if `plan_store` is actually being passed through correctly to `context_for_test`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="88700" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 420}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check if `context_for_test` accepts `plan_store`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="88700" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 420}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014hSFhCpwjTuVQiJn93CBHZ">
+    <param name="pattern">plan_store</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="88700" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 420}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014hSFhCpwjTuVQiJn93CBHZ">
+79-from erk_shared.gateway.time.real import RealTime
+80-from erk_shared.output.output import user_output
+81:from erk_shared.plan_store import get_plan_backend
+82:from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+83:from erk_shared.plan_store.github import GitHubPlanStore
+84:from erk_shared.plan_store.store import PlanStore
+85-
+86-
+--
+163-        github=fake_github,
+164-        github_admin=FakeGitHubAdmin(),
+165:        plan_store=GitHubPlanStore(fake_issues, fake_time),
+166-        graphite=fake_graphite,
+167-        graphite_branch_ops=fake_graphite_branch_ops,
+--
+196-    github_admin: GitHubAdmin | None = None,
+197-    issues: GitHubIssues | None = None,
+198:    plan_store: PlanStore | None = None,
+199-    graphite: Graphite | None = None,
+200-    console: Console | None = None,
+--
+299-        github_admin = FakeGitHubAdmin()
+300-
+301:    if plan_store is None:
+302-        # Always compose from issues layer - no separate FakePlanStore
+303-        # This ensures tests use the same composition as production code
+304:        plan_store = GitHubPlanStore(issues)
+305-
+306-    # Handle graphite based on global_config.use_graphite to match production behavior
+--
+
+... [23 lines omitted] ...
+  </tool_result>
+  <thinking>OK so `context_for_test` does accept `plan_store` as a named parameter. And when it's provided, it uses it directly (bypassing the `GitHubPlanStore(issues)` default).
+
+So the chain should work fine. Let me think about this differently. Maybe the issue is that `run_objective_update_after_close` is throwing an exception, and Click's `CliRunner.invoke` catches it. Let me check what `invoke` does by default...
+
+Actually, `CliRunner.invoke` catches exceptions by default (`catch_exceptions=True`). So if `stream_command_with_feedback` throws an exception, it would be caught but the exit code would not be 0... unless it's a SystemExit.
+
+
+Wait, `CliRunner` catches all exceptions when `catch_exceptions=True` and sets the exit code to 1, but the test expects `result.exit_code == 0`. So no exception is being raised. Looking at the test assertions more carefully, the first two assertions pass—the exit code is 0 and "Closed plan #42" appears in the output—but the third assertion fails because `executor.executed_commands` is empty. This means the close command succeeds, but the objective update isn't being invoked. The code should call `run_objective_update_after_close` when `result.objective_id` is not None, so either `result.objective_id` is somehow None, or I need to check what `create_plan_store_with_plans` actually returns.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2561" cache_read_input_tokens="89120" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2561}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check `create_plan_store_with_plans` to understand how it creates the store:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2561" cache_read_input_tokens="89120" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2561}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EkpUUjuow2RWWp1fKae2eE">
+    <param name="pattern">def create_plan_store_with_plans</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2561" cache_read_input_tokens="89120" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2561}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EkpUUjuow2RWWp1fKae2eE">
+Found 1 file
+tests/test_utils/plan_helpers.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NGAhqjVB4JmM5MhFd8XL7y">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/test_utils/plan_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="91681" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 944}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NGAhqjVB4JmM5MhFd8XL7y">
+     1→"""Helpers for creating plan stores with Plan objects in tests.
+     2→
+     3→This module provides utilities for tests that need to set up plan state.
+     4→It converts Plan objects to the appropriate backing store format:
+     5→- GitHubPlanStore backed by FakeGitHubIssues (GitHub Issues backend)
+     6→- DraftPRPlanBackend backed by FakeGitHub (Draft PR backend)
+     7→
+     8→For dual-backend testing, use create_plan_store() which dispatches based
+     9→on a backend parameter.
+    10→"""
+    11→
+    12→from datetime import UTC
+    13→
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    16→from erk_shared.gateway.github.issues.types import IssueInfo
+    17→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    18→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    19→from erk_shared.gateway.time.fake import FakeTime
+    20→from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+    21→from erk_shared.plan_store.draft_pr_lifecycle import (
+    22→    DETAILS_CLOSE,
+    23→    DETAILS_OPEN,
+    24→    PLAN_CONTENT_SEPARATOR,
+    25→)
+    26→from erk_shared.plan_store.github import GitHubPlanStore
+    27→from erk_shared.plan_store.store import PlanStore
+    28→from erk_shared.plan_store.types import Plan, PlanState
+    29→
+    30→_PLAN_HEADER_END_MARKER = "&lt;!-- /erk:metadata-block:plan-header --&gt;"
+
+... [250 lines omitted] ...
+  </tool_result>
+  <thinking>Now I see the issue. When `create_plan_store_with_plans` creates the store, it converts `Plan` objects to `IssueInfo` objects using `_plan_to_issue_info`. When `GitHubPlanStore.get_plan()` is called, it fetches the `IssueInfo` and converts it BACK to a `Plan` object using `_convert_to_plan()`.
+
+The `Plan` object I created has `objective_id=99`. But the conversion chain is:
+1. My `Plan(objective_id=99)` → `_plan_to_issue_info()` → `IssueInfo` (no `objective_id` field)
+
+
+2. `GitHubPlanStore.get_plan()` → fetches `IssueInfo` → `_convert_to_plan()` → `Plan`
+
+The problem is that `IssueInfo` doesn't store the `objective_id` directly—it's extracted from the plan-header metadata block in the issue body during the conversion back to `Plan`. Since my test plan body is just "This is a test issue" with no metadata block, the returned `Plan` will have `objective_id=None`. I need to include a plan-header metadata block in the body that specifies `objective_issue: 99`.
+
+Let me check how `_convert_to_plan` actually parses this metadata to understand the exact format required.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4265" cache_read_input_tokens="92625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4265}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I see the issue. The `objective_id` on the `Plan` object is set when constructing it, but `GitHubPlanStore.get_plan()` converts `IssueInfo` back to `Plan` and extracts `objective_id` from the plan-header metadata block in the body. My test body has no metadata block. Let me check how the conversion works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4265" cache_read_input_tokens="92625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4265}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XQdm5CkqrVcoTc8aRZDs1F">
+    <param name="pattern">objective_id|objective_issue</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/plan_store/github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4265" cache_read_input_tokens="92625" output_tokens="597" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4265, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XQdm5CkqrVcoTc8aRZDs1F">
+50-)
+51-
+52-
+53:def _parse_objective_id(value: object) -&gt; int | None:
+54:    """Parse objective_id from metadata value.
+55-
+56-    Args:
+57-        value: Raw value from metadata (str, int, or None)
+--
+68-        return value
+69-    if isinstance(value, str):
+70-        return int(value)
+71:    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+72-
+73-
+74-class GitHubPlanStore(PlanBackend):
+--
+388-            metadata: Provider-specific metadata. Supported keys:
+389-                - title_tag: str | None
+390-                - source_repo: str | None
+391:                - objective_issue: int | None
+392-
+393-        Returns:
+394-            CreatePlanResult with plan_id and url
+--
+406-        source_repo_str: str | None = str(source_repo_raw) if source_repo_raw is not None else None
+407-
+408-        # Handle int field
+409:        objective_issue_raw = metadata.get(OBJECTIVE_ISSUE)
+410:        objective_id: int | None = _parse_objective_id(objective_issue_raw)
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01ARtWaX3SG9i5Bnm1bDz5pJ">
+    <param name="pattern">def _convert_to_plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/plan_store/github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1064" cache_read_input_tokens="96890" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1064, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ARtWaX3SG9i5Bnm1bDz5pJ">
+681:    def _convert_to_plan(self, issue_info: IssueInfo, *, plan_body: str | None) -&gt; Plan:
+682-        """Convert IssueInfo to Plan.
+683-
+684-        Args:
+685-            issue_info: IssueInfo from GitHubIssues interface
+686-            plan_body: Plan content extracted from comment, or issue body as fallback.
+687-                       If None, uses issue_info.body (for list_plans compatibility)
+688-
+689-        Returns:
+690-            Plan with normalized data and enriched metadata
+691-        """
+692-        plan = issue_info_to_plan(issue_info)
+693-
+694-        # For get_plan(), overlay the plan body from comment
+695-        if plan_body is not None:
+696-            plan = dataclasses.replace(plan, body=plan_body)
+697-
+698-        return plan
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012SCNKk6SoyPfeuzNf15j9W">
+    <param name="pattern">def issue_info_to_plan</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="97954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 394}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012SCNKk6SoyPfeuzNf15j9W">
+Found 1 file
+packages/erk-shared/src/erk_shared/plan_store/conversion.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Rx17Y1rmHn6GyvUNYd88gb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/packages/erk-shared/src/erk_shared/plan_store/conversion.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="121" cache_read_input_tokens="98348" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 121}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rx17Y1rmHn6GyvUNYd88gb">
+     1→"""Shared conversion helpers for Plan construction from provider-specific types.
+     2→
+     3→Provides single-parse conversions that populate header_fields on Plan,
+     4→eliminating repeated YAML parsing of the plan-header metadata block.
+     5→Also provides typed accessor helpers for reading fields from header_fields.
+     6→"""
+     7→
+     8→from datetime import datetime
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueInfo
+    11→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    12→from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
+    13→from erk_shared.gateway.github.types import PRDetails
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→
+    16→
+    17→def issue_info_to_plan(issue: IssueInfo) -&gt; Plan:
+    18→    """Convert IssueInfo to Plan with pre-parsed header fields.
+    19→
+    20→    Parses the plan-header metadata block once and stores the result
+    21→    in header_fields, avoiding repeated YAML parsing by callers.
+    22→
+    23→    Args:
+    24→        issue: IssueInfo from GraphQL query
+    25→
+    26→    Returns:
+    27→        Plan with header_fields populated from plan-header block
+    28→    """
+    29→    state = PlanState.OPEN if issue.state == "OPEN" else PlanState.CLOSED
+    30→
+
+... [147 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the issue. When `GitHubPlanStore.get_plan()` is called, it:
+1. Gets the `IssueInfo` from `FakeGitHubIssues`
+2. Calls `_convert_to_plan()` → `issue_info_to_plan()`
+3. `issue_info_to_plan()` parses the `plan-header` metadata block from the body to get `objective_id`Since my test Plan body is "This is a test issue" (no metadata block), the resulting Plan will have `objective_id=None`, even though I set `objective_id=99` on the original Plan object.
+</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2236" cache_read_input_tokens="98469" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2236}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand. The `objective_id` is extracted from the plan-header metadata block in the issue body. I need to include a proper metadata body with `objective_issue: 99`. Let me fix the tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2236" cache_read_input_tokens="98469" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2236}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ETnuLgZagRmFrbt2YpSbX9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py</param>
+    <param name="old_string">from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.test_utils.context_b...[truncated 59 chars]...mport erk_inmem_env
+from tests.test_utils.plan_helpers import create_plan_store_with_plans</param>
+    <param name="new_string">from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.test_utils.context_b...[truncated 93 chars]...t_utils.plan_helpers import create_plan_store_with_plans, format_plan_header_body_for_test</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2236" cache_read_input_tokens="98469" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2236}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ETnuLgZagRmFrbt2YpSbX9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the two tests that use `objective_id=99` to include the metadata block in the body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="100705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 647}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Wd3KRu9fdQqYvRhaUGnBmN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py</param>
+    <param name="old_string">def test_close_plan_with_objective_invokes_update() -&gt; None:
+    """Test closing a plan li...[truncated 369 chars]...d_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=99,
+    )</param>
+    <param name="new_string">def test_close_plan_with_objective_invokes_update() -&gt; None:
+    """Test closing a plan li...[truncated 617 chars]...fo=UTC),
+        metadata={"issue_body": body_with_header},
+        objective_id=99,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="100705" output_tokens="604" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 647, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wd3KRu9fdQqYvRhaUGnBmN">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EfAGBaK6aD8BUy8qRDG3iS">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py</param>
+    <param name="old_string">def test_close_plan_objective_update_failure_does_not_break_close() -&gt; None:
+    """Test t...[truncated 394 chars]...d_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=99,
+    )</param>
+    <param name="new_string">def test_close_plan_objective_update_failure_does_not_break_close() -&gt; None:
+    """Test t...[truncated 642 chars]...fo=UTC),
+        metadata={"issue_body": body_with_header},
+        objective_id=99,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="860" cache_read_input_tokens="101352" output_tokens="592" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 860, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EfAGBaK6aD8BUy8qRDG3iS">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="102212" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 648}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Xw7Tx1sGrybFoXzRJx3XTx">
+    <param name="description">Run close plan tests again</param>
+    <param name="prompt">Run the tests in tests/commands/plan/test_close.py and report the full output, including any failures. Command: uv run pytest tests/commands/plan/test_close.py -v</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="102212" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 648, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xw7Tx1sGrybFoXzRJx3XTx">
+pytest passed: All 11 tests in test_close.py passed successfully in 0.42 seconds.
+agentId: a69678c27b554eaf4 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13695
+tool_uses: 1
+duration_ms: 9348&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 11 tests pass. Now let me run the type checker and linter on the modified files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="102860" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Mm8UPFAADrqveYMpueDAhy">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="102860" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mm8UPFAADrqveYMpueDAhy">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="Task" id="toolu_019kAYBmPWNELKD4bfShsLCw">
+    <param name="description">Run ty and ruff checks</param>
+    <param name="prompt">Run the following commands and report results:
+1. uv run ty check src/erk/cli/commands/pla...[truncated 261 chars]...n/close_cmd.py src/erk/cli/commands/objective_helpers.py tests/commands/plan/test_close.py</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="111" cache_read_input_tokens="103098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 111}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019kAYBmPWNELKD4bfShsLCw">
+## Results
+
+**ty**: All checks passed!
+
+**ruff check**: Failed with 2 issues found
+
+- **I001** (Import block un-sorted/unformatted) at `tests/commands/plan/test_close.py:3:1` — imports need reorganization (fixable)
+- **E501** (Line too long) at `tests/commands/plan/test_close.py:16:101` — line 16 exceeds 100 character limit with `format_plan_header_body_for_test` import
+
+**ruff format**: Unable to run (blocked by linting errors)
+
+The test file has import formatting issues that need to be fixed. The import block should be sorted/formatted, and the long line on line 16 needs to be broken up.
+agentId: a0b916a8f502e176c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15077
+tool_uses: 3
+duration_ms: 11907&lt;/usage&gt;
+  </tool_result>
+  <assistant>Let me fix the import issue in the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="103209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 499}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SjKuanXHTRsgZB2xadZcE3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="103209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 499}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SjKuanXHTRsgZB2xadZcE3">
+     1→"""Tests for plan close command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+    11→from erk_shared.plan_store.github import GitHubPlanStore
+    12→from erk_shared.plan_store.types import Plan, PlanState
+    13→from tests.fakes.prompt_executor import FakePromptExecutor
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_inmem_env
+    16→from tests.test_utils.plan_helpers import create_plan_store_with_plans, format_plan_header_body_for_test
+    17→
+    18→
+    19→def test_close_plan_with_issue_number() -&gt; None:
+    20→    """Test closing a plan with issue number."""
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019pYaAkLM32LRZURHaUcKia">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py</param>
+    <param name="old_string">from tests.test_utils.plan_helpers import create_plan_store_with_plans, format_plan_header_body_for_test</param>
+    <param name="new_string">from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    format_plan_header_body_for_test,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="463" cache_read_input_tokens="103708" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 463}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019pYaAkLM32LRZURHaUcKia">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01Duzhf1UBDE5ntvABkWoqJ8">
+    <param name="description">Re-run ruff checks</param>
+    <param name="prompt">Run these commands and report results:
+1. uv run ruff check src/erk/cli/commands/plan/clos...[truncated 119 chars]...n/close_cmd.py src/erk/cli/commands/objective_helpers.py tests/commands/plan/test_close.py</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="104171" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 272, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Duzhf1UBDE5ntvABkWoqJ8">
+**Results Summary:**
+
+**ruff check** passed: All linting violations clean across all three files.
+
+**ruff format --check** failed: 1 file needs reformatting.
+
+Files requiring formatting:
+- `src/erk/cli/commands/objective_helpers.py`
+
+Files already formatted:
+- `src/erk/cli/commands/plan/close_cmd.py`
+- `tests/commands/plan/test_close.py`
+agentId: a9370076a5533143f (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13861
+tool_uses: 2
+duration_ms: 19532&lt;/usage&gt;
+  </tool_result>
+  <tool_use name="Task" id="toolu_01PXsK2dkGDzcwo1Brha9cGw">
+    <param name="description">Format objective_helpers.py</param>
+    <param name="prompt">Run: uv run ruff format src/erk/cli/commands/objective_helpers.py
+Then run: uv run ruff format --check src/erk/cli/commands/objective_helpers.py
+Report both results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="104443" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PXsK2dkGDzcwo1Brha9cGw">
+**Results:**
+
+1. **ruff format**: 1 file reformatted
+   - The file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/src/erk/cli/commands/objective_helpers.py` had formatting issues that were corrected.
+
+2. **ruff format --check**: 1 file already formatted
+   - After the reformatting, the file now passes the format check and is properly formatted.
+agentId: a72ee67ca87314ed8 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13700
+tool_uses: 2
+duration_ms: 10235&lt;/usage&gt;
+  </tool_result>
+  <assistant>Good, formatting applied. Now let me run the full test suite one more time to confirm everything passes, then signal completion and verify `.impl/`:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="869" cache_read_input_tokens="104816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 869}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_016Q3tQdGHeBhXDLoaGEyWxU">
+    <param name="description">Final test run verification</param>
+    <param name="prompt">Run: uv run pytest tests/commands/plan/test_close.py -v
+Report all results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="869" cache_read_input_tokens="104816" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 869, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Q3tQdGHeBhXDLoaGEyWxU">
+pytest passed: 11 tests passed in 0.54s
+
+All tests in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/tests/commands/plan/test_close.py` are passing successfully.
+agentId: aa3914df99bc659bd (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13677
+tool_uses: 1
+duration_ms: 15194&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 11 tests pass. Now let me signal completion and verify `.impl/`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="105685" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 274}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RH6TsnCnkhtnbRb3n244VJ">
+    <param name="command">erk exec impl-signal ended --session-id="c1c79540-3037-4bf5-8f07-506718866d5a" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="105685" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 274}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RH6TsnCnkhtnbRb3n244VJ">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 7961
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EZiiyLVudWzwsys4QHZL9U">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(jq -r '.issue_number // empty' ....[truncated 154 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="105959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 282}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EZiiyLVudWzwsys4QHZL9U">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FfpXiv55PVT9T6qYYFTUiv">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="105959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 282}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FfpXiv55PVT9T6qYYFTUiv">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-35/.impl"}
+  </tool_result>
+  <assistant>Good, `.impl/` is preserved. Now let me run CI and submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="106241" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 360}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01PU3TgXNyJ9J9NC1Ln2msAS">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run: make fast-ci
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="106241" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 360}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
