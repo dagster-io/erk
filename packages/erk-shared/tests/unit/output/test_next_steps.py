@@ -45,3 +45,15 @@ def test_format_next_steps_plain_uses_co() -> None:
     output = format_next_steps_plain(99)
     assert "erk br co --for-plan 99" in output
     assert "erk br create" not in output
+
+
+def test_format_next_steps_plain_contains_implement() -> None:
+    """format_next_steps_plain includes implement command."""
+    output = format_next_steps_plain(99)
+    assert "erk implement --dangerous" in output
+
+
+def test_format_draft_pr_next_steps_plain_contains_implement() -> None:
+    """format_draft_pr_next_steps_plain includes implement command."""
+    output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo")
+    assert "erk implement --dangerous" in output

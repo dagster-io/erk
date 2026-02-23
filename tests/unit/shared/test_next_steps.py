@@ -80,6 +80,10 @@ class TestFormatNextStepsPlain:
         output = format_next_steps_plain(99)
         assert "erk br create" not in output
 
+    def test_contains_implement_command(self) -> None:
+        output = format_next_steps_plain(99)
+        assert "erk implement --dangerous" in output
+
 
 class TestFormatDraftPRNextStepsPlain:
     def test_contains_for_plan_command(self) -> None:
@@ -89,3 +93,7 @@ class TestFormatDraftPRNextStepsPlain:
     def test_contains_pr_number_in_view_command(self) -> None:
         output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
         assert "gh pr view 42 --web" in output
+
+    def test_contains_implement_command(self) -> None:
+        output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
+        assert "erk implement --dangerous" in output

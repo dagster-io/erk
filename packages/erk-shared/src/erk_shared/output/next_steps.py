@@ -99,6 +99,7 @@ In Claude Code:
 
 OR exit Claude Code first, then run one of:
   Checkout: {s.prepare}
+  Implement: {s.prepare_and_implement}
   Submit to Queue: {s.submit}"""
 
 
@@ -114,6 +115,7 @@ In Claude Code:
 
 OR exit Claude Code first, then run one of:
   Checkout: {s.prepare}
+  Implement: {s.prepare_new_slot_and_implement}
   Submit to Queue: {s.submit}"""
 
 
