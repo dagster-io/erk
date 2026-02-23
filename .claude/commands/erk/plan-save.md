@@ -144,12 +144,12 @@ If **on trunk = true**:
 OR exit Claude Code first, then run one of:
 
   New slot (recommended — you're on trunk):
-    Local: erk br co --new-slot <branch_name>
-    Implement: source "$(erk br co --new-slot <branch_name> --script)" && erk implement --dangerous
+    Local: erk br co --new-slot --for-plan <plan_number>
+    Implement: source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement --dangerous
 
   Same slot:
-    Local: erk br co <branch_name>
-    Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
+    Local: erk br co --for-plan <plan_number>
+    Implement: source "$(erk br co --for-plan <plan_number> --script)" && erk implement --dangerous
 
   Submit to Queue: erk plan submit <plan_number>
 ```
@@ -160,12 +160,12 @@ If **on trunk = false**:
 OR exit Claude Code first, then run one of:
 
   Same slot (recommended — you're in a slot):
-    Local: erk br co <branch_name>
-    Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
+    Local: erk br co --for-plan <plan_number>
+    Implement: source "$(erk br co --for-plan <plan_number> --script)" && erk implement --dangerous
 
   New slot:
-    Local: erk br co --new-slot <branch_name>
-    Implement: source "$(erk br co --new-slot <branch_name> --script)" && erk implement --dangerous
+    Local: erk br co --new-slot --for-plan <plan_number>
+    Implement: source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement --dangerous
 
   Submit to Queue: erk plan submit <plan_number>
 ```
@@ -181,8 +181,8 @@ In Claude Code:
   Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
 
 OR exit Claude Code first, then run one of:
-  Local: erk br co <branch_name>
-  Prepare+Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
+  Local: erk br co --for-plan <plan_number>
+  Prepare+Implement: source "$(erk br co --for-plan <plan_number> --script)" && erk implement --dangerous
   Submit to Queue: erk plan submit <plan_number>
 ```
 
@@ -198,8 +198,8 @@ In Claude Code:
   Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
 
 OR exit Claude Code first, then run one of:
-  Local: erk br co <branch_name>
-  Prepare+Implement: source "$(erk br co <branch_name> --script)" && erk implement --dangerous
+  Local: erk br co --for-plan <plan_number>
+  Prepare+Implement: source "$(erk br co --for-plan <plan_number> --script)" && erk implement --dangerous
   Submit to Queue: erk plan submit <plan_number>
 ```
 
