@@ -27,6 +27,7 @@ def test_stops_at_first_error(tmp_path: Path) -> None:
         force=False,
         debug=False,
         session_id="test",
+        skip_description=False,
     )
 
     result = run_submit_pipeline(ctx, state)
@@ -53,6 +54,7 @@ def test_threads_state_through_steps(tmp_path: Path) -> None:
         force=False,
         debug=False,
         session_id="test",
+        skip_description=False,
     )
 
     result = run_submit_pipeline(ctx, state)
@@ -75,6 +77,7 @@ def test_make_initial_state_sets_placeholders(tmp_path: Path) -> None:
         force=True,
         debug=True,
         session_id="my-session",
+        skip_description=False,
     )
 
     assert state.cwd == tmp_path
@@ -112,6 +115,7 @@ def test_catches_unhandled_exception_from_step(tmp_path: Path) -> None:
         force=False,
         debug=False,
         session_id="test",
+        skip_description=False,
     )
 
     with patch(

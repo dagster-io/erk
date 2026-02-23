@@ -42,6 +42,7 @@ def _make_state(
         force=force,
         debug=debug,
         session_id=session_id,
+        skip_description=False,
         issue_number=issue_number,
         pr_number=pr_number,
         pr_url=pr_url,
