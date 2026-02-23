@@ -237,16 +237,6 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
     location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
     variable_name = "CLAUDE_ENABLED"
 
-    affected_workflows = [
-        "code-reviews",
-        "autofix",
-        "learn",
-        "one-shot",
-        "plan-implement",
-        "pr-address",
-        "pr-fix-conflicts",
-    ]
-
     if action is None:
         value = admin.get_variable(location, variable_name)
         user_output(click.style("Claude CI Status", bold=True))
@@ -259,6 +249,15 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
             user_output(f"Status: {click.style('Disabled', fg='red')}")
         user_output("")
         user_output("Affected workflows:")
+        affected_workflows = [
+            "code-reviews",
+            "autofix",
+            "learn",
+            "one-shot",
+            "plan-implement",
+            "pr-address",
+            "pr-fix-conflicts",
+        ]
         for workflow in affected_workflows:
             user_output(f"  - {workflow}")
 

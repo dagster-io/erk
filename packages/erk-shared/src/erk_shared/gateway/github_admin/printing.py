@@ -62,5 +62,5 @@ class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
 
     def set_variable(self, location: GitHubRepoLocation, variable_name: str, value: str) -> None:
         """Set variable with printed output."""
-        self._emit(self._format_command(f"gh variable set {variable_name} --body {value}"))
+        self._emit(self._format_command(f"gh variable set {variable_name} --body '{value}'"))
         self._wrapped.set_variable(location, variable_name, value)

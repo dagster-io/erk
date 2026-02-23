@@ -223,6 +223,9 @@ class RealGitHubAdmin(GitHubAdmin):
                 return result.stdout.strip()
             return None
         except (subprocess.TimeoutExpired, OSError):
+            # Graceful degradation: variable lookup is best-effort.
+            # Timeout or missing gh binary should not prevent the caller
+            # from proceeding with a default value.
             return None
 
     def set_variable(self, location: GitHubRepoLocation, variable_name: str, value: str) -> None:
