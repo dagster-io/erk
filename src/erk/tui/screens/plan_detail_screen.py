@@ -660,6 +660,23 @@ class PlanDetailScreen(ModalScreen):
                 executor.copy_to_clipboard(cmd)
                 executor.notify(f"Copied: {cmd}", severity=None)
 
+        elif command_id == "copy_close_plan":
+            cmd = f"erk plan close {row.plan_id}"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}", severity=None)
+
+        elif command_id == "copy_fix_conflicts_remote":
+            if row.pr_number is not None:
+                cmd = f"erk launch pr-fix-conflicts --pr {row.pr_number}"
+                executor.copy_to_clipboard(cmd)
+                executor.notify(f"Copied: {cmd}", severity=None)
+
+        elif command_id == "copy_address_remote":
+            if row.pr_number is not None:
+                cmd = f"erk launch pr-address --pr {row.pr_number}"
+                executor.copy_to_clipboard(cmd)
+                executor.notify(f"Copied: {cmd}", severity=None)
+
         elif command_id == "fix_conflicts_remote":
             if row.pr_number is not None and self._repo_root is not None:
                 self.run_streaming_command(
