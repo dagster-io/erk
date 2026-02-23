@@ -645,7 +645,11 @@ class RealPlanDataProvider(PlanDataProvider):
                 )
 
         # Format objective display
-        objective_url = f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}" if objective_issue is not None else None
+        objective_url = (
+            f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}"
+            if objective_issue is not None
+            else None
+        )
         objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
 
         # Compute slug display
