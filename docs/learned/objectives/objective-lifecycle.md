@@ -175,13 +175,14 @@ Mutations update YAML frontmatter in the issue body (source of truth) and the ma
 
 ### Mutation Sites
 
-| Site                                    | Type      | Trigger                                         | Updates                          | Frontmatter-Aware?              |
-| --------------------------------------- | --------- | ----------------------------------------------- | -------------------------------- | ------------------------------- |
-| `update-objective-node.py`              | Surgical  | `erk exec update-objective-node` or `plan-save` | YAML frontmatter + table comment | Yes (this plan)                 |
-| `objective-update-with-landed-pr`       | Full-body | After landing PR                                | Roadmap + prose sections         | Yes (this plan)                 |
-| `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                    | Calls `update-objective-node`    | Inherits                        |
-| `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                           | N/A (reads only)                 | Inherits from `parse_roadmap()` |
-| `objective_fetch_context.py`            | Read-only | Fetch context for updates                       | N/A (reads only)                 | Inherits from `parse_roadmap()` |
+| Site                                    | Type      | Trigger                                         | Updates                            | Frontmatter-Aware?              |
+| --------------------------------------- | --------- | ----------------------------------------------- | ---------------------------------- | ------------------------------- |
+| `update-objective-node.py`              | Surgical  | `erk exec update-objective-node` or `plan-save` | YAML frontmatter + table comment   | Yes (this plan)                 |
+| `objective-update-with-landed-pr`       | Full-body | After landing PR                                | Roadmap + prose sections           | Yes (this plan)                 |
+| `objective-update-with-closed-plan`     | Full-body | After closing affiliated plan                   | Roadmap (reset to pending) + prose | Yes (this plan)                 |
+| `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                    | Calls `update-objective-node`      | Inherits                        |
+| `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                           | N/A (reads only)                   | Inherits from `parse_roadmap()` |
+| `objective_fetch_context.py`            | Read-only | Fetch context for updates                       | N/A (reads only)                   | Inherits from `parse_roadmap()` |
 
 ### Surgical Update: `update-objective-node`
 
@@ -290,7 +291,9 @@ Objective body sections fall into three tiers based on how they're updated:
 
 1. **After every PR landing** (primary trigger): The `objective-update-with-landed-pr` agent performs prose reconciliation after mechanical step updates. It compares the objective body against what the PR actually implemented and corrects stale information.
 
-2. **At next-step pickup** (lighter touch): When `objective-plan` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
+1. **After plan closure** (secondary trigger): The `objective-update-with-closed-plan` agent resets affiliated nodes to pending (clearing plan references) and reconciles prose that referenced the abandoned plan's approach.
+
+1. **At next-step pickup** (lighter touch): When `objective-plan` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
 
 ### What the Agent Checks
 
@@ -507,6 +510,7 @@ Required fields: `issue_number`, `date`, `pr_number`, `phase_step`, `title`, `wh
 - `erk objective close <issue>` - Close completed objective
 - `erk exec update-objective-node` - Update single step PR and status in both frontmatter and table
 - `/erk:objective-update-with-landed-pr` - Full update after PR lands
+- `/erk:objective-update-with-closed-plan` - Reset nodes to pending after plan closure
 
 ## Implementation References
 
@@ -514,7 +518,8 @@ Required fields: `issue_number`, `date`, `pr_number`, `phase_step`, `title`, `wh
 | ----------------------------------------------------------------------- | ------------------------------ |
 | `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` | Core parser: `parse_roadmap()` |
 | `src/erk/cli/commands/exec/scripts/update_objective_node.py`            | Surgical PR cell update        |
-| `.claude/commands/erk/objective-update-with-landed-pr.md`               | Full-body update agent         |
+| `.claude/commands/erk/objective-update-with-landed-pr.md`               | Full-body update agent (land)  |
+| `.claude/commands/erk/objective-update-with-closed-plan.md`             | Full-body update agent (close) |
 | `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`          | Context fetch for updates      |
 | `src/erk/cli/commands/objective/check_cmd.py`                           | Objective validation           |
 

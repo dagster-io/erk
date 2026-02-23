@@ -160,6 +160,42 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     return extract_objective_number(branch)
 
 
+def run_objective_update_after_close(
+    ctx: ErkContext,
+    *,
+    plan_number: int,
+    objective: int,
+) -> None:
+    """Run the objective update after a plan has been closed.
+
+    This is fail-open: catches all errors and never raises, because the
+    plan closing has already succeeded by the time this runs.
+    """
+    user_output(f"   Linked to Objective #{objective}")
+    user_output("")
+    user_output("Starting objective update...")
+
+    cmd = f"/erk:objective-update-with-closed-plan --plan {plan_number} --objective {objective}"
+
+    result = stream_command_with_feedback(
+        executor=ctx.prompt_executor,
+        command=cmd,
+        worktree_path=ctx.cwd,
+        dangerous=True,
+        permission_mode="edits",
+    )
+
+    if result.success:
+        user_output("")
+        user_output(click.style("✓", fg="green") + " Objective updated successfully")
+    else:
+        user_output("")
+        user_output(
+            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+        )
+        user_output("  Run '/erk:objective-update-with-closed-plan' manually to retry")
+
+
 def run_objective_update_after_land(
     ctx: ErkContext,
     *,
