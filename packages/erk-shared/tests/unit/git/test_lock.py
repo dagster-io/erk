@@ -1,7 +1,9 @@
 """Tests for git index lock waiting utilities."""
 
 import subprocess
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 from erk_shared.gateway.git.lock import get_lock_path, wait_for_index_lock
 from erk_shared.gateway.time.fake import FakeTime
@@ -205,3 +207,37 @@ class TestWaitForIndexLock:
 
         assert result is False
         assert fake_time.sleep_calls == [0.5, 0.5]
+
+    def test_outputs_message_when_lock_exists(self, tmp_path: Path) -> None:
+        """wait_for_index_lock outputs progress message on first poll iteration."""
+        repo = tmp_path / "repo"
+        create_git_repo(repo)
+        lock_file = repo / ".git" / "index.lock"
+        lock_file.touch()
+        fake_time = FakeTime()
+
+        captured = StringIO()
+        with patch("sys.stderr", captured):
+            wait_for_index_lock(
+                repo,
+                fake_time,
+                max_wait_seconds=1.0,
+                poll_interval=0.5,
+            )
+
+        output = captured.getvalue()
+        assert "Waiting for git index.lock to be released..." in output
+        # Message should appear exactly once (the printed flag prevents duplicates)
+        assert output.count("Waiting for git index.lock to be released...") == 1
+
+    def test_no_output_when_no_lock(self, tmp_path: Path) -> None:
+        """wait_for_index_lock produces no output when no lock exists."""
+        repo = tmp_path / "repo"
+        create_git_repo(repo)
+        fake_time = FakeTime()
+
+        captured = StringIO()
+        with patch("sys.stderr", captured):
+            wait_for_index_lock(repo, fake_time)
+
+        assert captured.getvalue() == ""
