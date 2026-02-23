@@ -573,6 +573,7 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_review_decision: str | None = None
         pr_checks_passing: bool | None = None
         pr_has_unresolved_comments: bool | None = None
+        pr_is_stacked: bool | None = None
 
         if plan_id in pr_linkages:
             issue_prs = pr_linkages[plan_id]
@@ -597,6 +598,9 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_has_conflicts = selected_pr.has_conflicts
                 pr_review_decision = selected_pr.review_decision
                 pr_checks_passing = selected_pr.checks_passing
+                base_ref_name = selected_pr.base_ref_name
+                if base_ref_name is not None:
+                    pr_is_stacked = base_ref_name not in ("master", "main")
 
                 # Get review thread counts from batched PR data
                 if selected_pr.review_thread_counts is not None:
@@ -707,6 +711,7 @@ class RealPlanDataProvider(PlanDataProvider):
             review_decision=pr_review_decision,
             checks_passing=pr_checks_passing,
             has_unresolved_comments=pr_has_unresolved_comments,
+            is_stacked=pr_is_stacked,
         )
 
         return PlanRowData(

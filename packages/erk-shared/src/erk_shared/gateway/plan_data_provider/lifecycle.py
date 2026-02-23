@@ -74,6 +74,7 @@ def compute_status_indicators(
     review_decision: str | None,
     checks_passing: bool | None,
     has_unresolved_comments: bool | None,
+    is_stacked: bool | None = None,
 ) -> str:
     """Compute status indicator emojis for a lifecycle stage.
 
@@ -88,6 +89,7 @@ def compute_status_indicators(
         checks_passing: True if all CI checks pass, False/None otherwise
         has_unresolved_comments: True if there are unresolved review threads,
             False/None otherwise
+        is_stacked: True if PR base branch is not master/main, None if unknown
 
     Returns:
         Space-joined indicators string (e.g., "🚧 💥"), or "-" when no indicators
@@ -99,6 +101,7 @@ def compute_status_indicators(
         review_decision=review_decision,
         checks_passing=checks_passing,
         has_unresolved_comments=has_unresolved_comments,
+        is_stacked=is_stacked,
     )
     if not indicators:
         return "-"
@@ -113,10 +116,12 @@ def format_lifecycle_with_status(
     review_decision: str | None,
     checks_passing: bool | None,
     has_unresolved_comments: bool | None,
+    is_stacked: bool | None = None,
 ) -> str:
     """Add draft/published prefix and status suffix to a lifecycle stage display.
 
     Adds emoji indicators to the stage text when relevant:
+    - 🥞 prefix for stacked PRs (base branch != master/main)
     - 🚧/👀 suffix for draft/published state (on planned, implementing, review)
     - 💥 suffix for merge conflicts (on implementing and review stages)
     - ✔ suffix for approved PRs (on review stage only)
@@ -135,6 +140,7 @@ def format_lifecycle_with_status(
         checks_passing: True if all CI checks pass, False/None otherwise
         has_unresolved_comments: True if there are unresolved review threads,
             False/None otherwise
+        is_stacked: True if PR base branch is not master/main, None if unknown
 
     Returns:
         Lifecycle display string with prefix/suffix indicators
@@ -146,6 +152,7 @@ def format_lifecycle_with_status(
         review_decision=review_decision,
         checks_passing=checks_passing,
         has_unresolved_comments=has_unresolved_comments,
+        is_stacked=is_stacked,
     )
 
     if not indicators:
@@ -173,6 +180,7 @@ def _build_indicators(
     review_decision: str | None,
     checks_passing: bool | None,
     has_unresolved_comments: bool | None,
+    is_stacked: bool | None = None,
 ) -> list[str]:
     """Build list of emoji indicators for a lifecycle stage.
 
@@ -187,6 +195,7 @@ def _build_indicators(
         checks_passing: True if all CI checks pass, False/None otherwise
         has_unresolved_comments: True if there are unresolved review threads,
             False/None otherwise
+        is_stacked: True if PR base branch is not master/main, None if unknown
 
     Returns:
         List of emoji indicator strings
@@ -200,6 +209,10 @@ def _build_indicators(
 
     # Build indicator suffix — all emojis go on the right for consistency
     indicators: list[str] = []
+
+    # Stacked PR indicator — first, before all other indicators
+    if is_stacked is True:
+        indicators.append("🥞")
 
     # Draft/published indicator for active stages
     if is_active_stage and is_draft is not None:

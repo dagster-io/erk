@@ -1274,6 +1274,7 @@ query {{
             review_thread_counts=review_thread_counts,
             head_branch=head_ref_name,
             review_decision=review_decision,
+            base_ref_name=source.get("baseRefName"),
         )
         return (pr_info, created_at_pr)
 
@@ -1590,6 +1591,7 @@ query {{
                 has_conflicts=None,  # Not fetched in batch API
                 checks_counts=None,
                 will_close_target=False,
+                base_ref_name=pr_data["base"]["ref"],
             )
 
         return result
@@ -1727,6 +1729,7 @@ query {{
                 review_thread_counts=review_thread_counts,
                 head_branch=node.get("headRefName"),
                 review_decision=review_decision,
+                base_ref_name=node.get("baseRefName"),
             )
             pr_linkages[pr_number] = [pr_info]
 

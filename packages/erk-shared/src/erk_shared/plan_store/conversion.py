@@ -105,6 +105,7 @@ def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
             "author": pr.author,
             "is_draft": pr.is_draft,
             "pr_state": pr.state,
+            "base_ref_name": pr.base_ref_name,
         },
         objective_id=objective_id,
         header_fields=header_fields,
