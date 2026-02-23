@@ -76,10 +76,6 @@ class TestFormatNextStepsPlain:
         output = format_next_steps_plain(99)
         assert "erk br co --for-plan 99" in output
 
-    def test_contains_implement_command(self) -> None:
-        output = format_next_steps_plain(99)
-        assert 'source "$(erk br co --for-plan 99 --script)" && erk implement --dangerous' in output
-
     def test_does_not_contain_create(self) -> None:
         output = format_next_steps_plain(99)
         assert "erk br create" not in output
@@ -93,7 +89,3 @@ class TestFormatDraftPRNextStepsPlain:
     def test_contains_pr_number_in_view_command(self) -> None:
         output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
         assert "gh pr view 42 --web" in output
-
-    def test_contains_implement_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(42, branch_name="plan-my-feature-02-20")
-        assert 'source "$(erk br co --for-plan 42 --script)" && erk implement --dangerous' in output

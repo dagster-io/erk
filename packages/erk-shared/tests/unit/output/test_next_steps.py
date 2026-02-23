@@ -38,7 +38,6 @@ def test_format_draft_pr_next_steps_plain_uses_for_plan() -> None:
     """format_draft_pr_next_steps_plain uses --for-plan command."""
     output = format_draft_pr_next_steps_plain(42, branch_name="plan-feature-foo")
     assert "erk br co --for-plan 42" in output
-    assert 'source "$(erk br co --for-plan 42 --script)"' in output
 
 
 def test_format_next_steps_plain_uses_co() -> None:

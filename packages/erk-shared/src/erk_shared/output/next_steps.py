@@ -98,8 +98,7 @@ In Claude Code:
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
-  Local: {s.prepare}
-  Implement: {s.prepare_and_implement}
+  Checkout: {s.prepare}
   Submit to Queue: {s.submit}"""
 
 
@@ -114,8 +113,7 @@ In Claude Code:
   Submit to queue: {SUBMIT_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
-  Local: {s.prepare}
-  Implement: {s.prepare_and_implement}
+  Checkout: {s.prepare}
   Submit to Queue: {s.submit}"""
 
 
