@@ -59,7 +59,10 @@ def _run_impl_init() -> dict[str, object]:
     impl_dir, impl_type = _validate_impl_folder()
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
-    plan_number = int(plan_ref.plan_id) if plan_ref else None
+    if plan_ref is not None:
+        plan_number: int | None = int(plan_ref.plan_id)
+    else:
+        plan_number = None
     plan_content = (impl_dir / "plan.md").read_text(encoding="utf-8")
     related_docs = _extract_related_docs(plan_content)
 
@@ -191,17 +194,17 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
         plan_ref = read_plan_ref(impl_dir)
         if plan_ref is not None:
             # Has plan tracking - sync with remote
-            plan_id = int(plan_ref.plan_id) if plan_ref.plan_id.isdigit() else None
+            if plan_ref.plan_id.isdigit():
+                plan_id: int | None = int(plan_ref.plan_id)
+            else:
+                plan_id = None
             if plan_id is not None:
                 _handle_issue_setup(ctx, issue_number=plan_id)
                 return
 
         # File-based plan (no tracking) - just validate
-        try:
+        if (impl_dir / "plan.md").exists():
             init_result = _run_impl_init()
-        except SystemExit:
-            pass
-        else:
             # Run cleanup and output
             ctx.invoke(cleanup_impl_context)
             click.echo(
@@ -273,11 +276,7 @@ def _handle_issue_setup(ctx: click.Context, *, issue_number: int) -> None:
     runner_ctx.obj = ctx.obj
 
     # Run setup-impl-from-issue
-    try:
-        ctx.invoke(setup_impl_from_issue, plan_number=issue_number, session_id=None, no_impl=False)
-    except SystemExit as e:
-        if e.code != 0:
-            raise
+    ctx.invoke(setup_impl_from_issue, plan_number=issue_number, session_id=None, no_impl=False)
 
     # Run impl-init for validation and metadata
     try:

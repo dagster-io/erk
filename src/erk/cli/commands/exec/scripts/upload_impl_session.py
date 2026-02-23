@@ -83,11 +83,7 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
     plan_id = int(plan_ref.plan_id)
 
     # Capture session info
-    try:
-        installation = require_claude_installation(ctx)
-    except SystemExit:
-        _output_not_uploaded("no_claude_installation")
-        return
+    installation = require_claude_installation(ctx)
 
     session_result = capture_session(cwd, installation)
     if session_result is None:
