@@ -143,6 +143,9 @@ from erk.cli.commands.exec.scripts.run_review import run_review
 from erk.cli.commands.exec.scripts.session_id_injector_hook import (
     session_id_injector_hook,
 )
+from erk.cli.commands.exec.scripts.set_local_review_marker import (
+    set_local_review_marker,
+)
 from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
 from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     setup_impl_from_issue,
@@ -255,6 +258,7 @@ exec_group.add_command(resolve_review_threads, name="resolve-review-threads")
 exec_group.add_command(run_review, name="run-review")
 exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
+exec_group.add_command(set_local_review_marker, name="set-local-review-marker")
 exec_group.add_command(set_pr_description, name="set-pr-description")
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
 exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")

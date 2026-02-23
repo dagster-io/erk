@@ -131,3 +131,22 @@ If all reviews are clean, celebrate briefly:
 ```
 All N reviews passed with no violations.
 ```
+
+### Phase 4: Mark PR as Reviewed
+
+**Only runs if ALL reviews passed (0 total violations).**
+
+If there were any violations, skip this phase entirely.
+
+Run the marker command:
+
+```bash
+erk exec set-local-review-marker
+```
+
+Parse the JSON output:
+
+- If `success: true`: Report "Local review marker set on PR #N for SHA abc1234... — CI will skip reviews for this commit."
+- If `success: false` with `reason: "no_pr"`: Report "No PR found for current branch — skipping marker."
+- If `success: false` with `reason: "detached_head"`: Report "Detached HEAD — skipping marker."
+- If the command fails: Report the error but don't fail the overall review run.

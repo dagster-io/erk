@@ -19,18 +19,38 @@ jobs:
       pull-requests: read
 
     steps:
+      - name: Check local review marker
+        id: check_local_review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          MARKER="<!-- erk:local-review-passed:${HEAD_SHA} -->"
+          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} --json body -q .body)
+          if printf '%s' "$PR_BODY" | grep -qF "$MARKER"; then
+            echo "Local review marker found for HEAD ${HEAD_SHA:0:8} - skipping CI reviews"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout repository
+        if: steps.check_local_review.outputs.skip != 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Install uv
+        if: steps.check_local_review.outputs.skip != 'true'
         uses: astral-sh/setup-uv@v5
 
       - name: Install erk
+        if: steps.check_local_review.outputs.skip != 'true'
         run: uv tool install --from . --with ./packages/erk-shared erk
 
       - name: Discover matching reviews
+        if: steps.check_local_review.outputs.skip != 'true'
         id: discover
         env:
           GH_TOKEN: ${{ github.token }}

@@ -93,6 +93,7 @@ Quick reference for all `erk exec` subcommands.
 | `resolve-review-threads`          | Resolve multiple PR review threads from JSON stdin.                         |
 | `run-review`                      | Run a code review using Claude.                                             |
 | `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                  |
+| `set-local-review-marker`         | Set local review marker on PR to skip CI reviews.                           |
 | `set-pr-description`              | Update PR title and body with agent-provided values.                        |
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.                 |
 | `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.            |
@@ -1132,6 +1133,12 @@ Run a code review using Claude.
 Inject session ID into conversation context when relevant.
 
 **Usage:** `erk exec session-id-injector-hook`
+
+### set-local-review-marker
+
+Set local review marker on PR to skip CI reviews.
+
+**Usage:** `erk exec set-local-review-marker`
 
 ### set-pr-description
 
