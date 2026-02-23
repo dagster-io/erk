@@ -1,100 +1,98 @@
-# Plan: Merge `plan`/`pr` into single `planned_pr` field in objective roadmap
+# Plan: Migrate `erk exec pr-check-complete` to `erk pr check --stage=impl`
 
 ## Context
 
-In the draft-PR plan backend (now the only backend), a plan IS a draft PR — they share the same GitHub PR number. The current roadmap format has separate `plan` and `pr` fields on each node, plus separate "Plan" and "PR" columns in the markdown table. This is redundant: when both are set, they always contain the same value (e.g., `plan: "#7971", pr: "#7971"`). Merging into a single `planned_pr` field simplifies the data model, CLI interface, and display.
-
-## Approach
-
-Merge `plan: str | None` and `pr: str | None` into a single `planned_pr: str | None` across the data model, YAML schema, CLI, rendering, and tests. Bump schema version from "4" to "5". Support parsing v4 (auto-coalesce `pr` > `plan` > null) for existing objectives.
+`erk exec pr-check-complete` is a near-duplicate of `erk pr check` — it runs the same 4 checks plus one extra: verifying `.erk/impl-context/` was cleaned up before submission. The duplication is a maintenance hazard: adding a new check to `erk pr check` requires remembering to add it to `pr_check_complete.py` too. Consolidating into a `--stage=impl` flag on `erk pr check` eliminates the duplication and makes the impl-specific check discoverable at the right surface.
 
 ## Changes
 
-### 1. Core data model (`packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`)
+### 1. `src/erk/cli/commands/pr/check_cmd.py`
 
-- **RoadmapNode**: Replace `plan: str | None` + `pr: str | None` with `planned_pr: str | None`
-- **validate_roadmap_frontmatter()**:
-  - Accept schema_version "5" (new) with `planned_pr` key
-  - Accept schema_version "2"/"3"/"4" (existing) with separate `plan`/`pr` keys — coalesce: `pr or plan or None`
-- **render_roadmap_block_inner()**: Emit `schema_version: "5"` with `planned_pr` key
-- **update_node_in_frontmatter()**: Replace separate `plan`/`pr` params with single `planned_pr` param. Simplify status inference: `planned_pr` set → `in_progress`
-- **render_roadmap_tables()**: Merge "Plan"/"PR" columns into single "Planned PR" column. Change `pr_count` to count done nodes instead of `step.pr is not None`
-- **serialize_phases()**: Replace `plan`/`pr` keys with `planned_pr`
+**Add a `PrCheck` named tuple** at module level to replace the bare `tuple[bool, str]` pattern used throughout:
 
-### 2. Dependency graph (`packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`)
+```python
+from typing import NamedTuple
 
-- **ObjectiveNode**: Replace `plan: str | None` + `pr: str | None` with `planned_pr: str | None`
-- Update `graph_from_phases()`, `graph_from_nodes()`, `nodes_from_graph()` to pass `planned_pr`
+class PrCheck(NamedTuple):
+    passed: bool
+    description: str
+```
 
-### 3. Render roadmap exec script (`src/erk/cli/commands/exec/scripts/objective_render_roadmap.py`)
+Update the checks list type annotation and all construction sites to use kwargs:
+```python
+checks: list[PrCheck] = []
+checks.append(PrCheck(passed=True, description="Branch name and plan reference agree (#456)"))
+checks.append(PrCheck(passed=False, description="..."))
+```
 
-- Update table header: `| Node | Description | Status | Planned PR |`
-- Update table rows to emit single `planned_pr` column (always `-` for new roadmaps)
+Also update the iteration that reads the results:
+```python
+for check in checks:
+    status = click.style("[PASS]", fg="green") if check.passed else click.style("[FAIL]", fg="red")
+    user_output(f"{status} {check.description}")
+failed_count = sum(1 for check in checks if not check.passed)
+```
 
-### 4. Update objective node CLI (`src/erk/cli/commands/exec/scripts/update_objective_node.py`)
+**Add `--stage` option** using `click.Choice(["impl"])`. When `stage == "impl"`, prepend the impl-context check:
 
-- Replace `--plan`/`--pr` options with single `--planned-pr` option
-- Remove the validation that `--plan` is required when `--pr` is set (no longer needed)
-- Update `_replace_table_in_text()`: Match 4-column rows (was 5-column)
-- Update `_find_node_refs()`: Return single `planned_pr` value
-- Update `_replace_node_refs_in_body()`: Pass single `planned_pr`
-- Update `_build_output()`: Replace `previous_plan`/`new_plan`/`previous_pr`/`new_pr` with `previous_planned_pr`/`new_planned_pr`
+```python
+@click.option(
+    "--stage",
+    type=click.Choice(["impl"]),
+    default=None,
+    help="Run stage-specific checks. Use 'impl' to also verify .erk/impl-context/ was cleaned up.",
+)
+@click.pass_obj
+def pr_check(ctx: ErkContext, stage: str | None) -> None:
+```
 
-### 5. View command (`src/erk/cli/commands/objective/view_cmd.py`)
+Impl-context check (inserted first when `stage == "impl"`):
+```python
+if stage == "impl":
+    impl_context_dir = repo_root / ".erk" / "impl-context"
+    if impl_context_dir.exists():
+        checks.append(PrCheck(passed=False, description=".erk/impl-context/ still present (should be removed before submission)"))
+    else:
+        checks.append(PrCheck(passed=True, description=".erk/impl-context/ not present (cleaned up)"))
+```
 
-- **_format_node_status()**: Rename `plan` param → `planned_pr`
-- Merge `max_plan_width`/`max_pr_width` into `max_planned_pr_width`
-- Merge separate "plan"/"pr" table columns into single "planned_pr" column
-- Update JSON output: replace `plan`/`pr` keys with `planned_pr`
+Note: `repo_root` is already computed before the checks list is built, so no reordering needed.
 
-### 6. Check command (`src/erk/cli/commands/objective/check_cmd.py`)
+### 2. `src/erk/cli/commands/exec/group.py`
 
-- Merge plan/pr consistency checks: single check for `planned_pr` reference format
-- Update orphaned done check: `node.status == "done" and node.planned_pr is None`
-- Merge plan/pr `#` prefix validation into single `planned_pr` check
+Remove the import and `add_command` registration for `pr_check_complete`.
 
-### 7. Fetch context (`src/erk/cli/commands/exec/scripts/objective_fetch_context.py`)
+Lines to remove:
+- `from erk.cli.commands.exec.scripts.pr_check_complete import pr_check_complete` (line 123)
+- `exec_group.add_command(pr_check_complete, name="pr-check-complete")` (line 251)
 
-- Update `step.plan == plan_ref` → `step.planned_pr == plan_ref` for step matching
+### 3. Delete `src/erk/cli/commands/exec/scripts/pr_check_complete.py`
 
-### 8. Skill/command docs (update CLI examples)
+### 4. Delete `tests/unit/cli/commands/exec/scripts/test_pr_check_complete.py`
 
-- `.claude/commands/erk/objective-update-with-landed-pr.md` — `--planned-pr` instead of `--plan`/`--pr`
-- `.claude/commands/erk/objective-update-with-closed-plan.md` — `--planned-pr ""`
-- `.claude/commands/erk/plan-save.md` — `--planned-pr`
-- `.claude/commands/local/objective-reevaluate.md` — `--planned-pr`
-- `.claude/skills/erk-exec/reference.md` — update parameter docs
-- `.claude/skills/objective/references/format.md` — update format docs
+### 5. `tests/commands/pr/test_check.py`
 
-### 9. CI workflow (`.github/workflows/one-shot.yml`)
+Add 3 new tests for `--stage=impl` behavior (pass `["check", "--stage=impl"]` to `runner.invoke`):
 
-- Change `--plan "$PLAN_NUMBER"` → `--planned-pr "$PLAN_NUMBER"`
+- `test_pr_check_stage_impl_fails_when_impl_context_present` — creates `.erk/impl-context/`, expects `[FAIL] .erk/impl-context/ still present`
+- `test_pr_check_stage_impl_passes_when_impl_context_absent` — no impl-context dir, expects `[PASS] .erk/impl-context/ not present (cleaned up)`
+- `test_pr_check_stage_impl_all_checks_pass` — full happy path with `--stage=impl`, impl-context absent and all PR invariants valid
 
-### 10. Tests
+### 6. `.claude/commands/erk/plan-implement.md`
 
-- `test_roadmap.py` — update `.pr`/`.plan` assertions → `.planned_pr`
-- `test_roadmap_frontmatter.py` — update all plan/pr assertions and YAML fixtures
-- `test_dependency_graph.py` — update ObjectiveNode assertions
-- `test_update_objective_node.py` — update --plan/--pr to --planned-pr, update output keys
-- `test_objective_render_roadmap.py` — update table format assertions
+Update line 343: `erk exec pr-check-complete` → `erk pr check --stage=impl`
 
-### 11. Docs (update roadmap-related learned docs)
-
-- `docs/learned/architecture/roadmap-mutation-semantics.md` — if it references plan/pr separately
-- `docs/learned/objectives/roadmap-status-system.md` — update two-tier status docs
-- `docs/learned/reference/objective-summary-format.md` — update format reference
-
-## Migration strategy
-
-- **Parsing**: `validate_roadmap_frontmatter()` accepts v2/3/4 (coalesces `pr ?? plan` into `planned_pr`) and v5 (reads `planned_pr` directly)
-- **Writing**: Always emits v5 with `planned_pr`
-- **Existing objectives**: First read coalesces to v5 in memory; next write (via `update-objective-node` or any mutation) upgrades the on-disk YAML to v5
-- **No explicit migration script needed**: objectives upgrade lazily on next mutation
+Also update the surrounding description on line 346 accordingly.
 
 ## Verification
 
-1. Run `make fast-ci` — all unit tests pass
-2. `erk objective view 7911` — renders correctly with single "planned_pr" column (existing v4 YAML auto-coalesced)
-3. `erk objective check 7911` — passes all validation checks
-4. `erk exec update-objective-node 7911 --node 1.2 --planned-pr "#9999" --status in_progress` — sets single field, then revert
-5. `erk exec objective-render-roadmap` with test JSON — produces 4-column table (Node | Description | Status | Planned PR)
+```bash
+# Run existing pr check tests + new ones
+uv run pytest tests/commands/pr/test_check.py -v
+
+# Confirm deleted exec command is gone
+erk exec --help  # should not list pr-check-complete
+
+# Confirm new flag works
+erk pr check --help  # should show --stage option
+```
