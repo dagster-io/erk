@@ -335,8 +335,8 @@ class RealGitHub(GitHub):
 
         # Poll for the run by matching displayTitle containing the distinct ID
         # The workflow uses run-name: "<issue_number>:<distinct_id>"
-        # GitHub API eventual consistency: fast path (5×1s) then slow path (10×2s)
-        max_attempts = 15
+        # GitHub API eventual consistency: exponential backoff 1,2,4,8,8,8s (~31s total)
+        max_attempts = 7
         runs_data: list[dict[str, Any]] = []
         for attempt in range(max_attempts):
             user_output(f"  Waiting for workflow run... (attempt {attempt + 1}/{max_attempts})")
@@ -400,9 +400,9 @@ class RealGitHub(GitHub):
                 return str(run_id)
 
             # No matching run found, retry if attempts remaining
-            # Fast path: 1s delay for first 5 attempts, then 2s delay for remaining
+            # Exponential backoff: 2^attempt seconds, capped at 8s
             if attempt < max_attempts - 1:
-                delay = 1 if attempt < 5 else 2
+                delay = min(2**attempt, 8)
                 self._time.sleep(delay)
 
         # All attempts exhausted without finding matching run
