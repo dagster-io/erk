@@ -681,6 +681,29 @@ def test_indicators_stacked_with_conflicts() -> None:
     assert _indicators("[yellow]impl[/yellow]", has_conflicts=True, is_stacked=True) == "🥞 💥"
 
 
+def test_indicators_stacked_implemented_ready_shows_both() -> None:
+    """Stacked + implemented + checks passing shows both pancake and rocket."""
+    result = _indicators(
+        "[cyan]impl[/cyan]",
+        is_stacked=True,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "🥞 🚀"
+
+
+def test_indicators_stacked_implemented_with_conflicts_no_rocket() -> None:
+    """Stacked + implemented + conflicts shows pancake and explosion, not rocket."""
+    result = _indicators(
+        "[cyan]impl[/cyan]",
+        is_stacked=True,
+        has_conflicts=True,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "🥞 💥"
+
+
 def test_indicators_not_stacked_no_pancake() -> None:
     """is_stacked=False shows no pancake emoji."""
     assert _indicators("[cyan]impl[/cyan]", is_stacked=False) == "-"

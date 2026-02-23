@@ -231,7 +231,9 @@ def _build_indicators(
 
     # Ready-to-merge indicator for implemented stage:
     # shown only when checks pass, no unresolved comments, and no conflicts
-    if is_implemented and not indicators:
+    # (🥞 is informational and should not block 🚀)
+    has_blocking_indicators = any(i != "🥞" for i in indicators)
+    if is_implemented and not has_blocking_indicators:
         if checks_passing is True and has_unresolved_comments is not True:
             indicators.append("🚀")
 
