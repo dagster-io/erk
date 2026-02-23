@@ -217,6 +217,11 @@ def dispatch_one_shot(
                 learned_from_issue=None,
                 lifecycle_stage="prompted",
             )
+            if not skeleton_result.success:
+                error_msg = skeleton_result.error or "Unknown error creating skeleton plan issue"
+                user_output(click.style("Error: ", fg="red") + error_msg)
+                raise SystemExit(1)
+
             plan_issue_number = skeleton_result.issue_number
             user_output(click.style(f"  \u2192 Plan issue #{plan_issue_number}", dim=True))
 
