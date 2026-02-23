@@ -285,3 +285,135 @@ def test_create_impl_context_no_readme(tmp_path: Path) -> None:
 
     readme_file = tmp_path / ".erk" / "impl-context" / "README.md"
     assert not readme_file.exists()
+
+
+def test_build_impl_context_files_returns_two_entries() -> None:
+    """Test that build_impl_context_files returns exactly plan.md and ref.json."""
+    from erk_shared.impl_context import build_impl_context_files
+
+    result = build_impl_context_files(
+        plan_content="# Test Plan\n",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        provider="github",
+        objective_id=None,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    assert set(result.keys()) == {".erk/impl-context/plan.md", ".erk/impl-context/ref.json"}
+
+
+def test_build_impl_context_files_preserves_plan_content() -> None:
+    """Test that plan.md content is preserved exactly."""
+    from erk_shared.impl_context import build_impl_context_files
+
+    plan_content = "# Plan\n\n## Tasks\n\n1. Do the thing\n2. Test it\n"
+
+    result = build_impl_context_files(
+        plan_content=plan_content,
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        provider="github",
+        objective_id=None,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    assert result[".erk/impl-context/plan.md"] == plan_content
+
+
+def test_build_impl_context_files_ref_json_fields() -> None:
+    """Test that ref.json contains all expected fields with correct values."""
+    from erk_shared.impl_context import build_impl_context_files
+
+    result = build_impl_context_files(
+        plan_content="# Plan\n",
+        plan_id="99",
+        url="https://github.com/owner/repo/issues/99",
+        provider="github",
+        objective_id=None,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["provider"] == "github"
+    assert ref_data["plan_id"] == "99"
+    assert ref_data["url"] == "https://github.com/owner/repo/issues/99"
+    assert ref_data["created_at"] == FAKE_NOW_ISO
+    assert ref_data["synced_at"] == FAKE_NOW_ISO
+    assert ref_data["labels"] == []
+    assert ref_data["objective_id"] is None
+
+
+def test_build_impl_context_files_with_objective_id() -> None:
+    """Test that objective_id is included in ref.json when provided."""
+    from erk_shared.impl_context import build_impl_context_files
+
+    result = build_impl_context_files(
+        plan_content="# Plan\n",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        provider="github",
+        objective_id=7813,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["objective_id"] == 7813
+
+
+def test_build_impl_context_files_draft_pr_provider() -> None:
+    """Test that github-draft-pr provider is passed through correctly."""
+    from erk_shared.impl_context import build_impl_context_files
+
+    result = build_impl_context_files(
+        plan_content="# Plan\n",
+        plan_id="789",
+        url="https://github.com/owner/repo/pull/789",
+        provider="github-draft-pr",
+        objective_id=None,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["provider"] == "github-draft-pr"
+    assert ref_data["plan_id"] == "789"
+    assert ref_data["url"] == "https://github.com/owner/repo/pull/789"
+
+
+def test_build_impl_context_files_matches_create_impl_context_structure(tmp_path: Path) -> None:
+    """Test that build_impl_context_files produces the same content as create_impl_context."""
+    from erk_shared.impl_context import build_impl_context_files, create_impl_context
+
+    plan_content = "# Plan\n\nSome content here.\n"
+    plan_id = "55"
+    url = "https://github.com/owner/repo/issues/55"
+    provider = "github"
+    objective_id = 100
+
+    # Build in-memory version
+    in_memory = build_impl_context_files(
+        plan_content=plan_content,
+        plan_id=plan_id,
+        url=url,
+        provider=provider,
+        objective_id=objective_id,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    # Build filesystem version
+    create_impl_context(
+        plan_content=plan_content,
+        plan_id=plan_id,
+        url=url,
+        repo_root=tmp_path,
+        provider=provider,
+        objective_id=objective_id,
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    plan_on_disk = (impl_dir / "plan.md").read_text(encoding="utf-8")
+    ref_on_disk = (impl_dir / "ref.json").read_text(encoding="utf-8")
+
+    assert in_memory[".erk/impl-context/plan.md"] == plan_on_disk
+    assert json.loads(in_memory[".erk/impl-context/ref.json"]) == json.loads(ref_on_disk)
