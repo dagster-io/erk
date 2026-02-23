@@ -21,11 +21,11 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 ### `IssueNextSteps`
 
-For issue-based plans. Takes `issue_number: int`.
+For issue-based plans. Takes `issue_number: int` and `url: str`.
 
 | Property                          | Output                                                                                             |
 | --------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `view`                            | `gh issue view {issue_number} --web`                                                               |
+| `view`                            | `{url}` (the GitHub issue URL, directly clickable)                                                 |
 | `checkout`                        | `erk br co --for-plan {issue_number}`                                                              |
 | `submit`                          | `erk plan submit {issue_number}`                                                                   |
 | `checkout_and_implement`          | `source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous`            |
@@ -34,11 +34,11 @@ For issue-based plans. Takes `issue_number: int`.
 
 ### `DraftPRNextSteps`
 
-For draft-PR plans. Takes `pr_number: int` and `branch_name: str`.
+For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`.
 
 | Property                          | Output                                                                                          |
 | --------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `view`                            | `gh pr view {pr_number} --web`                                                                  |
+| `view`                            | `{url}` (the GitHub PR URL, directly clickable)                                                 |
 | `submit`                          | `erk plan submit {pr_number}`                                                                   |
 | `checkout_branch_and_implement`   | `source "$(erk br co {branch_name} --script)" && erk implement --dangerous`                     |
 | `checkout`                        | `erk br co --for-plan {pr_number}`                                                              |

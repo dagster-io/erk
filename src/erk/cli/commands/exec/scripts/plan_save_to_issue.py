@@ -326,6 +326,8 @@ def plan_save_to_issue(
     # Guard for type narrowing
     if result.issue_number is None:
         raise RuntimeError("Unexpected: issue_number is None after successful create_plan_issue")
+    if result.issue_url is None:
+        raise RuntimeError("Unexpected: issue_url is None after successful create_plan_issue")
 
     if output_format == "display":
         click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
@@ -334,7 +336,7 @@ def plan_save_to_issue(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_next_steps_plain(result.issue_number))
+        click.echo(format_next_steps_plain(result.issue_number, url=result.issue_url))
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,

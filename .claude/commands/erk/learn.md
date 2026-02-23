@@ -791,7 +791,7 @@ Post-learn actions:
 **Execute the selected action:**
 
 - **Submit**: Run `/erk:plan-submit`
-- **Review**: If `plan_backend` is `"draft_pr"`, run `gh pr view <issue_number> --web`; otherwise run `gh issue view <issue_number> --web`. Then inform the user they can run `/erk:plan-submit` when ready.
+- **Review**: Display the `issue_url` from the JSON output for the user to click. Then inform the user they can run `/erk:plan-submit` when ready.
 - **Consolidate**: Run `/local:replan-learn-plans`
 - **Done**: Proceed directly to Step 11
 

@@ -88,7 +88,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
         raise SystemExit(1) from e
 
     # Now that we have the issue number, format the complete body with commands
-    formatted_body = format_plan_issue_body(plan.strip(), result.number)
+    formatted_body = format_plan_issue_body(plan.strip(), result.number, url=result.url)
 
     # Update the issue body with the formatted version
     try:

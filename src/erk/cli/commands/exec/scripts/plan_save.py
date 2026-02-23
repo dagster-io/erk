@@ -270,7 +270,9 @@ def _save_as_draft_pr(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_draft_pr_next_steps_plain(plan_number, branch_name=branch_name))
+        click.echo(
+            format_draft_pr_next_steps_plain(plan_number, branch_name=branch_name, url=result.url)
+        )
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
