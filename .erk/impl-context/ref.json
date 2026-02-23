@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Include branch_name in skipped_duplicate plan-save response"
+}
