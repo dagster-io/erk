@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Improve `erk one-shot` progress reporting & add timeout to slug generation"
+}
