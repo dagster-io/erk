@@ -23,6 +23,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
     format_plan_content_comment,
+    update_plan_header_comment_id,
 )
 from erk_shared.gateway.github.metadata.schemas import (
     CREATED_FROM_SESSION,
@@ -549,8 +550,15 @@ class GitHubPlanStore(PlanBackend):
             self._github_issues.update_comment(repo_root, comments[0].id, formatted)
             return
 
-        msg = f"No plan content comment found for issue #{issue_number}"
-        raise RuntimeError(msg)
+        # No existing comment — create a new plan-body comment
+        formatted = format_plan_content_comment(content)
+        comment_id = self._github_issues.add_comment(repo_root, issue_number, formatted)
+
+        # Update issue body with plan_comment_id for future direct lookups
+        updated_body = update_plan_header_comment_id(issue.body, comment_id)
+        self._github_issues.update_issue_body(
+            repo_root, issue_number, BodyText(content=updated_body)
+        )
 
     def update_plan_title(
         self,
