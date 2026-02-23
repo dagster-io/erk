@@ -44,6 +44,7 @@ from erk_shared.subprocess_utils import build_claude_subprocess_env
 
 # Constants for process execution
 PROCESS_TIMEOUT_SECONDS = 600  # 10 minutes
+PROMPT_TIMEOUT_SECONDS = 120  # 2 minutes for single-shot prompts
 STDERR_JOIN_TIMEOUT = 5.0  # 5 seconds (increased from 1.0)
 
 logger = logging.getLogger(__name__)
@@ -574,14 +575,22 @@ class ClaudePromptExecutor(PromptExecutor):
             cmd.extend(["--allowedTools", ",".join(tools)])
         cmd.append(prompt)
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            cwd=cwd,
-            check=False,
-            env=self._subprocess_env(),
-        )
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                cwd=cwd,
+                check=False,
+                env=self._subprocess_env(),
+                timeout=PROMPT_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return PromptResult(
+                success=False,
+                output="",
+                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+            )
 
         if result.returncode != 0:
             return PromptResult(
