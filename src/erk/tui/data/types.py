@@ -13,58 +13,77 @@ class PlanRowData:
     Contains pre-formatted display strings and raw data needed for actions.
     Immutable to ensure table state consistency.
 
+    **Display vs Raw convention:** Many data points have both a raw field (for
+    logic/predicates) and a display field (for table rendering). Raw fields are
+    often nullable (None when absent), while display fields are always strings
+    (dash "-" or empty when absent). Use raw fields in availability predicates
+    (``ctx.row.pr_number is not None``), display fields for rendering.
+
     Attributes:
-        plan_id: GitHub issue number (e.g., 123)
-        plan_url: Full URL to the GitHub issue
-        pr_number: PR number if linked, None otherwise
-        pr_url: URL to PR (GitHub or Graphite), None if no PR
-        pr_display: Formatted PR cell content (e.g., "#123 👀")
-        checks_display: Formatted checks cell (e.g., "✓" or "✗")
-        worktree_name: Name of local worktree, empty string if none
-        exists_locally: Whether worktree exists on local machine
-        local_impl_display: Relative time since last local impl (e.g., "2h ago")
-        remote_impl_display: Relative time since last remote impl
-        run_id_display: Formatted workflow run ID
-        run_state_display: Formatted workflow run state
-        run_url: URL to the GitHub Actions run page
-        full_title: Complete untruncated plan title
-        plan_body: Raw issue body text (markdown)
-        pr_title: PR title if linked
-        pr_state: PR state (e.g., "OPEN", "MERGED", "CLOSED")
-        pr_head_branch: Head branch from PR metadata (source branch for landing)
-        worktree_branch: Branch name in the worktree (if exists locally)
-        last_local_impl_at: Raw timestamp for local impl
-        last_remote_impl_at: Raw timestamp for remote impl
-        run_id: Raw workflow run ID (for display and URL construction)
-        run_status: Workflow run status (e.g., "completed", "in_progress")
-        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
-        log_entries: List of (event_name, timestamp, comment_url) for plan log
-        resolved_comment_count: Count of resolved PR review comments
-        total_comment_count: Total count of PR review comments
-        comments_display: Formatted display of comments (e.g., "3/5" or "-")
-        learn_status: Raw learn status value from plan header
-        learn_plan_issue: Plan issue number (for completed_with_plan status)
-        learn_plan_issue_closed: Whether the learn plan issue is closed (True/False/None)
-        learn_plan_pr: PR number (for plan_completed status)
-        learn_run_url: URL to GitHub Actions workflow run (for pending status)
-        learn_display: Formatted display string with text (e.g., "- not started", "⟳ in progress")
-        learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12")
-        objective_issue: Objective issue number (for linking plans to objectives)
-        objective_url: Full URL to the objective issue (for clickable links)
-        objective_display: Formatted display string (e.g., "#123" or "-")
-        objective_done_nodes: Count of done nodes in objective roadmap
-        objective_total_nodes: Total nodes in objective roadmap
-        objective_progress_display: Progress display (e.g., "3/7" or "-")
-        objective_slug_display: Slug or stripped title fallback (max 25 chars)
-        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
-        objective_deps_display: Dependency status of next node (e.g., "ready", "in progress", "-")
-        updated_at: Last update datetime of the issue
-        updated_display: Formatted relative time for last update (e.g., "2h ago")
-        created_at: Creation datetime of the issue
-        created_display: Formatted relative time string (e.g., "2d ago")
-        author: GitHub login of the issue creator
-        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-")
-        status_display: Status indicator emojis (e.g., "🚀", "👀 💥", "-")
+
+        plan_id: GitHub issue number (e.g., 123). Never None.
+        plan_url: Full URL to the GitHub issue. None when unavailable.
+        full_title: Complete untruncated plan title. Empty string possible.
+        plan_body: Raw issue body text (markdown). Empty string possible.
+
+        pr_number: PR number if linked, None otherwise.
+        pr_url: URL to PR (GitHub or Graphite), None if no PR.
+        pr_display: Formatted PR cell content (e.g., "#123 👀"). Always a string.
+        pr_title: PR title if different from issue title. None if no PR.
+        pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR.
+        pr_head_branch: Head branch from PR metadata (source branch for landing).
+            None if no PR.
+        checks_display: Formatted checks cell (e.g., "✓" or "✗"). Always a string.
+        resolved_comment_count: Count of resolved PR review comments. 0 if no PR.
+        total_comment_count: Total count of PR review comments. 0 if no PR.
+        comments_display: Formatted comment counts (e.g., "3/5" or "-").
+
+        worktree_name: Name of local worktree. Empty string if none.
+        worktree_branch: Branch name in the worktree. None if no worktree.
+        exists_locally: Whether worktree exists on this machine.
+
+        local_impl_display: Relative time since last local impl (e.g., "2h ago").
+        remote_impl_display: Relative time since last remote impl.
+        last_local_impl_at: Raw datetime for local impl. None if never run.
+        last_remote_impl_at: Raw datetime for remote impl. None if never run.
+
+        run_id: Raw workflow run ID. None if no run.
+        run_id_display: Formatted workflow run ID for display.
+        run_url: URL to the GitHub Actions run page. None if no run.
+        run_status: Run status ("completed", "in_progress", "queued"). None if no run.
+        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+            None if no run or still in progress.
+        run_state_display: Formatted workflow run state.
+
+        log_entries: Tuple of (event_name, timestamp, comment_url) for the plan
+            activity log. Empty tuple when no log entries.
+
+        learn_status: Raw learn status value from plan header. None if absent.
+        learn_plan_issue: Plan issue number (for completed_with_plan status).
+        learn_plan_issue_closed: Whether the learn plan issue is closed.
+        learn_plan_pr: PR number (for plan_completed status).
+        learn_run_url: URL to GitHub Actions workflow run (for pending status).
+        learn_display: Formatted display string (e.g., "- not started", "⟳ in progress").
+        learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12").
+
+        objective_issue: Objective issue number. None if not linked to an objective.
+        objective_url: Full URL to the objective issue. None if no objective.
+        objective_display: Formatted display string (e.g., "#123" or "-").
+        objective_done_nodes: Count of done nodes in objective roadmap. 0 if no objective.
+        objective_total_nodes: Total nodes in objective roadmap. 0 if no objective.
+        objective_progress_display: Progress display (e.g., "3/7" or "-").
+        objective_slug_display: Slug or stripped title fallback (max 25 chars).
+        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○").
+        objective_deps_display: Dep status of next node ("ready", "in progress", "-").
+
+        updated_at: Last update datetime of the issue.
+        updated_display: Formatted relative time for last update (e.g., "2h ago").
+        created_at: Creation datetime of the issue.
+        created_display: Formatted relative time string (e.g., "2d ago").
+        author: GitHub login of the issue creator.
+        is_learn_plan: Whether this is a learn plan (has [erk-learn] prefix).
+        lifecycle_display: Formatted lifecycle stage (e.g., "planned", "implementing", "-").
+        status_display: Status indicator emojis (e.g., "🚀", "👀 💥", "-").
     """
 
     plan_id: int
