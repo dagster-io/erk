@@ -69,7 +69,7 @@ Emoji indicators in the lifecycle column are classified as either **blocking** o
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators -->
 
-The distinction is implemented in `_build_indicators()` in `lifecycle.py`: the check treats all indicators except the pancake as blocking. When a plan is implemented and has no blocking indicators, the rocket emoji is appended to signal "ready to merge."
+The distinction is implemented in `_build_indicators()` in `lifecycle.py`: `has_blocking_indicators = any(i != "🥞" for i in indicators)`. When a plan is implemented and has no blocking indicators, the rocket emoji is appended to signal "ready to merge."
 
 See [Stacked PR Indicator](../tui/stacked-pr-indicator.md) for full details on the pancake emoji.
 

@@ -37,7 +37,13 @@ Indicators are classified as either **blocking** or **informational**:
 - **Blocking indicators** (CI failures, unresolved reviews, merge conflicts) prevent the rocket emoji (🚀) from appearing in the implemented stage.
 - **Informational indicators** (🥞 pancake) do not block the rocket.
 
-The mechanism uses an exclusion predicate: all indicators except the pancake are considered blocking. If a plan is in the `implemented` stage and has no blocking indicators, the rocket emoji is appended.
+The mechanism uses an exclusion check:
+
+```
+has_blocking_indicators = any(i != "🥞" for i in indicators)
+```
+
+If a plan is in the `implemented` stage and has no blocking indicators, the rocket emoji is appended.
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators -->
 

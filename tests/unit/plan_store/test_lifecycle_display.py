@@ -663,37 +663,37 @@ def test_indicators_merged_returns_dash() -> None:
     assert _indicators("[green]merged[/green]", is_draft=False) == "-"
 
 
-# --- Stacked PR indicator tests (pancake removed, stacked is no-op) ---
+# --- Stacked PR (pancake) indicator tests ---
 
 
-def test_indicators_stacked_no_pancake() -> None:
-    """Stacked PR no longer shows pancake emoji."""
-    assert _indicators("[yellow]impl[/yellow]", is_stacked=True) == "-"
+def test_indicators_stacked_shows_pancake() -> None:
+    """Stacked PR shows pancake emoji."""
+    assert _indicators("[yellow]impl[/yellow]", is_stacked=True) == "🥞"
 
 
 def test_indicators_stacked_with_draft() -> None:
-    """Stacked + draft shows only draft indicator."""
-    assert _indicators("[dim]planned[/dim]", is_draft=True, is_stacked=True) == "🚧"
+    """Stacked + draft shows pancake then construction."""
+    assert _indicators("[dim]planned[/dim]", is_draft=True, is_stacked=True) == "🥞 🚧"
 
 
 def test_indicators_stacked_with_conflicts() -> None:
-    """Stacked + conflicts shows only conflict indicator."""
-    assert _indicators("[yellow]impl[/yellow]", has_conflicts=True, is_stacked=True) == "💥"
+    """Stacked + conflicts shows pancake then explosion."""
+    assert _indicators("[yellow]impl[/yellow]", has_conflicts=True, is_stacked=True) == "🥞 💥"
 
 
-def test_indicators_stacked_impl_ready_shows_rocket() -> None:
-    """Stacked + impl + checks passing shows rocket only."""
+def test_indicators_stacked_impl_ready_shows_both() -> None:
+    """Stacked + impl + checks passing shows both pancake and rocket."""
     result = _indicators(
         "[yellow]impl[/yellow]",
         is_stacked=True,
         checks_passing=True,
         has_unresolved_comments=False,
     )
-    assert result == "🚀"
+    assert result == "🥞 🚀"
 
 
 def test_indicators_stacked_impl_with_conflicts_no_rocket() -> None:
-    """Stacked + impl + conflicts is not landable — no rocket."""
+    """Stacked + impl + conflicts shows pancake and explosion, not rocket."""
     result = _indicators(
         "[yellow]impl[/yellow]",
         is_stacked=True,
@@ -701,7 +701,7 @@ def test_indicators_stacked_impl_with_conflicts_no_rocket() -> None:
         checks_passing=True,
         has_unresolved_comments=False,
     )
-    assert result == "💥"
+    assert result == "🥞 💥"
 
 
 def test_indicators_not_stacked_no_pancake() -> None:
@@ -710,7 +710,7 @@ def test_indicators_not_stacked_no_pancake() -> None:
 
 
 def test_format_lifecycle_stacked_implementing() -> None:
-    """Stacked implementing stage no longer shows pancake."""
+    """Stacked implementing stage shows pancake inside Rich markup."""
     result = _format_lifecycle(
         "[yellow]impl[/yellow]",
         is_draft=None,
@@ -718,4 +718,4 @@ def test_format_lifecycle_stacked_implementing() -> None:
         review_decision=None,
         is_stacked=True,
     )
-    assert result == "[yellow]impl[/yellow]"
+    assert result == "[yellow]impl 🥞[/yellow]"
