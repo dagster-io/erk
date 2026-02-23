@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: pr-address remote workflow not updating plan metadata"
+  "plan_id": "7929",
+  "url": "https://github.com/dagster-io/erk/pull/7929",
+  "created_at": "2026-02-23T00:17:48.680774",
+  "synced_at": "2026-02-23T00:17:48.680774",
+  "labels": [],
+  "objective_id": null
 }
