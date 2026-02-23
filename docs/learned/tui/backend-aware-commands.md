@@ -26,13 +26,15 @@ Missing any dimension means a command can appear when it shouldn't, or be invisi
 
 The function checks `ctx.plan_backend == "github"` and returns `True` for issue-based plans. See `src/erk/tui/commands/registry.py:31-33` for the implementation.
 
-The `plan_backend` field is a `PlanBackendType` value (`"github"` or `"github-draft-pr"`).
+**Dead code note:** After PR #7971, `plan_backend` is always `"draft_pr"`, so `_is_github_backend()` can never return `True`. This function is scheduled for removal in objective #7911 node 1.3.
 
 ## `CommandContext` with `plan_backend`
 
 <!-- Source: src/erk/tui/commands/types.py:23-35, CommandContext -->
 
-The `CommandContext` frozen dataclass at `src/erk/tui/commands/types.py:23-35` carries `row`, `view_mode`, and `plan_backend` fields. The `plan_backend` field is set from the app's active backend configuration and passed to every command's `is_available` and `get_display_name` functions.
+The `CommandContext` frozen dataclass at `src/erk/tui/commands/types.py:23-35` carries `row`, `view_mode`, and `plan_backend` fields. The `plan_backend` field is typed as `Literal["draft_pr"]` after PR #7971. The former `PlanBackendType` type alias (which included `"github"`) was deleted. The only valid value is `"draft_pr"`.
+
+**Transitional state:** The `plan_backend` parameter still exists on several TUI entry points (`app.py`, `plan_table.py`, `types.py`) but is redundant — it always carries `"draft_pr"`. These parameters are scheduled for removal in objective #7911 node 1.3. Do not add new callers or expand usage of `plan_backend` in TUI code.
 
 ## Commands Hidden in `draft_pr` Mode
 

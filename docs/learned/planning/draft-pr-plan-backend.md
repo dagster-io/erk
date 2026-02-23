@@ -6,41 +6,30 @@ read_when:
   - "understanding how plans are stored as draft pull requests"
   - "modifying plan-save or land pipeline for plan handling"
 tripwires:
-  - action: "adding plan storage behavior without checking plan backend type"
-    warning: "Two backends exist (github, draft_pr). Verify behavior works for both. See draft-pr-plan-backend.md."
   - action: "validating plan_id in exec scripts without checking provider type"
     warning: "Draft-PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; draft-PR plans use PR numbers."
     score: 4
-  - action: "reading ERK_PLAN_BACKEND env var inside inner functions when global_config is already in scope"
-    warning: "Backend detection precedence: when GlobalConfig.plan_backend is available via context, use it. Never fall back to re-reading env vars inside inner functions if global_config is already in scope — the context value takes precedence and re-reading env vars bypasses context overrides."
-    score: 8
-  - action: "spawning a GitHub Actions workflow from erk without passing plan_backend as an explicit input"
-    warning: "Draft-PR backend propagation: GitHub Actions reusable workflows (workflow_call) do NOT inherit environment variables from the caller. ERK_PLAN_BACKEND must be declared as an explicit workflow input and passed by the caller. Ambient env vars are invisible to reusable workflows."
-    score: 9
-  - action: "implementing RealPlanListService or DraftPRPlanListService without checking the other for parity"
-    warning: "Both plan list services must handle parameters identically. Interface contracts are not enforced by the type system — behavioral divergence between the two services causes subtle bugs when switching backends."
-    score: 6
   - action: "using gh issue view on a plan ID without checking plan backend type"
     warning: "Draft-PR plan IDs are PR numbers. Using gh issue view on a draft-PR plan produces a confusing 404. Route to gh pr view based on backend type."
     score: 7
+  - action: "checking erk exec plan-save --format json output for empty result"
+    warning: "Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture."
+    score: 5
 ---
 
 # Draft PR Plan Backend
 
-DraftPRPlanBackend stores plans as GitHub draft pull requests instead of issues. It is an alternative to the default GitHubPlanStore (issue-based) backend.
+DraftPRPlanBackend stores plans as GitHub draft pull requests. It is the only active plan storage backend.
 
 ## Backend Selection
 
-Backend selection is controlled by the `ERK_PLAN_BACKEND` environment variable, read by `get_plan_backend()` in `packages/erk-shared/src/erk_shared/plan_store/__init__.py:19-24`:
+The plan backend is hardcoded to `"draft_pr"`. All plans are stored as GitHub draft pull requests via DraftPRPlanBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
 
-- `"github"` (default): Issue-based storage via GitHubPlanStore
-- `"draft_pr"`: Draft PR-based storage via DraftPRPlanBackend
+The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. Setting it has no effect. CI workflows and test fixtures that reference it are vestigial and will be removed in later nodes of objective #7911.
 
-Context creation in `src/erk/core/context.py:604-609` uses this to select both the plan store and plan list service:
+**Note:** Some code still contains `PLAN_BACKEND_SPLIT` comment blocks marking dead branches (e.g., `if "draft_pr" != "draft_pr":` in plan_save.py). These are intentionally preserved for node 1.2 cleanup.
 
 <!-- Source: src/erk/core/context.py, create_context -->
-
-See backend selection in `create_context()` in `src/erk/core/context.py` — dispatches on `get_plan_backend()` to select GitHubPlanStore or DraftPRPlanBackend.
 
 ## Architecture
 
@@ -78,11 +67,7 @@ See [branch-plan-resolution.md](branch-plan-resolution.md) for how branches reso
 
 ## Land Pipeline Integration
 
-The `close_review_pr()` function in `src/erk/cli/commands/land_pipeline.py:469-471` skips cleanup for draft-PR plans since they don't have separate review PRs:
-
-<!-- Source: src/erk/cli/commands/land_pipeline.py, close_review_pr -->
-
-See `close_review_pr()` in `src/erk/cli/commands/land_pipeline.py` — skips cleanup for draft-PR plans.
+Draft-PR plans don't have separate review PRs, so the land pipeline skips review PR cleanup for them.
 
 ## Type Narrowing
 
@@ -119,9 +104,21 @@ When implementing a draft-PR plan, the `.erk/impl-context/` staging directory mu
 
 For full details, see [Impl-Context Staging Directory](impl-context.md).
 
+## plan-save Duplicate Detection Output Routing
+
+When `erk exec plan-save --format json` detects that a plan was already saved in the current session (via the `plan-saved-issue` marker), it returns `{"skipped_duplicate": true, "plan_number": <N>}`. This JSON is written to **stderr**, not stdout.
+
+Empty stdout from `plan-save` does not indicate failure. Always capture both streams:
+
+```bash
+erk exec plan-save --format json --session-id "..." 2>&1
+```
+
+If stdout is empty, check stderr for the duplicate-detection response before assuming the command failed.
+
 ## Related Topics
 
 - [Branch Plan Resolution](branch-plan-resolution.md) - How branches resolve to plans
 - [Plan Save Branch Restoration](../architecture/plan-save-branch-restoration.md) - Try/finally pattern for branch safety
-- [Dual Backend Testing](../testing/dual-backend-testing.md) - Testing across both backends
+- [Plan Storage Testing](../testing/dual-backend-testing.md) - Plan storage testing patterns
 - [Impl-Context Staging Directory](impl-context.md) - Staging directory lifecycle and cleanup
