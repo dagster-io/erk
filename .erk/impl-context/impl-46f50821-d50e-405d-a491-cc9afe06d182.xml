@@ -1,0 +1,1056 @@
+<session>
+  <meta branch="plnd/rename-prepare-checkout-02-23-1054" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Parse Arguments
+
+Extract optional argument from ``:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+First, check if `.impl/` already exists and is valid:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+
+Otherwise, set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;ISSUE_ARG&gt;
+```
+
+This command:
+
+- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
+- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
+- Checks out the branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create &lt;branch-name&gt;
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl &amp;&amp; cp &lt;FILE_ARG&gt; .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`:
+
+- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
+- If `has_issue_tracking: true`: **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="46f50821-d50e-405d-a491-cc9afe06d182"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 2b: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue &lt;issue-number&gt;
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 2c: Re-run Implementation Initialization
+
+Run impl-init again now that .impl/ is set up:
+
+```bash
+erk exec impl-init --json
+```
+
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
+
+### Step 2d: Clean Up Plan Staging Directory (All Paths)
+
+**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
+
+```bash
+if [ -d .erk/impl-context/ ]; then
+  git rm -rf .erk/impl-context/
+  git commit -m "Remove .erk/impl-context/ before implementation"
+  git push origin "$(git branch --show-current)"
+fi
+```
+
+This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
+
+### Step 3: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 4: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 5: Create TodoWrite Entries
+
+Create todo entries for each phase from impl-init output.
+
+### Step 6: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="46f50821-d50e-405d-a491-cc9afe06d182" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 7: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 8: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 9: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 10: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="46f50821-d50e-405d-a491-cc9afe06d182" 2&gt;/dev/null || true
+```
+
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2&gt;/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] &amp;&amp; [ -n "$SESSION_FILE" ] &amp;&amp; [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR rules:
+
+```bash
+erk pr check
+```
+
+If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the instructions:
+
+1. Step 0: No arguments provided, so no ISSUE_ARG or FILE_ARG
+2. Step 1b: Check if `.impl/` already exists
+
+Let me check if `.impl/` exists and run `impl-init`.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12954}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me check if there's an existing `.impl/` folder.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12954" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12954}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U7TfrFJjfRGpzAnjpyjnRs">
+    <param name="command">erk exec impl-init --json</param>
+    <param name="description">Check if .impl/ folder exists and is valid</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12954" cache_read_input_tokens="19041" output_tokens="228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12954, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U7TfrFJjfRGpzAnjpyjnRs">
+{"valid": true, "impl_type": "impl", "has_plan_tracking": true, "related_docs": {"skills": [], "docs": []}, "plan_number": 7986}
+  </tool_result>
+  <thinking>The `.impl/` is valid, has issue tracking (plan_number 7986), and is an impl type. According to the instructions:
+
+- If `has_issue_tracking: true` (or equivalent `has_plan_tracking: true`): **Call `setup-impl-from-issue &lt;issue_number&gt;`** to sync the local branch with remote, then proceed to Step 2d.
+
+Let me sync with remote first, then proceed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="31995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Valid `.impl/` found with plan tracking (issue #7986). Syncing with remote...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="31995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Gd51vj6xPyY1ouy4YCnisW">
+    <param name="command">erk exec setup-impl-from-issue 7986</param>
+    <param name="description">Sync local branch with remote for plan #7986</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="31995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gd51vj6xPyY1ouy4YCnisW">
+Found existing .impl/ for plan #7986, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.impl", "plan_number": 7986, "plan_url": "https://github.com/dagster-io/erk/pull/7986", "branch": "plnd/rename-prepare-checkout-02-23-1054", "plan_title": "", "no_impl": false}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0176jM4ZK4BhGqejgSGKeRP1">
+    <param name="command">if [ -d .erk/impl-context/ ]; then git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove ...[truncated 32 chars]...h origin "$(git branch --show-current)"; else echo "No .erk/impl-context/ to clean up"; fi</param>
+    <param name="description">Clean up plan staging directory if it exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="32250" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 357}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0176jM4ZK4BhGqejgSGKeRP1">
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/ref.json'
+[plnd/rename-prepare-checkout-02-23-1054 f2e49cffe] Remove .erk/impl-context/ before implementation
+ 2 files changed, 70 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+remote: 
+remote: GitHub found 18 vulnerabilities on dagster-io/erk's default branch (11 high, 4 moderate, 3 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk.git
+   a0084fab7..f2e49cffe  plnd/rename-prepare-checkout-02-23-1054 -&gt; plnd/rename-prepare-checkout-02-23-1054
+  </tool_result>
+  <assistant>Implementation environment ready, reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="32607" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 418}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KTf6EV57YKNcz1xTeD1RLo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="32607" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 418}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KTf6EV57YKNcz1xTeD1RLo">
+     1→# Plan: Rename "prepare" properties to "checkout" in next_steps.py
+     2→
+     3→## Context
+     4→
+     5→PR review feedback on #7981: "change all these variable names to not use the word 'prepare'. python artifacts should align with user-facing messaging." The format functions use "Checkout:" and "Implement:" as user-facing labels, but the underlying properties are named `prepare`, `prepare_and_implement`, etc.
+     6→
+     7→## Rename Mapping
+     8→
+     9→### IssueNextSteps
+    10→
+    11→| Old Name | New Name |
+    12→|---|---|
+    13→| `prepare` | `checkout` |
+    14→| `prepare_and_implement` | `checkout_and_implement` |
+    15→| `prepare_new_slot` | `checkout_new_slot` |
+    16→| `prepare_new_slot_and_implement` | `checkout_new_slot_and_implement` |
+    17→
+    18→### DraftPRNextSteps
+    19→
+    20→| Old Name | New Name |
+    21→|---|---|
+    22→| `checkout_and_implement` (existing, branch-based) | `checkout_branch_and_implement` |
+    23→| `prepare` | `checkout` |
+    24→| `prepare_and_implement` | `checkout_and_implement` |
+    25→| `prepare_new_slot` | `checkout_new_slot` |
+    26→| `prepare_new_slot_and_implement` | `checkout_new_slot_and_implement` |
+    27→
+    28→Note: The existing `checkout_and_implement` (which uses branch name directly) is renamed to `checkout_branch_and_implement` to avoid collision with the plan-number-based variant.
+    29→
+    30→### Constants
+
+... [37 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to:
+1. Create todo entries for the phases
+2. Signal GitHub started
+3. Implement the changes
+
+Let me first read the source files to understand the current state, then implement.
+
+Let me read the files that need to be modified.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1227" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the files that need modification and set up the tasks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1227" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01158qJw7VxCvPQLCH2dWdGR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1227" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01158qJw7VxCvPQLCH2dWdGR">
+     1→"""Issue and draft PR next steps formatting - single source of truth."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class IssueNextSteps:
+     8→    """Canonical commands for issue operations."""
+     9→
+    10→    issue_number: int
+    11→
+    12→    @property
+    13→    def view(self) -&gt; str:
+    14→        return f"gh issue view {self.issue_number} --web"
+    15→
+    16→    @property
+    17→    def prepare(self) -&gt; str:
+    18→        return f"erk br co --for-plan {self.issue_number}"
+    19→
+    20→    @property
+    21→    def submit(self) -&gt; str:
+    22→        return f"erk plan submit {self.issue_number}"
+    23→
+    24→    @property
+    25→    def prepare_and_implement(self) -&gt; str:
+    26→        return (
+    27→            f'source "$(erk br co --for-plan {self.issue_number} --script)"'
+    28→            " &amp;&amp; erk implement --dangerous"
+    29→        )
+    30→
+
+... [110 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PsSf5tDrqpK1H4N3p85zDQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1227" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PsSf5tDrqpK1H4N3p85zDQ">
+     1→"""Tests for next_steps formatting."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    DraftPRNextSteps,
+     5→    IssueNextSteps,
+     6→    format_draft_pr_next_steps_plain,
+     7→    format_next_steps_plain,
+     8→)
+     9→
+    10→
+    11→def test_draft_pr_next_steps_constructs_with_both_params() -&gt; None:
+    12→    """DraftPRNextSteps constructs correctly with pr_number and branch_name."""
+    13→    s = DraftPRNextSteps(pr_number=42, branch_name="plan-feature-foo")
+    14→    assert s.pr_number == 42
+    15→    assert s.branch_name == "plan-feature-foo"
+    16→
+    17→
+    18→def test_draft_pr_next_steps_checkout_and_implement_uses_branch_name() -&gt; None:
+    19→    """checkout_and_implement uses branch_name, not pr_number."""
+    20→    s = DraftPRNextSteps(pr_number=42, branch_name="plan-feature-foo")
+    21→    assert "plan-feature-foo" in s.checkout_and_implement
+    22→    assert "42" not in s.checkout_and_implement
+    23→
+    24→
+    25→def test_draft_pr_next_steps_prepare_uses_pr_number() -&gt; None:
+    26→    """prepare uses --for-plan with pr_number."""
+    27→    s = DraftPRNextSteps(pr_number=42, branch_name="plan-feature-foo")
+    28→    assert s.prepare == "erk br co --for-plan 42"
+    29→
+    30→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012zvno3dYTkNrU9W5SMqE8V">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1227" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012zvno3dYTkNrU9W5SMqE8V">
+     1→"""Tests for next_steps formatting functions."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    DraftPRNextSteps,
+     5→    IssueNextSteps,
+     6→    format_draft_pr_next_steps_plain,
+     7→    format_next_steps_plain,
+     8→)
+     9→
+    10→
+    11→class TestIssueNextSteps:
+    12→    def test_prepare_uses_co(self) -&gt; None:
+    13→        steps = IssueNextSteps(issue_number=99)
+    14→        assert steps.prepare == "erk br co --for-plan 99"
+    15→
+    16→    def test_prepare_and_implement_uses_co(self) -&gt; None:
+    17→        steps = IssueNextSteps(issue_number=99)
+    18→        assert steps.prepare_and_implement == (
+    19→            'source "$(erk br co --for-plan 99 --script)" &amp;&amp; erk implement --dangerous'
+    20→        )
+    21→
+    22→    def test_prepare_new_slot(self) -&gt; None:
+    23→        steps = IssueNextSteps(issue_number=99)
+    24→        assert steps.prepare_new_slot == "erk br co --new-slot --for-plan 99"
+    25→
+    26→    def test_prepare_new_slot_and_implement(self) -&gt; None:
+    27→        steps = IssueNextSteps(issue_number=99)
+    28→        assert steps.prepare_new_slot_and_implement == (
+    29→            'source "$(erk br co --new-slot --for-plan 99 --script)" &amp;&amp; erk implement --dangerous'
+    30→        )
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T6tcoA3ZrVEwCvAQZzhZoG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/docs/learned/planning/next-steps-output.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1227" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T6tcoA3ZrVEwCvAQZzhZoG">
+     1→---
+     2→title: Next Steps Output Formatting
+     3→read_when:
+     4→  - "modifying next-steps output after plan save or submit"
+     5→  - "understanding IssueNextSteps vs DraftPRNextSteps"
+     6→  - "adding new next-steps commands to plan output"
+     7→tripwires:
+     8→  - action: "hardcoding next-steps command strings instead of using the dataclass properties"
+     9→    warning: "Use IssueNextSteps or DraftPRNextSteps dataclasses from erk_shared.output.next_steps. They are the single source of truth for command formatting."
+    10→---
+    11→
+    12→# Next Steps Output Formatting
+    13→
+    14→After saving a plan, erk displays next-steps commands to the user. The formatting is centralized in a single module with two dataclasses for the two plan backends.
+    15→
+    16→## Source
+    17→
+    18→`packages/erk-shared/src/erk_shared/output/next_steps.py`
+    19→
+    20→## Dataclasses
+    21→
+    22→### `IssueNextSteps`
+    23→
+    24→For issue-based plans. Takes `issue_number: int`.
+    25→
+    26→| Property                         | Output                                                                                             |
+    27→| -------------------------------- | -------------------------------------------------------------------------------------------------- |
+    28→| `view`                           | `gh issue view {issue_number} --web`                                                               |
+    29→| `prepare`                        | `erk br co --for-plan {issue_number}`                                                              |
+    30→| `submit`                         | `erk plan submit {issue_number}`                                                                   |
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X577xrFoJ1JE5A28Y1G7MY">
+    <param name="command">erk exec impl-signal started --session-id="46f50821-d50e-405d-a491-cc9afe06d182" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1227" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X577xrFoJ1JE5A28Y1G7MY">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 7986
+}
+  </tool_result>
+  <thinking>Now I have a clear picture of all the files. Let me create the task list and start implementing.
+
+The plan is straightforward - rename properties in 4 files:
+1. Source: `next_steps.py` - rename properties and constant
+2. Test: `packages/erk-shared/tests/unit/output/test_next_steps.py` - rename test functions and references
+3. Test: `tests/unit/shared/test_next_steps.py` - rename test methods and references
+4. Docs: `docs/learned/planning/next-steps-output.md` - update property table
+
+Let me also check if there are any other references to these property names elsewhere in the codebase.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check for any other references to these property names across the codebase before making changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01TwJTgVHiX5r4uSTroaxwg3">
+    <param name="subject">Rename properties in next_steps.py source file</param>
+    <param name="description">Rename prepare → checkout, prepare_and_implement → checkout_and_implement, prepare_new_slo...[truncated 81 chars]..._implement → checkout_branch_and_implement, PREPARE_SLASH_COMMAND → CHECKOUT_SLASH_COMMAND</param>
+    <param name="activeForm">Renaming properties in source file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TwJTgVHiX5r4uSTroaxwg3">
+Task #1 created successfully: Rename properties in next_steps.py source file
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_011jzX3FuRUpLQ6XRWK3gnta">
+    <param name="subject">Rename test references in erk-shared test file</param>
+    <param name="description">Update packages/erk-shared/tests/unit/output/test_next_steps.py with new property names</param>
+    <param name="activeForm">Updating erk-shared test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011jzX3FuRUpLQ6XRWK3gnta">
+Task #2 created successfully: Rename test references in erk-shared test file
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XdNYfteNr9cup2RfYJNF1c">
+    <param name="subject">Rename test references in tests/unit/shared test file</param>
+    <param name="description">Update tests/unit/shared/test_next_steps.py with new property names</param>
+    <param name="activeForm">Updating shared test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XdNYfteNr9cup2RfYJNF1c">
+Task #3 created successfully: Rename test references in tests/unit/shared test file
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01LgAt2NEbLB3Ap2qf8d2VcK">
+    <param name="subject">Update docs/learned/planning/next-steps-output.md</param>
+    <param name="description">Update property table with new names</param>
+    <param name="activeForm">Updating documentation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LgAt2NEbLB3Ap2qf8d2VcK">
+Task #4 created successfully: Update docs/learned/planning/next-steps-output.md
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01TEzwBSdifv5ZVJMKWpNrfL">
+    <param name="subject">Run tests to verify changes</param>
+    <param name="description">Run both test files and fast-ci to verify no breakage</param>
+    <param name="activeForm">Running verification tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TEzwBSdifv5ZVJMKWpNrfL">
+Task #5 created successfully: Run tests to verify changes
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018G2nRurrVbrb5tSWTPr75H">
+    <param name="pattern">\.prepare\b|prepare_and_implement|prepare_new_slot|PREPARE_SLASH_COMMAND</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018G2nRurrVbrb5tSWTPr75H">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PR1NrMiTNF8eWSdfG7m28g">
+    <param name="pattern">\.prepare\b|prepare_and_implement|prepare_new_slot|PREPARE_SLASH_COMMAND</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10535" cache_read_input_tokens="34252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10535}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PR1NrMiTNF8eWSdfG7m28g">
+Found 2 files
+packages/erk-shared/tests/unit/output/test_next_steps.py
+packages/erk-shared/src/erk_shared/output/next_steps.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RSvyLcJGtYrevUnN2fUbz5">
+    <param name="pattern">\.prepare\b|prepare_and_implement|prepare_new_slot|PREPARE_SLASH_COMMAND</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1292" cache_read_input_tokens="44787" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1292}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RSvyLcJGtYrevUnN2fUbz5">
+Found 1 file
+tests/unit/shared/test_next_steps.py
+  </tool_result>
+  <assistant>Good - references are only in the 3 files identified in the plan (source + 2 test files). No other callers. Let me implement the changes now.
+
+**Phase 1: Rename properties in source file**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="46079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 151}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01GfcefFZgE714CsHWRWox1R">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="46079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 151}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GfcefFZgE714CsHWRWox1R">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Write" id="toolu_01AehNzUTbWCLH5RevkZZDGo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+    <param name="content">"""Issue and draft PR next steps formatting - single source of truth."""
+
+from dataclasses...[truncated 3357 chars]...mit}
+```
+
+---
+
+### Local Execution
+
+**Checkout plan branch:**
+```bash
+{s.checkout}
+```"""
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="46230" output_tokens="1248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 140, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AehNzUTbWCLH5RevkZZDGo">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/output/next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01MFiatZw4f9qNsFtKNREk2V">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1314" cache_read_input_tokens="46370" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1314}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MFiatZw4f9qNsFtKNREk2V">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01E8duZaf6PMQjWDgbPUCsQ8">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1314" cache_read_input_tokens="46370" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1314}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E8duZaf6PMQjWDgbPUCsQ8">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 2: Update erk-shared test file**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="47684" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01BfVW3Zt97KKAM4Gxc1eQ8V">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="content">"""Tests for next_steps formatting."""
+
+from erk_shared.output.next_steps import (
+    Dra...[truncated 2094 chars]...lain(42, branch_name="plan-feature-foo")
+    assert "erk implement --dangerous" in output
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="47684" output_tokens="885" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BfVW3Zt97KKAM4Gxc1eQ8V">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_011ubJbyqurfYDLn6UBbK8ZM">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="950" cache_read_input_tokens="47882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 950}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ubJbyqurfYDLn6UBbK8ZM">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01GN5jvCNhrDy1nKNcoqVi6P">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="950" cache_read_input_tokens="47882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 950}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GN5jvCNhrDy1nKNcoqVi6P">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 3: Update tests/unit/shared test file**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="48832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DGgem5g4TR6z7JdEJcHX9v">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_next_steps.py</param>
+    <param name="content">"""Tests for next_steps formatting functions."""
+
+from erk_shared.output.next_steps import...[truncated 3965 chars]...branch_name="plan-my-feature-02-20")
+        assert "erk implement --dangerous" in output
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="48832" output_tokens="1498" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DGgem5g4TR6z7JdEJcHX9v">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_016W6Y846KASAVZkNBBQCwbC">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1556" cache_read_input_tokens="49030" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1556}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016W6Y846KASAVZkNBBQCwbC">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Sejw5yq9Twp4atkJPy9Jk9">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1556" cache_read_input_tokens="49030" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1556}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sejw5yq9Twp4atkJPy9Jk9">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Update documentation**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="50586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01M8fQTMraHwtuoh8AHu1Zk5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/docs/learned/planning/next-steps-output.md</param>
+    <param name="content">---
+title: Next Steps Output Formatting
+read_when:
+  - "modifying next-steps output after ...[truncated 4388 chars]...ull lifecycle of draft-PR plans
+- [Plan Lifecycle](lifecycle.md) - Overall plan lifecycle
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="50586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M8fQTMraHwtuoh8AHu1Zk5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/docs/learned/planning/next-steps-output.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01EHPGubzBW8K9Qn4Nczj48c">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1270" cache_read_input_tokens="50784" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1270}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EHPGubzBW8K9Qn4Nczj48c">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Fau9zAZwSma8W2Q3RRaZyJ">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1270" cache_read_input_tokens="50784" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1270}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Fau9zAZwSma8W2Q3RRaZyJ">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 5: Run tests to verify**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="52054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01F4xxSDFSEk2mzEc3sTncfu">
+    <param name="description">Run next_steps tests</param>
+    <param name="prompt">Run the following pytest command and report results:
+
+```bash
+uv run pytest packages/erk-s...[truncated 7 chars]...t_next_steps.py tests/unit/shared/test_next_steps.py -v
+```
+
+Report all pass/fail results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="52054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F4xxSDFSEk2mzEc3sTncfu">
+**pytest failed: Collection error**
+
+The test collection encountered an import error:
+
+```
+ERROR packages/erk-shared/tests/unit/output/test_next_steps.py
+ModuleNotFoundError: No module named 'tests.unit.output'
+```
+
+The test file at `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/tests/unit/output/test_next_steps.py` is missing the required `__init__.py` files in the test directory structure, or the import path is incorrect.
+
+The second test file (`tests/unit/shared/test_next_steps.py`) was not reached due to the collection failure on the first file.
+agentId: ac3507b1e7bfab489 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14783
+tool_uses: 1
+duration_ms: 5219&lt;/usage&gt;
+  </tool_result>
+  <thinking>The erk-shared package needs to be run with its own pytest configuration. Let me try running them separately.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="404" cache_read_input_tokens="52252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 404}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me run the tests separately - the erk-shared package has its own test configuration.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="404" cache_read_input_tokens="52252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 404}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01CVbaA6QRkb8M69CWQGvFSw">
+    <param name="description">Run erk-shared tests separately</param>
+    <param name="prompt">Run these two pytest commands separately and report results for both:
+
+1. First run from t...[truncated 268 chars]...pytest tests/unit/shared/test_next_steps.py -v
+```
+
+Report all pass/fail results for both.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="404" cache_read_input_tokens="52252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 404}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CVbaA6QRkb8M69CWQGvFSw">
+pytest passed: All tests passed
+
+**Test 1** - `/packages/erk-shared/tests/unit/output/test_next_steps.py`: 8 passed in 0.02s
+
+**Test 2** - `tests/unit/shared/test_next_steps.py`: 18 passed in 0.02s
+
+Both test suites passed successfully with a total of 26 tests passing.
+agentId: acc816ee5c05c0175 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14218
+tool_uses: 2
+duration_ms: 3494&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 26 tests pass. Now let me run fast-ci to verify nothing else breaks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="52656" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 473}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01185vMc8TgJ92wSZc4wietx">
+    <param name="description">Run fast-ci checks</param>
+    <param name="prompt">Run `make fast-ci` from the project root `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39` and report results. This is a read-only verification step.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="52656" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 473}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01185vMc8TgJ92wSZc4wietx">
+## Fast CI Results - PASSED
+
+All checks passed successfully. Here's the summary:
+
+**Linting &amp; Formatting:**
+- Ruff linting: All checks passed
+- Format check: 1509 files already formatted
+- Prettier: All matched files use correct code style
+- Markdown metadata: PASSED (AGENTS.md and CLAUDE.md files properly paired across 19 files)
+- Exec reference: Up to date
+
+**Type Checking:**
+- `ty`: All checks passed
+
+**Test Suite:**
+- **erk unit tests**: 5478 passed in 21.18s
+- **erk-dev tests**: 136 passed in 3.28s
+- **erk-statusline tests**: 126 passed in 1.32s
+
+**Total:** 5740 tests passed with zero failures.
+agentId: a176dd6d79c03e73e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14581
+tool_uses: 1
+duration_ms: 38466&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 5740 tests pass, lint/format/type checks clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="53129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Vw4XhNGtcnpxtDs5MvbgwJ">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="53129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vw4XhNGtcnpxtDs5MvbgwJ">
+Updated task #5 status
+  </tool_result>
+  <assistant>Now let me verify the `.impl/` folder is preserved and signal completion.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="53550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 105}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W7wCNQfqREXeq7Wp9F2jNH">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="53550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 105}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W7wCNQfqREXeq7Wp9F2jNH">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.impl"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Rh2ywVAnGc4gnPDjVeucTs">
+    <param name="command">erk exec impl-signal ended --session-id="46f50821-d50e-405d-a491-cc9afe06d182" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="53550" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 105, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rh2ywVAnGc4gnPDjVeucTs">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 7986
+}
+  </tool_result>
+  <assistant>Now let me upload the session and submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="53655" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 323}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014JuvijmZiig2Znth7Th3je">
+    <param name="command">eval "$(erk exec capture-session-info)" &amp;&amp; ISSUE_NUMBER=$(jq -r '.issue_number // empty' ....[truncated 154 chars]...FILE" --session-id "$SESSION_ID" --source local --issue-number "$ISSUE_NUMBER" || true; fi</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="53655" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 323, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014JuvijmZiig2Znth7Th3je">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XNh2ZhZGTUw9nMQvBeLJdk">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="53978" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 229}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XNh2ZhZGTUw9nMQvBeLJdk">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FYncHKXFNSsMVnwArWwxYY">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that PR has been submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="54207" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 120}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DsQsnFCR2eX8AJbFFa8xsy">
+    <param name="command">erk pr check</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="54207" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 120}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FYncHKXFNSsMVnwArWwxYY">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 7986
+}
+  </tool_result>
+  <tool_result tool="toolu_01DsQsnFCR2eX8AJbFFa8xsy">
+Checking PR #7986 for branch plnd/rename-prepare-checkout-02-23-1054...
+
+[PASS] Branch name and plan reference agree (#7986)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Plan execution complete. All checks pass.
+
+## Summary
+
+Renamed all "prepare" properties to "checkout" in `next_steps.py` per PR review feedback:
+
+**Source** (`packages/erk-shared/src/erk_shared/output/next_steps.py`):
+- `prepare` → `checkout` (both `IssueNextSteps` and `DraftPRNextSteps`)
+- `prepare_and_implement` → `checkout_and_implement`
+- `prepare_new_slot` → `checkout_new_slot`
+- `prepare_new_slot_and_implement` → `checkout_new_slot_and_implement`
+- `checkout_and_implement` (branch-based) → `checkout_branch_and_implement` (to avoid collision)
+- `PREPARE_SLASH_COMMAND` → `CHECKOUT_SLASH_COMMAND`
+
+**Tests**: Updated both test files (26 tests, all passing)
+**Docs**: Updated property tables in `next-steps-output.md`
+**CI**: All 5740 tests pass, lint/format/type checks clean
+**PR**: Submitted as #7986</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="54327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="334" cache_read_input_tokens="54896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 334}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>

@@ -1,0 +1,48 @@
+{
+  "success": true,
+  "pr_number": 7986,
+  "comments": [
+    {
+      "id": 3946679448,
+      "author": "schrockn",
+      "body": "\ud83d\ude80 Starting implementation\n\n---\n\n**Worktree:** `erk-slot-39`\n**Branch:** `plnd/rename-prepare-checkout-02-23-1054`",
+      "url": "https://github.com/dagster-io/erk/pull/7986#issuecomment-3946679448"
+    },
+    {
+      "id": 3946701992,
+      "author": "schrockn",
+      "body": "* **#7986** <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7986?utm_source=stack-comment-icon\" target=\"_blank\"><img src=\"https://static.graphite.dev/graphite-32x32-black.png\" alt=\"Graphite\" width=\"10px\" height=\"10px\"/></a> \ud83d\udc48 <a href=\"https://app.graphite.com/github/pr/dagster-io/erk/7986?utm_source=stack-comment-view-in-graphite\" target=\"_blank\">(View in Graphite)</a>\n* `master`\n\n\n<h2></h2>\n\nThis stack of pull requests is managed by <a href=\"https://graphite.dev?utm-source=stack-comment\"><b>Graphite</b></a>. Learn more about <a href=\"https://stacking.dev/?utm_source=stack-comment\">stacking</a>.\n<!-- Current dependencies on/for this PR: -->",
+      "url": "https://github.com/dagster-io/erk/pull/7986#issuecomment-3946701992"
+    },
+    {
+      "id": 3946707420,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-python-review -->\n\n## \u2705 Dignified Python Review\n\n**Last updated:** 2026-02-23 11:01:04 PT\n\nNo violations found. All code is compliant with dignified-python standards.\n\n<details>\n<summary>Details</summary>\n\n### Patterns Checked\n\u2705 LBYL (Look Before You Leap) - None found\n\u2705 Path operations (.exists before .resolve) - None found\n\u2705 Import organization - All module-level, no issues\n\u2705 Frozen dataclasses - Both classes properly frozen\n\u2705 Properties O(1) - All property methods are O(1)\n\u2705 Subprocess patterns - None found\n\u2705 Exception handling - No EAFP patterns\n\n### Files Reviewed\n- `packages/erk-shared/src/erk_shared/output/next_steps.py`: No violations\n- `packages/erk-shared/tests/unit/output/test_next_steps.py`: No violations\n- `tests/unit/shared/test_next_steps.py`: No violations\n- `docs/learned/planning/next-steps-output.md`: Not Python\n\n---\n\n### Activity Log\n- **2026-02-23 11:01:04 PT**: No violations detected. Refactoring work (property name changes) compliant with all standards.\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7986#issuecomment-3946707420"
+    },
+    {
+      "id": 3946707792,
+      "author": "github-actions[bot]",
+      "body": "<!-- test-coverage-review -->\n\n## \u2705 Test Coverage Review\n\n**Last updated:** 2026-02-23 11:01:10 PT\n\nFound 0 violations. All source changes have test coverage.\n\n<details>\n<summary>Details</summary>\n\n### Files Reviewed\n\n| File | Status | Tests |\n|------|--------|-------|\n| `packages/erk-shared/src/erk_shared/output/next_steps.py` | Modified | \u2705 Fully covered |\n| `packages/erk-shared/tests/unit/output/test_next_steps.py` | Modified | \u2705 Test file |\n| `tests/unit/shared/test_next_steps.py` | Modified | \u2705 Test file |\n\n### Patterns Checked\n\u2705 Source additions with test coverage - None found (refactoring only)\n\u2705 Significant source modifications with test coverage - All modified source is covered\n\u2705 Test file deletions - None found\n\n### Summary\nThis PR is a refactoring that renames properties in `IssueNextSteps` and `DraftPRNextSteps` classes (`prepare` \u2192 `checkout`). All property methods return simple string templates and are fully covered by renamed test methods. Two new tests were added to verify format function output includes implement commands.\n\n### Excluded Files\n- `docs/learned/planning/next-steps-output.md` \u2014 documentation file\n\n---\n\n### Activity Log\n- **2026-02-23 11:01:10 PT**: Refactoring PR with property renames fully covered by test renames and 2 new tests\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7986#issuecomment-3946707792"
+    },
+    {
+      "id": 3946708559,
+      "author": "github-actions[bot]",
+      "body": "<!-- dignified-code-simplifier-review -->\n\n## \u2705 Dignified Code Simplifier Review\n\n**Last updated:** 2026-02-23 11:01:16 PT\n\nFound 0 violations. Code adheres to all dignified-python standards.\n\n<details>\n<summary>Details</summary>\n\n### Patterns Checked\n\u2705 O(1) Properties - All properties return simple f-strings (no I/O or iteration)\n\u2705 Frozen Dataclasses - Both IssueNextSteps and DraftPRNextSteps correctly use @dataclass(frozen=True)\n\u2705 LBYL Exception Handling - No exception handling patterns detected; no violations\n\u2705 Pathlib Usage - Not applicable (no file operations in this PR)\n\u2705 Absolute Imports - All imports are absolute and at module level\n\u2705 Backwards Compatibility - Breaking change is intentional (renaming for clarity)\n\u2705 Variable Declaration - No unnecessary variable declarations\n\u2705 Indentation Depth - All code stays within 4-level indentation limit\n\n### Files Reviewed\n- `packages/erk-shared/src/erk_shared/output/next_steps.py`: 0 violations\n- `docs/learned/planning/next-steps-output.md`: Documentation only\n- `packages/erk-shared/tests/unit/output/test_next_steps.py`: Test code\n- `tests/unit/shared/test_next_steps.py`: Test code\n\n---\n\n### Activity Log\n- **2026-02-23 11:01:16 PT**: No violations detected. Pure refactoring with intentional property renaming maintains dignified-python standards\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7986#issuecomment-3946708559"
+    },
+    {
+      "id": 3946712960,
+      "author": "github-actions[bot]",
+      "body": "<!-- audit-pr-docs -->\n\n## \u2705 Audit PR Docs\n\n**Last updated:** 2026-02-23 11:01:26 PT\n\nFound 0 violations across 1 file. No inline comments needed.\n\n<details>\n<summary>Details</summary>\n\n### Patterns Checked\n\u2705 Verbatim code blocks \u2014 None found\n\u2705 Inaccurate claims \u2014 None found\n\u2705 Duplicative sections \u2014 None found\n\u2705 Drift risk \u2014 None found\n\n### Files Reviewed\n- `docs/learned/planning/next-steps-output.md`: 0 violations\n\n**Audit summary:** `docs/learned/planning/next-steps-output.md` | Verdict: KEEP | Duplicative: ~15% | High-value: ~70% | Issues: 0\n\nThe doc accurately reflects the property renames in this PR (`prepare` \u2192 `checkout`, `prepare_and_implement` \u2192 `checkout_and_implement`, etc.). No code blocks to evaluate. Property output tables serve as output-contract documentation (permitted by CLI/output exception). Shell activation explanation and tripwire add cross-cutting value. The `CHECKOUT_SLASH_COMMAND` constant value in prose carries minor drift risk but is not a violation.\n\n---\n\n### Activity Log\n- **2026-02-23 11:01:26 PT**: Audited 1 doc: 1 KEEP. No violations detected \u2014 property renames accurately reflected.\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7986#issuecomment-3946712960"
+    },
+    {
+      "id": 3946716173,
+      "author": "github-actions[bot]",
+      "body": "<!-- tripwires-review -->\n\n## \u2705 Tripwires Review\n\n**Last updated:** 2026-02-23 11:02:34 PT\n\nFound 0 violations across 4 files. No violations detected.\n\n<details>\n<summary>Details</summary>\n\n### Tripwires Triggered\n- Testing tripwires (4 Tier 1 patterns, 3 Tier 2 semantic checks)\n- Documentation tripwires (0 Tier 1 patterns, 1 Tier 2 semantic check)\n\n### Tier 1 Pattern Matches (Mechanical)\n\u2705 `@patch|monkeypatch\\.` - None found\n\u2705 `Path\\.home\\(\\)` - None found\n\u2705 `monkeypatch\\.setattr.*Path\\.home|monkeypatch.*subprocess\\.run` - None found\n\u2705 `monkeypatch\\.chdir\\(` - None found\n\n### Tier 2 Semantic Matches\n\u2705 Renaming user-facing strings - All 'prepare' references consistently updated to 'checkout'\n\u2705 Modifying business logic without tests - New tests added for implement command output\n\u2705 Documentation frontmatter changes - Not applicable (only body content changed)\n\n### Files Reviewed\n- `docs/learned/planning/next-steps-output.md`: 0 violations\n- `packages/erk-shared/src/erk_shared/output/next_steps.py`: 0 violations\n- `packages/erk-shared/tests/unit/output/test_next_steps.py`: 0 violations\n- `tests/unit/shared/test_next_steps.py`: 0 violations\n\n### Code Quality Notes\nThis PR demonstrates good refactoring practice:\n- Consistent renaming across all files (prepare* \u2192 checkout*)\n- All test assertions updated to match new property names\n- Added test coverage for previously untested implement command output\n- Documentation updated to reflect code changes\n\n---\n\n### Activity Log\n- **2026-02-23 11:02:34 PT**: No violations detected. Checked 4 Tier 1 patterns (all clean) and 3 Tier 2 semantic rules (all compliant). PR includes consistent renaming with enhanced test coverage.\n\n</details>",
+      "url": "https://github.com/dagster-io/erk/pull/7986#issuecomment-3946716173"
+    }
+  ]
+}
