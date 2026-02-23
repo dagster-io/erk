@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Include branch_name in skipped_duplicate plan-save response"
+  "plan_id": "7944",
+  "url": "https://github.com/dagster-io/erk/pull/7944",
+  "created_at": "2026-02-22T20:12:48.886094",
+  "synced_at": "2026-02-22T20:12:48.886094",
+  "labels": [],
+  "objective_id": null
 }
