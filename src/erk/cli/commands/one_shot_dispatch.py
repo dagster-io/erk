@@ -140,6 +140,7 @@ def dispatch_one_shot(
     # Get GitHub username
     _, username, _ = ctx.github.check_auth_status()
     submitted_by = username or "unknown"
+    user_output(click.style(f"  \u2713 Authenticated as {submitted_by}", dim=True))
 
     # Detect trunk branch
     trunk = ctx.git.branch.detect_trunk_branch(repo.root)
@@ -223,7 +224,12 @@ def dispatch_one_shot(
         # Generate branch name with LLM-generated slug
         current_step = "Generating branch name"
         user_output("Generating branch name...")
+        user_output(click.style("  (calling haiku for slug generation...)", dim=True))
+        slug_start = time.monotonic()
         slug = generate_slug_or_fallback(ctx.prompt_executor, params.prompt)
+        slug_elapsed = time.monotonic() - slug_start
+        slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
+        user_output(click.style(slug_msg, dim=True))
         if is_draft_pr:
             # draft_pr: plnd/ prefix (no issue number needed)
             branch_name = generate_draft_pr_branch_name(
@@ -255,25 +261,32 @@ def dispatch_one_shot(
         current_step = "Creating branch"
         user_output("Creating branch...")
         ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
+        user_output(click.style("  \u2713 Branch created", dim=True))
 
         # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout).
         # (.impl/ is in .gitignore; .erk/impl-context/ is the committable counterpart
         # that the remote workflow copies into .impl/)
+        current_step = "Committing prompt file"
+        user_output("Committing prompt file...")
         ctx.git.commit.commit_files_to_branch(
             repo.root,
             branch=branch_name,
             files={".erk/impl-context/prompt.md": params.prompt + "\n"},
             message=f"One-shot: {params.prompt[:60]}",
         )
+        user_output(click.style("  \u2713 Committed", dim=True))
 
         # Push to remote
         current_step = "Pushing to remote"
         user_output("Pushing to remote...")
+        push_start = time.monotonic()
         push_result = ctx.git.remote.push_to_remote(
             repo.root, "origin", branch_name, set_upstream=True, force=False
         )
         if isinstance(push_result, PushError):
             Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+        push_elapsed = time.monotonic() - push_start
+        user_output(click.style(f"  \u2713 Pushed ({format_duration(push_elapsed)})", dim=True))
 
         # --- Create draft PR ---
         current_step = "Creating draft PR"
