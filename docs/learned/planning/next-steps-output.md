@@ -21,30 +21,15 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 ### `IssueNextSteps`
 
-For issue-based plans. Takes `issue_number: int` and `url: str`.
+For issue-based plans. Takes `issue_number: int` and `url: str`. Properties provide canonical command strings for view, checkout, submit, and implement operations.
 
-| Property                          | Output                                                                                             |
-| --------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `view`                            | `{url}` (the GitHub issue URL, directly clickable)                                                 |
-| `checkout`                        | `erk br co --for-plan {issue_number}`                                                              |
-| `submit`                          | `erk plan submit {issue_number}`                                                                   |
-| `checkout_and_implement`          | `source "$(erk br co --for-plan {issue_number} --script)" && erk implement --dangerous`            |
-| `checkout_new_slot`               | `erk br co --new-slot --for-plan {issue_number}`                                                   |
-| `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {issue_number} --script)" && erk implement --dangerous` |
+See source for all properties: `packages/erk-shared/src/erk_shared/output/next_steps.py` (`IssueNextSteps` class, line 7).
 
 ### `DraftPRNextSteps`
 
-For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`.
+For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`. Properties provide canonical command strings for view, checkout, submit, and implement operations.
 
-| Property                          | Output                                                                                          |
-| --------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `view`                            | `{url}` (the GitHub PR URL, directly clickable)                                                 |
-| `submit`                          | `erk plan submit {pr_number}`                                                                   |
-| `checkout_branch_and_implement`   | `source "$(erk br co {branch_name} --script)" && erk implement --dangerous`                     |
-| `checkout`                        | `erk br co --for-plan {pr_number}`                                                              |
-| `checkout_and_implement`          | `source "$(erk br co --for-plan {pr_number} --script)" && erk implement --dangerous`            |
-| `checkout_new_slot`               | `erk br co --new-slot --for-plan {pr_number}`                                                   |
-| `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {pr_number} --script)" && erk implement --dangerous` |
+See source for all properties: `packages/erk-shared/src/erk_shared/output/next_steps.py` (`DraftPRNextSteps` class, line 44).
 
 ## Shell Activation Pattern
 
