@@ -52,6 +52,7 @@
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
 - **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan issue, debugging why get-pr-for-plan returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field
 - **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs issue number distinction
+- **[refactoring-decomposition.md](refactoring-decomposition.md)** — deleting a function or type that has many callers across the codebase, planning a multi-node objective that removes a backend or feature flag, decomposing a large refactor into reviewable PRs
 - **[reliability-patterns.md](reliability-patterns.md)** — deciding whether an operation should be agent-driven or workflow-native, designing multi-layer resilience for critical automated operations, ordering git operations that mix cleanup with reset in CI workflows
 - **[remote-implementation-idempotency.md](remote-implementation-idempotency.md)** — implementing remote plan execution, debugging branch creation in remote workflows, working with worktree reuse patterns
 - **[schema-v3-migration.md](schema-v3-migration.md)** — working with plan metadata YAML keys, modifying roadmap parsing or rendering, encountering steps vs nodes naming in plan metadata

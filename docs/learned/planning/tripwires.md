@@ -34,8 +34,6 @@ Rules triggered by matching actions in code.
 
 **adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
 
-**adding plan storage behavior without checking plan backend type** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Two backends exist (github, draft_pr). Verify behavior works for both. See draft-pr-plan-backend.md.
-
 **adding post-dispatch operations without matching submit.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. dispatch_one_shot() and \_submit_single_issue() in submit.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
 
 **adding subprocess calls to trigger-async-learn** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below.
@@ -71,6 +69,8 @@ Rules triggered by matching actions in code.
 **changing branch naming convention (P{issue}- or plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The P{issue}- prefix (issue-based) and plnd/ prefix (draft-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers.
 
 **changing how sessions are classified as planning vs impl** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently.
+
+**checking erk exec plan-save --format json output for empty result** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture.
 
 **checking only one location when extracting plan content** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Always check both the first comment (plan-body metadata block) and the issue body before reporting 'no plan content found'. The replan command documents this explicitly in Step 4a.
 
@@ -120,8 +120,6 @@ Rules triggered by matching actions in code.
 
 **implementing PR body generation with checkout footers** → Read [Plan Lifecycle](lifecycle.md) first. HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``
 
-**implementing RealPlanListService or DraftPRPlanListService without checking the other for parity** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Both plan list services must handle parameters identically. Interface contracts are not enforced by the type system — behavioral divergence between the two services causes subtle bugs when switching backends.
-
 **implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
 
 **implementing draft-PR plan without syncing with remote** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Before implementing a draft-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase
@@ -168,8 +166,6 @@ Rules triggered by matching actions in code.
 
 **pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
 
-**reading ERK_PLAN_BACKEND env var inside inner functions when global_config is already in scope** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Backend detection precedence: when GlobalConfig.plan_backend is available via context, use it. Never fall back to re-reading env vars inside inner functions if global_config is already in scope — the context value takes precedence and re-reading env vars bypasses context overrides.
-
 **reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 
 **reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
@@ -197,8 +193,6 @@ Rules triggered by matching actions in code.
 **running sequential analysis that could be parallelized** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input.
 
 **saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
-
-**spawning a GitHub Actions workflow from erk without passing plan_backend as an explicit input** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Draft-PR backend propagation: GitHub Actions reusable workflows (workflow_call) do NOT inherit environment variables from the caller. ERK_PLAN_BACKEND must be declared as an explicit workflow input and passed by the caller. Ambient env vars are invisible to reusable workflows.
 
 **staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
 
