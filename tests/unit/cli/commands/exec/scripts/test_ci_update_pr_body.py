@@ -14,6 +14,7 @@ from erk.cli.commands.exec.scripts.ci_update_pr_body import (
     UpdateSuccess,
     _build_pr_body,
     _build_prompt,
+    _parse_title_and_summary,
     _update_pr_body_impl,
 )
 from erk.cli.commands.exec.scripts.ci_update_pr_body import (
@@ -81,6 +82,22 @@ def test_build_pr_body_includes_workflow_link_when_provided() -> None:
     assert "https://github.com/owner/repo/actions/runs/789" in body
 
 
+def test_parse_title_and_summary_multiline() -> None:
+    """Test _parse_title_and_summary with multi-line input."""
+    raw = "Fix login bug\n\nThis fixes the authentication issue.\n\nFiles changed: auth.py"
+    title, summary = _parse_title_and_summary(raw)
+    assert title == "Fix login bug"
+    assert summary == "This fixes the authentication issue.\n\nFiles changed: auth.py"
+
+
+def test_parse_title_and_summary_single_line() -> None:
+    """Test _parse_title_and_summary with single-line input."""
+    raw = "Fix login bug"
+    title, summary = _parse_title_and_summary(raw)
+    assert title == "Fix login bug"
+    assert summary == ""
+
+
 def test_build_pr_body_omits_workflow_link_when_not_provided() -> None:
     """Test that _build_pr_body omits workflow link when run_id or run_url is None."""
     body = _build_pr_body(
@@ -140,7 +157,13 @@ def test_impl_success(tmp_path: Path) -> None:
     )
 
     executor = FakePromptExecutor(
-        prompt_results=[PromptResult(success=True, output="Generated PR summary", error=None)]
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output="Generated PR title\n\nGenerated PR summary",
+                error=None,
+            )
+        ]
     )
 
     result = _update_pr_body_impl(
@@ -158,6 +181,14 @@ def test_impl_success(tmp_path: Path) -> None:
     assert isinstance(result, UpdateSuccess)
     assert result.success is True
     assert result.pr_number == 123
+    assert result.title == "Generated PR title"
+
+    # Verify both title and body were updated
+    assert len(github.updated_pr_titles) == 1
+    assert github.updated_pr_titles[0] == (123, "Generated PR title")
+    assert len(github.updated_pr_bodies) == 1
+    _pr_num, updated_body = github.updated_pr_bodies[0]
+    assert "Generated PR summary" in updated_body
 
 
 def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
@@ -466,7 +497,9 @@ def test_cli_success(tmp_path: Path) -> None:
     )
 
     executor = FakePromptExecutor(
-        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+        prompt_results=[
+            PromptResult(success=True, output="PR title\n\nGenerated summary", error=None)
+        ]
     )
 
     ctx = ErkContext.for_test(
@@ -484,6 +517,7 @@ def test_cli_success(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["pr_number"] == 123
+    assert output["title"] == "PR title"
 
 
 def test_cli_with_workflow_run(tmp_path: Path) -> None:
@@ -524,7 +558,9 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
     )
 
     executor = FakePromptExecutor(
-        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+        prompt_results=[
+            PromptResult(success=True, output="PR title\n\nGenerated summary", error=None)
+        ]
     )
 
     ctx = ErkContext.for_test(
@@ -548,6 +584,7 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
+    assert "title" in output
 
 
 def test_cli_error_exit_code(tmp_path: Path) -> None:
@@ -622,7 +659,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     )
 
     executor = FakePromptExecutor(
-        prompt_results=[PromptResult(success=True, output="Summary", error=None)]
+        prompt_results=[PromptResult(success=True, output="PR title\n\nSummary", error=None)]
     )
 
     ctx = ErkContext.for_test(
@@ -642,10 +679,12 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     # Verify expected keys
     assert "success" in output
     assert "pr_number" in output
+    assert "title" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
     assert isinstance(output["pr_number"], int)
+    assert isinstance(output["title"], str)
 
 
 def test_cli_json_output_structure_error(tmp_path: Path) -> None:
@@ -752,7 +791,9 @@ def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) 
     )
 
     executor = FakePromptExecutor(
-        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+        prompt_results=[
+            PromptResult(success=True, output="Generated title\n\nGenerated summary", error=None)
+        ]
     )
 
     result = _update_pr_body_impl(
@@ -769,15 +810,19 @@ def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) 
 
     assert isinstance(result, UpdateSuccess)
     assert result.pr_number == 42
+    assert result.title == "Generated title"
 
-    # Verify the updated body
+    # Verify both title and body were updated
+    assert len(github.updated_pr_titles) == 1
+    assert github.updated_pr_titles[0] == (42, "Generated title")
+
     updated_bodies = github.updated_pr_bodies
     assert len(updated_bodies) == 1
     _pr_num, updated_body = updated_bodies[0]
 
     # Should have metadata prefix preserved
     assert updated_body.startswith(metadata_prefix)
-    # Should have summary
+    # Should have summary (not title)
     assert "Generated summary" in updated_body
     # Should NOT have Closes #N
     assert "Closes #42" not in updated_body
@@ -834,7 +879,9 @@ def test_cli_draft_pr_flag(tmp_path: Path) -> None:
     )
 
     executor = FakePromptExecutor(
-        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+        prompt_results=[
+            PromptResult(success=True, output="Draft PR title\n\nGenerated summary", error=None)
+        ]
     )
 
     ctx = ErkContext.for_test(
@@ -852,8 +899,12 @@ def test_cli_draft_pr_flag(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["pr_number"] == 42
+    assert output["title"] == "Draft PR title"
 
-    # Verify the draft-PR body path was taken
+    # Verify both title and body were updated
+    assert len(github.updated_pr_titles) == 1
+    assert github.updated_pr_titles[0] == (42, "Draft PR title")
+
     updated_bodies = github.updated_pr_bodies
     assert len(updated_bodies) == 1
     _pr_num, updated_body = updated_bodies[0]

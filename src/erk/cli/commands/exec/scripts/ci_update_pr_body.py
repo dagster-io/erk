@@ -55,7 +55,7 @@ from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
-from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
 from erk_shared.plan_store.draft_pr_lifecycle import (
     build_original_plan_section,
@@ -70,6 +70,7 @@ class UpdateSuccess:
 
     success: bool
     pr_number: int
+    title: str
 
 
 @dataclass(frozen=True)
@@ -87,6 +88,19 @@ class UpdateError:
     ]
     message: str
     stderr: str | None
+
+
+def _parse_title_and_summary(raw_output: str) -> tuple[str, str]:
+    """Parse Claude's commit message output into title and summary.
+
+    The commit message prompt produces: first line = title, rest = body.
+    Returns (title, summary). If no newline found, title is the full output
+    and summary is empty.
+    """
+    lines = raw_output.strip().split("\n", 1)
+    title = lines[0].strip()
+    summary = lines[1].strip() if len(lines) > 1 else ""
+    return title, summary
 
 
 def _build_prompt(
@@ -253,6 +267,9 @@ def _update_pr_body_impl(
             stderr=stderr_preview,
         )
 
+    # Parse title and summary from Claude output
+    title, summary = _parse_title_and_summary(result.output)
+
     # Build full PR body
     if is_draft_pr:
         # For draft-PR plans: preserve metadata prefix, include original plan section
@@ -261,7 +278,7 @@ def _update_pr_body_impl(
         original_plan_section = build_original_plan_section(plan_content)
 
         summary_body = _build_pr_body(
-            summary=result.output,
+            summary=summary,
             pr_number=pr_number,
             issue_number=None,
             run_id=run_id,
@@ -271,7 +288,7 @@ def _update_pr_body_impl(
         pr_body = metadata_prefix + summary_body + original_plan_section
     else:
         pr_body = _build_pr_body(
-            summary=result.output,
+            summary=summary,
             pr_number=pr_number,
             issue_number=issue_number,
             run_id=run_id,
@@ -279,9 +296,14 @@ def _update_pr_body_impl(
             plans_repo=plans_repo,
         )
 
-    # Update PR body
+    # Update PR title and body
     try:
-        github.update_pr_body(repo_root, pr_number, pr_body)
+        github.update_pr_title_and_body(
+            repo_root=repo_root,
+            pr_number=pr_number,
+            title=title,
+            body=BodyText(content=pr_body),
+        )
     except RuntimeError as e:
         return UpdateError(
             success=False,
@@ -290,7 +312,7 @@ def _update_pr_body_impl(
             stderr=None,
         )
 
-    return UpdateSuccess(success=True, pr_number=pr_number)
+    return UpdateSuccess(success=True, pr_number=pr_number, title=title)
 
 
 @click.command(name="ci-update-pr-body")
