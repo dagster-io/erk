@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Collapse \"impld\" and \"impling\" into \"impl\""
+}
