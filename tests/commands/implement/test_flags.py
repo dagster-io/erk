@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
@@ -10,18 +9,12 @@ from erk_shared.gateway.git.fake import FakeGit
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store
-
-
-@pytest.fixture(params=["github", "planned_pr"])
-def plan_backend_type(request: pytest.FixtureRequest) -> str:
-    return request.param
-
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 # Submit Flag Tests
 
 
-def test_implement_with_submit_flag_from_issue(plan_backend_type: str) -> None:
+def test_implement_with_submit_flag_from_issue() -> None:
     """Test --submit flag with --script from issue includes command chain in script."""
     plan_issue = create_sample_plan_issue()
 
@@ -32,7 +25,7 @@ def test_implement_with_submit_flag_from_issue(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         # Use --script --submit to generate activation script with all commands
@@ -74,7 +67,7 @@ def test_implement_with_submit_flag_from_file() -> None:
         assert plan_file.exists()
 
 
-def test_implement_without_submit_uses_default_command(plan_backend_type: str) -> None:
+def test_implement_without_submit_uses_default_command() -> None:
     """Test that default behavior (without --submit) still works unchanged."""
     plan_issue = create_sample_plan_issue()
 
@@ -85,7 +78,7 @@ def test_implement_without_submit_uses_default_command(plan_backend_type: str) -
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
@@ -98,7 +91,7 @@ def test_implement_without_submit_uses_default_command(plan_backend_type: str) -
         assert ".sh" in result.output
 
 
-def test_implement_submit_in_script_mode(plan_backend_type: str) -> None:
+def test_implement_submit_in_script_mode() -> None:
     """Test that --script --submit combination generates correct activation script."""
     plan_issue = create_sample_plan_issue()
 
@@ -109,7 +102,7 @@ def test_implement_submit_in_script_mode(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--submit", "--script"], obj=ctx)
@@ -133,7 +126,7 @@ def test_implement_submit_in_script_mode(plan_backend_type: str) -> None:
         assert "&&" in script_content
 
 
-def test_implement_submit_with_dry_run(plan_backend_type: str) -> None:
+def test_implement_submit_with_dry_run() -> None:
     """Test that --submit --dry-run shows all commands that would be executed."""
     plan_issue = create_sample_plan_issue()
 
@@ -144,7 +137,7 @@ def test_implement_submit_with_dry_run(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(
@@ -169,7 +162,7 @@ def test_implement_submit_with_dry_run(plan_backend_type: str) -> None:
 # Dangerous Flag Tests
 
 
-def test_implement_with_dangerous_flag_in_script_mode(plan_backend_type: str) -> None:
+def test_implement_with_dangerous_flag_in_script_mode() -> None:
     """Test that --dangerous flag adds --dangerously-skip-permissions to generated script."""
     plan_issue = create_sample_plan_issue()
 
@@ -180,7 +173,7 @@ def test_implement_with_dangerous_flag_in_script_mode(plan_backend_type: str) ->
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--dangerous", "--script"], obj=ctx)
@@ -204,7 +197,7 @@ def test_implement_with_dangerous_flag_in_script_mode(plan_backend_type: str) ->
         assert expected_cmd in script_content
 
 
-def test_implement_without_dangerous_flag_in_script_mode(plan_backend_type: str) -> None:
+def test_implement_without_dangerous_flag_in_script_mode() -> None:
     """Test that script without --dangerous flag does not include --dangerously-skip-permissions."""
     plan_issue = create_sample_plan_issue()
 
@@ -215,7 +208,7 @@ def test_implement_without_dangerous_flag_in_script_mode(plan_backend_type: str)
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
@@ -236,7 +229,7 @@ def test_implement_without_dangerous_flag_in_script_mode(plan_backend_type: str)
         assert "claude --permission-mode acceptEdits /erk:plan-implement" in script_content
 
 
-def test_implement_with_dangerous_and_submit_flags(plan_backend_type: str) -> None:
+def test_implement_with_dangerous_and_submit_flags() -> None:
     """Test that --dangerous --submit combination adds flag to all three commands."""
     plan_issue = create_sample_plan_issue()
 
@@ -247,7 +240,7 @@ def test_implement_with_dangerous_and_submit_flags(plan_backend_type: str) -> No
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--dangerous", "--submit", "--script"], obj=ctx)
@@ -277,7 +270,7 @@ def test_implement_with_dangerous_and_submit_flags(plan_backend_type: str) -> No
         assert expected_submit in script_content
 
 
-def test_implement_with_dangerous_flag_in_dry_run(plan_backend_type: str) -> None:
+def test_implement_with_dangerous_flag_in_dry_run() -> None:
     """Test that --dangerous flag shows in dry-run output."""
     plan_issue = create_sample_plan_issue()
 
@@ -288,7 +281,7 @@ def test_implement_with_dangerous_flag_in_dry_run(plan_backend_type: str) -> Non
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--dangerous", "--dry-run"], obj=ctx)
@@ -308,7 +301,7 @@ def test_implement_with_dangerous_flag_in_dry_run(plan_backend_type: str) -> Non
         assert not (env.cwd / ".impl").exists()
 
 
-def test_implement_with_dangerous_and_submit_in_dry_run(plan_backend_type: str) -> None:
+def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
     """Test that --dangerous --submit shows flag in all three commands during dry-run."""
     plan_issue = create_sample_plan_issue()
 
@@ -319,7 +312,7 @@ def test_implement_with_dangerous_and_submit_in_dry_run(plan_backend_type: str) 
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(
@@ -373,7 +366,7 @@ def test_implement_plan_file_with_dangerous_flag() -> None:
         assert plan_file.exists()
 
 
-def test_implement_with_dangerous_shows_in_script_content(plan_backend_type: str) -> None:
+def test_implement_with_dangerous_shows_in_script_content() -> None:
     """Test that --dangerous flag appears in generated script content."""
     plan_issue = create_sample_plan_issue()
 
@@ -384,7 +377,7 @@ def test_implement_with_dangerous_shows_in_script_content(plan_backend_type: str
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         # Use --script flag to generate activation script with dangerous flag

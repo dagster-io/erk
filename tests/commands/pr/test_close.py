@@ -38,8 +38,8 @@ def test_close_plan_with_issue_number() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, fake_issues = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
+        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_github.issues)
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
@@ -47,9 +47,9 @@ def test_close_plan_with_issue_number() -> None:
         # Assert
         assert result.exit_code == 0
         assert "Closed plan #42" in result.output
-        assert 42 in fake_issues.closed_issues
-        # Verify GitHubPlanStore added a comment before closing
-        assert any(num == 42 and "completed" in body for num, body, _ in fake_issues.added_comments)
+        assert 42 in fake_github.closed_prs
+        # Verify PlannedPRBackend added a comment before closing
+        assert any(num == 42 and "completed" in body for num, body in fake_github.pr_comments)
 
 
 def test_close_plan_not_found() -> None:
@@ -309,9 +309,9 @@ def test_close_plan_with_objective_invokes_update() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor()
-        store, fake_issues = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, issues=fake_issues, prompt_executor=executor
+            env, plan_store=store, issues=fake_github.issues, prompt_executor=executor
         )
 
         # Act
@@ -348,9 +348,9 @@ def test_close_plan_without_objective_skips_update() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor()
-        store, fake_issues = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, issues=fake_issues, prompt_executor=executor
+            env, plan_store=store, issues=fake_github.issues, prompt_executor=executor
         )
 
         # Act
@@ -385,9 +385,9 @@ def test_close_plan_objective_update_failure_does_not_break_close() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor(command_should_fail=True)
-        store, fake_issues = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, issues=fake_issues, prompt_executor=executor
+            env, plan_store=store, issues=fake_github.issues, prompt_executor=executor
         )
 
         # Act

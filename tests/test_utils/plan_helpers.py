@@ -1,92 +1,22 @@
 """Helpers for creating plan stores with Plan objects in tests.
 
 This module provides utilities for tests that need to set up plan state.
-It converts Plan objects to the appropriate backing store format:
-- GitHubPlanStore backed by FakeGitHubIssues (GitHub Issues backend)
-- PlannedPRBackend backed by FakeGitHub (Planned PR backend)
-
-For dual-backend testing, use create_plan_store() which dispatches based
-on a backend parameter.
+It converts Plan objects to PlannedPRBackend backed by FakeGitHub.
 """
 
-from datetime import UTC
-
 from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,
     DETAILS_OPEN,
     PLAN_CONTENT_SEPARATOR,
 )
-from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
 _PLAN_HEADER_END_MARKER = "<!-- /erk:metadata-block:plan-header -->"
-
-
-def _plan_to_issue_info(plan: Plan) -> IssueInfo:
-    """Convert a Plan to IssueInfo for FakeGitHubIssues.
-
-    Args:
-        plan: Plan to convert
-
-    Returns:
-        IssueInfo with equivalent data
-
-    Note:
-        For schema v2 plans where metadata['issue_body'] contains the full issue body
-        with metadata blocks, we use that for the IssueInfo.body so that GitHubPlanStore
-        can properly extract plan headers (including objective_issue) when it converts
-        back to a Plan via _convert_to_plan().
-    """
-    # Map PlanState to GitHub state string
-    state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
-
-    # Use original issue body from metadata if available (schema v2)
-    # Otherwise fall back to plan.body (schema v1 or tests without metadata)
-    raw_issue_body = plan.metadata.get("issue_body") if plan.metadata else None
-    body = raw_issue_body if isinstance(raw_issue_body, str) else plan.body
-
-    return IssueInfo(
-        number=int(plan.plan_identifier),
-        title=plan.title,
-        body=body,
-        state=state,
-        url=plan.url,
-        labels=plan.labels,
-        assignees=plan.assignees,
-        created_at=plan.created_at.astimezone(UTC),
-        updated_at=plan.updated_at.astimezone(UTC),
-        author="test-author",
-    )
-
-
-def create_plan_store_with_plans(
-    plans: dict[str, Plan],
-) -> tuple[GitHubPlanStore, FakeGitHubIssues]:
-    """Create GitHubPlanStore backed by FakeGitHubIssues.
-
-    This helper converts Plan objects to IssueInfo so tests can continue
-    constructing Plan objects while using GitHubPlanStore internally.
-
-    Args:
-        plans: Mapping of plan_identifier -> Plan
-
-    Returns:
-        Tuple of (store, fake_issues) for test assertions.
-        The fake_issues object provides mutation tracking like:
-        - fake_issues.closed_issues: list of issue numbers that were closed
-        - fake_issues.added_comments: list of (issue_number, body, comment_id) tuples
-    """
-    issues = {int(id): _plan_to_issue_info(plan) for id, plan in plans.items()}
-    fake_issues = FakeGitHubIssues(issues=issues)
-    return GitHubPlanStore(fake_issues), fake_issues
 
 
 def _plan_to_pr_details(plan: Plan) -> PRDetails:
@@ -145,7 +75,7 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
     )
 
 
-def create_planned_pr_store_with_plans(
+def create_plan_store_with_plans(
     plans: dict[str, Plan],
 ) -> tuple[PlannedPRBackend, FakeGitHub]:
     """Create PlannedPRBackend backed by FakeGitHub.
@@ -194,29 +124,6 @@ def create_planned_pr_store_with_plans(
         fake_github.set_pr_labels(pr_number, labels)
 
     return PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
-
-
-def create_plan_store(
-    plans: dict[str, Plan],
-    *,
-    backend: str,
-) -> tuple[PlanStore, FakeGitHubIssues | FakeGitHub]:
-    """Create a plan store for the given backend type.
-
-    Polymorphic dispatcher that creates the appropriate store type
-    based on the backend parameter. Use in tests that opt into
-    dual-backend testing via a plan_backend_type fixture.
-
-    Args:
-        plans: Mapping of plan_identifier -> Plan
-        backend: Backend type - "github" or "draft_pr"
-
-    Returns:
-        Tuple of (store, fake) where fake is FakeGitHubIssues or FakeGitHub.
-    """
-    if backend == "planned_pr":
-        return create_planned_pr_store_with_plans(plans)
-    return create_plan_store_with_plans(plans)
 
 
 def format_plan_header_body_for_test(
