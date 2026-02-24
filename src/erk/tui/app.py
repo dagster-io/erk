@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import subprocess
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -560,42 +560,196 @@ class ErkDashApp(App):
                 timeout=5,
             )
 
-    def _push_streaming_detail(
-        self,
-        *,
-        row: PlanRowData,
-        command: list[str],
-        title: str,
-        timeout: float,
-        on_success: Callable[[], None] | None,
-    ) -> PlanDetailScreen:
-        """Push a detail screen and run a streaming command after refresh."""
-        executor = RealCommandExecutor(
-            browser_launch=self._provider.browser.launch,
-            clipboard_copy=self._provider.clipboard.copy,
-            close_plan_fn=self._provider.close_plan,
-            notify_fn=self._notify_with_severity,
-            refresh_fn=self.action_refresh,
-            submit_to_queue_fn=self._provider.submit_to_queue,
-        )
-        detail_screen = PlanDetailScreen(
-            row=row,
-            clipboard=self._provider.clipboard,
-            browser=self._provider.browser,
-            executor=executor,
-            repo_root=self._provider.repo_root,
-        )
-        self.push_screen(detail_screen)
-        detail_screen.call_after_refresh(
-            lambda: detail_screen.run_streaming_command(
-                command,
-                cwd=self._provider.repo_root,
-                title=title,
-                timeout=timeout,
-                on_success=on_success,
+    @work(thread=True)
+    def _fix_conflicts_remote_async(self, pr_number: int) -> None:
+        """Dispatch fix-conflicts workflow in background thread with toast."""
+        try:
+            subprocess.run(
+                ["erk", "launch", "pr-fix-conflicts", "--pr", str(pr_number), "--no-wait"],
+                capture_output=True,
+                text=True,
+                check=True,
+                stdin=subprocess.DEVNULL,
+                cwd=str(self._provider.repo_root),
             )
-        )
-        return detail_screen
+            self.call_from_thread(
+                self.notify, f"Dispatched fix-conflicts for PR #{pr_number}", timeout=3
+            )
+            self.call_from_thread(self.action_refresh)
+        except subprocess.CalledProcessError as e:
+            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            self.call_from_thread(
+                self.notify,
+                f"Failed to dispatch fix-conflicts for PR #{pr_number}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    @work(thread=True)
+    def _land_pr_async(
+        self, pr_number: int, branch: str, objective_issue: int | None
+    ) -> None:
+        """Land PR in background thread with toast."""
+        try:
+            subprocess.run(
+                [
+                    "erk",
+                    "exec",
+                    "land-execute",
+                    f"--pr-number={pr_number}",
+                    f"--branch={branch}",
+                    "-f",
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+                stdin=subprocess.DEVNULL,
+                cwd=str(self._provider.repo_root),
+            )
+            self.call_from_thread(self.notify, f"Landed PR #{pr_number}", timeout=3)
+            self.call_from_thread(self.action_refresh)
+        except subprocess.CalledProcessError as e:
+            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            self.call_from_thread(
+                self.notify,
+                f"Failed to land PR #{pr_number}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+            return
+
+        if objective_issue is not None:
+            self.call_from_thread(
+                self.notify, f"Updating objective #{objective_issue}...", timeout=3
+            )
+            try:
+                subprocess.run(
+                    [
+                        "erk",
+                        "exec",
+                        "objective-update-after-land",
+                        f"--objective={objective_issue}",
+                        f"--pr={pr_number}",
+                        f"--branch={branch}",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                    stdin=subprocess.DEVNULL,
+                    cwd=str(self._provider.repo_root),
+                )
+                self.call_from_thread(
+                    self.notify, f"Updated objective #{objective_issue}", timeout=3
+                )
+            except subprocess.CalledProcessError as e:
+                error_msg = (
+                    (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+                )
+                self.call_from_thread(
+                    self.notify,
+                    f"Failed to update objective #{objective_issue}: {error_msg}",
+                    severity="error",
+                    timeout=5,
+                )
+
+    @work(thread=True)
+    def _submit_to_queue_async(self, plan_id: int) -> None:
+        """Submit plan to queue in background thread with toast."""
+        try:
+            subprocess.run(
+                ["erk", "plan", "submit", str(plan_id), "-f"],
+                capture_output=True,
+                text=True,
+                check=True,
+                stdin=subprocess.DEVNULL,
+                cwd=str(self._provider.repo_root),
+            )
+            self.call_from_thread(
+                self.notify, f"Submitted plan #{plan_id} to queue", timeout=3
+            )
+            self.call_from_thread(self.action_refresh)
+        except subprocess.CalledProcessError as e:
+            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            self.call_from_thread(
+                self.notify,
+                f"Failed to submit plan #{plan_id}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    @work(thread=True)
+    def _close_objective_async(self, plan_id: int) -> None:
+        """Close objective in background thread with toast."""
+        try:
+            subprocess.run(
+                ["erk", "objective", "close", str(plan_id), "--force"],
+                capture_output=True,
+                text=True,
+                check=True,
+                stdin=subprocess.DEVNULL,
+                cwd=str(self._provider.repo_root),
+            )
+            self.call_from_thread(
+                self.notify, f"Closed objective #{plan_id}", timeout=3
+            )
+            self.call_from_thread(self.action_refresh)
+        except subprocess.CalledProcessError as e:
+            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            self.call_from_thread(
+                self.notify,
+                f"Failed to close objective #{plan_id}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    @work(thread=True)
+    def _check_objective_async(self, plan_id: int) -> None:
+        """Check objective in background thread with toast."""
+        try:
+            subprocess.run(
+                ["erk", "objective", "check", str(plan_id)],
+                capture_output=True,
+                text=True,
+                check=True,
+                stdin=subprocess.DEVNULL,
+                cwd=str(self._provider.repo_root),
+            )
+            self.call_from_thread(
+                self.notify, f"Checked objective #{plan_id}", timeout=3
+            )
+        except subprocess.CalledProcessError as e:
+            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            self.call_from_thread(
+                self.notify,
+                f"Failed to check objective #{plan_id}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    @work(thread=True)
+    def _one_shot_plan_async(self, plan_id: int) -> None:
+        """Dispatch one-shot plan in background thread with toast."""
+        try:
+            subprocess.run(
+                ["erk", "objective", "plan", str(plan_id), "--one-shot"],
+                capture_output=True,
+                text=True,
+                check=True,
+                stdin=subprocess.DEVNULL,
+                cwd=str(self._provider.repo_root),
+            )
+            self.call_from_thread(
+                self.notify, f"Dispatched one-shot plan for objective #{plan_id}", timeout=3
+            )
+            self.call_from_thread(self.action_refresh)
+        except subprocess.CalledProcessError as e:
+            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            self.call_from_thread(
+                self.notify,
+                f"Failed to dispatch one-shot plan for objective #{plan_id}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
 
     def action_show_detail(self) -> None:
         """Show plan detail modal for selected row."""
@@ -909,36 +1063,8 @@ class ErkDashApp(App):
 
         elif command_id == "fix_conflicts_remote":
             if row.pr_number:
-                executor = RealCommandExecutor(
-                    browser_launch=self._provider.browser.launch,
-                    clipboard_copy=self._provider.clipboard.copy,
-                    close_plan_fn=self._provider.close_plan,
-                    notify_fn=self._notify_with_severity,
-                    refresh_fn=self.action_refresh,
-                    submit_to_queue_fn=self._provider.submit_to_queue,
-                )
-                detail_screen = PlanDetailScreen(
-                    row=row,
-                    clipboard=self._provider.clipboard,
-                    browser=self._provider.browser,
-                    executor=executor,
-                    repo_root=self._provider.repo_root,
-                )
-                self.push_screen(detail_screen)
-                detail_screen.call_after_refresh(
-                    lambda: detail_screen.run_streaming_command(
-                        [
-                            "erk",
-                            "launch",
-                            "pr-fix-conflicts",
-                            "--pr",
-                            str(row.pr_number),
-                            "--no-wait",
-                        ],
-                        cwd=self._provider.repo_root,
-                        title=f"Fix Conflicts Remote PR #{row.pr_number}",
-                    )
-                )
+                self.notify(f"Dispatching fix-conflicts for PR #{row.pr_number}...")
+                self._fix_conflicts_remote_async(row.pr_number)
 
         elif command_id == "address_remote":
             if row.pr_number:
@@ -953,51 +1079,13 @@ class ErkDashApp(App):
 
         elif command_id == "submit_to_queue":
             if row.plan_url:
-                self._push_streaming_detail(
-                    row=row,
-                    command=["erk", "plan", "submit", str(row.plan_id), "-f"],
-                    title=f"Submit Plan #{row.plan_id}",
-                    timeout=30.0,
-                    on_success=self.action_refresh,
-                )
+                self.notify(f"Submitting plan #{row.plan_id} to queue...")
+                self._submit_to_queue_async(row.plan_id)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
-                pr_num = row.pr_number
-                branch = row.pr_head_branch
-                objective_issue = row.objective_issue
-
-                def _on_land_success() -> None:
-                    self.action_refresh()
-                    if objective_issue is not None:
-                        detail_screen.run_streaming_command(
-                            [
-                                "erk",
-                                "exec",
-                                "objective-update-after-land",
-                                f"--objective={objective_issue}",
-                                f"--pr={pr_num}",
-                                f"--branch={branch}",
-                            ],
-                            cwd=self._provider.repo_root,
-                            title=f"Update Objective #{objective_issue}",
-                            timeout=300.0,
-                        )
-
-                detail_screen = self._push_streaming_detail(
-                    row=row,
-                    command=[
-                        "erk",
-                        "exec",
-                        "land-execute",
-                        f"--pr-number={pr_num}",
-                        f"--branch={branch}",
-                        "-f",
-                    ],
-                    title=f"Land PR #{pr_num}",
-                    timeout=600.0,
-                    on_success=_on_land_success,
-                )
+                self.notify(f"Landing PR #{row.pr_number}...")
+                self._land_pr_async(row.pr_number, row.pr_head_branch, row.objective_issue)
 
         elif command_id == "copy_replan":
             cmd = f"/erk:replan {row.plan_id}"
@@ -1021,37 +1109,16 @@ class ErkDashApp(App):
                 self.notify(f"Opened objective #{row.plan_id}")
 
         elif command_id == "one_shot_plan":
-            self._push_streaming_detail(
-                row=row,
-                command=[
-                    "erk",
-                    "objective",
-                    "plan",
-                    str(row.plan_id),
-                    "--one-shot",
-                ],
-                title=f"Implement (One-Shot) #{row.plan_id}",
-                timeout=600.0,
-                on_success=None,
-            )
+            self.notify(f"Dispatching one-shot plan for objective #{row.plan_id}...")
+            self._one_shot_plan_async(row.plan_id)
 
         elif command_id == "check_objective":
-            self._push_streaming_detail(
-                row=row,
-                command=["erk", "objective", "check", str(row.plan_id)],
-                title=f"Check Objective #{row.plan_id}",
-                timeout=30.0,
-                on_success=None,
-            )
+            self.notify(f"Checking objective #{row.plan_id}...")
+            self._check_objective_async(row.plan_id)
 
         elif command_id == "close_objective":
-            self._push_streaming_detail(
-                row=row,
-                command=["erk", "objective", "close", str(row.plan_id), "--force"],
-                title=f"Close Objective #{row.plan_id}",
-                timeout=30.0,
-                on_success=None,
-            )
+            self.notify(f"Closing objective #{row.plan_id}...")
+            self._close_objective_async(row.plan_id)
 
         elif command_id == "codespace_run_plan":
             cmd = f"erk codespace run objective plan {row.plan_id}"

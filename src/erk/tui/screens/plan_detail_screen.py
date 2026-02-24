@@ -366,13 +366,14 @@ class PlanDetailScreen(ModalScreen):
 
     def action_fix_conflicts_remote(self) -> None:
         """Launch remote conflict resolution workflow."""
-        if self._row.pr_number is None or self._repo_root is None:
+        from erk.tui.app import ErkDashApp
+
+        if self._row.pr_number is None:
             return
-        self.run_streaming_command(
-            ["erk", "launch", "pr-fix-conflicts", "--pr", str(self._row.pr_number), "--no-wait"],
-            cwd=self._repo_root,
-            title=f"Fix Conflicts Remote PR #{self._row.pr_number}",
-        )
+        self.dismiss()
+        if isinstance(self.app, ErkDashApp):
+            self.app.notify(f"Dispatching fix-conflicts for PR #{self._row.pr_number}...")
+            self.app._fix_conflicts_remote_async(self._row.pr_number)
 
     def action_copy_output_logs(self) -> None:
         """Copy command output logs to clipboard."""
@@ -697,20 +698,18 @@ class PlanDetailScreen(ModalScreen):
                 executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "fix_conflicts_remote":
-            if row.pr_number is not None and self._repo_root is not None:
-                self.run_streaming_command(
-                    ["erk", "launch", "pr-fix-conflicts", "--pr", str(row.pr_number), "--no-wait"],
-                    cwd=self._repo_root,
-                    title=f"Fix Conflicts Remote PR #{row.pr_number}",
-                )
+            if row.pr_number is not None:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Dispatching fix-conflicts for PR #{row.pr_number}...")
+                    self.app._fix_conflicts_remote_async(row.pr_number)
 
         elif command_id == "address_remote":
-            if row.pr_number is not None and self._repo_root is not None:
-                self.run_streaming_command(
-                    ["erk", "launch", "pr-address", "--pr", str(row.pr_number), "--no-wait"],
-                    cwd=self._repo_root,
-                    title=f"Address Remote PR #{row.pr_number}",
-                )
+            if row.pr_number is not None:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Dispatching address for PR #{row.pr_number}...")
+                    self.app._address_remote_async(row.pr_number)
 
         elif command_id == "close_plan":
             if row.plan_url:
@@ -722,53 +721,18 @@ class PlanDetailScreen(ModalScreen):
                     self.app._close_plan_async(row.plan_id, row.plan_url)
 
         elif command_id == "submit_to_queue":
-            if row.plan_url and self._repo_root is not None:
-                self.run_streaming_command(
-                    ["erk", "plan", "submit", str(row.plan_id), "-f"],
-                    cwd=self._repo_root,
-                    title=f"Submit Plan #{row.plan_id}",
-                    timeout=30.0,
-                    on_success=self._executor.refresh_data if self._executor else None,
-                )
+            if row.plan_url:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Submitting plan #{row.plan_id} to queue...")
+                    self.app._submit_to_queue_async(row.plan_id)
 
         elif command_id == "land_pr":
-            if row.pr_number and row.pr_head_branch and self._repo_root is not None:
-                pr_num = row.pr_number
-                branch = row.pr_head_branch
-                objective_issue = row.objective_issue
-
-                def _on_land_success() -> None:
-                    if self._executor is not None:
-                        self._executor.refresh_data()
-                    if objective_issue is not None and self._repo_root is not None:
-                        self.run_streaming_command(
-                            [
-                                "erk",
-                                "exec",
-                                "objective-update-after-land",
-                                f"--objective={objective_issue}",
-                                f"--pr={pr_num}",
-                                f"--branch={branch}",
-                            ],
-                            cwd=self._repo_root,
-                            title=f"Update Objective #{objective_issue}",
-                            timeout=300.0,
-                        )
-
-                self.run_streaming_command(
-                    [
-                        "erk",
-                        "exec",
-                        "land-execute",
-                        f"--pr-number={pr_num}",
-                        f"--branch={branch}",
-                        "-f",
-                    ],
-                    cwd=self._repo_root,
-                    title=f"Land PR #{pr_num}",
-                    timeout=600.0,
-                    on_success=_on_land_success,
-                )
+            if row.pr_number and row.pr_head_branch:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Landing PR #{row.pr_number}...")
+                    self.app._land_pr_async(row.pr_number, row.pr_head_branch, row.objective_issue)
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""

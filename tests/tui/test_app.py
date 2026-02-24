@@ -1,6 +1,5 @@
 """Tests for ErkDashApp using Textual Pilot."""
 
-from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -875,8 +874,7 @@ class TestCommandPaletteFromMainCopyVariants:
 class TestExecutePaletteCommandLandPR:
     """Tests for execute_palette_command('land_pr').
 
-    land_pr uses modal streaming via _push_streaming_detail.
-    These tests verify guard conditions and that a PlanDetailScreen is pushed.
+    land_pr uses toast + background worker pattern.
     """
 
     @pytest.mark.asyncio
@@ -902,30 +900,6 @@ class TestExecutePaletteCommandLandPR:
             assert len(app.screen_stack) == initial_stack_len
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_land_pr_pushes_streaming_detail(
-        self, tmp_path: Path
-    ) -> None:
-        """Execute palette command land_pr pushes a PlanDetailScreen modal."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            initial_stack_len = len(app.screen_stack)
-            app.execute_palette_command("land_pr")
-            await pilot.pause()
-
-            # Should have pushed a PlanDetailScreen
-            assert len(app.screen_stack) == initial_stack_len + 1
-            assert isinstance(app.screen_stack[-1], PlanDetailScreen)
-
-    @pytest.mark.asyncio
     async def test_execute_palette_command_land_pr_with_no_branch(self) -> None:
         """Execute palette command land_pr does nothing if no pr_head_branch."""
         provider = FakePlanDataProvider(
@@ -948,47 +922,10 @@ class TestExecutePaletteCommandLandPR:
             assert len(app.screen_stack) == initial_stack_len
 
 
-class TestExecutePaletteCommandSubmitToQueue:
-    """Tests for execute_palette_command('submit_to_queue').
-
-    submit_to_queue uses modal streaming via _push_streaming_detail.
-    These tests verify guard conditions and that a PlanDetailScreen is pushed.
-    """
-
-    @pytest.mark.asyncio
-    async def test_execute_palette_command_submit_to_queue_pushes_streaming_detail(
-        self, tmp_path: Path
-    ) -> None:
-        """submit_to_queue pushes a PlanDetailScreen modal."""
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(123, "Test Plan", plan_url="https://github.com/test/repo/issues/123")
-            ],
-            repo_root=tmp_path,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            initial_stack_len = len(app.screen_stack)
-            app.execute_palette_command("submit_to_queue")
-            await pilot.pause()
-
-            # Should have pushed a PlanDetailScreen
-            assert len(app.screen_stack) == initial_stack_len + 1
-            assert isinstance(app.screen_stack[-1], PlanDetailScreen)
-
-
 class TestExecutePaletteCommandFixConflictsRemote:
     """Tests for execute_palette_command('fix_conflicts_remote').
 
-    Note: fix_conflicts_remote uses streaming output via subprocess. These tests verify
-    the guard conditions. The guard condition test (no PR) doesn't invoke
-    subprocess, so it can be tested without a real directory. Testing the
-    positive case with actual subprocess execution is done via integration tests.
+    fix_conflicts_remote uses toast + background worker pattern.
     """
 
     @pytest.mark.asyncio
@@ -1012,67 +949,6 @@ class TestExecutePaletteCommandFixConflictsRemote:
 
             # Should not have pushed a new screen
             assert len(app.screen_stack) == initial_stack_len
-
-    @pytest.mark.asyncio
-    async def test_execute_palette_command_fix_conflicts_remote_pushes_screen_and_runs_command(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        """Execute palette command fix_conflicts_remote pushes screen and runs correct command."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        # Capture the command passed to run_streaming_command
-        captured_command = None
-
-        def mock_run_streaming_command(
-            self: PlanDetailScreen,
-            command: list[str],
-            cwd: Path,
-            title: str,
-            *,
-            timeout: float = 30.0,
-            on_success: Callable[[], None] | None = None,
-        ) -> None:
-            nonlocal captured_command
-            captured_command = command
-
-        # Patch run_streaming_command to capture the command
-        monkeypatch.setattr(
-            PlanDetailScreen,
-            "run_streaming_command",
-            mock_run_streaming_command,
-        )
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            initial_stack_len = len(app.screen_stack)
-
-            # Execute fix_conflicts_remote command
-            app.execute_palette_command("fix_conflicts_remote")
-            await pilot.pause()
-
-            # Should have pushed a new screen
-            assert len(app.screen_stack) == initial_stack_len + 1
-
-            detail_screen = app.screen_stack[-1]
-            assert isinstance(detail_screen, PlanDetailScreen)
-
-            # Verify correct command was prepared
-            assert captured_command is not None
-            assert captured_command == [
-                "erk",
-                "launch",
-                "pr-fix-conflicts",
-                "--pr",
-                "456",
-                "--no-wait",
-            ]
 
 
 class TestStreamingCommandTimeout:
@@ -2223,7 +2099,7 @@ class TestActionLaunch:
 
             app._on_launch_result("copy_prepare")
 
-            assert clipboard.last_copied == "erk br create --for-plan 123"
+            assert clipboard.last_copied == "erk br co --for-plan 123"
 
 
 class TestAddressRemoteAsync:
@@ -2324,3 +2200,561 @@ class TestAddressRemoteAsync:
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
+
+
+class TestFixConflictsRemoteAsync:
+    """Tests for _fix_conflicts_remote_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_fix_conflicts_remote_passes_no_wait(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_fix_conflicts_remote_async should pass --no-wait to subprocess."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_args: list[str] = []
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_args.extend(args)
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._fix_conflicts_remote_async(456)
+            await pilot.pause(0.3)
+
+            assert captured_args == [
+                "erk", "launch", "pr-fix-conflicts", "--pr", "456", "--no-wait",
+            ]
+
+    @pytest.mark.asyncio
+    async def test_fix_conflicts_remote_triggers_refresh_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_fix_conflicts_remote_async should trigger refresh after success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._fix_conflicts_remote_async(456)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+    @pytest.mark.asyncio
+    async def test_fix_conflicts_remote_no_refresh_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_fix_conflicts_remote_async should NOT refresh on failure."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            raise subprocess.CalledProcessError(1, args, stderr="dispatch failed")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._fix_conflicts_remote_async(456)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count == count_before
+
+
+class TestLandPrAsync:
+    """Tests for _land_pr_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_land_pr_runs_correct_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should run land-execute with correct args."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_calls.append(list(args))
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._land_pr_async(456, "test-branch", None)
+            await pilot.pause(0.3)
+
+            assert len(captured_calls) == 1
+            assert captured_calls[0] == [
+                "erk", "exec", "land-execute", "--pr-number=456", "--branch=test-branch", "-f",
+            ]
+
+    @pytest.mark.asyncio
+    async def test_land_pr_triggers_refresh_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should trigger refresh after success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._land_pr_async(456, "test-branch", None)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+    @pytest.mark.asyncio
+    async def test_land_pr_no_refresh_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should NOT refresh on failure."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            raise subprocess.CalledProcessError(1, args, stderr="land failed")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._land_pr_async(456, "test-branch", None)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count == count_before
+
+    @pytest.mark.asyncio
+    async def test_land_pr_chains_objective_update(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should chain objective update when objective_issue is set."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(
+                123, "Test Plan",
+                pr_number=456,
+                pr_head_branch="test-branch",
+                objective_issue=789,
+            )],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_calls.append(list(args))
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._land_pr_async(456, "test-branch", 789)
+            await pilot.pause(0.3)
+
+            assert len(captured_calls) == 2
+            assert captured_calls[1] == [
+                "erk", "exec", "objective-update-after-land",
+                "--objective=789", "--pr=456", "--branch=test-branch",
+            ]
+
+    @pytest.mark.asyncio
+    async def test_land_pr_skips_objective_update_without_objective(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should NOT chain objective update without objective."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_calls.append(list(args))
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._land_pr_async(456, "test-branch", None)
+            await pilot.pause(0.3)
+
+            # Only the land command, no objective update
+            assert len(captured_calls) == 1
+
+
+class TestSubmitToQueueAsync:
+    """Tests for _submit_to_queue_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_submit_to_queue_runs_correct_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_submit_to_queue_async should run correct subprocess command."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_args: list[str] = []
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_args.extend(args)
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._submit_to_queue_async(123)
+            await pilot.pause(0.3)
+
+            assert captured_args == ["erk", "plan", "submit", "123", "-f"]
+
+    @pytest.mark.asyncio
+    async def test_submit_to_queue_triggers_refresh_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_submit_to_queue_async should trigger refresh after success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._submit_to_queue_async(123)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+    @pytest.mark.asyncio
+    async def test_submit_to_queue_no_refresh_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_submit_to_queue_async should NOT refresh on failure."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            raise subprocess.CalledProcessError(1, args, stderr="submit failed")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._submit_to_queue_async(123)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count == count_before
+
+
+class TestCloseObjectiveAsync:
+    """Tests for _close_objective_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_close_objective_runs_correct_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_close_objective_async should run correct subprocess command."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_args: list[str] = []
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_args.extend(args)
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._close_objective_async(123)
+            await pilot.pause(0.3)
+
+            assert captured_args == ["erk", "objective", "close", "123", "--force"]
+
+    @pytest.mark.asyncio
+    async def test_close_objective_triggers_refresh_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_close_objective_async should trigger refresh after success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._close_objective_async(123)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+
+class TestCheckObjectiveAsync:
+    """Tests for _check_objective_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_check_objective_runs_correct_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_check_objective_async should run correct subprocess command."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_args: list[str] = []
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_args.extend(args)
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._check_objective_async(123)
+            await pilot.pause(0.3)
+
+            assert captured_args == ["erk", "objective", "check", "123"]
+
+    @pytest.mark.asyncio
+    async def test_check_objective_no_refresh(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_check_objective_async should NOT trigger refresh (read-only)."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._check_objective_async(123)
+            await pilot.pause(0.3)
+
+            # check_objective is read-only, no refresh
+            assert provider.fetch_count == count_before
+
+
+class TestOneShotPlanAsync:
+    """Tests for _one_shot_plan_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_one_shot_plan_runs_correct_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_one_shot_plan_async should run correct subprocess command."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_args: list[str] = []
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            captured_args.extend(args)
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._one_shot_plan_async(123)
+            await pilot.pause(0.3)
+
+            assert captured_args == ["erk", "objective", "plan", "123", "--one-shot"]
+
+    @pytest.mark.asyncio
+    async def test_one_shot_plan_triggers_refresh_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_one_shot_plan_async should trigger refresh after success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._one_shot_plan_async(123)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
