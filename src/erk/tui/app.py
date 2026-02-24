@@ -550,8 +550,7 @@ class ErkDashApp(App):
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            cmd_str = shlex.join(cmd)
-            self.call_from_thread(self.notify, f"Dispatched: {cmd_str}", timeout=3)
+            self.call_from_thread(self.notify, f"Dispatched: {shlex.join(cmd)}", timeout=3)
         except subprocess.CalledProcessError as e:
             error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
             self.call_from_thread(
