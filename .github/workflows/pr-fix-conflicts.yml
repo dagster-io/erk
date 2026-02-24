@@ -157,3 +157,19 @@ jobs:
           printf "%b" "$BODY" > "$TEMP_FILE"
           gh pr comment "$PR_NUMBER" --body-file "$TEMP_FILE"
           rm "$TEMP_FILE"
+
+      - name: Update plan header with dispatch metadata
+        if: always() && inputs.plan_number != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          PLAN_NUMBER: ${{ inputs.plan_number }}
+          RUN_ID: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
+          erk exec update-plan-header "$PLAN_NUMBER" \
+            "last_dispatched_run_id=$RUN_ID" \
+            "last_dispatched_node_id=$NODE_ID" \
+            "last_dispatched_at=$TIMESTAMP"
