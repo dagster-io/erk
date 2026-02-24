@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Address PR #8087 Review Comments \u2014 Time Gateway + Divergence Comments"
+  "plan_id": "8093",
+  "url": "https://github.com/dagster-io/erk/pull/8093",
+  "created_at": "2026-02-24T11:48:15.066659",
+  "synced_at": "2026-02-24T11:48:15.066659",
+  "labels": [],
+  "objective_id": null
 }
