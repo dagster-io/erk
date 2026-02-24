@@ -20,7 +20,14 @@ class OneShotMissingMessageCommand(BaseModel):
     type: Literal["one_shot_missing_message"] = "one_shot_missing_message"
 
 
-Command = PlanListCommand | QuoteCommand | OneShotCommand | OneShotMissingMessageCommand
+class ChatCommand(BaseModel):
+    type: Literal["chat"] = "chat"
+    message: str = Field(min_length=1)
+
+
+Command = (
+    PlanListCommand | QuoteCommand | OneShotCommand | OneShotMissingMessageCommand | ChatCommand
+)
 
 
 class RunResult(BaseModel):

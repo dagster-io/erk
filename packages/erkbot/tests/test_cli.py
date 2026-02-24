@@ -25,7 +25,7 @@ class TestMain(unittest.TestCase):
 
         mock_load_dotenv.assert_called_once()
         mock_settings_cls.assert_called_once()
-        mock_create_app.assert_called_once_with(settings=mock_settings_cls.return_value)
+        mock_create_app.assert_called_once_with(settings=mock_settings_cls.return_value, bot=None)
         mock_handler_cls.assert_called_once_with(
             mock_create_app.return_value,
             mock_settings_cls.return_value.slack_app_token,

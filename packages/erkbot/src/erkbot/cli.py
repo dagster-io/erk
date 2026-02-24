@@ -10,7 +10,7 @@ from erkbot.config import Settings
 async def _run() -> None:
     load_dotenv()
     settings = Settings()
-    app = create_app(settings=settings)
+    app = create_app(settings=settings, bot=None)
     handler = AsyncSocketModeHandler(app, settings.slack_app_token)
     await handler.start_async()
 

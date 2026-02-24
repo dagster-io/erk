@@ -30,7 +30,7 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.settings = Settings(SLACK_BOT_TOKEN="x", SLACK_APP_TOKEN="y")
         self.app = FakeApp()
-        register_handlers(self.app, settings=self.settings)
+        register_handlers(self.app, settings=self.settings, bot=None)
 
     @patch("erkbot.slack_handlers.run_erk_plan_list", new_callable=AsyncMock)
     async def test_plan_list(self, mock_run_plan_list: AsyncMock) -> None:
@@ -63,6 +63,41 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
         client = AsyncMock()
         event = {
             "text": "<@U123> one-shot Review README",
+            "channel": "C1",
+            "ts": "1.23",
+            "user": "U1",
+        }
+
+        await handler(event, say, client)
+
+        mock_asyncio.create_task.assert_called_once()
+
+    async def test_chat_without_bot_returns_not_configured(self) -> None:
+        handler = self.app.event_handlers["app_mention"]
+        say = AsyncMock()
+        client = AsyncMock()
+        event = {
+            "text": "<@U123> chat hello there",
+            "channel": "C1",
+            "ts": "1.23",
+            "user": "U1",
+        }
+
+        await handler(event, say, client)
+
+        say.assert_called_with("Agent mode is not configured.", thread_ts="1.23")
+
+    @patch("erkbot.slack_handlers.asyncio")
+    async def test_chat_with_bot_starts_background_task(self, mock_asyncio: MagicMock) -> None:
+        bot = MagicMock()
+        app = FakeApp()
+        register_handlers(app, settings=self.settings, bot=bot)
+
+        handler = app.event_handlers["app_mention"]
+        say = AsyncMock()
+        client = AsyncMock()
+        event = {
+            "text": "<@U123> chat hello there",
             "channel": "C1",
             "ts": "1.23",
             "user": "U1",

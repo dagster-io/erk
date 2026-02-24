@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import asyncio
 import time
 from collections import deque
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from slack_sdk.errors import SlackApiError
 
+from erkbot.agent_handler import run_agent_background
 from erkbot.config import Settings
 from erkbot.models import (
+    ChatCommand,
     OneShotCommand,
     OneShotMissingMessageCommand,
     PlanListCommand,
@@ -23,10 +27,15 @@ from erkbot.utils import (
     tail_output_lines,
 )
 
-SUPPORTED_COMMANDS_TEXT = "Supported commands: `@erk plan list`, `@erk one-shot <message>`."
+if TYPE_CHECKING:
+    from erkbot.agent.bot import ErkBot
+
+SUPPORTED_COMMANDS_TEXT = (
+    "Supported commands: `@erk plan list`, `@erk chat <message>`, `@erk one-shot <message>`."
+)
 
 
-def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-untyped-def]
+def register_handlers(app, *, settings: Settings, bot: ErkBot | None) -> None:  # type: ignore[no-untyped-def]
     async def add_read_ack(client: Any, channel: str, timestamp: str) -> None:
         try:
             await client.reactions_add(channel=channel, timestamp=timestamp, name="eyes")
@@ -203,6 +212,29 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
 
         if isinstance(command, OneShotMissingMessageCommand):
             await say("Usage: `@erk one-shot <message>`", thread_ts=reply_thread_ts)
+            return
+
+        if isinstance(command, ChatCommand):
+            if bot is None:
+                await say("Agent mode is not configured.", thread_ts=reply_thread_ts)
+                return
+            if not channel:
+                await say(
+                    "Could not determine channel for this mention.", thread_ts=reply_thread_ts
+                )
+                return
+            asyncio.create_task(
+                run_agent_background(
+                    client=client,
+                    channel=channel,
+                    reply_thread_ts=reply_thread_ts,
+                    source_ts=source_ts,
+                    prompt=command.message,
+                    bot=bot,
+                    progress_update_interval_seconds=settings.one_shot_progress_update_interval_seconds,
+                    max_slack_code_block_chars=settings.max_slack_code_block_chars,
+                )
+            )
             return
 
         if isinstance(command, OneShotCommand):
