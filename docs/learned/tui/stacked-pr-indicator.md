@@ -18,9 +18,9 @@ Stacked status is detected from two sources with a fallback strategy:
 
 2. **Fallback: Graphite `get_parent_branch()`** — If `base_ref_name` detection doesn't confirm stacking and the PR head branch is known, the branch manager's `get_parent_branch()` is consulted. If it returns a parent, the PR is stacked.
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_plan_row -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_row_data -->
 
-See `RealPlanDataProvider._build_plan_row()` in `real.py` for the dual-source detection logic.
+See `RealPlanDataProvider._build_row_data()` in `real.py` for the dual-source detection logic.
 
 ## Indicator Ordering
 
@@ -47,7 +47,7 @@ See `_build_indicators()` in `lifecycle.py` for the blocking indicator logic.
 
 ```
 PullRequestInfo.base_ref_name (from GitHub API)
-    → pr_is_stacked (bool | None, in _build_plan_row)
+    → pr_is_stacked (bool | None, in _build_row_data)
     → is_stacked parameter (passed to format_lifecycle_with_status / compute_status_indicators)
     → _build_indicators appends 🥞 when is_stacked is True
 ```

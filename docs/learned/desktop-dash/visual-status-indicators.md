@@ -25,9 +25,9 @@ audit_result: edited
 
 `format_lifecycle_with_status()` in `lifecycle.py` adds draft/published prefixes and review decision suffixes to lifecycle stage strings.
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_plan_row -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_row_data -->
 
-`RealPlanDataProvider._build_plan_row()` in `real.py` wires `review_decision` from `PullRequestInfo` into the formatter.
+`RealPlanDataProvider._build_row_data()` in `real.py` wires `review_decision` from `PullRequestInfo` into the formatter.
 
 ## Why Visual Indicators Over Text
 

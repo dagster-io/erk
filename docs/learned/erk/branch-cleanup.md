@@ -4,6 +4,10 @@ read_when:
   - "cleaning up branches"
   - "removing dormant worktrees"
   - "managing branch lifecycle"
+tripwires:
+  - action: "implementing branch deletion during automated cleanup"
+    warning: "Use force=True (git branch -D) for post-merge cleanup. Non-force delete refuses squash-merged branches because the SHA differs."
+    score: 6
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -224,6 +228,26 @@ for branch in $MERGED; do
   gt delete --force "$branch" 2>/dev/null || git branch -D "$branch"
 done
 ```
+
+## Automated Cleanup During `erk land`
+
+<!-- Source: src/erk/cli/commands/land_cmd.py, delete_branch -->
+
+When `erk land` completes a merge, it force-deletes the implementation branch in all cleanup paths. There are 5 `delete_branch(..., force=True)` calls in `land_cmd.py` (lines 775, 796, 821, 839, 870), covering different worktree configurations:
+
+- Simple branch deletion (no worktree)
+- Slot-assigned branch cleanup
+- Root worktree branch cleanup
+- Linked worktree with branch and worktree removal
+
+**Why force-delete?** After the merge is verified via GitHub API, the branch's purpose is complete. The local branch may appear "unmerged" from git's perspective because GitHub's squash-merge creates a new commit SHA. `git branch -d` (non-force) would refuse to delete, so `force=True` (equivalent to `git branch -D`) is used.
+
+**Implementation:**
+
+- Git-only branches: `git branch -D` via `gateway/git/branch_ops/real.py`
+- Graphite-tracked branches: `gt delete -f` via `gateway/graphite/branch_ops/real.py`
+
+The `BranchManager.delete_branch()` abstraction routes to the correct implementation based on whether Graphite tracking is active.
 
 ## See Also
 
