@@ -82,8 +82,7 @@ def pr_check(ctx: ErkContext, stage: str | None) -> None:
                 PrCheck(
                     passed=False,
                     description=(
-                        ".erk/impl-context/ still present"
-                        " (should be removed before submission)"
+                        ".erk/impl-context/ still present (should be removed before submission)"
                     ),
                 )
             )
@@ -165,8 +164,7 @@ def pr_check(ctx: ErkContext, stage: str | None) -> None:
                 PrCheck(
                     passed=False,
                     description=(
-                        "Plan-header metadata is at legacy top position"
-                        " (should be above footer)"
+                        "Plan-header metadata is at legacy top position (should be above footer)"
                     ),
                 )
             )
