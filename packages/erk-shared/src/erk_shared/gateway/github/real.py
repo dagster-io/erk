@@ -485,8 +485,7 @@ class RealGitHub(GitHub):
                 "  • All recent runs were cancelled/skipped",
                 "",
                 "Debug commands:",
-                f"  gh api repos/{{owner}}/{{repo}}/actions/workflows/"
-                f"{workflow}/runs?per_page=10",
+                f"  gh api repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?per_page=10",
             ]
         )
 
