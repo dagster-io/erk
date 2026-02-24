@@ -1,12 +1,12 @@
 import unittest
 
-from erk_slack_bot.models import (
+from erkbot.models import (
     OneShotCommand,
     OneShotMissingMessageCommand,
     PlanListCommand,
     QuoteCommand,
 )
-from erk_slack_bot.parser import parse_erk_command
+from erkbot.parser import parse_erk_command
 
 
 class TestParseErkCommand(unittest.TestCase):

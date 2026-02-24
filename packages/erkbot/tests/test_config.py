@@ -2,7 +2,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from erk_slack_bot.config import Settings
+from erkbot.config import Settings
 from pydantic import ValidationError
 
 

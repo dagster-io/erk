@@ -2,7 +2,7 @@
   <img width="64" height="64" alt="erk-oneshot" src="https://github.com/user-attachments/assets/d50143c7-bb42-49d7-8af9-f189fbe80f79" />
 </div>
 
-## Erk Slack Bot
+## Erkbot
 
 ### Prerequisites
 

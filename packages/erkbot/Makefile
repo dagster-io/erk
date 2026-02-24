@@ -5,10 +5,10 @@ ERK_LOCAL_PATH ?= $(HOME)/src/erk
 dev:
 	@if [ -d "$(ERK_LOCAL_PATH)" ]; then \
 		echo "Using local editable erk: $(ERK_LOCAL_PATH)"; \
-		uv run --with-editable "$(ERK_LOCAL_PATH)" erk-slack-bot; \
+		uv run --with-editable "$(ERK_LOCAL_PATH)" erkbot; \
 	else \
 		echo "Using PyPI erk dependency"; \
-		uv run erk-slack-bot; \
+		uv run erkbot; \
 	fi
 
 erk-version:

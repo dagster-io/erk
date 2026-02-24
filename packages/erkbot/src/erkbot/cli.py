@@ -3,8 +3,8 @@ import asyncio
 from dotenv import load_dotenv
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
-from erk_slack_bot.app import create_app
-from erk_slack_bot.config import Settings
+from erkbot.app import create_app
+from erkbot.config import Settings
 
 
 async def _run() -> None:

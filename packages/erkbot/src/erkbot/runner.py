@@ -5,7 +5,7 @@ from shutil import which
 from click.testing import CliRunner
 
 from erk import cli
-from erk_slack_bot.models import RunResult
+from erkbot.models import RunResult
 
 
 async def run_erk_plan_list() -> RunResult:

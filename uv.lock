@@ -12,8 +12,8 @@ members = [
     "erk",
     "erk-dev",
     "erk-shared",
-    "erk-slack-bot",
     "erk-statusline",
+    "erkbot",
 ]
 
 [[package]]
@@ -508,9 +508,20 @@ requires-dist = [
 ]
 
 [[package]]
-name = "erk-slack-bot"
+name = "erk-statusline"
+version = "0.8.1"
+source = { editable = "packages/erk-statusline" }
+dependencies = [
+    { name = "erk-shared" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "erk-shared", editable = "packages/erk-shared" }]
+
+[[package]]
+name = "erkbot"
 version = "0.1.0"
-source = { editable = "packages/erk-slack-bot" }
+source = { editable = "packages/erkbot" }
 dependencies = [
     { name = "aiohttp" },
     { name = "erk" },
@@ -541,17 +552,6 @@ dev = [
     { name = "ruff", specifier = ">=0.15.0" },
     { name = "ty", specifier = ">=0.0.1a19" },
 ]
-
-[[package]]
-name = "erk-statusline"
-version = "0.8.1"
-source = { editable = "packages/erk-statusline" }
-dependencies = [
-    { name = "erk-shared" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "erk-shared", editable = "packages/erk-shared" }]
 
 [[package]]
 name = "execnet"
