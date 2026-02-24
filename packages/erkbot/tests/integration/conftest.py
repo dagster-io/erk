@@ -9,7 +9,6 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
-from erk_shared.gateway.time.fake import FakeTime
 from erkbot.config import Settings
 from erkbot.slack_handlers import register_handlers
 from slack_bolt.async_app import AsyncApp
@@ -18,6 +17,7 @@ from slack_bolt.response import BoltResponse
 from slack_sdk.signature import SignatureVerifier
 from slack_sdk.web.async_client import AsyncWebClient
 
+from erk_shared.gateway.time.fake import FakeTime
 from tests.mock_web_api_server.mock_server_thread import (
     MockServerThread,
     setup_mock_server,
