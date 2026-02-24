@@ -23,6 +23,8 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.printing.base import PrintingBase
 
+_MAX_WORKFLOW_POLL_ATTEMPTS = 15
+
 
 class PrintingGitHub(PrintingBase, GitHub):
     """Wrapper that prints operations before delegating to inner implementation.
@@ -132,7 +134,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         """
         cmd = self._format_workflow_run_command(workflow=workflow, inputs=inputs, ref=ref)
         self._emit(self._format_command(cmd))
-        self._emit(f"   Polling for run (max {15} attempts)...")
+        self._emit(f"   Polling for run (max {_MAX_WORKFLOW_POLL_ATTEMPTS} attempts)...")
         run_id = self._wrapped.trigger_workflow(
             repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
         )
