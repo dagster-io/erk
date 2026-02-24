@@ -160,6 +160,8 @@ class PlanFilters:
         show_prs: Whether to include PR data
         show_runs: Whether to include workflow run data
         creator: Filter by creator username (None for all users)
+        show_pr_column: Whether to show PR column in table
+        lifecycle_stage: Filter by lifecycle stage (e.g., "impl", "planned")
     """
 
     labels: tuple[str, ...]
@@ -170,6 +172,7 @@ class PlanFilters:
     show_runs: bool
     creator: str | None = None
     show_pr_column: bool = True
+    lifecycle_stage: str | None = None
 
     @staticmethod
     def default() -> PlanFilters:

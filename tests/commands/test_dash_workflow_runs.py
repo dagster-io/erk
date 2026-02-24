@@ -113,7 +113,7 @@ Implementation details"""
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify workflow run ID appears
@@ -203,7 +203,7 @@ last_dispatched_node_id: 'WFR_def456'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify run ID and OSC 8 link present
@@ -289,7 +289,7 @@ last_dispatched_node_id: 'WFR_ghi789'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify run ID displays (without link)
@@ -351,7 +351,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify "-" appears in run-id column
@@ -419,7 +419,7 @@ def test_plan_list_handles_batch_query_failure() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
         # Command should succeed despite API failure
         assert result.exit_code == 0, result.output
 
@@ -552,7 +552,7 @@ last_dispatched_node_id: 'WFR_node2'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify both run IDs appear
@@ -607,7 +607,7 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify plan displays without run ID

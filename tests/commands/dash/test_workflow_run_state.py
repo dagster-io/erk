@@ -100,7 +100,7 @@ last_dispatched_node_id: 'WFR_running'
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for queued workflow runs
-        result = runner.invoke(cli, ["plan", "list", "--run-state", "queued"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--run-state", "queued"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -191,7 +191,7 @@ last_dispatched_node_id: 'WFR_failed'
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for success workflow runs
-        result = runner.invoke(cli, ["plan", "list", "--run-state", "success"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--run-state", "success"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -233,7 +233,7 @@ def test_plan_list_run_state_filter_no_matches() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for "in_progress" which won't match (run is completed/success)
-        result = runner.invoke(cli, ["plan", "list", "--run-state", "in_progress"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--run-state", "in_progress"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0

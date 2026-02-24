@@ -63,8 +63,8 @@ def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str
         return f"{pr_text} {emoji}"
 
 
-def plan_filter_options(f: Callable[P, T]) -> Callable[P, T]:
-    """Shared filter options for plan list commands."""
+def pr_filter_options(f: Callable[P, T]) -> Callable[P, T]:
+    """Shared filter options for pr list commands."""
     f = click.option(
         "--label",
         multiple=True,
@@ -81,6 +81,14 @@ def plan_filter_options(f: Callable[P, T]) -> Callable[P, T]:
             ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
         ),
         help="Filter by workflow run state",
+    )(f)
+    f = click.option(
+        "--stage",
+        type=click.Choice(
+            ["prompted", "planning", "planned", "impl", "merged", "closed"],
+            case_sensitive=False,
+        ),
+        help="Filter by lifecycle stage",
     )(f)
     f = click.option(
         "--limit",
@@ -225,12 +233,13 @@ def _row_to_static_values(
     return tuple(values)
 
 
-def _list_plans_impl(
+def _pr_list_impl(
     ctx: ErkContext,
     *,
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
+    stage: str | None,
     limit: int | None,
     all_users: bool,
     sort: str,
@@ -282,10 +291,15 @@ def _list_plans_impl(
         show_runs=True,
         creator=creator,
         show_pr_column=False,
+        lifecycle_stage=stage,
     )
 
     # Fetch data via provider
     rows = provider.fetch_plans(filters)
+
+    # Apply --stage post-fetch filtering
+    if stage is not None:
+        rows = [r for r in rows if strip_rich_markup(r.lifecycle_display).startswith(stage)]
 
     if not rows:
         user_output("No plans found matching the criteria.")
@@ -317,6 +331,7 @@ def _run_interactive_mode(
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
+    stage: str | None,
     runs: bool,
     prs: bool,
     limit: int | None,
@@ -331,6 +346,7 @@ def _run_interactive_mode(
         label: Labels to filter by
         state: State filter ("open", "closed", or None)
         run_state: Workflow run state filter
+        stage: Lifecycle stage filter (e.g., "impl", "planned")
         runs: Whether to show run columns
         prs: Whether to show PR columns
         limit: Maximum number of results
@@ -384,6 +400,7 @@ def _run_interactive_mode(
         show_runs=runs,
         creator=creator,
         show_pr_column=False,
+        lifecycle_stage=stage,
     )
 
     # Convert sort string to SortState
@@ -400,14 +417,15 @@ def _run_interactive_mode(
 
 
 @click.command("list")
-@plan_filter_options
+@pr_filter_options
 @click.pass_obj
-def list_plans(
+def pr_list(
     ctx: ErkContext,
     *,
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
+    stage: str | None,
     limit: int | None,
     all_users: bool,
     sort: str,
@@ -418,20 +436,22 @@ def list_plans(
     to show plans from all users.
 
     Examples:
-        erk plan list                    # Your plans only
-        erk plan list --all-users        # All users' plans
-        erk plan list -A                 # All users' plans (short form)
-        erk plan list --state open
-        erk plan list --label erk-plan --label bug
-        erk plan list --limit 10
-        erk plan list --run-state in_progress
-        erk plan list --sort activity    # Sort by recent branch activity
+        erk pr list                      # Your plans only
+        erk pr list --all-users          # All users' plans
+        erk pr list -A                   # All users' plans (short form)
+        erk pr list --state open
+        erk pr list --label erk-plan --label bug
+        erk pr list --limit 10
+        erk pr list --run-state in_progress
+        erk pr list --stage impl         # Filter by lifecycle stage
+        erk pr list --sort activity      # Sort by recent branch activity
     """
-    _list_plans_impl(
+    _pr_list_impl(
         ctx,
         label=label,
         state=state,
         run_state=run_state,
+        stage=stage,
         limit=limit,
         all_users=all_users,
         sort=sort,
@@ -439,7 +459,7 @@ def list_plans(
 
 
 @click.command("dash")
-@plan_filter_options
+@pr_filter_options
 @dash_options
 @click.pass_obj
 def dash(
@@ -448,6 +468,7 @@ def dash(
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
+    stage: str | None,
     limit: int | None,
     all_users: bool,
     sort: str,
@@ -460,7 +481,7 @@ def dash(
 
     Launches an interactive terminal UI for viewing and managing plans.
     Shows all columns (runs) by default. For a static table output, use
-    'erk plan list' instead.
+    'erk pr list' instead.
 
     Examples:
         erk dash                         # Your plans only
@@ -470,6 +491,7 @@ def dash(
         erk dash --label erk-plan --state open
         erk dash --limit 10
         erk dash --run-state in_progress
+        erk dash --stage impl            # Filter by lifecycle stage
         erk dash --sort activity         # Sort by recent branch activity
     """
     # Default to showing all columns (runs=True)
@@ -481,6 +503,7 @@ def dash(
         label=label,
         state=state,
         run_state=run_state,
+        stage=stage,
         runs=runs,
         prs=prs,
         limit=limit,

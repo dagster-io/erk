@@ -41,7 +41,7 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0

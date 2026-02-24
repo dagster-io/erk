@@ -53,7 +53,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).              |
 | `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.              |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                  |
-| `get-pr-for-plan`                 | Get PR details for a plan issue.                                           |
+| `get-pr-for-plan`                 | Get PR details for a plan.                                                 |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                      |
 | `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).              |
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                     |
@@ -546,7 +546,7 @@ Fetch PR discussion comments for agent context injection.
 
 ### get-pr-for-plan
 
-Get PR details for a plan issue.
+Get PR details for a plan.
 
 **Usage:** `erk exec get-pr-for-plan` <issue_number>
 
@@ -1213,11 +1213,10 @@ Set up .impl/ folder from GitHub issue in current worktree.
 
 **Options:**
 
-| Flag            | Type | Required | Default | Description                                                             |
-| --------------- | ---- | -------- | ------- | ----------------------------------------------------------------------- |
-| `--session-id`  | TEXT | No       | -       | Claude session ID for marker creation                                   |
-| `--no-impl`     | FLAG | No       | -       | Skip .impl/ folder creation (for local execution without file overhead) |
-| `--branch-slug` | TEXT | No       | -       | Pre-generated branch slug (skips LLM call when provided)                |
+| Flag           | Type | Required | Default | Description                                                             |
+| -------------- | ---- | -------- | ------- | ----------------------------------------------------------------------- |
+| `--session-id` | TEXT | No       | -       | Claude session ID for marker creation                                   |
+| `--no-impl`    | FLAG | No       | -       | Skip .impl/ folder creation (for local execution without file overhead) |
 
 ### store-tripwire-candidates
 

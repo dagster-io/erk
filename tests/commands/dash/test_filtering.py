@@ -54,7 +54,7 @@ def test_plan_list_no_filters() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use erk plan list for static output
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -102,7 +102,7 @@ def test_plan_list_filter_by_state() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for open issues
-        result = runner.invoke(cli, ["plan", "list", "--state", "open"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--state", "open"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -154,7 +154,7 @@ def test_plan_list_filter_by_labels() -> None:
         # Act - Filter for both labels (AND logic)
         result = runner.invoke(
             cli,
-            ["plan", "list", "--label", "erk-plan", "--label", "erk-queue"],
+            ["pr", "list", "--label", "erk-plan", "--label", "erk-queue"],
             obj=ctx,
         )
 
@@ -195,7 +195,7 @@ def test_plan_list_with_limit() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["plan", "list", "--limit", "2"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--limit", "2"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -267,7 +267,7 @@ def test_plan_list_combined_filters() -> None:
         result = runner.invoke(
             cli,
             [
-                "plan",
+                "pr",
                 "list",
                 "--state",
                 "open",
@@ -309,7 +309,7 @@ def test_plan_list_empty_results() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["plan", "list", "--state", "closed"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--state", "closed"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
