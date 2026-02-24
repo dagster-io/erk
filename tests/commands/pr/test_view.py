@@ -73,9 +73,7 @@ def test_view_plan_infers_from_branch() -> None:
         fake_github._prs[real_branch] = fake_github._prs["plan-123"]
         fake_github._prs_by_branch[real_branch] = fake_github._pr_details[123]
         # Set current branch to a plan branch
-        ctx = build_workspace_test_context(
-            env, plan_store=store, current_branch=real_branch
-        )
+        ctx = build_workspace_test_context(env, plan_store=store, current_branch=real_branch)
 
         # Act - no identifier provided
         result = runner.invoke(cli, ["pr", "view"], obj=ctx)
