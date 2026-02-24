@@ -322,6 +322,27 @@ user = fetch_user(user_id)
 send_notification(user.name, user.email, user.role)
 ```
 
+### Simple Ternaries Are Preferred
+
+Simple one-line ternary expressions are idiomatic and often preferable to multi-line if/else:
+
+```python
+# CORRECT: Simple ternary - clear and concise
+root = repo.main_root if repo.main_root else repo.root
+label = name if name else "unknown"
+
+# ALSO CORRECT: `or` for falsy fallback (when semantics match)
+root = repo.main_root or repo.root
+
+# WRONG: Unnecessary multi-line expansion of a simple conditional
+if repo.main_root:
+    root = repo.main_root
+else:
+    root = repo.root
+```
+
+Only avoid ternaries when they are **nested** (ternary inside ternary) or span multiple lines.
+
 ### Indentation Depth Limit
 
 **Maximum indentation: 4 levels**
