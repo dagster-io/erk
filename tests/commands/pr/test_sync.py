@@ -1054,7 +1054,7 @@ def test_pr_sync_strips_impl_context_before_restack(tmp_path: Path) -> None:
         result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Stripping .erk/impl-context/ before restack" in result.output
+        assert "Stripped .erk/impl-context/ before restack" in result.output
         # Verify commit was created for impl-context removal
         commit_messages = [c.message for c in git.commits]
         assert "Remove impl-context before sync" in commit_messages
@@ -1110,7 +1110,7 @@ def test_pr_sync_skips_strip_when_no_impl_context(tmp_path: Path) -> None:
 
         assert result.exit_code == 0
         # Should NOT show strip message
-        assert "Stripping .erk/impl-context/ before restack" not in result.output
+        assert "Stripped .erk/impl-context/ before restack" not in result.output
         # No extra commit for impl-context removal
         commit_messages = [c.message for c in git.commits]
         assert "Remove impl-context before sync" not in commit_messages
